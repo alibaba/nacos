@@ -34,8 +34,11 @@ It is super easy to get started with your first project.
 
 #### Download run package 
 [Download](http://nacos.oss-cn-hangzhou-zmf.aliyuncs.com/nacos-server-0.1.0.zip)
-  > unzip nacos-all.zip 
-  > cd nacos/bin
+
+```
+unzip nacos-all.zip 
+cd nacos/bin 
+``` 
 #### Start Server
 ##### Linux/Unix/Mac
 
