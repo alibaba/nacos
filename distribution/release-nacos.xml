@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<assembly>
+	<id>server-${project.version}</id>
+	<includeBaseDirectory>true</includeBaseDirectory>
+	<formats>
+		<format>dir</format>
+		<format>tar.gz</format>
+		<format>zip</format>
+	</formats>
+	<fileSets>
+
+		<fileSet>
+			<includes>
+				<include>conf/**</include>
+			</includes>
+		</fileSet>
+
+		<fileSet>
+			<includes>
+				<include>bin/*</include>
+			</includes>
+			<fileMode>0755</fileMode>
+		</fileSet>
+	</fileSets>
+	<files>
+		<file>
+			<source>LICENSE-BIN</source>
+			<destName>LICENSE</destName>
+		</file>
+		<file>
+			<source>NOTICE-BIN</source>
+			<destName>NOTICE</destName>
+		</file>
+		<file>
+			<!--打好的jar包名称和放置目录-->
+			<source>../console/target/nacos-server.jar</source>
+			<outputDirectory>/target/</outputDirectory>
+		</file>
+	</files>
+
+	<moduleSets>
+		<moduleSet>
+			<useAllReactorProjects>true</useAllReactorProjects>
+			<includes>
+				<include>com.alibaba.nacos:nacos-console</include>
+			</includes>
+		</moduleSet>
+	</moduleSets>
+</assembly>

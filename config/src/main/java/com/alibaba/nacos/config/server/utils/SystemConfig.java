@@ -1,0 +1,65 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.nacos.config.server.utils;
+
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * System config
+ * @author Nacos
+ *
+ */
+public class SystemConfig {
+
+    public static final String LOCAL_IP = getHostAddress();
+
+    private static final Logger log = LoggerFactory.getLogger(SystemConfig.class);
+
+    private static String getHostAddress() {
+		String address = System.getProperty("nacos.server.ip");
+		if (StringUtils.isNotEmpty(address)) {
+			return address;
+		} else {
+			address = "127.0.0.1";
+		}
+        try {
+            Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
+            while (en.hasMoreElements()) {
+                NetworkInterface ni = en.nextElement();
+                Enumeration<InetAddress> ads = ni.getInetAddresses();
+				while (ads.hasMoreElements()) {
+					InetAddress ip = ads.nextElement();
+					// 兼容集团不规范11网段
+					if (!ip.isLoopbackAddress()
+							&& ip.getHostAddress().indexOf(":") == -1
+					/* && ip.isSiteLocalAddress() */) {
+						return ip.getHostAddress();
+					}
+				}
+            }
+        } catch (Exception e) {
+            log.error("get local host address error", e);
+        }
+        return address;
+    }
+
+}
