@@ -29,10 +29,28 @@ Nacos provides four major funcations.
 	Nacos provides an easy-to-use service dashboard to help you manage your services metadata, configuration, kubernetes DNS, service health and metrics statistics.
  
 
-## Quick Start (TODO)
+### Quick Start
 It is super easy to get started with your first project.
 
-https://nacos.io/#/docs/quick-start.md
+#### Download run package 
+[Download](http://nacos.oss-cn-hangzhou-zmf.aliyuncs.com/nacos-server-0.1.0.zip)
+  > unzip nacos-all.zip 
+  > cd nacos/bin
+#### Start Server
+##### Linux/Unix/Mac
+
+Run the following command to sart(standalone means non-cluster mode): 
+
+`sh startup.sh -m standalone`
+
+##### Windows
+Run the following command to start:
+
+`cmd startup.cmd`
+
+Or double-click the startup.cmd to run NacosServer.
+
+you can see detail in https://nacos.io/#/docs/quick-start.md
 
 Quick start for other open-source projects:
 
@@ -41,9 +59,17 @@ Quick start for other open-source projects:
 [quick start with kubernetes](xx)
 [more...](xx)
 
-
-## Documentation
+### Documentation
 
 You can view full documentation on the Nacos website:
 
-[https://nacos.io/#/blog](https://nacos.io/#/blog)
+[nacos.io](https://nacos.io/#/docs/what-is-nacos.md)
+
+### Contact
+#### Nacos Gitter-[https://gitter.im/alibaba/nacos](https://gitter.im/alibaba/nacos)
+#### Nacos weibo-[https://weibo.com/u/6574374908](https://weibo.com/u/6574374908)
+#### Nacos segmentfault-[https://segmentfault.com/t/nacos](https://segmentfault.com/t/nacos)
+
+#### Mailing list
+ [nacos\_dev@linux.alibaba.com](https://lark.alipay.com/nacos/nacosdocs/vl19q1).
+
