@@ -54,10 +54,13 @@ you can see detail in https://nacos.io/#/docs/quick-start.md
 
 Quick start for other open-source projects:
 
-[quick start with spring cloud](xx)
-[quick start with dubbo](xx)
-[quick start with kubernetes](xx)
-[more...](xx)
+[quick start with spring cloud](https://nacos.io/#/docs/use-nacos-with-springcloud.md)
+
+[quick start with dubbo](https://nacos.io/#/docs/use-nacos-with-dubbo.md)
+
+[quick start with kubernetes](https://nacos.io/#/docs/use-nacos-with-kubernetes.md)
+
+[more...](https://nacos.io/)
 
 ### Documentation
 
@@ -66,8 +69,11 @@ You can view full documentation on the Nacos website:
 [nacos.io](https://nacos.io/#/docs/what-is-nacos.md)
 
 ### Contact
+
 #### Nacos Gitter-[https://gitter.im/alibaba/nacos](https://gitter.im/alibaba/nacos)
+
 #### Nacos weibo-[https://weibo.com/u/6574374908](https://weibo.com/u/6574374908)
+
 #### Nacos segmentfault-[https://segmentfault.com/t/nacos](https://segmentfault.com/t/nacos)
 
 #### Mailing list
