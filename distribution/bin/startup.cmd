@@ -16,13 +16,11 @@ set "JAVA_OPT=%JAVA_OPT% -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollect
 set "JAVA_OPT=%JAVA_OPT% -verbose:gc -Xloggc:"%USERPROFILE%\rmq_srv_gc.log" -XX:+PrintGCDetails"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
 
-if not ""%2"" == "cluster"
-set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
+if not ""%2"" == "cluster" set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
 
 set "JAVA_OPT=%JAVA_OPT% -XX:-OmitStackTraceInFastThrow"
 set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
 set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
 set "JAVA_OPT=%JAVA_OPT% -cp "%CLASSPATH%""
-set CMD_LINE_ARGS=
 
 call "%JAVA%" %JAVA_OPT% %*
