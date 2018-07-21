@@ -49,8 +49,6 @@ public class DistroMapper {
 
     public static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
-    private static long HEALTH_TIME_OUT_MILLIS = TimeUnit.SECONDS.toMillis(30);
-
     private static long LAST_HEALTH_SERVER_MILLIS = 0L;
 
     private static boolean AUTO_DISABLED_HEALTH_CHECK = false;
@@ -352,10 +350,6 @@ public class DistroMapper {
         return liveSites;
     }
 
-    public static boolean liveSite(String site) {
-        return liveSites.contains(site);
-    }
-
     public static void clean() {
         cleanInvalidServers();
 
@@ -368,10 +362,6 @@ public class DistroMapper {
             }
 
         }
-    }
-
-    public static void cleanWithoutDiamond() {
-        cleanInvalidServers();
     }
 
     private static void cleanInvalidServers() {
