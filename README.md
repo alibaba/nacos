@@ -8,7 +8,7 @@
 <img src="doc/Nacos_Logo.png" width="50%" height="50%" />
 Nacos is an easy-to-use platform desgined for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
 
-Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](xx)、[Spring Cloud RESTFul service](xx) or [Kubernetes service](xx).
+Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/#/docs/use-nacos-with-dubbo.md)、[Spring Cloud RESTFul service](https://nacos.io/#/docs/use-nacos-with-springcloud.md) or [Kubernetes service](https://nacos.io/#/docs/use-nacos-with-kubernetes.md).
 
 Nacos provides four major funcations.
 
@@ -33,12 +33,13 @@ Nacos provides four major funcations.
 It is super easy to get started with your first project.
 
 #### Download run package 
-[Download](http://nacos.oss-cn-hangzhou-zmf.aliyuncs.com/nacos-server-0.1.0.zip)
+[Download](https://nacos-pub.oss-cn-hangzhou.aliyuncs.com/nacos-server-0.1.0.zip)
 
 ```
-unzip nacos-all.zip 
+unzip nacos-server-0.1.0.zip
 cd nacos/bin 
 ``` 
+
 #### Start Server
 ##### Linux/Unix/Mac
 
