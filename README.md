@@ -33,7 +33,7 @@ Nacos provides four major funcations.
 It is super easy to get started with your first project.
 
 #### Download run package 
-[Download](https://nacos-pub.oss-cn-hangzhou.aliyuncs.com/nacos-server-0.1.0.zip)
+[Download](https://pan.baidu.com/s/1FsPzIK8lQ8VSNucI57H67A)
 
 ```
 unzip nacos-server-0.1.0.zip
