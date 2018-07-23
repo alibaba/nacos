@@ -16,7 +16,6 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
@@ -43,7 +42,7 @@ public class HostReactor {
 
     private Map<String, Domain> domMap;
 
-    private PushRecver pushRecver;
+    private PushReceiver pushRecver;
 
     private EventDispatcher eventDispatcher;
 
@@ -59,7 +58,7 @@ public class HostReactor {
         this.cacheDir = cacheDir;
         this.domMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
         this.failoverReactor = new FailoverReactor(this, cacheDir);
-        this.pushRecver = new PushRecver(this);
+        this.pushRecver = new PushReceiver(this);
     }
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
