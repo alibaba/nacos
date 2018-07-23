@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 package com.alibaba.nacos.api.config.filter;
-
 /**
- * Config Context Interface
- * 
+ * Filter Config Interface
  * @author Nacos
  *
  */
-public interface IConfigContext {
-	/**
-	 * get context by key
-	 * 
-	 * @param key
-	 * @return context
-	 */
-	public Object getParameter(String key);
+public interface FilterConfig {
 
 	/**
-	 * set context
+	 * get filter name
 	 * 
-	 * @param key
-	 *            key
-	 * @param value
-	 *            value
+	 * @return
 	 */
-	public void setParameter(String key, Object value);
+	public String getFilterName();
+
+	/**
+	 * get param
+	 * 
+	 * @param name
+	 * @return param
+	 */
+	public Object getInitParameter(String name);
+
 }

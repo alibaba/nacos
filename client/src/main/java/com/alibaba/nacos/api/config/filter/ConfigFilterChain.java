@@ -18,52 +18,22 @@ package com.alibaba.nacos.api.config.filter;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * Config Filter Interface
+ * Config Filter Chain Interface
  * 
  * @author Nacos
  *
  */
-public interface IConfigFilter {
+public interface ConfigFilterChain {
 	/**
-	 * Init Fuction
-	 * 
-	 * @param filterConfig
-	 *            Filter Config
-	 */
-	void init(IFilterConfig filterConfig);
-
-	/**
-	 * do filter
+	 * Filter aciton
 	 * 
 	 * @param request
 	 *            request
 	 * @param response
 	 *            response
-	 * @param filterChain
-	 *            filter Chain
 	 * @throws NacosException
-	 *             exception
+	 *             NacosException
 	 */
-	void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
-			throws NacosException;
-
-	/**
-	 * deploy
-	 */
-	void deploy();
-
-	/**
-	 * order
-	 * 
-	 * @return
-	 */
-	int getOrder();
-
-	/**
-	 * filterName
-	 * 
-	 * @return
-	 */
-	String getFilterName();
-
+	public void doFilter(ConfigRequest request, ConfigResponse response) throws NacosException;
+	
 }
