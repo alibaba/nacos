@@ -31,7 +31,7 @@ import java.util.concurrent.ThreadFactory;
 /**
  * @author xuanyin
  */
-public class PushRecver implements Runnable {
+public class PushReceiver implements Runnable {
 
     private ScheduledExecutorService executorService;
 
@@ -41,7 +41,7 @@ public class PushRecver implements Runnable {
 
     private HostReactor hostReactor;
 
-    public PushRecver(HostReactor hostReactor) {
+    public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
             udpSocket = new DatagramSocket();
