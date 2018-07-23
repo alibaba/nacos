@@ -107,7 +107,7 @@ final public class MessageFormatter {
    * 
    * @param messagePattern
    *          The message pattern which will be parsed and formatted
-   * @param argument
+   * @param arg
    *          The argument to be substituted in place of the formatting anchor
    * @return The formatted message
    */

@@ -18,15 +18,13 @@ package com.alibaba.nacos.client.config.filter.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.api.config.filter.IConfigContext;
-
 /**
  * Config Context
  * 
  * @author Nacos
  *
  */
-public class ConfigContext implements IConfigContext {
+public class ConfigContext implements com.alibaba.nacos.api.config.filter.ConfigContext {
 
 	private Map<String, Object> param = new HashMap<String, Object>();
 

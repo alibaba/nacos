@@ -82,6 +82,7 @@ public class Logback918ActivateOption extends AbstractActiveOption {
         activateAsyncAppender(productName, file, encoding, Integer.MIN_VALUE, Integer.MIN_VALUE);
     }
 
+    @Override
     public void activateAsyncAppender(String productName, String file, String encoding, int queueSize,
                                       int discardingThreshold) {
         activateAppender(productName, file, encoding);

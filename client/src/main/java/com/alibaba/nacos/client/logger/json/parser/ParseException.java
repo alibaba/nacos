@@ -82,7 +82,8 @@ public class ParseException extends Exception {
 	public void setUnexpectedObject(Object unexpectedObject) {
 		this.unexpectedObject = unexpectedObject;
 	}
-	
+
+	@Override
 	public String getMessage() {
 		StringBuffer sb = new StringBuffer();
 		

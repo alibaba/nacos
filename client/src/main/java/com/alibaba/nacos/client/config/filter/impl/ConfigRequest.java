@@ -18,8 +18,7 @@ package com.alibaba.nacos.client.config.filter.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.nacos.api.config.filter.IConfigContext;
-import com.alibaba.nacos.api.config.filter.IConfigRequest;
+import com.alibaba.nacos.api.config.filter.ConfigContext;
 
 /**
  * Config Request
@@ -27,11 +26,11 @@ import com.alibaba.nacos.api.config.filter.IConfigRequest;
  * @author Nacos
  *
  */
-public class ConfigRequest implements IConfigRequest {
+public class ConfigRequest implements com.alibaba.nacos.api.config.filter.ConfigRequest {
 
 	private Map<String, Object> param = new HashMap<String, Object>();
 
-	private IConfigContext configContext = new ConfigContext();
+	private ConfigContext configContext = new com.alibaba.nacos.client.config.filter.impl.ConfigContext();
 
 	public String getTenant() {
 		return (String) param.get("tenant");
@@ -71,7 +70,7 @@ public class ConfigRequest implements IConfigRequest {
 	}
 
 	@Override
-	public IConfigContext getConfigContext() {
+	public ConfigContext getConfigContext() {
 		return configContext;
 	}
 

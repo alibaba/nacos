@@ -82,6 +82,7 @@ public final class JvmRandom extends Random {
      * @param seed ignored
      * @throws UnsupportedOperationException
      */
+    @Override
     public synchronized void setSeed(long seed) {
         if (this.constructed) {
             throw new UnsupportedOperationException();
@@ -94,6 +95,7 @@ public final class JvmRandom extends Random {
      * @return Nothing, this method always throws an UnsupportedOperationException.
      * @throws UnsupportedOperationException
      */
+    @Override
     public synchronized double nextGaussian() {
         throw new UnsupportedOperationException();
     }
@@ -104,6 +106,7 @@ public final class JvmRandom extends Random {
      * @param byteArray ignored
      * @throws UnsupportedOperationException
      */
+    @Override
     public void nextBytes(byte[] byteArray) {
         throw new UnsupportedOperationException();
     }
@@ -117,6 +120,7 @@ public final class JvmRandom extends Random {
      * </p>
      * @return the random int
      */
+    @Override
     public int nextInt() {
         return nextInt(Integer.MAX_VALUE);
     }
@@ -130,6 +134,7 @@ public final class JvmRandom extends Random {
      * @return the random int
      * @throws IllegalArgumentException when <code>n &lt;= 0</code>
      */
+    @Override
     public int nextInt(int n) {
         return SHARED_RANDOM.nextInt(n);
     }
@@ -143,6 +148,7 @@ public final class JvmRandom extends Random {
      * </p>
      * @return the random long
      */
+    @Override
     public long nextLong() {
         return nextLong(Long.MAX_VALUE);
     }
@@ -187,6 +193,7 @@ public final class JvmRandom extends Random {
      *
      * @return the random boolean
      */
+    @Override
     public boolean nextBoolean() {
         return SHARED_RANDOM.nextBoolean();
     }
@@ -198,6 +205,7 @@ public final class JvmRandom extends Random {
      *
      * @return the random float
      */
+    @Override
     public float nextFloat() {
         return SHARED_RANDOM.nextFloat();
     }
@@ -207,6 +215,7 @@ public final class JvmRandom extends Random {
      *
      * @return the random double
      */
+    @Override
     public double nextDouble() {
         return SHARED_RANDOM.nextDouble();
     }

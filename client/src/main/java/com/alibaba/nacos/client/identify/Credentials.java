@@ -35,7 +35,8 @@ public class Credentials implements SpasCredential {
 	public Credentials() {
 		this(null, null);
 	}
-	
+
+	@Override
 	public String getAccessKey() {
 		return accessKey;
 	}
@@ -44,6 +45,7 @@ public class Credentials implements SpasCredential {
 		this.accessKey = accessKey;
 	}
 
+	@Override
 	public String getSecretKey() {
 		return secretKey;
 	}

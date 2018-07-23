@@ -48,6 +48,7 @@ public class NopLogger extends LoggerSupport implements Logger {
 
     }
 
+    @Override
     public void warn(String message, Throwable t) {
 
     }

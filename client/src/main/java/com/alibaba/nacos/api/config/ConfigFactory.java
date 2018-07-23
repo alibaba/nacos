@@ -45,7 +45,7 @@ public class ConfigFactory {
 	/**
 	 * Create Config
 	 * 
-	 * @param ServerAddr
+	 * @param serverAddr
 	 *            serverlist
 	 * @return Config
 	 * @throws NacosException

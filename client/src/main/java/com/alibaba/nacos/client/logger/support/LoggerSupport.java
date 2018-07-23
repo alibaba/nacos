@@ -81,10 +81,13 @@ public abstract class LoggerSupport implements Logger {
         error(null, errorCode, format, args);
     }
 
+    @Override
     public Object getDelegate() {
         return delegateLogger;
     }
 
+
+    @Override
     public void activateConsoleAppender(String target, String encoding) {
         if (activateOption != null) {
             activateOption.activateConsoleAppender(target, encoding);

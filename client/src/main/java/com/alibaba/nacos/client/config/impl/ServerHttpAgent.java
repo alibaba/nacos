@@ -371,6 +371,7 @@ public class ServerHttpAgent {
 			return code;
 		}
 
+		@Override
 		public String toString() {
 			return "STSCredential{" +
 				"accessKeyId='" + accessKeyId + '\'' +
