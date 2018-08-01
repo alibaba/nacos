@@ -65,7 +65,7 @@ public class TimeoutUtils {
     /**
      * 累计总的时间
      * 
-     * @param timeout
+     * @param time
      */
     public void addTotalTime(long time) {
         totalTime.addAndGet(time);

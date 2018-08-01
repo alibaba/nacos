@@ -104,7 +104,7 @@ public class MD5 {
     /**
      * 对二进制数据进行md5
      * 
-     * @param str
+     * @param data
      * @return md5 byte[16]
      */
     public byte[] hash(byte[] data) {
