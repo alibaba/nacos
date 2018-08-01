@@ -143,10 +143,7 @@ public class Constants {
      *  从网络获取数据的总时间的失效时间, 单位ms
      */
     public static final long TOTALTIME_INVALID_THRESHOLD = 60000;
-
-    /**
-     * 批量操作时, 单条数据的状态码
-     */
+    
     /**
      *  发生异常
      */
