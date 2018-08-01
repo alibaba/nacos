@@ -38,7 +38,6 @@ public class TimeUtils {
 	static public String getCurrentTimeStr() {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
-        c.get(Calendar.HOUR);
         FastDateFormat format = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
         return format.format(c.getTime());
     }
