@@ -73,43 +73,31 @@ public class ApiCommands {
     @Autowired
     protected DomainsManager domainsManager;
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.naming.setWeights4AllIPs.thread");
-            t.setDaemon(true);
-            return t;
+
+    private DataSource pushDataSource = client -> {
+
+        Map<String, String[]> params = new HashMap<String, String[]>(10);
+        params.put("dom", new String[]{client.getDom()});
+        params.put("clusters", new String[]{client.getClusters()});
+
+        // set udp port to 0, otherwise will cause recursion
+        params.put("udpPort", new String[]{"0"});
+
+        InetAddress inetAddress = client.getSocketAddr().getAddress();
+        params.put("clientIP", new String[]{inetAddress.getHostAddress()});
+        params.put("header:Client-Version", new String[]{client.getAgent()});
+
+        JSONObject result = new JSONObject();
+        try {
+            result = srvIPXT(MockHttpRequest.buildRequest(params));
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("PUSH-SERVICE", "dom is not modified");
         }
-    });
 
-    private DataSource pushDataSource = new DataSource() {
-        @Override
-        public String getData(PushService.PushClient client) {
+        // overdrive the cache millis to push mode
+        result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
 
-            Map<String, String[]> params = new HashMap<String, String[]>(10);
-            params.put("dom", new String[]{client.getDom()});
-            params.put("clusters", new String[]{client.getClusters()});
-
-            // set udp port to 0, otherwise will cause recursion
-            params.put("udpPort", new String[]{"0"});
-
-            InetAddress inetAddress = client.getSocketAddr().getAddress();
-            params.put("clientIP", new String[]{inetAddress.getHostAddress()});
-            params.put("header:Client-Version", new String[]{client.getAgent()});
-
-            JSONObject result = new JSONObject();
-            try {
-                result = srvIPXT(MockHttpRequest.buildRequest(params));
-            } catch (Exception e) {
-                Loggers.SRV_LOG.warn("PUSH-SERVICE", "dom is not modified");
-            }
-
-            // overdrive the cache millis to push mode
-            result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
-
-            return result.toJSONString();
-        }
+        return result.toJSONString();
     };
 
 
@@ -2424,29 +2412,4 @@ public class ApiCommands {
         this.domainsManager = domainsManager;
     }
 
-    public boolean isEnableTrafficSchedule(String agent) {
-        ClientInfo clientInfo = new ClientInfo(agent);
-
-        if (clientInfo.type == ClientInfo.ClientType.C
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getTrafficSchedulingCVersion())) >= 0) {
-            return true;
-        }
-
-        if (clientInfo.type == ClientInfo.ClientType.JAVA
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getTrafficSchedulingJavaVersion())) >= 0) {
-            return true;
-        }
-
-        if (clientInfo.type == ClientInfo.ClientType.DNS
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getTrafficSchedulingPythonVersion())) >= 0) {
-            return true;
-        }
-
-        if (clientInfo.type == ClientInfo.ClientType.TENGINE
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getTrafficSchedulingTengineVersion())) >= 0) {
-            return true;
-        }
-
-        return false;
-    }
 }
