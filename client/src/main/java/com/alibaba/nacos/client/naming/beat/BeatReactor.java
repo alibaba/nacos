@@ -24,8 +24,8 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,12 +33,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(r -> {
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
         Thread thread = new Thread(r);
         thread.setDaemon(true);
         thread.setName("com.alibaba.nacos.naming.beat.sender");
         return thread;
     });
+    ;
 
     private long clientBeatInterval = 10 * 1000;
 
