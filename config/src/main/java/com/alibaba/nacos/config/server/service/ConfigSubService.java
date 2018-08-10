@@ -124,7 +124,9 @@ public class ConfigSubService {
 										ipList.get(i));
 					}
 				} catch (TimeoutException e) {
-					f.cancel(true);
+					if (f != null) {
+						f.cancel(true);
+					}
 					LogUtil.defaultLog.warn(
 							"get task result with TimeoutException: {} ", e
 									.getMessage());
