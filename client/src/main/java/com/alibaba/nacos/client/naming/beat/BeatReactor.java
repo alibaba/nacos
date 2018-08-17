@@ -23,22 +23,23 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author harold
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.beat.sender");
-            return thread;
-        }
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        thread.setName("com.alibaba.nacos.naming.beat.sender");
+        return thread;
     });
+    ;
 
     private long clientBeatInterval = 10 * 1000;
 
@@ -48,7 +49,7 @@ public class BeatReactor {
 
     public BeatReactor(NamingProxy serverProxy) {
         this.serverProxy = serverProxy;
-        executorService.execute(new BeatProcessor());
+        executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
@@ -63,18 +64,14 @@ public class BeatReactor {
 
         @Override
         public void run() {
-            while (true) {
-                try {
-                    for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
-                        BeatInfo beatInfo = entry.getValue();
-                        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                        LogUtils.LOG.info("BEAT", "send beat to server: ", beatInfo.toString());
-                    }
-
-                    TimeUnit.MILLISECONDS.sleep(clientBeatInterval);
-                } catch (Exception e) {
-                    LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
+            try {
+                for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
+                    BeatInfo beatInfo = entry.getValue();
+                    executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
+                    LogUtils.LOG.info("BEAT", "send beat to server: ", beatInfo.toString());
                 }
+            } catch (Exception e) {
+                LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
             }
         }
     }
