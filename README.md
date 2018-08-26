@@ -10,7 +10,7 @@ Nacos is an easy-to-use platform desgined for dynamic service discovery and conf
 
 Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/#/docs/use-nacos-with-dubbo.md)、[Spring Cloud RESTFul service](https://nacos.io/#/docs/use-nacos-with-springcloud.md) or [Kubernetes service](https://nacos.io/#/docs/use-nacos-with-kubernetes.md).
 
-Nacos provides four major funcations.
+Nacos provides four major functions.
 
 * **Service Discovery and Service Health Check** 
     
