@@ -1,6 +1,5 @@
 import dva from 'dva';
 import '@alifd/next/dist/next.css';
-// import "@alife/dpl-cdnext/index.css";
 import './index.css';
 import './index.less';
 
