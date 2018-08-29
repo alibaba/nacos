@@ -17,7 +17,6 @@ import EdasConfigeditor from './pages/EdasConfigeditor';
 import ListeningToQuery from './pages/ListeningToQuery';
 import ProblemOrientation from './pages/ProblemOrientation';
 import ConsistencyEfficacy from './pages/ConsistencyEfficacy';
-import EnvironmentalGroups from './pages/EnvironmentalGroups';
 import ListAllEnvironmental from './pages/ListAllEnvironmental';
 import ConfigurationManagement from './pages/ConfigurationManagement';
 import EnvironmentalManagement from './pages/EnvironmentalManagement';
@@ -43,7 +42,6 @@ function RouterConfig({ history }) {
 					<Route path="/ListeningToQuery" component={ListeningToQuery} />
 					<Route path="/ProblemOrientation" component={ProblemOrientation} />
 					<Route path="/ConsistencyEfficacy" component={ConsistencyEfficacy} />
-					<Route path="/EnvironmentalGroups" component={EnvironmentalGroups} />
 					<Route path="/ListAllEnvironmental" component={ListAllEnvironmental} />
 					<Route path="/ConfigurationManagement" component={ConfigurationManagement} />
 					<Route path="/EnvironmentalManagement" component={EnvironmentalManagement} />
