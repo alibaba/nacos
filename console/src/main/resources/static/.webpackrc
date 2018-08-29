@@ -1,0 +1,14 @@
+{
+    "disableCSSModules": true,
+    "outputPath": "./build",
+    "proxy": {
+        "/": {
+        "target": "http://naruto.alibaba.net", //这边写你自己的服务Ip
+        "changeOrigin": true,
+        "pathRewrite": { "^/" : "" }
+        }
+    },
+    "extraBabelPlugins": [
+        "transform-decorators-legacy"
+    ]
+}
