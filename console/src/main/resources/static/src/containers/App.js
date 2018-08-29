@@ -5,7 +5,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'dva';
 import MainLayout from '../layouts/MainLayout';
-import { Message, Loading } from '@alife/next';
+import { Message, Loading } from '@alifd/next';
 import _menu from '../menu';
 
 class App extends Component {
