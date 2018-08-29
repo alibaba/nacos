@@ -1,0 +1,204 @@
+import React, { Component } from 'react'; import { Affix, Animate, Badge, Balloon, Breadcrumb, Button, Calendar, Card, Cascader, CascaderSelect, Checkbox, Collapse, ConfigProvider, DatePicker, Dialog, Dropdown, Field, Form, Grid, Icon, Input, Loading, Menu, MenuButton, Message, Nav, NumberPicker, Overlay, Pagination, Paragragh, Progress, Radio, Range, Rating, Search, Select, Slider, SplitButton, Step, Switch, Tab, Table, Tag, TimePicker, Timeline, Transfer, Tree, TreeSelect, Upload, Validate } from '@alife/next'; const Accordion = Collapse; const TabPane = Tab.Item; const FormItem = Form.Item; const { RangePicker } = DatePicker; const { Item: StepItem } = Step; const { Row, Col } = Grid; const { Node: TreeNode } = Tree; const { Item } = Nav; const { Panel } = Collapse; const { Gateway } = Overlay; const { Group: CheckboxGroup } = Checkbox; const { Group: RadioGroup } = Radio; const { Item: TimelineItem } = Timeline; const { AutoComplete: Combobox } = Select;
+import MinusIcon from './MinusIcon' ;
+import AddIcon from './AddIcon' ;
+import AddGroup from './AddGroup' ;
+
+/*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
+class EditorNameSpace extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            dialogvisible: false,
+            group: [],
+            type: 0,
+            loading: false
+
+        };
+
+        this.field = new Field(this);
+    }
+
+    componentDidMount() {
+        this.getGroup();
+    }
+    openDialog(record) {
+
+        this.getGroup();
+        this.field.setValues(record);
+        this.setState({
+            dialogvisible: true,
+            type: record.type
+        });
+    }
+
+    closeDialog() {
+        this.setState({
+            dialogvisible: false
+        });
+    }
+
+    openLoading() {
+        this.setState({
+            loading: true
+        });
+    }
+    closeLoading() {
+        this.setState({
+            loading: false
+        });
+    }
+    getGroup() {
+        let self = this;
+        request({
+            type: 'get',
+            beforeSend: function () {},
+            url: '/diamond-ops/service/group',
+            success: res => {
+                if (res.code === 200) {
+                    this.setState({
+                        group: res.data
+                    });
+                }
+            }
+        });
+    }
+    openAddGroup() {
+        this.refs['addgroup'].openDialog();
+    }
+    delGroup(value) {
+        let group = this.state.group;
+        let i = group.indexOf(value);
+        group.splice(i, 1);
+        this.setState({
+            group: group
+        });
+    }
+    handleSubmit() {
+        this.field.validate((errors, values) => {
+            if (errors) {
+                return;
+            }
+            let serverId = getParams('serverId') || 'daily';
+            request({
+                type: 'put',
+                beforeSend: () => {
+                    this.openLoading();
+                },
+                url: `/diamond-ops/service/serverId/${serverId}/namespace`,
+                contentType: 'application/json',
+                data: JSON.stringify(values),
+                success: res => {
+                    if (res.code == 200) {
+                        this.closeDialog();
+                        this.props.getNameSpaces();
+                        this.refreshNameSpace(); //刷新全局namespace
+                    } else {
+                        Dialog.alert({
+                            language: window.pageLanguage || 'zh-cn',
+                            title: aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.prompt'),
+                            content: res.message
+                        });
+                    }
+                },
+                complete: () => {
+                    this.closeLoading();
+                }
+            });
+        });
+    }
+    refreshNameSpace() {
+
+        let serverId = getParams('serverId') || 'center';
+        setTimeout(() => {
+            request({
+                type: 'get',
+                url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
+                success: res => {
+                    if (res.code == 200) {
+                        let data = res.data;
+                        window.namespaceList = res.data;
+                    }
+                }
+            });
+        }, 2000);
+    }
+    validateChart(rule, value, callback) {
+        const { getValue } = this.field;
+        const chartReg = /[@#\$%\^&\*]+/g;
+
+        if (chartReg.test(value)) {
+            callback(aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.please_do'));
+        } else {
+            callback();
+        }
+    }
+    render() {
+        const formItemLayout = {
+            labelCol: {
+                fixedSpan: 6
+            },
+            wrapperCol: {
+                span: 18
+            }
+        };
+        const list = [{
+            value: '2',
+            label: aliwareIntl.get('com.alibaba.newDiamond.component.editorNameSpace')
+
+        }, {
+            value: '0',
+            label: aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.private')
+
+        }];
+
+        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.public_space')}</Button>;
+        return (
+            <div>
+                <Dialog title={aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
+                    <Loading tip={aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
+                        <Form field={this.field}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.load')} required {...formItemLayout}>
+                                <Input {...this.field.init('namespaceShowName', {
+                                    rules: [{
+                                        required: true,
+                                        message: aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.namespace')
+                                    }, { validator: this.validateChart.bind(this) }]
+                                })} disabled={this.state.type == 0 ? true : false} />
+                                <Input {...this.field.init('namespace')} htmlType="hidden" />
+                                <Input {...this.field.init('type')} htmlType="hidden" />
+                            </FormItem>
+                            {this.state.type == 0 ? <FormItem label="group:" required {...formItemLayout}>
+                                    <div style={{ height: 300, border: '1px solid #ccc' }}>
+
+                                        {this.state.group.map((value, index) => {
+                                        return <Row style={{ width: '100%', margin: '0 auto', padding: 4, textAlign: 'center' }}>
+                                                    <Col span={'12'}>{value}</Col>
+                                                    <Col span={'12'}>
+                                                        <div style={{ width: 30, margin: '0 auto', cursor: 'pointer' }} onClick={this.delGroup.bind(this, value)}>
+                                                            <MinusIcon />
+                                                        </div>
+                                                    </Col>
+                                                </Row>;
+                                    })}
+                                        <Row style={{ width: '100%', margin: '0 auto', padding: 4, textAlign: 'center' }}>
+                                            <Col span={'12'} style={{ cursor: 'pointer' }}>
+                                                <div style={{ width: 30, margin: '0 auto' }} onClick={this.openAddGroup.bind(this)}>
+                                                    <AddIcon />
+                                                </div></Col>
+                                            <Col span={'12'}></Col>
+                                        </Row>
+
+
+                                    </div>
+                                </FormItem> : ''}
+                        </Form>
+                        <AddGroup getGroup={this.getGroup.bind(this)} ref={'addgroup'} />
+                    </Loading>
+                </Dialog>
+
+            </div>
+        );
+    }
+}
+/*****************************此行为标记行, 请勿删和修改此行, 主体代码请写在此行上面的class中, 组件导出语句及其他信息请写在此行下面*****************************/
+export default EditorNameSpace;
