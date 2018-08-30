@@ -35,7 +35,7 @@ class Configeditor extends React.Component {
             tagLst: [],
             config_tags: [],
             switchEncrypt: false,
-            tag: [{ title: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.official'), key: 'normal' }]
+            tag: [{ title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' }]
         };
         this.codeValue = '';
         this.mode = 'text';
@@ -158,7 +158,7 @@ class Configeditor extends React.Component {
                     if (result.data.length > 0) {
                         //如果存在beta
                         let sufex = new Date().getTime();
-                        let tag = [{ title: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
+                        let tag = [{ title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
                         self.setState({
                             tag: tag,
                             hasbeta: true
@@ -292,7 +292,7 @@ class Configeditor extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.wrong'),
+                        title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.wrong'),
                         content: result.message
                     });
                 }
@@ -438,8 +438,8 @@ class Configeditor extends React.Component {
                 data: JSON.stringify(payload),
                 success: function (res) {
                     let _payload = {};
-                    _payload.maintitle = aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.toedittitle');
-                    _payload.title = <div>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.toedit')}<a href="javascript:;" onClick={self.navTo.bind(self, '/pushTrajectory')}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.look')}</a></div>;
+                    _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
+                    _payload.title = <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}<a href="javascript:;" onClick={self.navTo.bind(self, '/pushTrajectory')}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.look')}</a></div>;
                     _payload.content = '';
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
@@ -451,7 +451,7 @@ class Configeditor extends React.Component {
                             //如果是在normal面板选择了beta发布
                             let sufex = new Date().getTime();
                             self.setState({
-                                tag: [{ title: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.official'), key: 'normal' + '-' + sufex }, { title: 'BETA', key: 'beta' + '-' + sufex }], hasbeta: true,
+                                tag: [{ title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' + '-' + sufex }, { title: 'BETA', key: 'beta' + '-' + sufex }], hasbeta: true,
                                 activeKey: 'beta' + '-' + sufex
 
                             });
@@ -494,7 +494,7 @@ class Configeditor extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.vdchart'));
+            callback(aliwareIntl.get('com.alibaba.nacos.page.configeditor.vdchart'));
         } else {
             callback();
         }
@@ -529,8 +529,8 @@ class Configeditor extends React.Component {
                 success: function (res) {
                     let _payload = {};
 
-                    _payload.maintitle = aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.stop_beta');
-                    _payload.title = <div>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.stop_beta')}<a href="javascript:;" onClick={self.navTo.bind(self, '/pushTrajectory')}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.look')}</a></div>;
+                    _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta');
+                    _payload.title = <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta')}<a href="javascript:;" onClick={self.navTo.bind(self, '/pushTrajectory')}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.look')}</a></div>;
                     _payload.content = '';
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
@@ -538,12 +538,12 @@ class Configeditor extends React.Component {
                         _payload.isok = true;
                     } else {
                         _payload.isok = false;
-                        _payload.title = aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.stop_beta');
+                        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta');
                         _payload.message = res.message;
                     }
                     setTimeout(() => {
                         let sufex = new Date().getTime();
-                        let tag = [{ title: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.official'), key: 'normal' + '-' + sufex }];
+                        let tag = [{ title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' + '-' + sufex }];
                         self.setState({
                             tag: tag,
                             checkedBeta: false,
@@ -739,7 +739,7 @@ class Configeditor extends React.Component {
             <div style={{ padding: 10 }}>
                 <Loading shape="flower" style={{ position: 'relative', width: '100%' }} visible={this.state.loading} tip="Loading..." color="#333">
                     <h1 style={{ overflow: 'hidden', height: 50, width: '100%' }}>
-                        <div>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.toedit')}</div>
+                        <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}</div>
 
                     </h1>
                     {this.state.hasbeta ? <div style={{ display: 'inline-block', height: 40, width: '80%', overflow: 'hidden' }}>
@@ -755,14 +755,14 @@ class Configeditor extends React.Component {
                             <Input disabled={true} {...init('dataId', {
                                 rules: [{
                                     required: true,
-                                    message: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.recipient_from')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.configeditor.recipient_from')
                                 }, { validator: this.validateChart.bind(this) }]
                             })} />
 
                         </FormItem>
                         <FormItem label="" {...formItemLayout}>
                             <div>
-                                <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.more_advanced_options') : aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.group_is_not_empty')}</a>
+                                <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.configeditor.more_advanced_options') : aliwareIntl.get('com.alibaba.nacos.page.configeditor.group_is_not_empty')}</a>
                             </div>
                         </FormItem>
                         <div style={{ height: this.state.showmore ? 'auto' : '0', overflow: 'hidden' }}>
@@ -770,47 +770,47 @@ class Configeditor extends React.Component {
                                 <Input disabled={true} {...init('group', {
                                     rules: [{
                                         required: true,
-                                        message: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.Home_application:')
+                                        message: aliwareIntl.get('com.alibaba.nacos.page.configeditor.Home_application:')
                                     }, { validator: this.validateChart.bind(this) }]
                                 })} />
                             </FormItem>
-                            <FormItem label={aliwareIntl.get('newDiamond.page.configeditor.Tags')} {...formItemLayout}>
-                                <Combobox size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} tags={true} filterLocal={true} placeholder={aliwareIntl.get('newDiamond.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} onChange={this.onInputUpdate.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
+                            <FormItem label={aliwareIntl.get('nacos.page.configeditor.Tags')} {...formItemLayout}>
+                                <Combobox size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} tags={true} filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} onChange={this.onInputUpdate.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                                 </Combobox>
                             </FormItem>
 
-                            <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.the_target_environment:')} {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.the_target_environment:')} {...formItemLayout}>
                                 <Input {...init('appName')} readOnly={this.inApp}/>
                             </FormItem>
                         </div>
 
-                        <FormItem label={aliwareIntl.get('newDiamond.page.configeditor.Description')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('nacos.page.configeditor.Description')} {...formItemLayout}>
                             <Input htmlType="text" multiple rows={3} {...init('desc')} />
                         </FormItem>
 
-                        <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.beta_release:')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.beta_release:')} {...formItemLayout}>
                             <div style={{ height: 30, lineHeight: '33px' }}>
                                 <CheckboxGroup disabled={true} value={this.state.envvalues} onChange={this.changeEnv.bind(this)} dataSource={this.state.envlist} />
                             </div>
                             {}
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.beta_release_notes(default_not_checked)')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.beta_release_notes(default_not_checked)')} {...formItemLayout}>
                             <div style={{ height: 30, lineHeight: '33px' }}>
-                                {activeKey === 'normal' ? <span><Checkbox onChange={this.changeBeta.bind(this)} checked={this.state.checkedBeta} /><span>  {aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.configuration_formatpre')}<a href={`${window._getLink('betaPublish')}`} target="_blank" style={{ paddingLeft: 5 }}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.configuration_format:')}</a></span></span> : ''}
+                                {activeKey === 'normal' ? <span><Checkbox onChange={this.changeBeta.bind(this)} checked={this.state.checkedBeta} /><span>  {aliwareIntl.get('com.alibaba.nacos.page.configeditor.configuration_formatpre')}<a href={`${window._getLink('betaPublish')}`} target="_blank" style={{ paddingLeft: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.configuration_format:')}</a></span></span> : ''}
                             </div>
                             <div style={{ width: '100%', display: 'none' }} id={'betaips'}>
                                 <Input multiple style={{ width: '100%' }} onChange={this.getIps.bind(this)} value={this.state.ips} readOnly={this.state.hasbeta} placeholder="multiple" placeholder={'127.0.0.1,127.0.0.2'} />
                             </div>
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('newDiamond.page.configeditor.Data_encryption0')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('nacos.page.configeditor.Data_encryption0')} {...formItemLayout}>
                                 <Switch checkedChildren={<Icon type="select" style={{ marginLeft: -3 }} />} unCheckedChildren={<Icon type="close" size="small" />} size="small" checked={this.state.switchEncrypt} disabled />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.configure_contents_of')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.configure_contents_of')} {...formItemLayout}>
                             <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />
                         </FormItem>
-                        <FormItem label={<span style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.configcontent')}<Balloon trigger={<Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginTop: 2 }} />} align="t" style={{ marginRight: 5 }} triggerType="hover">
-                            <p>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.Esc_exit')}</p>
-                            <p>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.release_beta')}</p>
+                        <FormItem label={<span style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.configcontent')}<Balloon trigger={<Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginTop: 2 }} />} align="t" style={{ marginRight: 5 }} triggerType="hover">
+                            <p>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.Esc_exit')}</p>
+                            <p>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.release_beta')}</p>
                         </Balloon>:</span>} {...formItemLayout}>
 
                             <div style={{ clear: 'both', height: 300 }} id="container"></div>
@@ -819,11 +819,11 @@ class Configeditor extends React.Component {
                         <FormItem {...formItemLayout} label="">
 
                             <div style={{ textAlign: 'right' }}>
-                                {activeKey === 'normal' ? '' : <Button type="primary" style={{ marginRight: 10 }} onClick={this.stopPublishConfig.bind(this, false)}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.stop_beta')}</Button>}
-                                {activeKey === 'beta' ? <Button style={{ marginRight: 10 }} type="primary" onClick={this.openDiff.bind(this, true)}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.release')}</Button> : ''}
-                                {activeKey === 'normal' ? <Button type="primary" disabled={this.state.hasbeta} style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, this.state.checkedBeta)}>{this.state.checkedBeta ? aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.release') : aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.return')}</Button> : <Button type="primary" style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, false)}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.return')}</Button>}
+                                {activeKey === 'normal' ? '' : <Button type="primary" style={{ marginRight: 10 }} onClick={this.stopPublishConfig.bind(this, false)}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta')}</Button>}
+                                {activeKey === 'beta' ? <Button style={{ marginRight: 10 }} type="primary" onClick={this.openDiff.bind(this, true)}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.release')}</Button> : ''}
+                                {activeKey === 'normal' ? <Button type="primary" disabled={this.state.hasbeta} style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, this.state.checkedBeta)}>{this.state.checkedBeta ? aliwareIntl.get('com.alibaba.nacos.page.configeditor.release') : aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}</Button> : <Button type="primary" style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, false)}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}</Button>}
 
-                                <Button type="light" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.')}</Button>
+                                <Button type="light" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.')}</Button>
                             </div>
                         </FormItem>
                     </Form>

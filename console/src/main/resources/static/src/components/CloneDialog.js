@@ -8,7 +8,7 @@ class CloneDialog extends React.Component {
 
     constructor(props) {
         super(props);
-        this.allPolicy = [{ value: 'abort', label: aliwareIntl.get('newDiamond.component.CloneDialog.Terminate_the_clone0') }, { value: 'skip', label: aliwareIntl.get('newDiamond.component.CloneDialog.skip') }, { value: 'overwrite', label: aliwareIntl.get('newDiamond.component.CloneDialog.cover') }];
+        this.allPolicy = [{ value: 'abort', label: aliwareIntl.get('nacos.component.CloneDialog.Terminate_the_clone0') }, { value: 'skip', label: aliwareIntl.get('nacos.component.CloneDialog.skip') }, { value: 'overwrite', label: aliwareIntl.get('nacos.component.CloneDialog.cover') }];
         this.defaultPolicy = 'abort';
         this.state = {
             visible: false,
@@ -22,7 +22,7 @@ class CloneDialog extends React.Component {
             records: [],
             namespaces: [],
             policy: this.defaultPolicy,
-            policyLabel: aliwareIntl.get('newDiamond.component.CloneDialog.Terminate_the_clone0'),
+            policyLabel: aliwareIntl.get('nacos.component.CloneDialog.Terminate_the_clone0'),
             total: 0
         };
         this.field = new Field(this);
@@ -73,7 +73,7 @@ class CloneDialog extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.component.CloneDialog.get_the_namespace_failed'),
+                        title: aliwareIntl.get('nacos.component.CloneDialog.get_the_namespace_failed'),
                         content: res.message
                     });
                 }
@@ -103,7 +103,7 @@ class CloneDialog extends React.Component {
 
     getQuery() {
         if (this.state.records.length > 0) {
-            return aliwareIntl.get('newDiamond.component.CloneDialog.|_the_selected_entry4');
+            return aliwareIntl.get('nacos.component.CloneDialog.|_the_selected_entry4');
         }
         if (this.state.dataId === '' && this.state.group === '' && this.state.appName === '' && this.state.configTags.length === 0) {
             return '';
@@ -116,10 +116,10 @@ class CloneDialog extends React.Component {
             query += ' Group: ' + this.state.group + ',';
         }
         if (this.state.appName !== '') {
-            query += aliwareIntl.get('newDiamond.component.CloneDialog.HOME_Application') + this.state.appName + ',';
+            query += aliwareIntl.get('nacos.component.CloneDialog.HOME_Application') + this.state.appName + ',';
         }
         if (this.state.configTags.length !== 0) {
-            query += aliwareIntl.get('newDiamond.component.CloneDialog.tags') + this.state.configTags + ',';
+            query += aliwareIntl.get('nacos.component.CloneDialog.tags') + this.state.configTags + ',';
         }
         return query.substr(0, query.length - 1);
     }
@@ -138,29 +138,29 @@ class CloneDialog extends React.Component {
 
     render() {
         const init = this.field.init;
-        const footer = <div><Button type="primary" onClick={this.doClone.bind(this)} {...{ "disabled": this.state.total <= 0 }}>{aliwareIntl.get('newDiamond.component.CloneDialog.start_cloning')}</Button>
+        const footer = <div><Button type="primary" onClick={this.doClone.bind(this)} {...{ "disabled": this.state.total <= 0 }}>{aliwareIntl.get('nacos.component.CloneDialog.start_cloning')}</Button>
         </div>;
 
         return <div>
-            <Dialog visible={this.state.visible} footer={footer} footerAlign="center" language={window.pageLanguage || 'zh-cn'} style={{ width: 555 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={aliwareIntl.get('newDiamond.component.CloneDialog.configuration_cloning\uFF08') + this.state.serverId + "）"}>
+            <Dialog visible={this.state.visible} footer={footer} footerAlign="center" language={window.pageLanguage || 'zh-cn'} style={{ width: 555 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={aliwareIntl.get('nacos.component.CloneDialog.configuration_cloning\uFF08') + this.state.serverId + "）"}>
                 <Form field={this.field}>
-                    <FormItem label={aliwareIntl.get('newDiamond.component.CloneDialog.source_space')} {...this.formItemLayout}>
+                    <FormItem label={aliwareIntl.get('nacos.component.CloneDialog.source_space')} {...this.formItemLayout}>
                         <p><span style={{ color: '#33cde5' }}>{this.state.tenantFrom.name}</span>{" | " + this.state.tenantFrom.id}
                         </p>
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('newDiamond.component.CloneDialog.configuration_number')} {...this.formItemLayout}>
+                    <FormItem label={aliwareIntl.get('nacos.component.CloneDialog.configuration_number')} {...this.formItemLayout}>
                         <p><span style={{ color: '#33cde5' }}>{this.state.total}</span> {this.getQuery()} </p>
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('newDiamond.component.CloneDialog.target_space')} {...this.formItemLayout}>
-                        <Combobox style={{ width: '80%' }} size="medium" hasArrow placeholder={aliwareIntl.get('newDiamond.component.CloneDialog.select_namespace')} dataSource={this.state.namespaces} {...init('select', {
+                    <FormItem label={aliwareIntl.get('nacos.component.CloneDialog.target_space')} {...this.formItemLayout}>
+                        <Combobox style={{ width: '80%' }} size="medium" hasArrow placeholder={aliwareIntl.get('nacos.component.CloneDialog.select_namespace')} dataSource={this.state.namespaces} {...init('select', {
                             props: {
                                 onChange: this.setTenantTo.bind(this)
                             },
-                            rules: [{ required: true, message: aliwareIntl.get('newDiamond.component.CloneDialog.select_namespace') }]
+                            rules: [{ required: true, message: aliwareIntl.get('nacos.component.CloneDialog.select_namespace') }]
                         })} language={aliwareIntl.currentLanguageCode}>
                         </Combobox>
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('newDiamond.component.CloneDialog.the_same_configuration')} {...this.formItemLayout}>
+                    <FormItem label={aliwareIntl.get('nacos.component.CloneDialog.the_same_configuration')} {...this.formItemLayout}>
                         <Select size="medium" hasArrow defaultValue={this.defaultPolicy} dataSource={this.allPolicy} onChange={this.setPolicy.bind(this)} language={aliwareIntl.currentLanguageCode}>
                         </Select>
                     </FormItem>

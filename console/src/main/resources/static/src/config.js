@@ -4,5 +4,5 @@ module.exports = {
     TIMERDEFAULT: '5s',
     TIMEDURINT: 2000,
     is_preview: process.env.NODE_ENV === 'development',
-    projectName: 'newDiamond'
+    projectName: 'nacos'
 }

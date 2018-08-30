@@ -20,13 +20,13 @@ class ConfigRollback extends React.Component {
         //this.params = window.location.hash.split('?')[1]||'';	
         this.typeMap = { //操作映射提示
             'U': 'publish',
-            'I': aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.delete'),
+            'I': aliwareIntl.get('com.alibaba.nacos.page.configRollback.delete'),
             'D': 'publish'
         };
         this.typeMapName = { //操作映射名
-            'U': aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.updated'),
-            'I': aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.inserted'),
-            'D': aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.delete')
+            'U': aliwareIntl.get('com.alibaba.nacos.page.configRollback.updated'),
+            'I': aliwareIntl.get('com.alibaba.nacos.page.configRollback.inserted'),
+            'D': aliwareIntl.get('com.alibaba.nacos.page.configRollback.delete')
         };
     }
 
@@ -89,9 +89,9 @@ class ConfigRollback extends React.Component {
         }
         Dialog.confirm({
             language: window.pageLanguage || 'zh-cn',
-            title: aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.please_confirm_rollback'),
+            title: aliwareIntl.get('com.alibaba.nacos.page.configRollback.please_confirm_rollback'),
             content: <div style={{ marginTop: '-20px' }}>
-                <h3>{aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.determine')} {aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.the_following_configuration')}</h3>
+                <h3>{aliwareIntl.get('com.alibaba.nacos.page.configRollback.determine')} {aliwareIntl.get('com.alibaba.nacos.page.configRollback.the_following_configuration')}</h3>
                 <p>
                     <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
                     <span style={{ color: '#c7254e' }}>
@@ -105,7 +105,7 @@ class ConfigRollback extends React.Component {
                     </span>
                 </p>
                 <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.environment')}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configRollback.environment')}</span>
                     <span style={{ color: '#c7254e' }}>
                         {this.state.envName}
                     </span>
@@ -137,7 +137,7 @@ class ConfigRollback extends React.Component {
                     data: JSON.stringify(postData),
                     success: function (data) {
                         if (data.code === 200) {
-                            Dialog.alert({ language: window.pageLanguage || 'zh-cn', content: aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.rollback_successful') });
+                            Dialog.alert({ language: window.pageLanguage || 'zh-cn', content: aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback_successful') });
                         }
                     }
                 });
@@ -158,39 +158,39 @@ class ConfigRollback extends React.Component {
         };
         return (
             <div style={{ padding: 10 }}>
-                <h1>{aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.configuration_rollback')}</h1>
+                <h1>{aliwareIntl.get('com.alibaba.nacos.page.configRollback.configuration_rollback')}</h1>
                 <Form field={this.field}>
 
                     <FormItem label="Data ID:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('dataId')} />
                         <div style={{ marginTop: 10 }}>
-                            <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.retracted') : aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.for_more_advanced')}</a>
+                            <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.configRollback.retracted') : aliwareIntl.get('com.alibaba.nacos.page.configRollback.for_more_advanced')}</a>
                         </div>
                     </FormItem>
                     <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
                         <FormItem label="Group:" required {...formItemLayout}>
                             <Input htmlType="text" readOnly={true} {...init('group')} />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.home')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.home')} {...formItemLayout}>
                             <Input htmlType="text" readOnly={true} {...init('appName')} />
                         </FormItem>
                     </div>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.belongs_to')} required {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.belongs_to')} required {...formItemLayout}>
                         <Input htmlType="hidden" {...init('envs')} />
                         <Input htmlType="text" readOnly={true} {...init('envName')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.action_type')} required {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.action_type')} required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('opType')} />
                     </FormItem>
                     <FormItem label="MD5:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('md5')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.configuration')} required {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.configuration')} required {...formItemLayout}>
                         <Input htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
-                        <Button type="primary" style={{ marginRight: 10 }} onClick={this.onOpenConfirm.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.rollback')}</Button>
-                        <Button type="light" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.page.configRollback.return')}</Button>
+                        <Button type="primary" style={{ marginRight: 10 }} onClick={this.onOpenConfirm.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback')}</Button>
+                        <Button type="light" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configRollback.return')}</Button>
                     </FormItem>
 
                 </Form>

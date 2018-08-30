@@ -8,7 +8,7 @@ module.exports = {
     ],
     "serviceList": [
         {
-            "registerName": "com.alibaba.newDiamond.service.dashlist",
+            "registerName": "com.alibaba.nacos.service.dashlist",
             "name": "",
             "registerTo": null,
             "url": "/diamond-ops/info",
@@ -23,7 +23,7 @@ module.exports = {
             "ctime": "2018-05-19T07:24:01.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 0,
             "is_param": 0,
@@ -35,7 +35,7 @@ module.exports = {
             "autoLoading": 0
         },
         {
-            "registerName": "com.alibaba.newDiamond.service.getLink",
+            "registerName": "com.alibaba.nacos.service.getLink",
             "name": "getLink",
             "registerTo": null,
             "url": "/diamond-ops/viper/getLink",
@@ -50,7 +50,7 @@ module.exports = {
             "ctime": "2017-12-03T07:38:56.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 0,
             "is_param": 0,
@@ -62,7 +62,7 @@ module.exports = {
             "autoLoading": 0
         },
         {
-            "registerName": "com.alibaba.newDiamond.service.getLinks",
+            "registerName": "com.alibaba.nacos.service.getLinks",
             "name": "getLinks",
             "registerTo": null,
             "url": "/diamond-ops/viper/getLinks",
@@ -77,7 +77,7 @@ module.exports = {
             "ctime": "2017-12-03T07:38:56.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 0,
             "is_param": 0,
@@ -89,7 +89,7 @@ module.exports = {
             "autoLoading": 0
         },
         {
-            "registerName": "com.alibaba.newDiamond.service.deleteNameSpace",
+            "registerName": "com.alibaba.nacos.service.deleteNameSpace",
             "name": "删除命名空间",
             "registerTo": null,
             "url": "/diamond-ops/service/serverId/{serverId}/namespace/{namespace}",
@@ -104,7 +104,7 @@ module.exports = {
             "ctime": "2017-12-03T07:38:56.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 3,
             "is_param": 0,
@@ -116,7 +116,7 @@ module.exports = {
             "autoLoading": 0
         },
         {
-            "registerName": "com.alibaba.newDiamond.service.getMetaData",
+            "registerName": "com.alibaba.nacos.service.getMetaData",
             "name": "获取metaData",
             "registerTo": null,
             "url": "/diamond-ops/meta/data",
@@ -131,7 +131,7 @@ module.exports = {
             "ctime": "2017-12-03T07:38:56.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 0,
             "is_param": 0,
@@ -143,7 +143,7 @@ module.exports = {
             "autoLoading": 0
         },
         {
-            "registerName": "com.alibaba.newDiamond.service.sendVerifyCode",
+            "registerName": "com.alibaba.nacos.service.sendVerifyCode",
             "name": "发送验证码",
             "registerTo": null,
             "url": "/diamond-ops/meta/sendVerifyCode",
@@ -158,7 +158,7 @@ module.exports = {
             "ctime": "2017-12-03T07:38:56.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 0,
             "is_param": 0,
@@ -170,7 +170,7 @@ module.exports = {
             "autoLoading": 0
         },
         {
-            "registerName": "com.alibaba.newDiamond.service.getDomain",
+            "registerName": "com.alibaba.nacos.service.getDomain",
             "name": "获取region",
             "registerTo": null,
             "url": "/diamond-ops/env/domain",
@@ -185,7 +185,7 @@ module.exports = {
             "ctime": "2017-12-03T07:38:56.000Z",
             "mtime": "2018-08-28T10:19:46.000Z",
             "author_id": 23,
-            "project_id": "newDiamond",
+            "project_id": "nacos",
             "is_mock": 0,
             "method": 0,
             "is_param": 0,

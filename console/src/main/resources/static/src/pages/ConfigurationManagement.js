@@ -17,12 +17,12 @@ const DashboardCard = ({ data, height }) => <div>
    {data.modeType == 'notice' ? <div data-spm-click={"gostr=/aliyun;locaid=notice"}><Slider style={{ marginBottom: data.modeList.length > 1 ? 20 : 10 }} arrows={false}>	
             {data.modeList.map((item, index) => <div key={index} className={"slider-img-wrapper"}>
                     <div className={"alert alert-success"} style={{ minHeight: 120, backgroundColor: '#e9feff' }}>
-                        <div className={"alert-success-text"} style={{ fontWeight: 'bold' }}>{aliwareIntl.get("newDiamond.page.configurationManagement.Important_reminder0") /*重要提醒*/}</div>
+                        <div className={"alert-success-text"} style={{ fontWeight: 'bold' }}>{aliwareIntl.get("nacos.page.configurationManagement.Important_reminder0") /*重要提醒*/}</div>
                         <strong style={{ color: '#777a7e' }}>
                             <span>{item.title}</span>
                         </strong>
                         <strong>
-                            <span><a style={{ marginLeft: 10, color: '#33cde5' }} href={item.url} target={"_blank"}>{aliwareIntl.get("newDiamond.page.configurationManagement.view_details1") /*查看详情*/}</a></span>
+                            <span><a style={{ marginLeft: 10, color: '#33cde5' }} href={item.url} target={"_blank"}>{aliwareIntl.get("nacos.page.configurationManagement.view_details1") /*查看详情*/}</a></span>
                         </strong> 
                     </div>
                 </div>)}	
@@ -108,14 +108,14 @@ class ConfigurationManagement extends React.Component {
             if (!this.checkQuestionnaire()) {
                 if (window.location.host == 'acm.console.aliyun.com') {
                     Dialog.alert({
-                        title: aliwareIntl.get("newDiamond.page.configurationManagement.questionnaire2") /*问卷调查*/
+                        title: aliwareIntl.get("nacos.page.configurationManagement.questionnaire2") /*问卷调查*/
                         , style: {
                             width: '60%'
                         },
                         content: <div>	
-                            <div style={{ fontSize: '15px', lineHeight: '22px' }}>{aliwareIntl.get("newDiamond.page.configurationManagement.a_ACM_front-end_monitoring_questionnaire,_the_time_limit_to_receive_Ali_cloud_voucher_details_shoved_stamp_the3") /*答ACM前端监控调查问卷，限时领取阿里云代金券详情猛戳：*/}<a href={"https://survey.aliyun.com/survey/k0BjJ2ARC"} target={"_blank"}>{aliwareIntl.get("newDiamond.page.configurationManagement.questionnaire2") /*问卷调查*/}</a>	
+                            <div style={{ fontSize: '15px', lineHeight: '22px' }}>{aliwareIntl.get("nacos.page.configurationManagement.a_ACM_front-end_monitoring_questionnaire,_the_time_limit_to_receive_Ali_cloud_voucher_details_shoved_stamp_the3") /*答ACM前端监控调查问卷，限时领取阿里云代金券详情猛戳：*/}<a href={"https://survey.aliyun.com/survey/k0BjJ2ARC"} target={"_blank"}>{aliwareIntl.get("nacos.page.configurationManagement.questionnaire2") /*问卷调查*/}</a>	
                         </div>	
-                        <div style={{ fontSize: '15px' }}>{aliwareIntl.get("newDiamond.page.configurationManagement.no_longer_display4") /*不再显示：*/}<Checkbox onChange={this.toggleShowQuestionnaire} />	
+                        <div style={{ fontSize: '15px' }}>{aliwareIntl.get("nacos.page.configurationManagement.no_longer_display4") /*不再显示：*/}<Checkbox onChange={this.toggleShowQuestionnaire} />	
                             </div>	
                         </div>,
                         language: aliwareIntl.currentLanguageCode
@@ -130,7 +130,7 @@ class ConfigurationManagement extends React.Component {
     getContentList() {
 
         request({
-            url: 'com.alibaba.newDiamond.service.dashlist', //以 com.alibaba. 开头最终会转换为真正的url地址
+            url: 'com.alibaba.nacos.service.dashlist', //以 com.alibaba. 开头最终会转换为真正的url地址
             data: {},
             $data: {}, //替换请求url路径中{}占位符的内容
             success: res => {
@@ -351,9 +351,9 @@ class ConfigurationManagement extends React.Component {
         let self = this;
         Dialog.confirm({
             language: window.pageLanguage || 'zh-cn',
-            title: aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.Remove_configuration'),
+            title: aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.Remove_configuration'),
             content: <div style={{ marginTop: '-20px' }}>	
-                <h3>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.suredelete')}</h3>	
+                <h3>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.suredelete')}</h3>	
                 <p>	
                     <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>	
                     <span style={{ color: '#c7254e' }}>	
@@ -367,7 +367,7 @@ class ConfigurationManagement extends React.Component {
                     </span>	
                 </p>	
                 <p>	
-                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.environment')}</span>	
+                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.environment')}</span>	
                     <span style={{ color: '#c7254e' }}>	
                         {self.serverId || ''}	
                                 </span>	
@@ -386,7 +386,7 @@ class ConfigurationManagement extends React.Component {
                     success: function (res) {
                         let _payload = {};
 
-                        _payload.title = aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.configuration_management');
+                        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.configuration_management');
                         _payload.content = '';
                         _payload.dataId = record.dataId;
                         _payload.group = record.group;
@@ -412,23 +412,22 @@ class ConfigurationManagement extends React.Component {
     renderCol(value, index, record) {
 
         return <div>	
-            <a href={"javascript:;"} onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.details')}</a>	
+            <a href={"javascript:;"} onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.details')}</a>	
             <span style={{ marginRight: 5 }}>|</span>	
-            <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.showCode.bind(this, record)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.the_sample_code')}</a>	
+            <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.showCode.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.the_sample_code')}</a>	
             <Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} />} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>	
-                <a href={window._getLink && window._getLink("knowSDK")} target={"_blank"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.clickfordetail')}</a>	
+                <a href={window._getLink && window._getLink("knowSDK")} target={"_blank"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.clickfordetail')}</a>	
             </Balloon>	
             <span style={{ marginRight: 5 }}>|</span>	
-            <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.edit')}</a>	
+            <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.edit')}</a>	
             <span style={{ marginRight: 5 }}>|</span>	
-            <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.delete')}</a>	
+            <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}</a>	
             <span style={{ marginRight: 5 }}>|</span>	
 	
-            <Dropdown trigger={<span style={{ color: '#33cde5' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.more')}<Icon type={"arrow-down-filling"} size={'xxs'} /></span>} triggerType={"click"}>	
-                <Menu onClick={this.chooseNav.bind(this, record)}>	
-                    <Menu.Item key={"nav1"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.version')}</Menu.Item>	
-                    <Menu.Item key={"nav2"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.push_track')}</Menu.Item>	
-                    <Menu.Item key={"nav3"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.listener_query')}</Menu.Item>	
+            <Dropdown trigger={<span style={{ color: '#33cde5' }}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.more')}<Icon type={"arrow-down-filling"} size={'xxs'} /></span>} triggerType={"click"}>	
+                <Menu onItemClick={this.chooseNav.bind(this, record)}>	
+                    <Menu.Item key={"nav1"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.version')}</Menu.Item>	
+                    <Menu.Item key={"nav3"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.listener_query')}</Menu.Item>	
                 </Menu>	
             </Dropdown>	
 	
@@ -588,8 +587,8 @@ class ConfigurationManagement extends React.Component {
         let self = this;
         if (this.state.selectedRecord.length < 1) {
             Dialog.alert({
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.Configuration_cloning0'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('newDiamond.page.configurationManagement.select_need_to_clone_the_configuration_items1')}</div>,
+                title: aliwareIntl.get('nacos.page.configurationManagement.Configuration_cloning0'),
+                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('nacos.page.configurationManagement.select_need_to_clone_the_configuration_items1')}</div>,
                 // content: <div ><span style={{fontSize:18,color:"#373D41"}}>您未选择配置项，确定按以下条件克隆所有数据？</span><p>DataId:2321, Group:testgroup, 标签:tag, 归属应用:testapp</p></div>,	
                 language: aliwareIntl.currentLanguageCode
                 // onOk: () => {	
@@ -639,7 +638,7 @@ class ConfigurationManagement extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.configurationManagement.Cloning_check_fails'),
+                        title: aliwareIntl.get('nacos.page.configurationManagement.Cloning_check_fails'),
                         content: res.message
                     });
                 }
@@ -661,15 +660,15 @@ class ConfigurationManagement extends React.Component {
             },
             success: res => {
                 if (res.code === 200) {
-                    let msg = aliwareIntl.get('newDiamond.page.configurationManagement.process_is_successful,_the_cloned') + res.data.processedNum + aliwareIntl.get('newDiamond.page.configurationManagement.configuration');
+                    let msg = aliwareIntl.get('nacos.page.configurationManagement.process_is_successful,_the_cloned') + res.data.processedNum + aliwareIntl.get('nacos.page.configurationManagement.configuration');
                     if (res.data.duplicatedNum > 0) {
-                        msg += aliwareIntl.get('newDiamond.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('newDiamond.page.configurationManagement.items_for') + policy;
+                        msg += aliwareIntl.get('nacos.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('nacos.page.configurationManagement.items_for') + policy;
                     }
                     Message.success(msg);
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.configurationManagement.Clone_failed'),
+                        title: aliwareIntl.get('nacos.page.configurationManagement.Clone_failed'),
                         content: self.getBatchFailedContent(res)
                     });
                 }
@@ -680,8 +679,8 @@ class ConfigurationManagement extends React.Component {
         let self = this;
         if (this.state.selectedRecord.length < 1) {
             Dialog.alert({
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.bulk_delete'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('newDiamond.page.configurationManagement.please_select_the_required_delete_the_configuration_item')}</div>,
+                title: aliwareIntl.get('nacos.page.configurationManagement.bulk_delete'),
+                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('nacos.page.configurationManagement.please_select_the_required_delete_the_configuration_item')}</div>,
                 language: aliwareIntl.currentLanguageCode
             });
             return;
@@ -689,9 +688,9 @@ class ConfigurationManagement extends React.Component {
 
         Dialog.confirm({
             language: window.pageLanguage || 'zh-cn',
-            title: aliwareIntl.get('newDiamond.page.configurationManagement.bulk_delete'),
+            title: aliwareIntl.get('nacos.page.configurationManagement.bulk_delete'),
             content: <div style={{ fontSize: 18, color: "#373D41" }}>	
-                {aliwareIntl.get('newDiamond.page.configurationManagement.whether_to_delete_the_selected')}<span style={{ color: '#33cde5', margin: 5 }}>{this.state.selectedRecord.length}</span>{aliwareIntl.get('newDiamond.page.configurationManagement.configuration_item?')}	
+                {aliwareIntl.get('nacos.page.configurationManagement.whether_to_delete_the_selected')}<span style={{ color: '#33cde5', margin: 5 }}>{this.state.selectedRecord.length}</span>{aliwareIntl.get('nacos.page.configurationManagement.configuration_item?')}	
                 </div>,
             onOk: () => {
                 let payload = {
@@ -716,11 +715,11 @@ class ConfigurationManagement extends React.Component {
                     },
                     success: res => {
                         if (res.code === 200) {
-                            Feedback.toast.success(aliwareIntl.get('newDiamond.page.configurationManagement._The_process_is_successful,_delete_the') + res.data.processedNum + aliwareIntl.get('newDiamond.page.configurationManagement.configuration'));
+                            Feedback.toast.success(aliwareIntl.get('nacos.page.configurationManagement._The_process_is_successful,_delete_the') + res.data.processedNum + aliwareIntl.get('nacos.page.configurationManagement.configuration'));
                         } else {
                             Dialog.alert({
                                 language: window.pageLanguage || 'zh-cn',
-                                title: aliwareIntl.get('newDiamond.page.configurationManagement.Delete_failed'),
+                                title: aliwareIntl.get('nacos.page.configurationManagement.Delete_failed'),
                                 content: self.getBatchFailedContent(res)
                             });
                         }
@@ -751,24 +750,24 @@ class ConfigurationManagement extends React.Component {
                     Dialog.alert({
                         needWrapper: false,
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.namespace.Namespace_details'),
+                        title: aliwareIntl.get('nacos.page.namespace.Namespace_details'),
                         content: <div>	
                         	
                         <div style={{ marginTop: '10px' }}>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.namespace.region_ID')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.region_ID')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
                                     {obj.regionId}	
                                 </span>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.namespace.namespace_name')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
                                     {self.state.nownamespace_name}	
                                 </span>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.namespace.namespace_ID')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
                                     {namespaceId}	
                                 </span>	
@@ -780,35 +779,35 @@ class ConfigurationManagement extends React.Component {
                                 </span>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.ecs_ram_role')}</span>	
-                                <a href={window._getLink && window._getLink("ecsInstanceRamRolesUse")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.configurationManagement._Details_of8')}</a>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ecs_ram_role')}</span>	
+                                <a href={window._getLink && window._getLink("ecsInstanceRamRolesUse")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement._Details_of8')}</a>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.AccessKey_recommended3')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.AccessKey_recommended3')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
-                                    <a href={window._getLink && window._getLink("getAk")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.configurationManagement.click_on_the_obtain_of3')}</a>	
+                                    <a href={window._getLink && window._getLink("getAk")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement.click_on_the_obtain_of3')}</a>	
                                 </span>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.SecretKey_recommended5')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.SecretKey_recommended5')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
-                                    <a href={window._getLink && window._getLink("getAk")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.configurationManagement.click_on_the_obtain_of3')}</a>	
+                                    <a href={window._getLink && window._getLink("getAk")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement.click_on_the_obtain_of3')}</a>	
                                 </span>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.ACM_dedicated_AccessKey_will_the_waste,_does_not_recommend_the_use_of5')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ACM_dedicated_AccessKey_will_the_waste,_does_not_recommend_the_use_of5')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
                                     {obj.accessKey}	
                                 </span>	
                             </p>	
                             <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use6')}</span>	
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use6')}</span>	
                                 <span style={{ color: '#c7254e' }}>	
                                     {obj.secretKey}	
                                 </span>	
                             </p>	
                         </div>	
-                         <div style={{ marginTop: '20px', backgroundColor: '#eee', padding: 10, fontSize: 12 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.note_ACM_is_dedicated_AK/SK_is_mainly_used_for_some_of_the_compatibility_scenario,_it_is_recommended_to_Unified_the_use_of_Ali_cloud_AK/SK.7')}<a href={window._getLink && window._getLink("akHelp")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.configurationManagement._Details_of8')}</a>	
+                         <div style={{ marginTop: '20px', backgroundColor: '#eee', padding: 10, fontSize: 12 }}>{aliwareIntl.get('nacos.page.configurationManagement.note_ACM_is_dedicated_AK/SK_is_mainly_used_for_some_of_the_compatibility_scenario,_it_is_recommended_to_Unified_the_use_of_Ali_cloud_AK/SK.7')}<a href={window._getLink && window._getLink("akHelp")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement._Details_of8')}</a>	
                          </div>	
                         </div>
                     });
@@ -830,15 +829,15 @@ class ConfigurationManagement extends React.Component {
     showImportResult(res, policy) {
         let self = this;
         if (res.code === 200) {
-            let msg = aliwareIntl.get('newDiamond.page.configurationManagement.process_is_successful,_import_the') + res.data.processedNum + aliwareIntl.get('newDiamond.page.configurationManagement.configuration');
+            let msg = aliwareIntl.get('nacos.page.configurationManagement.process_is_successful,_import_the') + res.data.processedNum + aliwareIntl.get('nacos.page.configurationManagement.configuration');
             if (res.data.duplicatedNum > 0) {
-                msg += aliwareIntl.get('newDiamond.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('newDiamond.page.configurationManagement.items_for') + policy;
+                msg += aliwareIntl.get('nacos.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('nacos.page.configurationManagement.items_for') + policy;
             }
             Feedback.toast.success(msg);
         } else {
             Dialog.alert({
                 language: window.pageLanguage || 'zh-cn',
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.import_failed'),
+                title: aliwareIntl.get('nacos.page.configurationManagement.import_failed'),
                 content: self.getBatchFailedContent(res)
             });
         }
@@ -847,8 +846,8 @@ class ConfigurationManagement extends React.Component {
     checkForExport() {
         if (this.state.selectedRecord.length < 1) {
             Dialog.alert({
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.configuration_export9'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('newDiamond.page.configurationManagement.please_choose_the_required_export_configuration_items10')}</div>,
+                title: aliwareIntl.get('nacos.page.configurationManagement.configuration_export9'),
+                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('nacos.page.configurationManagement.please_choose_the_required_export_configuration_items10')}</div>,
                 language: aliwareIntl.currentLanguageCode
             });
             return;
@@ -891,7 +890,7 @@ class ConfigurationManagement extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.configurationManagement.export_check_failed'),
+                        title: aliwareIntl.get('nacos.page.configurationManagement.export_check_failed'),
                         content: <div style={{ fontSize: 18, color: "#373D41" }}>{res.message}</div>
                     });
                 }
@@ -927,19 +926,19 @@ class ConfigurationManagement extends React.Component {
         return <div>	
             <div style={{ fontSize: 18, color: "#373D41", overflow: "auto" }}>{res.message}</div>	
             {"data" in res && res.data != null && <Accordion style={{ width: '500px' }}>	
-                {"failedItems" in res.data && res.data.failedItems.length > 0 ? <Panel title={aliwareIntl.get('newDiamond.page.configurationManagement.failed_entry') + res.data.failedItems.length}>	
+                {"failedItems" in res.data && res.data.failedItems.length > 0 ? <Panel title={aliwareIntl.get('nacos.page.configurationManagement.failed_entry') + res.data.failedItems.length}>	
                     <Table dataSource={res.data.failedItems} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode}>	
                         <Table.Column title={'Data ID'} dataIndex={"dataId"} />	
                         <Table.Column title={'Group'} dataIndex={"group"} />	
                     </Table>	
                     </Panel> : <Panel style={{ display: 'none' }} />}	
-                {"succeededItems" in res.data && res.data.succeededItems.length > 0 ? <Panel title={aliwareIntl.get('newDiamond.page.configurationManagement.successful_entry') + res.data.succeededItems.length}>	
+                {"succeededItems" in res.data && res.data.succeededItems.length > 0 ? <Panel title={aliwareIntl.get('nacos.page.configurationManagement.successful_entry') + res.data.succeededItems.length}>	
                         <Table dataSource={res.data.succeededItems} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode}>	
                             <Table.Column title={'Data ID'} dataIndex={"dataId"} />	
                             <Table.Column title={'Group'} dataIndex={"group"} />	
                         </Table>	
                     </Panel> : <Panel style={{ display: 'none' }} />}	
-                {"unprocessedItems" in res.data && res.data.unprocessedItems.length > 0 ? <Panel title={aliwareIntl.get('newDiamond.page.configurationManagement.unprocessed_entry') + res.data.unprocessedItems.length}>	
+                {"unprocessedItems" in res.data && res.data.unprocessedItems.length > 0 ? <Panel title={aliwareIntl.get('nacos.page.configurationManagement.unprocessed_entry') + res.data.unprocessedItems.length}>	
                     <Table dataSource={res.data.unprocessedItems} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode}>	
                         <Table.Column title={'Data ID'} dataIndex={"dataId"} />	
                         <Table.Column title={'Group'} dataIndex={"group"} />	
@@ -977,10 +976,10 @@ class ConfigurationManagement extends React.Component {
             empty: pubnodedata
         };
         const helpDataId = <Balloon trigger={<span>Data ID <Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} /></span>} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>	
-                <a href={window._getLink && window._getLink("knowDataid")} target={"_blank"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.click_to_learn_DataId')}</a>	
+                <a href={window._getLink && window._getLink("knowDataid")} target={"_blank"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_DataId')}</a>	
             </Balloon>;
         const helpGroup = <Balloon trigger={<span>Group <Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} /></span>} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>	
-                <a href={window._getLink && window._getLink("knowGoup")} target={"_blank"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.click_to_learn_Group')}</a>	
+                <a href={window._getLink && window._getLink("knowGoup")} target={"_blank"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_Group')}</a>	
             </Balloon>;
         return (
             <div>	
@@ -991,27 +990,27 @@ class ConfigurationManagement extends React.Component {
                 {this.state.isCn ? <div style={{ position: 'absolute', right: 15, top: 27 }}>
                       {this.state.hasdash ? <a href={"javascript:;"} onClick={() => {
                                     this.setState({ hasdash: false });
-                                }}>{aliwareIntl.get("newDiamond.page.configurationManagement.off_the_Bulletin_Board5") /*关闭公告栏*/}</a> : <a href={"javascript:;"} onClick={() => {
+                                }}>{aliwareIntl.get("nacos.page.configurationManagement.off_the_Bulletin_Board5") /*关闭公告栏*/}</a> : <a href={"javascript:;"} onClick={() => {
                                     if (this.state.contentList.length > 0) {
                                         this.setState({ hasdash: true });
                                     } else {
-                                        Feedback.toast.show(aliwareIntl.get("newDiamond.page.configurationManagement.no_announcement6") /*暂无公告*/);
+                                        Feedback.toast.show(aliwareIntl.get("nacos.page.configurationManagement.no_announcement6") /*暂无公告*/);
                                     }
-                                }}>{aliwareIntl.get("newDiamond.page.configurationManagement.open_Bulletin_Board7") /*打开公告栏*/}</a>}  
+                                }}>{aliwareIntl.get("nacos.page.configurationManagement.open_Bulletin_Board7") /*打开公告栏*/}</a>}  
                 </div> : ''}
                 <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>	
                     <RegionGroup namespaceCallBack={this.cleanAndGetData.bind(this)} setNowNameSpace={this.setNowNameSpace.bind(this)} />	
                 </div>	
                 <div style={{ display: this.inApp ? 'none' : 'block', position: 'relative', width: '100%', overflow: 'hidden', height: '40px' }}>	
                     <h3 style={{ height: 30, width: '100%', lineHeight: '30px', padding: 0, margin: 0, paddingLeft: 10, borderLeft: '3px solid #09c', color: '#ccc', fontSize: '12px' }}>
-                        <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>{aliwareIntl.get("newDiamond.page.configurationManagement.configuration_management8") /*配置管理*/}</span>
+                        <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>{aliwareIntl.get("nacos.page.configurationManagement.configuration_management8") /*配置管理*/}</span>
                         <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>|</span>
                         <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>{this.state.nownamespace_name}</span>
                         <span style={{ fontSize: '14px', color: '#000', marginRight: 18 }}>{this.state.nownamespace_id}</span>
-                        <span><a href={"javascript:;"} onClick={this.detailNamespace.bind(this, this.state.nownamespace_id)} style={{ marginRight: 10 }}>{aliwareIntl.get('newDiamond.page.namespace.details')}</a></span>
-                        {aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.query_results')}
+                        <span><a href={"javascript:;"} onClick={this.detailNamespace.bind(this, this.state.nownamespace_id)} style={{ marginRight: 10 }}>{aliwareIntl.get('nacos.page.namespace.details')}</a></span>
+                        {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query_results')}
                         <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-                        {aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.article_meet_the_requirements')}
+                        {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.article_meet_the_requirements')}
                     </h3>	
                     <div style={{ position: 'absolute', textAlign: 'right', zIndex: 2, right: 0, top: 0 }}>	
                     </div>	
@@ -1019,47 +1018,47 @@ class ConfigurationManagement extends React.Component {
                     <div style={{ position: 'relative', marginTop: 10, height: this.state.isAdvancedQuery ? 'auto' : 48 }}>	
                         <Form direction={"hoz"} inline>	
                             <FormItem label={"Data ID:"}>	
-                                <Input htmlType={"text"} placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.fuzzyd')} style={{ height: 32, width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />	
+                                <Input htmlType={"text"} placeholder={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyd')} style={{ height: 32, width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />	
                             </FormItem>	
         
                             <FormItem label={"Group:"}>	
-                            <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>	
+                            <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>	
                             </Combobox>	
                              </FormItem>	
                             <FormItem label={""}>	
-                                <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)} data-spm-click={"gostr=/aliyun;locaid=dashsearch"}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.query')}</Button>	
+                                <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)} data-spm-click={"gostr=/aliyun;locaid=dashsearch"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query')}</Button>	
                                 
                                 {/* <Button type="primary" 
                                                                                                style={this.inApp ? {display:"none"}:{float: 'right', marginLeft: 10 }} 
                                                                                                onClick={this.doBatch.bind(this, "import")}
-                                                                                               data-spm-click="gostr=/aliyun;locaid=dashaddnew">{aliwareIntl.get('newDiamond.page.configurationManagement.import')}</Button>	
+                                                                                               data-spm-click="gostr=/aliyun;locaid=dashaddnew">{aliwareIntl.get('nacos.page.configurationManagement.import')}</Button>	
                                                                                         <Button type="primary" 
                                                                                                onClick={this.chooseEnv.bind(this)} 
                                                                                                style={{ float: 'right', marginLeft: 10 }}
                                                                                                data-spm-click="gostr=/aliyun;locaid=dashdaoru">	
-                                                                                           <Icon type="edit" size={'small'} />{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.new_listing')}</Button>	 */}
+                                                                                           <Icon type="edit" size={'small'} />{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.new_listing')}</Button>	 */}
                             </FormItem>	
                             {/* <FormItem style={this.inApp ? {display:"none"}:{ verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
-                                                                                       <Dropdown trigger={<span style={{ color: '#33cde5', fontSize: 12 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.batch_management')}<Icon type="arrow-down-filling" size={'xs'} /></span>} triggerType="click" >	
+                                                                                       <Dropdown trigger={<span style={{ color: '#33cde5', fontSize: 12 }}>{aliwareIntl.get('nacos.page.configurationManagement.batch_management')}<Icon type="arrow-down-filling" size={'xs'} /></span>} triggerType="click" >	
                                                                                            <Menu onClick={this.doBatch.bind(this)}>	
-                                                                                               <Menu.Item key="export">{aliwareIntl.get('newDiamond.page.configurationManagement.export')}</Menu.Item>	
-                                                                                               <Menu.Item key="clone">{aliwareIntl.get('newDiamond.page.configurationManagement.clone')}</Menu.Item>	
-                                                                                               <Menu.Item key="delete">{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.delete')}</Menu.Item>	
+                                                                                               <Menu.Item key="export">{aliwareIntl.get('nacos.page.configurationManagement.export')}</Menu.Item>	
+                                                                                               <Menu.Item key="clone">{aliwareIntl.get('nacos.page.configurationManagement.clone')}</Menu.Item>	
+                                                                                               <Menu.Item key="delete">{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}</Menu.Item>	
                                                                                            </Menu>	
                                                                                        </Dropdown>	
                                                                                     </FormItem>	 */}
                             <FormItem style={this.inApp ? { display: "none" } : { verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
                                 <div style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }} onClick={this.changeAdvancedQuery}>
-                                    <span style={{ marginRight: 5 }}>{aliwareIntl.get("newDiamond.page.configurationManagement.advanced_query9") /*高级查询*/}</span><Icon type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'} size={'xs'} />
+                                    <span style={{ marginRight: 5 }}>{aliwareIntl.get("nacos.page.configurationManagement.advanced_query9") /*高级查询*/}</span><Icon type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'} size={'xs'} />
                                 </div>
                             </FormItem>
                             <br />
-                            <FormItem style={this.inApp ? { display: "none" } : {}} label={aliwareIntl.get("newDiamond.page.configurationManagement.HOME_Application0") /*归属应用：*/}>	
-                                <Input htmlType={"text"} placeholder={aliwareIntl.get("newDiamond.page.configurationManagement.Please_enter_the_name_of_the_app1") /*请输入应用名称*/} style={{ height: 32 }} value={this.state.appName} onChange={this.setAppName.bind(this)} />	
+                            <FormItem style={this.inApp ? { display: "none" } : {}} label={aliwareIntl.get("nacos.page.configurationManagement.HOME_Application0") /*归属应用：*/}>	
+                                <Input htmlType={"text"} placeholder={aliwareIntl.get("nacos.page.configurationManagement.Please_enter_the_name_of_the_app1") /*请输入应用名称*/} style={{ height: 32 }} value={this.state.appName} onChange={this.setAppName.bind(this)} />	
                             
                             </FormItem>	
-                            <FormItem label={aliwareIntl.get('newDiamond.page.configurationManagement.Tags')}>	
-                            <Combobox size={"medium"} hasArrow multiple={true} tags={true} filterLocal={false} placeholder={aliwareIntl.get('newDiamond.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode} />	
+                            <FormItem label={aliwareIntl.get('nacos.page.configurationManagement.Tags')}>	
+                            <Combobox size={"medium"} hasArrow multiple={true} tags={true} filterLocal={false} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode} />	
                             </FormItem>	
                         </Form>	
                         <div style={{ position: 'absolute', right: 10, top: 4 }}>
@@ -1076,23 +1075,23 @@ class ConfigurationManagement extends React.Component {
                                 }} ref={"dataTable"}>	
                             <Table.Column title={helpDataId} dataIndex={"dataId"} />	
                             <Table.Column title={helpGroup} dataIndex={"group"} />	
-                            {!this.inApp ? <Table.Column title={aliwareIntl.get('newDiamond.page.configurationManagement.HOME_Application')} dataIndex={"appName"} /> : <div></div>}	
-                            <Table.Column title={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />	
+                            {!this.inApp ? <Table.Column title={aliwareIntl.get('nacos.page.configurationManagement.HOME_Application')} dataIndex={"appName"} /> : <div></div>}	
+                            <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />	
                         </Table>	
         
                     </div>	
                     {this.state.dataSource.length > 0 && <div style={{ marginTop: 10, overflow: "hidden" }}>	
-                        {/* <Button type="primary" onClick={this.onClickBatchHandle.bind(this)}>{aliwareIntl.get('newDiamond.page.configurationManagement.Batch_processing0')}</Button>	 */}
+                        {/* <Button type="primary" onClick={this.onClickBatchHandle.bind(this)}>{aliwareIntl.get('nacos.page.configurationManagement.Batch_processing0')}</Button>	 */}
                         <div style={this.inApp ? { display: "none" } : { paddingLeft: 20, float: 'left' }}>
                             <Checkbox checked={this.state.isCheckAll} onChange={checked => this.checkAllHandle(checked)} />
                             <Button onClick={this.doBatch.bind(this, "delete")} style={{ marginLeft: 20, color: 'red' }}>
-                                {aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.delete')}
+                                {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}
                             </Button>
                             <Button onClick={this.doBatch.bind(this, "export")} style={{ marginLeft: 20 }}>
-                                {aliwareIntl.get('newDiamond.page.configurationManagement.export')}
+                                {aliwareIntl.get('nacos.page.configurationManagement.export')}
                             </Button>
                             <Button onClick={this.doBatch.bind(this, "clone")} style={{ marginLeft: 20 }}>
-                                {aliwareIntl.get('newDiamond.page.configurationManagement.clone')}
+                                {aliwareIntl.get('nacos.page.configurationManagement.clone')}
                             </Button>
                         </div>	
                         <Pagination style={{ float: "right" }} pageSizeList={[10, 20, 30]} pageSizeSelector={"dropdown"} onPageSizeChange={this.handlePageSizeChange.bind(this)} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />	

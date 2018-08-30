@@ -192,7 +192,7 @@ class Newconfig extends React.Component {
                     if (result.data.length > 0) {
                         //如果存在beta
                         let sufex = new Date().getTime();
-                        let tag = [{ title: aliwareIntl.get('com.alibaba.newDiamond.page.configeditor.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
+                        let tag = [{ title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
                         self.setState({
                             tag: tag,
                             hasbeta: true
@@ -328,7 +328,7 @@ class Newconfig extends React.Component {
             //         // this.field.setError()
             //         Dialog.alert({
             //             language: window.pageLanguage || 'zh-cn',
-            //             content: aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.configuration_contentmax')
+            //             content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_contentmax')
             //         });
             //         return;
             //     }
@@ -372,8 +372,8 @@ class Newconfig extends React.Component {
                 },
                 success: function (res) {
                     let _payload = {};
-                    _payload.maintitle = aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.new_listing_main');
-                    _payload.title = aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.new_listing');
+                    _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
+                    _payload.title = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
                     _payload.content = '';
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
@@ -394,7 +394,7 @@ class Newconfig extends React.Component {
                 error: function (res) {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        content: aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.publish_failed')
+                        content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed')
                     });
                     self.closeLoading();
                 }
@@ -458,14 +458,14 @@ class Newconfig extends React.Component {
                         });
                     } else if (res.code === 1403) {
                         let data = res.data;
-                        let titleTmp = aliwareIntl.get('newDiamond.page.newconfig.The_opening_of_the_data_encryption-related_services0');
+                        let titleTmp = aliwareIntl.get('nacos.page.newconfig.The_opening_of_the_data_encryption-related_services0');
                         let contentTmp1 = "";
                         let contentTmp2 = "";
                         if (data.kmsServiceStatus != 200) {
-                            contentTmp1 = <div>{data.kmsMsg}<a href={window._getLink && window._getLink("kmsOpen")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.newconfig._to_go_to_the_opening_of1')}</a></div>;
+                            contentTmp1 = <div>{data.kmsMsg}<a href={window._getLink && window._getLink("kmsOpen")} target={"_blank"}>{aliwareIntl.get('nacos.page.newconfig._to_go_to_the_opening_of1')}</a></div>;
                         }
                         if (data.sts2KmsRightStatus != 200) {
-                            contentTmp2 = <div>{data.sts2KmsMsg}<a style={{marginLeft:10}} href={window._getLink && window._getLink("kmsAuthorize")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.newconfig.to_the_authorization_of2')}</a></div>;
+                            contentTmp2 = <div>{data.sts2KmsMsg}<a style={{marginLeft:10}} href={window._getLink && window._getLink("kmsAuthorize")} target={"_blank"}>{aliwareIntl.get('nacos.page.newconfig.to_the_authorization_of2')}</a></div>;
                         }
                         let contentTmp = <div style={{ "font-size": "14px" }}>{contentTmp1}{contentTmp2}</div>;
                         Dialog.alert({
@@ -479,7 +479,7 @@ class Newconfig extends React.Component {
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
-                            title: aliwareIntl.get('newDiamond.page.newconfig.The_opening_of_the_data_encryption-related_services0'),
+                            title: aliwareIntl.get('nacos.page.newconfig.The_opening_of_the_data_encryption-related_services0'),
                             content: res.message
                         });
                         this.setState({
@@ -514,7 +514,7 @@ class Newconfig extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.do_not_ente'));
+            callback(aliwareIntl.get('com.alibaba.nacos.page.newconfig.do_not_ente'));
         } else {
             callback();
         }
@@ -561,13 +561,13 @@ class Newconfig extends React.Component {
         }];
 
         const groupInput = <FormItem label={"Group:"} required {...formItemLayout}>
-                        <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={aliwareIntl.get("com.alibaba.newDiamond.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
+                        <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
                 rules: [{
                     required: true,
-                    message: aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.the_more_advanced')
+                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
                 }, {
                     max: 127,
-                    message: aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.group_is_not_empty')
+                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
                 }, { validator: this.validateChart.bind(this) }]
             })} onChange={this.setGroup.bind(this)} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                         </Combobox>
@@ -576,65 +576,65 @@ class Newconfig extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape={"flower"} tip={"Loading..."} style={{ width: '100%', position: 'relative' }} visible={this.state.loading} color={"#333"}>
-                    <h1>{aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.new_listing')}</h1>
+                    <h1>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing')}</h1>
                     <Form field={this.field}>
                         <FormItem label={"Data ID:"} required {...formItemLayout}>
                             <Input {...init('dataId', {
                                 rules: [{
                                     required: true,
-                                    message: aliwareIntl.get('com.alibaba.newDiamond.page.newconfig')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig')
                                 }, {
                                     max: 255,
-                                    message: aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.dataId_is_not_empty')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig.dataId_is_not_empty')
                                 }, { validator: this.validateChart.bind(this) }]
                             })} addonTextBefore={this.state.addonBefore ? <div style={{ minWidth: 100, color: "#373D41" }}>{this.state.addonBefore}</div> : null} />
 
                         </FormItem>
                         {this.inEdas ? groupInput : ""}
                         <FormItem label={" "} {...formItemLayout} style={{ display: this.state.showGroupWarning ? "block" : "none" }}>
-                            <Message type={'warning'} size={'medium'} animation={false}>{aliwareIntl.get('newDiamond.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0')}</Message>
+                            <Message type={'warning'} size={'medium'} animation={false}>{aliwareIntl.get('nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0')}</Message>
                         </FormItem>
                     <FormItem label={""} {...formItemLayout}>
                         <div>
-                            <a style={{ fontSize: '12px' }} href={"javascript:;"} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.Data_ID_length') : aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.collapse')}</a>
+                            <a style={{ fontSize: '12px' }} href={"javascript:;"} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length') : aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}</a>
                         </div>
                     </FormItem>
 
                     <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
                         {this.inEdas ? "" : groupInput}
 
-                        <FormItem label={aliwareIntl.get('newDiamond.page.newconfig.Tags')} {...formItemLayout}>
-                            <Combobox size={"medium"} hasArrow style={{ width: '100%' ,height: '100%!important'}} autoWidth={true} multiple={true} tags={true} filterLocal={true} placeholder={aliwareIntl.get('newDiamond.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} onChange={this.onInputUpdate.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
+                        <FormItem label={aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
+                            <Combobox size={"medium"} hasArrow style={{ width: '100%' ,height: '100%!important'}} autoWidth={true} multiple={true} tags={true} filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} onChange={this.onInputUpdate.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                             </Combobox>
                         </FormItem>
 
-                        <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.Group_ID_cannot_be_longer')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.Group_ID_cannot_be_longer')} {...formItemLayout}>
                             <Input {...init('appName')} readOnly={this.inApp} />
 
                         </FormItem>
                     </div>
 
-                    <FormItem label={aliwareIntl.get('newDiamond.page.newconfig.Description')} {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('nacos.page.newconfig.Description')} {...formItemLayout}>
                         <Input htmlType={"text"} multiple rows={3} {...init('desc')} />
                     </FormItem>
 
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.the_home_application')} {...formItemLayout} required>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_home_application')} {...formItemLayout} required>
                         <div style={{ height: 30, lineHeight: '33px' }}>
                             <CheckboxGroup disabled={true} value={this.state.envvalues} onChange={this.changeEnv.bind(this)} dataSource={this.state.envlist} />
                         </div>
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('newDiamond.page.newconfig.data_encryption3')} {...formItemLayout}>
-                            <Switch checkedChildren="Open" unCheckedChildren={aliwareIntl.get('newDiamond.page.newconfig.off1') /*关*/} size={"medium"} onChange={this.switchEncrypt.bind(this)} checked={this.state.encrypt} />
+                    <FormItem label={aliwareIntl.get('nacos.page.newconfig.data_encryption3')} {...formItemLayout}>
+                            <Switch checkedChildren="Open" unCheckedChildren={aliwareIntl.get('nacos.page.newconfig.off1') /*关*/} size={"medium"} onChange={this.switchEncrypt.bind(this)} checked={this.state.encrypt} />
                             <Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginLeft: 5, verticalAlign: 'top', height: 26, lineHeight: "26px" }} />} align={"t"} triggerType={"hover"}>
-                            <a href={window._getLink && window._getLink("kmsUse")} target={"_blank"}>{aliwareIntl.get('newDiamond.page.newconfig.data_encryption3')}</a>
+                            <a href={window._getLink && window._getLink("kmsUse")} target={"_blank"}>{aliwareIntl.get('nacos.page.newconfig.data_encryption3')}</a>
                         </Balloon>
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.the_target_environment')} {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')} {...formItemLayout}>
                         <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />
                     </FormItem>
-                    <FormItem label={<span>{aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.configuration_format')}<Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginTop: 2 }} />} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>
-                        <p>{aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.configure_contents_of')}</p>
-                        <p>{aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.full_screen')}</p>
+                    <FormItem label={<span>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_format')}<Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginTop: 2 }} />} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>
+                        <p>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.configure_contents_of')}</p>
+                        <p>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.full_screen')}</p>
                     </Balloon>:</span>} required {...formItemLayout}>
                         <div id={"container"} style={{ width: '100%', height: 300 }}></div>
                     </FormItem>
@@ -642,9 +642,9 @@ class Newconfig extends React.Component {
                     <FormItem {...formItemLayout} label={""}>
 
                         <div style={{ textAlign: 'right' }}>
-                            <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.publishConfig.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.esc_exit')}</Button>
+                            <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.publishConfig.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.esc_exit')}</Button>
 
-                            <Button type={"light"} onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.page.newconfig.release')}</Button>
+                            <Button type={"light"} onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.release')}</Button>
                         </div>
                     </FormItem>
                     </Form>

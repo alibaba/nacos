@@ -26,7 +26,7 @@ class NameSpaceList extends React.Component {
     getLink(linkKey, keyName) {
         if (window[keyName] == null) {
             request({
-                url: "com.alibaba.newDiamond.service.getLink",
+                url: "com.alibaba.nacos.service.getLink",
                 data: {
                     linkKey
                 },
@@ -98,7 +98,7 @@ class NameSpaceList extends React.Component {
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
-                            title: aliwareIntl.get('com.alibaba.newDiamond.component.NameSpaceList.Prompt'),
+                            title: aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
                             content: res.message
                         });
                     }
@@ -167,10 +167,10 @@ class NameSpaceList extends React.Component {
                          Namespace: {this.state.nownamespace}
                       </div>**/}
             <div style={{ float: 'left' }} hidden={window._getLink && !window._getLink("dingding") && !window._getLink("discuz") && !window._getLink("learningPath")}>
-                {!window.globalConfig.isParentEdas() ? <div style={{ float: 'left', height: '32px', lineHeight: '32px' }}>{aliwareIntl.get('com.alibaba.newDiamond.component.NameSpaceList.online_customer_support')}<a href={window._getLink && window._getLink("dingding")} hidden={window._getLink && !window._getLink("dingding")} className={"dingding"}></a>
-                    <a href={window._getLink && window._getLink("discuz")} hidden={window._getLink && !window._getLink("discuz")} target={"_blank"} style={{ marginLeft: 10 }}>{aliwareIntl.get('newDiamond.component.NameSpaceList.Forum')}</a>
+                {!window.globalConfig.isParentEdas() ? <div style={{ float: 'left', height: '32px', lineHeight: '32px' }}>{aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.online_customer_support')}<a href={window._getLink && window._getLink("dingding")} hidden={window._getLink && !window._getLink("dingding")} className={"dingding"}></a>
+                    <a href={window._getLink && window._getLink("discuz")} hidden={window._getLink && !window._getLink("discuz")} target={"_blank"} style={{ marginLeft: 10 }}>{aliwareIntl.get('nacos.component.NameSpaceList.Forum')}</a>
                     <span style={{ marginRight: 5, marginLeft: 5 }}>|</span>
-                    <a href={window._getLink && window._getLink("learningPath")} hidden={window._getLink && !window._getLink("learningPath")} target={"_blank"}>{aliwareIntl.get('newDiamond.component.NameSpaceList.Quick_to_learn0') /*快速学习*/}</a>
+                    <a href={window._getLink && window._getLink("learningPath")} hidden={window._getLink && !window._getLink("learningPath")} target={"_blank"}>{aliwareIntl.get('nacos.component.NameSpaceList.Quick_to_learn0') /*快速学习*/}</a>
 
                 </div> : ''}
             </div>

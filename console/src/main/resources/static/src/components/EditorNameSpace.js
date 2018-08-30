@@ -98,7 +98,7 @@ class EditorNameSpace extends React.Component {
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
-                            title: aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.prompt'),
+                            title: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.prompt'),
                             content: res.message
                         });
                     }
@@ -130,7 +130,7 @@ class EditorNameSpace extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.please_do'));
+            callback(aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.please_do'));
         } else {
             callback();
         }
@@ -146,25 +146,25 @@ class EditorNameSpace extends React.Component {
         };
         const list = [{
             value: '2',
-            label: aliwareIntl.get('com.alibaba.newDiamond.component.editorNameSpace')
+            label: aliwareIntl.get('com.alibaba.nacos.component.editorNameSpace')
 
         }, {
             value: '0',
-            label: aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.private')
+            label: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.private')
 
         }];
 
-        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.public_space')}</Button>;
+        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.public_space')}</Button>;
         return (
             <div>
-                <Dialog title={aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
-                    <Loading tip={aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
+                    <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
                         <Form field={this.field}>
-                            <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.load')} required {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.load')} required {...formItemLayout}>
                                 <Input {...this.field.init('namespaceShowName', {
                                     rules: [{
                                         required: true,
-                                        message: aliwareIntl.get('com.alibaba.newDiamond.component.EditorNameSpace.namespace')
+                                        message: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
                                     }, { validator: this.validateChart.bind(this) }]
                                 })} disabled={this.state.type == 0 ? true : false} />
                                 <Input {...this.field.init('namespace')} htmlType="hidden" />
