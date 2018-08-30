@@ -39,7 +39,6 @@ public class BeatReactor {
         thread.setName("com.alibaba.nacos.naming.beat.sender");
         return thread;
     });
-    ;
 
     private long clientBeatInterval = 10 * 1000;
 
