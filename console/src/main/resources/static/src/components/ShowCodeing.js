@@ -421,9 +421,9 @@ print(c.get(DATA_ID, GROUP))`;
         const footer = <div></div>;
         return (
             <div>
-                <Dialog title={aliwareIntl.get('com.alibaba.newDiamond.component.ShowCodeing.Sample_code')} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.Sample_code')} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
                     <div style={{ height: 500 }}>
-                        <Loading tip={aliwareIntl.get('com.alibaba.newDiamond.component.ShowCodeing.loading')} style={{ width: '100%' }} visible={this.state.loading}>
+                        <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.loading')} style={{ width: '100%' }} visible={this.state.loading}>
                             <Tab shape={'text'} style={{ height: 40, paddingBottom: 10 }}>
                                 <TabPane title={'Java'} key={1} onClick={this.changeTab.bind(this, 'commoneditor1', this.defaultCode)}>
 

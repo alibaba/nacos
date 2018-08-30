@@ -49,7 +49,7 @@ class AddGroup extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('com.alibaba.newDiamond.component.AddGroup.prompt'),
+                        title: aliwareIntl.get('com.alibaba.nacos.component.AddGroup.prompt'),
                         content: res.message
                     });
                 }
@@ -69,10 +69,10 @@ class AddGroup extends React.Component {
 
         return (
             <div>
-                <Dialog title={aliwareIntl.get('com.alibaba.newDiamond.component.AddGroup.a_new_group')} style={{ width: '60%' }} visible={this.state.dialogvisible} language={window.pageLanguage || 'zh-cn'} onOk={this.handeSubmit.bind(this)} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)}><Form field={this.field}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.AddGroup.a_new_group')} style={{ width: '60%' }} visible={this.state.dialogvisible} language={window.pageLanguage || 'zh-cn'} onOk={this.handeSubmit.bind(this)} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)}><Form field={this.field}>
 
 
-                        <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.component.AddGroup.group_name')} required {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.component.AddGroup.group_name')} required {...formItemLayout}>
                             <Input {...this.field.init('group')} />
                         </FormItem>
 

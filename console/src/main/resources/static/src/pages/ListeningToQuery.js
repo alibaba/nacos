@@ -95,7 +95,7 @@ class ListeningToQuery extends React.Component {
         this.forceUpdate();
     }
     renderStatus(values, index, record) {
-        return <div>{record.pushStatus === true ? <span style={{ color: 'green' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.success')}</span> : <span style={{ color: 'red' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.failure')}</span>}
+        return <div>{record.pushStatus === true ? <span style={{ color: 'green' }}>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.success')}</span> : <span style={{ color: 'red' }}>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.failure')}</span>}
         </div>;
     }
     getQueryLater() {
@@ -116,43 +116,43 @@ class ListeningToQuery extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape="flower" style={{ position: 'relative' }} visible={this.state.loading} tip="Loading..." color="#333">
-                    <RegionGroup left={aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.listener_query')} namespaceCallBack={this.getQueryLater.bind(this)} />
+                    <RegionGroup left={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.listener_query')} namespaceCallBack={this.getQueryLater.bind(this)} />
                     {/**<div className={'namespacewrapper'}>
                               <NameSpaceList namespaceCallBack={this.getQueryLater.bind(this)} />
                            </div>**/}
                     <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
                         <Col span="24">
                             <Form inline field={this.field}>
-                                <FormItem label={aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.query_dimension')} initValue="0">
+                                <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_dimension')} initValue="0">
                                     <Select style={{ width: '100%' }} {...this.init('type')} language={aliwareIntl.currentLanguageCode}>
-                                        <div value="0">{aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.configuration')}</div>
+                                        <div value="0">{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.configuration')}</div>
                                         <div value="1">IP</div>
                                     </Select>
                                 </FormItem>
                                 <FormItem label="Data ID:" style={{
                                     display: this.getValue('type') == '0' ? '' : 'none'
                                 }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.please_enter_the_dataid')} style={{ height: '32px', lineHeight: '32px' }} {...this.init('dataId')} />
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')} style={{ height: '32px', lineHeight: '32px' }} {...this.init('dataId')} />
                                 </FormItem>
                                 <FormItem label="Group:" style={{
                                     display: this.getValue('type') == '0' ? '' : 'none'
                                 }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.please_input_group')} style={{ height: '32px', lineHeight: '32px' }} {...this.init('group')} />
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ height: '32px', lineHeight: '32px' }} {...this.init('group')} />
                                 </FormItem>
                                 <FormItem label="IP:" style={{
                                     display: this.getValue('type') == '0' ? 'none' : ''
                                 }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.please_input_ip')} style={{ height: '32px', lineHeight: '32px', boxSize: 'border-box' }} {...this.init('ip')} />
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_ip')} style={{ height: '32px', lineHeight: '32px', boxSize: 'border-box' }} {...this.init('ip')} />
                                 </FormItem>
                                 <FormItem label="">
-                                    <Button type="primary" onClick={this.queryTrackQuery.bind(this)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.query')}</Button>
+                                    <Button type="primary" onClick={this.queryTrackQuery.bind(this)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query')}</Button>
                                    {}
                                 </FormItem>
                             </Form>
                         </Col>
                     </Row>
                     <div style={{ position: 'relative' }}>
-                        <h3 style={{ height: 28, lineHeight: '28px', paddingLeft: 10, borderLeft: '3px solid #09c' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.query_results:_query')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery.article_meet_the_requirements_of_the_configuration.')}</h3>
+                        <h3 style={{ height: 28, lineHeight: '28px', paddingLeft: 10, borderLeft: '3px solid #09c' }}>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_results:_query')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.article_meet_the_requirements_of_the_configuration.')}</h3>
                     </div>
                     <Row style={{ padding: 0 }}>
                         <Col span="24" style={{ padding: 0 }}>
@@ -161,7 +161,7 @@ class ListeningToQuery extends React.Component {
                                 <Table.Column title="Group" dataIndex="group" />
                             </Table> : <Table dataSource={this.state.dataSource} fixedHeader={true} maxBodyHeight={400} locale={locale} language={aliwareIntl.currentLanguageCode}>
                                     <Table.Column title="IP" dataIndex="ip" />
-                                    <Table.Column title={aliwareIntl.get('com.alibaba.cspupcloud.page.listeningToQuery._Push_state')} dataIndex="pushStatus" cell={this.renderStatus.bind(this)} />
+                                    <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery._Push_state')} dataIndex="pushStatus" cell={this.renderStatus.bind(this)} />
                                 </Table>}
                         </Col>
                     </Row>

@@ -15,7 +15,7 @@ class Configdetail extends React.Component {
             ips: '',
             checkedBeta: false,
             switchEncrypt: false,
-            tag: [{ title: aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.official'), key: 'normal' }]
+            tag: [{ title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }]
         };
         this.field = new Field(this);
         this.dataId = getParams('dataId') || 'yanlin';
@@ -67,7 +67,7 @@ class Configdetail extends React.Component {
                     if (result.data.length > 0) {
                         //如果存在beta
                         let sufex = new Date().getTime();
-                        let tag = [{ title: aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
+                        let tag = [{ title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
                         self.setState({
                             tag: tag,
                             hasbeta: true
@@ -159,7 +159,7 @@ class Configdetail extends React.Component {
                     self.field.setValue('md5', data.md5);
                 } else {
                     Dialog.alert({
-                        title: aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.error'),
+                        title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.error'),
                         content: result.message,
                         language: aliwareIntl.currentLanguageCode
                     });
@@ -189,7 +189,7 @@ class Configdetail extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape={"flower"} tip={"Loading..."} style={{ width: '100%', position: 'relative' }} visible={this.state.loading} color={"#333"}>
-                    <h1 style={{ position: 'relative', width: '100%' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.configuration_details')}</h1>
+                    <h1 style={{ position: 'relative', width: '100%' }}>{aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration_details')}</h1>
                     {this.state.hasbeta ? <div style={{ display: 'inline-block', height: 40, width: '80%', overflow: 'hidden' }}>
 
                         <Tab shape={'wrapped'} onChange={this.changeTab.bind(this)} lazyLoad={false} activeKey={this.state.activeKey}>
@@ -202,7 +202,7 @@ class Configdetail extends React.Component {
                         <FormItem label={"Data ID:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('dataId')} />
                             <div style={{ marginTop: 10 }}>
-                                <a style={{ fontSize: '12px' }} href={"javascript:;"} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.recipient_from') : aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.more_advanced_options')}</a>
+                                <a style={{ fontSize: '12px' }} href={"javascript:;"} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
                             </div>
                         </FormItem>
 
@@ -210,22 +210,22 @@ class Configdetail extends React.Component {
                             <FormItem label={"Group:"} required {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('group')} />
                             </FormItem>
-                            <FormItem label={aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.home')} {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.home')} {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('appName')} />
                             </FormItem>
 
-                            <FormItem label={aliwareIntl.get('newDiamond.page.configdetail.Tags')} {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('nacos.page.configdetail.Tags')} {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('config_tags')} />
                             </FormItem>
                         </div> : ''}
 
-                        <FormItem label={aliwareIntl.get('newDiamond.page.configdetail.Description')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('nacos.page.configdetail.Description')} {...formItemLayout}>
                             <Input htmlType={"text"} multiple rows={3} readOnly={true} {...init('desc')} />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.belongs_to_the_environment')} required {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.belongs_to_the_environment')} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('envs')} />
                         </FormItem>
-                        {activeKey === 'normal' ? '' : <FormItem label={aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.beta_release')} {...formItemLayout}>
+                        {activeKey === 'normal' ? '' : <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.beta_release')} {...formItemLayout}>
 
                             <div style={{ width: '100%' }} id={'betaips'}>
                                 <Input multiple style={{ width: '100%' }} value={this.state.ips} readOnly={true} placeholder={"multiple"} placeholder={'127.0.0.1,127.0.0.2'} />
@@ -234,15 +234,15 @@ class Configdetail extends React.Component {
                         <FormItem label={"MD5:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('md5')} />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('newDiamond.page.configdetail.Data_encryption0')} {...formItemLayout}>
-                                <Switch checkedChildren={aliwareIntl.get('newDiamond.page.configdetail.Open0') /*开*/} unCheckedChildren={aliwareIntl.get('newDiamond.page.configdetail.off1') /*关*/} size={"small"} checked={this.state.switchEncrypt} disabled />
+                        <FormItem label={aliwareIntl.get('nacos.page.configdetail.Data_encryption0')} {...formItemLayout}>
+                                <Switch checkedChildren={aliwareIntl.get('nacos.page.configdetail.Open0') /*开*/} unCheckedChildren={aliwareIntl.get('nacos.page.configdetail.off1') /*关*/} size={"small"} checked={this.state.switchEncrypt} disabled />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.configuration')} required {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration')} required {...formItemLayout}>
                             <Input htmlType={"text"} multiple rows={15} readOnly={true} {...init('content')} />
                         </FormItem>
                         <FormItem label={" "} {...formItemLayout}>
 
-                            <Button type={"primary"} onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configdetail.return')}</Button>
+                            <Button type={"primary"} onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configdetail.return')}</Button>
 
                         </FormItem>
                     </Form>

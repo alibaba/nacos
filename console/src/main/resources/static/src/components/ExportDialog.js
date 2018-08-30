@@ -51,7 +51,7 @@ class ExportDialog extends React.Component {
 
     getQuery() {
         if (this.state.records.length > 0) {
-            return aliwareIntl.get('newDiamond.component.ExportDialog.|_The_selected_entry0');
+            return aliwareIntl.get('nacos.component.ExportDialog.|_The_selected_entry0');
         }
         if (this.state.dataId === '' && this.state.group === '' && this.state.appName === '' && this.state.configTags.length === 0) {
             return '';
@@ -64,10 +64,10 @@ class ExportDialog extends React.Component {
             query += ' Group: ' + this.state.group + ',';
         }
         if (this.state.appName !== '') {
-            query += aliwareIntl.get('newDiamond.component.ExportDialog.HOME_Application1') + this.state.appName + ',';
+            query += aliwareIntl.get('nacos.component.ExportDialog.HOME_Application1') + this.state.appName + ',';
         }
         if (this.state.configTags.length !== 0) {
-            query += aliwareIntl.get('newDiamond.component.ExportDialog.tags2') + this.state.configTags + ',';
+            query += aliwareIntl.get('nacos.component.ExportDialog.tags2') + this.state.configTags + ',';
         }
         return query.substr(0, query.length - 1);
     }
@@ -93,18 +93,18 @@ class ExportDialog extends React.Component {
 
     render() {
         const footer = <div>
-            <a id="downloadLink" style={{ display: "none" }} href={this.getLink()} /><Button type="primary" onClick={this.doExport.bind(this)} {...{ "disabled": this.state.total <= 0 }}>{aliwareIntl.get('newDiamond.component.ExportDialog.export3')}</Button>
+            <a id="downloadLink" style={{ display: "none" }} href={this.getLink()} /><Button type="primary" onClick={this.doExport.bind(this)} {...{ "disabled": this.state.total <= 0 }}>{aliwareIntl.get('nacos.component.ExportDialog.export3')}</Button>
         </div>;
 
         return <div>
-            <Dialog visible={this.state.visible} footer={footer} footerAlign="center" language={window.pageLanguage || 'zh-cn'} style={{ width: 480 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={aliwareIntl.get('newDiamond.component.ExportDialog.export_configuration4') + this.state.serverId + "）"}>
+            <Dialog visible={this.state.visible} footer={footer} footerAlign="center" language={window.pageLanguage || 'zh-cn'} style={{ width: 480 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={aliwareIntl.get('nacos.component.ExportDialog.export_configuration4') + this.state.serverId + "）"}>
                 <Form>
-                    <FormItem label={aliwareIntl.get('newDiamond.component.ExportDialog.source_space5')} {...this.formItemLayout}>
+                    <FormItem label={aliwareIntl.get('nacos.component.ExportDialog.source_space5')} {...this.formItemLayout}>
                         <p>
                             <span style={{ color: '#33cde5' }}>{this.state.tenant.name}</span>{" | " + this.state.tenant.id}
                         </p>
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('newDiamond.component.ExportDialog.configuration_number6')} {...this.formItemLayout}>
+                    <FormItem label={aliwareIntl.get('nacos.component.ExportDialog.configuration_number6')} {...this.formItemLayout}>
                         <p><span style={{ color: '#33cde5' }}>{this.state.total}</span> {this.getQuery()} </p>
                     </FormItem>
                 </Form>

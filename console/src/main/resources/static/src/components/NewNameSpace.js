@@ -70,7 +70,7 @@ class NewNameSpace extends React.Component {
             });
             if (!flag) {
                 Dialog.alert({
-                    content: aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.norepeat'),
+                    content: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.norepeat'),
                     language: aliwareIntl.currentLanguageCode
                 });
                 return;
@@ -101,7 +101,7 @@ class NewNameSpace extends React.Component {
                         this.refreshNameSpace(); //刷新全局namespace
                     } else {
                         Dialog.alert({
-                            title: aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.prompt'),
+                            title: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.prompt'),
                             content: res.message,
                             language: aliwareIntl.currentLanguageCode
                         });
@@ -134,7 +134,7 @@ class NewNameSpace extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.input'));
+            callback(aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.input'));
         } else {
             callback();
         }
@@ -150,19 +150,19 @@ class NewNameSpace extends React.Component {
         };
 
         let footer = <div>
-            <Button type="primary" onClick={this.handleSubmit.bind(this)} disabled={this.disabled}>{aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.confirm')}</Button>
-            <Button type="normal" onClick={this.closeDialog.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.cancel')}</Button>
+            <Button type="primary" onClick={this.handleSubmit.bind(this)} disabled={this.disabled}>{aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.confirm')}</Button>
+            <Button type="normal" onClick={this.closeDialog.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.cancel')}</Button>
         </div>;
         return (
             <div>
-                <Dialog title={aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.newnamespce')} style={{ width: '50%' }} visible={this.state.dialogvisible} onOk={this.handleSubmit.bind(this)} onCancel={this.closeDialog.bind(this)} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}><Form field={this.field}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.newnamespce')} style={{ width: '50%' }} visible={this.state.dialogvisible} onOk={this.handleSubmit.bind(this)} onCancel={this.closeDialog.bind(this)} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}><Form field={this.field}>
 
-                        <Loading tip={aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.loading')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
-                            <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.name')} required {...formItemLayout}>
+                        <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.loading')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.name')} required {...formItemLayout}>
                                 <Input {...this.field.init('namespaceShowName', {
                                     rules: [{
                                         required: true,
-                                        message: aliwareIntl.get('com.alibaba.newDiamond.component.NewNameSpace.namespacenotnull')
+                                        message: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.namespacenotnull')
                                     }, { validator: this.validateChart.bind(this) }]
                                 })} style={{ width: '100%' }} />
                             </FormItem>

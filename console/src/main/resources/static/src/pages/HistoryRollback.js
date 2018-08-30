@@ -119,9 +119,9 @@ class HistoryRollback extends React.Component {
     showMore() {}
     renderCol(value, index, record) {
         return <div>
-            <a href="javascript:;" onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.details')}</a>
+            <a href="javascript:;" onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.details')}</a>
             <span style={{ marginRight: 5 }}>|</span>
-            <a href="javascript:;" style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.rollback')}</a>
+            <a href="javascript:;" style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.rollback')}</a>
         </div>;
     }
     changePage(value) {
@@ -232,8 +232,8 @@ class HistoryRollback extends React.Component {
         };
         return (
             <div style={{ padding: 10 }}>
-                <Loading shape="flower" style={{ position: 'relative' }} visible={this.state.loading} tip="Loading..." color="#333">
-                <RegionGroup left={<h5 style={{ borderLeft: '2px solid rgb(136, 183, 224)', textIndent: 8, lineHeight: '32px', marginTop: 8, fontSize: '16px' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.to_configure')}</h5>} namespaceCallBack={this.cleanAndGetData.bind(this)} />
+                <Loading shape="flower" style={{ position: 'relative', width: "100%" }} visible={this.state.loading} tip="Loading..." color="#333">
+                <RegionGroup left={<h5 style={{ borderLeft: '2px solid rgb(136, 183, 224)', textIndent: 8, lineHeight: '32px', marginTop: 8, fontSize: '16px' }}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.to_configure')}</h5>} namespaceCallBack={this.cleanAndGetData.bind(this)} />
                     {/**<div className={'namespacewrapper'}>
                               <NameSpaceList namespaceCallBack={this.cleanAndGetData.bind(this)} />
                            </div>**/}
@@ -242,17 +242,17 @@ class HistoryRollback extends React.Component {
                         <Form inline>
 
                             <FormItem label="Data ID:">
-                                <Input htmlType="text" placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.dataid')} 
+                                <Input htmlType="text" placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')} 
                                 style={{ height: '32px', lineHeight: '32px' }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
                             </FormItem>
                             <FormItem label="Group:">
-                                <Input placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.group')} id="userName" name="userName" value={this.state.group} 
+                                <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')} id="userName" name="userName" value={this.state.group} 
                                 style={{ height: 30, lineHeight: '30px' }} onChange={this.getGroup.bind(this)} />
                             </FormItem>
 
                             <FormItem label="">
                                 <Button type="primary" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)}>
-                                {aliwareIntl.get('com.alibaba.cspupcloud.page.historyrollback.query')}</Button>
+                                {aliwareIntl.get('com.alibaba.nacos.page.historyrollback.query')}</Button>
                               {} 
 
                             </FormItem>
@@ -263,7 +263,7 @@ class HistoryRollback extends React.Component {
                     </div>
                     <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '40px' }}>
 
-                        <h3 style={{ height: 30, width: '100%', lineHeight: '30px', padding: 0, margin: 0, paddingLeft: 10, borderLeft: '3px solid #09c' }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.queryresult')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.article_meet')}</h3>
+                        <h3 style={{ height: 30, width: '100%', lineHeight: '30px', padding: 0, margin: 0, paddingLeft: 10, borderLeft: '3px solid #09c' }}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.queryresult')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.article_meet')}</h3>
 
                     </div>
                     <div>
@@ -271,8 +271,8 @@ class HistoryRollback extends React.Component {
                         <Table dataSource={this.state.dataSource} locale={locale} language={aliwareIntl.currentLanguageCode}>
                             <Table.Column title="Data ID" dataIndex="dataId" />
                             <Table.Column title="Group" dataIndex="group" />
-                            <Table.Column title={aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.last_update_time')} dataIndex="time" cell={this.renderLastTime.bind(this)} />
-                            <Table.Column title={aliwareIntl.get('com.alibaba.cspupcloud.page.historyRollback.operation')} cell={this.renderCol.bind(this)} />
+                            <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.last_update_time')} dataIndex="time" cell={this.renderLastTime.bind(this)} />
+                            <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.operation')} cell={this.renderCol.bind(this)} />
                         </Table>
 
                     </div>

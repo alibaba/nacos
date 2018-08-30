@@ -1,5 +1,7 @@
-import React, { Component } from 'react'; import { Affix, Animate, Badge, Balloon, Breadcrumb, Button, Calendar, Card, Cascader, CascaderSelect, Checkbox, Collapse, ConfigProvider, DatePicker, Dialog, Dropdown, Field, Form, Grid, Icon, Input, Loading, Menu, MenuButton, Message, Nav, NumberPicker, Overlay, Pagination, Paragragh, Progress, Radio, Range, Rating, Search, Select, Slider, SplitButton, Step, Switch, Tab, Table, Tag, TimePicker, Timeline, Transfer, Tree, TreeSelect, Upload, Validate } from '@alifd/next'; const Accordion = Collapse; const TabPane = Tab.TabPane; const FormItem = Form.Item; const { RangePicker } = DatePicker; const { Item: StepItem } = Step; const { Row, Col } = Grid; const { Node: TreeNode } = Tree; const { Item } = Nav; const { Panel } = Collapse; const { Gateway } = Overlay; const { Group: CheckboxGroup } = Checkbox; const { Group: RadioGroup } = Radio; const { Item: TimelineItem } = Timeline; const { AutoComplete: Combobox } = Select;
-export default class Noenv extends React.Component {
+import React, { Component } from 'react';
+import { Balloon, Icon } from '@alifd/next';
+
+export default class extends React.Component {
     constructor(props) {
         super(props);
         this.initNav = this.props.navList;
@@ -173,9 +175,9 @@ export default class Noenv extends React.Component {
                         //如果是虚拟菜单需要增加展开箭头
                         let icon = item.isExtend ? <span className="icon-arrow-down iconshow"></span> : <span className="icon-arrow-right iconshow"></span>;
                         let hiddenClass = item.isExtend ? '' : 'hidden';
-                        return <li  key={`${item.serviceName}`} 
-                                    data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                                    id={`${item.serviceName}`}>
+                        return <li key={`${item.serviceName}`}
+                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                            id={`${item.serviceName}`}>
                             <div>
                                 <a href="javascript:;" onClick={this.simpleMVCToggleNav.bind(this, `nav${index}`)}>
                                     <div className="nav-icon">
@@ -190,8 +192,8 @@ export default class Noenv extends React.Component {
                         </li>;
                     } else {
                         if (item.link && item.link.indexOf('http') !== -1) {
-                            return <li  key={`nav${index}`}
-                                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}>
+                            return <li key={`nav${index}`}
+                                data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}>
                                 <a href="{item.link}" >
                                     <div className="nav-icon">
 
@@ -201,9 +203,9 @@ export default class Noenv extends React.Component {
                             </li>;
                         }
 
-                        return <li  key={`${item.serviceName}`} 
-                                    data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                                    onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+                        return <li key={`${item.serviceName}`}
+                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                            onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
                             <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
                                 <div className="nav-icon"></div>
                                 <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
@@ -213,21 +215,21 @@ export default class Noenv extends React.Component {
                 }
 
                 if (item.serviceName === 'namespace') {
-                    const help = <Balloon trigger={<span>{aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{marginRight:5}} triggerType="hover">
-                        <a style={{fontSize: 12}} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{aliwareIntl.get('com.alibaba.newDiamond.layout.noenv.Click_to_learn_the_namespace')}</a>
+                    const help = <Balloon trigger={<span>{aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{ marginRight: 5 }} triggerType="hover">
+                        <a style={{ fontSize: 12 }} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace')}</a>
                     </Balloon>;
-                    return <li  key={`${item.serviceName}`} 
-                                data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                                onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+                    return <li key={`${item.serviceName}`}
+                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
                         <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
                             <div className="nav-icon"></div>
                             <div className="nav-title">{help}</div>
                         </a>
                     </li>;
                 }
-                return <li  key={`${item.serviceName}`} 
-                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                            onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+                return <li key={`${item.serviceName}`}
+                    data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                    onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
                     <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
                         <div className="nav-icon"></div>
                         <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
@@ -252,48 +254,8 @@ export default class Noenv extends React.Component {
         let navRow = this.simpleMVCGetNav(nav);
         this.setState({
             navRow: navRow
-        }
+        });
 
-            // request({
-            //     url: '/diamond-ops/service/right',
-            //     success: (res) => {
-            //         console.log(res);
-            //         if (res.data === true) {
-            //             let nav = this.props.navList || [];
-            //             //nav = this.edasNav.concat(nav); //是否关联EDAS
-            //             let navRow = this.simpleMVCGetNav(nav);
-            //             this.setState({
-            //                 navRow: navRow,
-            //                 noChildren: false
-            //             })
-            //         }else {
-            //             Dialog.alert({
-            //                 content:'您没有权限'
-            //             })
-            //             this.setState({
-
-            //                 noChildren: true
-            //             })
-            //         }
-            //     }
-            // })
-
-        );
-
-    }
-    /**
-     * 国际站添加特殊meta标签
-     */
-    addIntelSpmTag() {
-        let meta1 = document.createElement('meta');
-        meta1.name = 'aplus-rhost-v';
-        meta1.content = 'sg.mmstat.com';
-        let meta2 = document.createElement('meta');
-        meta2.name = 'aplus-rhost-g';
-        meta2.content = 'sg.mmstat.com';
-        let head = document.getElementsByTagName('head')[0];
-        head.appendChild(meta1);
-        head.appendChild(meta2);
     }
     componentDidMount() {
         this.simpleMVCLeftBarDom = document.getElementById('viewFramework-product-navbar');
@@ -304,13 +266,6 @@ export default class Noenv extends React.Component {
         let defaultNav = '/configurationManagement';
         let self = this;
         let childrenNav = parentNav.children || [];
-        if (window.isIntel()) { //如果是在国际站
-            this.addIntelSpmTag()//插入meta标签
-        } else {
-            if (window._getLink('isNational') == 'true') {//如果是国际用户
-                this.addIntelSpmTag()//插入meta标签
-            }
-        }
         hashHistory.listen((location, action) => {
             if (this.preSimplePath && this.preSimplePath !== '/') {
                 if (location.pathname.indexOf(this.preSimplePath) !== -1) {
@@ -385,16 +340,16 @@ export default class Noenv extends React.Component {
     render() {
 
         return <div className="viewFramework-product">
-            <div className="viewFramework-product-navbar" 
-                 style={{ width: 180, marginLeft: 0 }} 
-                 id="viewFramework-product-navbar"
-                 data-spm="acm_nav">
+            <div className="viewFramework-product-navbar"
+                style={{ width: 180, marginLeft: 0 }}
+                id="viewFramework-product-navbar"
+                data-spm="acm_nav">
                 <div className="viewFramework-product-navbar-removed">
                     <div>
                         <div className="product-nav-scene product-nav-main-scene">
                             {this.state.showLink ? <div className="product-nav-icon env" style={{ height: 80, paddingTop: 25 }}>
                                 {this.state.showLink}
-                            </div> : <div className={'product-nav-title'} title={aliwareIntl.get('com.alibaba.newDiamond.layout.noenv.app_configuration_management_acm')}>{aliwareIntl.get('com.alibaba.newDiamond.layout.noenv.app_configuration_management_acm')}</div>}
+                            </div> : <div className={'product-nav-title'} title={aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}>{aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}</div>}
 
                             <div className="product-nav-list" style={{ position: 'relative', top: 0, height: '100%' }}>
                                 {this.state.navRow}
@@ -403,9 +358,9 @@ export default class Noenv extends React.Component {
                     </div>
                 </div>
             </div>
-            <div className="viewFramework-product-navbar-collapse" 
-                 id="viewFramework-product-navbar-collapse" 
-                 onClick={this.simpleMVCToggleLeftBar.bind(this)}>
+            <div className="viewFramework-product-navbar-collapse"
+                id="viewFramework-product-navbar-collapse"
+                onClick={this.simpleMVCToggleLeftBar.bind(this)}>
                 <div className="product-navbar-collapse-inner">
                     <div className="product-navbar-collapse-bg"></div>
                     {/* <div className="product-navbar-collapse" aliyun-console-spm="4"  > */}
@@ -419,7 +374,7 @@ export default class Noenv extends React.Component {
                 <div>
                     {!this.state.noChild ? <div>
                         {this.props.children}
-                    </div> : <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>{aliwareIntl.get('com.alibaba.newDiamond.layout.noenv.does_not_exist')}</div>}
+                    </div> : <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>{aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}</div>}
                 </div>
             </div>
         </div>;

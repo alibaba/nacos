@@ -20,9 +20,9 @@ class HistoryDetail extends React.Component {
         this.tenant = getParams('namespace') || ''; //为当前实例保存tenant参数
         //this.params = window.location.hash.split('?')[1]||'';
         this.typeMap = {
-            'U': aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.update'),
-            'I': aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.insert'),
-            'D': aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.delete')
+            'U': aliwareIntl.get('com.alibaba.nacos.page.historyDetail.update'),
+            'I': aliwareIntl.get('com.alibaba.nacos.page.historyDetail.insert'),
+            'D': aliwareIntl.get('com.alibaba.nacos.page.historyDetail.delete')
         };
     }
 
@@ -40,15 +40,16 @@ class HistoryDetail extends React.Component {
         request({
             url: `/diamond-ops/historys/detail/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
             success: function (result) {
-
-                let data = result.data;
-                self.field.setValue('dataId', data.dataId);
-                self.field.setValue('content', data.content);
-                self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
-                self.field.setValue('envs', self.serverId);
-                self.field.setValue('opType', self.typeMap[data.opType]);
-                self.field.setValue('group', data.group);
-                self.field.setValue('md5', data.md5);
+                if (result.code === 200) {
+                    let data = result.data;
+                    self.field.setValue('dataId', data.dataId);
+                    self.field.setValue('content', data.content);
+                    self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
+                    self.field.setValue('envs', self.serverId);
+                    self.field.setValue('opType', self.typeMap[data.opType]);
+                    self.field.setValue('group', data.group);
+                    self.field.setValue('md5', data.md5);
+                }
             }
         });
     }
@@ -69,37 +70,37 @@ class HistoryDetail extends React.Component {
         };
         return (
             <div style={{ padding: 10 }}>
-                <h1>{aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.history_details')}</h1>
+                <h1>{aliwareIntl.get('com.alibaba.nacos.page.historyDetail.history_details')}</h1>
                 <Form field={this.field}>
                   
                     <FormItem label="Data ID:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('dataId')} />
                         <div style={{ marginTop: 10 }}>
-                            <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.recipient_from') : aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.more_advanced_options')}</a>
+                            <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.historyDetail.recipient_from') : aliwareIntl.get('com.alibaba.nacos.page.historyDetail.more_advanced_options')}</a>
                         </div>
                     </FormItem>
                     <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
                     <FormItem label="Group:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('group')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.home')} {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.home')} {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('appName')} />
                     </FormItem>
                     </div>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.belongs_to_the_environment')} required {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.belongs_to_the_environment')} required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('envs')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.action_type')} required {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.action_type')} required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('opType')} />
                     </FormItem>
                     <FormItem label="MD5:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('md5')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.configure_content')} required {...formItemLayout}>
+                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.configure_content')} required {...formItemLayout}>
                         <Input htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
-                        <Button type="primary" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.page.historyDetail.return')}</Button>
+                        <Button type="primary" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.historyDetail.return')}</Button>
 
                     </FormItem>
                 </Form>

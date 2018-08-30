@@ -53,14 +53,14 @@ class DiffEditorDialog extends React.Component {
         this.props.publishConfig();
     }
     render() {
-        const footer = <div> <Button type="primary" onClick={this.confirmPub.bind(this)}>{aliwareIntl.get('com.alibaba.newDiamond.component.DiffEditorDialog.confirm_that_the')}</Button></div>;
+        const footer = <div> <Button type="primary" onClick={this.confirmPub.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.confirm_that_the')}</Button></div>;
         return <div>
-            <Dialog title={aliwareIntl.get('com.alibaba.newDiamond.component.DiffEditorDialog.contents')} language={window.pageLanguage || 'zh-cn'} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)}>
+            <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.contents')} language={window.pageLanguage || 'zh-cn'} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)}>
             <div style={{ height: 400 }}>
                 <div>
                     <Row>
-                        <Col style={{ textAlign: 'center' }}>{aliwareIntl.get('com.alibaba.newDiamond.component.DiffEditorDialog.of_the_current_area')}</Col>
-                        <Col style={{ textAlign: 'center' }}>{aliwareIntl.get('com.alibaba.newDiamond.component.DiffEditorDialog.original_value')}</Col>
+                        <Col style={{ textAlign: 'center' }}>{aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.of_the_current_area')}</Col>
+                        <Col style={{ textAlign: 'center' }}>{aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.original_value')}</Col>
                     </Row>
                 </div>
                 <div style={{ clear: 'both', height: 480 }} ref="diffeditor"></div>

@@ -591,7 +591,7 @@ window.request = (function (window) {
             // contentType: config.contentType || 'application/x-www-form-urlencoded',
             beforeSend: function (xhr) {
                 xhr.setRequestHeader('poweredBy', 'naruto');
-                xhr.setRequestHeader('projectName', projectConfig.projectName);
+                xhr.setRequestHeader('projectName', 'newDiamond');
                 config.beforeSend && config.beforeSend(xhr);
             }
         }))

@@ -290,9 +290,9 @@ class EdasConfigurationManagement extends React.Component {
         let self = this;
         Dialog.confirm({
             language: window.pageLanguage || 'zh-cn',
-            title: aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.Remove_configuration'),
+            title: aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.Remove_configuration'),
             content: <div style={{ marginTop: '-20px' }}>
-                <h3>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.suredelete')}</h3>
+                <h3>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.suredelete')}</h3>
                 <p>
                     <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
                     <span style={{ color: '#c7254e' }}>
@@ -306,7 +306,7 @@ class EdasConfigurationManagement extends React.Component {
                     </span>
                 </p>
                 <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.environment')}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.environment')}</span>
                     <span style={{ color: '#c7254e' }}>
                         {self.serverId || ''}
                                 </span>
@@ -325,7 +325,7 @@ class EdasConfigurationManagement extends React.Component {
                     success: function (res) {
                         let _payload = {};
 
-                        _payload.title = aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.configuration_management');
+                        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.configuration_management');
                         _payload.content = '';
                         _payload.dataId = record.dataId;
                         _payload.group = record.group;
@@ -351,11 +351,11 @@ class EdasConfigurationManagement extends React.Component {
     renderCol(value, index, record) {
 
         return <div>
-            <a href="javascript:;" onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.details')}</a>
+            <a href="javascript:;" onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.details')}</a>
             <span style={{ marginRight: 5 }}>|</span>
-            <a href="javascript:;" style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.edit')}</a>
+            <a href="javascript:;" style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.edit')}</a>
             <span style={{ marginRight: 5 }}>|</span>
-            <a href="javascript:;" style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.delete')}</a>
+            <a href="javascript:;" style={{ marginRight: 5 }} onClick={this.removeConfig.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}</a>
            
 
 
@@ -509,8 +509,8 @@ class EdasConfigurationManagement extends React.Component {
         let self = this;
         if (this.state.selectedRecord.length < 1) {
             Dialog.alert({
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.Configuration_cloning0'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('newDiamond.page.configurationManagement.select_need_to_clone_the_configuration_items1')}</div>,
+                title: aliwareIntl.get('nacos.page.configurationManagement.Configuration_cloning0'),
+                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('nacos.page.configurationManagement.select_need_to_clone_the_configuration_items1')}</div>,
                 // content: <div ><span style={{fontSize:18,color:"#373D41"}}>您未选择配置项，确定按以下条件克隆所有数据？</span><p>DataId:2321, Group:testgroup, 标签:tag, 归属应用:testapp</p></div>,
                 language: aliwareIntl.currentLanguageCode
                 // onOk: () => {
@@ -560,7 +560,7 @@ class EdasConfigurationManagement extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.configurationManagement.Cloning_check_fails'),
+                        title: aliwareIntl.get('nacos.page.configurationManagement.Cloning_check_fails'),
                         content: res.message
                     });
                 }
@@ -582,15 +582,15 @@ class EdasConfigurationManagement extends React.Component {
             },
             success: res => {
                 if (res.code === 200) {
-                    let msg = aliwareIntl.get('newDiamond.page.configurationManagement.process_is_successful,_the_cloned') + res.data.processedNum + aliwareIntl.get('newDiamond.page.configurationManagement.configuration');
+                    let msg = aliwareIntl.get('nacos.page.configurationManagement.process_is_successful,_the_cloned') + res.data.processedNum + aliwareIntl.get('nacos.page.configurationManagement.configuration');
                     if (res.data.duplicatedNum > 0) {
-                        msg += aliwareIntl.get('newDiamond.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('newDiamond.page.configurationManagement.items_for') + policy;
+                        msg += aliwareIntl.get('nacos.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('nacos.page.configurationManagement.items_for') + policy;
                     }
                     Feedback.toast.success(msg);
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.configurationManagement.Clone_failed'),
+                        title: aliwareIntl.get('nacos.page.configurationManagement.Clone_failed'),
                         content: self.getBatchFailedContent(res)
                     });
                 }
@@ -601,8 +601,8 @@ class EdasConfigurationManagement extends React.Component {
         let self = this;
         if (this.state.selectedRecord.length < 1) {
             Dialog.alert({
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.bulk_delete'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('newDiamond.page.configurationManagement.please_select_the_required_delete_the_configuration_item')}</div>,
+                title: aliwareIntl.get('nacos.page.configurationManagement.bulk_delete'),
+                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('nacos.page.configurationManagement.please_select_the_required_delete_the_configuration_item')}</div>,
                 language: aliwareIntl.currentLanguageCode
             });
             return;
@@ -610,9 +610,9 @@ class EdasConfigurationManagement extends React.Component {
 
         Dialog.confirm({
             language: window.pageLanguage || 'zh-cn',
-            title: aliwareIntl.get('newDiamond.page.configurationManagement.bulk_delete'),
+            title: aliwareIntl.get('nacos.page.configurationManagement.bulk_delete'),
             content: <div style={{ fontSize: 18, color: "#373D41" }}>
-                {aliwareIntl.get('newDiamond.page.configurationManagement.whether_to_delete_the_selected')}<span style={{ color: '#33cde5', margin: 5 }}>{this.state.selectedRecord.length}</span>{aliwareIntl.get('newDiamond.page.configurationManagement.configuration_item?')}
+                {aliwareIntl.get('nacos.page.configurationManagement.whether_to_delete_the_selected')}<span style={{ color: '#33cde5', margin: 5 }}>{this.state.selectedRecord.length}</span>{aliwareIntl.get('nacos.page.configurationManagement.configuration_item?')}
                 </div>,
             onOk: () => {
                 let payload = {
@@ -637,11 +637,11 @@ class EdasConfigurationManagement extends React.Component {
                     },
                     success: res => {
                         if (res.code === 200) {
-                            Feedback.toast.success(aliwareIntl.get('newDiamond.page.configurationManagement._The_process_is_successful,_delete_the') + res.data.processedNum + aliwareIntl.get('newDiamond.page.configurationManagement.configuration'));
+                            Feedback.toast.success(aliwareIntl.get('nacos.page.configurationManagement._The_process_is_successful,_delete_the') + res.data.processedNum + aliwareIntl.get('nacos.page.configurationManagement.configuration'));
                         } else {
                             Dialog.alert({
                                 language: window.pageLanguage || 'zh-cn',
-                                title: aliwareIntl.get('newDiamond.page.configurationManagement.Delete_failed'),
+                                title: aliwareIntl.get('nacos.page.configurationManagement.Delete_failed'),
                                 content: self.getBatchFailedContent(res)
                             });
                         }
@@ -672,24 +672,24 @@ class EdasConfigurationManagement extends React.Component {
                     Dialog.alert({
                         needWrapper: false,
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.namespace.Namespace_details'),
+                        title: aliwareIntl.get('nacos.page.namespace.Namespace_details'),
                         content: <div>
                         
                         <div style={{ marginTop: '10px' }}>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.namespace.region_ID')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.region_ID')}</span>
                                 <span style={{ color: '#c7254e' }}>
                                     {obj.regionId}
                                 </span>
                             </p>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.namespace.namespace_name')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>
                                 <span style={{ color: '#c7254e' }}>
                                     {self.state.nownamespace_name}
                                 </span>
                             </p>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.namespace.namespace_ID')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>
                                 <span style={{ color: '#c7254e' }}>
                                     {namespaceId}
                                 </span>
@@ -701,31 +701,31 @@ class EdasConfigurationManagement extends React.Component {
                                 </span>
                             </p>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.AccessKey_recommended2')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.AccessKey_recommended2')}</span>
                                 <span style={{ color: '#c7254e' }}>
-                                    <a href={window._getLink && window._getLink("getAk")} target="_blank">{aliwareIntl.get('newDiamond.page.configurationManagement.click_on_the_obtain_of3')}</a>
+                                    <a href={window._getLink && window._getLink("getAk")} target="_blank">{aliwareIntl.get('nacos.page.configurationManagement.click_on_the_obtain_of3')}</a>
                                 </span>
                             </p>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.SecretKey_recommended4')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.SecretKey_recommended4')}</span>
                                 <span style={{ color: '#c7254e' }}>
-                                    <a href={window._getLink && window._getLink("getAk")} target="_blank">{aliwareIntl.get('newDiamond.page.configurationManagement.click_on_the_obtain_of3')}</a>
+                                    <a href={window._getLink && window._getLink("getAk")} target="_blank">{aliwareIntl.get('nacos.page.configurationManagement.click_on_the_obtain_of3')}</a>
                                 </span>
                             </p>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.ACM_dedicated_AccessKey_will_the_waste,_does_not_recommend_the_use_of5')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ACM_dedicated_AccessKey_will_the_waste,_does_not_recommend_the_use_of5')}</span>
                                 <span style={{ color: '#c7254e' }}>
                                     {obj.accessKey}
                                 </span>
                             </p>
                             <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use6')}</span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use6')}</span>
                                 <span style={{ color: '#c7254e' }}>
                                     {obj.secretKey}
                                 </span>
                             </p>
                         </div>
-                         <div style={{ marginTop: '20px', backgroundColor: '#eee', padding: 10, fontSize: 12 }}>{aliwareIntl.get('newDiamond.page.configurationManagement.note_ACM_is_dedicated_AK/SK_is_mainly_used_for_some_of_the_compatibility_scenario,_it_is_recommended_to_Unified_the_use_of_Ali_cloud_AK/SK.7')}<a href={window._getLink && window._getLink("akHelp")} target="_blank">{aliwareIntl.get('newDiamond.page.configurationManagement._Details_of8')}</a>
+                         <div style={{ marginTop: '20px', backgroundColor: '#eee', padding: 10, fontSize: 12 }}>{aliwareIntl.get('nacos.page.configurationManagement.note_ACM_is_dedicated_AK/SK_is_mainly_used_for_some_of_the_compatibility_scenario,_it_is_recommended_to_Unified_the_use_of_Ali_cloud_AK/SK.7')}<a href={window._getLink && window._getLink("akHelp")} target="_blank">{aliwareIntl.get('nacos.page.configurationManagement._Details_of8')}</a>
                          </div>
                         </div>
                     });
@@ -747,15 +747,15 @@ class EdasConfigurationManagement extends React.Component {
     showImportResult(res, policy) {
         let self = this;
         if (res.code === 200) {
-            let msg = aliwareIntl.get('newDiamond.page.configurationManagement.process_is_successful,_import_the') + res.data.processedNum + aliwareIntl.get('newDiamond.page.configurationManagement.configuration');
+            let msg = aliwareIntl.get('nacos.page.configurationManagement.process_is_successful,_import_the') + res.data.processedNum + aliwareIntl.get('nacos.page.configurationManagement.configuration');
             if (res.data.duplicatedNum > 0) {
-                msg += aliwareIntl.get('newDiamond.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('newDiamond.page.configurationManagement.items_for') + policy;
+                msg += aliwareIntl.get('nacos.page.configurationManagement.,_wherein') + res.data.duplicatedNum + aliwareIntl.get('nacos.page.configurationManagement.items_for') + policy;
             }
             Feedback.toast.success(msg);
         } else {
             Dialog.alert({
                 language: window.pageLanguage || 'zh-cn',
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.import_failed'),
+                title: aliwareIntl.get('nacos.page.configurationManagement.import_failed'),
                 content: self.getBatchFailedContent(res)
             });
         }
@@ -764,8 +764,8 @@ class EdasConfigurationManagement extends React.Component {
     checkForExport() {
         if (this.state.selectedRecord.length < 1) {
             Dialog.alert({
-                title: aliwareIntl.get('newDiamond.page.configurationManagement.configuration_export9'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('newDiamond.page.configurationManagement.please_choose_the_required_export_configuration_items10')}</div>,
+                title: aliwareIntl.get('nacos.page.configurationManagement.configuration_export9'),
+                content: <div style={{ fontSize: 18, color: "#373D41" }}>{aliwareIntl.get('nacos.page.configurationManagement.please_choose_the_required_export_configuration_items10')}</div>,
                 language: aliwareIntl.currentLanguageCode
             });
             return;
@@ -808,7 +808,7 @@ class EdasConfigurationManagement extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('newDiamond.page.configurationManagement.export_check_failed'),
+                        title: aliwareIntl.get('nacos.page.configurationManagement.export_check_failed'),
                         content: <div style={{ fontSize: 18, color: "#373D41" }}>{res.message}</div>
                     });
                 }
@@ -841,19 +841,19 @@ class EdasConfigurationManagement extends React.Component {
         return <div style={{ height: 500, overflow: "auto" }}>
             <div style={{ fontSize: 18, color: "#373D41", overflow: "auto" }}>{res.message}</div>
             {"data" in res && res.data != null && <Accordion style={{ width: '500px' }}>
-                {"failedItems" in res.data && res.data.failedItems.length > 0 ? <Panel title={aliwareIntl.get('newDiamond.page.configurationManagement.failed_entry') + res.data.failedItems.length}>
+                {"failedItems" in res.data && res.data.failedItems.length > 0 ? <Panel title={aliwareIntl.get('nacos.page.configurationManagement.failed_entry') + res.data.failedItems.length}>
                     <Table dataSource={res.data.failedItems} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode}>
                         <Table.Column title={'Data ID'} dataIndex="dataId" />
                         <Table.Column title={'Group'} dataIndex="group" />
                     </Table>
                     </Panel> : <Panel style={{ display: 'none' }} />}
-                {"succeededItems" in res.data && res.data.succeededItems.length > 0 ? <Panel title={aliwareIntl.get('newDiamond.page.configurationManagement.successful_entry') + res.data.succeededItems.length}>
+                {"succeededItems" in res.data && res.data.succeededItems.length > 0 ? <Panel title={aliwareIntl.get('nacos.page.configurationManagement.successful_entry') + res.data.succeededItems.length}>
                         <Table dataSource={res.data.succeededItems} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode}>
                             <Table.Column title={'Data ID'} dataIndex="dataId" />
                             <Table.Column title={'Group'} dataIndex="group" />
                         </Table>
                     </Panel> : <Panel style={{ display: 'none' }} />}
-                {"unprocessedItems" in res.data && res.data.unprocessedItems.length > 0 ? <Panel title={aliwareIntl.get('newDiamond.page.configurationManagement.unprocessed_entry') + res.data.unprocessedItems.length}>
+                {"unprocessedItems" in res.data && res.data.unprocessedItems.length > 0 ? <Panel title={aliwareIntl.get('nacos.page.configurationManagement.unprocessed_entry') + res.data.unprocessedItems.length}>
                     <Table dataSource={res.data.unprocessedItems} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode}>
                         <Table.Column title={'Data ID'} dataIndex="dataId" />
                         <Table.Column title={'Group'} dataIndex="group" />
@@ -881,17 +881,17 @@ class EdasConfigurationManagement extends React.Component {
             empty: pubnodedata
         };
         const helpDataId = <Balloon trigger={<span>Data ID <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} /></span>} align="t" style={{ marginRight: 5 }} triggerType="hover">
-                <a href={window._getLink && window._getLink("knowDataid")} target="_blank">{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.click_to_learn_DataId')}</a>
+                <a href={window._getLink && window._getLink("knowDataid")} target="_blank">{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_DataId')}</a>
             </Balloon>;
         const helpGroup = <Balloon trigger={<span>Group <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} /></span>} align="t" style={{ marginRight: 5 }} triggerType="hover">
-                <a href={window._getLink && window._getLink("knowGoup")} target="_blank">{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.click_to_learn_Group')}</a>
+                <a href={window._getLink && window._getLink("knowGoup")} target="_blank">{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_Group')}</a>
             </Balloon>;
         return (
             <div style={{ padding: 10 }}>
                 <BatchHandle ref={ref => this.batchHandle = ref} />
                 <Loading shape="flower" style={{ position: 'relative' }} visible={this.state.loading} tip="Loading..." color="#333">
                 <div style={{display:'none'}}>
-                    <RegionGroup left={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.configuration_management')} namespaceCallBack={this.cleanAndGetData.bind(this)} setNowNameSpace={this.setNowNameSpace.bind(this)}/>
+                    <RegionGroup left={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.configuration_management')} namespaceCallBack={this.cleanAndGetData.bind(this)} setNowNameSpace={this.setNowNameSpace.bind(this)}/>
                 </div>
                     {}
                     {}
@@ -901,24 +901,24 @@ class EdasConfigurationManagement extends React.Component {
                             {}
 
                             <FormItem label="Data ID:">
-                                <Input htmlType="text" placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.fuzzyd')} style={{ height: 32 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
+                                <Input htmlType="text" placeholder={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyd')} style={{ height: 32 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
                             </FormItem>
 
                             <FormItem label="Group:">
-                            <Combobox size="medium" hasArrow placeholder={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
+                            <Combobox size="medium" hasArrow placeholder={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                             </Combobox>
                              </FormItem>
 
-                            <FormItem label={aliwareIntl.get('newDiamond.page.configurationManagement.Tags')}>
-                            <Combobox size="medium" hasArrow multiple={true} tags={true} filterLocal={false} placeholder={aliwareIntl.get('newDiamond.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
+                            <FormItem label={aliwareIntl.get('nacos.page.configurationManagement.Tags')}>
+                            <Combobox size="medium" hasArrow multiple={true} tags={true} filterLocal={false} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                             </Combobox>
                             </FormItem>
                            
                             <FormItem label="">
-                                <Button type="primary" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)}>{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.query')}</Button>
+                                <Button type="primary" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query')}</Button>
                               
                                 <Button type="primary" onClick={this.chooseEnv.bind(this)} style={{ float: 'right', marginLeft: 10 }}>
-                                    <Icon type="edit" size={'small'} />{aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.new_listing')}</Button>
+                                    <Icon type="edit" size={'small'} />{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.new_listing')}</Button>
                             </FormItem>
                         </Form>
 
@@ -933,12 +933,12 @@ class EdasConfigurationManagement extends React.Component {
                             <Table.Column title={helpDataId} dataIndex="dataId" />
                             <Table.Column title={helpGroup} dataIndex="group" />
                            
-                            <Table.Column title={aliwareIntl.get('com.alibaba.cspupcloud.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />
+                            <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />
                         </Table>
 
                     </div>
                     <div style={{ marginTop: 10, overflow: "hidden" }}>
-                        <Button style={{ display: "none" }} type="primary" onClick={this.onClickBatchHandle.bind(this)}>{aliwareIntl.get('newDiamond.page.configurationManagement.Batch_processing0')}</Button>
+                        <Button style={{ display: "none" }} type="primary" onClick={this.onClickBatchHandle.bind(this)}>{aliwareIntl.get('nacos.page.configurationManagement.Batch_processing0')}</Button>
                         <Pagination style={{ float: "right" }} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />
                 </div>
                     <ShowCodeing ref="showcode" />
