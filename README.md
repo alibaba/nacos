@@ -32,7 +32,7 @@ Nacos provides four major functions.
 ### Quick Start
 It is super easy to get started with your first project.
 
-#### Download run package 
+1. #### Download run package 
 [Download](https://github.com/alibaba/nacos/releases/download/v0.1.0/nacos-server-0.1.0.zip)
 
 ```
@@ -40,15 +40,16 @@ unzip nacos-server-0.1.0.zip
 cd nacos/bin 
 ``` 
 
-#### Start Server
-##### Linux/Unix/Mac
+2. #### Start Server
+* ##### Linux/Unix/Mac
 
-Run the following command to start (standalone means non-cluster mode): 
+    Run the following command to start (standalone means non-cluster mode): 
 
 `sh startup.sh -m standalone`
 
-##### Windows
-Run the following command to start:
+* ##### Windows
+
+    Run the following command to start:
 
 `cmd startup.cmd`
 
@@ -56,30 +57,29 @@ Or double-click the startup.cmd to run NacosServer.
 
 For more details, see https://nacos.io/#/docs/quick-start.md
 
-Quick start for other open-source projects:
+3. #### Quick start for other open-source projects:
 
-[quick start with spring cloud](https://nacos.io/#/docs/use-nacos-with-springcloud.md)
+* [quick start with spring cloud](https://nacos.io/#/docs/use-nacos-with-springcloud.md)
 
-[quick start with dubbo](https://nacos.io/#/docs/use-nacos-with-dubbo.md)
+* [quick start with dubbo](https://nacos.io/#/docs/use-nacos-with-dubbo.md)
 
-[quick start with kubernetes](https://nacos.io/#/docs/use-nacos-with-kubernetes.md)
+* [quick start with kubernetes](https://nacos.io/#/docs/use-nacos-with-kubernetes.md)
 
-[more...](https://nacos.io/)
+* [more...](https://nacos.io/)
 
 ### Documentation
 
 You can view full documentation on the Nacos website:
 
-[nacos.io](https://nacos.io/#/docs/what-is-nacos.md)
+* [nacos.io](https://nacos.io/#/docs/what-is-nacos.md)
 
 ### Contact
 
-#### Nacos Gitter-[https://gitter.im/alibaba/nacos](https://gitter.im/alibaba/nacos)
+* #### Gitter-[Nacos Gitter](https://gitter.im/alibaba/nacos)
 
-#### Nacos weibo-[https://weibo.com/u/6574374908](https://weibo.com/u/6574374908)
+* #### Weibo-[Nacos Weibo](https://weibo.com/u/6574374908)
 
-#### Nacos segmentfault-[https://segmentfault.com/t/nacos](https://segmentfault.com/t/nacos)
+* #### Segmentfault-[Nacos Segmentfault](https://segmentfault.com/t/nacos)
 
-#### Mailing list
- [nacos\_dev@linux.alibaba.com](https://lark.alipay.com/nacos/nacosdocs/vl19q1).
+* #### Mailing list-[nacos\_dev@linux.alibaba.com](https://lark.alipay.com/nacos/nacosdocs/vl19q1).
 
