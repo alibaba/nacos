@@ -43,19 +43,22 @@ cd nacos/bin
 2. #### Start Server
 * ##### Linux/Unix/Mac
 
-    Run the following command to start (standalone means non-cluster mode): 
+```
+Run the following command to start (standalone means non-cluster mode): 
 
-`sh startup.sh -m standalone`
+sh startup.sh -m standalone
+```
 
 * ##### Windows
+```
+Run the following command to start:
 
-    Run the following command to start:
-
-`cmd startup.cmd`
+cmd startup.cmd
 
 Or double-click the startup.cmd to run NacosServer.
+```
 
-For more details, see https://nacos.io/#/docs/quick-start.md
+For more details, see [quick-start.](https://nacos.io/#/docs/quick-start.md)
 
 3. #### Quick start for other open-source projects:
 
