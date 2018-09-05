@@ -2834,7 +2834,7 @@ public class PersistService {
 	public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize) {
 		PaginationHelper<ConfigHistoryInfo> helper = new PaginationHelper<ConfigHistoryInfo>();
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-		String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+		String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
 		String sqlFetchRows = "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
 
 		Page<ConfigHistoryInfo> page = null;

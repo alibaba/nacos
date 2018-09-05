@@ -179,6 +179,24 @@ public class ConfigController extends HttpServlet {
 	}
 	
 	/**
+	 * 取数据
+	 * 
+	 * @throws ServletException
+	 * @throws IOException
+	 * @throws NacosException
+	 */
+	@RequestMapping(params = "show=all", method = RequestMethod.GET)
+	@ResponseBody
+	public ConfigInfo detailConfig(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
+			throws IOException, ServletException, NacosException {
+		// check params
+		ParamUtils.checkParam(dataId, group, "datumId", "content");
+		return persistService.findConfigInfo(dataId, group, tenant);
+	}
+
+	/**
 	 * 同步删除某个dataId下面所有的聚合前数据
 	 * 
 	 * @throws NacosException
