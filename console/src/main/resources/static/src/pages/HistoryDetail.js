@@ -38,10 +38,11 @@ class HistoryDetail extends React.Component {
         let self = this;
 
         request({
-            url: `/diamond-ops/historys/detail/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+            url: `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+//            url: `/diamond-ops/historys/detail/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
             success: function (result) {
-                if (result.code === 200) {
-                    let data = result.data;
+                if (result != null) {
+                    let data = result;
                     self.field.setValue('dataId', data.dataId);
                     self.field.setValue('content', data.content);
                     self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
