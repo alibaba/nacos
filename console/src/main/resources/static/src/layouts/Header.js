@@ -73,7 +73,7 @@ class Header extends React.Component {
         }
       >
         <div className="header-body">
-          <a href={getLink(`/${language}/index.html`)} target="_blank">
+          <a href={'https://nacos.io/zh-cn/'} target="_blank">
             <img className="logo" alt={siteConfig.name} title={siteConfig.name} src={logo} />
           </a>
           {
