@@ -129,25 +129,27 @@ class Configdetail extends React.Component {
             showmore: !this.state.showmore
         });
     }
+    
     getDataDetail() {
         let self = this;
         this.serverId = getParams('serverId') || 'center';
         this.tenant = getParams('namespace') || '';
         this.edasAppName = getParams('edasAppName') || '';
         this.inApp = this.edasAppName;
-        let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
+        let url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+//        let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
+//
+//        if (this.tenant === 'global' || !this.tenant) {
+//            url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
+//        }
         request({
             url: url,
             beforeSend: function () {
                 self.openLoading();
             },
             success: function (result) {
-                if (result.code === 200) {
-                    let data = result.data;
+                if (result!=null) {
+                    let data = result;
                     self.valueMap['normal'] = data;
                     self.field.setValue('dataId', data.dataId);
                     self.field.setValue('content', data.content);
