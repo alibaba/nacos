@@ -233,10 +233,11 @@ class Configeditor extends React.Component {
         let self = this;
         this.tenant = getParams('namespace') || '';
         this.serverId = getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
+        let url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+//        let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
+//        if (this.tenant === 'global' || !this.tenant) {
+//            url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
+//        }
         request({
             url: url,
             beforeSend: function () {
@@ -244,8 +245,8 @@ class Configeditor extends React.Component {
             },
             success: function (result) {
 
-                if (result.code === 200) {
-                    let data = result.data;
+                if (result!=null) {
+                    let data = result;
                     self.valueMap['normal'] = data;
                     self.field.setValue('dataId', data.dataId);
                     //self.field.setValue('content', data.content);
@@ -272,21 +273,22 @@ class Configeditor extends React.Component {
 
                     let envlist = [];
                     let envvalues = [];
-                    for (let i = 0; i < data.envs.length; i++) {
-                        let obj = data.envs[i];
-                        envlist.push({
-                            label: obj.name,
-                            value: obj.serverId
-                        });
-                        envvalues.push(obj.serverId);
-                    }
+//                    for (let i = 0; i < data.envs.length; i++) {
+//                        let obj = data.envs[i];
+//                        envlist.push({
+//                            label: obj.name,
+//                            value: obj.serverId
+//                        });
+//                        envvalues.push(obj.serverId);
+//                    }
 
-                    let env = data.envs[0] || {};
-                    self.setState({
-                        envlist: envlist,
-                        envname: env.name,
-                        envvalues: envvalues
-                    });
+                    let env = {};
+//                    let env = data.envs[0] || {};
+//                    self.setState({
+//                        envlist: envlist,
+//                        envname: env.name,
+//                        envvalues: envvalues
+//                    });
                     self.serverId = env.serverId;
                     self.targetEnvs = envvalues;
                 } else {
@@ -421,21 +423,25 @@ class Configeditor extends React.Component {
                 config_tags: this.state.config_tags.join(),
                 type: this.state.configType,
                 content: content,
-                betaIps: this.hasips ? this.ips : '', //如果是beta发布hasips为true否则为false
-                tenant: this.tenant,
-                targetEnvs: this.targetEnvs
+//                betaIps: this.hasips ? this.ips : '', //如果是beta发布hasips为true否则为false
+                tenant: this.tenant
+//                targetEnvs: this.targetEnvs
 
             };
-            let url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${this.dataId}/group/${payload.group}/tenant/${this.tenant}?id=`;
-            if (this.tenant === 'global' || !this.tenant) {
-                url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${this.dataId}/group/${payload.group}?id=`;
-            }
+            let url = `/nacos/v1/cs/configs`;
+//            let url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${this.dataId}/group/${payload.group}/tenant/${this.tenant}?id=`;
+//            if (this.tenant === 'global' || !this.tenant) {
+//                url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${this.dataId}/group/${payload.group}?id=`;
+//            }
 
             request({
-                type: 'put',
-                contentType: 'application/json',
+                type: 'post',
+//                type: 'put',
+                contentType: 'application/x-www-form-urlencoded',
+//                contentType: 'application/json',
                 url: url,
-                data: JSON.stringify(payload),
+                data: payload,
+//                data: JSON.stringify(payload),
                 success: function (res) {
                     let _payload = {};
                     _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
@@ -444,7 +450,7 @@ class Configeditor extends React.Component {
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
 
-                    if (res.code === 200) {
+                    if (res!=null) {
                         _payload.isok = true;
                         let activeKey = self.state.activeKey.split('-')[0];
                         if (activeKey === 'normal' && self.hasips === true) {

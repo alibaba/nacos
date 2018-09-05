@@ -101,13 +101,14 @@ class HistoryRollback extends React.Component {
             beforeSend: function () {
                 self.openLoading();
             },
-            url: `/diamond-ops/historys/listData/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+            url: `/nacos/v1/cs/history?search=accurate&dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+//            url: `/diamond-ops/historys/listData/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
             success: function (data) {
-                if (data.code === 200) {
+                if (data != null) {
                     self.setState({
-                        dataSource: data.data || [],
-                        total: data.total,
-                        currentPage: pageNo
+                        dataSource: data.pageItems || [],
+                        total: data.totalCount,
+                        currentPage: data.pageNumber
                     });
                 }
             },
