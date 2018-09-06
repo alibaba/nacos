@@ -200,7 +200,7 @@ window.aliwareIntl = (function (window) {
     //当前地区
     aliwareI18n.prototype.currentSite = aliwareLocalSite;
     //当前语言-地区
-    aliwareI18n.prototype.currentLanguageCode = `${aliwareLocal}-${aliwareLocalSite}`;
+    aliwareI18n.prototype.currentLanguageCode = window.aliwareGetCookieByKeyName('docsite_language') ||  `${aliwareLocal}-${aliwareLocalSite}`;
     /**
      * 通过key获取对应国际化文案
      * @param {String} key 国际化key
@@ -213,7 +213,7 @@ window.aliwareIntl = (function (window) {
      * @param {String} local 语言信息
      */
     aliwareI18n.prototype.changeLanguage = function (local) {
-        this.nowData = window[`i18n_${local}_doc`] || {}
+        this.nowData = window[`i18n_${local}_doc`] || (window.i18ndoc && window.i18ndoc[local]) || {}
     }
     /**
      * 数字国际化
@@ -279,7 +279,7 @@ window.aliwareIntl = (function (window) {
 
     return new aliwareI18n({
         currentLocal: `${aliwareLocal}`,
-        locals: window[`i18n_${aliwareLocal}_doc`] || window[`i18n_en_doc`] || (window.i18ndoc && window.i18ndoc[aliwareLocal]) || {}
+        locals: window[`i18n_${aliwareLocal}_doc`] || window[`i18n_en_doc`] || (window.i18ndoc && window.i18ndoc[aliwareI18n.prototype.currentLanguageCode]) || {}
     });
 })(window);
 /**
