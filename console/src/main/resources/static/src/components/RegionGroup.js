@@ -117,6 +117,9 @@ class RegionGroup extends React.Component {
             console.log('...');
             this.handleRegionList(window._regionList);
         } else {
+        	// TODO
+        	this.nameSpaceList && this.nameSpaceList.getNameSpaces();
+        	
             request({
                 url: this.state.url,
                 data: {},

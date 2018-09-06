@@ -42,13 +42,14 @@ class ConfigRollback extends React.Component {
         let self = this;
         this.tenant = getParams('namespace') || '';
         this.serverId = getParams('serverId') || 'center';
-        let url = `/diamond-ops/historys/detail/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+        let url = `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+//        let url = `/diamond-ops/historys/detail/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
 
         request({
             url: url,
             success: function (result) {
-                if (result.code === 200) {
-                    let data = result.data;
+                if (result != null) {
+                    let data = result;
                     let envs = data.envs;
                     let envName = self.serverId;
                     // for (let i = 0; i < envs.length; i++) {
@@ -83,7 +84,8 @@ class ConfigRollback extends React.Component {
     onOpenConfirm() {
         let self = this;
         let content = this.typeMap[this.opType];
-        let type = 'put';
+        let type = 'post';
+//        let type = 'put';
         if (this.opType === 'I') {
             type = 'delete';
         }
@@ -122,19 +124,23 @@ class ConfigRollback extends React.Component {
                     dataId: self.field.getValue("dataId"),
                     group: self.field.getValue("group"),
                     content: self.field.getValue("content"),
-                    targetEnvs: [self.serverId],
+//                    targetEnvs: [self.serverId],
                     tenant: self.tenant
                 };
-                let url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${self.dataId}/group/${postData.group}/tenant/${self.tenant}?id=${self.id}`;
-                if (self.tenant === 'global' || !self.tenant) {
-                    url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${self.dataId}/group/${postData.group}?id=${self.id}`;
-                }
+                
+                let url = `/nacos/v1/cs/configs`;
+//                let url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${self.dataId}/group/${postData.group}/tenant/${self.tenant}?id=${self.id}`;
+//                if (self.tenant === 'global' || !self.tenant) {
+//                    url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${self.dataId}/group/${postData.group}?id=${self.id}`;
+//                }
                 // ajax		
                 request({
                     type: type,
-                    contentType: 'application/json',
+                    contentType: 'application/x-www-form-urlencoded',
+//                    contentType: 'application/json',
                     url: url,
-                    data: JSON.stringify(postData),
+                    data: postData,
+//                    data: JSON.stringify(postData),
                     success: function (data) {
                         if (data.code === 200) {
                             Dialog.alert({ language: window.pageLanguage || 'zh-cn', content: aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback_successful') });

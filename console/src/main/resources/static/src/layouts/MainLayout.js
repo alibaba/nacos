@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Balloon, Icon } from '@alifd/next';
-
+import siteConfig from '../config';
+import Header from './Header';
 export default class extends React.Component {
     constructor(props) {
         super(props);
@@ -175,64 +176,64 @@ export default class extends React.Component {
                         //如果是虚拟菜单需要增加展开箭头
                         let icon = item.isExtend ? <span className="icon-arrow-down iconshow"></span> : <span className="icon-arrow-right iconshow"></span>;
                         let hiddenClass = item.isExtend ? '' : 'hidden';
-                        return <li key={`${item.serviceName}`}
-                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                            id={`${item.serviceName}`}>
+                        return <li key={ `${item.serviceName}` }
+                            data-spm-click={ `gostr=/aliyun;locaid=${item.serviceName}` }
+                            id={ `${item.serviceName}` }>
                             <div>
-                                <a href="javascript:;" onClick={this.simpleMVCToggleNav.bind(this, `nav${index}`)}>
+                                <a href="javascript:;" onClick={ this.simpleMVCToggleNav.bind(this, `nav${index}`) }>
                                     <div className="nav-icon">
-                                        {icon}
+                                        { icon }
                                     </div>
-                                    <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                                    <div className="nav-title">{ aliwareIntl.get(item.id) || item.name }</div>
                                 </a>
                             </div>
-                            <ul className={`subnavlist ${hiddenClass}`}>
-                                {self.simpleMVCLoopNav(item.children, index)}
+                            <ul className={ `subnavlist ${hiddenClass}` }>
+                                { self.simpleMVCLoopNav(item.children, index) }
                             </ul>
                         </li>;
                     } else {
                         if (item.link && item.link.indexOf('http') !== -1) {
-                            return <li key={`nav${index}`}
-                                data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}>
+                            return <li key={ `nav${index}` }
+                                data-spm-click={ `gostr=/aliyun;locaid=${item.serviceName}` }>
                                 <a href="{item.link}" >
                                     <div className="nav-icon">
 
                                     </div>
-                                    <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                                    <div className="nav-title">{ aliwareIntl.get(item.id) || item.name }</div>
                                 </a>
                             </li>;
                         }
 
-                        return <li key={`${item.serviceName}`}
-                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                            onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-                            <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+                        return <li key={ `${item.serviceName}` }
+                            data-spm-click={ `gostr=/aliyun;locaid=${item.serviceName}` }
+                            onClick={ this.navTo.bind(this, `/${item.serviceName}`) }>
+                            <a href={ `javascript:;` } id={ `${item.serviceName}` } onClick={ this.activeNav.bind(this, `nav${index}`) }>
                                 <div className="nav-icon"></div>
-                                <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                                <div className="nav-title">{ aliwareIntl.get(item.id) || item.name }</div>
                             </a>
                         </li>;
                     }
                 }
 
                 if (item.serviceName === 'namespace') {
-                    const help = <Balloon trigger={<span>{aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{ marginRight: 5 }} triggerType="hover">
-                        <a style={{ fontSize: 12 }} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace')}</a>
+                    const help = <Balloon trigger={ <span>{ aliwareIntl.get(item.id) || item.name } <Icon type="help" size={ 'small' } style={ { color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 } } /></span> } align="tr" style={ { marginRight: 5 } } triggerType="hover">
+                        <a style={ { fontSize: 12 } } href={ window._getLink && window._getLink("knowNamespace") || '' } target="_blank">{ aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace') }</a>
                     </Balloon>;
-                    return <li key={`${item.serviceName}`}
-                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-                        <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+                    return <li key={ `${item.serviceName}` }
+                        data-spm-click={ `gostr=/aliyun;locaid=${item.serviceName}` }
+                        onClick={ this.navTo.bind(this, `/${item.serviceName}`) }>
+                        <a href={ `javascript:;` } id={ `${item.serviceName}` } onClick={ this.activeNav.bind(this, `nav${index}`) }>
                             <div className="nav-icon"></div>
-                            <div className="nav-title">{help}</div>
+                            <div className="nav-title">{ help }</div>
                         </a>
                     </li>;
                 }
-                return <li key={`${item.serviceName}`}
-                    data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                    onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-                    <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+                return <li key={ `${item.serviceName}` }
+                    data-spm-click={ `gostr=/aliyun;locaid=${item.serviceName}` }
+                    onClick={ this.navTo.bind(this, `/${item.serviceName}`) }>
+                    <a href={ `javascript:;` } id={ `${item.serviceName}` } onClick={ this.activeNav.bind(this, `nav${index}`) }>
                         <div className="nav-icon"></div>
-                        <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                        <div className="nav-title">{ aliwareIntl.get(item.id) || item.name }</div>
                     </a>
                 </li>;
             }
@@ -241,7 +242,7 @@ export default class extends React.Component {
     simpleMVCGetNav(navList) {
         let navRow = ''; //导航
         if (navList.length > 0) {
-            navRow = <ul>{this.simpleMVCLoopNav(navList)}</ul>;
+            navRow = <ul>{ this.simpleMVCLoopNav(navList) }</ul>;
             this.simpleMVCLoopNavDeeply(navList); //深度遍历导航树获得平行map
         }
         return navRow;
@@ -314,10 +315,10 @@ export default class extends React.Component {
                 }
                 self.setState({
                     showLink: <div>
-                        <Icon type="back" onClick={this.simpleMVCGoBack.bind(self, parentId)} id={'backarrow'} onMouseOver={self.simpleMVCEnterBack.bind(self)} onMouseLeave={self.simpleMVCOutBack.bind(self)} style={{ marginLeft: 77, marginTop: 0, fontWeight: 'bold', cursor: 'pointer', color: '#546478', fontSize: '20px' }} />
+                        <Icon type="back" onClick={ this.simpleMVCGoBack.bind(self, parentId) } id={ 'backarrow' } onMouseOver={ self.simpleMVCEnterBack.bind(self) } onMouseLeave={ self.simpleMVCOutBack.bind(self) } style={ { marginLeft: 77, marginTop: 0, fontWeight: 'bold', cursor: 'pointer', color: '#546478', fontSize: '20px' } } />
                     </div>,
 
-                    navRow: <ul>{this.simpleMVCLoopNav([nowNavObj])}</ul>
+                    navRow: <ul>{ this.simpleMVCLoopNav([nowNavObj]) }</ul>
                 });
                 setTimeout(() => {
                     let navid = navName;
@@ -327,7 +328,7 @@ export default class extends React.Component {
 
                 self.setState({
                     showLink: null,
-                    navRow: <ul>{this.simpleMVCLoopNav(this.initNav)}</ul>
+                    navRow: <ul>{ this.simpleMVCLoopNav(this.initNav) }</ul>
                 });
                 setTimeout(() => {
                     let navid = navName;
@@ -338,21 +339,37 @@ export default class extends React.Component {
     }
 
     render() {
+        const hashSearch = window.location.hash.split('?');
+        const search = '';//qs.parse(hashSearch[1] || '');
+        let language = 'zh-cn';//search.lang || cookie.get('docsite_language') || siteConfig.defaultLanguage;
+        if (language !== "zh-cn" && language !== "en-us") {
+            language = siteConfig.defaultLanguage;
+        }
+        // 同步cookie和search上的语言版本
+        // if (language !== cookie.get('docsite_language')) {
+        //   cookie.set('docsite_language', language, { expires: 365, path: '' });
+        // }
 
-        return <div className="viewFramework-product">
+        const { headerType } = this.state;
+        const headerLogo = 'https://nacos.io/img/nacos_white.png';
+        return <div className="viewFramework-product" style={{top:66}}>
+            <Header type={ headerType }
+                logo={ headerLogo }
+                language={ language }
+                onLanguageChange={ this.onLanguageChange } />
             <div className="viewFramework-product-navbar"
-                style={{ width: 180, marginLeft: 0 }}
+                style={ { width: 180, marginLeft: 0 } }
                 id="viewFramework-product-navbar"
                 data-spm="acm_nav">
                 <div className="viewFramework-product-navbar-removed">
                     <div>
                         <div className="product-nav-scene product-nav-main-scene">
-                            {this.state.showLink ? <div className="product-nav-icon env" style={{ height: 80, paddingTop: 25 }}>
-                                {this.state.showLink}
-                            </div> : <div className={'product-nav-title'} title={aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}>{aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}</div>}
+                            { this.state.showLink ? <div className="product-nav-icon env" style={ { height: 80, paddingTop: 25 } }>
+                                { this.state.showLink }
+                            </div> : <div className={ 'product-nav-title' } title={ aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm') }>{ aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm') }</div> }
 
-                            <div className="product-nav-list" style={{ position: 'relative', top: 0, height: '100%' }}>
-                                {this.state.navRow}
+                            <div className="product-nav-list" style={ { position: 'relative', top: 0, height: '100%' } }>
+                                { this.state.navRow }
                             </div>
                         </div>
                     </div>
@@ -360,21 +377,21 @@ export default class extends React.Component {
             </div>
             <div className="viewFramework-product-navbar-collapse"
                 id="viewFramework-product-navbar-collapse"
-                onClick={this.simpleMVCToggleLeftBar.bind(this)}>
+                onClick={ this.simpleMVCToggleLeftBar.bind(this) }>
                 <div className="product-navbar-collapse-inner">
                     <div className="product-navbar-collapse-bg"></div>
-                    {/* <div className="product-navbar-collapse" aliyun-console-spm="4"  > */}
+                    {/* <div className="product-navbar-collapse" aliyun-console-spm="4"  > */ }
                     <div className="product-navbar-collapse">
-                        {this.state.leftBarClose ? <span className="icon-collapse-right" style={{ display: 'block' }}></span> : <span className="icon-collapse-left"></span>}
+                        { this.state.leftBarClose ? <span className="icon-collapse-right" style={ { display: 'block' } }></span> : <span className="icon-collapse-left"></span> }
                     </div>
                 </div>
             </div>
-            <div className="viewFramework-product-body" style={{ marginLeft: 180 }} id="viewFramework-product-body">
+            <div className="viewFramework-product-body" style={ { marginLeft: 180 } } id="viewFramework-product-body">
 
                 <div>
-                    {!this.state.noChild ? <div>
-                        {this.props.children}
-                    </div> : <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>{aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}</div>}
+                    { !this.state.noChild ? <div>
+                        { this.props.children }
+                    </div> : <div style={ { height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' } }>{ aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist') }</div> }
                 </div>
             </div>
         </div>;

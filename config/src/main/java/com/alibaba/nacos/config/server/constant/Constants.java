@@ -118,6 +118,8 @@ public class Constants {
 	public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
 
 	public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
+	
+	public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
     
     public static final String ENCODE = "UTF-8";
 

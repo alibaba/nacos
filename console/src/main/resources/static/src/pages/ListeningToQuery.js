@@ -50,12 +50,14 @@ class ListeningToQuery extends React.Component {
         var serverId = getParams('serverId') || '';
         if (this.getValue('type') == '1') {
             var ip = this.getValue('ip');
-            queryUrl = `/diamond-ops/configList/listenerByIp/serverId/${serverId}?ip=${ip}&tenant=${tenant}`;
+            queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
+//            queryUrl = `/diamond-ops/configList/listenerByIp/serverId/${serverId}?ip=${ip}&tenant=${tenant}`;
         } else {
             var dataId = this.getValue('dataId');
             var group = this.getValue('group');
             if(!dataId) return false;
-            queryUrl = `/diamond-ops/configList/listenerIp/serverId/${serverId}?dataId=${dataId}&group=${group}`;
+            queryUrl = `/nacos/v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
+//            queryUrl = `/diamond-ops/configList/listenerIp/serverId/${serverId}?dataId=${dataId}&group=${group}`;
         }
         request({
             url: queryUrl,
@@ -63,18 +65,10 @@ class ListeningToQuery extends React.Component {
                 self.openLoading();
             },
             success: function (data) {
-                if (data.code === 200) {
-                    // if (this.getValue('type') != '0') {
+                if (data.collectStatus === 200) {
                     self.setState({
-                        dataSource: data.data || [],
-                        total: data.total
-                        // } else {
-                        //     self.setState({
-                        //         dataSource: data.data,
-                        //         total: data.total
-                        //     })
-                        // }
-
+                        dataSource: data.lisentersGroupkeyStatus || [],
+                        total: data.length
                     });
                 }
             },

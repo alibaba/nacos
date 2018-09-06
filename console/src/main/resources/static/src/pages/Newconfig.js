@@ -346,27 +346,30 @@ class Newconfig extends React.Component {
             this.tenant = getParams('namespace') || '';
             let payload = {
                 dataId: self.state.addonBefore + this.field.getValue('dataId'),
-                appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
                 group: this.field.getValue('group'),
+                content: content,
                 desc: this.field.getValue('desc'),
                 config_tags: this.state.config_tags.join(),
-                content: content,
                 type: this.state.configType,
-                betaIps: this.ip || '',
-                targetEnvs: this.targetEnvs || ['center'],
+//                betaIps: this.ip || '',
+//                targetEnvs: this.targetEnvs || ['center'],
+//                appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
                 tenant: this.tenant
             };
             this.serverId = getParams('serverId') || 'center';
-            let url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}/tenant/${this.tenant}`;
-
-            if (!this.tenant) {
-                url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}`;
-            }
+            let url = `/nacos/v1/cs/configs`;
+//            let url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}/tenant/${this.tenant}`;
+//
+//            if (!this.tenant) {
+//                url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}`;
+//            }
             request({
                 type: 'post',
-                contentType: 'application/json',
+                contentType: 'application/x-www-form-urlencoded',
+//                contentType: 'application/json',
                 url: url,
-                data: JSON.stringify(payload),
+                data: payload,
+//                data: JSON.stringify(payload),
                 beforeSend: () => {
                     this.openLoading();
                 },
@@ -377,7 +380,7 @@ class Newconfig extends React.Component {
                     _payload.content = '';
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
-                    if (res.code === 200) {
+                    if (res === true) {
                         self.group = payload.group;
                         self.dataId = payload.dataId;
                         setParams({ group: payload.group, dataId: payload.dataId }); //设置参数

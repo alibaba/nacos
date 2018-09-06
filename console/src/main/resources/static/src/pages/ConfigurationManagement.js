@@ -305,16 +305,17 @@ class ConfigurationManagement extends React.Component {
         this.tenant = getParams('namespace') || ''; //为当前实例保存tenant参数	
         this.serverId = getParams('serverId') || '';
         request({
-            url: `/diamond-ops/configList/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+            url: `/nacos/v1/cs/configs?search=accurate&dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+            //            url: `/diamond-ops/configList/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
             beforeSend: function () {
                 self.openLoading();
             },
             success: function (data) {
-                if (data.code === 200) {
+            	if (data!=null) {
                     self.setState({
-                        dataSource: data.data,
-                        total: data.total,
-                        currentPage: pageNo
+                        dataSource: data.pageItems,
+                        total: data.totalCount,
+                        currentPage: data.pagesAvailable
                     });
                     if (clearSelect) {
                         self.setState({
@@ -327,8 +328,15 @@ class ConfigurationManagement extends React.Component {
                     tenant: self.tenant
                 });
             },
+            error: function (data) {
+            	self.setState({
+                        dataSource: [],
+                        total: 0,
+                        currentPage: 0
+                 });
+            },
             complete: function () {
-                self.closeLoading();
+            	self.closeLoading();
             }
         });
     }
@@ -375,11 +383,12 @@ class ConfigurationManagement extends React.Component {
 	
             </div>,
             onOk: () => {
-                let url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${record.dataId}/group/${record.group}?id=${record.id}`;
-                if (this.tenant) {
-                    //如果存在tenant 在path加上	
-                    url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${record.dataId}/group/${record.group}/tenant/${this.tenant}?id=${record.id}`;
-                }
+                let url = `/nacos/v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
+//                let url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${record.dataId}/group/${record.group}?id=${record.id}`;
+//                if (this.tenant) {
+//                    //如果存在tenant 在path加上	
+//                    url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${record.dataId}/group/${record.group}/tenant/${this.tenant}?id=${record.id}`;
+//                }
                 request({
                     url: url,
                     type: 'delete',
@@ -390,7 +399,7 @@ class ConfigurationManagement extends React.Component {
                         _payload.content = '';
                         _payload.dataId = record.dataId;
                         _payload.group = record.group;
-                        if (res.code === 200) {
+                        if (res === true) {
                             _payload.isok = true;
                         } else {
                             _payload.isok = false;
