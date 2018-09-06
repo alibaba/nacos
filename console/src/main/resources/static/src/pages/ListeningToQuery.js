@@ -107,6 +107,16 @@ class ListeningToQuery extends React.Component {
         const locale = {
             empty: pubnodedata
         };
+        const selectDataSource = [
+            {
+                label: aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.configuration'),
+                value: "0"
+            },
+            {
+                label: "IP",
+                value: "1"
+            }
+        ]
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape="flower" style={{ position: 'relative' }} visible={this.state.loading} tip="Loading..." color="#333">
@@ -118,10 +128,7 @@ class ListeningToQuery extends React.Component {
                         <Col span="24">
                             <Form inline field={this.field}>
                                 <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_dimension')} initValue="0">
-                                    <Select style={{ width: '100%' }} {...this.init('type')} language={aliwareIntl.currentLanguageCode}>
-                                        <div value="0">{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.configuration')}</div>
-                                        <div value="1">IP</div>
-                                    </Select>
+                                    <Select dataSource={selectDataSource} style={{ width: '100%' }} {...this.init('type')} language={aliwareIntl.currentLanguageCode} />
                                 </FormItem>
                                 <FormItem label="Data ID:" style={{
                                     display: this.getValue('type') == '0' ? '' : 'none'
