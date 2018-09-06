@@ -425,15 +425,9 @@ class Configeditor extends React.Component {
                 content: content,
 //                betaIps: this.hasips ? this.ips : '', //如果是beta发布hasips为true否则为false
                 tenant: this.tenant
-//                targetEnvs: this.targetEnvs
 
             };
             let url = `/nacos/v1/cs/configs`;
-//            let url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${this.dataId}/group/${payload.group}/tenant/${this.tenant}?id=`;
-//            if (this.tenant === 'global' || !this.tenant) {
-//                url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${this.dataId}/group/${payload.group}?id=`;
-//            }
-
             request({
                 type: 'post',
 //                type: 'put',
@@ -441,7 +435,6 @@ class Configeditor extends React.Component {
 //                contentType: 'application/json',
                 url: url,
                 data: payload,
-//                data: JSON.stringify(payload),
                 success: function (res) {
                     let _payload = {};
                     _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
@@ -650,27 +643,6 @@ class Configeditor extends React.Component {
         //self.field.setValue('md5', data.md5);
         self.codeValue = data.content || '';
         self.createCodeMirror('text', self.codeValue);
-        //self.codeValue = self.commoneditor.doc.getValue();
-
-        // let envlist = [];
-        // let envvalues = [];
-        // for (let i = 0; i < data.envs.length; i++) {
-        //     let obj = data.envs[i]
-        //     envlist.push({
-        //         label: obj.name,
-        //         value: obj.serverId
-        //     })
-        //     envvalues.push(obj.serverId);
-        // }
-
-        // let env = data.envs[0] || {};
-        // self.setState({
-        //     envlist: envlist,
-        //     envname: env.name,
-        //     envvalues: envvalues
-        // })
-        // self.serverId = env.serverId;
-        // self.targetEnvs = envvalues;
         if (data.betaIps) {
             self.getIps(data.betaIps);
             self.changeBeta(true);
@@ -793,13 +765,6 @@ class Configeditor extends React.Component {
                         <FormItem label={aliwareIntl.get('nacos.page.configeditor.Description')} {...formItemLayout}>
                             <Input htmlType="text" multiple rows={3} {...init('desc')} />
                         </FormItem>
-
-                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.beta_release:')} {...formItemLayout}>
-                            <div style={{ height: 30, lineHeight: '33px' }}>
-                                <CheckboxGroup disabled={true} value={this.state.envvalues} onChange={this.changeEnv.bind(this)} dataSource={this.state.envlist} />
-                            </div>
-                            {}
-                        </FormItem>
                         <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.beta_release_notes(default_not_checked)')} {...formItemLayout}>
                             <div style={{ height: 30, lineHeight: '33px' }}>
                                 {activeKey === 'normal' ? <span><Checkbox onChange={this.changeBeta.bind(this)} checked={this.state.checkedBeta} /><span>  {aliwareIntl.get('com.alibaba.nacos.page.configeditor.configuration_formatpre')}<a href={`${window._getLink('betaPublish')}`} target="_blank" style={{ paddingLeft: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.configuration_format:')}</a></span></span> : ''}
@@ -807,9 +772,6 @@ class Configeditor extends React.Component {
                             <div style={{ width: '100%', display: 'none' }} id={'betaips'}>
                                 <Input multiple style={{ width: '100%' }} onChange={this.getIps.bind(this)} value={this.state.ips} readOnly={this.state.hasbeta} placeholder="multiple" placeholder={'127.0.0.1,127.0.0.2'} />
                             </div>
-                        </FormItem>
-                        <FormItem label={aliwareIntl.get('nacos.page.configeditor.Data_encryption0')} {...formItemLayout}>
-                                <Switch checkedChildren={<Icon type="select" style={{ marginLeft: -3 }} />} unCheckedChildren={<Icon type="close" size="small" />} size="small" checked={this.state.switchEncrypt} disabled />
                         </FormItem>
                         <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.configure_contents_of')} {...formItemLayout}>
                             <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />

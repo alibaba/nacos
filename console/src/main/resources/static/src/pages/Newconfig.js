@@ -322,19 +322,6 @@ class Newconfig extends React.Component {
             }
             let content = '';
             let self = this;
-            // if (this.commoneditor) {
-            //     content = this.commoneditor.doc.getValue();
-            //     if (content && content.length >= 10240) {
-            //         // this.field.setError()
-            //         Dialog.alert({
-            //             language: window.pageLanguage || 'zh-cn',
-            //             content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_contentmax')
-            //         });
-            //         return;
-            //     }
-            // } else {
-            //     content = this.codeValue;
-            // }
             if (this.monacoEditor) {
                 content = this.monacoEditor.getValue();
             } else {
@@ -351,25 +338,16 @@ class Newconfig extends React.Component {
                 desc: this.field.getValue('desc'),
                 config_tags: this.state.config_tags.join(),
                 type: this.state.configType,
-//                betaIps: this.ip || '',
-//                targetEnvs: this.targetEnvs || ['center'],
-//                appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
+                appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
                 tenant: this.tenant
             };
             this.serverId = getParams('serverId') || 'center';
             let url = `/nacos/v1/cs/configs`;
-//            let url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}/tenant/${this.tenant}`;
-//
-//            if (!this.tenant) {
-//                url = `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}`;
-//            }
             request({
                 type: 'post',
                 contentType: 'application/x-www-form-urlencoded',
-//                contentType: 'application/json',
                 url: url,
                 data: payload,
-//                data: JSON.stringify(payload),
                 beforeSend: () => {
                     this.openLoading();
                 },
@@ -621,17 +599,6 @@ class Newconfig extends React.Component {
                         <Input htmlType={"text"} multiple rows={3} {...init('desc')} />
                     </FormItem>
 
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_home_application')} {...formItemLayout} required>
-                        <div style={{ height: 30, lineHeight: '33px' }}>
-                            <CheckboxGroup disabled={true} value={this.state.envvalues} onChange={this.changeEnv.bind(this)} dataSource={this.state.envlist} />
-                        </div>
-                    </FormItem>
-                    <FormItem label={aliwareIntl.get('nacos.page.newconfig.data_encryption3')} {...formItemLayout}>
-                            <Switch checkedChildren="Open" unCheckedChildren={aliwareIntl.get('nacos.page.newconfig.off1') /*关*/} size={"medium"} onChange={this.switchEncrypt.bind(this)} checked={this.state.encrypt} />
-                            <Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginLeft: 5, verticalAlign: 'top', height: 26, lineHeight: "26px" }} />} align={"t"} triggerType={"hover"}>
-                            <a href={window._getLink && window._getLink("kmsUse")} target={"_blank"}>{aliwareIntl.get('nacos.page.newconfig.data_encryption3')}</a>
-                        </Balloon>
-                    </FormItem>
                     <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')} {...formItemLayout}>
                         <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />
                     </FormItem>

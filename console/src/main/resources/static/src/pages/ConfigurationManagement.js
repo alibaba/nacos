@@ -304,8 +304,16 @@ class ConfigurationManagement extends React.Component {
         let self = this;
         this.tenant = getParams('namespace') || ''; //为当前实例保存tenant参数	
         this.serverId = getParams('serverId') || '';
+        let urlPrefix = "";
+        if (this.dataId.indexOf("*") !=-1 || this
+        		.group.indexOf("*") !=-1) {
+        	urlPrefix = "/nacos/v1/cs/configs?search=blur";
+		} else {
+			urlPrefix = "/nacos/v1/cs/configs?search=accurate";
+		}
+       
         request({
-            url: `/nacos/v1/cs/configs?search=accurate&dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+            url: `${urlPrefix}&dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
             //            url: `/diamond-ops/configList/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
             beforeSend: function () {
                 self.openLoading();
@@ -739,95 +747,6 @@ class ConfigurationManagement extends React.Component {
         });
     }
 
-    detailNamespace(namespaceId) {
-        let self = this;
-        let serverId = getParams('serverId') || 'center';
-        request({
-            url: `/diamond-ops/service/namespaceOwnerInfo/${namespaceId}`,
-            beforeSend: () => {
-                this.openLoading();
-            },
-            success: res => {
-                if (res.code === 200) {
-                    let obj = {
-                        regionId: res.data.regionId,
-                        accessKey: res.data.accessKey,
-                        secretKey: res.data.secretKey,
-                        endpoint: res.data.endpoint
-                    };
-
-                    Dialog.alert({
-                        needWrapper: false,
-                        language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('nacos.page.namespace.Namespace_details'),
-                        content: <div>	
-                        	
-                        <div style={{ marginTop: '10px' }}>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.region_ID')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    {obj.regionId}	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    {self.state.nownamespace_name}	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    {namespaceId}	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>End Point:</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    {obj.endpoint}	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ecs_ram_role')}</span>	
-                                <a href={window._getLink && window._getLink("ecsInstanceRamRolesUse")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement._Details_of8')}</a>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.AccessKey_recommended3')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    <a href={window._getLink && window._getLink("getAk")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement.click_on_the_obtain_of3')}</a>	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.SecretKey_recommended5')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    <a href={window._getLink && window._getLink("getAk")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement.click_on_the_obtain_of3')}</a>	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ACM_dedicated_AccessKey_will_the_waste,_does_not_recommend_the_use_of5')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    {obj.accessKey}	
-                                </span>	
-                            </p>	
-                            <p>	
-                                <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configurationManagement.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use6')}</span>	
-                                <span style={{ color: '#c7254e' }}>	
-                                    {obj.secretKey}	
-                                </span>	
-                            </p>	
-                        </div>	
-                         <div style={{ marginTop: '20px', backgroundColor: '#eee', padding: 10, fontSize: 12 }}>{aliwareIntl.get('nacos.page.configurationManagement.note_ACM_is_dedicated_AK/SK_is_mainly_used_for_some_of_the_compatibility_scenario,_it_is_recommended_to_Unified_the_use_of_Ali_cloud_AK/SK.7')}<a href={window._getLink && window._getLink("akHelp")} target={"_blank"}>{aliwareIntl.get('nacos.page.configurationManagement._Details_of8')}</a>	
-                         </div>	
-                        </div>
-                    });
-                }
-            },
-            complete: () => {
-                this.closeLoading();
-            }
-        });
-    }
-
     doImport() {
         let payload = {
             tenant: { id: this.tenant, name: this.state.nownamespace_name },
@@ -996,17 +915,6 @@ class ConfigurationManagement extends React.Component {
                 <Loading shape={"flower"} style={{ position: 'relative', width: '100%', overflow: 'auto' }} visible={this.state.loading} tip={"Loading..."} color={"#333"}>	
                 <div className={this.state.hasdash ? 'dash-page-container' : ''}>	
                 <div className={this.state.hasdash ? 'dash-left-container' : ''} style={{ position: 'relative', padding: 10 }}>
-                {this.state.isCn ? <div style={{ position: 'absolute', right: 15, top: 27 }}>
-                      {this.state.hasdash ? <a href={"javascript:;"} onClick={() => {
-                                    this.setState({ hasdash: false });
-                                }}>{aliwareIntl.get("nacos.page.configurationManagement.off_the_Bulletin_Board5") /*关闭公告栏*/}</a> : <a href={"javascript:;"} onClick={() => {
-                                    if (this.state.contentList.length > 0) {
-                                        this.setState({ hasdash: true });
-                                    } else {
-                                        Feedback.toast.show(aliwareIntl.get("nacos.page.configurationManagement.no_announcement6") /*暂无公告*/);
-                                    }
-                                }}>{aliwareIntl.get("nacos.page.configurationManagement.open_Bulletin_Board7") /*打开公告栏*/}</a>}  
-                </div> : ''}
                 <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>	
                     <RegionGroup namespaceCallBack={this.cleanAndGetData.bind(this)} setNowNameSpace={this.setNowNameSpace.bind(this)} />	
                 </div>	
@@ -1016,7 +924,6 @@ class ConfigurationManagement extends React.Component {
                         <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>|</span>
                         <span style={{ fontSize: '14px', color: '#000', marginRight: 8 }}>{this.state.nownamespace_name}</span>
                         <span style={{ fontSize: '14px', color: '#000', marginRight: 18 }}>{this.state.nownamespace_id}</span>
-                        <span><a href={"javascript:;"} onClick={this.detailNamespace.bind(this, this.state.nownamespace_id)} style={{ marginRight: 10 }}>{aliwareIntl.get('nacos.page.namespace.details')}</a></span>
                         {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query_results')}
                         <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
                         {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.article_meet_the_requirements')}
@@ -1072,8 +979,6 @@ class ConfigurationManagement extends React.Component {
                         </Form>	
                         <div style={{ position: 'absolute', right: 10, top: 4 }}>
                             <Icon type={"add"} size={'medium'} style={{ color: 'black', marginRight: 15, verticalAlign: 'middle', cursor: 'pointer', backgroundColor: '#eee', border: '1px solid #ddd', padding: '3px 6px' }} onClick={this.chooseEnv.bind(this)} />
-                            {/* <Icon type="daochu" size={'medium'} style={{color: 'black', marginRight: 15, verticalAlign: 'middle', cursor: 'pointer', backgroundColor: '#eee', border: '1px solid #ddd', padding: '3px 6px' }} onClick={()=>this.doBatch("export")} /> */}
-                            <Icon type={"download"} size={'medium'} style={{ color: 'black', marginRight: 15, verticalAlign: 'middle', cursor: 'pointer', backgroundColor: '#eee', border: '1px solid #ddd', padding: '3px 6px' }} onClick={() => this.doBatch("import")} />
                         </div>
                     </div>	
                     <div>	
