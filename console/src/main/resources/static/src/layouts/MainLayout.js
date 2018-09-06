@@ -215,19 +215,19 @@ export default class extends React.Component {
                     }
                 }
 
-                if (item.serviceName === 'namespace') {
-                    const help = <Balloon trigger={<span>{aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{ marginRight: 5 }} triggerType="hover">
-                        <a style={{ fontSize: 12 }} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace')}</a>
-                    </Balloon>;
-                    return <li key={`${item.serviceName}`}
-                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-                        <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
-                            <div className="nav-icon"></div>
-                            <div className="nav-title">{help}</div>
-                        </a>
-                    </li>;
-                }
+//                if (item.serviceName === 'namespace') {
+//                    const help = <Balloon trigger={<span>{aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{ marginRight: 5 }} triggerType="hover">
+//                        <a style={{ fontSize: 12 }} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace')}</a>
+//                    </Balloon>;
+//                    return <li key={`${item.serviceName}`}
+//                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+//                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+//                        <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+//                            <div className="nav-icon"></div>
+//                            <div className="nav-title">{help}</div>
+//                        </a>
+//                    </li>;
+//                }
                 return <li key={`${item.serviceName}`}
                     data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
                     onClick={this.navTo.bind(this, `/${item.serviceName}`)}>

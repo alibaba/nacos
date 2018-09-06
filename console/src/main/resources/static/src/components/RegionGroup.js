@@ -195,7 +195,6 @@ class RegionGroup extends React.Component {
                             url += '&serverId=' + serverId;
                         }
                     }
-                    console.log("url: ", url, obj);
                     window.location.href = window.location.protocol + '//' + url;
                 }
 
@@ -215,7 +214,6 @@ class RegionGroup extends React.Component {
         // })
     }
     setRegionBarRegionList(regionList, regionId) {
-        console.log("regionList: ", regionList, regionId);
         // regionList = [{
         //     serverId: "cn-hangzhou",
         // }, {
@@ -235,7 +233,7 @@ class RegionGroup extends React.Component {
 
         return <div>
             <ValidateDialog />
-            <div ref={ref => this.mainRef = ref} className="clearfix" style={{ marginBottom: '10px', paddingBottom: "10px", borderBottom: "1px solid #ccc" }}>
+            <div ref={ref => this.mainRef = ref} className="clearfix" >
                 <div style={{ overflow: "hidden" }}>
                     <div id="left" style={{ float: 'left', display: 'inline-block', marginRight: 20 }}>
                         <div ref={ref => this.titleRef = ref} style={{ display: 'inline-block', verticalAlign: 'top' }}>
@@ -251,7 +249,7 @@ class RegionGroup extends React.Component {
                         {Object.prototype.toString.call(this.state.right) == '[object Function]' ? this.state.right() : this.state.right}
                     </div>
                 </div>
-                {this.props.namespaceCallBack ? <div className={'namespacewrapper'} style={{ marginTop: 5 }}><NameSpaceList ref={ref => this.nameSpaceList = ref} namespaceCallBack={this.props.namespaceCallBack} setNowNameSpace={this.props.setNowNameSpace} /></div> : null}
+                {this.props.namespaceCallBack ? <div><NameSpaceList ref={ref => this.nameSpaceList = ref} namespaceCallBack={this.props.namespaceCallBack} setNowNameSpace={this.props.setNowNameSpace} /></div> : null}
             </div>
         </div>;
     }
