@@ -39,7 +39,6 @@ class HistoryDetail extends React.Component {
 
         request({
             url: `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
-//            url: `/diamond-ops/historys/detail/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
             success: function (result) {
                 if (result != null) {
                     let data = result;
@@ -47,7 +46,7 @@ class HistoryDetail extends React.Component {
                     self.field.setValue('content', data.content);
                     self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
                     self.field.setValue('envs', self.serverId);
-                    self.field.setValue('opType', self.typeMap[data.opType]);
+                    self.field.setValue('opType', self.typeMap[data.opType.trim()]);
                     self.field.setValue('group', data.group);
                     self.field.setValue('md5', data.md5);
                 }
@@ -88,9 +87,6 @@ class HistoryDetail extends React.Component {
                         <Input htmlType="text" readOnly={true} {...init('appName')} />
                     </FormItem>
                     </div>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.belongs_to_the_environment')} required {...formItemLayout}>
-                        <Input htmlType="text" readOnly={true} {...init('envs')} />
-                    </FormItem>
                     <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.action_type')} required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('opType')} />
                     </FormItem>

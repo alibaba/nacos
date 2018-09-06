@@ -48,7 +48,8 @@ class ListeningToQuery extends React.Component {
         var queryUrl = "";
         var tenant = getParams('namespace') || '';
         var serverId = getParams('serverId') || '';
-        if (this.getValue('type') == '1') {
+        var type = this.getValue('type');
+        if (type == '1') {
             var ip = this.getValue('ip');
             queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
 //            queryUrl = `/diamond-ops/configList/listenerByIp/serverId/${serverId}?ip=${ip}&tenant=${tenant}`;
@@ -66,8 +67,24 @@ class ListeningToQuery extends React.Component {
             },
             success: function (data) {
                 if (data.collectStatus === 200) {
-                    self.setState({
-                        dataSource: data.lisentersGroupkeyStatus || [],
+                	let dataSoureTmp = new Array();
+                	let status = data.lisentersGroupkeyStatus;
+                	for (var key in status) {
+                		if (type == '1') {
+                			let obj = new Object();
+                            obj.dataId = key.split("+")[0];
+                            obj.group = key.split("+")[1];
+                            obj.md5 = status[key];
+                            dataSoureTmp.push(obj);
+                    	} else {
+                    		let obj = new Object();
+                            obj.ip = key;
+                            obj.md5 = status[key];
+                            dataSoureTmp.push(obj);
+                    	}
+                    }
+                	self.setState({
+                        dataSource: dataSoureTmp || [],
                         total: data.length
                     });
                 }
@@ -160,9 +177,10 @@ class ListeningToQuery extends React.Component {
                             {this.getValue('type') == '1' ? <Table dataSource={this.state.dataSource} fixedHeader={true} maxBodyHeight={500} locale={locale} language={aliwareIntl.currentLanguageCode}>
                                 <Table.Column title="Data ID" dataIndex="dataId" />
                                 <Table.Column title="Group" dataIndex="group" />
+                                <Table.Column title="MD5" dataIndex="md5" />
                             </Table> : <Table dataSource={this.state.dataSource} fixedHeader={true} maxBodyHeight={400} locale={locale} language={aliwareIntl.currentLanguageCode}>
                                     <Table.Column title="IP" dataIndex="ip" />
-                                    <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery._Push_state')} dataIndex="pushStatus" cell={this.renderStatus.bind(this)} />
+                                    <Table.Column title="MD5" dataIndex="md5" />
                                 </Table>}
                         </Col>
                     </Row>

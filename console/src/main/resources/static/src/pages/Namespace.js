@@ -224,7 +224,6 @@ class Namespace extends React.Component {
         request({
             type: 'get',
             url: `/nacos/v1/cs/namespaces`,
-//            url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
             success: res => {
                 if (res.code == 200) {
                     let data = res.data;

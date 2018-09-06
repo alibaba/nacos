@@ -137,11 +137,6 @@ class Configdetail extends React.Component {
         this.edasAppName = getParams('edasAppName') || '';
         this.inApp = this.edasAppName;
         let url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
-//        let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-//
-//        if (this.tenant === 'global' || !this.tenant) {
-//            url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-//        }
         request({
             url: url,
             beforeSend: function () {
@@ -173,8 +168,6 @@ class Configdetail extends React.Component {
         });
     }
     goList() {
-
-        //console.log(`/configurationManagement?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}`)	
         hashHistory.push(`/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${this.searchDataId}&namespace=${this.tenant}`);
     }
     render() {
@@ -224,9 +217,6 @@ class Configdetail extends React.Component {
                         <FormItem label={aliwareIntl.get('nacos.page.configdetail.Description')} {...formItemLayout}>
                             <Input htmlType={"text"} multiple rows={3} readOnly={true} {...init('desc')} />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.belongs_to_the_environment')} required {...formItemLayout}>
-                            <Input htmlType={"text"} readOnly={true} {...init('envs')} />
-                        </FormItem>
                         {activeKey === 'normal' ? '' : <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.beta_release')} {...formItemLayout}>
 
                             <div style={{ width: '100%' }} id={'betaips'}>
@@ -235,9 +225,6 @@ class Configdetail extends React.Component {
                         </FormItem>}
                         <FormItem label={"MD5:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('md5')} />
-                        </FormItem>
-                        <FormItem label={aliwareIntl.get('nacos.page.configdetail.Data_encryption0')} {...formItemLayout}>
-                                <Switch checkedChildren={aliwareIntl.get('nacos.page.configdetail.Open0') /*开*/} unCheckedChildren={aliwareIntl.get('nacos.page.configdetail.off1') /*关*/} size={"small"} checked={this.state.switchEncrypt} disabled />
                         </FormItem>
                         <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration')} required {...formItemLayout}>
                             <Input htmlType={"text"} multiple rows={15} readOnly={true} {...init('content')} />
