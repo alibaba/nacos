@@ -28,7 +28,8 @@ class Namespace extends React.Component {
             request({
                 type: 'get',
                 beforeSend: function () {},
-                url: `/diamond-ops/service/serverId/${serverId}/namespaceAllInfo`,
+                url: `/nacos/v1/cs/namespaces`,
+//                url: `/diamond-ops/service/serverId/${serverId}/namespaceAllInfo`,
                 success: res => {
                     if (res.code == 200) {
                         let data = res.data;
@@ -222,7 +223,8 @@ class Namespace extends React.Component {
         let serverId = getParams('serverId') || 'center';
         request({
             type: 'get',
-            url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
+            url: `/nacos/v1/cs/namespaces`,
+//            url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
             success: res => {
                 if (res.code == 200) {
                     let data = res.data;
