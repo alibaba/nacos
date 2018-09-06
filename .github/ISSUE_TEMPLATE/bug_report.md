@@ -39,5 +39,5 @@ We might ask for further information to locate a bug. A duplicated bug report wi
 
 我们可能会要求您提供更多信息以查找错误。将关闭重复的错误报告。
 
-[etcd-issue](https://github.com/alibaba/nacos/issues/new)
+[nacos-issue](https://github.com/alibaba/nacos/issues/new)
 [filing-good-bugs](http://fantasai.inkedblade.net/style/talks/filing-good-bugs/)
