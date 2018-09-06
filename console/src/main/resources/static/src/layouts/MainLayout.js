@@ -351,7 +351,7 @@ export default class extends React.Component {
         // }
 
         const { headerType } = this.state;
-        const headerLogo = 'https://nacos.io/img/nacos_white.png';
+        const headerLogo = 'https://img.alicdn.com/tfs/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg';
         return <div className="viewFramework-product" style={{top:66}}>
             <Header type={ headerType }
                 logo={ headerLogo }
