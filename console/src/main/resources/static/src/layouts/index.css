@@ -12,7 +12,8 @@ border-bottom: 1px solid #eee}
     background-color: #fff;
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.08); }
   .header-container .header-body {
-    max-width: 1280px;
+    /* max-width: 1280px; */
+    width: 100%;
     margin: 0 auto;
     height: 66px;
     line-height: 66px; }
