@@ -349,12 +349,12 @@ export default class extends React.Component {
         let language = window.aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
 
         const { headerType } = this.state;
-        const headerLogo = 'https://nacos.io/img/nacos_white.png';
-        return <div className="viewFramework-product" style={{ top: 66 }}>
-            <Header type={headerType}
-                logo={headerLogo}
-                language={language}
-                onLanguageChange={this.onLanguageChange} />
+        const headerLogo = 'https://img.alicdn.com/tfs/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg';
+        return <div className="viewFramework-product" style={{ top:66 }}>
+            <Header type={ headerType }
+                logo={ headerLogo }
+                language={ language }
+                onLanguageChange={ this.onLanguageChange } />
             <div className="viewFramework-product-navbar"
                 style={{ width: 180, marginLeft: 0 }}
                 id="viewFramework-product-navbar"
