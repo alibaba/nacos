@@ -79,7 +79,6 @@ class NameSpaceList extends React.Component {
             request({
                 type: 'get',
                 url: `/nacos/v1/cs/namespaces`,
-//                url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
                 success: res => {
                     if (res.code == 200) {
                         let edasAppId = getParams('edasAppId');
@@ -101,14 +100,29 @@ class NameSpaceList extends React.Component {
                             language: window.pageLanguage || 'zh-cn',
                             title: aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
                             content: res.message
-                        });
+                        }); 
                     }
+                },
+                error: res => {
+                	window.namespaceList = [];
+//                    window.namespaceList = [{
+//                    	"namespace": "",
+//                    	"namespaceShowName": "公共空间",
+//                    	"type": 0
+//                    }];
+                    this.handleNameSpaces(window.namespaceList);
                 }
             });
         }
     }
     handleNameSpaces(data) {
-        let nownamespace = this._namespace || data[0].namespace || '';
+    	let nownamespace;
+    	if (data.length === 0) {
+    		let nownamespace = '';
+		} else {
+			let nownamespace = this._namespace || data[0].namespace || '';
+		}
+        
         // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
         window.namespaceList = data;
         window.nownamespace = nownamespace;
@@ -136,13 +150,10 @@ class NameSpaceList extends React.Component {
     }
 
     rendernamespace(namespaceList) {
-
         let nownamespace = this.state.nownamespace; //获得当前namespace
         let namespacesBtn = namespaceList.map((obj, index) => {
-
             let style = obj.namespace === nownamespace ? { color: '#00C1DE', marginRight: 10, border: 'none', fontSize: 12 } : { color: '#666', marginRight: 10, border: 'none', fontSize: 12 };
-
-            return <div key={index} style={{ float: 'left', cursor: 'pointer' }}><span style={{ marginRight: 5, marginLeft: 5 }}>|</span><span type={"light"} style={style} onClick={this.changeNameSpace.bind(this, obj.namespace, obj.namespaceShowName)} key={index}>{obj.namespaceShowName}</span></div>;
+            return <div key={index} style={{ float: 'left', cursor: 'pointer' }}>{index===0?'':<span style={{ marginRight: 5, marginLeft: 5 }}>|</span>}<span type={"light"} style={style} onClick={this.changeNameSpace.bind(this, obj.namespace, obj.namespaceShowName)} key={index}>{obj.namespaceShowName}</span></div>;
         });
         return <div style={{ paddingTop: 9 }}>{namespacesBtn}</div>;
     }
@@ -157,7 +168,9 @@ class NameSpaceList extends React.Component {
             padding: '0 20px',
             marginBottom: 5
         };
-        return <div>
+        let namespacestyle = { marginTop: 5,marginBottom: '10px', paddingBottom: "10px", borderBottom: "1px solid #ccc" };
+
+        return <div   className={namespaceList.length>0?'namespacewrapper':''} style={ namespaceList.length > 0 ? namespacestyle:{}}>
             {}
             {title ? <p style={{ height: 30, lineHeight: '30px', paddingTop: 0, paddingBottom: 0, borderLeft: '2px solid #09c', float: 'left', margin: 0, paddingLeft: 10 }}>{this.props.title}</p> : ''}
             <div style={{ float: 'left' }}>

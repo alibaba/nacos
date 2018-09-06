@@ -29,7 +29,6 @@ class Namespace extends React.Component {
                 type: 'get',
                 beforeSend: function () {},
                 url: `/nacos/v1/cs/namespaces`,
-//                url: `/diamond-ops/service/serverId/${serverId}/namespaceAllInfo`,
                 success: res => {
                     if (res.code == 200) {
                         let data = res.data;
@@ -54,6 +53,13 @@ class Namespace extends React.Component {
                 },
                 complete: function () {
                     self.closeLoading();
+                },
+                error: res => {
+                    window.namespaceList = [{
+                    	"namespace": "",
+                    	"namespaceShowName": "公共空间",
+                    	"type": 0
+                    }];
                 }
             });
         }, delayTime);
@@ -229,6 +235,13 @@ class Namespace extends React.Component {
                     let data = res.data;
                     window.namespaceList = res.data;
                 }
+            },
+            error: res => {
+            	window.namespaceList = [{
+                	"namespace": "",
+                	"namespaceShowName": "公共空间",
+                	"type": 0
+                }];;
             }
         });
     }
