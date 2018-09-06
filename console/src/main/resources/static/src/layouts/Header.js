@@ -33,6 +33,7 @@ class Header extends React.Component {
       language: props.language,
     };
     
+    this.switchLang = this.switchLang.bind(this);
   }
 
   toggleMenu() {

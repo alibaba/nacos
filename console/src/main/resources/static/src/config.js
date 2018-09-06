@@ -5,7 +5,7 @@ module.exports = {
     TIMEDURINT: 2000,
     is_preview: process.env.NODE_ENV === 'development',
     projectName: 'nacos',
-    defaultLanguage: 'en-us',
+    defaultLanguage: 'zh-cn',
     'en-us': {
         pageMenu: [
             {
