@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -187,13 +188,13 @@ public class ConfigController extends HttpServlet {
 	 */
 	@RequestMapping(params = "show=all", method = RequestMethod.GET)
 	@ResponseBody
-	public ConfigInfo detailConfig(HttpServletRequest request, HttpServletResponse response,
+	public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
 			throws IOException, ServletException, NacosException {
 		// check params
 		ParamUtils.checkParam(dataId, group, "datumId", "content");
-		return persistService.findConfigInfo(dataId, group, tenant);
+		return persistService.findConfigAllInfo(dataId, group, tenant);
 	}
 
 	/**
