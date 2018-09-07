@@ -9,4 +9,3 @@ target
 /logs
 *.iml
 node_modules
-build
