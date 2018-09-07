@@ -585,8 +585,8 @@ class Newconfig extends React.Component {
                         {this.inEdas ? "" : groupInput}
 
                         <FormItem label={aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
-                            <Combobox size={"medium"} hasArrow style={{ width: '100%' ,height: '100%!important'}} autoWidth={true} multiple={true} tags={true} filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} onChange={this.onInputUpdate.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
-                            </Combobox>
+                            <Select size={"medium"} hasArrow style={{ width: '100%' ,height: '100%!important'}} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
+                            </Select>
                         </FormItem>
 
                         <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.Group_ID_cannot_be_longer')} {...formItemLayout}>
