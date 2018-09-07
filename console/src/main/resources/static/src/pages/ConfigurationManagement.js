@@ -938,7 +938,7 @@ class ConfigurationManagement extends React.Component {
                             </FormItem>	
         
                             <FormItem label={"Group:"}>	
-                            <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>	
+                            <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>	
                             </Combobox>	
                              </FormItem>	
                             <FormItem label={""}>	
@@ -974,7 +974,7 @@ class ConfigurationManagement extends React.Component {
                             
                             </FormItem>	
                             <FormItem label={aliwareIntl.get('nacos.page.configurationManagement.Tags')}>	
-                            <Combobox size={"medium"} hasArrow multiple={true} tags={true} filterLocal={false} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode} />	
+                            <Select size={"medium"} hasArrow multiple={true} mode="tag" filterLocal={false} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode} />	
                             </FormItem>	
                         </Form>	
                         <div style={{ position: 'absolute', right: 10, top: 4 }}>

@@ -753,8 +753,8 @@ class Configeditor extends React.Component {
                                 })} />
                             </FormItem>
                             <FormItem label={aliwareIntl.get('nacos.page.configeditor.Tags')} {...formItemLayout}>
-                                <Combobox size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} tags={true} filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} onChange={this.onInputUpdate.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
-                                </Combobox>
+                                <Select size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
+                                </Select>
                             </FormItem>
 
                             <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.the_target_environment:')} {...formItemLayout}>

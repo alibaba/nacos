@@ -1,5 +1,5 @@
-#开始项目
-## cnpm 安装（如果已经安装好请忽略）
+# 开始项目
+## cnpm 安装（可忽略）
 ```sh
 npm install -g cnpm --registry=https://registry.npm.taobao.org
 
@@ -18,14 +18,22 @@ $ echo '\n#alias for cnpm\nalias cnpm="npm --registry=https://registry.npm.taoba
 ```
 [详情地址: http://npm.taobao.org/](http://npm.taobao.org/) 
 
-## cd proj dir
+## 安装依赖
 ```sh
 cnpm install
 ```
-## 开启
+
+## 启动
 ```sh
 npm start
 ```
+
+## 构建打包
+```sh
+npm build
+```
+
+## 
 
 # 代理配置
 根目录下的 .webpackrc
