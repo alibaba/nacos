@@ -392,11 +392,6 @@ class ConfigurationManagement extends React.Component {
             </div>,
             onOk: () => {
                 let url = `/nacos/v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
-//                let url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${record.dataId}/group/${record.group}?id=${record.id}`;
-//                if (this.tenant) {
-//                    //如果存在tenant 在path加上	
-//                    url = `/diamond-ops/configList/serverId/${self.serverId}/dataId/${record.dataId}/group/${record.group}/tenant/${this.tenant}?id=${record.id}`;
-//                }
                 request({
                     url: url,
                     type: 'delete',
@@ -432,9 +427,6 @@ class ConfigurationManagement extends React.Component {
             <a href={"javascript:;"} onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.details')}</a>	
             <span style={{ marginRight: 5 }}>|</span>	
             <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.showCode.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.the_sample_code')}</a>	
-            <Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} />} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>	
-                <a href={window._getLink && window._getLink("knowSDK")} target={"_blank"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.clickfordetail')}</a>	
-            </Balloon>	
             <span style={{ marginRight: 5 }}>|</span>	
             <a href={"javascript:;"} style={{ marginRight: 5 }} onClick={this.goEditor.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.edit')}</a>	
             <span style={{ marginRight: 5 }}>|</span>	

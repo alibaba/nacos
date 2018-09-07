@@ -35,8 +35,6 @@ public class ConfigExample {
 		String serverAddr = "localhost";
 		String dataId = "test";
 		String group = "DEFAULT_GROUP";
-//		String dataId = "testDataId";
-//		String group = "testGroup";
 		Properties properties = new Properties();
 		properties.put("serverAddr", serverAddr);
 		ConfigService configService = NacosFactory.createConfigService(properties);
