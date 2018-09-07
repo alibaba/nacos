@@ -311,19 +311,7 @@ window.getParams = function (name) {
  * 设置参数
  */
 window.setParam = function (name, value) {
-    if (!name) {
-        return;
-    }
-    let obj = {};
-    if (typeof name === 'string') {
-        obj = {
-            [name]: value
-        }
-    } else if (Object.prototype.toString.call(name) === '[object Object]') {
-        obj = name;
-    }
-
-    window.setParams(obj);
+    return window.setParams.apply(this, arguments);
 };
 /**
  * 设置参数
@@ -356,12 +344,12 @@ window.setParams = (function (window) {
         let paramObj = {};
         paramArr.forEach((val) => {
             var tmpArr = val.split('=');
-            paramObj[tmpArr[0]] = tmpArr[1];
+            paramObj[tmpArr[0]] = decodeURIComponent(tmpArr[1] || "");
         });
         paramObj = Object.assign({}, paramObj, obj);
 
         let resArr = Object.keys(paramObj).map(function (key) {
-            return `${key}=${paramObj[key]}`;
+            return `${key}=${encodeURIComponent(paramObj[key] || "")}`;
         }) || [];
 
         hashArr[1] = resArr.join('&');
