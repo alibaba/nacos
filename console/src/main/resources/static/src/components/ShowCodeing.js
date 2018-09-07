@@ -11,10 +11,10 @@ class ShowCodeing extends React.Component {
             loading: false
         };
         this.defaultCode = ``;
-        this.nodejsCode = ``;
-        this.cppCode = ``;
-        this.shellCode = ``;
-        this.pythonCode = ``;
+        this.nodejsCode = `TODO`;
+        this.cppCode = `TODO`;
+        this.shellCode = `TODO`;
+        this.pythonCode = `TODO`;
         this.record = {};
         this.sprigboot_code = `// Refer to document:  https://help.aliyun.com/document_detail/60369.html
 package com.alibaba.cloud.acm.sample;
@@ -93,275 +93,109 @@ class SampleController {
 
     getData() {
         let namespace = getParams('namespace'); //获取ak,sk
-        request({
-            url: `/diamond-ops/service/namespaceOwnerInfo/${namespace}`,
-            beforeSend: () => {
-                this.openLoading();
-            },
-            success: res => {
-                if (res.code === 200) {
-                    let obj = {
-                        regionId: res.data.regionId,
-                        accessKey: res.data.accessKey,
-                        secretKey: res.data.secretKey,
-                        group: this.record.group || '',
-                        dataId: this.record.dataId || '',
-                        namespace: namespace,
-                        endpoint: res.data.endpoint,
-                        inEdas: window.globalConfig.isParentEdas()
-                    };
-
-                    this.defaultCode = this.getJavaCode(obj);
-                    this.createCodeMirror('text/x-java', this.defaultCode);
-                    this.nodejsCode = this.getNodejsCode(obj);
-                    this.cppCode = this.getCppCode(obj);
-                    this.shellCode = this.getShellCode(obj);
-                    this.pythonCode = this.getPythonCode(obj);
-                }
-            },
-            complete: () => {
-                this.closeLoading();
-            }
-        });
+        let obj = {
+            group: this.record.group || '',
+            dataId: this.record.dataId || '',
+            namespace: namespace,
+            inEdas: window.globalConfig.isParentEdas()
+        };
+        this.defaultCode = this.getJavaCode(obj);
+        this.createCodeMirror('text/x-java', this.defaultCode);
+        this.nodejsCode = this.getNodejsCode(obj);
+        this.cppCode = this.getCppCode(obj);
+        this.shellCode = this.getShellCode(obj);
+        this.pythonCode = this.getPythonCode(obj);
     }
 
     getJavaCode(data) {
-        let initCode = "";
-        let initKmsCode = "";
-        if (data.dataId.startsWith("cipher-")) {
-            initKmsCode = `properties.put("openKMSFilter", true);
-			properties.put("regionId", "${data.regionId}");`;
-        }
-        if (data.inEdas) {
-            initCode = `/**
-                *  In production environment, parameters are passed through JVM so that you can use multiple environment， -Daddress.server.domain=${data.endpoint}  -Dtenant.id=${data.namespace} -Dproject.name=acmtest -Dspas.identity=\${home}\\.spas_key\\acmtest
-                *  Input accessKey/secretKey in your local acmtest file in the following format.
-                *  accessKey=$accessKey
-                *  secretKey=$secretKey
-                */
-                Properties properties = new Properties();
-                ${initKmsCode}
-                ConfigService.init(properties);`;
-        } else {
-            initCode = `// Initialize configuration service and the console will retrieve the following parameters through the sample code. Input parameters include endpoint, namespace, accessKey, and secretKey(The secrectKey of ACM. Do not use the secrectKey of your Alibaba acount.).
-			Properties properties = new Properties();
-			properties.put("endpoint", "${data.endpoint}");
-			properties.put("namespace", "${data.namespace}");
-            // Access ACM with instance RAM role: https://help.aliyun.com/document_detail/72013.html
-            // properties.put("ramRoleName", "$ramRoleName");
-			properties.put("accessKey", "$accessKey");
-			properties.put("secretKey", "$secretKey");
-			${initKmsCode}
-			ConfigService.init(properties);`;
-        }
-
-        return `// Refer to document:  https://help.aliyun.com/document_detail/60138.html
-package com.alibaba.middleware.acm;
+        return `/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.nacos.example;
 
 import java.util.Properties;
-import com.alibaba.edas.acm.ConfigService;
-import com.alibaba.edas.acm.exception.ConfigException;
-import com.alibaba.edas.acm.listener.ConfigChangeListener;
-// Sample code, for illustration only
-public class ACMTest {
+import java.util.concurrent.Executor;
 
-    // Properties/Switch
-    private static String config = "DefaultValue";
-	
-    private static Properties acmProperties = new Properties();
-    
-	public static void main(String[] args) {
-		try {
-			
-			${initCode}
-			// Get configuration proactively
-			String content = ConfigService.getConfig("${data.dataId}", "${data.group}", 6000);
-			System.out.println(content);
-			// Add listener for the configuration during initialization, so that configuration changes will trigger callback notifications.
-			ConfigService.addListener("${data.dataId}", "${data.group}", new ConfigChangeListener() {
-				public void receiveConfigInfo(String configInfo) {
-					// When the configuration is updated, the callback function will send the new value to the user.
-					// Note that you should not perform any block operations in the callback function. Otherwise the thread will be blocked.
-					config = configInfo;
-					System.out.println(configInfo);
-				}
-			});
-			
-			/**
-			 * If the configuration value is in the format of properties (key=value), you can use the following listener to configure multiple configuration items in one configuration.
-			 */
-			
-			/**
-			ConfigService.addListener("${data.dataId}", "${data.group}", new PropertiesListener() {
-				
-				@Override
-				public void innerReceive(Properties properties) {
-					// TODO Auto-generated method stub
-					acmProperties = properties;
-					System.out.println(properties);
-				}
-			});
-			
-			**/
-			
-		} catch (ConfigException e) {
-			e.printStackTrace();
-		}
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.exception.NacosException;
 
-		// In this sample, the main thread does not exit, because the configuration subscription is the daemon thread, and it will exit if the main threads exits. The following code is not needed in real scenarios. 
-		while (true) {
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+/**
+ * Config service example
+ * 
+ * @author Nacos
+ *
+ */
+public class ConfigExample {
+
+	public static void main(String[] args) throws NacosException, InterruptedException {
+		String serverAddr = "localhost";
+		String dataId = "${data.dataId}";
+		String group = "${data.group}";
+		Properties properties = new Properties();
+		properties.put("serverAddr", serverAddr);
+		ConfigService configService = NacosFactory.createConfigService(properties);
+		String content = configService.getConfig(dataId, group, 5000);
+		System.out.println(content);
+		configService.addListener(dataId, group, new Listener() {
+			@Override
+			public void receiveConfigInfo(String configInfo) {
+				System.out.println("recieve:" + configInfo);
 			}
-		}
+
+			@Override
+			public Executor getExecutor() {
+				return null;
+			}
+		});
+		
+		boolean isPublishOk = configService.publishConfig(dataId, group, "content");
+		System.out.println(isPublishOk);
+		
+		Thread.sleep(3000);
+		content = configService.getConfig(dataId, group, 5000);
+		System.out.println(content);
+
+		boolean isRemoveOk = configService.removeConfig(dataId, group);
+		System.out.println(isRemoveOk);
+		Thread.sleep(3000);
+
+		content = configService.getConfig(dataId, group, 5000);
+		System.out.println(content);
+		Thread.sleep(300000);
+
 	}
-	
-    // Expose the configuration value with the GET interface
-    public static String getConfig() {
-        return config;
-    }
-    
-	// Expose the configuration value with the GET interface
-	public static Object getPorpertiesValue(String key) {
-		if (acmProperties != null) {
-			return acmProperties.get(key);
-		}
-		return null;
-	}
-
-}`;
-    }
-
-    getNodejsCode(data) {
-        return `// Refer to document:  https://help.aliyun.com/document_detail/62670.html
-        
-const ACMClient = require('acm-client');
-const co = require('co');
-const acm = new ACMClient({
-  endpoint: '${data.endpoint}', // Available in the ACM console
-  namespace: '${data.namespace}', // Available in the ACM console
-  accessKey: '$accessKey', // Available in the ACM console
-  secretKey: '$secretKey', // Available in the ACM console
-  requestTimeout: 6000, // Request timeout, 6s by default
-});
-// get config
-co(function*() {
-  const content= yield acm.getConfig('${data.dataId}', '${data.group}');
-  console.log('getConfig = ',content);
-});
-// Update listening data
-acm.subscribe({
-  dataId: 'test',
-  group: 'DEFAULT_GROUP',
-}, content => {
-  console.log(content);
-});`;
-    }
-
-    getCppCode(data) {
-        return `// Refer to document: https://help.aliyun.com/document_detail/63523.html
-#include "ACM.h"
-
-using namespace std;
-using namespace acm;
-// Define listener
-class MyListener : public ManagerListener
-{
-public:
-    MyListener(const std::string& data_id, const std::string& group):data_id_(data_id),group_(group){}
-    virtual ~MyListener()
-    {}
-    virtual void getExecutor()
-    {
-        printf("data_id:%s group:%s getExecutor\\n", \
-        data_id_.c_str(), group_.c_str());
-    }
-    // Callback function
-    virtual void receiveConfigInfo( std::string &configInfo)
-    {
-        printf("data_id:%s group:%s configInfo:\\n%s\\n", \
-        data_id_.c_str(), group_.c_str(), configInfo.c_str());
-        config_ = configInfo;
-    }
-
-private:
-    std::string data_id_;
-    std::string group_;
-    std::string config_;
-};
-
-
-int main() {
-    // Initialize configuration service and the console will retrieve the following parameters through the sample code.
-    ACM::init("${data.endpoint}", "${data.namespace}", "$accessKey", "$secretKey");
-
-    // fill in dataId and group
-    std::string dataId = "${data.dataId}";
-    std::string group = "${data.group}";
-    std::string content;
-    // get config
-    ACM::getConfig(dataId, group, 5000, content);
-    printf("get ok config %s\\n", content.c_str());
-    // Listen for configuration changes
-    MyListener* listener = new MyListener(dataId, group);
-    ACM::addListener(dataId, group, listener);
-    printf("add listener ok %s %s\\n", dataId.c_str(), group.c_str());
-    do {
-        printf("input q to quit\\n");
-    } while (getchar() != 'q');
-
-    return 0;
 }
 `;
     }
 
+    getNodejsCode(data) {
+       return `TODO`;
+    }
+
+    getCppCode(data) {
+        return `TODO`;
+    }
+
     getShellCode(data) {
-        return `#!/bin/bash
-
-## config param
-endpoint=${data.endpoint}
-namespace=${data.namespace}
-accessKey=$accessKey
-secretKey=$secretKey
-dataId=${data.dataId}
-group=${data.group}
-## config param end
-
-## get serverIp from address server
-serverIp=\`curl $endpoint:8080/diamond-server/diamond -s | awk '{a[NR]=$0}END{srand();i=int(rand()*NR+1);print a[i]}'\`
-
-## config sign
-timestamp=\`echo $[$(date +%s%N)/1000000]\`
-signStr=$namespace+$group+$timestamp
-signContent=\`echo -n $signStr | openssl dgst -hmac $secretKey -sha1 -binary | base64\`
-
-## request
-curl -H "Spas-AccessKey:"$accessKey -H "timeStamp:"$timestamp -H "Spas-Signature:"$signContent "http://"$serverIp":8080/diamond-server/config.co?dataId="$dataId"&group="$group"&tenant="$namespace -v`;
+        return `TODO`;
     }
 
     getPythonCode(data) {
-        let initKmsCode = "";
-        if (data.dataId.startsWith("cipher-")) {
-            initKmsCode = `c.set_options(kms_enabled=True, region_id="${data.regionId}")`;
-        }
-        return `# https://help.aliyun.com/document_detail/66727.html
-import acm
-
-ENDPOINT = "${data.endpoint}"
-NAMESPACE = "${data.namespace}"
-AK = "$accessKey"
-SK = "$secretKey"
-DATA_ID= "${data.dataId}"
-GROUP= "${data.group}"
-
-# Initialize ACM client.
-c = acm.ACMClient(ENDPOINT, NAMESPACE, AK, SK)
-${initKmsCode}
-
-# Get plain content from ACM.
-print(c.get(DATA_ID, GROUP))`;
+    	return `TODO`;
     }
 
     openDialog(record) {

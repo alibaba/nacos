@@ -266,8 +266,9 @@ class Configeditor extends React.Component {
 
                     //self.createCodeMirror('text', self.codeValue);
                     //self.codeValue = self.commoneditor.doc.getValue();
-                    if (data.config_tags != null) {
-                        let tagArr = data.config_tags.split(",");
+                    debugger;
+                    if (data.configTags != null) {
+                        let tagArr = data.configTags.split(",");
                         self.setConfigTags(tagArr);
                     }
 
@@ -423,22 +424,19 @@ class Configeditor extends React.Component {
                 config_tags: this.state.config_tags.join(),
                 type: this.state.configType,
                 content: content,
-//                betaIps: this.hasips ? this.ips : '', //如果是beta发布hasips为true否则为false
                 tenant: this.tenant
 
             };
             let url = `/nacos/v1/cs/configs`;
             request({
                 type: 'post',
-//                type: 'put',
                 contentType: 'application/x-www-form-urlencoded',
-//                contentType: 'application/json',
                 url: url,
                 data: payload,
                 success: function (res) {
                     let _payload = {};
                     _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
-                    _payload.title = <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}<a href="javascript:;" onClick={self.navTo.bind(self, '/pushTrajectory')}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.look')}</a></div>;
+                    _payload.title = <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}</div>;
                     _payload.content = '';
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
@@ -452,7 +450,6 @@ class Configeditor extends React.Component {
                             self.setState({
                                 tag: [{ title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' + '-' + sufex }, { title: 'BETA', key: 'beta' + '-' + sufex }], hasbeta: true,
                                 activeKey: 'beta' + '-' + sufex
-
                             });
                             payload.betaIps = payload.betaIps || payload.ips;
                             self.valueMap['beta'] = payload; //赋值beta
@@ -476,12 +473,6 @@ class Configeditor extends React.Component {
                         _payload.message = res.message;
                     }
                     self.refs['success'].openDialog(_payload
-                    // if (activeKey === 'normal') {
-                    //     self.getDataDetail();
-                    // } else {
-                    //     self.getBeta();
-                    // }
-                    //self.getDataDetail();
                     );
                 },
                 error: function () {}
@@ -765,14 +756,6 @@ class Configeditor extends React.Component {
                         <FormItem label={aliwareIntl.get('nacos.page.configeditor.Description')} {...formItemLayout}>
                             <Input htmlType="text" multiple rows={3} {...init('desc')} />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.beta_release_notes(default_not_checked)')} {...formItemLayout}>
-                            <div style={{ height: 30, lineHeight: '33px' }}>
-                                {activeKey === 'normal' ? <span><Checkbox onChange={this.changeBeta.bind(this)} checked={this.state.checkedBeta} /><span>  {aliwareIntl.get('com.alibaba.nacos.page.configeditor.configuration_formatpre')}<a href={`${window._getLink('betaPublish')}`} target="_blank" style={{ paddingLeft: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.configuration_format:')}</a></span></span> : ''}
-                            </div>
-                            <div style={{ width: '100%', display: 'none' }} id={'betaips'}>
-                                <Input multiple style={{ width: '100%' }} onChange={this.getIps.bind(this)} value={this.state.ips} readOnly={this.state.hasbeta} placeholder="multiple" placeholder={'127.0.0.1,127.0.0.2'} />
-                            </div>
-                        </FormItem>
                         <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.configure_contents_of')} {...formItemLayout}>
                             <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />
                         </FormItem>
@@ -785,7 +768,6 @@ class Configeditor extends React.Component {
                         </FormItem>
                         {}
                         <FormItem {...formItemLayout} label="">
-
                             <div style={{ textAlign: 'right' }}>
                                 {activeKey === 'normal' ? '' : <Button type="primary" style={{ marginRight: 10 }} onClick={this.stopPublishConfig.bind(this, false)}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta')}</Button>}
                                 {activeKey === 'beta' ? <Button style={{ marginRight: 10 }} type="primary" onClick={this.openDiff.bind(this, true)}>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.release')}</Button> : ''}

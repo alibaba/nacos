@@ -57,9 +57,9 @@ class NameSpaceList extends React.Component {
     **/
     changeNameSpace(ns, nsName) {
 
-        this.setnamespace(ns);
+        this.setnamespace(ns || "");
         setParams({
-            namespace: ns,
+            namespace: ns || "",
             namespaceShowName: nsName
         });
         window.nownamespace = ns;
@@ -134,7 +134,7 @@ class NameSpaceList extends React.Component {
             }
         }
         window.namespaceShowName = namespaceShowName;
-        setParams('namespace', nownamespace);
+        setParams('namespace', nownamespace || "");
         // setParams('namespaceShowName', namespaceShowName);
         this.props.setNowNameSpace && this.props.setNowNameSpace(namespaceShowName, nownamespace);
         this.setState({
