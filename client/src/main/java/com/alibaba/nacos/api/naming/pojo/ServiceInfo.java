@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.naming.core;
+package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * @author dungu.zpf
  */
-public class Domain {
+public class ServiceInfo {
     @JSONField(serialize = false)
     private String jsonFromServer = StringUtils.EMPTY;
     public static final String SPLITER = "@@";
@@ -50,7 +50,7 @@ public class Domain {
 
     private volatile boolean allIPs = false;
 
-    public Domain() {
+    public ServiceInfo() {
     }
 
     public boolean isAllIPs() {
@@ -61,24 +61,24 @@ public class Domain {
         this.allIPs = allIPs;
     }
 
-    public Domain(String key) {
+    public ServiceInfo(String key) {
 
         int maxKeySectionCount = 4;
         int allIpFlagIndex = 3;
         int envIndex = 2;
         int clusterIndex = 1;
-        int domNameIndex = 0;
+        int serviceNameIndex = 0;
 
         String[] keys = key.split(SPLITER);
         if (keys.length >= maxKeySectionCount) {
-            this.name = keys[domNameIndex];
+            this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
             this.env = keys[envIndex];
             if (StringUtils.equals(keys[allIpFlagIndex], UtilAndComs.ALL_IPS)) {
                 this.setAllIPs(true);
             }
         } else if (keys.length >= allIpFlagIndex) {
-            this.name = keys[domNameIndex];
+            this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
             if (StringUtils.equals(keys[envIndex], UtilAndComs.ALL_IPS)) {
                 this.setAllIPs(true);
@@ -86,7 +86,7 @@ public class Domain {
                 this.env = keys[envIndex];
             }
         } else if (keys.length >= envIndex) {
-            this.name = keys[domNameIndex];
+            this.name = keys[serviceNameIndex];
             if (StringUtils.equals(keys[clusterIndex], UtilAndComs.ALL_IPS)) {
                 this.setAllIPs(true);
             } else {
@@ -97,11 +97,11 @@ public class Domain {
         this.name = keys[0];
     }
 
-    public Domain(String name, String clusters) {
+    public ServiceInfo(String name, String clusters) {
         this(name, clusters, StringUtils.EMPTY);
     }
 
-    public Domain(String name, String clusters, String env) {
+    public ServiceInfo(String name, String clusters, String env) {
         this.name = name;
         this.clusters = clusters;
         this.env = env;
