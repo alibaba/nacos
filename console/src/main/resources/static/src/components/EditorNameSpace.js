@@ -1,10 +1,10 @@
-import React from 'react'; 
+import React from 'react';
+import MinusIcon from './MinusIcon';
+import AddIcon from './AddIcon';
+import AddGroup from './AddGroup';
 import { Button, Dialog, Field, Form, Grid, Input, Loading } from '@alifd/next';
-const FormItem = Form.Item; 
-const { Row, Col } = Grid; 
-import MinusIcon from './MinusIcon' ;
-import AddIcon from './AddIcon' ;
-import AddGroup from './AddGroup' ;
+const FormItem = Form.Item;
+const { Row, Col } = Grid;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class EditorNameSpace extends React.Component {
@@ -51,10 +51,9 @@ class EditorNameSpace extends React.Component {
         });
     }
     getGroup() {
-        let self = this;
-        request({
+        window.request({
             type: 'get',
-            beforeSend: function () {},
+            beforeSend: function () { },
             url: '/diamond-ops/service/group',
             success: res => {
                 if (res.code === 200) {
@@ -81,8 +80,8 @@ class EditorNameSpace extends React.Component {
             if (errors) {
                 return;
             }
-            let serverId = getParams('serverId') || 'daily';
-            request({
+            let serverId = window.getParams('serverId') || 'daily';
+            window.request({
                 type: 'put',
                 beforeSend: () => {
                     this.openLoading();
@@ -91,14 +90,14 @@ class EditorNameSpace extends React.Component {
                 contentType: 'application/json',
                 data: JSON.stringify(values),
                 success: res => {
-                    if (res.code == 200) {
+                    if (res.code === 200) {
                         this.closeDialog();
                         this.props.getNameSpaces();
                         this.refreshNameSpace(); //刷新全局namespace
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
-                            title: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.prompt'),
+                            title: window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.prompt'),
                             content: res.message
                         });
                     }
@@ -111,14 +110,13 @@ class EditorNameSpace extends React.Component {
     }
     refreshNameSpace() {
 
-        let serverId = getParams('serverId') || 'center';
+        let serverId = window.getParams('serverId') || 'center';
         setTimeout(() => {
-            request({
+            window.request({
                 type: 'get',
                 url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
                 success: res => {
-                    if (res.code == 200) {
-                        let data = res.data;
+                    if (res.code === 200) {
                         window.namespaceList = res.data;
                     }
                 }
@@ -126,11 +124,10 @@ class EditorNameSpace extends React.Component {
         }, 2000);
     }
     validateChart(rule, value, callback) {
-        const { getValue } = this.field;
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.please_do'));
+            callback(window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.please_do'));
         } else {
             callback();
         }
@@ -144,56 +141,56 @@ class EditorNameSpace extends React.Component {
                 span: 18
             }
         };
-        const list = [{
-            value: '2',
-            label: aliwareIntl.get('com.alibaba.nacos.component.editorNameSpace')
+        // const list = [{
+        //     value: '2',
+        //     label: window.aliwareIntl.get('com.alibaba.nacos.component.editorNameSpace')
 
-        }, {
-            value: '0',
-            label: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.private')
+        // }, {
+        //     value: '0',
+        //     label: window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.private')
 
-        }];
+        // }];
 
-        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.public_space')}</Button>;
+        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.public_space')}</Button>;
         return (
             <div>
-                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
-                    <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
+                <Dialog title={window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={window.aliwareIntl.currentLanguageCode}>
+                    <Loading tip={window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
                         <Form field={this.field}>
-                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.load')} required {...formItemLayout}>
+                            <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.load')} required {...formItemLayout}>
                                 <Input {...this.field.init('namespaceShowName', {
                                     rules: [{
                                         required: true,
-                                        message: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
+                                        message: window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
                                     }, { validator: this.validateChart.bind(this) }]
-                                })} disabled={this.state.type == 0 ? true : false} />
+                                })} disabled={this.state.type === 0 ? true : false} />
                                 <Input {...this.field.init('namespace')} htmlType="hidden" />
                                 <Input {...this.field.init('type')} htmlType="hidden" />
                             </FormItem>
-                            {this.state.type == 0 ? <FormItem label="group:" required {...formItemLayout}>
-                                    <div style={{ height: 300, border: '1px solid #ccc' }}>
+                            {this.state.type === 0 ? <FormItem label="group:" required {...formItemLayout}>
+                                <div style={{ height: 300, border: '1px solid #ccc' }}>
 
-                                        {this.state.group.map((value, index) => {
+                                    {this.state.group.map((value, index) => {
                                         return <Row style={{ width: '100%', margin: '0 auto', padding: 4, textAlign: 'center' }}>
-                                                    <Col span={'12'}>{value}</Col>
-                                                    <Col span={'12'}>
-                                                        <div style={{ width: 30, margin: '0 auto', cursor: 'pointer' }} onClick={this.delGroup.bind(this, value)}>
-                                                            <MinusIcon />
-                                                        </div>
-                                                    </Col>
-                                                </Row>;
+                                            <Col span={'12'}>{value}</Col>
+                                            <Col span={'12'}>
+                                                <div style={{ width: 30, margin: '0 auto', cursor: 'pointer' }} onClick={this.delGroup.bind(this, value)}>
+                                                    <MinusIcon />
+                                                </div>
+                                            </Col>
+                                        </Row>;
                                     })}
-                                        <Row style={{ width: '100%', margin: '0 auto', padding: 4, textAlign: 'center' }}>
-                                            <Col span={'12'} style={{ cursor: 'pointer' }}>
-                                                <div style={{ width: 30, margin: '0 auto' }} onClick={this.openAddGroup.bind(this)}>
-                                                    <AddIcon />
-                                                </div></Col>
-                                            <Col span={'12'}></Col>
-                                        </Row>
+                                    <Row style={{ width: '100%', margin: '0 auto', padding: 4, textAlign: 'center' }}>
+                                        <Col span={'12'} style={{ cursor: 'pointer' }}>
+                                            <div style={{ width: 30, margin: '0 auto' }} onClick={this.openAddGroup.bind(this)}>
+                                                <AddIcon />
+                                            </div></Col>
+                                        <Col span={'12'}></Col>
+                                    </Row>
 
 
-                                    </div>
-                                </FormItem> : ''}
+                                </div>
+                            </FormItem> : ''}
                         </Form>
                         <AddGroup getGroup={this.getGroup.bind(this)} ref={'addgroup'} />
                     </Loading>

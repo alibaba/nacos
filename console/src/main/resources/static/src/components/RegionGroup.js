@@ -1,7 +1,8 @@
-import React from 'react'; 
+import React from 'react';
 import { Button } from '@alifd/next';
-import ValidateDialog from './ValidateDialog' ;
-import NameSpaceList from './NameSpaceList' ;
+import $ from 'jquery';
+import ValidateDialog from './ValidateDialog';
+import NameSpaceList from './NameSpaceList';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class RegionGroup extends React.Component {
@@ -44,7 +45,7 @@ class RegionGroup extends React.Component {
 
     componentDidMount() {
         //this.setRegionWidth();
-        window.postMessage({ type: 'CONSOLE_HAS_REGION' }, location)
+        window.postMessage({ type: 'CONSOLE_HAS_REGION' }, window.location)
         $(".aliyun-console-regionbar").show();
         $(window).bind("resize", this.handleResize);
         window.addEventListener("message", this.handleAliyunNav);
@@ -56,10 +57,10 @@ class RegionGroup extends React.Component {
     }
     componentWillUnmount() {
         $(window).unbind('resize', this.handleResize);
-        window.postMessage({ type: 'CONSOLE_HIDE_REGION' }, location)
+        window.postMessage({ type: 'CONSOLE_HIDE_REGION' }, window.location)
         $(".aliyun-console-regionbar").hide();
     }
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         this.setState({
             url: nextProps.url,
             left: nextProps.left,
@@ -117,10 +118,10 @@ class RegionGroup extends React.Component {
             console.log('...');
             this.handleRegionList(window._regionList);
         } else {
-        	// TODO
-        	this.nameSpaceList && this.nameSpaceList.getNameSpaces();
-        	
-            request({
+            // TODO
+            this.nameSpaceList && this.nameSpaceList.getNameSpaces();
+
+            window.request({
                 url: this.state.url,
                 data: {},
                 success: res => {
@@ -136,7 +137,7 @@ class RegionGroup extends React.Component {
     handleRegionList(data) {
         let envcontent = '';
         let envGroups = data.envGroups;
-        // let serverId = getParams('serverId') || '';
+        // let serverId = window.getParams('serverId') || '';
         let instanceData = [];
         for (let i = 0; i < envGroups.length; i++) {
             let obj = envGroups[i].envs || [];
@@ -149,7 +150,7 @@ class RegionGroup extends React.Component {
         }
 
         this.currRegionId = envcontent || instanceData[0] && instanceData[0].serverId;
-        setParam("serverId", this.currRegionId);
+        window.setParam("serverId", this.currRegionId);
 
         this.setRegionBarRegionList(instanceData, this.currRegionId);
         this.changeRegionBarRegionId(this.currRegionId);
@@ -165,8 +166,8 @@ class RegionGroup extends React.Component {
     changeTableData(serverId) {
         console.log(serverId);
         console.log(this.state.currRegionId);
-        setParam("serverId", serverId);
-        if (this.state.currRegionId == serverId) {
+        window.setParam("serverId", serverId);
+        if (this.state.currRegionId === serverId) {
             return;
         }
         this.currRegionId = serverId;
@@ -177,19 +178,19 @@ class RegionGroup extends React.Component {
         }
 
         instanceData.forEach(obj => {
-            if (obj.serverId == serverId) {
+            if (obj.serverId === serverId) {
                 let lastHash = window.location.hash.split("?")[0];
                 if (inEdas) {
-                    setParam("serverId", obj.serverId);
-                    // setParam('regionId', obj.serverId);
+                    window.setParam("serverId", obj.serverId);
+                    // window.setParam('regionId', obj.serverId);
                     let url = window.location.href;
 
                     console.log("url: ", url);
                     window.location.href = url;
                 } else {
                     let url = obj.domain + window.location.search + lastHash;
-                    if (lastHash.indexOf('serverId') == -1) {
-                        if (lastHash.indexOf('?') == -1) {
+                    if (lastHash.indexOf('serverId') === -1) {
+                        if (lastHash.indexOf('?') === -1) {
                             url += '?serverId=' + serverId;
                         } else {
                             url += '&serverId=' + serverId;
@@ -203,7 +204,7 @@ class RegionGroup extends React.Component {
         });
         //window.location.href = '';
         // return;
-        // setParam("serverId", serverId);
+        // window.setParam("serverId", serverId);
         // this.setState({
         //     currRegionId: serverId
         // });
@@ -222,12 +223,12 @@ class RegionGroup extends React.Component {
         // if (!window.viewframeSetting.regionList || window.viewframeSetting.regionList.length === 0) {
         if (window.viewframeSetting) {
             window.viewframeSetting.regionList = regionList;
-            window.postMessage({ type: 'TOGGLE_REGIONBAR_STATUS', payload: { regionList: regionList, defaultRegionId: regionId } }, location);
+            window.postMessage({ type: 'TOGGLE_REGIONBAR_STATUS', payload: { regionList: regionList, defaultRegionId: regionId } }, window.location);
         }
     }
     changeRegionBarRegionId(regionId) {
         window.viewframeSetting && (window.viewframeSetting.defaultRegionId = regionId);
-        window.postMessage({ type: 'SET_ACTIVE_REGION_ID', payload: { defaultRegionId: regionId } }, location);
+        window.postMessage({ type: 'SET_ACTIVE_REGION_ID', payload: { defaultRegionId: regionId } }, window.location);
     }
     render() {
 
@@ -237,16 +238,16 @@ class RegionGroup extends React.Component {
                 <div style={{ overflow: "hidden" }}>
                     <div id="left" style={{ float: 'left', display: 'inline-block', marginRight: 20 }}>
                         <div ref={ref => this.titleRef = ref} style={{ display: 'inline-block', verticalAlign: 'top' }}>
-                            {typeof this.state.left == 'string' ? <h5 style={this.styles.title}>{this.state.left}</h5> : this.state.left}
+                            {typeof this.state.left === 'string' ? <h5 style={this.styles.title}>{this.state.left}</h5> : this.state.left}
                         </div>
                         {this.state.hideRegionList ? null : <div ref={ref => this.regionRef = ref} style={{ width: this.state.regionWidth, display: 'inline-block', lineHeight: '40px', marginLeft: 20 }}>
                             {this.state.instanceData.map((val, key) => {
-                                return <Button key={val.serverId} type={this.state.currRegionId == val.serverId ? "primary" : "normal"} style={{ fontSize: '12px', marginRight: 10, backgroundColor: this.state.currRegionId == val.serverId ? '#546478' : '#D9DEE4' }} onClick={this.changeTableData.bind(this, val.serverId)}> {val.name} </Button>;
+                                return <Button key={val.serverId} type={this.state.currRegionId === val.serverId ? "primary" : "normal"} style={{ fontSize: '12px', marginRight: 10, backgroundColor: this.state.currRegionId === val.serverId ? '#546478' : '#D9DEE4' }} onClick={this.changeTableData.bind(this, val.serverId)}> {val.name} </Button>;
                             })}
                         </div>}
                     </div>
                     <div ref={ref => this.extraRef = ref} style={{ float: 'right', display: 'inline-block', paddingTop: 6 }}>
-                        {Object.prototype.toString.call(this.state.right) == '[object Function]' ? this.state.right() : this.state.right}
+                        {Object.prototype.toString.call(this.state.right) === '[object Function]' ? this.state.right() : this.state.right}
                     </div>
                 </div>
                 {this.props.namespaceCallBack ? <div><NameSpaceList ref={ref => this.nameSpaceList = ref} namespaceCallBack={this.props.namespaceCallBack} setNowNameSpace={this.props.setNowNameSpace} /></div> : null}

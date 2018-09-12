@@ -1,4 +1,4 @@
-import React from 'react'; 
+import React from 'react';
 import { Dialog } from '@alifd/next';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
@@ -8,8 +8,8 @@ import { Dialog } from '@alifd/next';
 class NameSpaceList extends React.Component {
     constructor(props) {
         super(props);
-        this._namespace = getParams('namespace') || '';
-        // this._namespaceShowName = getParams('namespaceShowName') || '';
+        this._namespace = window.getParams('namespace') || '';
+        // this._namespaceShowName = window.getParams('namespaceShowName') || '';
         this.state = {
             nownamespace: window.nownamespace || this._namespace || '',
             namespaceList: window.namespaceList || []
@@ -24,8 +24,8 @@ class NameSpaceList extends React.Component {
     }
 
     getLink(linkKey, keyName) {
-        if (window[keyName] == null) {
-            request({
+        if (window[keyName] === null) {
+            window.request({
                 url: "com.alibaba.nacos.service.getLink",
                 data: {
                     linkKey
@@ -58,7 +58,7 @@ class NameSpaceList extends React.Component {
     changeNameSpace(ns, nsName) {
 
         this.setnamespace(ns || "");
-        setParams({
+        window.setParams({
             namespace: ns || "",
             namespaceShowName: nsName
         });
@@ -75,16 +75,15 @@ class NameSpaceList extends React.Component {
         if (window.namespaceList) {
             this.handleNameSpaces(window.namespaceList);
         } else {
-            let serverId = getParams('serverId') || 'center';
-            request({
+            window.request({
                 type: 'get',
                 url: `/nacos/v1/cs/namespaces`,
                 success: res => {
-                    if (res.code == 200) {
-                        let edasAppId = getParams('edasAppId');
+                    if (res.code === 200) {
+                        let edasAppId = window.getParams('edasAppId');
                         if (edasAppId && edasAppId !== '') {
                             console.log("======", edasAppId);
-                            request({
+                            window.request({
                                 type: 'get',
                                 url: `/diamond-ops/service/namespaceId?edasAppId=${edasAppId}`,
                                 success: res => {
@@ -98,31 +97,26 @@ class NameSpaceList extends React.Component {
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
-                            title: aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
+                            title: window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
                             content: res.message
-                        }); 
+                        });
                     }
                 },
                 error: res => {
-                	window.namespaceList = [];
-//                    window.namespaceList = [{
-//                    	"namespace": "",
-//                    	"namespaceShowName": "公共空间",
-//                    	"type": 0
-//                    }];
+                    window.namespaceList = [];
+                    //                    window.namespaceList = [{
+                    //                    	"namespace": "",
+                    //                    	"namespaceShowName": "公共空间",
+                    //                    	"type": 0
+                    //                    }];
                     this.handleNameSpaces(window.namespaceList);
                 }
             });
         }
     }
     handleNameSpaces(data) {
-    	let nownamespace;
-    	if (data.length === 0) {
-    		let nownamespace = '';
-		} else {
-			let nownamespace = this._namespace || data[0].namespace || '';
-		}
-        
+        let nownamespace;
+
         // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
         window.namespaceList = data;
         window.nownamespace = nownamespace;
@@ -134,8 +128,8 @@ class NameSpaceList extends React.Component {
             }
         }
         window.namespaceShowName = namespaceShowName;
-        setParams('namespace', nownamespace || "");
-        // setParams('namespaceShowName', namespaceShowName);
+        window.setParams('namespace', nownamespace || "");
+        // window.setParams('namespaceShowName', namespaceShowName);
         this.props.setNowNameSpace && this.props.setNowNameSpace(namespaceShowName, nownamespace);
         this.setState({
             nownamespace: nownamespace,
@@ -153,24 +147,24 @@ class NameSpaceList extends React.Component {
         let nownamespace = this.state.nownamespace; //获得当前namespace
         let namespacesBtn = namespaceList.map((obj, index) => {
             let style = obj.namespace === nownamespace ? { color: '#00C1DE', marginRight: 10, border: 'none', fontSize: 12 } : { color: '#666', marginRight: 10, border: 'none', fontSize: 12 };
-            return <div key={index} style={{ float: 'left', cursor: 'pointer' }}>{index===0?'':<span style={{ marginRight: 5, marginLeft: 5 }}>|</span>}<span type={"light"} style={style} onClick={this.changeNameSpace.bind(this, obj.namespace, obj.namespaceShowName)} key={index}>{obj.namespaceShowName}</span></div>;
+            return <div key={index} style={{ float: 'left', cursor: 'pointer' }}>{index === 0 ? '' : <span style={{ marginRight: 5, marginLeft: 5 }}>|</span>}<span type={"light"} style={style} onClick={this.changeNameSpace.bind(this, obj.namespace, obj.namespaceShowName)} key={index}>{obj.namespaceShowName}</span></div>;
         });
         return <div style={{ paddingTop: 9 }}>{namespacesBtn}</div>;
     }
     render() {
         let namespaceList = this.state.namespaceList || [];
         let title = this.props.title || '';
-        const noticeStyle = {
-            height: 45,
-            lineHeight: '45px',
-            backgroundColor: 'rgb(242, 242, 242)',
-            border: '1px solid rgb(228, 228, 228)',
-            padding: '0 20px',
-            marginBottom: 5
-        };
-        let namespacestyle = { marginTop: 5,marginBottom: '10px', paddingBottom: "10px", borderBottom: "1px solid #ccc" };
+        // const noticeStyle = {
+        //     height: 45,
+        //     lineHeight: '45px',
+        //     backgroundColor: 'rgb(242, 242, 242)',
+        //     border: '1px solid rgb(228, 228, 228)',
+        //     padding: '0 20px',
+        //     marginBottom: 5
+        // };
+        let namespacestyle = { marginTop: 5, marginBottom: '10px', paddingBottom: "10px", borderBottom: "1px solid #ccc" };
 
-        return <div   className={namespaceList.length>0?'namespacewrapper':''} style={ namespaceList.length > 0 ? namespacestyle:{}}>
+        return <div className={namespaceList.length > 0 ? 'namespacewrapper' : ''} style={namespaceList.length > 0 ? namespacestyle : {}}>
             {}
             {title ? <p style={{ height: 30, lineHeight: '30px', paddingTop: 0, paddingBottom: 0, borderLeft: '2px solid #09c', float: 'left', margin: 0, paddingLeft: 10 }}>{this.props.title}</p> : ''}
             <div style={{ float: 'left' }}>
@@ -181,14 +175,14 @@ class NameSpaceList extends React.Component {
                          Namespace: {this.state.nownamespace}
                       </div>**/}
             <div style={{ float: 'left' }} hidden={window._getLink && !window._getLink("dingding") && !window._getLink("discuz") && !window._getLink("learningPath")}>
-                {!window.globalConfig.isParentEdas() ? <div style={{ float: 'left', height: '32px', lineHeight: '32px' }}>{aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.online_customer_support')}<a href={window._getLink && window._getLink("dingding")} hidden={window._getLink && !window._getLink("dingding")} className={"dingding"}></a>
-                    <a href={window._getLink && window._getLink("discuz")} hidden={window._getLink && !window._getLink("discuz")} target={"_blank"} style={{ marginLeft: 10 }}>{aliwareIntl.get('nacos.component.NameSpaceList.Forum')}</a>
+                {!window.globalConfig.isParentEdas() ? <div style={{ float: 'left', height: '32px', lineHeight: '32px' }}>{window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.online_customer_support')}<a href={window._getLink && window._getLink("dingding")} hidden={window._getLink && !window._getLink("dingding")} className={"dingding"}></a>
+                    <a href={window._getLink && window._getLink("discuz")} hidden={window._getLink && !window._getLink("discuz")} target={"_blank"} style={{ marginLeft: 10 }}>{window.aliwareIntl.get('nacos.component.NameSpaceList.Forum')}</a>
                     <span style={{ marginRight: 5, marginLeft: 5 }}>|</span>
-                    <a href={window._getLink && window._getLink("learningPath")} hidden={window._getLink && !window._getLink("learningPath")} target={"_blank"}>{aliwareIntl.get('nacos.component.NameSpaceList.Quick_to_learn0') /*快速学习*/}</a>
+                    <a href={window._getLink && window._getLink("learningPath")} hidden={window._getLink && !window._getLink("learningPath")} target={"_blank"}>{window.aliwareIntl.get('nacos.component.NameSpaceList.Quick_to_learn0') /*快速学习*/}</a>
 
                 </div> : ''}
             </div>
-            
+
         </div>;
     }
 }

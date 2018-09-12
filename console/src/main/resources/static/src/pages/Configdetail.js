@@ -1,7 +1,7 @@
-import React from 'react'; 
-import { Button, Dialog, Field, Form, Input, Loading, Switch, Tab } from '@alifd/next';
-const TabPane = Tab.Item; 
-const FormItem = Form.Item; 
+import React from 'react';
+import { Button, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
+const TabPane = Tab.Item;
+const FormItem = Form.Item;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class Configdetail extends React.Component {
@@ -15,16 +15,16 @@ class Configdetail extends React.Component {
             ips: '',
             checkedBeta: false,
             switchEncrypt: false,
-            tag: [{ title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }]
+            tag: [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }]
         };
         this.field = new Field(this);
-        this.dataId = getParams('dataId') || 'yanlin';
-        this.group = getParams('group') || 'DEFAULT_GROUP';
+        this.dataId = window.getParams('dataId') || 'yanlin';
+        this.group = window.getParams('group') || 'DEFAULT_GROUP';
         this.ips = '';
         this.valueMap = {}; //存储不同版本的数据
-        this.tenant = getParams('namespace') || '';
-        this.searchDataId = getParams('searchDataId') || '';
-        this.searchGroup = getParams('searchGroup') || '';
+        this.tenant = window.getParams('namespace') || '';
+        this.searchDataId = window.getParams('searchDataId') || '';
+        this.searchGroup = window.getParams('searchGroup') || '';
         //this.params = window.location.hash.split('?')[1]||'';	
     }
 
@@ -49,13 +49,13 @@ class Configdetail extends React.Component {
     }
     getTags() {
         let self = this;
-        this.tenant = getParams('namespace') || '';
-        this.serverId = getParams('serverId') || 'center';
+        this.tenant = window.getParams('namespace') || '';
+        this.serverId = window.getParams('serverId') || 'center';
         let url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
         if (this.tenant === 'global' || !this.tenant) {
             url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
         }
-        request({
+        window.request({
             url: url,
             beforeSend: function () {
                 self.openLoading();
@@ -66,15 +66,14 @@ class Configdetail extends React.Component {
 
                     if (result.data.length > 0) {
                         //如果存在beta
-                        let sufex = new Date().getTime();
-                        let tag = [{ title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
+                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
                         self.setState({
                             tag: tag,
                             hasbeta: true
                         });
                         self.getBeta();
                     }
-                } else {}
+                } else { }
             },
             complete: function () {
                 self.closeLoading();
@@ -84,13 +83,13 @@ class Configdetail extends React.Component {
     getBeta() {
 
         let self = this;
-        this.tenant = getParams('namespace') || '';
-        this.serverId = getParams('serverId') || 'center';
+        this.tenant = window.getParams('namespace') || '';
+        this.serverId = window.getParams('serverId') || 'center';
         let url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
         if (this.tenant === 'global' || !this.tenant) {
             url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
         }
-        request({
+        window.request({
             url: url,
             beforeSend: function () {
                 self.openLoading();
@@ -99,7 +98,7 @@ class Configdetail extends React.Component {
 
                 if (result.code === 200) {
                     self.valueMap['beta'] = result.data;
-                } else {}
+                } else { }
             },
             complete: function () {
                 self.closeLoading();
@@ -129,21 +128,21 @@ class Configdetail extends React.Component {
             showmore: !this.state.showmore
         });
     }
-    
+
     getDataDetail() {
         let self = this;
-        this.serverId = getParams('serverId') || 'center';
-        this.tenant = getParams('namespace') || '';
-        this.edasAppName = getParams('edasAppName') || '';
+        this.serverId = window.getParams('serverId') || 'center';
+        this.tenant = window.getParams('namespace') || '';
+        this.edasAppName = window.getParams('edasAppName') || '';
         this.inApp = this.edasAppName;
         let url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
-        request({
+        window.request({
             url: url,
             beforeSend: function () {
                 self.openLoading();
             },
             success: function (result) {
-                if (result!=null) {
+                if (result != null) {
                     let data = result;
                     self.valueMap['normal'] = data;
                     self.field.setValue('dataId', data.dataId);
@@ -156,9 +155,9 @@ class Configdetail extends React.Component {
                     self.field.setValue('md5', data.md5);
                 } else {
                     Dialog.alert({
-                        title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.error'),
+                        title: window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.error'),
                         content: result.message,
-                        language: aliwareIntl.currentLanguageCode
+                        language: window.aliwareIntl.currentLanguageCode
                     });
                 }
             },
@@ -168,7 +167,7 @@ class Configdetail extends React.Component {
         });
     }
     goList() {
-        hashHistory.push(`/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${this.searchDataId}&namespace=${this.tenant}`);
+        window.hashHistory.push(`/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${this.searchDataId}&namespace=${this.tenant}`);
     }
     render() {
         const init = this.field.init;
@@ -184,7 +183,7 @@ class Configdetail extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape={"flower"} tip={"Loading..."} style={{ width: '100%', position: 'relative' }} visible={this.state.loading} color={"#333"}>
-                    <h1 style={{ position: 'relative', width: '100%' }}>{aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration_details')}</h1>
+                    <h1 style={{ position: 'relative', width: '100%' }}>{window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration_details')}</h1>
                     {this.state.hasbeta ? <div style={{ display: 'inline-block', height: 40, width: '80%', overflow: 'hidden' }}>
 
                         <Tab shape={'wrapped'} onChange={this.changeTab.bind(this)} lazyLoad={false} activeKey={this.state.activeKey}>
@@ -197,7 +196,7 @@ class Configdetail extends React.Component {
                         <FormItem label={"Data ID:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('dataId')} />
                             <div style={{ marginTop: 10 }}>
-                                <a style={{ fontSize: '12px' }} href={"javascript:;"} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
+                                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
                             </div>
                         </FormItem>
 
@@ -205,33 +204,33 @@ class Configdetail extends React.Component {
                             <FormItem label={"Group:"} required {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('group')} />
                             </FormItem>
-                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.home')} {...formItemLayout}>
+                            <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.home')} {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('appName')} />
                             </FormItem>
 
-                            <FormItem label={aliwareIntl.get('nacos.page.configdetail.Tags')} {...formItemLayout}>
+                            <FormItem label={window.aliwareIntl.get('nacos.page.configdetail.Tags')} {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('config_tags')} />
                             </FormItem>
                         </div> : ''}
 
-                        <FormItem label={aliwareIntl.get('nacos.page.configdetail.Description')} {...formItemLayout}>
+                        <FormItem label={window.aliwareIntl.get('nacos.page.configdetail.Description')} {...formItemLayout}>
                             <Input htmlType={"text"} multiple rows={3} readOnly={true} {...init('desc')} />
                         </FormItem>
-                        {activeKey === 'normal' ? '' : <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.beta_release')} {...formItemLayout}>
+                        {activeKey === 'normal' ? '' : <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.beta_release')} {...formItemLayout}>
 
                             <div style={{ width: '100%' }} id={'betaips'}>
-                                <Input multiple style={{ width: '100%' }} value={this.state.ips} readOnly={true} placeholder={"multiple"} placeholder={'127.0.0.1,127.0.0.2'} />
+                                <Input multiple style={{ width: '100%' }} value={this.state.ips} readOnly={true} placeholder={'127.0.0.1,127.0.0.2'} />
                             </div>
                         </FormItem>}
                         <FormItem label={"MD5:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('md5')} />
                         </FormItem>
-                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration')} required {...formItemLayout}>
+                        <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration')} required {...formItemLayout}>
                             <Input htmlType={"text"} multiple rows={15} readOnly={true} {...init('content')} />
                         </FormItem>
                         <FormItem label={" "} {...formItemLayout}>
 
-                            <Button type={"primary"} onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configdetail.return')}</Button>
+                            <Button type={"primary"} onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.return')}</Button>
 
                         </FormItem>
                     </Form>

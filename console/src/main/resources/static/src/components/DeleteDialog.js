@@ -7,7 +7,7 @@ class DeleteDialog extends React.Component {
         super(props);
         this.state = {
             visible: false,
-            title: aliwareIntl.get('nacos.component.DeleteDialog.Configuration_management'),
+            title: window.aliwareIntl.get('nacos.component.DeleteDialog.Configuration_management'),
             content: '',
             isok: true,
             dataId: '',
@@ -34,9 +34,9 @@ class DeleteDialog extends React.Component {
         });
     }
     render() {
-        const footer = <div style={{ textAlign: 'right' }}><Button type="primary" onClick={this.closeDialog.bind(this)}>{aliwareIntl.get('nacos.component.DeleteDialog.determine')}</Button></div>;
+        const footer = <div style={{ textAlign: 'right' }}><Button type="primary" onClick={this.closeDialog.bind(this)}>{window.aliwareIntl.get('nacos.component.DeleteDialog.determine')}</Button></div>;
         return <div>
-            <Dialog visible={this.state.visible} footer={footer} language={window.pageLanguage || 'zh-cn'} style={{ width: 555 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={aliwareIntl.get('nacos.component.DeleteDialog.deletetitle')}>
+            <Dialog visible={this.state.visible} footer={footer} language={window.pageLanguage || 'zh-cn'} style={{ width: 555 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={window.aliwareIntl.get('nacos.component.DeleteDialog.deletetitle')}>
                 <div>
                     <Row>
                         <Col span={'4'} style={{ paddingTop: 16 }}>
@@ -45,7 +45,7 @@ class DeleteDialog extends React.Component {
                         </Col>
                         <Col span={'20'}>
                             <div>
-                                <h3>{this.state.isok ? aliwareIntl.get('nacos.component.DeleteDialog.deleted_successfully_configured') : aliwareIntl.get('nacos.component.DeleteDialog.delete_the_configuration_failed')}</h3>
+                                <h3>{this.state.isok ? window.aliwareIntl.get('nacos.component.DeleteDialog.deleted_successfully_configured') : window.aliwareIntl.get('nacos.component.DeleteDialog.delete_the_configuration_failed')}</h3>
                                 <p>
                                     <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
                                     <span style={{ color: '#c7254e' }}>

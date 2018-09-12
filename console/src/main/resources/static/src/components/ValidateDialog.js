@@ -1,5 +1,6 @@
-import React from 'react'; 
+import React from 'react';
 import { Button, Dialog, Input } from '@alifd/next';
+import $ from 'jquery';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class ValidateDialog extends React.Component {
@@ -11,8 +12,8 @@ class ValidateDialog extends React.Component {
 			isValid: false,
 			errorInfoCode: 0,
 			visible: false,
-			btnText: aliwareIntl.get("nacos.component.validateDialog.Click_to_get_verification_code"),
-			defaultBtnText: aliwareIntl.get("nacos.component.validateDialog.Click_to_get_verification_code"),
+			btnText: window.aliwareIntl.get("nacos.component.validateDialog.Click_to_get_verification_code"),
+			defaultBtnText: window.aliwareIntl.get("nacos.component.validateDialog.Click_to_get_verification_code"),
 			disabled: false,
 			submitDisabled: false,
 			verifyCode: '',
@@ -72,7 +73,7 @@ class ValidateDialog extends React.Component {
 		let countryName = 'cn';
 		let countryData = $.fn.intlTelInput.getCountryData();
 		countryData.some(obj => {
-			if (obj.dialCode == dialCode) {
+			if (obj.dialCode === dialCode) {
 				countryName = obj.iso2;
 				return true;
 			}
@@ -97,7 +98,7 @@ class ValidateDialog extends React.Component {
 			disabled: true
 		});
 
-		request({
+		window.request({
 			url: 'com.alibaba.nacos.service.sendVerifyCode', //以 com.alibaba. 开头最终会转换为真正的url地址
 			data: {
 				codeType: this.state.codeType
@@ -106,10 +107,9 @@ class ValidateDialog extends React.Component {
 			success: res => {
 				if (res && res.code === 200) {
 					this.setState({
-						requestId: res.data && res.data.requestId || ''
+						requestId: res.data && res.data.window.requestId || ''
 					});
 					let count = this.countTime;
-					let btnText = this.state.btnText;
 					clearInterval(this.timer);
 					this.timer = setInterval(() => {
 						if (count === -1) {
@@ -136,8 +136,8 @@ class ValidateDialog extends React.Component {
 	onValidateVerifyCode() {
 		if (!this.state.verifyCode) {
 			Dialog.alert({
-				content: aliwareIntl.get("nacos.component.validateDialog.fill_the_code"),
-				language: aliwareIntl.currentLanguageCode
+				content: window.aliwareIntl.get("nacos.component.validateDialog.fill_the_code"),
+				language: window.aliwareIntl.currentLanguageCode
 			});
 			return;
 		}
@@ -145,14 +145,14 @@ class ValidateDialog extends React.Component {
 		let data = Object.assign({}, config.data, {
 			codeType: this.state.codeType,
 			verifyCode: this.state.verifyCode,
-			requestId: this.state.requestId
+			requestId: this.state.window.requestId
 		});
 		let preSucess = config.success;
 		this.setState({
 			submitDisabled: true
 		});
 		this.submitDisabled = true;
-		request(Object.assign({}, config, {
+		window.request(Object.assign({}, config, {
 			data: data,
 			success: res => {
 				this.setState({
@@ -166,8 +166,8 @@ class ValidateDialog extends React.Component {
 					typeof preSucess === "function" && preSucess(res);
 				} else {
 					Dialog.alert({
-						content: res.code === 400 ? aliwareIntl.get("nacos.component.validateDialog.verification_code_error") : res.message,
-						language: aliwareIntl.currentLanguageCode
+						content: res.code === 400 ? window.aliwareIntl.get("nacos.component.validateDialog.verification_code_error") : res.message,
+						language: window.aliwareIntl.currentLanguageCode
 					});
 				}
 			}
@@ -179,17 +179,17 @@ class ValidateDialog extends React.Component {
 		});
 	}
 	render() {
-		let footer = <div><Button type="primary" onClick={this.onValidateVerifyCode.bind(this)} disabled={this.submitDisabled}>{aliwareIntl.get("nacos.component.validateDialog.confirm")}</Button><Button type="normal" onClick={this.onClose.bind(this)}>{aliwareIntl.get("nacos.component.validateDialog.cancel")}</Button></div>;
-		return <Dialog title={aliwareIntl.get("nacos.component.validateDialog.title")} style={{ color: '#73777A', width: 550 }} visible={this.state.visible} onOk={this.onValidateVerifyCode.bind(this)} onCancel={this.onClose.bind(this)} onClose={this.onClose.bind(this)} footer={footer} language={aliwareIntl.currentLanguageCode}>
+		let footer = <div><Button type="primary" onClick={this.onValidateVerifyCode.bind(this)} disabled={this.submitDisabled}>{window.aliwareIntl.get("nacos.component.validateDialog.confirm")}</Button><Button type="normal" onClick={this.onClose.bind(this)}>{window.aliwareIntl.get("nacos.component.validateDialog.cancel")}</Button></div>;
+		return <Dialog title={window.aliwareIntl.get("nacos.component.validateDialog.title")} style={{ color: '#73777A', width: 550 }} visible={this.state.visible} onOk={this.onValidateVerifyCode.bind(this)} onCancel={this.onClose.bind(this)} onClose={this.onClose.bind(this)} footer={footer} language={window.aliwareIntl.currentLanguageCode}>
 			<div>
 				<div style={{ marginBottom: 20 }}>
-					<span style={{ display: 'inline-block', verticalAlign: 'middle', width: 100, textAlign: 'right', marginRight: 10 }}>{aliwareIntl.get("nacos.component.validateDialog.phoneNumber")}</span><span>{this.state.verifyDetail}</span>
+					<span style={{ display: 'inline-block', verticalAlign: 'middle', width: 100, textAlign: 'right', marginRight: 10 }}>{window.aliwareIntl.get("nacos.component.validateDialog.phoneNumber")}</span><span>{this.state.verifyDetail}</span>
 				</div>
 				<div>
-					<span style={{ display: 'inline-block', verticalAlign: 'middle', width: 100, textAlign: 'right' }}>{aliwareIntl.get("nacos.component.validateDialog.Please_fill_out_the_verification_code")} </span>
+					<span style={{ display: 'inline-block', verticalAlign: 'middle', width: 100, textAlign: 'right' }}>{window.aliwareIntl.get("nacos.component.validateDialog.Please_fill_out_the_verification_code")} </span>
 					<Input style={{ margin: '0 10px', height: 32, width: 200, verticalAlign: 'top' }} onChange={this.onChangeVerifyCode.bind(this)} />
 					<Button onClick={this.onClickBtn.bind(this)} disabled={this.disabled} style={{ minWidth: 150 }}>{this.state.btnText}</Button>
-					<p style={{ margin: "12px", color: "#999" }}>{aliwareIntl.get("nacos.component.validateDialog.remark")}</p>
+					<p style={{ margin: "12px", color: "#999" }}>{window.aliwareIntl.get("nacos.component.validateDialog.remark")}</p>
 				</div>
 			</div>
 		</Dialog>;

@@ -92,7 +92,7 @@ class SampleController {
     }
 
     getData() {
-        let namespace = getParams('namespace'); //获取ak,sk
+        let namespace = window.getParams('namespace'); //获取ak,sk
         let obj = {
             group: this.record.group || '',
             dataId: this.record.dataId || '',
@@ -219,7 +219,7 @@ public class ConfigExample {
         let commontarget = this.refs['codepreview'];
         if (commontarget) {
             commontarget.innerHTML = '';
-            this.cm = CodeMirror(commontarget, {
+            this.cm = window.CodeMirror(commontarget, {
                 value: value,
                 mode: mode,
                 height: 400,
@@ -255,9 +255,9 @@ public class ConfigExample {
         const footer = <div></div>;
         return (
             <div>
-                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.Sample_code')} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
+                <Dialog title={window.aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.Sample_code')} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)} language={window.aliwareIntl.currentLanguageCode}>
                     <div style={{ height: 500 }}>
-                        <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.loading')} style={{ width: '100%' }} visible={this.state.loading}>
+                        <Loading tip={window.aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.loading')} style={{ width: '100%' }} visible={this.state.loading}>
                             <Tab shape={'text'} style={{ height: 40, paddingBottom: 10 }}>
                                 <TabPane title={'Java'} key={1} onClick={this.changeTab.bind(this, 'commoneditor1', this.defaultCode)}>
 
