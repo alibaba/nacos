@@ -253,4 +253,9 @@ public class NacosNamingService implements NamingService {
     public List<ServiceInfo> getSubscribeServices() {
         return new ArrayList<>(hostReactor.getServiceInfoMap().values());
     }
+
+    @Override
+    public boolean serverHealthy() {
+        return serverProxy.serverHealthy();
+    }
 }

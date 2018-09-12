@@ -28,6 +28,7 @@ import java.util.List;
  * @author dungu.zpf
  */
 public class ServiceInfo {
+
     @JSONField(serialize = false)
     private String jsonFromServer = StringUtils.EMPTY;
     public static final String SPLITER = "@@";

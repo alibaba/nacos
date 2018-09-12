@@ -193,4 +193,6 @@ public interface NamingService {
      * @throws NacosException
      */
     List<ServiceInfo> getSubscribeServices() throws NacosException;
+
+    boolean serverHealthy();
 }
