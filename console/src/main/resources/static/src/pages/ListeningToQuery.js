@@ -125,11 +125,11 @@ class ListeningToQuery extends React.Component {
         const selectDataSource = [
             {
                 label: window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.configuration'),
-                value: "0"
+                value: 0
             },
             {
                 label: "IP",
-                value: "1"
+                value: 1
             }
         ]
         return (
@@ -143,22 +143,22 @@ class ListeningToQuery extends React.Component {
                         <Col span="24">
                             <Form inline field={this.field}>
                                 <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_dimension')} initValue="0">
-                                    <Select dataSource={selectDataSource} style={{ width: '100%' }} {...this.init('type')} language={window.aliwareIntl.currentLanguageCode} />
+                                    <Select dataSource={selectDataSource} style={{ width: 200 }} {...this.init('type')} language={window.aliwareIntl.currentLanguageCode} />
                                 </FormItem>
                                 <FormItem label="Data ID:" style={{
-                                    display: this.getValue('type') === '0' ? '' : 'none'
+                                    display: this.getValue('type') === 0 ? '' : 'none'
                                 }}>
-                                    <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')} style={{ height: '32px', lineHeight: '32px' }} {...this.init('dataId')} />
+                                    <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')} style={{ width: 200 }} {...this.init('dataId')} />
                                 </FormItem>
                                 <FormItem label="Group:" style={{
-                                    display: this.getValue('type') === '0' ? '' : 'none'
+                                    display: this.getValue('type') === 0 ? '' : 'none'
                                 }}>
-                                    <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ height: '32px', lineHeight: '32px' }} {...this.init('group')} />
+                                    <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ width: 200 }} {...this.init('group')} />
                                 </FormItem>
                                 <FormItem label="IP:" style={{
-                                    display: this.getValue('type') === '0' ? 'none' : ''
+                                    display: this.getValue('type') === 0 ? 'none' : ''
                                 }}>
-                                    <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_ip')} style={{ height: '32px', lineHeight: '32px', boxSize: 'border-box' }} {...this.init('ip')} />
+                                    <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_ip')} style={{ width: 200, boxSize: 'border-box' }} {...this.init('ip')} />
                                 </FormItem>
                                 <FormItem label="">
                                     <Button type="primary" onClick={this.queryTrackQuery.bind(this)} style={{ marginRight: 10 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query')}</Button>
