@@ -474,7 +474,10 @@ window.request = (function (window) {
                 //有mock数据 直接返回 生产环境失效
                 if (projectConfig.is_preview && serviceObj.is_mock && config.success) {
                     var code = null;
-                    eval('code = ' + serviceObj.defaults + ';')
+                    try {
+                        code = JSON.parse(serviceObj.defaults);
+                    } catch (error) {
+                    }
                     config.success(code);
                     return;
                 }

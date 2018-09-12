@@ -136,13 +136,13 @@ window.require(['vs/editor/editor.main'], () => {
                 label: 'testing',
                 kind: window.monaco.languages.CompletionItemKind.Keyword,
                 insertText: {
-                    value: 'testing(${1:condition})'
+                    value: `testing(\${1:condition})`
                 }
             }, {
                 label: 'ifelse',
                 kind: window.monaco.languages.CompletionItemKind.Snippet,
                 insertText: {
-                    value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join('\n')
+                    value: [`if (\${1:condition}) {`, '\t$0', '} else {', '\t', '}'].join('\n')
                 },
                 documentation: 'If-Else Statement'
             }];
