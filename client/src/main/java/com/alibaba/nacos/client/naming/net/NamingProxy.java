@@ -233,6 +233,17 @@ public class NamingProxy {
         }
     }
 
+    public boolean serverHealthy() {
+
+        try {
+            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<>());
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
+
     public ListView<String> getServiceList(int pageNo, int pageSize) throws NacosException {
 
         Map<String, String> params = new HashMap<String, String>(4);
@@ -244,7 +255,8 @@ public class NamingProxy {
         JSONObject json = JSON.parseObject(result);
         ListView<String> listView = new ListView<>();
         listView.setCount(json.getInteger("count"));
-        listView.setData(JSON.parseObject(json.getString("doms"), new TypeReference<List<String>>(){}));
+        listView.setData(JSON.parseObject(json.getString("doms"), new TypeReference<List<String>>() {
+        }));
 
         return listView;
     }
