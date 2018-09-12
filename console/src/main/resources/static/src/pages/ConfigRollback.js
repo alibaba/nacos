@@ -73,7 +73,8 @@ class ConfigRollback extends React.Component {
     onOpenConfirm() {
         let self = this;
         let type = 'post';
-        if (this.opType === 'I') {
+        debugger;
+        if (this.opType.trim() === 'I') {
             type = 'delete';
         }
         Dialog.confirm({
@@ -98,17 +99,23 @@ class ConfigRollback extends React.Component {
             onOk: function () {
                 self.tenant = window.getParams('namespace') || '';
                 self.serverId = window.getParams('serverId') || 'center';
-
+                self.dataId = self.field.getValue("dataId");
+                self.group = self.field.getValue("group");
                 let postData = {
                     appName: self.field.getValue("appName"),
-                    dataId: self.field.getValue("dataId"),
-                    group: self.field.getValue("group"),
+                    dataId: self.dataId,
+                    group: group,
                     content: self.field.getValue("content"),
                     tenant: self.tenant
                 };
 
                 let url = `/nacos/v1/cs/configs`;
-                // ajax		
+                if (self.opType.trim() === 'I') {
+                	url = `/nacos/v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+                	postData = {};
+                }
+                
+                // ajax
                 window.request({
                     type: type,
                     contentType: 'application/x-www-form-urlencoded',
