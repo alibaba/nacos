@@ -955,33 +955,14 @@ class ConfigurationManagement extends React.Component {
                     </div>	
                     <div>	
         
-                        <Table dataSource={this.state.dataSource} locale={locale} fixedHeader={true} maxBodyHeight={400} language={window.aliwareIntl.currentLanguageCode} rowSelection={{
-                                    onChange: this.onSelectChange.bind(this),
-                                    selectedRowKeys: this.state.selectedKeys
-                                }} ref={"dataTable"}>	
+                        <Table dataSource={this.state.dataSource} locale={locale} fixedHeader={true} maxBodyHeight={400} language={window.aliwareIntl.currentLanguageCode} ref={"dataTable"}>	
                             <Table.Column title={helpDataId} dataIndex={"dataId"} />	
                             <Table.Column title={helpGroup} dataIndex={"group"} />	
                             {!this.inApp ? <Table.Column title={window.aliwareIntl.get('nacos.page.configurationManagement.HOME_Application')} dataIndex={"appName"} /> : <div></div>}	
                             <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />	
                         </Table>	
         
-                    </div>	
-                    {this.state.dataSource.length > 0 && <div style={{ marginTop: 10, overflow: "hidden" }}>	
-                        {/* <Button type="primary" onClick={this.onClickBatchHandle.bind(this)}>{window.aliwareIntl.get('nacos.page.configurationManagement.Batch_processing0')}</Button>	 */}
-                        <div style={this.inApp ? { display: "none" } : { paddingLeft: 20, float: 'left' }}>
-                            <Checkbox checked={this.state.isCheckAll} onChange={checked => this.checkAllHandle(checked)} />
-                            <Button onClick={this.doBatch.bind(this, "delete")} style={{ marginLeft: 20, color: 'red' }}>
-                                {window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}
-                            </Button>
-                            <Button onClick={this.doBatch.bind(this, "export")} style={{ marginLeft: 20 }}>
-                                {window.aliwareIntl.get('nacos.page.configurationManagement.export')}
-                            </Button>
-                            <Button onClick={this.doBatch.bind(this, "clone")} style={{ marginLeft: 20 }}>
-                                {window.aliwareIntl.get('nacos.page.configurationManagement.clone')}
-                            </Button>
-                        </div>	
-                        <Pagination style={{ float: "right" }} pageSizeList={[10, 20, 30]} pageSizeSelector={"dropdown"} onPageSizeChange={this.handlePageSizeChange.bind(this)} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />	
-                    </div>}	
+                    </div>
                     <ShowCodeing ref={"showcode"} />	
                     <DeleteDialog ref={"delete"} />	
                     <CloneDialog ref={"cloneDialog"} />	

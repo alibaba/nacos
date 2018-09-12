@@ -368,7 +368,7 @@ export default class extends React.Component {
                         <div className="product-nav-scene product-nav-main-scene">
                             {this.state.showLink ? <div className="product-nav-icon env" style={{ height: 80, paddingTop: 25 }}>
                                 {this.state.showLink}
-                            </div> : <div className={'product-nav-title'} title={window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}>{window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}</div>}
+                            </div> : <div style={{ textIndent: 0 }} className={'product-nav-title'} title={window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}>{window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}</div>}
 
                             <div className="product-nav-list" style={{ position: 'relative', top: 0, height: '100%' }}>
                                 {this.state.navRow}
