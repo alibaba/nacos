@@ -936,25 +936,7 @@ class ConfigurationManagement extends React.Component {
                             <FormItem label={""}>	
                                 <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)} data-spm-click={"gostr=/aliyun;locaid=dashsearch"}>{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query')}</Button>	
                                 
-                                {/* <Button type="primary" 
-                                                                                               style={this.inApp ? {display:"none"}:{float: 'right', marginLeft: 10 }} 
-                                                                                               onClick={this.doBatch.bind(this, "import")}
-                                                                                               data-spm-click="gostr=/aliyun;locaid=dashaddnew">{window.aliwareIntl.get('nacos.page.configurationManagement.import')}</Button>	
-                                                                                        <Button type="primary" 
-                                                                                               onClick={this.chooseEnv.bind(this)} 
-                                                                                               style={{ float: 'right', marginLeft: 10 }}
-                                                                                               data-spm-click="gostr=/aliyun;locaid=dashdaoru">	
-                                                                                           <Icon type="edit" size={'small'} />{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.new_listing')}</Button>	 */}
                             </FormItem>	
-                            {/* <FormItem style={this.inApp ? {display:"none"}:{ verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
-                                                                                       <Dropdown trigger={<span style={{ color: '#33cde5', fontSize: 12 }}>{window.aliwareIntl.get('nacos.page.configurationManagement.batch_management')}<Icon type="arrow-down-filling" size={'xs'} /></span>} triggerType="click" >	
-                                                                                           <Menu onClick={this.doBatch.bind(this)}>	
-                                                                                               <Menu.Item key="export">{window.aliwareIntl.get('nacos.page.configurationManagement.export')}</Menu.Item>	
-                                                                                               <Menu.Item key="clone">{window.aliwareIntl.get('nacos.page.configurationManagement.clone')}</Menu.Item>	
-                                                                                               <Menu.Item key="delete">{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}</Menu.Item>	
-                                                                                           </Menu>	
-                                                                                       </Dropdown>	
-                                                                                    </FormItem>	 */}
                             <FormItem style={this.inApp ? { display: "none" } : { verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
                                 <div style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }} onClick={this.changeAdvancedQuery}>
                                     <span style={{ marginRight: 5 }}>{window.aliwareIntl.get("nacos.page.configurationManagement.advanced_query9") /*高级查询*/}</span><Icon type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'} size={'xs'} />
@@ -975,33 +957,14 @@ class ConfigurationManagement extends React.Component {
                     </div>	
                     <div>	
         
-                        <Table dataSource={this.state.dataSource} locale={locale} fixedHeader={true} maxBodyHeight={400} language={window.aliwareIntl.currentLanguageCode} rowSelection={{
-                                    onChange: this.onSelectChange.bind(this),
-                                    selectedRowKeys: this.state.selectedKeys
-                                }} ref={"dataTable"}>	
+                        <Table dataSource={this.state.dataSource} locale={locale} fixedHeader={true} maxBodyHeight={400} language={window.aliwareIntl.currentLanguageCode} ref={"dataTable"}>	
                             <Table.Column title={helpDataId} dataIndex={"dataId"} />	
                             <Table.Column title={helpGroup} dataIndex={"group"} />	
                             {!this.inApp ? <Table.Column title={window.aliwareIntl.get('nacos.page.configurationManagement.HOME_Application')} dataIndex={"appName"} /> : <div></div>}	
                             <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />	
                         </Table>	
         
-                    </div>	
-                    {this.state.dataSource.length > 0 && <div style={{ marginTop: 10, overflow: "hidden" }}>	
-                        {/* <Button type="primary" onClick={this.onClickBatchHandle.bind(this)}>{window.aliwareIntl.get('nacos.page.configurationManagement.Batch_processing0')}</Button>	 */}
-                        <div style={this.inApp ? { display: "none" } : { paddingLeft: 20, float: 'left' }}>
-                            <Checkbox checked={this.state.isCheckAll} onChange={checked => this.checkAllHandle(checked)} />
-                            <Button onClick={this.doBatch.bind(this, "delete")} style={{ marginLeft: 20, color: 'red' }}>
-                                {window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}
-                            </Button>
-                            <Button onClick={this.doBatch.bind(this, "export")} style={{ marginLeft: 20 }}>
-                                {window.aliwareIntl.get('nacos.page.configurationManagement.export')}
-                            </Button>
-                            <Button onClick={this.doBatch.bind(this, "clone")} style={{ marginLeft: 20 }}>
-                                {window.aliwareIntl.get('nacos.page.configurationManagement.clone')}
-                            </Button>
-                        </div>	
-                        <Pagination style={{ float: "right" }} pageSizeList={[10, 20, 30]} pageSizeSelector={"dropdown"} onPageSizeChange={this.handlePageSizeChange.bind(this)} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />	
-                    </div>}	
+                    </div>
                     <ShowCodeing ref={"showcode"} />	
                     <DeleteDialog ref={"delete"} />	
                     <CloneDialog ref={"cloneDialog"} />	
