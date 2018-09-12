@@ -1,7 +1,9 @@
-import React, { Component } from 'react';
-import { Balloon, Icon } from '@alifd/next';
+import React from 'react';
+import { Icon } from '@alifd/next';
 import siteConfig from '../config';
 import Header from './Header';
+import $ from 'jquery';
+
 export default class extends React.Component {
     constructor(props) {
         super(props);
@@ -18,9 +20,10 @@ export default class extends React.Component {
 
     goBack() {
 
-        hashHistory.goBack();
+        window.hashHistory.goBack();
     }
-    simpleMVCToggleNav(id) {
+    simpleMVCToggleNav(id, event) {
+        event.preventDefault();
         let nowNav = document.getElementById(id);
         let iconClass = nowNav.querySelector('.iconshow');
         let subNav = nowNav.querySelector('.subnavlist');
@@ -56,7 +59,7 @@ export default class extends React.Component {
                 }
             }
         }
-        hashHistory.push(`/${url}?${queryParams.join('&')}`);
+        window.hashHistory.push(`/${url}?${queryParams.join('&')}`);
     }
     simpleMVCEnterBack() {
         document.getElementById('backarrow').style.color = '#09c';
@@ -85,7 +88,7 @@ export default class extends React.Component {
     navTo(url) {
         if (url !== '/configdetail' && url !== '/configeditor') {
             //二级菜单不清空
-            setParams({
+            window.setParams({
                 dataId: '',
                 group: ''
             });
@@ -100,10 +103,10 @@ export default class extends React.Component {
             }
         }
 
-        hashHistory.push(`${url}?${queryParams.join('&')}`);
+        window.hashHistory.push(`${url}?${queryParams.join('&')}`);
     }
     simpleMVCSetSpecialNav(item) {
-        item.children.map(_item => {
+        item.children.forEach(_item => {
             let obj = _item;
 
             if (obj.dontUseChild === true) {
@@ -136,7 +139,7 @@ export default class extends React.Component {
     simpleMVCLoopNavDeeply(data, parent) {
         //深度遍历获取所有的导航数据
         let self = this;
-        data.map(item => {
+        data.forEach(item => {
             if (item) {
                 let navObj = {};
                 navObj.name = item.name;
@@ -165,78 +168,79 @@ export default class extends React.Component {
         //遍历导航，只显示2级
         let self = this;
         return data.map(item => {
-            if (item) {
-                index++;
-                if (item.dontUseChild === true) {
-                    return '';
-                }
-                if (item.children && item.children.length > 0) {
+            if (!item) {
+                return '';
+            }
+            index++;
+            if (item.dontUseChild === true) {
+                return '';
+            }
+            if (item.children && item.children.length > 0) {
 
-                    if (item.isVirtual) {
-                        //如果是虚拟菜单需要增加展开箭头
-                        let icon = item.isExtend ? <span className="icon-arrow-down iconshow"></span> : <span className="icon-arrow-right iconshow"></span>;
-                        let hiddenClass = item.isExtend ? '' : 'hidden';
-                        return <li key={`${item.serviceName}`}
-                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                            id={`${item.serviceName}`}>
-                            <div>
-                                <a href="javascript:;" onClick={this.simpleMVCToggleNav.bind(this, `nav${index}`)}>
-                                    <div className="nav-icon">
-                                        {icon}
-                                    </div>
-                                    <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
-                                </a>
-                            </div>
-                            <ul className={`subnavlist ${hiddenClass}`}>
-                                {self.simpleMVCLoopNav(item.children, index)}
-                            </ul>
-                        </li>;
-                    } else {
-                        if (item.link && item.link.indexOf('http') !== -1) {
-                            return <li key={`nav${index}`}
-                                data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}>
-                                <a href="{item.link}" >
-                                    <div className="nav-icon">
+                if (item.isVirtual) {
+                    //如果是虚拟菜单需要增加展开箭头
+                    let icon = item.isExtend ? <span className="icon-arrow-down iconshow"></span> : <span className="icon-arrow-right iconshow"></span>;
+                    let hiddenClass = item.isExtend ? '' : 'hidden';
+                    return <li key={`${item.serviceName}`}
+                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                        id={`${item.serviceName}`}>
+                        <div>
+                            <a href="" onClick={this.simpleMVCToggleNav.bind(this, `nav${index}`)}>
+                                <div className="nav-icon">
+                                    {icon}
+                                </div>
+                                <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
+                            </a>
+                        </div>
+                        <ul className={`subnavlist ${hiddenClass}`}>
+                            {self.simpleMVCLoopNav(item.children, index)}
+                        </ul>
+                    </li>;
+                } else {
+                    if (item.link && item.link.indexOf('http') !== -1) {
+                        return <li key={`nav${index}`}
+                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}>
+                            <a href="{item.link}" >
+                                <div className="nav-icon">
 
-                                    </div>
-                                    <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
-                                </a>
-                            </li>;
-                        }
-
-                        return <li key={`${item.serviceName}`}
-                            data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                            onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-                            <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
-                                <div className="nav-icon"></div>
-                                <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                                </div>
+                                <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
                             </a>
                         </li>;
                     }
-                }
 
-//                if (item.serviceName === 'namespace') {
-//                    const help = <Balloon trigger={<span>{aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{ marginRight: 5 }} triggerType="hover">
-//                        <a style={{ fontSize: 12 }} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace')}</a>
-//                    </Balloon>;
-//                    return <li key={`${item.serviceName}`}
-//                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-//                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-//                        <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
-//                            <div className="nav-icon"></div>
-//                            <div className="nav-title">{help}</div>
-//                        </a>
-//                    </li>;
-//                }
-                return <li key={`${item.serviceName}`}
-                    data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
-                    onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
-                    <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
-                        <div className="nav-icon"></div>
-                        <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
-                    </a>
-                </li>;
+                    return <li key={`${item.serviceName}`}
+                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+                        <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+                            <div className="nav-icon"></div>
+                            <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
+                        </a>
+                    </li>;
+                }
             }
+
+            //                if (item.serviceName === 'namespace') {
+            //                    const help = <Balloon trigger={<span>{window.aliwareIntl.get(item.id) || item.name} <Icon type="help" size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginLeft: 5 }} /></span>} align="tr" style={{ marginRight: 5 }} triggerType="hover">
+            //                        <a style={{ fontSize: 12 }} href={window._getLink && window._getLink("knowNamespace") || ''} target="_blank">{window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.Click_to_learn_the_namespace')}</a>
+            //                    </Balloon>;
+            //                    return <li key={`${item.serviceName}`}
+            //                        data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+            //                        onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+            //                        <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+            //                            <div className="nav-icon"></div>
+            //                            <div className="nav-title">{help}</div>
+            //                        </a>
+            //                    </li>;
+            //                }
+            return <li key={`${item.serviceName}`}
+                data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
+                onClick={this.navTo.bind(this, `/${item.serviceName}`)}>
+                <a href={`javascript:;`} id={`${item.serviceName}`} onClick={this.activeNav.bind(this, `nav${index}`)}>
+                    <div className="nav-icon"></div>
+                    <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
+                </a>
+            </li>;
         });
     }
     simpleMVCGetNav(navList) {
@@ -247,7 +251,7 @@ export default class extends React.Component {
         }
         return navRow;
     }
-    componentWillMount() {
+    UNSAFE_componentWillMount() {
         //抓取edas 数据
         //和现有的导航数据整合
         //渲染出导航
@@ -267,7 +271,7 @@ export default class extends React.Component {
         let defaultNav = '/configurationManagement';
         let self = this;
         let childrenNav = parentNav.children || [];
-        hashHistory.listen((location, action) => {
+        window.hashHistory.listen((location, action) => {
             if (this.preSimplePath && this.preSimplePath !== '/') {
                 if (location.pathname.indexOf(this.preSimplePath) !== -1) {
                     return;
@@ -283,7 +287,7 @@ export default class extends React.Component {
 
             if (navName === '') {
                 // let firstNav = defaultNav + window.location.hash;
-                hashHistory.push(defaultNav);
+                window.hashHistory.push(defaultNav);
                 setTimeout(() => {
                     this.activeNav('configurationManagement');
                 });
@@ -339,22 +343,22 @@ export default class extends React.Component {
     }
 
     onLanguageChange = (language) => {
-        aliwareIntl.changeLanguage(language);
+        window.aliwareIntl.changeLanguage(language);
         document.cookie = `docsite_language=${language}`;
         window.location.reload();
     }
 
     render() {
-        const hashSearch = window.location.hash.split('?');
+        // const hashSearch = window.location.hash.split('?');
         let language = window.aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
 
         const { headerType } = this.state;
         const headerLogo = 'https://img.alicdn.com/tfs/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg';
-        return <div className="viewFramework-product" style={{ top:66 }}>
-            <Header type={ headerType }
-                logo={ headerLogo }
-                language={ language }
-                onLanguageChange={ this.onLanguageChange } />
+        return <div className="viewFramework-product" style={{ top: 66 }}>
+            <Header type={headerType}
+                logo={headerLogo}
+                language={language}
+                onLanguageChange={this.onLanguageChange} />
             <div className="viewFramework-product-navbar"
                 style={{ width: 180, marginLeft: 0 }}
                 id="viewFramework-product-navbar"
@@ -364,7 +368,7 @@ export default class extends React.Component {
                         <div className="product-nav-scene product-nav-main-scene">
                             {this.state.showLink ? <div className="product-nav-icon env" style={{ height: 80, paddingTop: 25 }}>
                                 {this.state.showLink}
-                            </div> : <div className={'product-nav-title'} title={aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}>{aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}</div>}
+                            </div> : <div className={'product-nav-title'} title={window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}>{window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.app_configuration_management_acm')}</div>}
 
                             <div className="product-nav-list" style={{ position: 'relative', top: 0, height: '100%' }}>
                                 {this.state.navRow}
@@ -389,7 +393,7 @@ export default class extends React.Component {
                 <div>
                     {!this.state.noChild ? <div>
                         {this.props.children}
-                    </div> : <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>{aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}</div>}
+                    </div> : <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>{window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}</div>}
                 </div>
             </div>
         </div>;

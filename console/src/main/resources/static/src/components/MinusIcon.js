@@ -24,14 +24,14 @@ class MinusIcon extends React.Component {
             left: '25%',
             top: '43.75%'
         };
-        const verticalPlus = {
-            position: 'relative',
-            backgroundColor: '#FFFFFF',
-            width: '12.5%',
-            height: '50%',
-            left: '43.75%',
-            top: '12.5%'
-        };
+        // const verticalPlus = {
+        //     position: 'relative',
+        //     backgroundColor: '#FFFFFF',
+        //     width: '12.5%',
+        //     height: '50%',
+        //     left: '43.75%',
+        //     top: '12.5%'
+        // };
         return <div onClick={this.props.onClick} style={{
             ...circle
         }}>

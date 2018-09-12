@@ -1,17 +1,15 @@
-import React from 'react'; 
+import React from 'react';
 import { Button, Checkbox, Dialog, Field, Form, Input, Loading } from '@alifd/next';
-const FormItem = Form.Item; 
-const { Group: CheckboxGroup } = Checkbox; 
-import SuccessDialog from '../components/SuccessDialog' ;
+import SuccessDialog from '../components/SuccessDialog';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class Configsync extends React.Component {
     constructor(props) {
         super(props);
         this.field = new Field(this);
-        this.dataId = getParams('dataId') || 'yanlin';
-        this.group = getParams('group') || '';
-        this.serverId = getParams('serverId') || '';
+        this.dataId = window.getParams('dataId') || 'yanlin';
+        this.group = window.getParams('group') || '';
+        this.serverId = window.getParams('serverId') || '';
 
         this.state = {
             configType: 0,
@@ -46,7 +44,7 @@ class Configsync extends React.Component {
     }
     getDomain() {
         let self = this;
-        request({
+        window.request({
             url: `/diamond-ops/env/domain`,
             success: function (data) {
 
@@ -62,13 +60,13 @@ class Configsync extends React.Component {
     }
     getDataDetail() {
         let self = this;
-        this.tenant = getParams('namespace') || '';
-        this.serverId = getParams('serverId') || 'center';
+        this.tenant = window.getParams('namespace') || '';
+        this.serverId = window.getParams('serverId') || 'center';
         let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
         if (this.tenant === 'global' || !this.tenant) {
             url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
         }
-        request({
+        window.request({
             url: url,
             beforeSend: function () {
                 self.openLoading();
@@ -84,18 +82,18 @@ class Configsync extends React.Component {
                     self.field.setValue('group', data.group);
                     //self.field.setValue('md5', data.md5);
                     self.field.setValue('content', data.content || ''
-                    //let envlist = [];
-                    // let envvalues = [];
-                    // for (let i = 0; i < data.envs.length; i++) {
-                    //     let obj = data.envs[i]
-                    //     envlist.push({
-                    //         label: obj.name,
-                    //         value: obj.serverId
-                    //     })
-                    //     envvalues.push(obj.serverId);
-                    // }
+                        //let envlist = [];
+                        // let envvalues = [];
+                        // for (let i = 0; i < data.envs.length; i++) {
+                        //     let obj = data.envs[i]
+                        //     envlist.push({
+                        //         label: obj.name,
+                        //         value: obj.serverId
+                        //     })
+                        //     envvalues.push(obj.serverId);
+                        // }
 
-                    );let env = data.envs || [];
+                    ); let env = data.envs || [];
                     let envvalues = [];
                     let envlist = [];
                     for (let i = 0; i < env.length; i++) {
@@ -119,7 +117,7 @@ class Configsync extends React.Component {
                 } else {
                     Dialog.alert({
                         language: window.pageLanguage || 'zh-cn',
-                        title: aliwareIntl.get('com.alibaba.nacos.page.configsync.error'),
+                        title: window.aliwareIntl.get('com.alibaba.nacos.page.configsync.error'),
                         content: result.message
                     });
                 }
@@ -133,7 +131,7 @@ class Configsync extends React.Component {
     goList() {
 
         //console.log(`/configurationManagement?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}`)
-        hashHistory.push(`/configurationManagement?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}`);
+        window.hashHistory.push(`/configurationManagement?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}`);
     }
 
     sync() {
@@ -148,15 +146,15 @@ class Configsync extends React.Component {
             targetEnvs: this.envs
 
         };
-        request({
+        window.request({
             type: 'put',
             contentType: 'application/json',
             url: `/diamond-ops/configList/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}?id=`,
             data: JSON.stringify(payload),
             success: function (res) {
                 let _payload = {};
-                _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration_main');
-                _payload.title = aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration');
+                _payload.maintitle = window.aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration_main');
+                _payload.title = window.aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration');
                 _payload.content = '';
                 _payload.dataId = payload.dataId;
                 _payload.group = payload.group;
@@ -168,13 +166,13 @@ class Configsync extends React.Component {
                 }
                 self.refs['success'].openDialog(_payload);
             },
-            error: function () {}
+            error: function () { }
         });
     }
     syncResult() {
         let dataId = this.field.getValue('dataId');
         let gruop = this.field.getValue('group');
-        hashHistory.push(`/diamond-ops/static/pages/config-sync/index.html?serverId=center&dataId=${dataId}&group=${gruop}`);
+        window.hashHistory.push(`/diamond-ops/static/pages/config-sync/index.html?serverId=center&dataId=${dataId}&group=${gruop}`);
     }
     changeEnv(values) {
         this.targetEnvs = values;
@@ -186,7 +184,7 @@ class Configsync extends React.Component {
         this.ips = value;
     }
     goResult() {
-        hashHistory.push(`/consistencyEfficacy?serverId=${this.serverId}&dataId=${this.dataId}&group=${this.group}`);
+        window.hashHistory.push(`/consistencyEfficacy?serverId=${this.serverId}&dataId=${this.dataId}&group=${this.group}`);
     }
     openLoading() {
         this.setState({
@@ -200,7 +198,7 @@ class Configsync extends React.Component {
         });
     }
     render() {
-        const { init, getError, getState } = this.field;
+        const { init } = this.field;
         const formItemLayout = {
             labelCol: {
                 span: 2
@@ -212,46 +210,46 @@ class Configsync extends React.Component {
 
         return (
             <div style={{ padding: 10 }}>
-             <Loading shape="flower" style={{ position: 'relative', width: '100%' }} visible={this.state.loading} tip="Loading..." color="#333">
-                <h1>{aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration')}</h1>
-                <Form field={this.field}>
+                <Loading shape="flower" style={{ position: 'relative', width: '100%' }} visible={this.state.loading} tip="Loading..." color="#333">
+                    <h1>{window.aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration')}</h1>
+                    <Form field={this.field}>
 
-                    <FormItem label="Data ID:" required {...formItemLayout}>
-                        <Input htmlType="text" disabled={'disabled'} {...init('dataId')} />
-                         <div style={{ marginTop: 10 }}>
-                                <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.configsync.retracted') : aliwareIntl.get('com.alibaba.nacos.page.configsync.for_more_advanced_options')}</a>
+                        <Form.Item label="Data ID:" required {...formItemLayout}>
+                            <Input htmlType="text" disabled={'disabled'} {...init('dataId')} />
+                            <div style={{ marginTop: 10 }}>
+                                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configsync.retracted') : window.aliwareIntl.get('com.alibaba.nacos.page.configsync.for_more_advanced_options')}</a>
+                            </div>
+                        </Form.Item>
+                        <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
+                            <Form.Item label="Group ID:" required {...formItemLayout}>
+                                <Input htmlType="text" disabled={'disabled'} {...init('group')} />
+                            </Form.Item>
+                            <Form.Item label={window.aliwareIntl.get('com.alibaba.nacos.page.configsync.home')} required {...formItemLayout}>
+                                <Input htmlType="text" disabled={'disabled'} {...init('appName')} />
+                            </Form.Item>
                         </div>
-                    </FormItem>
-                    <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-                    <FormItem label="Group ID:" required {...formItemLayout}>
-                        <Input htmlType="text" disabled={'disabled'} {...init('group')} />
-                    </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configsync.home')} required {...formItemLayout}>
-                        <Input htmlType="text" disabled={'disabled'} {...init('appName')} />
-                    </FormItem>
-                    </div>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configsync.belongs_to_the_environment')} required {...formItemLayout}>
-                        <Input htmlType="text" disabled={'disabled'} {...init('envs')} />
-                    </FormItem>
+                        <Form.Item label={window.aliwareIntl.get('com.alibaba.nacos.page.configsync.belongs_to_the_environment')} required {...formItemLayout}>
+                            <Input htmlType="text" disabled={'disabled'} {...init('envs')} />
+                        </Form.Item>
 
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configsync.configuration')} required {...formItemLayout}>
-                        <Input htmlType="text" multiple rows={15} disabled={'disabled'} {...init('content')} />
-                    </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.configsync.target')} required {...formItemLayout}>
-                         <div>
-                            <CheckboxGroup value={this.state.envvalues} onChange={this.changeEnv.bind(this)} dataSource={this.state.envlist} />
-                        </div>
-                    </FormItem>
-                    <FormItem label=" " {...formItemLayout}>
-                   
-                        <div style={{ textAlign: 'right' }}>
-                            <Button type="primary" onClick={this.sync.bind(this)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.nacos.page.configsync.sync')}</Button>
-                            {}
-                            <Button type="light" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.configsync.return')}</Button>
-                        </div>
-                    </FormItem>
-                </Form>
-                <SuccessDialog ref="success" />
+                        <Form.Item label={window.aliwareIntl.get('com.alibaba.nacos.page.configsync.configuration')} required {...formItemLayout}>
+                            <Input htmlType="text" multiple rows={15} disabled={'disabled'} {...init('content')} />
+                        </Form.Item>
+                        <Form.Item label={window.aliwareIntl.get('com.alibaba.nacos.page.configsync.target')} required {...formItemLayout}>
+                            <div>
+                                <Checkbox.Group value={this.state.envvalues} onChange={this.changeEnv.bind(this)} dataSource={this.state.envlist} />
+                            </div>
+                        </Form.Item>
+                        <Form.Item label=" " {...formItemLayout}>
+
+                            <div style={{ textAlign: 'right' }}>
+                                <Button type="primary" onClick={this.sync.bind(this)} style={{ marginRight: 10 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.configsync.sync')}</Button>
+                                {}
+                                <Button type="light" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configsync.return')}</Button>
+                            </div>
+                        </Form.Item>
+                    </Form>
+                    <SuccessDialog ref="success" />
                 </Loading>
             </div>
         );

@@ -1,6 +1,6 @@
 var hasAlert = false;
 
-window.pageLanguage = aliwareIntl.currentLanguageCode;
+window.pageLanguage = window.aliwareIntl.currentLanguageCode;
 
 window.edasprefix = 'acm'; //固定的edas网关需要的项目名
 
@@ -15,22 +15,9 @@ window.globalConfig = {
     }
 };
 
-let metaData = {};
-request({
-    type: 'get',
-    url: 'com.alibaba.nacos.service.getMetaData', //以 com.alibaba. 开头最终会转换为真正的url地址
-    data: {},
-    $data: {}, //替换{}中的内容
-    async: false,
-    success: res => {
-        if (res.code === 200) {
-            metaData = res.data;
-        }
-    }
-});
-request.middleWare(config => {
+window.request.middleWare(config => {
     let url = config.url;
-    let tenant = window.nownamespace || getParams('namespace') || '';
+    let tenant = window.nownamespace || window.getParams('namespace') || '';
     tenant = tenant === 'global' ? '' : tenant;
     let splitArr = url.split('?');
     if (splitArr.length > 1) {
@@ -62,7 +49,7 @@ request.middleWare(config => {
         }
         if (res.code === 403 && !hasAlert) {
             hasAlert = true;
-            Dialog.alert({
+            window.Dialog.alert({
                 language: window.pageLanguage || 'zh-cn',
                 style: { width: 400 },
                 content: res.message,
@@ -86,7 +73,7 @@ request.middleWare(config => {
         if (res.status === 403 && !hasAlert) {
             hasAlert = true;
 
-            Dialog.alert({
+            window.Dialog.alert({
                 language: window.pageLanguage || 'zh-cn',
                 style: { width: 400 },
                 content: window.aliwareIntl.get('com.alibaba.nacos.pubshow'), //'子账号没有权限，请联系主账号负责人RAM上授权',
@@ -123,37 +110,37 @@ window.require.config({
 
 window.require(['vs/editor/editor.main'], () => {
     // Register a new language
-    monaco.languages.register({ id: 'properties' });
+    window.monaco.languages.register({ id: 'properties' });
 
     // Register a tokens provider for the language
-    monaco.languages.setMonarchTokensProvider('properties', {
+    window.monaco.languages.setMonarchTokensProvider('properties', {
         tokenizer: {
             root: [[/^\#.*/, 'comment'], [/.*\=/, 'key'], [/^=.*/, 'value']]
         }
     });
 
     // Define a new theme that constains only rules that match this language
-    monaco.editor.defineTheme('properties', {
+    window.monaco.editor.defineTheme('properties', {
         base: 'vs',
         inherit: false,
         rules: [{ token: 'key', foreground: '009968' }, { token: 'value', foreground: '009968' }, { token: 'comment', foreground: '666666' }]
     });
 
     // Register a completion item provider for the new language
-    monaco.languages.registerCompletionItemProvider('properties', {
+    window.monaco.languages.registerCompletionItemProvider('properties', {
         provideCompletionItems: () => {
             return [{
                 label: 'simpleText',
-                kind: monaco.languages.CompletionItemKind.Text
+                kind: window.monaco.languages.CompletionItemKind.Text
             }, {
                 label: 'testing',
-                kind: monaco.languages.CompletionItemKind.Keyword,
+                kind: window.monaco.languages.CompletionItemKind.Keyword,
                 insertText: {
                     value: 'testing(${1:condition})'
                 }
             }, {
                 label: 'ifelse',
-                kind: monaco.languages.CompletionItemKind.Snippet,
+                kind: window.monaco.languages.CompletionItemKind.Snippet,
                 insertText: {
                     value: ['if (${1:condition}) {', '\t$0', '} else {', '\t', '}'].join('\n')
                 },
@@ -173,7 +160,7 @@ window.importEditor = callback => {
 
 window._getLink = function () {
     let _linkObj = {};
-    request({
+    window.request({
         url: "com.alibaba.nacos.service.getLinks",
         async: false,
         data: {},
@@ -207,7 +194,7 @@ window.addEventListener('resize', () => {
 //判断是否是国际站国际用户
 window.isIntel = function () {
 
-    let host = location.host;
+    let host = window.location.host;
     if (host.indexOf('alibabacloud.com') !== -1) {
         return true;
     } else {

@@ -55,7 +55,7 @@ class BatchHandle extends React.Component {
 	}
 	getData() {
 		const dataSource = this.state.dataSource;
-		request({
+		window.request({
 			url: `/diamond-ops/configList/serverId/${dataSource.serverId}?dataId=${dataSource.dataId}&group=${dataSource.group}&appName=${dataSource.appName}&config_tags=${dataSource.config_tags || ''}&pageNo=${this.state.currentPage}&pageSize=${dataSource.pageSize}`,
 			success: res => {
 				if (res.code === 200) {
@@ -94,7 +94,7 @@ class BatchHandle extends React.Component {
 		<div>
 			<Transfer ref={ref => this.transfer = ref} listStyle={{ height: 350 }} dataSource={this.state.dataSourceList || []} value={this.state.valueList} onChange={this.onChange.bind(this)} language={window.pageLanguage || 'zh-cn'} />
 			{/* <div>
-      <Table  dataSource={this.state.dataSourceList} language={aliwareIntl.currentLanguageCode}></Table>
+      <Table  dataSource={this.state.dataSourceList} language={window.aliwareIntl.currentLanguageCode}></Table>
       </div> */}
 			<Pagination style={{ marginTop: 10 }} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} type="simple" />
 		</div>

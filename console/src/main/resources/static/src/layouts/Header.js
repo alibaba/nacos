@@ -55,7 +55,7 @@ class Header extends React.Component {
     this.props.onLanguageChange(language);
   }
 
-  componentWillReceiveProps(nextProps) {
+  UNSAFE_componentWillReceiveProps(nextProps) {
     this.setState({
       language: nextProps.language,
     });
@@ -74,7 +74,7 @@ class Header extends React.Component {
         }
       >
         <div className="header-body">
-          <a href={'https://nacos.io/zh-cn/'} target="_blank">
+          <a href={'https://nacos.io/zh-cn/'} target="_blank" rel="noopener noreferrer">
             <img className="logo" alt={siteConfig.name} title={siteConfig.name} src={logo} />
           </a>
           {
@@ -104,6 +104,7 @@ class Header extends React.Component {
             <img
               className="header-menu-toggle"
               onClick={this.toggleMenu}
+              alt=""
               src={type === 'primary' ? getLink('/img/menu_white.png') : getLink('/img/menu_gray.png')}
             />
             <ul>
@@ -116,7 +117,7 @@ class Header extends React.Component {
                       [`menu-item-${type}-active`]: currentKey === item.key,
                     })}
                   >
-                    <a href={getLink(item.link)}  target="_blank">{item.text}</a>
+                    <a href={getLink(item.link)}  target="_blank" rel="noopener noreferrer">{item.text}</a>
                   </li>
               ))}
             </ul>

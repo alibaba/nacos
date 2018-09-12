@@ -9,20 +9,20 @@ class HistoryDetail extends React.Component {
         this.state = {
             showmore: false
         };
-        this.edasAppName = getParams('edasAppName');
-        this.edasAppId = getParams('edasAppId');
+        this.edasAppName = window.getParams('edasAppName');
+        this.edasAppId = window.getParams('edasAppId');
         this.inApp = this.edasAppName;
         this.field = new Field(this);
-        this.dataId = getParams('dataId') || 'yanlin';
-        this.group = getParams('group') || 'DEFAULT_GROUP';
-        this.serverId = getParams('serverId') || 'center';
-        this.nid = getParams('nid') || '123509854';
-        this.tenant = getParams('namespace') || ''; //为当前实例保存tenant参数
+        this.dataId = window.getParams('dataId') || 'yanlin';
+        this.group = window.getParams('group') || 'DEFAULT_GROUP';
+        this.serverId = window.getParams('serverId') || 'center';
+        this.nid = window.getParams('nid') || '123509854';
+        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
         //this.params = window.location.hash.split('?')[1]||'';
         this.typeMap = {
-            'U': aliwareIntl.get('com.alibaba.nacos.page.historyDetail.update'),
-            'I': aliwareIntl.get('com.alibaba.nacos.page.historyDetail.insert'),
-            'D': aliwareIntl.get('com.alibaba.nacos.page.historyDetail.delete')
+            'U': window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.update'),
+            'I': window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.insert'),
+            'D': window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.delete')
         };
     }
 
@@ -37,7 +37,7 @@ class HistoryDetail extends React.Component {
     getDataDetail() {
         let self = this;
 
-        request({
+        window.request({
             url: `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
             success: function (result) {
                 if (result != null) {
@@ -56,7 +56,7 @@ class HistoryDetail extends React.Component {
     goList() {
 
         //console.log(`/configurationManagement?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}`)
-        hashHistory.push(`/historyRollback?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}&namespace=${this.tenant}`);
+        window.hashHistory.push(`/historyRollback?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}&namespace=${this.tenant}`);
     }
     render() {
         const init = this.field.init;
@@ -70,34 +70,34 @@ class HistoryDetail extends React.Component {
         };
         return (
             <div style={{ padding: 10 }}>
-                <h1>{aliwareIntl.get('com.alibaba.nacos.page.historyDetail.history_details')}</h1>
+                <h1>{window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.history_details')}</h1>
                 <Form field={this.field}>
                   
                     <FormItem label="Data ID:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('dataId')} />
                         <div style={{ marginTop: 10 }}>
-                            <a style={{ fontSize: '12px' }} href="javascript:;" onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.historyDetail.recipient_from') : aliwareIntl.get('com.alibaba.nacos.page.historyDetail.more_advanced_options')}</a>
+                            <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.recipient_from') : window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.more_advanced_options')}</a>
                         </div>
                     </FormItem>
                     <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
                     <FormItem label="Group:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('group')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.home')} {...formItemLayout}>
+                    <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.home')} {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('appName')} />
                     </FormItem>
                     </div>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.action_type')} required {...formItemLayout}>
+                    <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.action_type')} required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('opType')} />
                     </FormItem>
                     <FormItem label="MD5:" required {...formItemLayout}>
                         <Input htmlType="text" readOnly={true} {...init('md5')} />
                     </FormItem>
-                    <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.configure_content')} required {...formItemLayout}>
+                    <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.configure_content')} required {...formItemLayout}>
                         <Input htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
-                        <Button type="primary" onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.historyDetail.return')}</Button>
+                        <Button type="primary" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.return')}</Button>
 
                     </FormItem>
                 </Form>

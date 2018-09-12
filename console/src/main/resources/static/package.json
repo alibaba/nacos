@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "start": "ESLINT=none roadhog dev",
+    "start": "roadhog dev",
     "build": "ESLINT=none roadhog build",
     "lint": "eslint --ext .js src test"
   },

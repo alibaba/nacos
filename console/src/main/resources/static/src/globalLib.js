@@ -200,7 +200,7 @@ window.aliwareIntl = (function (window) {
     //当前地区
     aliwareI18n.prototype.currentSite = aliwareLocalSite;
     //当前语言-地区
-    aliwareI18n.prototype.currentLanguageCode = window.aliwareGetCookieByKeyName('docsite_language') ||  `${aliwareLocal}-${aliwareLocalSite}`;
+    aliwareI18n.prototype.currentLanguageCode = window.aliwareGetCookieByKeyName('docsite_language') || `${aliwareLocal}-${aliwareLocalSite}`;
     /**
      * 通过key获取对应国际化文案
      * @param {String} key 国际化key
@@ -491,7 +491,7 @@ window.request = (function (window) {
                     console.log(e)
                 }
                 //替换请求方式
-                if (serviceObj.method && config.type == null) {
+                if (serviceObj.method && !config.type) {
                     config.type = serviceObj.methodType;
                 }
                 //将请求参数变为json格式
@@ -574,9 +574,6 @@ window.request = (function (window) {
             url: config.url,
             data: config.data || '',
             dataType: config.dataType || 'json',
-            // async: config.async == null ? true : config.async,
-            // processData: config.processData == null ? true : config.processData,
-            // contentType: config.contentType || 'application/x-www-form-urlencoded',
             beforeSend: function (xhr) {
                 xhr.setRequestHeader('poweredBy', 'naruto');
                 xhr.setRequestHeader('projectName', 'newDiamond');
