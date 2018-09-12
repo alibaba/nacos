@@ -442,12 +442,12 @@ class Configeditor extends React.Component {
                             //如果是在normal面板选择了beta发布
                             let sufex = new Date().getTime();
                             self.setState({
-                                tag: [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' + '-' + sufex }, { title: 'BETA', key: 'beta' + '-' + sufex }], hasbeta: true,
-                                activeKey: 'beta' + '-' + sufex
+                                tag: [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: `normal-${sufex}` }, { title: 'BETA', key: `beta-${sufex}` }], hasbeta: true,
+                                activeKey: `beta-${sufex}`
                             });
                             payload.betaIps = payload.betaIps || payload.ips;
                             self.valueMap['beta'] = payload; //赋值beta
-                            self.changeTab('beta' + '-' + sufex);
+                            self.changeTab(`beta-${sufex}`);
                         }
                         if (activeKey === 'normal' && self.hasips === false) {
                             //如果是在normal面板选择了发布
@@ -525,7 +525,7 @@ class Configeditor extends React.Component {
                     }
                     setTimeout(() => {
                         let sufex = new Date().getTime();
-                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' + '-' + sufex }];
+                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: `normal-${sufex}` }];
                         self.setState({
                             tag: tag,
                             checkedBeta: false,
@@ -533,7 +533,7 @@ class Configeditor extends React.Component {
                             hasbeta: false
 
                         });
-                        self.changeTab('normal' + '-' + sufex);
+                        self.changeTab(`normal-${sufex}`);
                     });
 
                     self.refs['success'].openDialog(_payload);

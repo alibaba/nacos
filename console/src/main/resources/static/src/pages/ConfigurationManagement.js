@@ -320,7 +320,7 @@ class ConfigurationManagement extends React.Component {
                     self.setState({
                         dataSource: data.pageItems,
                         total: data.totalCount,
-                        currentPage: data.pagesAvailable
+                        currentPage: data.pageNumber
                     });
                     if (clearSelect) {
                         self.setState({
@@ -441,7 +441,6 @@ class ConfigurationManagement extends React.Component {
         </div>;
     }
     changePage(value) {
-        console.log(this.state, 'ss');
         this.setState({
             currentPage: value
         });
@@ -935,26 +934,7 @@ class ConfigurationManagement extends React.Component {
                              </FormItem>	
                             <FormItem label={""}>	
                                 <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)} data-spm-click={"gostr=/aliyun;locaid=dashsearch"}>{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query')}</Button>	
-                                
-                                {/* <Button type="primary" 
-                                                                                               style={this.inApp ? {display:"none"}:{float: 'right', marginLeft: 10 }} 
-                                                                                               onClick={this.doBatch.bind(this, "import")}
-                                                                                               data-spm-click="gostr=/aliyun;locaid=dashaddnew">{window.aliwareIntl.get('nacos.page.configurationManagement.import')}</Button>	
-                                                                                        <Button type="primary" 
-                                                                                               onClick={this.chooseEnv.bind(this)} 
-                                                                                               style={{ float: 'right', marginLeft: 10 }}
-                                                                                               data-spm-click="gostr=/aliyun;locaid=dashdaoru">	
-                                                                                           <Icon type="edit" size={'small'} />{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.new_listing')}</Button>	 */}
                             </FormItem>	
-                            {/* <FormItem style={this.inApp ? {display:"none"}:{ verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
-                                                                                       <Dropdown trigger={<span style={{ color: '#33cde5', fontSize: 12 }}>{window.aliwareIntl.get('nacos.page.configurationManagement.batch_management')}<Icon type="arrow-down-filling" size={'xs'} /></span>} triggerType="click" >	
-                                                                                           <Menu onClick={this.doBatch.bind(this)}>	
-                                                                                               <Menu.Item key="export">{window.aliwareIntl.get('nacos.page.configurationManagement.export')}</Menu.Item>	
-                                                                                               <Menu.Item key="clone">{window.aliwareIntl.get('nacos.page.configurationManagement.clone')}</Menu.Item>	
-                                                                                               <Menu.Item key="delete">{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.delete')}</Menu.Item>	
-                                                                                           </Menu>	
-                                                                                       </Dropdown>	
-                                                                                    </FormItem>	 */}
                             <FormItem style={this.inApp ? { display: "none" } : { verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
                                 <div style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }} onClick={this.changeAdvancedQuery}>
                                     <span style={{ marginRight: 5 }}>{window.aliwareIntl.get("nacos.page.configurationManagement.advanced_query9") /*高级查询*/}</span><Icon type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'} size={'xs'} />

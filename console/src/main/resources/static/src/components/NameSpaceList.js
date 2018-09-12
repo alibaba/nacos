@@ -174,15 +174,6 @@ class NameSpaceList extends React.Component {
                       <div style={{ color: '#00C1DE', float: 'left', height: '32px', lineHeight: '32px', paddingRight: 10 }}>
                          Namespace: {this.state.nownamespace}
                       </div>**/}
-            <div style={{ float: 'left' }} hidden={window._getLink && !window._getLink("dingding") && !window._getLink("discuz") && !window._getLink("learningPath")}>
-                {!window.globalConfig.isParentEdas() ? <div style={{ float: 'left', height: '32px', lineHeight: '32px' }}>{window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.online_customer_support')}<a href={window._getLink && window._getLink("dingding")} hidden={window._getLink && !window._getLink("dingding")} className={"dingding"}></a>
-                    <a href={window._getLink && window._getLink("discuz")} hidden={window._getLink && !window._getLink("discuz")} target={"_blank"} style={{ marginLeft: 10 }}>{window.aliwareIntl.get('nacos.component.NameSpaceList.Forum')}</a>
-                    <span style={{ marginRight: 5, marginLeft: 5 }}>|</span>
-                    <a href={window._getLink && window._getLink("learningPath")} hidden={window._getLink && !window._getLink("learningPath")} target={"_blank"}>{window.aliwareIntl.get('nacos.component.NameSpaceList.Quick_to_learn0') /*快速学习*/}</a>
-
-                </div> : ''}
-            </div>
-
         </div>;
     }
 }

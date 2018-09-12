@@ -73,7 +73,9 @@ class ExportDialog extends React.Component {
     }
 
     doExport() {
-        document.getElementById('downloadLink').click();
+        // document.getElementById('downloadLink').click();
+        let url = this.getLink();
+        window.open(url);
         this.closeDialog();
     }
 
@@ -93,7 +95,8 @@ class ExportDialog extends React.Component {
 
     render() {
         const footer = <div>
-            <a id="downloadLink" style={{ display: "none" }} href={this.getLink()} /><Button type="primary" onClick={this.doExport.bind(this)} {...{ "disabled": this.state.total <= 0 }}>{window.aliwareIntl.get('nacos.component.ExportDialog.export3')}</Button>
+            {/* <a id="downloadLink" style={{ display: "none" }} href={this.getLink()} /> */}
+            <Button type="primary" onClick={this.doExport.bind(this)} {...{ "disabled": this.state.total <= 0 }}>{window.aliwareIntl.get('nacos.component.ExportDialog.export3')}</Button>
         </div>;
 
         return <div>
