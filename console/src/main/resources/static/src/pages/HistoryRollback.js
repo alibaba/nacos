@@ -242,11 +242,11 @@ class HistoryRollback extends React.Component {
 
                             <Form.Item label="Data ID:">
                                 <Input htmlType="text" placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')} 
-                                style={{ height: '32px', lineHeight: '32px' }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
+                                style={{ width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
                             </Form.Item>
                             <Form.Item label="Group:">
                                 <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')} id="userName" name="userName" value={this.state.group} 
-                                style={{ height: 30, lineHeight: '30px' }} onChange={this.getGroup.bind(this)} />
+                                style={{ width: 200 }} onChange={this.getGroup.bind(this)} />
                             </Form.Item>
 
                             <Form.Item label="">

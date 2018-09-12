@@ -925,32 +925,32 @@ class ConfigurationManagement extends React.Component {
                     <div style={{ position: 'relative', marginTop: 10, height: this.state.isAdvancedQuery ? 'auto' : 48 }}>	
                         <Form direction={"hoz"} inline>	
                             <FormItem label={"Data ID:"}>	
-                                <Input htmlType={"text"} placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyd')} style={{ height: 32, width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />	
+                                <Input htmlType={"text"} placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyd')} style={{ width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />	
                             </FormItem>	
         
                             <FormItem label={"Group:"}>	
-                            <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>	
-                            </Combobox>	
-                             </FormItem>	
+                                <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>	
+                                </Combobox>	
+                            </FormItem>	
                             <FormItem label={""}>	
                                 <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)} data-spm-click={"gostr=/aliyun;locaid=dashsearch"}>{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query')}</Button>	
                             </FormItem>	
-                            <FormItem style={this.inApp ? { display: "none" } : { verticalAlign: "middle", marginTop: 8, marginLeft: 10 }}>	
+                            <FormItem style={this.inApp ? { display: "none" } : { verticalAlign: "middle", marginTop: 0, marginLeft: 10 }}>	
                                 <div style={{ color: '#33cde5', fontSize: 12, cursor: 'pointer' }} onClick={this.changeAdvancedQuery}>
-                                    <span style={{ marginRight: 5 }}>{window.aliwareIntl.get("nacos.page.configurationManagement.advanced_query9") /*高级查询*/}</span><Icon type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'} size={'xs'} />
+                                    <span style={{ marginRight: 5, lineHeight: "28px" }}>{window.aliwareIntl.get("nacos.page.configurationManagement.advanced_query9") /*高级查询*/}</span><Icon type={this.state.isAdvancedQuery ? 'arrow-up-filling' : 'arrow-down-filling'} size={'xs'} />
                                 </div>
                             </FormItem>
                             <br />
                             <FormItem style={this.inApp ? { display: "none" } : {}} label={window.aliwareIntl.get("nacos.page.configurationManagement.HOME_Application0") /*归属应用：*/}>	
-                                <Input htmlType={"text"} placeholder={window.aliwareIntl.get("nacos.page.configurationManagement.Please_enter_the_name_of_the_app1") /*请输入应用名称*/} style={{ height: 32 }} value={this.state.appName} onChange={this.setAppName.bind(this)} />	
+                                <Input htmlType={"text"} placeholder={window.aliwareIntl.get("nacos.page.configurationManagement.Please_enter_the_name_of_the_app1") /*请输入应用名称*/} style={{ width: 200 }} value={this.state.appName} onChange={this.setAppName.bind(this)} />	
                             
                             </FormItem>	
                             <FormItem label={window.aliwareIntl.get('nacos.page.configurationManagement.Tags')}>	
-                            <Select size={"medium"} hasArrow multiple={true} mode="tag" filterLocal={false} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode} />	
+                                <Select style={{ width: 200 }} size={"medium"} hasArrow multiple={true} mode="tag" filterLocal={false} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode} />	
                             </FormItem>	
                         </Form>	
                         <div style={{ position: 'absolute', right: 10, top: 4 }}>
-                            <Icon type={"add"} size={'medium'} style={{ color: 'black', marginRight: 15, verticalAlign: 'middle', cursor: 'pointer', backgroundColor: '#eee', border: '1px solid #ddd', padding: '3px 6px' }} onClick={this.chooseEnv.bind(this)} />
+                            <Icon type={"add"} size={'medium'} style={{ color: 'black', marginRight: 0, verticalAlign: 'middle', cursor: 'pointer', backgroundColor: '#eee', border: '1px solid #ddd', padding: '3px 6px' }} onClick={this.chooseEnv.bind(this)} />
                         </div>
                     </div>	
                     <div>	
