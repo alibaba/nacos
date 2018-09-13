@@ -91,11 +91,13 @@ public class IOUtils {
 
         if (fileOrDir.isDirectory()) {
             cleanDirectory(fileOrDir);
-        }
-
-		boolean isDeleteOk = fileOrDir.delete();
-		if (!isDeleteOk) {
-			throw new IOException("delete fail");
+		} else {
+			if (fileOrDir.exists()) {
+				boolean isDeleteOk = fileOrDir.delete();
+				if (!isDeleteOk) {
+					throw new IOException("delete fail");
+				}
+			}
 		}
     }
     
