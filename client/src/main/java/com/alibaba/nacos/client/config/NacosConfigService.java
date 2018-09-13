@@ -264,4 +264,13 @@ public class NacosConfigService implements ConfigService {
 
 	}
 
+	@Override
+	public String getServerStatus() {
+		if (worker.isHealthServer()) {
+			return "UP";
+		} else {
+			return "DOWN";
+		}
+	}
+
 }
