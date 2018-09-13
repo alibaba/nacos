@@ -1,0 +1,12 @@
+# 忽略目录
+build/
+test/
+
+# node 覆盖率文件
+coverage/
+
+node_modules/
+
+# 忽略文件
+**/*.min.js
+**/*-min.js

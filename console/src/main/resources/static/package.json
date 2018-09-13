@@ -1,0 +1,33 @@
+{
+  "private": true,
+  "scripts": {
+    "start": "roadhog dev",
+    "build": "ESLINT=none roadhog build",
+    "lint": "eslint --ext .js src test"
+  },
+  "dependencies": {
+    "@alifd/next": "^1.7.6",
+    "dva": "^2.3.1",
+    "jquery": "^3.3.1",
+    "moment": "^2.22.2",
+    "prop-types": "^15.6.2",
+    "react": "^16.2.0",
+    "react-dom": "^16.2.0"
+  },
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-plugin-dva-hmr": "^0.3.2",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-plugin-transform-decorators-legacy": "^1.3.5",
+    "babel-preset-stage-2": "^6.24.1",
+    "eslint": "^4.14.0",
+    "eslint-config-umi": "^0.1.1",
+    "eslint-plugin-flowtype": "^2.34.1",
+    "eslint-plugin-import": "^2.6.0",
+    "eslint-plugin-jsx-a11y": "^5.1.1",
+    "eslint-plugin-react": "^7.1.0",
+    "husky": "^0.12.0",
+    "roadhog": "^2.0.0"
+  }
+}
