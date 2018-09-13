@@ -199,5 +199,5 @@ public interface NamingService {
      *
      * @return is server healthy
      */
-    boolean isServerHealthy();
+    String getServerStatus();
 }
