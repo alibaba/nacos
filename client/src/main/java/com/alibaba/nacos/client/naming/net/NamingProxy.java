@@ -236,7 +236,7 @@ public class NamingProxy {
     public boolean serverHealthy() {
 
         try {
-            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<>());
+            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<>(2));
         } catch (Exception e) {
             return false;
         }
