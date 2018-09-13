@@ -142,7 +142,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 			if (StringUtils.isBlank(System.getProperty(NACOS_HOME_KEY))) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
-                sqlFileIn = new FileInputStream(url.getFile());
+                sqlFileIn = url.openStream();
             } else {
                 File file = new File(System.getProperty(NACOS_HOME_KEY) + File.separator + "conf" + File.separator + sqlFile);
                 sqlFileIn = new FileInputStream(file);

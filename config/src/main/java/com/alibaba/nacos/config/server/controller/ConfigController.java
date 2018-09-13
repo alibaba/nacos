@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
@@ -178,6 +179,24 @@ public class ConfigController extends HttpServlet {
 		inner.doGetConfig(request, response, dataId, group, tenant, tag, clientIp);
 	}
 	
+	/**
+	 * 取数据
+	 * 
+	 * @throws ServletException
+	 * @throws IOException
+	 * @throws NacosException
+	 */
+	@RequestMapping(params = "show=all", method = RequestMethod.GET)
+	@ResponseBody
+	public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
+			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
+			throws IOException, ServletException, NacosException {
+		// check params
+		ParamUtils.checkParam(dataId, group, "datumId", "content");
+		return persistService.findConfigAllInfo(dataId, group, tenant);
+	}
+
 	/**
 	 * 同步删除某个dataId下面所有的聚合前数据
 	 * 

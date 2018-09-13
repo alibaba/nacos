@@ -3,15 +3,15 @@
 	<parent>
 		<groupId>com.alibaba.nacos</groupId>
 		<artifactId>nacos-all</artifactId>
-		<version>0.2.0</version>
+		<version>0.1.0</version>
 	</parent>
 
 	<modelVersion>4.0.0</modelVersion>
 
-	<artifactId>nacos-client</artifactId>
+	<artifactId>nacos-api</artifactId>
 	<packaging>jar</packaging>
 
-	<name>nacos-client ${project.version}</name>
+	<name>nacos-api ${project.version}</name>
 	<url>http://maven.apache.org</url>
 
 	<properties>
@@ -63,10 +63,6 @@
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>nacos-common</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>nacos-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.alibaba</groupId>

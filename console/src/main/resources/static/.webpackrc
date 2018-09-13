@@ -1,0 +1,14 @@
+{
+    "disableCSSModules": true,
+    "outputPath": "./build",
+    "proxy": {
+        "/": {
+        "target": "http://127.0.0.1:8080", //这边写你自己的服务Ip
+        "changeOrigin": true,
+        "pathRewrite": { "^/" : "" }
+        }
+    },
+    "extraBabelPlugins": [
+        "transform-decorators-legacy"
+    ]
+}
