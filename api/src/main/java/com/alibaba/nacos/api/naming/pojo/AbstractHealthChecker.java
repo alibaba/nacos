@@ -81,14 +81,14 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             Http other = (Http) obj;
 
-            if (!equals(type, other.getType())) {
+            if (!strEquals(type, other.getType())) {
                 return false;
             }
 
-            if (!equals(path, other.getPath())) {
+            if (!strEquals(path, other.getPath())) {
                 return false;
             }
-            if (!equals(headers, other.getHeaders())) {
+            if (!strEquals(headers, other.getHeaders())) {
                 return false;
             }
             return expectedResponseCode == other.getExpectedResponseCode();
@@ -162,20 +162,20 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             Mysql other = (Mysql) obj;
 
-            if (!equals(user, other.getUser())) {
+            if (!strEquals(user, other.getUser())) {
                 return false;
             }
 
-            if (!equals(pwd, other.getPwd())) {
+            if (!strEquals(pwd, other.getPwd())) {
                 return false;
             }
 
-            return equals(cmd, other.getCmd());
+            return strEquals(cmd, other.getCmd());
 
         }
     }
     
-	private static boolean equals(String str1, String str2) {
+	private static boolean strEquals(String str1, String str2) {
 		return str1 == null ? str2 == null : str1.equals(str2);
 	}
 }
