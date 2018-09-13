@@ -20,8 +20,8 @@ import java.util.Properties;
 import com.alibaba.nacos.api.config.ConfigFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
-//import com.alibaba.nacos.api.naming.NamingFactory;
-//import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.NamingFactory;
+import com.alibaba.nacos.api.naming.NamingService;
 
 /**
  * Nacos Factory
@@ -57,30 +57,30 @@ public class NacosFactory {
 		return ConfigFactory.createConfigService(serverAddr);
 	}
 
-//	/**
-//	 * Create Naming
-//	 * 
-//	 * @param serverAddr
-//	 *            server list
-//	 * @return Naming
-//	 * @throws NacosException
-//	 *             Exception
-//	 */
-//	public static NamingService createNamingService(String serverAddr) throws NacosException {
-//		return NamingFactory.createNamingService(serverAddr);
-//	}
-//
-//	/**
-//	 * Create Naming
-//	 * 
-//	 * @param properties
-//	 *            init param
-//	 * @return Naming
-//	 * @throws NacosException
-//	 *             Exception
-//	 */
-//	public static NamingService createNamingService(Properties properties) throws NacosException {
-//		return NamingFactory.createNamingService(properties);
-//	}
+	/**
+	 * Create Naming
+	 * 
+	 * @param serverAddr
+	 *            server list
+	 * @return Naming
+	 * @throws NacosException
+	 *             Exception
+	 */
+	public static NamingService createNamingService(String serverAddr) throws NacosException {
+		return NamingFactory.createNamingService(serverAddr);
+	}
+
+	/**
+	 * Create Naming
+	 * 
+	 * @param properties
+	 *            init param
+	 * @return Naming
+	 * @throws NacosException
+	 *             Exception
+	 */
+	public static NamingService createNamingService(Properties properties) throws NacosException {
+		return NamingFactory.createNamingService(properties);
+	}
 
 }
