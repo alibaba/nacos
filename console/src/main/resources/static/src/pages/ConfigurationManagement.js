@@ -961,7 +961,9 @@ class ConfigurationManagement extends React.Component {
                             {!this.inApp ? <Table.Column title={window.aliwareIntl.get('nacos.page.configurationManagement.HOME_Application')} dataIndex={"appName"} /> : <div></div>}	
                             <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />	
                         </Table>	
-        
+                        {this.state.dataSource.length > 0 && <div style={{ marginTop: 10, overflow: "hidden" }}>
+                            <Pagination style={{ float: "right" }} pageSizeList={[10, 20, 30]} pageSizeSelector={"dropdown"} onPageSizeChange={this.handlePageSizeChange.bind(this)} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />	
+                        </div>}	
                     </div>
                     <ShowCodeing ref={"showcode"} />	
                     <DeleteDialog ref={"delete"} />	
