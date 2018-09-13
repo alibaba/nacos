@@ -255,7 +255,7 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public boolean isServerHealthy() {
-        return serverProxy.serverHealthy();
+    public String getServerStatus() {
+        return serverProxy.serverHealthy() ? "UP" : "DOWN";
     }
 }
