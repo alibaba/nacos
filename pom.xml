@@ -407,6 +407,7 @@
 		<module>core</module>
 		<module>naming</module>
 		<module>test</module>
+		<module>api</module>
 		<module>client</module>
 		<module>example</module>
 		<module>common</module>
@@ -440,6 +441,11 @@
 			<dependency>
 				<groupId>${project.groupId}</groupId>
 				<artifactId>nacos-naming</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>nacos-api</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
