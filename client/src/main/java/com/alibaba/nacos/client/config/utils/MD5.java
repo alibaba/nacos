@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.api.config.common.Constants;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.alibaba.nacos.client.config.common.Constants;
 
 /**
  * MD5 util
