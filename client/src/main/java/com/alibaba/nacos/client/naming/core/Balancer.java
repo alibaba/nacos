@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.Chooser;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
@@ -23,10 +24,7 @@ import com.alibaba.nacos.client.naming.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author xuanyin
@@ -36,33 +34,33 @@ public class Balancer {
     /**
      * report status to server
      */
-    public final static List<String> UNCONSISTENT_DOM_WITH_ADDRESS_SERVER = new CopyOnWriteArrayList<String>();
+    public final static List<String> UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER = new CopyOnWriteArrayList<String>();
 
     public static class RandomByWeight {
 
-        public static List<Instance> selectAll(Domain dom) {
-            List<Instance> hosts = nothing(dom);
+        public static List<Instance> selectAll(ServiceInfo serviceInfo) {
+            List<Instance> hosts = nothing(serviceInfo);
 
             if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for dom: " + dom.getName());
+                throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
             }
 
             return hosts;
         }
 
-        public static Instance selectHost(Domain dom) {
+        public static Instance selectHost(ServiceInfo dom) {
 
             List<Instance> hosts = selectAll(dom);
 
             if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for dom: " + dom.getName());
+                throw new IllegalStateException("no host to srv for service: " + dom.getName());
             }
 
             return getHostByRandomWeight(hosts);
         }
 
-        public static List<Instance> nothing(Domain dom) {
-            return dom.getHosts();
+        public static List<Instance> nothing(ServiceInfo serviceInfo) {
+            return serviceInfo.getHosts();
         }
     }
 

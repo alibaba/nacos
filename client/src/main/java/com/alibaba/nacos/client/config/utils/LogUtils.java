@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import com.alibaba.nacos.client.config.common.Constants;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.logger.Level;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.LoggerFactory;

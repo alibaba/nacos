@@ -16,9 +16,9 @@
 package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
-import com.alibaba.nacos.client.naming.core.Domain;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
@@ -47,7 +47,7 @@ public class FailoverReactor {
         this.init();
     }
 
-    private Map<String, Domain> domainMap = new ConcurrentHashMap<String, Domain>();
+    private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -144,7 +144,7 @@ public class FailoverReactor {
 
         @Override
         public void run() {
-            Map<String, Domain> domMap = new HashMap<String, Domain>(16);
+            Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
 
             BufferedReader reader = null;
             try {
@@ -168,7 +168,7 @@ public class FailoverReactor {
                         continue;
                     }
 
-                    Domain dom = new Domain(file.getName());
+                    ServiceInfo dom = new ServiceInfo(file.getName());
 
                     try {
                         String dataString = ConcurrentDiskUtil.getFileContent(file, Charset.defaultCharset().toString());
@@ -177,7 +177,7 @@ public class FailoverReactor {
                         String json;
                         if ((json = reader.readLine()) != null) {
                             try {
-                                dom = JSON.parseObject(json, Domain.class);
+                                dom = JSON.parseObject(json, ServiceInfo.class);
                             } catch (Exception e) {
                                 LogUtils.LOG.error("NA", "error while parsing cached dom : " + json, e);
                             }
@@ -203,24 +203,24 @@ public class FailoverReactor {
             }
 
             if (domMap.size() > 0) {
-                domainMap = domMap;
+                serviceMap = domMap;
             }
         }
     }
 
     class DiskFileWriter extends TimerTask {
         public void run() {
-            Map<String, Domain> map = hostReactor.getDomMap();
-            for (Map.Entry<String, Domain> entry : map.entrySet()) {
-                Domain domain = entry.getValue();
-                if (StringUtils.equals(domain.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(domain.getName(), UtilAndComs.ENV_LIST_KEY)
-                        || StringUtils.equals(domain.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
-                        || StringUtils.equals(domain.getName(), "vipclient.properties")
-                        || StringUtils.equals(domain.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
+            Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
+            for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
+                ServiceInfo serviceInfo = entry.getValue();
+                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
+                        || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
+                        || StringUtils.equals(serviceInfo.getName(), "vipclient.properties")
+                        || StringUtils.equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
                     continue;
                 }
 
-                DiskCache.write(domain, failoverDir);
+                DiskCache.write(serviceInfo, failoverDir);
             }
         }
     }
@@ -229,14 +229,14 @@ public class FailoverReactor {
         return Boolean.parseBoolean(switchParams.get("failover-mode"));
     }
 
-    public Domain getDom(String key) {
-        Domain domain = domainMap.get(key);
+    public ServiceInfo getService(String key) {
+        ServiceInfo serviceInfo = serviceMap.get(key);
 
-        if (domain == null) {
-            domain = new Domain();
-            domain.setName(key);
+        if (serviceInfo == null) {
+            serviceInfo = new ServiceInfo();
+            serviceInfo.setName(key);
         }
 
-        return domain;
+        return serviceInfo;
     }
 }

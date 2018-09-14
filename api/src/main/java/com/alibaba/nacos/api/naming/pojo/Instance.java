@@ -17,7 +17,6 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -155,7 +154,7 @@ public class Instance {
 
         Instance host = (Instance) obj;
 
-        return StringUtils.equals(toString(), host.toString());
+        return strEquals(toString(), host.toString());
     }
 
     @Override
@@ -163,4 +162,8 @@ public class Instance {
         return toString().hashCode();
     }
 
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
+    
 }

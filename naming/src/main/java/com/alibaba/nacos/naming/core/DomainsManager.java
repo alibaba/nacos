@@ -221,6 +221,10 @@ public class DomainsManager {
         return new HashSet<String>(chooseDomMap().keySet());
     }
 
+    public List<String> getAllDomNamesList() {
+        return new ArrayList<>(chooseDomMap().keySet());
+    }
+
     public void setAllDomNames(List<String> allDomNames) {
         this.allDomNames = new HashSet<>(allDomNames);
     }
