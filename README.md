@@ -84,5 +84,5 @@ You can view full documentation on the Nacos website:
 
 * #### Segmentfault-[Nacos Segmentfault](https://segmentfault.com/t/nacos)
 
-* #### Mailing list-[nacos\_dev@linux.alibaba.com](https://lark.alipay.com/nacos/nacosdocs/vl19q1).
+* #### Mailing list-[nacos\_dev@linux.alibaba.com](mailto:nacos_dev@linux.alibaba.com).
 
