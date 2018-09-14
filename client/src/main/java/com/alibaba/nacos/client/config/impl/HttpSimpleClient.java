@@ -15,6 +15,13 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.utils.IOUtils;
+import com.alibaba.nacos.client.config.utils.MD5;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.util.UuidUtil;
+
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
@@ -24,14 +31,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.common.Constants;
-import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.config.utils.MD5;
-import com.alibaba.nacos.client.utils.EnvUtil;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.util.UuidUtil;
 
 /**
  * Http tool

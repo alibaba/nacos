@@ -189,7 +189,7 @@ public class ConfigSubService {
 							.append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
 				}
 
-				String urlAll = getUrl(ip, url) + paramUrl;
+				String urlAll = getUrl(ip, url) + "?" + paramUrl;
 				com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
 						.invokeURL(urlAll, null, Constants.ENCODE);
 				/**

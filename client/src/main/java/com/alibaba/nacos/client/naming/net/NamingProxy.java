@@ -16,8 +16,11 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.UuidUtil;
 
@@ -25,7 +28,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author dungu.zpf
@@ -225,6 +231,34 @@ public class NamingProxy {
         } catch (Exception e) {
             LogUtils.LOG.error("NA", "faild to deRegDom: " + JSON.toJSONString(params), e);
         }
+    }
+
+    public boolean serverHealthy() {
+
+        try {
+            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<>(2));
+        } catch (Exception e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public ListView<String> getServiceList(int pageNo, int pageSize) throws NacosException {
+
+        Map<String, String> params = new HashMap<String, String>(4);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+
+        String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/service/list", params);
+
+        JSONObject json = JSON.parseObject(result);
+        ListView<String> listView = new ListView<>();
+        listView.setCount(json.getInteger("count"));
+        listView.setData(JSON.parseObject(json.getString("doms"), new TypeReference<List<String>>() {
+        }));
+
+        return listView;
     }
 
     public String callAllServers(String api, Map<String, String> params) throws NacosException {

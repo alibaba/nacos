@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.nacos.client.naming.utils.StringUtils;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +31,7 @@ public class Cluster {
     /**
      * Name of cluster
      */
-    private String name = StringUtils.EMPTY;
+    private String name = "";
 
     /**
      * Health check config of this cluster
