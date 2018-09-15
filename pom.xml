@@ -12,7 +12,7 @@
 	<inceptionYear>2018</inceptionYear>
 	<groupId>com.alibaba.nacos</groupId>
 	<artifactId>nacos-all</artifactId>
-	<version>0.2.0</version>
+	<version>0.2.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Alibaba NACOS ${project.version}</name>
@@ -26,7 +26,7 @@
 		<url>git@github.com:alibaba/nacos.git</url>
 		<connection>scm:git@github.com:alibaba/nacos.git</connection>
 		<developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-		<tag>nacos-all-0.2.0</tag>
+		<tag>nacos-all-0.2.1-SNAPSHOT</tag>
 	</scm>
 
 	<mailingLists>
@@ -541,7 +541,7 @@
 			<dependency>
 				<groupId>com.taobao.middleware</groupId>
 				<artifactId>logger.api</artifactId>
-				<version>0.2.0</version>
+				<version>0.2.1-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>apache-log4j</groupId>
