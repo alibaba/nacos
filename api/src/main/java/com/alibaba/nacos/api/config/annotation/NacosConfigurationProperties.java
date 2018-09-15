@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.config.annotation;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.common.Constants;
 
 import java.lang.annotation.*;
@@ -29,7 +30,7 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see PropertyKeyConst
- * @since 0.1.0
+ * @since 0.2.0
  */
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
