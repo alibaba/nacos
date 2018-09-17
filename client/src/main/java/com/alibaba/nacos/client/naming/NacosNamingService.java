@@ -174,7 +174,7 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            throw new IllegalStateException("no host to srv for dom: " + serviceName);
+            return new ArrayList<>();
         }
         return list;
     }
@@ -190,7 +190,7 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            throw new IllegalStateException("no host to srv for dom: " + serviceName);
+            return new ArrayList<>();
         }
 
         if (healthy) {
