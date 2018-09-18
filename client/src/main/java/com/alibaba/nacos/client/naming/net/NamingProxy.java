@@ -46,7 +46,7 @@ public class NamingProxy {
 
     private List<String> serverList;
 
-    private List<String> serversFromEndpoint = new ArrayList<>();
+    private List<String> serversFromEndpoint = new ArrayList<String>();
 
     private long lastSrvRefTime = 0L;
 
@@ -151,7 +151,7 @@ public class NamingProxy {
 
         LogUtils.LOG.info("REGISTER-SERVICE", "registering service " + serviceName + " with instance:" + instance);
 
-        final Map<String, String> params = new HashMap<>(8);
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
@@ -173,7 +173,7 @@ public class NamingProxy {
         LogUtils.LOG.info("DEREGISTER-SERVICE", "deregistering service " + serviceName
                 + " with instance:" + ip + ":" + port + "@" + cluster);
 
-        final Map<String, String> params = new HashMap<>(8);
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
@@ -185,7 +185,7 @@ public class NamingProxy {
 
     public String queryList(String serviceName, String clusters, boolean healthyOnly) throws NacosException {
 
-        final Map<String, String> params = new HashMap<>(8);
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
         params.put("serviceName", serviceName);
         params.put("clusters", clusters);
@@ -202,7 +202,7 @@ public class NamingProxy {
     public boolean serverHealthy() {
 
         try {
-            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<>(2));
+            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<String, String>(2));
         } catch (Exception e) {
             return false;
         }
@@ -219,7 +219,7 @@ public class NamingProxy {
         String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/service/list", params);
 
         JSONObject json = JSON.parseObject(result);
-        ListView<String> listView = new ListView<>();
+        ListView<String> listView = new ListView<String>();
         listView.setCount(json.getInteger("count"));
         listView.setData(JSON.parseObject(json.getString("doms"), new TypeReference<List<String>>() {
         }));

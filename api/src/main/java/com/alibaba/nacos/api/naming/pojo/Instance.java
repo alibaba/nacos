@@ -67,7 +67,7 @@ public class Instance {
     /**
      * User extended attributes
      */
-    private Map<String, String> metadata = new HashMap<>();
+    private Map<String, String> metadata = new HashMap<String, String>();
 
     public String getInstanceId() {
         return instanceId;
