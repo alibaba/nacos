@@ -122,7 +122,7 @@ public class NamingProxy {
         try {
 
             if (!CollectionUtils.isEmpty(serverList)) {
-                LogUtils.LOG.info("server list provided by user: " + serverList);
+                LogUtils.LOG.debug("server list provided by user: " + serverList);
                 return;
             }
 
@@ -147,28 +147,9 @@ public class NamingProxy {
         }
     }
 
-    public void regDom(String dom, String ip, int port, double weight, String cluster) throws NacosException {
-
-        final Map<String, String> params = new HashMap<String, String>(8);
-        params.put("dom", dom);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("weight", String.valueOf(weight));
-        params.put("cluster", cluster);
-
-        try {
-            doRegDom(params);
-        } catch (Exception e) {
-            try {
-                Thread.sleep(1000L);
-                doRegDom(params);
-            } catch (Exception e1) {
-                throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
-            }
-        }
-    }
-
     public void registerService(String serviceName, Instance instance) throws NacosException {
+
+        LogUtils.LOG.info("REGISTER-SERVICE", "registering service " + serviceName + " with instance:" + instance);
 
         final Map<String, String> params = new HashMap<>(8);
         params.put("tenant", namespace);
@@ -188,6 +169,9 @@ public class NamingProxy {
     }
 
     public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
+
+        LogUtils.LOG.info("DEREGISTER-SERVICE", "deregistering service " + serviceName
+                + " with instance:" + ip + ":" + port + "@" + cluster);
 
         final Map<String, String> params = new HashMap<>(8);
         params.put("tenant", namespace);
@@ -213,24 +197,6 @@ public class NamingProxy {
     private String doRegDom(Map<String, String> params) throws Exception {
         String api = UtilAndComs.NACOS_URL_BASE + "/api/regService";
         return reqAPI(api, params);
-    }
-
-    public void deRegDom(String dom, String ip, int port, String cluster) throws NacosException {
-        String api = UtilAndComs.NACOS_URL_BASE + "/api/deRegService";
-
-        Map<String, String> params = new HashMap<String, String>(8);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("cluster", cluster);
-
-        params.put("dom", dom);
-        params.put("tenant", namespace);
-
-        try {
-            reqAPI(api, params);
-        } catch (Exception e) {
-            LogUtils.LOG.error("NA", "faild to deRegDom: " + JSON.toJSONString(params), e);
-        }
     }
 
     public boolean serverHealthy() {

@@ -30,6 +30,7 @@ import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
@@ -77,6 +78,13 @@ public class NacosNamingService implements NamingService {
         if (StringUtils.isEmpty(logName)) {
             logName = "naming.log";
         }
+
+        String logLevel = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_LEVEL);
+        if (StringUtils.isEmpty(logLevel)) {
+            logLevel = "INFO";
+        }
+
+        LogUtils.setLogLevel(logLevel);
 
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
