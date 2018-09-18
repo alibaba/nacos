@@ -52,10 +52,12 @@ public class BeatReactor {
     }
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
+        LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
         dom2Beat.put(dom, beatInfo);
     }
 
     public void removeBeatInfo(String dom) {
+        LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
         dom2Beat.remove(dom);
     }
 
@@ -67,7 +69,7 @@ public class BeatReactor {
                 for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
                     BeatInfo beatInfo = entry.getValue();
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                    LogUtils.LOG.info("BEAT", "send beat to server: ", beatInfo.toString());
+                    LogUtils.LOG.debug("BEAT", "send beat to server: ", beatInfo.toString());
                 }
             } catch (Exception e) {
                 LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
