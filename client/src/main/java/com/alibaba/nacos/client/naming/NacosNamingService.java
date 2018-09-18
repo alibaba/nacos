@@ -182,7 +182,7 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<>();
+            return new ArrayList<Instance>();
         }
         return list;
     }
@@ -198,7 +198,7 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<>();
+            return new ArrayList<Instance>();
         }
 
         if (healthy) {
@@ -259,7 +259,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public List<ServiceInfo> getSubscribeServices() {
-        return new ArrayList<>(hostReactor.getServiceInfoMap().values());
+        return new ArrayList<ServiceInfo>(hostReactor.getServiceInfoMap().values());
     }
 
     @Override

@@ -155,7 +155,7 @@ public class ServiceInfo {
 
     public List<Instance> getHosts() {
 
-        return new ArrayList<>(hosts);
+        return new ArrayList<Instance>(hosts);
     }
 
     public boolean validate() {
