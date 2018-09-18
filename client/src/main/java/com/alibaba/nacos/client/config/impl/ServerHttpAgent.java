@@ -95,7 +95,7 @@ public class ServerHttpAgent {
 						new Object[] { serverListMgr.getCurrentServerAddr()});
 				throw ioe;
 			}
-		} while (System.currentTimeMillis() > endTime);
+		} while (System.currentTimeMillis() <= endTime);
 
 		log.error("NACOS-0002",
 				LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
@@ -137,7 +137,7 @@ public class ServerHttpAgent {
 				throw ioe;
 			}
 
-		} while (System.currentTimeMillis() > endTime);
+		} while (System.currentTimeMillis() <= endTime);
 
 		log.error("NACOS-0002",
 				LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
@@ -179,7 +179,7 @@ public class ServerHttpAgent {
 				throw ioe;
 			}
 			
-		} while (System.currentTimeMillis() > endTime);
+		} while (System.currentTimeMillis() <= endTime);
 		
 		log.error("NACOS-0002",
 				LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
