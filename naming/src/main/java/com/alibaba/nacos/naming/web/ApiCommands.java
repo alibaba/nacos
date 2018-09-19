@@ -1066,8 +1066,9 @@ public class ApiCommands {
         }
 
         String dom = BaseServlet.required(request, "dom");
+
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
-        String agent = BaseServlet.optional(request, "header:Client-Version", StringUtils.EMPTY);
+        String agent = request.getHeader("Client-Version");
         String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = BaseServlet.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(BaseServlet.optional(request, "udpPort", "0"));
