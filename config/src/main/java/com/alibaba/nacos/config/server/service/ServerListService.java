@@ -77,7 +77,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	
 	@PostConstruct
 	public void init() {
-		serverPort = System.getProperty("nacos.server.port", "8080");
+		serverPort = System.getProperty("nacos.server.port", "8848");
 		String envDomainName = System.getenv("address_server_domain");
 		if (StringUtils.isBlank(envDomainName)) {
 			domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
