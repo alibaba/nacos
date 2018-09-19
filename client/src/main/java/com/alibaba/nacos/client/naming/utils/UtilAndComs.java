@@ -20,7 +20,7 @@ package com.alibaba.nacos.client.naming.utils;
  */
 public class UtilAndComs {
 
-    public static final String VERSION = "Nacos-Client-0.1";
+    public static final String VERSION = "Nacos-Java-Client:v0.2.1";
 
     public static final String ENCODING = "UTF-8";
 
