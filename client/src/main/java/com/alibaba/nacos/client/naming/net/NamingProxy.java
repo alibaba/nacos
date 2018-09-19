@@ -38,6 +38,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class NamingProxy {
 
+    private static final int DEFAULT_SERVER_PORT = 8848;
+
     private String namespace;
 
     private String endpoint;
@@ -281,6 +283,10 @@ public class NamingProxy {
                 "RequestId", UuidUtil.generateUuid());
 
         String url;
+
+        if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
+            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + DEFAULT_SERVER_PORT;
+        }
 
         url = HttpClient.getPrefix() + curServer + api;
 
