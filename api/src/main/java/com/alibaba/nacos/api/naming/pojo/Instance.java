@@ -78,7 +78,7 @@ public class Instance {
         this.instanceId = instanceId;
     }
 
-    public String getServiceName() {
+    public String serviceName() {
         String[] infos = instanceId.split(Constants.NAMING_INSTANCE_ID_SPLITTER);
         if (infos.length < Constants.NAMING_INSTANCE_ID_SEG_COUNT) {
             return null;

@@ -455,11 +455,6 @@ public class DomainsManager {
 
             ipAddrs.removeAll(ips);
 
-            if (ipAddrs.size() <= 0 && dom.allIPs().size() > 1) {
-                throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
-                        + JSON.toJSONString(ipAddrs));
-            }
-
             RaftCore.signalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
         } finally {
             lock.unlock();
