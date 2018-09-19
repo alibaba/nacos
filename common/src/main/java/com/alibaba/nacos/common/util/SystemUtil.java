@@ -33,7 +33,7 @@ public class SystemUtil {
 
     public static List<String> getIPsBySystemEnv(String key) {
         String env = getSystemEnv(key);
-        List<String> ips = new ArrayList<>();
+        List<String> ips = new ArrayList<String>();
         if (StringUtils.isNotEmpty(env)) {
             ips = Arrays.asList(env.split(","));
         }
