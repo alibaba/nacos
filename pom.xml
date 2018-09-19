@@ -698,14 +698,5 @@
 			<!-- naming -->
 		</dependencies>
 	</dependencyManagement>
-
-
-
-	<distributionManagement>
-		<repository>
-			<id>snapshots</id>
-			<url>http://mvnrepo.alibaba-inc.com/mvn/snapshots</url>
-		</repository>
-	</distributionManagement>
 </project>
 
