@@ -578,7 +578,7 @@
 				<artifactId>spotbugs-annotations</artifactId>
 				<version>3.1.3</version>
 			</dependency>
-			<!-- cfg-->
+			<!-- config-->
 
 			<dependency>
 				<groupId>javax.ws.rs</groupId>
@@ -640,7 +640,7 @@
 				<artifactId>jackson-mapper-lgpl</artifactId>
 				<version>1.9.6</version>
 			</dependency>
-			<!-- cfg-->
+			<!-- config-->
 
 
 			<!-- naming -->
