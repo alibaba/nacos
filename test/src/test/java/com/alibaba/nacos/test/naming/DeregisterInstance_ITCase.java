@@ -63,6 +63,7 @@ public class DeregisterInstance_ITCase {
     @Test
     public void dregDomTest() throws Exception {
         String serviceName = randomDomainName();
+
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
 
@@ -87,9 +88,10 @@ public class DeregisterInstance_ITCase {
      * 删除service中指定cluster的一个ip
      * @throws Exception
      */
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void dregDomClusterTest() throws Exception {
         String serviceName = randomDomainName();
+
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
