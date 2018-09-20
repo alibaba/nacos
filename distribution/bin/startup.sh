@@ -27,7 +27,8 @@ done
 export JAVA_HOME
 export JAVA="$JAVA_HOME/bin/java"
 export BASE_DIR=`cd $(dirname $0)/..; pwd`
-export CLASSPATH=.:${BASE_DIR}/conf:${CLASSPATH}
+export DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
+export CUSTOM_SEARCH_LOCATIONS=${DEFAULT_SEARCH_LOCATIONS},file:${BASE_DIR}/conf/
 
 #===========================================================================================
 # JVM Configuration
@@ -44,7 +45,7 @@ JAVA_OPT="${JAVA_OPT} -XX:-OmitStackTraceInFastThrow"
 JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
 JAVA_OPT="${JAVA_OPT} -jar ${BASE_DIR}/target/nacos-server.jar"
 JAVA_OPT="${JAVA_OPT} ${JAVA_OPT_EXT}"
-JAVA_OPT="${JAVA_OPT} -cp ${CLASSPATH}"
+JAVA_OPT="${JAVA_OPT} --spring.config.location=${CUSTOM_SEARCH_LOCATIONS}"
 if [ ! -d "${BASE_DIR}/logs" ]; then
   mkdir ${BASE_DIR}/logs
 fi
