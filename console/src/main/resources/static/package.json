@@ -2,7 +2,8 @@
   "private": true,
   "scripts": {
     "start": "roadhog dev",
-    "build": "ESLINT=none roadhog build",
+    "build": "node build.js",
+    "dist": "roadhog build",
     "lint": "eslint --ext .js src test"
   },
   "dependencies": {

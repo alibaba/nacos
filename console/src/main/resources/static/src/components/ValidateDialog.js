@@ -145,7 +145,7 @@ class ValidateDialog extends React.Component {
 		let data = Object.assign({}, config.data, {
 			codeType: this.state.codeType,
 			verifyCode: this.state.verifyCode,
-			requestId: this.state.window.requestId
+			requestId: this.state.requestId
 		});
 		let preSucess = config.success;
 		this.setState({
