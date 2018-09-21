@@ -163,10 +163,6 @@ public class ServiceInfo {
             return true;
         }
 
-        if (isEmpty(hosts)) {
-            return false;
-        }
-
         List<Instance> validHosts = new ArrayList<Instance>();
         for (Instance host : hosts) {
             if (!host.isHealthy()) {
@@ -176,10 +172,6 @@ public class ServiceInfo {
             for (int i = 0; i < host.getWeight(); i++) {
                 validHosts.add(host);
             }
-        }
-
-        if (isEmpty(validHosts)) {
-            return false;
         }
 
         return true;
