@@ -82,6 +82,13 @@ public class DeregisterInstance_ITCase {
         Assert.assertEquals(instances.size(), 1);
         Assert.assertEquals(instances.get(0).getIp(), "127.0.0.2");
 
+        naming.deregisterInstance(serviceName, "127.0.0.2", TEST_PORT);
+
+        TimeUnit.SECONDS.sleep(2);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(0, instances.size());
     }
 
     /**
