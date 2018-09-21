@@ -128,6 +128,19 @@
 				</configuration>
 			</plugin>
 		</plugins>
+		<resources>
+			<resource>
+				<filtering>true</filtering>
+				<directory>src/main/resources</directory>
+				<excludes>
+					<exclude>application.properties</exclude>
+					<exclude>banner.txt</exclude>
+					<exclude>nacos-config-logback.xml</exclude>
+					<exclude>schema.sql</exclude>
+					<exclude>nacos-db.sql</exclude>
+				</excludes>
+			</resource>
+		</resources>
 	</build>
 	<profiles>
 		<profile>
