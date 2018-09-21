@@ -135,7 +135,6 @@
 				<excludes>
 					<exclude>application.properties</exclude>
 					<exclude>banner.txt</exclude>
-					<exclude>nacos-config-logback.xml</exclude>
 					<exclude>schema.sql</exclude>
 					<exclude>nacos-db.sql</exclude>
 				</excludes>
