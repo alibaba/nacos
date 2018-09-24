@@ -52,7 +52,7 @@ public class SwitchService {
             rtn =  value != null ? Boolean.valueOf(value).booleanValue() : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
-            LogUtil.fatalLog.error("corrupt switch value {}={}", new Object[]{key, switches.get(key)});
+            LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
         }
         return rtn;
     }
@@ -64,7 +64,7 @@ public class SwitchService {
             rtn =  status != null ? Integer.parseInt(status) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
-            LogUtil.fatalLog.error("corrupt switch value {}={}", new Object[]{key, switches.get(key)});
+            LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
         }
         return rtn;
     }

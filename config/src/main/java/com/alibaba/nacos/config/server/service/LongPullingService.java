@@ -240,13 +240,13 @@ public class LongPullingService extends AbstractEventListener {
             if (changedGroups.size() > 0) {
                 generateResponse(req, rsp, changedGroups);
                 LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                        new Object[]{System.currentTimeMillis() - start, "instant", RequestUtil.getRemoteIp(req), "polling",
-                                clientMd5Map.size(), probeRequestSize, changedGroups.size()});
+	                System.currentTimeMillis() - start, "instant", RequestUtil.getRemoteIp(req), "polling",
+	                clientMd5Map.size(), probeRequestSize, changedGroups.size());
                 return;
             } else if(noHangUpFlag!=null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
-            	LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                        new Object[]{System.currentTimeMillis() - start, "nohangup", RequestUtil.getRemoteIp(req), "polling",
-                                clientMd5Map.size(), probeRequestSize, changedGroups.size()}); 
+	            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
+		            RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
+		            changedGroups.size());
             	return;
             }
         }
@@ -335,9 +335,10 @@ public class LongPullingService extends AbstractEventListener {
                     	getRetainIps().put(clientSub.ip, System.currentTimeMillis());
                     	iter.remove(); // 删除订阅关系
                         LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                                new Object[]{(System.currentTimeMillis() - changeTime),
-                                        "in-advance", RequestUtil.getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()), "polling",
-                                        clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey});
+	                        (System.currentTimeMillis() - changeTime),
+	                        "in-advance", RequestUtil.getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
+	                        "polling",
+	                        clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
@@ -394,9 +395,10 @@ public class LongPullingService extends AbstractEventListener {
 
                         if(isFixedPolling()) {
                         	LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-                        			new Object[]{(System.currentTimeMillis() - createTime),
-                        			"fix", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()), "polling",
-                        			clientMd5Map.size(), probeRequestSize});
+		                        (System.currentTimeMillis() - createTime),
+		                        "fix", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+		                        "polling",
+		                        clientMd5Map.size(), probeRequestSize);
                             List<String> changedGroups = MD5Util.compareMd5((HttpServletRequest) asyncContext.getRequest(), (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
                             if (changedGroups.size() > 0) {
                                 sendResponse(changedGroups);
@@ -405,9 +407,10 @@ public class LongPullingService extends AbstractEventListener {
                             }
                         } else {
                         	LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-                        			new Object[]{(System.currentTimeMillis() - createTime),
-                        			"timeout", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()), "polling",
-                        			clientMd5Map.size(), probeRequestSize});
+		                        (System.currentTimeMillis() - createTime),
+		                        "timeout", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
+		                        "polling",
+		                        clientMd5Map.size(), probeRequestSize);
                             sendResponse(null);
                         }
         			} catch (Throwable t) {
