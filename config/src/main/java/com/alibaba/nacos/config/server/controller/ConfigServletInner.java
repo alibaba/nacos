@@ -248,7 +248,7 @@ public class ConfigServletInner {
 							Channels.newChannel(response.getOutputStream()));
 				}
 
-                LogUtil.pullCheckLog.warn("{}|{}|{}|{}", new Object[]{groupKey,requestIp,md5, TimeUtils.getCurrentTimeStr()});
+                LogUtil.pullCheckLog.warn("{}|{}|{}|{}", groupKey,requestIp,md5, TimeUtils.getCurrentTimeStr());
 
 
 				final long delayed = System.currentTimeMillis() - lastModified;
@@ -275,7 +275,7 @@ public class ConfigServletInner {
 
 		} else {
 
-			pullLog.info("[client-get] clientIp={}, {}, get data during dump", new Object[]{clientIp, groupKey});
+			pullLog.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
 
 			response.setStatus(HttpServletResponse.SC_CONFLICT);
 			response.getWriter().println("requested file is being modified, please try later.");

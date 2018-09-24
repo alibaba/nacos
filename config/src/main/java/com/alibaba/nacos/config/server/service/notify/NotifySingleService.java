@@ -77,13 +77,15 @@ public class NotifySingleService
                 this.isSuccess = PROCESSOR.process(GroupKey2.getKey(getDataId(), getGroup()), this);
             } catch (Exception e) { // never goes here, but in case (运行中never中断此通知线程)
                 this.isSuccess = false;
-                LogUtil.notifyLog.error("[notify-exception] target:{} dataid:{} group:{} ts:{}", new Object[]{target, getDataId(), getGroup(), getLastModified()});
+                LogUtil.notifyLog.error("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(),
+                    getGroup(), getLastModified());
 				LogUtil.notifyLog.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
 						new Object[] { target, getDataId(), getGroup(), getLastModified() }, e);
             }
 
             if (!this.isSuccess) {
-                LogUtil.notifyLog.error("[notify-retry] target:{} dataid:{} group:{} ts:{}", new Object[]{target, getDataId(), getGroup(), getLastModified()});
+                LogUtil.notifyLog.error("[notify-retry] target:{} dataid:{} group:{} ts:{}", target, getDataId(),
+                    getGroup(), getLastModified());
                 try {
                     ((ScheduledThreadPoolExecutor) executor).schedule(this, 500L, TimeUnit.MILLISECONDS);
                 } catch (Exception e) { // 通知虽然失败，但是同时此前节点也下线了
