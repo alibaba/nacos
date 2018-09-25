@@ -30,7 +30,7 @@ npm start
 
 ## 构建打包
 ```sh
-npm build
+npm run build
 ```
 
 ## 
