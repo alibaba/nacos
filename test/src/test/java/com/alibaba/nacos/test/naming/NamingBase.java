@@ -66,7 +66,7 @@ public class NamingBase {
         instance.setPort(TEST_PORT);
         instance.setHealthy(true);
         instance.setWeight(2.0);
-        Map<String, String> instanceMeta = new HashMap<>();
+        Map<String, String> instanceMeta = new HashMap<String, String>();
         instanceMeta.put("site", "et2");
         instance.setMetadata(instanceMeta);
 
@@ -75,7 +75,7 @@ public class NamingBase {
         service.setHealthCheckMode("server");
         service.setProtectThreshold(0.8F);
         service.setGroup("CNCF");
-        Map<String, String> serviceMeta = new HashMap<>();
+        Map<String, String> serviceMeta = new HashMap<String, String>();
         serviceMeta.put("symmetricCall", "true");
         service.setMetadata(serviceMeta);
         instance.setService(service);
@@ -87,7 +87,7 @@ public class NamingBase {
         healthChecker.setHeaders("Client-Version|Nacos");
         healthChecker.setPath("/xxx.html");
         cluster.setHealthChecker(healthChecker);
-        Map<String, String> clusterMeta = new HashMap<>();
+        Map<String, String> clusterMeta = new HashMap<String, String>();
         clusterMeta.put("xxx", "yyyy");
         cluster.setMetadata(clusterMeta);
 
@@ -151,12 +151,12 @@ public class NamingBase {
     }
 
     public static boolean verifyInstanceList(List<Instance> instanceList1, List<Instance> instanceList2) {
-        Map<String, Instance> instanceMap = new HashMap<>();
+        Map<String, Instance> instanceMap = new HashMap<String, Instance>();
         for (Instance instance : instanceList1) {
             instanceMap.put(instance.getIp(), instance);
         }
 
-        Map<String, Instance> instanceGetMap = new HashMap<>();
+        Map<String, Instance> instanceGetMap = new HashMap<String, Instance>();
         for (Instance instance : instanceList2) {
             instanceGetMap.put(instance.getIp(), instance);
         }

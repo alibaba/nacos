@@ -40,7 +40,7 @@ public class SwitchDomain implements Domain, RaftListener {
 
     private long clientBeatInterval = 5 * 1000;
 
-    public long defaultCacheMillis = 1000L;
+    public long defaultCacheMillis = 10000L;
 
     public float distroThreshold = 0.7F;
 
@@ -88,7 +88,7 @@ public class SwitchDomain implements Domain, RaftListener {
     /**
      * since which version, push can be enabled
      */
-    public String pushJavaVersion = "4.1.0";
+    public String pushJavaVersion = "0.1.0";
     public String pushPythonVersion = "0.4.3";
     public String pushCVersion = "1.0.12";
     public String trafficSchedulingJavaVersion = "4.5.0";

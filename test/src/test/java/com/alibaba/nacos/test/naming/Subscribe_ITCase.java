@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.Event;
@@ -30,6 +31,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -189,5 +191,37 @@ public class Subscribe_ITCase {
         }
 
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+    }
+
+    @Test
+    public void subscribeEmpty() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        naming.subscribe(serviceName, new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println(((NamingEvent)event).getServiceName());
+                System.out.println(((NamingEvent)event).getInstances());
+                instances = ((NamingEvent)event).getInstances();
+            }
+        });
+
+        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+
+        while (instances.isEmpty()) {
+            Thread.sleep(1000L);
+        }
+
+        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+
+        naming.deregisterInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+
+        while (!instances.isEmpty()) {
+            Thread.sleep(1000L);
+        }
+
+        Assert.assertEquals(0, instances.size());
+        Assert.assertEquals(0, naming.getAllInstances(serviceName).size());
     }
 }
