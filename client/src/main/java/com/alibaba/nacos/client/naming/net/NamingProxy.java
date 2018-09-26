@@ -193,7 +193,7 @@ public class NamingProxy {
         params.put("clusters", clusters);
         params.put("healthyOnly", String.valueOf(healthyOnly));
 
-        return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instances", params, "GET");
+        return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, "GET");
     }
 
     private String doRegDom(Map<String, String> params) throws Exception {
