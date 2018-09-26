@@ -15,18 +15,20 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.core.DomainsManager;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.BaseServlet;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.web.BaseServlet;
 
 /**
  * @author dungu.zpf
@@ -65,4 +67,5 @@ public class ServiceController {
         return result;
 
     }
+
 }

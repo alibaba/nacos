@@ -1177,6 +1177,7 @@ public class ApiCommands {
                 ipObj.put("marked", ip.isMarked());
                 ipObj.put("instanceId", ip.generateInstanceId());
                 ipObj.put("metadata", ip.getMetadata());
+                ipObj.put("clusterName",ip.getClusterName());
                 double weight = ip.getWeight();
 
                 ipObj.put("weight", ip.getWeight());
@@ -1189,7 +1190,6 @@ public class ApiCommands {
         result.put("hosts", hosts);
 
         result.put("dom", dom);
-        result.put("clusters", clusters);
         result.put("cacheMillis", cacheMillis);
         result.put("lastRefTime", System.currentTimeMillis());
         result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
