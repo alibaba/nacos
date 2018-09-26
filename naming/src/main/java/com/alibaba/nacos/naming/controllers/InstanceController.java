@@ -120,7 +120,7 @@ public class InstanceController extends ApiCommands {
         return addIP4Dom(request);
     }
 
-    @RequestMapping(value = "/instances", method = RequestMethod.GET)
+    @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
     public JSONObject queryList(HttpServletRequest request) throws Exception {
 
         Map<String, String[]> params = new HashMap<>(request.getParameterMap());
