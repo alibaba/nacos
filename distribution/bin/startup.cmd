@@ -27,7 +27,6 @@ set "JAVA_OPT=%JAVA_OPT% -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollect
 set "JAVA_OPT=%JAVA_OPT% -verbose:gc -Xloggc:"%USERPROFILE%\rmq_srv_gc.log" -XX:+PrintGCDetails"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
 set "JAVA_OPT=%JAVA_OPT% -Dspring.config.location=%BASE_DIR%\conf\application.properties"
-set "JAVA_OPT=%JAVA_OPT% -Dserver.port=8848"
 
 if not ""%2"" == "cluster" set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
 
