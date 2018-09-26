@@ -27,7 +27,6 @@ set "JAVA_OPT=%JAVA_OPT% -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX
 set "JAVA_OPT=%JAVA_OPT% -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8 -XX:-UseParNewGC"
 set "JAVA_OPT=%JAVA_OPT% -verbose:gc -Xloggc:"%USERPROFILE%\rmq_srv_gc.log" -XX:+PrintGCDetails"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-set "JAVA_OPT=%JAVA_OPT% -Dspring.config.location=%BASE_DIR%\conf\application.properties"
 
 if not ""%2"" == "cluster" set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
 
