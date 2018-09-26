@@ -625,7 +625,7 @@ public class RestAPI_ITCase {
 
         HttpHeaders headers = new HttpHeaders();
 
-        HttpEntity<?> entity = new HttpEntity<>(headers);
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
                 .queryParams(params);
