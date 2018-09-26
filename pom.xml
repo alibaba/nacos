@@ -12,7 +12,7 @@
 	<inceptionYear>2018</inceptionYear>
 	<groupId>com.alibaba.nacos</groupId>
 	<artifactId>nacos-all</artifactId>
-	<version>0.2.0</version>
+	<version>0.2.0-SM-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Alibaba NACOS ${project.version}</name>
@@ -688,5 +688,15 @@
 			<!-- naming -->
 		</dependencies>
 	</dependencyManagement>
+	<distributionManagement>
+		<repository>
+			<id>releases</id>
+			<url>http://mvnrepo.alibaba-inc.com/mvn/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshots</id>
+			<url>http://mvnrepo.alibaba-inc.com/mvn/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 </project>
 
