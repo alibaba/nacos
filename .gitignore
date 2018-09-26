@@ -9,3 +9,4 @@ target
 /logs
 *.iml
 node_modules
+test/derby.log
