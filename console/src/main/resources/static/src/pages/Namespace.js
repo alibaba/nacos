@@ -28,7 +28,7 @@ class Namespace extends React.Component {
             window.request({
                 type: 'get',
                 beforeSend: function () { },
-                url: `/nacos/v1/cs/namespaces`,
+                url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
                         let data = res.data;
@@ -79,19 +79,12 @@ class Namespace extends React.Component {
     detailNamespace(record) {
         let namespace = record.namespace; //获取ak,sk
         window.request({
-            url: `/diamond-ops/service/namespaceOwnerInfo/${namespace}`,
+            url: `/nacos/v1/console/namespaces?show=all&namespaceId=${namespace}`,
             beforeSend: () => {
                 this.openLoading();
             },
             success: res => {
-                if (res.code === 200) {
-                    let obj = {
-                        regionId: res.data.regionId,
-                        accessKey: res.data.accessKey,
-                        secretKey: res.data.secretKey,
-                        endpoint: res.data.endpoint
-                    };
-
+            	if (res !== null) {
                     Dialog.alert({
                         needWrapper: false,
                         language: window.pageLanguage || 'zh-cn',
@@ -99,59 +92,29 @@ class Namespace extends React.Component {
                         content: <div>
                             <div style={{ marginTop: '10px' }}>
                                 <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.region_ID')}</span>
-                                    <span style={{ color: '#c7254e' }}>
-                                        {obj.regionId}
-                                    </span>
-                                </p>
-                                <p>
                                     <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>
                                     <span style={{ color: '#c7254e' }}>
-                                        {record.namespaceShowName}
+                                        {res.namespaceShowName}
                                     </span>
                                 </p>
                                 <p>
                                     <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>
                                     <span style={{ color: '#c7254e' }}>
-                                        {record.namespace}
+                                        {res.namespace}
                                     </span>
                                 </p>
                                 <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>End Point:</span>
-                                    <span style={{ color: '#c7254e' }}>
-                                        {obj.endpoint}
-                                    </span>
+                                <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')}</span>
+                                <span style={{ color: '#c7254e' }}>
+                                {res.configCount} / {res.quota}
+                                </span>
                                 </p>
                                 <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.ecs_ram_role')}</span>
-                                    <a href={window._getLink && window._getLink("ecsInstanceRamRolesUse")} rel="noopener noreferrer" target="_blank">{window.aliwareIntl.get('nacos.page.namespace._Details_of6')}</a>
+                                <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.configdetail.Description')}</span>
+                                <span style={{ color: '#c7254e' }}>
+                                {res.namespaceDesc}
+                                </span>
                                 </p>
-                                <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.AccessKey_recommended1')}</span>
-                                    <span style={{ color: '#c7254e' }}>
-                                        <a href={window._getLink && window._getLink("getAk")} rel="noopener noreferrer" target="_blank">{window.aliwareIntl.get('nacos.page.namespace.click_on_the_obtain_of1')}</a>
-                                    </span>
-                                </p>
-                                <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.SecretKey_recommended3')}</span>
-                                    <span style={{ color: '#c7254e' }}>
-                                        <a href={window._getLink && window._getLink("getAk")} rel="noopener noreferrer" target="_blank">{window.aliwareIntl.get('nacos.page.namespace.click_on_the_obtain_of1')}</a>
-                                    </span>
-                                </p>
-                                <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.ACM_dedicated_AccessKey_will_the_waste,_does_not_recommend_the_use_of3')}</span>
-                                    <span style={{ color: '#c7254e' }}>
-                                        {obj.accessKey}
-                                    </span>
-                                </p>
-                                <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use4')}</span>
-                                    <span style={{ color: '#c7254e' }}>
-                                        {obj.secretKey}
-                                    </span>
-                                </p>
-                            </div>
-                            <div style={{ marginTop: '20px', backgroundColor: '#eee', padding: 10, fontSize: 12 }}>{window.aliwareIntl.get('nacos.page.namespace.note_ACM_is_dedicated_AK/SK_is_mainly_used_for_some_of_the_compatibility_scenario,_it_is_recommended_to_Unified_the_use_of_Ali_cloud_AK/SK.5')}<a href={window._getLink && window._getLink("akHelp")} rel="noopener noreferrer" target="_blank">{window.aliwareIntl.get('nacos.page.namespace._Details_of6')}</a>
                             </div>
                         </div>
                     });
@@ -184,18 +147,14 @@ class Namespace extends React.Component {
             </div>,
             language: window.pageLanguage || 'zh-cn',
             onOk: () => {
+            	let url = `/nacos/v1/console/namespaces?namespaceId=${record.namespace}`;
                 window.request({
-                    url: "com.alibaba.nacos.service.deleteNameSpace",
+                    url: url,
                     type: 'delete',
-                    data: {},
-                    $data: {
-                        serverId: serverId,
-                        namespace: record.namespace
-                    },
                     success: res => {
                         let _payload = {};
                         _payload.title = window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.configuration_management');
-                        if (res.code === 200) {
+                        if (res === true) {
                             let urlnamespace = window.getParams('namespace');
                             if (record.namespace === urlnamespace) {
                                 window.setParams('namespace', this.state.defaultNamespace);
@@ -223,7 +182,7 @@ class Namespace extends React.Component {
     refreshNameSpace() {
         window.request({
             type: 'get',
-            url: `/nacos/v1/cs/namespaces`,
+            url: `/nacos/v1/console/namespaces`,
             success: res => {
                 if (res.code === 200) {
                     window.namespaceList = res.data;

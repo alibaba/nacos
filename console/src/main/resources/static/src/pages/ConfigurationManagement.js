@@ -901,7 +901,7 @@ class ConfigurationManagement extends React.Component {
                 <a href={window._getLink && window._getLink("knowGoup")} target={"_blank"}>{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_Group')}</a>	
             </Balloon>;
         return (
-            <div>	
+            <div>
                 <BatchHandle ref={ref => this.batchHandle = ref} />	
                 <Loading shape={"flower"} style={{ position: 'relative', width: '100%', overflow: 'auto' }} visible={this.state.loading} tip={"Loading..."} color={"#333"}>	
                 <div className={this.state.hasdash ? 'dash-page-container' : ''}>	

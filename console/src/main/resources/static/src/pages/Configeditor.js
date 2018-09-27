@@ -229,10 +229,6 @@ class Configeditor extends React.Component {
         this.tenant = window.getParams('namespace') || '';
         this.serverId = window.getParams('serverId') || 'center';
         let url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
-        //        let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        //        if (this.tenant === 'global' || !this.tenant) {
-        //            url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        //        }
         window.request({
             url: url,
             beforeSend: function () {
@@ -268,22 +264,7 @@ class Configeditor extends React.Component {
                     }
 
                     let envvalues = [];
-                    //                    for (let i = 0; i < data.envs.length; i++) {
-                    //                        let obj = data.envs[i];
-                    //                        envlist.push({
-                    //                            label: obj.name,
-                    //                            value: obj.serverId
-                    //                        });
-                    //                        envvalues.push(obj.serverId);
-                    //                    }
-
                     let env = {};
-                    //                    let env = data.envs[0] || {};
-                    //                    self.setState({
-                    //                        envlist: envlist,
-                    //                        envname: env.name,
-                    //                        envvalues: envvalues
-                    //                    });
                     self.serverId = env.serverId;
                     self.targetEnvs = envvalues;
                 } else {
