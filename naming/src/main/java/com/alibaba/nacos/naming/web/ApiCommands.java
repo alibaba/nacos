@@ -1430,7 +1430,9 @@ public class ApiCommands {
                     Switch.setPushPythonVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
                     Switch.setPushCVersion(version);
-                } else {
+                } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
+                    Switch.setPushGoVersion(version);
+                } else{
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
 
