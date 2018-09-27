@@ -10,7 +10,3 @@
 # misc
 .DS_Store
 npm-debug.log*
-/index.html
-/index.css
-/index.js
-/i18ndoc.js
