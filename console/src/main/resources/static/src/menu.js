@@ -75,6 +75,21 @@ module.exports = {
             "id": "configurationManagement"
         },
         {
+          "isExtend": false,
+          "name": "服务列表",
+          "title": "服务列表",
+          "isVirtual": false,
+          "projectName": "nacos",
+          "children": [],
+          "serviceName": "serviceManagement",
+          "link": "serviceManagement",
+          "hasFusion": true,
+          "template": "",
+          "registerName": "com.alibaba.nacos.page.serviceManagement",
+          "useRouter": false,
+          "id": "serviceManagement"
+        },
+        {
             "isExtend": false,
             "name": "历史版本",
             "title": "历史版本",
