@@ -77,7 +77,7 @@ class NameSpaceList extends React.Component {
         } else {
             window.request({
                 type: 'get',
-                url: `/nacos/v1/cs/namespaces`,
+                url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
                         let edasAppId = window.getParams('edasAppId');
@@ -115,7 +115,7 @@ class NameSpaceList extends React.Component {
         }
     }
     handleNameSpaces(data) {
-        let nownamespace;
+        let nownamespace = "";
 
         // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
         window.namespaceList = data;

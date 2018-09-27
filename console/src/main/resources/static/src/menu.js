@@ -147,22 +147,22 @@ module.exports = {
             "registerName": "com.alibaba.nacos.page.listeningToQuery",
             "useRouter": false,
             "id": "listeningToQuery"
+        },
+        {
+            "isExtend": false,
+            "name": "命名空间",
+            "title": "命名空间",
+            "isVirtual": false,
+            "projectName": "nacos",
+            "serviceName": "namespace",
+            "link": "namespace",
+            "hasFusion": true,
+            "template": "",
+            "dontUseChild": false,
+            "registerName": "com.alibaba.nacos.page.namespace",
+            "useRouter": false,
+            "id": "namespace"
         }
-//        {
-//            "isExtend": false,
-//            "name": "命名空间",
-//            "title": "命名空间",
-//            "isVirtual": false,
-//            "projectName": "nacos",
-//            "serviceName": "namespace",
-//            "link": "namespace",
-//            "hasFusion": true,
-//            "template": "",
-//            "dontUseChild": false,
-//            "registerName": "com.alibaba.nacos.page.namespace",
-//            "useRouter": false,
-//            "id": "namespace"
-//        }
     ],
     "defaultKey": "configurationManagement",
     "projectName": "nacos"

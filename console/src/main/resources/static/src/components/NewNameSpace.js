@@ -82,20 +82,22 @@ class NewNameSpace extends React.Component {
             });
             window.request({
                 type: 'post',
-                url: `/diamond-ops/service/serverId/${serverId}/namespace`,
-                contentType: 'application/json',
+                url: `/nacos/v1/console/namespaces`,
+                contentType: 'application/x-www-form-urlencoded',
                 beforeSend: () => {
                     this.openLoading();
                 },
-                data: JSON.stringify({
-                    namespaceShowName: values.namespaceShowName
-                }),
+                data: {
+                    namespaceName: values.namespaceShowName,
+                    namespaceDesc: values.namespaceDesc,
+                },
                 success: res => {
                     this.disabled = false;
                     this.setState({
                         disabled: false
                     });
-                    if (res.code === 200) {
+                    debugger;
+                    if (res === true) {
                         this.closeDialog();
                         this.props.getNameSpaces();
                         this.refreshNameSpace(); //刷新全局namespace
@@ -149,7 +151,7 @@ class NewNameSpace extends React.Component {
 
         let footer = <div>
             <Button type="primary" onClick={this.handleSubmit.bind(this)} disabled={this.disabled}>{window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.confirm')}</Button>
-            <Button type="normal" onClick={this.closeDialog.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.cancel')}</Button>
+            <Button type="normal" onClick={this.closeDialog.bind(this)} style={{ marginLeft: 5 }}>{window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.cancel')}</Button>
         </div>;
         return (
             <div>
@@ -164,6 +166,14 @@ class NewNameSpace extends React.Component {
                                 }, { validator: this.validateChart.bind(this) }]
                             })} style={{ width: '100%' }} />
                         </FormItem>
+                        <FormItem label={window.aliwareIntl.get('nacos.page.configdetail.Description')} required {...formItemLayout}>
+                            <Input {...this.field.init('namespaceDesc', {
+                            	rules: [{
+                            		required: true,
+                            		message: window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.namespacenotnull')
+                            	}, { validator: this.validateChart.bind(this) }]
+                            })} style={{ width: '100%' }} />
+                       </FormItem>
                     </Loading>
                 </Form>
                 </Dialog>
