@@ -128,17 +128,14 @@ public class RaftStore {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
 
-        FileChannel fc = null;
         ByteBuffer data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
 
-        try {
-            fc = new FileOutputStream(cacheFile, false).getChannel();
+        try (FileChannel fc = new FileOutputStream(cacheFile, false).getChannel()) {
             fc.write(data, data.position());
             fc.force(true);
-        } finally {
-            if (fc != null) {
-                fc.close();
-            }
+        } catch (Exception e) {
+            Loggers.RAFT.warn("waning: failed to write datum: " + datum);
+            throw e;
         }
 
     }
