@@ -29,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author nacos
@@ -37,7 +38,7 @@ public class PeerSet {
 
     private RaftPeer leader = null;
 
-    private static Map<String, RaftPeer> peers = new HashMap<String, RaftPeer>();
+    private static Map<String, RaftPeer> peers = new ConcurrentHashMap<>();
 
     private static Set<String> sites = new HashSet<>();
 
