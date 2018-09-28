@@ -21,11 +21,16 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
-import com.alibaba.nacos.client.naming.core.*;
+import com.alibaba.nacos.client.naming.core.Balancer;
+import com.alibaba.nacos.client.naming.core.EventDispatcher;
+import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
@@ -73,6 +78,13 @@ public class NacosNamingService implements NamingService {
         if (StringUtils.isEmpty(logName)) {
             logName = "naming.log";
         }
+
+        String logLevel = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_LEVEL);
+        if (StringUtils.isEmpty(logLevel)) {
+            logLevel = "INFO";
+        }
+
+        LogUtils.setLogLevel(logLevel);
 
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
@@ -167,10 +179,10 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
 
-        Domain domain = hostReactor.getDom(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
+        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
         List<Instance> list;
-        if (domain == null || CollectionUtils.isEmpty(list = domain.getHosts())) {
-            throw new IllegalStateException("no host to srv for dom: " + serviceName);
+        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
+            return new ArrayList<Instance>();
         }
         return list;
     }
@@ -183,10 +195,10 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy) throws NacosException {
 
-        Domain domain = hostReactor.getDom(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
+        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
         List<Instance> list;
-        if (domain == null || CollectionUtils.isEmpty(list = domain.getHosts())) {
-            throw new IllegalStateException("no host to srv for dom: " + serviceName);
+        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
+            return new ArrayList<Instance>();
         }
 
         if (healthy) {
@@ -217,17 +229,17 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) {
-        return Balancer.RandomByWeight.selectHost(hostReactor.getDom(serviceName, StringUtils.join(clusters, ",")));
+        return Balancer.RandomByWeight.selectHost(hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
     }
 
     @Override
     public void subscribe(String service, EventListener listener) {
-        eventDispatcher.addListener(hostReactor.getDom(service, StringUtils.EMPTY), StringUtils.EMPTY, listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.EMPTY), StringUtils.EMPTY, listener);
     }
 
     @Override
     public void subscribe(String service, List<String> clusters, EventListener listener) {
-        eventDispatcher.addListener(hostReactor.getDom(service, StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
     }
 
     @Override
@@ -238,5 +250,20 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String service, List<String> clusters, EventListener listener) {
         eventDispatcher.removeListener(service, StringUtils.join(clusters, ","), listener);
+    }
+
+    @Override
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException {
+        return serverProxy.getServiceList(pageNo, pageSize);
+    }
+
+    @Override
+    public List<ServiceInfo> getSubscribeServices() {
+        return new ArrayList<ServiceInfo>(hostReactor.getServiceInfoMap().values());
+    }
+
+    @Override
+    public String getServerStatus() {
+        return serverProxy.serverHealthy() ? "UP" : "DOWN";
     }
 }

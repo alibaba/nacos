@@ -16,8 +16,8 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
@@ -41,7 +41,7 @@ public class HostReactor {
 
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
 
-    private Map<String, Domain> domMap;
+    private Map<String, ServiceInfo> serviceInfoMap;
 
     private PushRecver pushRecver;
 
@@ -57,7 +57,7 @@ public class HostReactor {
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
-        this.domMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
+        this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushRecver = new PushRecver(this);
     }
@@ -72,37 +72,37 @@ public class HostReactor {
         }
     });
 
-    public Map<String, Domain> getDomMap() {
-        return domMap;
+    public Map<String, ServiceInfo> getServiceInfoMap() {
+        return serviceInfoMap;
     }
 
     public synchronized ScheduledFuture<?> addTask(UpdateTask task) {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
 
-    public Domain processDomJSON(String json) {
-        Domain domObj = JSON.parseObject(json, Domain.class);
-        Domain oldDom = domMap.get(domObj.getKey());
-        if (domObj.getHosts() == null || !domObj.validate()) {
+    public ServiceInfo processServiceJSON(String json) {
+        ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
+        ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
+        if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
-            return oldDom;
+            return oldService;
         }
 
-        if (oldDom != null) {
-            if (oldDom.getLastRefTime() > domObj.getLastRefTime()) {
-                LogUtils.LOG.warn("out of date data received, old-t: " + oldDom.getLastRefTime()
-                        + ", new-t: " + domObj.getLastRefTime());
+        if (oldService != null) {
+            if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
+                LogUtils.LOG.warn("out of date data received, old-t: " + oldService.getLastRefTime()
+                        + ", new-t: " + serviceInfo.getLastRefTime());
             }
 
-            domMap.put(domObj.getKey(), domObj);
+            serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
 
-            Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldDom.getHosts().size());
-            for (Instance host : oldDom.getHosts()) {
+            Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
+            for (Instance host : oldService.getHosts()) {
                 oldHostMap.put(host.toInetAddr(), host);
             }
 
-            Map<String, Instance> newHostMap = new HashMap<String, Instance>(domObj.getHosts().size());
-            for (Instance host : domObj.getHosts()) {
+            Map<String, Instance> newHostMap = new HashMap<String, Instance>(serviceInfo.getHosts().size());
+            for (Instance host : serviceInfo.getHosts()) {
                 newHostMap.put(host.toInetAddr(), host);
             }
 
@@ -110,8 +110,8 @@ public class HostReactor {
             Set<Instance> newHosts = new HashSet<Instance>();
             Set<Instance> remvHosts = new HashSet<Instance>();
 
-            List<Map.Entry<String, Instance>> newDomHosts = new ArrayList<Map.Entry<String, Instance>>(newHostMap.entrySet());
-            for (Map.Entry<String, Instance> entry : newDomHosts) {
+            List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(newHostMap.entrySet());
+            for (Map.Entry<String, Instance> entry : newServiceHosts) {
                 Instance host = entry.getValue();
                 String key = entry.getKey();
                 if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
@@ -141,174 +141,174 @@ public class HostReactor {
             }
 
             if (newHosts.size() > 0) {
-                LogUtils.LOG.info("new ips(" + newHosts.size() + ") dom: "
-                        + domObj.getName() + " -> " + JSON.toJSONString(newHosts));
+                LogUtils.LOG.info("new ips(" + newHosts.size() + ") service: "
+                        + serviceInfo.getName() + " -> " + JSON.toJSONString(newHosts));
             }
 
             if (remvHosts.size() > 0) {
-                LogUtils.LOG.info("removed ips(" + remvHosts.size() + ") dom: "
-                        + domObj.getName() + " -> " + JSON.toJSONString(remvHosts));
+                LogUtils.LOG.info("removed ips(" + remvHosts.size() + ") service: "
+                        + serviceInfo.getName() + " -> " + JSON.toJSONString(remvHosts));
             }
 
             if (modHosts.size() > 0) {
-                LogUtils.LOG.info("modified ips(" + modHosts.size() + ") dom: "
-                        + domObj.getName() + " -> " + JSON.toJSONString(modHosts));
+                LogUtils.LOG.info("modified ips(" + modHosts.size() + ") service: "
+                        + serviceInfo.getName() + " -> " + JSON.toJSONString(modHosts));
             }
 
 
-            domObj.setJsonFromServer(json);
+            serviceInfo.setJsonFromServer(json);
 
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
-                eventDispatcher.domChanged(domObj);
-                DiskCache.write(domObj, cacheDir);
+                eventDispatcher.serviceChanged(serviceInfo);
+                DiskCache.write(serviceInfo, cacheDir);
             }
 
         } else {
-            LogUtils.LOG.info("new ips(" + domObj.ipCount() + ") dom: " + domObj.getName() + " -> " + JSON.toJSONString(domObj.getHosts()));
-            domMap.put(domObj.getKey(), domObj);
-            eventDispatcher.domChanged(domObj);
-            domObj.setJsonFromServer(json);
-            DiskCache.write(domObj, cacheDir);
+            LogUtils.LOG.info("new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() + " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+            serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
+            eventDispatcher.serviceChanged(serviceInfo);
+            serviceInfo.setJsonFromServer(json);
+            DiskCache.write(serviceInfo, cacheDir);
         }
 
-        LogUtils.LOG.info("current ips:(" + domObj.ipCount() + ") dom: " + domObj.getName() +
-                " -> " + JSON.toJSONString(domObj.getHosts()));
+        LogUtils.LOG.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
+                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
 
-        return domObj;
+        return serviceInfo;
     }
 
-    private Domain getDom0(String dom, String clusters, String env) {
+    private ServiceInfo getSerivceInfo0(String serviceName, String clusters, String env) {
 
-        String key = Domain.getKey(dom, clusters, env, false);
+        String key = ServiceInfo.getKey(serviceName, clusters, env, false);
 
-        return domMap.get(key);
+        return serviceInfoMap.get(key);
     }
 
-    private Domain getDom0(String dom, String clusters, String env, boolean allIPs) {
+    private ServiceInfo getSerivceInfo0(String serviceName, String clusters, String env, boolean allIPs) {
 
-        String key = Domain.getKey(dom, clusters, env, allIPs);
-        return domMap.get(key);
+        String key = ServiceInfo.getKey(serviceName, clusters, env, allIPs);
+        return serviceInfoMap.get(key);
     }
 
-    public Domain getDom(String dom, String clusters, String env) {
-        return getDom(dom, clusters, env, false);
+    public ServiceInfo getServiceInfo(String serviceName, String clusters, String env) {
+        return getServiceInfo(serviceName, clusters, env, false);
     }
 
-    public Domain getDom(String dom, String clusters) {
+    public ServiceInfo getServiceInfo(String serviceName, String clusters) {
         String env = StringUtils.EMPTY;
-        return getDom(dom, clusters, env, false);
+        return getServiceInfo(serviceName, clusters, env, false);
     }
 
-    public Domain getDom(final String dom, final String clusters, final String env, final boolean allIPs) {
+    public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env, final boolean allIPs) {
 
         LogUtils.LOG.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
-        String key = Domain.getKey(dom, clusters, env, allIPs);
+        String key = ServiceInfo.getKey(serviceName, clusters, env, allIPs);
         if (failoverReactor.isFailoverSwitch()) {
-            return failoverReactor.getDom(key);
+            return failoverReactor.getService(key);
         }
 
-        Domain domObj = getDom0(dom, clusters, env, allIPs);
+        ServiceInfo serviceObj = getSerivceInfo0(serviceName, clusters, env, allIPs);
 
-        if (null == domObj) {
-            domObj = new Domain(dom, clusters, env);
+        if (null == serviceObj) {
+            serviceObj = new ServiceInfo(serviceName, clusters, env);
 
             if (allIPs) {
-                domObj.setAllIPs(allIPs);
+                serviceObj.setAllIPs(allIPs);
             }
 
-            domMap.put(domObj.getKey(), domObj);
+            serviceInfoMap.put(serviceObj.getKey(), serviceObj);
 
             if (allIPs) {
-                updateDom4AllIPNow(dom, clusters, env);
+                updateService4AllIPNow(serviceName, clusters, env);
             } else {
-                updateDomNow(dom, clusters, env);
+                updateServiceNow(serviceName, clusters, env);
             }
-        } else if (domObj.getHosts().isEmpty()) {
+        } else if (serviceObj.getHosts().isEmpty()) {
 
             if (updateHoldInterval > 0) {
                 // hold a moment waiting for update finish
-                synchronized (domObj) {
+                synchronized (serviceObj) {
                     try {
-                        domObj.wait(updateHoldInterval);
+                        serviceObj.wait(updateHoldInterval);
                     } catch (InterruptedException e) {
-                        LogUtils.LOG.error("[getDom]", "dom:" + dom + ", clusters:" + clusters + ", allIPs:" + allIPs, e);
+                        LogUtils.LOG.error("[getServiceInfo]", "serviceName:" + serviceName + ", clusters:" + clusters + ", allIPs:" + allIPs, e);
                     }
                 }
             }
         }
 
-        scheduleUpdateIfAbsent(dom, clusters, env, allIPs);
+        scheduleUpdateIfAbsent(serviceName, clusters, env, allIPs);
 
-        return domMap.get(domObj.getKey());
+        return serviceInfoMap.get(serviceObj.getKey());
     }
 
-    public void scheduleUpdateIfAbsent(String dom, String clusters, String env, boolean allIPs) {
-        if (futureMap.get(Domain.getKey(dom, clusters, env, allIPs)) != null) {
+    public void scheduleUpdateIfAbsent(String serviceName, String clusters, String env, boolean allIPs) {
+        if (futureMap.get(ServiceInfo.getKey(serviceName, clusters, env, allIPs)) != null) {
             return;
         }
 
         synchronized (futureMap) {
-            if (futureMap.get(Domain.getKey(dom, clusters, env, allIPs)) != null) {
+            if (futureMap.get(ServiceInfo.getKey(serviceName, clusters, env, allIPs)) != null) {
                 return;
             }
 
-            ScheduledFuture<?> future = addTask(new UpdateTask(dom, clusters, env, allIPs));
-            futureMap.put(Domain.getKey(dom, clusters, env, allIPs), future);
+            ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, clusters, env, allIPs));
+            futureMap.put(ServiceInfo.getKey(serviceName, clusters, env, allIPs), future);
         }
     }
 
-    public void updateDom4AllIPNow(String dom, String clusters, String env) {
-        updateDom4AllIPNow(dom, clusters, env, -1L);
+    public void updateService4AllIPNow(String serviceName, String clusters, String env) {
+        updateService4AllIPNow(serviceName, clusters, env, -1L);
     }
 
     @SuppressFBWarnings("NN_NAKED_NOTIFY")
-    public void updateDom4AllIPNow(String dom, String clusters, String env, long timeout) {
+    public void updateService4AllIPNow(String serviceName, String clusters, String env, long timeout) {
         try {
             Map<String, String> params = new HashMap<String, String>(8);
-            params.put("dom", dom);
+            params.put("dom", serviceName);
             params.put("clusters", clusters);
             params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
 
-            Domain oldDom = getDom0(dom, clusters, env, true);
-            if (oldDom != null) {
-                params.put("checksum", oldDom.getChecksum());
+            ServiceInfo oldService = getSerivceInfo0(serviceName, clusters, env, true);
+            if (oldService != null) {
+                params.put("checksum", oldService.getChecksum());
             }
 
             String result = serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/srvAllIP", params);
             if (StringUtils.isNotEmpty(result)) {
-                Domain domain = processDomJSON(result);
-                domain.setAllIPs(true);
+                ServiceInfo serviceInfo = processServiceJSON(result);
+                serviceInfo.setAllIPs(true);
             }
 
-            if (oldDom != null) {
-                synchronized (oldDom) {
-                    oldDom.notifyAll();
+            if (oldService != null) {
+                synchronized (oldService) {
+                    oldService.notifyAll();
                 }
             }
 
             //else nothing has changed
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "failed to update dom: " + dom, e);
+            LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         }
     }
 
     @SuppressFBWarnings("NN_NAKED_NOTIFY")
-    public void updateDomNow(String dom, String clusters, String env) {
-        Domain oldDom = getDom0(dom, clusters, env);
+    public void updateServiceNow(String serviceName, String clusters, String env) {
+        ServiceInfo oldService = getSerivceInfo0(serviceName, clusters, env);
         try {
             Map<String, String> params = new HashMap<String, String>(8);
-            params.put("dom", dom);
+            params.put("dom", serviceName);
             params.put("clusters", clusters);
             params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
             params.put("env", env);
             params.put("clientIP", NetUtils.localIP());
 
             StringBuilder stringBuilder = new StringBuilder();
-            for (String string : Balancer.UNCONSISTENT_DOM_WITH_ADDRESS_SERVER) {
+            for (String string : Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER) {
                 stringBuilder.append(string).append(",");
             }
 
-            Balancer.UNCONSISTENT_DOM_WITH_ADDRESS_SERVER.clear();
+            Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER.clear();
             params.put("unconsistentDom", stringBuilder.toString());
 
             String envSpliter = ",";
@@ -316,42 +316,42 @@ public class HostReactor {
                 params.put("useEnvId", "true");
             }
 
-            if (oldDom != null) {
-                params.put("checksum", oldDom.getChecksum());
+            if (oldService != null) {
+                params.put("checksum", oldService.getChecksum());
             }
 
             String result = serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/srvIPXT", params);
             if (StringUtils.isNotEmpty(result)) {
-                processDomJSON(result);
+                processServiceJSON(result);
             }
             //else nothing has changed
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "failed to update dom: " + dom, e);
+            LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         } finally {
-            if (oldDom != null) {
-                synchronized (oldDom) {
-                    oldDom.notifyAll();
+            if (oldService != null) {
+                synchronized (oldService) {
+                    oldService.notifyAll();
                 }
             }
         }
     }
 
-    public void refreshOnly(String dom, String clusters, String env, boolean allIPs) {
+    public void refreshOnly(String serviceName, String clusters, String env, boolean allIPs) {
         try {
             Map<String, String> params = new HashMap<String, String>(16);
-            params.put("dom", dom);
+            params.put("dom", serviceName);
             params.put("clusters", clusters);
             params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
             params.put("unit", env);
             params.put("clientIP", NetUtils.localIP());
 
-            String domSpliter = ",";
+            String serviceSpliter = ",";
             StringBuilder stringBuilder = new StringBuilder();
-            for (String string : Balancer.UNCONSISTENT_DOM_WITH_ADDRESS_SERVER) {
-                stringBuilder.append(string).append(domSpliter);
+            for (String string : Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER) {
+                stringBuilder.append(string).append(serviceSpliter);
             }
 
-            Balancer.UNCONSISTENT_DOM_WITH_ADDRESS_SERVER.clear();
+            Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER.clear();
             params.put("unconsistentDom", stringBuilder.toString());
 
             String envSpliter = ",";
@@ -365,7 +365,7 @@ public class HostReactor {
                 serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/srvIPXT", params);
             }
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "failed to update dom: " + dom, e);
+            LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         }
     }
 
@@ -373,18 +373,18 @@ public class HostReactor {
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;
         private String clusters;
-        private String dom;
+        private String serviceName;
         private String env;
         private boolean allIPs = false;
 
-        public UpdateTask(String dom, String clusters, String env) {
-            this.dom = dom;
+        public UpdateTask(String serviceName, String clusters, String env) {
+            this.serviceName = serviceName;
             this.clusters = clusters;
             this.env = env;
         }
 
-        public UpdateTask(String dom, String clusters, String env, boolean allIPs) {
-            this.dom = dom;
+        public UpdateTask(String serviceName, String clusters, String env, boolean allIPs) {
+            this.serviceName = serviceName;
             this.clusters = clusters;
             this.env = env;
             this.allIPs = allIPs;
@@ -393,38 +393,38 @@ public class HostReactor {
         @Override
         public void run() {
             try {
-                Domain domObj = domMap.get(Domain.getKey(dom, clusters, env, allIPs));
+                ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters, env, allIPs));
 
-                if (domObj == null) {
+                if (serviceObj == null) {
                     if (allIPs) {
-                        updateDom4AllIPNow(dom, clusters, env);
+                        updateService4AllIPNow(serviceName, clusters, env);
                     } else {
-                        updateDomNow(dom, clusters, env);
+                        updateServiceNow(serviceName, clusters, env);
                         executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
                     }
                     return;
                 }
 
-                if (domObj.getLastRefTime() <= lastRefTime) {
+                if (serviceObj.getLastRefTime() <= lastRefTime) {
                     if (allIPs) {
-                        updateDom4AllIPNow(dom, clusters, env);
-                        domObj = domMap.get(Domain.getKey(dom, clusters, env, true));
+                        updateService4AllIPNow(serviceName, clusters, env);
+                        serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters, env, true));
                     } else {
-                        updateDomNow(dom, clusters, env);
-                        domObj = domMap.get(Domain.getKey(dom, clusters, env));
+                        updateServiceNow(serviceName, clusters, env);
+                        serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters, env));
                     }
 
                 } else {
-                    // if dom already updated by push, we should not override it
+                    // if serviceName already updated by push, we should not override it
                     // since the push data may be different from pull through force push
-                    refreshOnly(dom, clusters, env, allIPs);
+                    refreshOnly(serviceName, clusters, env, allIPs);
                 }
 
-                executor.schedule(this, domObj.getCacheMillis(), TimeUnit.MILLISECONDS);
+                executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
 
-                lastRefTime = domObj.getLastRefTime();
+                lastRefTime = serviceObj.getLastRefTime();
             } catch (Throwable e) {
-                LogUtils.LOG.warn("NA", "failed to update dom: " + dom, e);
+                LogUtils.LOG.warn("NA", "failed to update serviceName: " + serviceName, e);
             }
 
         }

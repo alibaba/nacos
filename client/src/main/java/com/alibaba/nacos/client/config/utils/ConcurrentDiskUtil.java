@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.client.logger.Logger;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,9 +27,6 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-
-import com.alibaba.nacos.client.config.common.Constants;
-import com.alibaba.nacos.client.logger.Logger;
 
 /**
  * concurrent disk util;op file with file lock

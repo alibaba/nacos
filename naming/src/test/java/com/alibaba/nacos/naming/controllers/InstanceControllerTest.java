@@ -80,7 +80,7 @@ public class InstanceControllerTest extends BaseTest {
         IpAddress ipAddress = new IpAddress();
         ipAddress.setIp("1.1.1.1");
         ipAddress.setPort(9999);
-        List<IpAddress> ipList = new ArrayList<>();
+        List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
         domain.updateIPs(ipList, false);
 
@@ -127,7 +127,7 @@ public class InstanceControllerTest extends BaseTest {
         ipAddress.setIp("10.10.10.10");
         ipAddress.setPort(8888);
         ipAddress.setWeight(2.0);
-        List<IpAddress> ipList = new ArrayList<>();
+        List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
         domain.updateIPs(ipList, false);
 

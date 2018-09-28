@@ -74,30 +74,34 @@ public class ApiCommands {
     protected DomainsManager domainsManager;
 
 
-    private DataSource pushDataSource = client -> {
+    private DataSource pushDataSource = new DataSource() {
 
-        Map<String, String[]> params = new HashMap<String, String[]>(10);
-        params.put("dom", new String[]{client.getDom()});
-        params.put("clusters", new String[]{client.getClusters()});
+        @Override
+        public String getData(PushService.PushClient client) throws Exception {
 
-        // set udp port to 0, otherwise will cause recursion
-        params.put("udpPort", new String[]{"0"});
+            Map<String, String[]> params = new HashMap<String, String[]>(10);
+            params.put("dom", new String[]{client.getDom()});
+            params.put("clusters", new String[]{client.getClusters()});
 
-        InetAddress inetAddress = client.getSocketAddr().getAddress();
-        params.put("clientIP", new String[]{inetAddress.getHostAddress()});
-        params.put("header:Client-Version", new String[]{client.getAgent()});
+            // set udp port to 0, otherwise will cause recursion
+            params.put("udpPort", new String[]{"0"});
 
-        JSONObject result = new JSONObject();
-        try {
-            result = srvIPXT(MockHttpRequest.buildRequest(params));
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("PUSH-SERVICE", "dom is not modified");
+            InetAddress inetAddress = client.getSocketAddr().getAddress();
+            params.put("clientIP", new String[]{inetAddress.getHostAddress()});
+            params.put("header:Client-Version", new String[]{client.getAgent()});
+
+            JSONObject result = new JSONObject();
+            try {
+                result = ApiCommands.this.srvIPXT(MockHttpRequest.buildRequest(params));
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("PUSH-SERVICE: dom is not modified", e);
+            }
+
+            // overdrive the cache millis to push mode
+            result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
+
+            return result.toJSONString();
         }
-
-        // overdrive the cache millis to push mode
-        result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
-
-        return result.toJSONString();
     };
 
 
@@ -1066,8 +1070,9 @@ public class ApiCommands {
         }
 
         String dom = BaseServlet.required(request, "dom");
+
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
-        String agent = BaseServlet.optional(request, "header:Client-Version", StringUtils.EMPTY);
+        String agent = request.getHeader("Client-Version");
         String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = BaseServlet.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(BaseServlet.optional(request, "udpPort", "0"));
@@ -1118,12 +1123,6 @@ public class ApiCommands {
             String msg = "no ip to serve for dom: " + dom;
 
             Loggers.SRV_LOG.debug(msg);
-
-            if (isCheck) {
-                result.put("errorMsg", msg);
-            } else {
-                throw new NacosException(NacosException.NOT_FOUND, msg);
-            }
         }
 
         Map<Boolean, List<IpAddress>> ipMap = new HashMap<>(2);

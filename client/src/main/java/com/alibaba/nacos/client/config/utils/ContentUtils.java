@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import static com.alibaba.nacos.client.config.common.Constants.WORD_SEPARATOR;
+import com.alibaba.nacos.api.common.Constants;
 
-import com.alibaba.nacos.client.config.common.Constants;
+import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
 /**
  * Content Util
