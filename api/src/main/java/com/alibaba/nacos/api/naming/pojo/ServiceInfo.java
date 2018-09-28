@@ -16,7 +16,7 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.naming.pojo.Instance;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -155,16 +155,12 @@ public class ServiceInfo {
 
     public List<Instance> getHosts() {
 
-        return new ArrayList<>(hosts);
+        return new ArrayList<Instance>(hosts);
     }
 
     public boolean validate() {
         if (isAllIPs()) {
             return true;
-        }
-
-        if (isEmpty(hosts)) {
-            return false;
         }
 
         List<Instance> validHosts = new ArrayList<Instance>();
@@ -176,10 +172,6 @@ public class ServiceInfo {
             for (int i = 0; i < host.getWeight(); i++) {
                 validHosts.add(host);
             }
-        }
-
-        if (isEmpty(validHosts)) {
-            return false;
         }
 
         return true;
@@ -240,20 +232,20 @@ public class ServiceInfo {
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
-    
+
     private static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
 
-	private static boolean strEquals(String str1, String str2) {
-		return str1 == null ? str2 == null : str1.equals(str2);
-	}
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
 
     private static boolean isEmpty(Collection coll) {
         return (coll == null || coll.isEmpty());
     }
-    
+
     private static final String EMPTY = "";
-	
+
     private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
 }

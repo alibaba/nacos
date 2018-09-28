@@ -70,7 +70,7 @@ public class HttpClient {
             conn.setRequestMethod(method);
             setHeaders(conn, headers, encoding);
             conn.connect();
-            LogUtils.LOG.info("Request from server: " + url);
+            LogUtils.LOG.debug("Request from server: " + url);
             return getResult(conn);
         } catch (Exception e) {
             try {

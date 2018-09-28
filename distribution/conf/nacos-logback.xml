@@ -189,10 +189,10 @@
     <!--config module logback config-->
     <appender name="dumpFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-dump.log</file>
+        <file>${nacos.home}/logs/config-dump.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -205,10 +205,10 @@
     </appender>
     <appender name="pullFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-pull.log</file>
+        <file>${nacos.home}/logs/config-pull.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -221,10 +221,10 @@
     </appender>
     <appender name="fatalFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-fatal.log</file>
+        <file>${nacos.home}/logs/config-fatal.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -237,10 +237,10 @@
     </appender>
     <appender name="memoryFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-memory.log</file>
+        <file>${nacos.home}/logs/config-memory.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -253,10 +253,10 @@
     </appender>
     <appender name="pullCheckFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-pull-check.log</file>
+        <file>${nacos.home}/logs/config-pull-check.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -270,10 +270,10 @@
 
     <appender name="aclLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-acl.log</file>
+        <file>${nacos.home}/logs/config-acl.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
@@ -287,10 +287,10 @@
 
     <appender name="clientLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-client-request.log</file>
+        <file>${nacos.home}/logs/config-client-request.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -304,10 +304,10 @@
 
     <appender name="sdkLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-sdk-request.log</file>
+        <file>${nacos.home}/logs/config-sdk-request.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -321,10 +321,10 @@
 
     <appender name="traceLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-trace.log</file>
+        <file>${nacos.home}/logs/config-trace.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -338,10 +338,10 @@
 
     <appender name="notifyLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-notify.log</file>
+        <file>${nacos.home}/logs/config-notify.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -355,10 +355,10 @@
 
     <appender name="appCollectorLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-app.log</file>
+        <file>${nacos.home}/logs/config-app.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -372,10 +372,10 @@
     
     <appender name="startLog"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/cfg-server.log</file>
+        <file>${nacos.home}/logs/config-server.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/cfg-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${nacos.home}/logs/config-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>  
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.annotation;
+package com.alibaba.nacos.api.annotation;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 
@@ -25,7 +25,7 @@ import java.lang.annotation.*;
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see PropertyKeyConst
- * @since 0.1.0
+ * @since 0.2.1
  */
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
@@ -78,59 +78,107 @@ public @interface NacosProperties {
     String ENCODE = "encode";
 
     /**
+     * The placeholder of endpoint, the value is <code>"${nacos.endpoint:}"</code>
+     */
+    String ENDPOINT_PLACEHOLDER = "${" + PREFIX + ENDPOINT + ":}";
+
+    /**
+     * The placeholder of endpoint, the value is <code>"${nacos.namespace:}"</code>
+     */
+    String NAMESPACE_PLACEHOLDER = "${" + PREFIX + NAMESPACE + ":}";
+
+    /**
+     * The placeholder of endpoint, the value is <code>"${nacos.access-key:}"</code>
+     */
+    String ACCESS_KEY_PLACEHOLDER = "${" + PREFIX + ACCESS_KEY + ":}";
+
+    /**
+     * The placeholder of endpoint, the value is <code>"${nacos.secret-key:}"</code>
+     */
+    String SECRET_KEY_PLACEHOLDER = "${" + PREFIX + SECRET_KEY + ":}";
+
+    /**
+     * The placeholder of endpoint, the value is <code>${nacos.server-addr:}"</code>
+     */
+    String SERVER_ADDR_PLACEHOLDER = "${" + PREFIX + SERVER_ADDR + ":}";
+
+    /**
+     * The placeholder of endpoint, the value is ${nacos.context-path:}"
+     */
+    String CONTEXT_PATH_PLACEHOLDER = "${" + PREFIX + CONTEXT_PATH + ":}";
+
+    /**
+     * The placeholder of endpoint, the value is <code>"${nacos.cluster-name:}"</code>
+     */
+    String CLUSTER_NAME_PLACEHOLDER = "${" + PREFIX + CLUSTER_NAME + ":}";
+
+    /**
+     * The placeholder of {@link NacosProperties#ENCODE encode}, the value is <code>"${nacos.encode:UTF-8}"</code>
+     */
+    String ENCODE_PLACEHOLDER = "${" + PREFIX + ENCODE + ":UTF-8}";
+
+    /**
      * The property of "endpoint"
      *
      * @return empty as default value
+     * @see #ENDPOINT_PLACEHOLDER
      */
-    String endpoint() default "${" + PREFIX + ENDPOINT + ":}";
+    String endpoint() default ENDPOINT_PLACEHOLDER;
 
     /**
      * The property of "namespace"
      *
      * @return empty as default value
+     * @see #NAMESPACE_PLACEHOLDER
      */
-    String namespace() default "${" + PREFIX + NAMESPACE + ":}";
+    String namespace() default NAMESPACE_PLACEHOLDER;
 
     /**
      * The property of "access-key"
      *
      * @return empty as default value
+     * @see #ACCESS_KEY_PLACEHOLDER
      */
-    String accessKey() default "${" + PREFIX + ACCESS_KEY + ":}";
+    String accessKey() default ACCESS_KEY_PLACEHOLDER;
 
     /**
      * The property of "secret-key"
      *
      * @return empty as default value
+     * @see #SECRET_KEY_PLACEHOLDER
      */
-    String secretKey() default "${" + PREFIX + SECRET_KEY + ":}";
+    String secretKey() default SECRET_KEY_PLACEHOLDER;
 
     /**
      * The property of "server-addr"
      *
      * @return empty as default value
+     * @see #SERVER_ADDR_PLACEHOLDER
      */
-    String serverAddr() default "${" + PREFIX + SERVER_ADDR + ":}";
+    String serverAddr() default SERVER_ADDR_PLACEHOLDER;
 
     /**
      * The property of "context-path"
      *
      * @return empty as default value
+     * @see #CONTEXT_PATH_PLACEHOLDER
      */
-    String contextPath() default "${" + PREFIX + CONTEXT_PATH + ":}";
+    String contextPath() default CONTEXT_PATH_PLACEHOLDER;
 
     /**
      * The property of "cluster-name"
      *
      * @return empty as default value
+     * @see #CLUSTER_NAME_PLACEHOLDER
      */
-    String clusterName() default "${" + PREFIX + CLUSTER_NAME + ":}";
+    String clusterName() default CLUSTER_NAME_PLACEHOLDER;
 
     /**
      * The property of "encode"
      *
      * @return "UTF-8" as default value
+     * @see #ENCODE_PLACEHOLDER
      */
-    String encode() default "${" + PREFIX + ENCODE + ":UTF-8}";
+    String encode() default ENCODE_PLACEHOLDER;
 
 }
