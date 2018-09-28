@@ -3,7 +3,7 @@
     "outputPath": "./build",
     "proxy": {
         "/": {
-        "target": "http://10.101.109.214:8080", //这边写你自己的服务Ip
+        "target": "http://127.0.0.1:8848", //这边写你自己的服务Ip
         "changeOrigin": true,
         "pathRewrite": { "^/" : "" }
         }

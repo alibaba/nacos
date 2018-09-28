@@ -1,10 +1,9 @@
 import React from 'react';
-import MinusIcon from './MinusIcon';
-import AddIcon from './AddIcon';
-import AddGroup from './AddGroup';
-import { Button, Dialog, Field, Form, Grid, Input, Loading } from '@alifd/next';
+// import MinusIcon from './MinusIcon';
+// import AddIcon from './AddIcon';
+// import AddGroup from './AddGroup';
+import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 const FormItem = Form.Item;
-const { Row, Col } = Grid;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class EditorNameSpace extends React.Component {
@@ -22,7 +21,7 @@ class EditorNameSpace extends React.Component {
     }
     
     openDialog(record) {
-        this.field.setValues(record);
+        this.getNamespaceDetail(record);
         this.setState({
             dialogvisible: true,
             type: record.type
@@ -43,6 +42,29 @@ class EditorNameSpace extends React.Component {
     closeLoading() {
         this.setState({
             loading: false
+        });
+    }
+
+    getNamespaceDetail(record){
+        this.field.setValues(record);
+        window.request({
+            type: 'get',
+            url: `/nacos/v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
+            success: res => {
+                if (res !== null) {
+                    this.field.setValue('namespaceDesc', res.namespaceDesc);
+                } else {
+                    Dialog.alert({
+                        language: window.pageLanguage || 'zh-cn',
+                        title: window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
+                        content: res.message
+                    });
+                }
+            },
+            error: res => {
+                window.namespaceList = [];
+                this.handleNameSpaces(window.namespaceList);
+            }
         });
     }
 

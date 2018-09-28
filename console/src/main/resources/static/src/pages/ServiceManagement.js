@@ -1,6 +1,6 @@
 import React from 'react';
 import RegionGroup from '../components/RegionGroup' ;
-import {Button, Field, Form, Grid, Input, Loading, Pagination, Select, Table} from '@alifd/next';
+import {Button, Field, Form, Grid, Input, Loading, Pagination, Table} from '@alifd/next';
 
 const FormItem = Form.Item;
 const {Row, Col} = Grid;
