@@ -498,26 +498,34 @@ public class DomainsManager {
         return raftDomMap;
     }
 
-    public List<Domain> getPagedDom(int startPage, int pageSize) {
-        ArrayList<Domain> domainList = new ArrayList<Domain>(chooseDomMap().values());
-        if (pageSize >= chooseDomMap().size()) {
-            return Collections.unmodifiableList(domainList);
+    public int getPagedDom(int startPage, int pageSize, String keyword, List<Domain> domainList) {
+
+
+        List<Domain> matchList;
+        if (StringUtils.isNotBlank(keyword)) {
+            matchList = searchDomains(".*" + keyword + ".*");
+        } else {
+            matchList = new ArrayList<Domain>(chooseDomMap().values());
         }
 
-        List<Domain> resultList = new ArrayList<Domain>();
-        for (int i = 0; i < domainList.size(); i++) {
+        if (pageSize >= matchList.size()) {
+            domainList.addAll(matchList);
+            return matchList.size();
+        }
+
+        for (int i = 0; i < matchList.size(); i++) {
             if (i < startPage * pageSize) {
                 continue;
             }
 
-            resultList.add(domainList.get(i));
+            domainList.add(matchList.get(i));
 
-            if (resultList.size() >= pageSize) {
+            if (domainList.size() >= pageSize) {
                 break;
             }
         }
 
-        return resultList;
+        return matchList.size();
     }
 
     public static class DomainChecksum {
