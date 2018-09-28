@@ -48,8 +48,6 @@ public class Constants {
 
     public static final String DAILY_DOMAINNAME = "commonconfig.taobao.net";
 
-    public static final int DEFAULT_PORT = 8080;
-
     public static final String NULL = "";
 
     public static final String DATAID = "dataId";

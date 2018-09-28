@@ -14,9 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.annotation;
+package com.alibaba.nacos.api.annotation;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.naming.NamingService;
 
@@ -28,8 +27,8 @@ import java.lang.annotation.*;
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see ConfigService
  * @see NamingService
- * @see PropertyKeyConst
- * @since 0.1.0
+ * @see NacosProperties
+ * @since 0.2.1
  */
 @Target({ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
@@ -37,8 +36,7 @@ import java.lang.annotation.*;
 public @interface NacosInjected {
 
     /**
-     * The {@link NacosProperties} attribute, If not specified, it will use
-     * global Nacos Properties global Nacos Properties}.
+     * The {@link NacosProperties} attribute, If not specified, it will use global Nacos Properties.
      *
      * @return the default value is {@link NacosProperties}
      */
