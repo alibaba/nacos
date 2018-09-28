@@ -141,7 +141,7 @@
 				</configuration>
 			</plugin>
 		</plugins>
-		<resources>
+	<!-- 	<resources>
 			<resource>
 				<filtering>true</filtering>
 				<directory>src/main/resources</directory>
@@ -152,7 +152,7 @@
 					<exclude>nacos-db.sql</exclude>
 				</excludes>
 			</resource>
-		</resources>
+		</resources> -->
 	</build>
 	<profiles>
 		<profile>
