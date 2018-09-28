@@ -107,7 +107,7 @@ window.i18ndoc = {
     "nacos.component.CloneDialog.target_space": "目标空间：",
     "com.alibaba.nacos.component.DiffEditorDialog.original_value": "原始值",
     "com.alibaba.nacos.page.configurationManagement.environment": "地域：",
-    "nacos.page.configdetail.Description": "描述:",
+    "nacos.page.configdetail.Description": "描述：",
     "com.alibaba.nacos.page.pushTrajectory.Data_Id_can_not_be_empty": "Data ID不能为空",
     "com.alibaba.nacos.page.listAllEnvironmental.Into_the": "进入",
     "com.alibaba.nacos.page.listeningToQuery._Push_state": "推送状态",
