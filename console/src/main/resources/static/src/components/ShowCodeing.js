@@ -16,65 +16,52 @@ class ShowCodeing extends React.Component {
         this.shellCode = `TODO`;
         this.pythonCode = `TODO`;
         this.record = {};
-        this.sprigboot_code = `// Refer to document:  https://help.aliyun.com/document_detail/60369.html
-package com.alibaba.cloud.acm.sample;
+        this.sprigboot_code = `// Refer to document: https://github.com/nacos-group/nacos-examples/tree/master/nacos-spring-boot-example/nacos-spring-boot-config-example
+package com.alibaba.nacos.example.spring.boot.controller;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+
+@Controller
+@RequestMapping("config")
+public class ConfigController {
+
+    @Value("\${useLocalCache:false}")
+    private boolean useLocalCache;
+
+    public void setUseLocalCache(boolean useLocalCache) {
+        this.useLocalCache = useLocalCache;
+    }
+
+    @RequestMapping(value = "/get", method = GET)
+    @ResponseBody
+    public boolean get() {
+        return useLocalCache;
+    }
+}`;
+     this.sprigcloud_code = `// Refer to document:  https://github.com/nacos-group/nacos-examples/tree/master/nacos-spring-cloud-example/nacos-spring-cloud-config-example
+package com.alibaba.nacos.example.spring.cloud.controller;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Created on 01/10/2017.
- * Assume the configuration content is as follows
- * user.id = 0
- * user.name = juven.xxxb
- * user.age = 18
- * @author juven.xuxb
- */
-@SpringBootApplication
-public class SampleApplication {
-
-    public static void main(String[] args) {
-        SpringApplication.run(SampleApplication.class, args);
-    }
-}
-
-@Component
-class SampleRunner implements ApplicationRunner {
-
-    @Value("\${user.id}")
-    String userId;
-
-    @Value("\${user.name}")
-    String userName;
-
-    @Value("\${user.age}")
-    int userAge;
-
-    public void run(ApplicationArguments args) throws Exception {
-        System.out.println(userId);
-        System.out.println(userName);
-        System.out.println(userAge);
-    }
-}
-
 @RestController
-@RequestMapping("/sample")
+@RequestMapping("/config")
 @RefreshScope
-class SampleController {
+public class ConfigController {
 
-    @Value("\${user.name}")
-    String userName;
+    @Value("\${useLocalCache:false}")
+    private boolean useLocalCache;
 
-    @RequestMapping("/acm")
-    public String simple() {
-        return "Hello Spring Cloud ACM!" + "Hello " + userName + "!";
+    @RequestMapping("/get")
+    public boolean get() {
+        return useLocalCache;
     }
 }`;
     }
@@ -263,20 +250,21 @@ public class ConfigExample {
 
                                 </TabPane>
                                 <TabPane title={'Spring Boot'} key={2} onClick={this.changeTab.bind(this, 'commoneditor2', this.sprigboot_code)}>
-
                                 </TabPane>
+                                
+                                <TabPane title={'Spring Cloud'} key={21} onClick={this.changeTab.bind(this, 'commoneditor21', this.sprigcloud_code)}>
+                                </TabPane>
+                                
                                 <TabPane title={'Node.js'} key={3} onClick={this.changeTab.bind(this, 'commoneditor3', this.nodejsCode)}>
-
                                 </TabPane>
+                                
                                 <TabPane title={'C++'} key={4} onClick={this.changeTab.bind(this, 'commoneditor4', this.cppCode)}>
-
                                 </TabPane>
 
                                 <TabPane title={'Shell'} key={5} onClick={this.changeTab.bind(this, 'commoneditor5', this.shellCode)}>
-
                                 </TabPane>
+                                
                                 <TabPane title={'Python'} key={6} onClick={this.changeTab.bind(this, 'commoneditor6', this.pythonCode)}>
-
                                 </TabPane>
                                 {}
                             </Tab>

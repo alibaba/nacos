@@ -22,7 +22,7 @@ class EditorNameSpace extends React.Component {
     }
     
     openDialog(record) {
-        this.field.setValues(record);
+        this.getNamespaceDetail(record);
         this.setState({
             dialogvisible: true,
             type: record.type
@@ -43,6 +43,30 @@ class EditorNameSpace extends React.Component {
     closeLoading() {
         this.setState({
             loading: false
+        });
+    }
+
+    getNamespaceDetail(record){
+        this.field.setValues(record);
+        window.request({
+            type: 'get',
+            url: `/nacos/v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
+            success: res => {
+                debugger;
+                if (res !== null) {
+                    this.field.setValue('namespaceDesc', res.namespaceDesc);
+                } else {
+                    Dialog.alert({
+                        language: window.pageLanguage || 'zh-cn',
+                        title: window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
+                        content: res.message
+                    });
+                }
+            },
+            error: res => {
+                window.namespaceList = [];
+                this.handleNameSpaces(window.namespaceList);
+            }
         });
     }
 
