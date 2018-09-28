@@ -1,10 +1,9 @@
 import React from 'react';
-import MinusIcon from './MinusIcon';
-import AddIcon from './AddIcon';
-import AddGroup from './AddGroup';
-import { Button, Dialog, Field, Form, Grid, Input, Loading } from '@alifd/next';
+// import MinusIcon from './MinusIcon';
+// import AddIcon from './AddIcon';
+// import AddGroup from './AddGroup';
+import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 const FormItem = Form.Item;
-const { Row, Col } = Grid;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class EditorNameSpace extends React.Component {

@@ -127,7 +127,7 @@ class Namespace extends React.Component {
     }
 
     removeNamespace(record) {
-        let serverId = window.getParams('serverId') || 'center';
+        // let serverId = window.getParams('serverId') || 'center';
         Dialog.confirm({
             title: window.aliwareIntl.get('nacos.page.namespace.remove_the_namespace'),
             content: <div style={{ marginTop: '-20px' }}>

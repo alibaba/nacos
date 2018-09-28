@@ -75,7 +75,7 @@ class NewNameSpace extends React.Component {
                 });
                 return;
             }
-            let serverId = window.getParams('serverId') || 'daily';
+            // let serverId = window.getParams('serverId') || 'daily';
             this.disabled = true;
             this.setState({
                 disabled: true
