@@ -83,7 +83,7 @@ public class ClusterTest {
         ipAddress2.setIp("1.1.1.1");
         ipAddress2.setPort(2345);
 
-        List<IpAddress> list = new ArrayList<>();
+        List<IpAddress> list = new ArrayList<IpAddress>();
         list.add(ipAddress1);
         list.add(ipAddress2);
 

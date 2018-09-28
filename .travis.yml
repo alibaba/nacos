@@ -1,6 +1,7 @@
 notifications:
   email:
     recipients:
+      - xchaos8@126.com
       - nacos_dev@linux.alibaba.com
       - dev-nacos@googlegroups.com
   on_success: change

@@ -27,7 +27,7 @@ public class Params {
 
     public static Params newParams() {
         Params params = new Params();
-        params.paramMap = new LinkedMultiValueMap<>();
+        params.paramMap = new LinkedMultiValueMap<String, String>();
         return params;
     }
 

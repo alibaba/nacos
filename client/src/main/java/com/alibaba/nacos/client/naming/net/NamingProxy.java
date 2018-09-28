@@ -16,8 +16,11 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.UuidUtil;
 
@@ -25,12 +28,17 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author dungu.zpf
  */
 public class NamingProxy {
+
+    private static final int DEFAULT_SERVER_PORT = 8848;
 
     private String namespace;
 
@@ -40,7 +48,7 @@ public class NamingProxy {
 
     private List<String> serverList;
 
-    private List<String> serversFromEndpoint = new ArrayList<>();
+    private List<String> serversFromEndpoint = new ArrayList<String>();
 
     private long lastSrvRefTime = 0L;
 
@@ -116,7 +124,7 @@ public class NamingProxy {
         try {
 
             if (!CollectionUtils.isEmpty(serverList)) {
-                LogUtils.LOG.info("server list provided by user: " + serverList);
+                LogUtils.LOG.debug("server list provided by user: " + serverList);
                 return;
             }
 
@@ -141,30 +149,11 @@ public class NamingProxy {
         }
     }
 
-    public void regDom(String dom, String ip, int port, double weight, String cluster) throws NacosException {
-
-        final Map<String, String> params = new HashMap<String, String>(8);
-        params.put("dom", dom);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("weight", String.valueOf(weight));
-        params.put("cluster", cluster);
-
-        try {
-            doRegDom(params);
-        } catch (Exception e) {
-            try {
-                Thread.sleep(1000L);
-                doRegDom(params);
-            } catch (Exception e1) {
-                throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
-            }
-        }
-    }
-
     public void registerService(String serviceName, Instance instance) throws NacosException {
 
-        final Map<String, String> params = new HashMap<>(8);
+        LogUtils.LOG.info("REGISTER-SERVICE", "registering service " + serviceName + " with instance:" + instance);
+
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
@@ -183,7 +172,10 @@ public class NamingProxy {
 
     public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
 
-        final Map<String, String> params = new HashMap<>(8);
+        LogUtils.LOG.info("DEREGISTER-SERVICE", "deregistering service " + serviceName
+                + " with instance:" + ip + ":" + port + "@" + cluster);
+
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
@@ -195,13 +187,13 @@ public class NamingProxy {
 
     public String queryList(String serviceName, String clusters, boolean healthyOnly) throws NacosException {
 
-        final Map<String, String> params = new HashMap<>(8);
+        final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
         params.put("serviceName", serviceName);
         params.put("clusters", clusters);
         params.put("healthyOnly", String.valueOf(healthyOnly));
 
-        return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instances", params, "GET");
+        return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, "GET");
     }
 
     private String doRegDom(Map<String, String> params) throws Exception {
@@ -209,22 +201,32 @@ public class NamingProxy {
         return reqAPI(api, params);
     }
 
-    public void deRegDom(String dom, String ip, int port, String cluster) throws NacosException {
-        String api = UtilAndComs.NACOS_URL_BASE + "/api/deRegService";
-
-        Map<String, String> params = new HashMap<String, String>(8);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
-        params.put("cluster", cluster);
-
-        params.put("dom", dom);
-        params.put("tenant", namespace);
+    public boolean serverHealthy() {
 
         try {
-            reqAPI(api, params);
+            reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/hello", new HashMap<String, String>(2));
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "faild to deRegDom: " + JSON.toJSONString(params), e);
+            return false;
         }
+
+        return true;
+    }
+
+    public ListView<String> getServiceList(int pageNo, int pageSize) throws NacosException {
+
+        Map<String, String> params = new HashMap<String, String>(4);
+        params.put("pageNo", String.valueOf(pageNo));
+        params.put("pageSize", String.valueOf(pageSize));
+
+        String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/service/list", params);
+
+        JSONObject json = JSON.parseObject(result);
+        ListView<String> listView = new ListView<String>();
+        listView.setCount(json.getInteger("count"));
+        listView.setData(JSON.parseObject(json.getString("doms"), new TypeReference<List<String>>() {
+        }));
+
+        return listView;
     }
 
     public String callAllServers(String api, Map<String, String> params) throws NacosException {
@@ -281,6 +283,10 @@ public class NamingProxy {
                 "RequestId", UuidUtil.generateUuid());
 
         String url;
+
+        if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
+            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + DEFAULT_SERVER_PORT;
+        }
 
         url = HttpClient.getPrefix() + curServer + api;
 
