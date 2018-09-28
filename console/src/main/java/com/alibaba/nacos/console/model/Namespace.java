@@ -14,7 +14,9 @@ public class Namespace {
 	private int quota;
 
 	private int configCount;
-    // 0 全局配置， 1 默认私有命名空间 ，2 自定义命名空间
+    /**
+     *  0 全局配置， 1 默认私有命名空间 ，2 自定义命名空间
+     */
 	private int type;
 
 	public String getNamespaceShowName() {

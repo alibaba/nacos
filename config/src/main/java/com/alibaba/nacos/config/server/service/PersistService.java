@@ -2984,20 +2984,43 @@ public class PersistService {
 		}
 	}
 	
-	// 更新变更记录；数据库原子操作，最小sql动作，无业务封装
-	public void insertTenantInfoAtomic(String kp, String tenant_id, String tenant_name, String tenant_desc,
-			String create_resoure, final long time) {
+	/**
+	 * insert tenant info
+	 * 
+	 * @param kp
+	 *            kp
+	 * @param tenantId
+	 *            tenant Id
+	 * @param tenantName
+	 *            tenant name
+	 * @param tenantDesc
+	 *            tenant description
+	 * @param time time
+	 */
+	public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+			String createResoure, final long time) {
 		try {
 			jt.update(
 					"insert into tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) values(?,?,?,?,?,?,?)",
-					kp, tenant_id, tenant_name, tenant_desc, create_resoure, time, time);
+					kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
 		} catch (DataAccessException e) {
 			fatalLog.error("[db-error] " + e.toString(), e);
 			throw e;
 		}
 	}
 
-	// 更新变更记录；数据库原子操作，最小sql动作，无业务封装
+	/**
+	 * Update tenantInfo showname
+	 * 
+	 * @param kp
+	 *            kp
+	 * @param tenantId
+	 *            tenant Id
+	 * @param tenantName
+	 *            tenant name
+	 * @param tenantDesc
+	 *            tenant description
+	 */
 	public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
 		try {
 			jt.update(
