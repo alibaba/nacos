@@ -51,7 +51,6 @@ class EditorNameSpace extends React.Component {
             type: 'get',
             url: `/nacos/v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
             success: res => {
-                debugger;
                 if (res !== null) {
                     this.field.setValue('namespaceDesc', res.namespaceDesc);
                 } else {
