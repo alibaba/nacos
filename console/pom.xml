@@ -80,17 +80,17 @@
 				</executions>
 			</plugin>
 		</plugins>
-		<resources>
-			<resource>
-				<filtering>true</filtering>
-				<directory>src/main/resources</directory>
-				<excludes>
-					<exclude>application.properties</exclude>
-					<exclude>banner.txt</exclude>
-					<exclude>diamond-server-logback.xml</exclude>
-					<exclude>schema.sql</exclude>
-				</excludes>
-			</resource>
-		</resources>
+		<!--<resources>-->
+			<!--<resource>-->
+				<!--<filtering>true</filtering>-->
+				<!--<directory>src/main/resources</directory>-->
+				<!--<excludes>-->
+					<!--<exclude>application.properties</exclude>-->
+					<!--<exclude>banner.txt</exclude>-->
+					<!--<exclude>diamond-server-logback.xml</exclude>-->
+					<!--<exclude>schema.sql</exclude>-->
+				<!--</excludes>-->
+			<!--</resource>-->
+		<!--</resources>-->
 	</build>
 </project>

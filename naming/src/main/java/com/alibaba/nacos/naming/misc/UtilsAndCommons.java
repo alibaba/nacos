@@ -45,6 +45,8 @@ public class UtilsAndCommons {
 
     public static final String NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
 
+    public static final String NACOS_NAMING_CATALOG_CONTEXT = "/catalog";
+
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
