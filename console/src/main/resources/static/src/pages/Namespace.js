@@ -31,7 +31,9 @@ class Namespace extends React.Component {
                 url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
-                        let data = res.data;
+                        let data = res.data || [];
+                        window.namespaceList = data;
+
                         for (var i = 0; i < data.length; i++) {
                             if (data[i].type === 1) {
                                 this.setState({
@@ -86,6 +88,7 @@ class Namespace extends React.Component {
             success: res => {
             	if (res !== null) {
                     Dialog.alert({
+                        style: { width: "500px" },
                         needWrapper: false,
                         language: window.pageLanguage || 'zh-cn',
                         title: window.aliwareIntl.get('nacos.page.namespace.Namespace_details'),
@@ -245,7 +248,7 @@ class Namespace extends React.Component {
                     <div>
                         <div style={{ textAlign: 'right', marginBottom: 10 }}>
 
-                            <Button type="primary" style={{ marginRight: 20, marginTop: 10 }} onClick={this.addNameSpace.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.add')}</Button>
+                            <Button type="primary" style={{ marginRight: 0, marginTop: 10 }} onClick={this.addNameSpace.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.add')}</Button>
                         </div>
                         <div>
                             <Table dataSource={this.state.dataSource} locale={locale} language={window.aliwareIntl.currentLanguageCode}>
