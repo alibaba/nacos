@@ -11,22 +11,22 @@ module.exports = {
             {
                 key: 'home', // 用作顶部菜单的选中
                 text: 'HOME',
-                link: '/en-us/index.html',
+                link: 'https://nacos.io/en-us/index.html',
             },
             {
                 key: 'docs',
                 text: 'DOCS',
-                link: '/en-us/docs/quick-start.html',
+                link: 'https://nacos.io/en-us/docs/quick-start.html',
             },
             {
                 key: 'blog',
                 text: 'BLOG',
-                link: '/en-us/blog',
+                link: 'https://nacos.io/en-us/blog',
             },
             {
                 key: 'community',
                 text: 'COMMUNITY',
-                link: '/en-us/community',
+                link: 'https://nacos.io/en-us/community',
             },
             // {
             //   text: 'ALI-SUPPORT',
