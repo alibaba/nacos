@@ -33,10 +33,10 @@ Nacos provides four major functions.
 It is super easy to get started with your first project.
 
 1. #### Download run package 
-[Download](https://github.com/alibaba/nacos/releases/download/v0.1.0/nacos-server-0.1.0.zip)
+[Download](https://github.com/alibaba/nacos/releases/download/0.2.1/nacos-server-0.2.1.zip)
 
 ```
-unzip nacos-server-0.1.0.zip
+unzip nacos-server-0.2.1.zip
 cd nacos/bin 
 ``` 
 
