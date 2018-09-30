@@ -207,7 +207,7 @@ class ServiceDetail extends React.Component {
             wrapperCol: {span: 14}
         };
         return (
-            <div className="service-detail">
+            <div className="main-container service-detail">
                 <Loading
                     shape={"flower"}
                     tip={"Loading..."}
