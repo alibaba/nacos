@@ -98,7 +98,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 			throw new RuntimeException("datasource is null");
 		}
 		try {
-			execute(ds.getConnection(), "schema.sql");
+			execute(ds.getConnection(), "META-INF/schema.sql");
 		} catch (Exception e) {
 			throw new RuntimeException("load schema.sql error." + e);
 		}
