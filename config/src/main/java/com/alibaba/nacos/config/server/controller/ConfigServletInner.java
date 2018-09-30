@@ -40,7 +40,7 @@ import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.LongPullingService;
+import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
@@ -60,7 +60,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 public class ConfigServletInner {
 
 	@Autowired
-    private LongPullingService longPullingService;
+    private LongPollingService longPollingService;
 
 	@Autowired
 	private PersistService persistService;
@@ -74,8 +74,8 @@ public class ConfigServletInner {
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response, Map<String, String> clientMd5Map, int probeRequestSize) throws IOException, ServletException {
 
         // 长轮询
-        if (LongPullingService.isSupportLongPulling(request)) {
-            longPullingService.addLongPullingClient(request, response, clientMd5Map, probeRequestSize);
+        if (LongPollingService.isSupportLongPulling(request)) {
+            longPollingService.addLongPullingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
 

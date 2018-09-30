@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service;
 import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +56,7 @@ import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
  * @author Nacos
  */
 @Service
-public class LongPullingService extends AbstractEventListener {
+public class LongPollingService extends AbstractEventListener {
 
 	private static final int FIXED_POLLING_INTERVAL_MS = 10000;
     
@@ -222,8 +221,8 @@ public class LongPullingService extends AbstractEventListener {
 
     public void addLongPullingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map, int probeRequestSize) {
 
-        String str = req.getHeader(LongPullingService.LONG_PULLING_HEADER);
-        String noHangUpFlag = req.getHeader(LongPullingService.LONG_PULLING_NO_HANG_UP_HEADER);
+        String str = req.getHeader(LongPollingService.LONG_PULLING_HEADER);
+        String noHangUpFlag = req.getHeader(LongPollingService.LONG_PULLING_NO_HANG_UP_HEADER);
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
 		String tag = req.getHeader("Vipserver-Tag");
         int delayTime=SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
@@ -285,7 +284,7 @@ public class LongPullingService extends AbstractEventListener {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public LongPullingService() {
+    public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<ClientLongPulling>();
 
         scheduler = Executors.newScheduledThreadPool(1, new ThreadFactory() {
