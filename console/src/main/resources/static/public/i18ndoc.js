@@ -471,7 +471,8 @@ window.i18ndoc = {
     "com.alibaba.nacos.page.serviceManagement.service_name": "服务名称",
     "com.alibaba.nacos.page.serviceManagement.please_enter_the_service_name": "请输入服务名称",
     "com.alibaba.nacos.page.serviceManagement.query": "查询",
-    "serviceManagement": "服务列表"
+    "serviceManagement": "服务列表",
+    "com.alibaba.nacos.page.serviceDetail.service_details": "服务详情"
   },
   "en-us": {
     "nacos.component.CloneDialog.the_same_configuration": "Conflict:",
@@ -944,6 +945,7 @@ window.i18ndoc = {
     "com.alibaba.nacos.page.serviceManagement.service_name": "Service Name",
     "com.alibaba.nacos.page.serviceManagement.please_enter_the_service_name": "Enter Service Name",
     "com.alibaba.nacos.page.serviceManagement.query": "Search",
-    "serviceManagement": "Service Management"
+    "serviceManagement": "Service Management",
+    "com.alibaba.nacos.page.serviceDetail.service_details": "Service Details"
   }
 }
