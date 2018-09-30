@@ -572,11 +572,6 @@
 				<version>1.9.10</version>
 			</dependency>
 			<dependency>
-				<groupId>com.taobao.middleware</groupId>
-				<artifactId>logger.api</artifactId>
-				<version>0.2.1-SNAPSHOT</version>
-			</dependency>
-			<dependency>
 				<groupId>apache-log4j</groupId>
 				<artifactId>log4j</artifactId>
 				<version>1.2.15</version>
