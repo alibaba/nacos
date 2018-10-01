@@ -30,6 +30,8 @@ import javax.sql.DataSource;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.dbcp.BasicDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -41,28 +43,30 @@ import com.alibaba.nacos.config.server.utils.StringUtils;
 
 /**
  * local data source
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @Service("localDataSourceService")
 public class LocalDataSourceServiceImpl implements DataSourceService {
-	private static final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
-	private static final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
-	private static String appHome = System.getProperty("user.home") + File.separator + "nacos";
-	private static final String NACOS_HOME_KEY = "nacos.home";
-	private static final String USER_NAME = "nacos";
-	private static final String PASSWORD = "nacos";
+
+    private static final Logger logger = LoggerFactory.getLogger(LocalDataSourceServiceImpl.class);
+
+    private static final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
+    private static final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
+    private static String appHome = System.getProperty("user.home") + File.separator + "nacos";
+    private static final String NACOS_HOME_KEY = "nacos.home";
+    private static final String USER_NAME = "nacos";
+    private static final String PASSWORD = "nacos";
 
     private JdbcTemplate jt;
     private TransactionTemplate tjt;
 
     @PostConstruct
     public void init() {
-		String nacosBaseDir = System.getProperty(NACOS_HOME_KEY);
-		if (!StringUtils.isBlank(nacosBaseDir)) {
-			setAppHome(nacosBaseDir);
-		}
+        String nacosBaseDir = System.getProperty(NACOS_HOME_KEY);
+        if (!StringUtils.isBlank(nacosBaseDir)) {
+            setAppHome(nacosBaseDir);
+        }
         BasicDataSource ds = new BasicDataSource();
         ds.setDriverClassName(JDBC_DRIVER_NAME);
         ds.setUrl("jdbc:derby:" + appHome + File.separator + DERBY_BASE_DIR + ";create=true");
@@ -92,17 +96,20 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     }
 
     @Override
-	public void reload() {
-		DataSource ds = jt.getDataSource();
-		if (ds == null) {
-			throw new RuntimeException("datasource is null");
-		}
-		try {
-			execute(ds.getConnection(), "META-INF/schema.sql");
-		} catch (Exception e) {
-			throw new RuntimeException("load schema.sql error." + e);
-		}
-	}
+    public void reload() {
+        DataSource ds = jt.getDataSource();
+        if (ds == null) {
+            throw new RuntimeException("datasource is null");
+        }
+        try {
+            execute(ds.getConnection(), "META-INF/schema.sql");
+        } catch (Exception e) {
+            if (logger.isErrorEnabled()) {
+                logger.error(e.getMessage(), e);
+            }
+            throw new RuntimeException("load schema.sql error." + e);
+        }
+    }
 
     @Override
     public boolean checkMasterWritable() {
@@ -131,6 +138,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     /**
      * 读取SQL文件
+     *
      * @param sqlFile sql
      * @return sqls
      * @throws Exception Exception
@@ -139,7 +147,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         List<String> sqlList = new ArrayList<String>();
         InputStream sqlFileIn = null;
         try {
-			if (StringUtils.isBlank(System.getProperty(NACOS_HOME_KEY))) {
+            if (StringUtils.isBlank(System.getProperty(NACOS_HOME_KEY))) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
                 sqlFileIn = url.openStream();
@@ -151,9 +159,9 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             StringBuffer sqlSb = new StringBuffer();
             byte[] buff = new byte[1024];
             int byteRead = 0;
-			while ((byteRead = sqlFileIn.read(buff)) != -1) {
-				sqlSb.append(new String(buff, 0, byteRead, Constants.ENCODE));
-			}
+            while ((byteRead = sqlFileIn.read(buff)) != -1) {
+                sqlSb.append(new String(buff, 0, byteRead, Constants.ENCODE));
+            }
 
             String[] sqlArr = sqlSb.toString().split(";");
             for (int i = 0; i < sqlArr.length; i++) {
@@ -163,18 +171,19 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 }
             }
             return sqlList;
-		} catch (Exception ex) {
-			throw new Exception(ex.getMessage());
-		} finally {
-			if (sqlFileIn != null) {
-				sqlFileIn.close();
-			}
-		}
+        } catch (Exception ex) {
+            throw new Exception(ex.getMessage());
+        } finally {
+            if (sqlFileIn != null) {
+                sqlFileIn.close();
+            }
+        }
     }
 
     /**
      * 执行SQL语句
-     * @param conn connect
+     *
+     * @param conn    connect
      * @param sqlFile sql
      * @throws Exception Exception
      */
@@ -193,13 +202,13 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         stmt.close();
     }
 
-	public static String getAppHome() {
-		return appHome;
-	}
+    public static String getAppHome() {
+        return appHome;
+    }
 
-	public static void setAppHome(String appHome) {
-		LocalDataSourceServiceImpl.appHome = appHome;
-	}
+    public static void setAppHome(String appHome) {
+        LocalDataSourceServiceImpl.appHome = appHome;
+    }
 
-	
+
 }

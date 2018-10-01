@@ -71,10 +71,8 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	@Autowired
     private ServletContext servletContext;
 	
-	@Value("${server.port}")
     private int port;
-	
-	
+
 	@PostConstruct
 	public void init() {
 		serverPort = System.getProperty("nacos.server.port", "8848");
