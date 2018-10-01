@@ -18,8 +18,7 @@ package com.alibaba.nacos.config.server.service.trace;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.SystemConfig;
-
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 /**
  * Config trace

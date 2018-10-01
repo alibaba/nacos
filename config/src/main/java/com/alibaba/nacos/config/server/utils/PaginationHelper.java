@@ -15,12 +15,11 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.util.List;
-
+import com.alibaba.nacos.config.server.model.Page;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.alibaba.nacos.config.server.model.Page;
+import java.util.List;
 
 
 /**

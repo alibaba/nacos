@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +26,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 管理控制器。
