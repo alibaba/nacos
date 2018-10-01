@@ -46,6 +46,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
@@ -152,7 +153,7 @@ public class DumpService {
 			throw new RuntimeException(
 					"Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
 		}
-		if (!PropertyUtil.isStandaloneMode()) {
+		if (!STANDALONE_MODE) {
 			Runnable heartbeat = new Runnable() {
 				@Override
 				public void run() {

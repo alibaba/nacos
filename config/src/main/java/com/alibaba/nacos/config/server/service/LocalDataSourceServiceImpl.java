@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.StringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.slf4j.Logger;
@@ -38,6 +37,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
 /**
  * local data source
@@ -88,7 +89,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         tm.setDataSource(ds);
         tjt.setTimeout(5000);
 
-        if (PropertyUtil.isStandaloneMode()) {
+        if (STANDALONE_MODE) {
             reload();
         }
     }

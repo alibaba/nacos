@@ -16,18 +16,23 @@
 
 package com.alibaba.nacos.common.util;
 
+import com.sun.management.OperatingSystemMXBean;
+import org.apache.commons.lang3.StringUtils;
+
 import java.lang.management.ManagementFactory;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.lang3.StringUtils;
-import com.sun.management.OperatingSystemMXBean;
 
 /**
  * @author nacos
  */
-public class SystemUtil {
+public class SystemUtils {
+
+    /**
+     * Standalone mode or not
+     */
+    public static final boolean STANDALONE_MODE = Boolean.getBoolean("nacos.standalone");
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 

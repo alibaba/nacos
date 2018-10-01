@@ -47,6 +47,7 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -240,7 +241,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 			defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
 		}
 
-		if (isUseAddressServer() && !PropertyUtil.isStandaloneMode()) {
+		if (isUseAddressServer() && !STANDALONE_MODE) {
 			try {
 				HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
 

@@ -80,8 +80,6 @@ public class UtilsAndCommons {
 
     public static final String SELF_SERVICE_CLUSTER_ENV = "naming_self_service_cluster_ips";
 
-    public static final boolean STANDALONE_MODE = Boolean.parseBoolean(System.getProperty("nacos.standalone", "false"));
-
     public static final String CACHE_KEY_SPLITER = "@@@@";
 
     public static final String LOCAL_HOST_IP = "127.0.0.1";
