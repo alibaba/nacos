@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -37,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
@@ -105,7 +105,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!PropertyUtil.isStandaloneMode()) {
+        if (!STANDALONE_MODE) {
             try {
                 reload();
             } catch (IOException e) {

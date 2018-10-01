@@ -104,7 +104,7 @@
 //         *  事务的超时时间需要与普通操作区分开
 //         */
 //        tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-//        if (!PropertyUtil.isStandaloneMode()) {
+//        if (!STANDALONE_MODE) {
 //            try {
 //                reload();
 //            } catch (IOException e) {

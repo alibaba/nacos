@@ -19,9 +19,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
-import com.alibaba.nacos.common.util.SystemUtil;
+import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -50,7 +49,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -2002,9 +2004,9 @@ public class ApiCommands {
         result.put("ipCount", ipCount);
         result.put("responsibleDomCount", responsibleDomCount);
         result.put("responsibleIPCount", responsibleIPCount);
-        result.put("cpu", SystemUtil.getCPU());
-        result.put("load", SystemUtil.getLoad());
-        result.put("mem", SystemUtil.getMem());
+        result.put("cpu", SystemUtils.getCPU());
+        result.put("load", SystemUtils.getLoad());
+        result.put("mem", SystemUtils.getMem());
 
         return result;
     }

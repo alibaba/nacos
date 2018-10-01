@@ -15,13 +15,12 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.util.SystemUtil;
+import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -31,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
@@ -62,7 +63,7 @@ public class NamingProxy {
     private static String jmenv;
 
     public static String getJmenv() {
-        jmenv = SystemUtil.getSystemEnv("nacos_jmenv_domain");
+        jmenv = SystemUtils.getSystemEnv("nacos_jmenv_domain");
 
         if (StringUtils.isEmpty(jmenv)) {
             jmenv = System.getProperty("com.alibaba.nacos.naming.jmenv", "jmenv.tbsite.net");
@@ -106,7 +107,7 @@ public class NamingProxy {
                 return;
             }
 
-            if (UtilsAndCommons.STANDALONE_MODE) {
+            if (STANDALONE_MODE) {
                 servers = new ArrayList<>();
                 servers.add(InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort());
                 return;
@@ -165,7 +166,7 @@ public class NamingProxy {
 
         //use system env
         if (CollectionUtils.isEmpty(result)) {
-            result = SystemUtil.getIPsBySystemEnv(UtilsAndCommons.SELF_SERVICE_CLUSTER_ENV);
+            result = SystemUtils.getIPsBySystemEnv(UtilsAndCommons.SELF_SERVICE_CLUSTER_ENV);
             Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST4: " + result);
         }
 

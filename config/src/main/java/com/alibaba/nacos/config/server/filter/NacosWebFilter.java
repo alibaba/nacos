@@ -19,6 +19,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import org.springframework.core.annotation.Order;
 
 import javax.servlet.*;
+import javax.servlet.annotation.WebFilter;
 import java.io.IOException;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
@@ -30,8 +31,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
  *
  */
 @Order(1)
-@javax.servlet.annotation.WebFilter(filterName = "webFilter", urlPatterns = "/*")
-public class WebFilter implements Filter {
+@WebFilter(filterName = "webFilter", urlPatterns = "/*")
+public class NacosWebFilter implements Filter {
     
     static private String webRootPath;
     
