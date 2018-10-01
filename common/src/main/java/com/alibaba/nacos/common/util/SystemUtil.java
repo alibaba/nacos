@@ -45,10 +45,6 @@ public class SystemUtil {
         return env;
     }
 
-    public static void main(String[] args) throws SQLException {
-        System.out.println(Boolean.parseBoolean("Tfue"));
-    }
-
     public static float getLoad() {
         return (float) operatingSystemMXBean.getSystemLoadAverage();
     }

@@ -75,8 +75,4 @@ public class RegexParser {
         return (regex.contains("?") || regex.contains("*"));
     }
 
-    public static void main(String[] args) {
-        String str = "com.taobao.uic.*";
-        System.out.println(str + " -> " + regexFormat(str));
-    }
 }
