@@ -25,16 +25,15 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 
 /**
  * Config main
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
-@SpringBootApplication(scanBasePackages = "com.alibaba.nacos.config.server")
-@EnableAutoConfiguration(exclude={DataSourceAutoConfiguration.class})
-@ServletComponentScan
+@SpringBootApplication(
+        scanBasePackages = "com.alibaba.nacos.config.server",
+        exclude = {DataSourceAutoConfiguration.class})
 public class Config {
-	public static void main(String[] args) throws UnknownHostException {
-		SpringApplication.run(Config.class, args);
-	}
-	
+    public static void main(String[] args) throws UnknownHostException {
+        SpringApplication.run(Config.class, args);
+    }
+
 }
