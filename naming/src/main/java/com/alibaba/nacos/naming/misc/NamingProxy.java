@@ -15,15 +15,14 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.SystemUtil;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -157,9 +156,9 @@ public class NamingProxy {
         List<String> result = new ArrayList<>();
         // read nacos config if necessary.
         try {
-            result = IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "UTF-8"));
+            result = FileUtils.readLines(UtilsAndCommons.getConfFile(), "UTF-8");
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to get config: " + UtilsAndCommons.getConfFile(), e);
+            Loggers.SRV_LOG.warn("failed to get config: " + UtilsAndCommons.getConfFilePath(), e);
         }
 
         Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST1", result);

@@ -39,6 +39,7 @@ import com.ning.http.client.Response;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -57,7 +58,8 @@ import java.security.AccessControlException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -340,7 +342,7 @@ public class ApiCommands {
 
         String dom = BaseServlet.required(request, "dom");
         String owners = BaseServlet.optional(request, "owners", StringUtils.EMPTY);
-        String token = BaseServlet.optional(request, "token", Md5Utils.getMD5(dom, "utf-8"));
+        String token = BaseServlet.optional(request, "token", Md5Utils.getMD5(dom, "UTF-8"));
 
         float protectThreshold = NumberUtils.toFloat(BaseServlet.optional(request, "protectThreshold", "0.0"));
         boolean isUseSpecifiedURL = Boolean.parseBoolean(BaseServlet.optional(request, "isUseSpecifiedURL", "false"));
@@ -2019,8 +2021,7 @@ public class ApiCommands {
 
         if (SwitchEntry.ACTION_ADD.equals(action)) {
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "UTF-8"));
+            List<String> oldList = FileUtils.readLines(UtilsAndCommons.getConfFile(), "UTF-8");
             StringBuilder sb = new StringBuilder();
             for (String ip : oldList) {
                 sb.append(ip).append("\r\n");
@@ -2030,7 +2031,7 @@ public class ApiCommands {
             }
 
             Loggers.SRV_LOG.info("UPDATE-CLUSTER", "new ips:" + sb.toString());
-            IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
+            FileUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "UTF-8");
             return result;
         }
 
@@ -2041,7 +2042,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
             Loggers.SRV_LOG.info("UPDATE-CLUSTER", "new ips:" + sb.toString());
-            IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
+            FileUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "UTF-8");
             return result;
         }
 
@@ -2052,8 +2053,7 @@ public class ApiCommands {
                 removeIps.add(ip);
             }
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "utf-8"));
+            List<String> oldList = FileUtils.readLines(UtilsAndCommons.getConfFile(), "UTF-8");
 
             Iterator<String> iterator = oldList.iterator();
 
@@ -2070,15 +2070,14 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
 
-            IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
+            FileUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "UTF-8");
 
             return result;
         }
 
         if (SwitchEntry.ACTION_VIEW.equals(action)) {
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "utf-8"));
+            List<String> oldList = FileUtils.readLines(UtilsAndCommons.getConfFile(), "UTF-8");
             result.put("list", oldList);
 
             return result;

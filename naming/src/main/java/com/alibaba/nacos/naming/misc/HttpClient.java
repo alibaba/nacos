@@ -22,6 +22,7 @@ import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentStringsMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
@@ -261,7 +262,7 @@ public class HttpClient {
                 }
             }
 
-            return new HttpResult(response.getStatusLine().getStatusCode(), IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+            return new HttpResult(response.getStatusLine().getStatusCode(), IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Throwable e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -288,7 +289,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -315,7 +316,7 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        HttpResult result = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult result = new HttpResult(respCode, IOUtils.toString(inputStream, getCharset(conn)), respHeaders);
         inputStream.close();
 
         return result;
@@ -324,15 +325,15 @@ public class HttpClient {
     private static String getCharset(HttpURLConnection conn) {
         String contentType = conn.getContentType();
         if (StringUtils.isEmpty(contentType)) {
-            return "utf-8";
+            return "UTF-8";
         }
 
         String[] values = contentType.split(";");
         if (values.length == 0) {
-            return "utf-8";
+            return "UTF-8";
         }
 
-        String charset = "utf-8";
+        String charset = "UTF-8";
         for (String value : values) {
             value = value.trim();
 

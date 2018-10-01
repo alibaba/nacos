@@ -37,7 +37,7 @@ public class UtilsAndCommons {
 
     private static final String NACOS_CONF_FILE_NAME = "cluster.conf";
 
-    private static String NACOS_CONF_FILE = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
+    private static String NACOS_CONF_FILE_PATH = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
 
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
@@ -127,7 +127,7 @@ public class UtilsAndCommons {
         String nacosHome = System.getProperty("nacos.home");
 
         if (StringUtils.isNotBlank(nacosHome)) {
-            NACOS_CONF_FILE = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
+            NACOS_CONF_FILE_PATH = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
         }
 
         DOMAIN_SYNCHRONIZATION_EXECUTOR
@@ -188,8 +188,12 @@ public class UtilsAndCommons {
         return strBuilder.toString();
     }
 
-    public static String getConfFile() {
-        return NACOS_CONF_FILE;
+    public static String getConfFilePath() {
+        return NACOS_CONF_FILE_PATH;
+    }
+
+    public static File getConfFile() {
+        return new File(getConfFilePath());
     }
 
 
