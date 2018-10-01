@@ -451,11 +451,4 @@ public class Cluster implements Cloneable {
             }
         }
     }
-
-    public static void main(String[] args) {
-        String v1 = "nesttest";
-        if (v1.matches(CLUSTER_NAME_SYNTAX)) {
-            System.out.print("");
-        }
-    }
 }

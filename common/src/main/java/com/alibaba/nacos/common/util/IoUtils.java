@@ -162,12 +162,5 @@ public class IoUtils {
         return null;
     }
 
-    public static void main(String[] args) throws IOException {
-
-//        String path = "/Users/zhupengfei/test_write.txt";
-
-//        writeStringToFile(new File(path), "hello2222", "utf-8");
-    }
-
 }
 
