@@ -15,33 +15,25 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.dumpLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.MD5;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.*;
 
 /**
  * config service
