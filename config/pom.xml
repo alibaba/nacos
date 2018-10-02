@@ -158,9 +158,6 @@
                 <directory>src/main/resources</directory>
                 <excludes>
                     <exclude>application.properties</exclude>
-                    <exclude>banner.txt</exclude>
-                    <exclude>schema.sql</exclude>
-                    <exclude>nacos-db.sql</exclude>
                 </excludes>
             </resource>
         </resources>
