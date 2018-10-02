@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <include resource="META-INF/logback/nacos-included.xml"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
+    <springProfile name="!standalone">
+        <root>
+            <level value="INFO"/>
+            <appender-ref ref="rootFile"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="standalone">
+        <root>
+            <level value="INFO"/>
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="rootFile"/>
+        </root>
+    </springProfile>
+
+</configuration>
