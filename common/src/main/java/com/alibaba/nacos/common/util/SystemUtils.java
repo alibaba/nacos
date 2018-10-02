@@ -30,9 +30,14 @@ import java.util.List;
 public class SystemUtils {
 
     /**
+     * The System property name of  Standalone mode
+     */
+    public static final String STANDALONE_MODE_PROPERTY_NAME = "nacos.standalone";
+
+    /**
      * Standalone mode or not
      */
-    public static final boolean STANDALONE_MODE = Boolean.getBoolean("nacos.standalone");
+    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 

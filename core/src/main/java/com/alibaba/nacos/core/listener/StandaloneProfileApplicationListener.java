@@ -28,6 +28,7 @@ import java.util.Arrays;
 
 import static com.alibaba.nacos.common.util.Constants.STANDALONE_SPRING_PROFILE;
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE_PROPERTY_NAME;
 
 /**
  * Standalone {@link Profile} {@link ApplicationListener} for {@link ApplicationEnvironmentPreparedEvent}
@@ -46,7 +47,7 @@ public class StandaloneProfileApplicationListener implements ApplicationListener
 
         ConfigurableEnvironment environment = event.getEnvironment();
 
-        if (STANDALONE_MODE) {
+        if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, false)) {
             environment.addActiveProfile(STANDALONE_SPRING_PROFILE);
         }
 
