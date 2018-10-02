@@ -1,0 +1,3 @@
+# ApplicationListener
+org.springframework.context.ApplicationListener=\
+com.alibaba.nacos.core.listener.StandaloneProfileApplicationListener
