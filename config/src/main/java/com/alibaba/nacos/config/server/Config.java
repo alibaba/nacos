@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 
 import java.net.UnknownHostException;
 
@@ -26,12 +25,10 @@ import java.net.UnknownHostException;
  *
  * @author Nacos
  */
-@SpringBootApplication(
-        scanBasePackages = "com.alibaba.nacos.config.server",
-        exclude = {DataSourceAutoConfiguration.class})
+@SpringBootApplication
 public class Config {
+
     public static void main(String[] args) throws UnknownHostException {
         SpringApplication.run(Config.class, args);
     }
-
 }
