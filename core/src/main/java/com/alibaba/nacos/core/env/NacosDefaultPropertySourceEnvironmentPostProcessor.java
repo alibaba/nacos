@@ -97,7 +97,8 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
         ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver(resourceLoader);
         Resource[] resources = resourcePatternResolver.getResources(RESOURCE_LOCATION_PATTERN);
         for (Resource resource : resources) {
-            if (resource.exists()) { // Add if exists
+            // Add if exists
+            if (resource.exists()) {
                 String internalName = String.valueOf(resource.getURL());
                 propertySource.addPropertySource(new ResourcePropertySource(internalName,
                         new EncodedResource(resource, FILE_ENCODING)));
