@@ -41,9 +41,11 @@ public class UtilsAndCommons {
 
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
-    public static final String NACOS_SERVER_VERSION = "/v1";
+    public static final String NACOS_SERVER_VERSION = NACOS_SERVER_CONTEXT + "/v1";
 
-    public static final String NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+    public static final String DEFAULT_NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+
+    public static final String NACOS_NAMING_CONTEXT = "${nacos.naming.context.path" + ":" + DEFAULT_NACOS_NAMING_CONTEXT + "}";
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
