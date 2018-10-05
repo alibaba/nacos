@@ -1,8 +1,10 @@
 import React from 'react';
 import {Button, Card, Dialog, Table, Form, Pagination, Loading, Input, Switch, Select} from '@alifd/next';
+import {I18N} from './constant'
 import './ServiceDetail.less'
 
 const FormItem = Form.Item;
+const Option = Select.Option
 
 const dataSource = () => {
     const result = [];
@@ -11,12 +13,6 @@ const dataSource = () => {
     }
     return result;
 };
-
-const getI18N = (key, prefix = 'com.alibaba.nacos.page.serviceDetail.') => window.aliwareIntl.get(prefix + key)
-/**
- * 服务列表
- */
-const I18N_SERVICE_DETAILS = getI18N('service_details')
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class ServiceDetail extends React.Component {
@@ -57,7 +53,7 @@ class ServiceDetail extends React.Component {
         return (
             <Dialog
                 className="service-detail-edit-dialog"
-                title="Update Service"
+                title={I18N.UPDATE_SERVICE}
                 visible={editServiceDialogVisible}
                 onOk={hideDialog}
                 onCancel={hideDialog}
@@ -67,19 +63,20 @@ class ServiceDetail extends React.Component {
                     labelCol={{fixedSpan: 8}}
                     wrapperCol={{span: 16}}
                 >
-                    <FormItem label="Service Name:">
+                    <FormItem label={`${I18N.SERVICE_NAME}:`}>
                         <p>test.com</p>
                     </FormItem>
-                    <FormItem label="Protect Threshold:">
+                    <FormItem label={`${I18N.PROTECT_THRESHOLD}:`}>
                         <Input className="in-text" value="0.5"/>
                     </FormItem>
-                    <FormItem label="Health Check Enabled:">
-                        <Switch onChange={f => f}/>
+                    <FormItem label={`${I18N.HEALTH_CHECK_PATTERN}:`}>
+                        <Select defaultValue="service">
+                            <Option value="service">{I18N.HEALTH_CHECK_PATTERN_SERVICE}</Option>
+                            <Option value="client">{I18N.HEALTH_CHECK_PATTERN_CLIENT}</Option>
+                            <Option value="forbidden">{I18N.HEALTH_CHECK_PATTERN_FORBIDDEN}</Option>
+                        </Select>
                     </FormItem>
-                    <FormItem label="Health Check Enabled:">
-                        <Switch onChange={f => f}/>
-                    </FormItem>
-                    <FormItem label="Metadata:">
+                    <FormItem label={`${I18N.METADATA}:`}>
                         <Input className="in-text" value="k1=v1,k2=v2"/>
                     </FormItem>
                 </Form>
@@ -94,14 +91,14 @@ class ServiceDetail extends React.Component {
         return (
             <Dialog
                 className="cluster-edit-dialog"
-                title="Update Cluster"
+                title={I18N.UPDATE_CLUSTER}
                 visible={editClusterDialogVisible}
                 onOk={hideDialog}
                 onCancel={hideDialog}
                 onClose={hideDialog}
             >
                 <Form {...formInit}>
-                    <FormItem label="Check Type:">
+                    <FormItem label={`${I18N.CHECK_TYPE}:`}>
                         <Select
                             className="in-select"
                             defaultValue={this.state.checkType}
@@ -111,27 +108,27 @@ class ServiceDetail extends React.Component {
                             <Select.Option value="http">HTTP</Select.Option>
                         </Select>
                     </FormItem>
-                    <FormItem label="Check Port:">
+                    <FormItem label={`${I18N.CHECK_PORT}:`}>
                         <Input className="in-text" value="80"/>
                     </FormItem>
-                    <FormItem label="Use port of IP:">
+                    <FormItem label={`${I18N.USE_IP_PORT_CHECK}:`}>
                         <Switch onChange={f => f}/>
                     </FormItem>
                     {
                         this.state.checkType === 'http'
                             ? (
                                 <Form {...formInit}>
-                                    <FormItem label="Check Path:">
+                                    <FormItem label={`${I18N.CHECK_PATH}:`}>
                                         <Input className="in-text"/>
                                     </FormItem>
-                                    <FormItem label="Check Headers:">
+                                    <FormItem label={`${I18N.CHECK_HEADERS}:`}>
                                         <Input className="in-text"/>
                                     </FormItem>
                                 </Form>
                             )
                             : null
                     }
-                    <FormItem label="Metadata:">
+                    <FormItem label={`${I18N.METADATA}:`}>
                         <Input className="in-text" value="k1=v1,k2=v2"/>
                     </FormItem>
                 </Form>
@@ -145,29 +142,29 @@ class ServiceDetail extends React.Component {
         return (
             <Dialog
                 className="instance-edit-dialog"
-                title="Update Instance"
+                title={I18N.UPDATE_INSTANCE}
                 visible={editInstanceDialogVisible}
                 onOk={hideDialog}
                 onCancel={hideDialog}
                 onClose={hideDialog}
             >
                 <Form
-                    labelCol={{fixedSpan: 4}}
-                    wrapperCol={{span: 20}}
+                    labelCol={{fixedSpan: 6}}
+                    wrapperCol={{span: 18}}
                 >
                     <FormItem label="IP:">
                         <p>1.1.1.1</p>
                     </FormItem>
-                    <FormItem label="Port:">
+                    <FormItem label={`${I18N.PORT}:`}>
                         <p>8080</p>
                     </FormItem>
-                    <FormItem label="Weight:">
+                    <FormItem label={`${I18N.WEIGHT}:`}>
                         <Input className="in-text" value="0.5"/>
                     </FormItem>
-                    <FormItem label="Enable:">
+                    <FormItem label={`${I18N.WHETHER_ONLINE}:`}>
                         <Switch onChange={f => f}/>
                     </FormItem>
-                    <FormItem label="Metadata:">
+                    <FormItem label={`${I18N.METADATA}:`}>
                         <Input className="in-text" value="k1=v1,k2=v2"/>
                     </FormItem>
                 </Form>
@@ -218,37 +215,34 @@ class ServiceDetail extends React.Component {
                         position: 'relative',
                         width: '100%'
                     }}>
-                        {I18N_SERVICE_DETAILS}
+                        {I18N.SERVICE_DETAILS}
                         <Button
                             type="normal"
                             className="edit-service-btn"
                             onClick={this.openEditServiceDialog}
-                        >Edit Service</Button>
+                        >{I18N.EDIT_SERVICE}</Button>
                     </h1>
 
                     <Form style={{width: '60%'}} {...formItemLayout}>
-                        <FormItem label="Service Name:">
+                        <FormItem label={`${I18N.SERVICE_NAME}:`}>
                             <p>test.com</p>
                         </FormItem>
-                        <FormItem label="Protect Threshold:">
+                        <FormItem label={`${I18N.PROTECT_THRESHOLD}:`}>
                             <p>0.5</p>
                         </FormItem>
-                        <FormItem label="Health Check Enabled:">
+                        <FormItem label={`${I18N.HEALTH_CHECK_PATTERN}:`}>
                             <p>true</p>
                         </FormItem>
-                        <FormItem label="Client Beat Enabled:">
-                            <p>true</p>
-                        </FormItem>
-                        <FormItem label="Metadata:">
+                        <FormItem label={`${I18N.METADATA}:`}>
                             <p>k1=v1,k2=v2</p>
                         </FormItem>
                     </Form>
 
                     <Card
-                        title="Cluster:"
+                        title={`${I18N.CLUSTER}:`}
                         subTitle="DEFAULT"
                         contentHeight="auto"
-                        extra={<Button type="normal" onClick={this.openClusterDialog}>View Cluster & Edit</Button>}
+                        extra={<Button type="normal" onClick={this.openClusterDialog}>{I18N.EDIT_CLUSTER}</Button>}
                     >
                         <Loading
                             shape={"flower"}
@@ -258,21 +252,21 @@ class ServiceDetail extends React.Component {
                         >
                             <Table dataSource={instanceList}>
                                 <Table.Column title="IP" dataIndex="ip"/>
-                                <Table.Column title="Port" dataIndex="port"/>
-                                <Table.Column title="Weight" dataIndex="weight"/>
-                                <Table.Column title="Healthy" dataIndex="healthy"/>
-                                <Table.Column title="Metadata" dataIndex="metadata"/>
-                                <Table.Column title="Operation" width={150} cell={(value, index, record) => (
+                                <Table.Column title={I18N.PORT} dataIndex="port"/>
+                                <Table.Column title={I18N.WEIGHT} dataIndex="weight"/>
+                                <Table.Column title={I18N.HEALTHY} dataIndex="healthy"/>
+                                <Table.Column title={I18N.METADATA} dataIndex="metadata"/>
+                                <Table.Column title={I18N.OPERATION} width={150} cell={(value, index, record) => (
                                     <div>
                                         <Button
                                             type="normal"
                                             className="edit-btn"
                                             onClick={this.openInstanceDialog}
-                                        >Edit</Button>
+                                        >{I18N.EDITOR}</Button>
                                         <Button
                                             type={record.online ? 'normal' : 'secondary'}
                                             onClick={() => this.switchState(index, record)}
-                                        >{record.online ? 'Offline' : 'Online'}</Button>
+                                        >{I18N[record.online ? 'OFFLINE' : 'ONLINE']}</Button>
                                     </div>
                                 )}/>
                             </Table>
