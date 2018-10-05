@@ -113,7 +113,9 @@ public class Constants {
 
     public static final String DEFAULT_COMMUNICATION_CONTROLLER_PATH = BASE_PATH + "/communication";
 
-    public static final String COMMUNICATION_CONTROLLER_PATH = "${nacos.config.communication.path" + ":" + DEFAULT_COMMUNICATION_CONTROLLER_PATH + "}";
+//    public static final String COMMUNICATION_CONTROLLER_PATH = "${nacos.config.communication.path" + ":" + DEFAULT_COMMUNICATION_CONTROLLER_PATH + "}";
+
+    public static final String COMMUNICATION_CONTROLLER_PATH = DEFAULT_COMMUNICATION_CONTROLLER_PATH;
 
     public static final String DEFAULT_CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
 
@@ -121,7 +123,9 @@ public class Constants {
 
     public static final String DEFAULT_HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
 
-    public static final String HEALTH_CONTROLLER_PATH = "${nacos.config.health.path" + ":" + DEFAULT_HEALTH_CONTROLLER_PATH + "}";
+//    public static final String HEALTH_CONTROLLER_PATH = "${nacos.config.health.path" + ":" + DEFAULT_HEALTH_CONTROLLER_PATH + "}";
+
+    public static final String HEALTH_CONTROLLER_PATH = DEFAULT_HEALTH_CONTROLLER_PATH;
 
     public static final String DEFAULT_HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
 
