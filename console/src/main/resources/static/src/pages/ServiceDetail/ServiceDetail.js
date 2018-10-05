@@ -14,6 +14,11 @@ const dataSource = () => {
     return result;
 };
 
+const dialogFormLayout = {
+    labelCol: {fixedSpan: 12},
+    wrapperCol: {span: 12}
+}
+
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class ServiceDetail extends React.Component {
     constructor(props) {
@@ -59,10 +64,7 @@ class ServiceDetail extends React.Component {
                 onCancel={hideDialog}
                 onClose={hideDialog}
             >
-                <Form
-                    labelCol={{fixedSpan: 8}}
-                    wrapperCol={{span: 16}}
-                >
+                <Form {...dialogFormLayout}>
                     <FormItem label={`${I18N.SERVICE_NAME}:`}>
                         <p>test.com</p>
                     </FormItem>
@@ -70,7 +72,7 @@ class ServiceDetail extends React.Component {
                         <Input className="in-text" value="0.5"/>
                     </FormItem>
                     <FormItem label={`${I18N.HEALTH_CHECK_PATTERN}:`}>
-                        <Select defaultValue="service">
+                        <Select defaultValue="service" className="in-select">
                             <Option value="service">{I18N.HEALTH_CHECK_PATTERN_SERVICE}</Option>
                             <Option value="client">{I18N.HEALTH_CHECK_PATTERN_CLIENT}</Option>
                             <Option value="forbidden">{I18N.HEALTH_CHECK_PATTERN_FORBIDDEN}</Option>
@@ -87,7 +89,6 @@ class ServiceDetail extends React.Component {
     editClusterDialog() {
         const hideDialog = () => this.setState({editClusterDialogVisible: false})
         const {editClusterDialogVisible} = this.state
-        const formInit = {labelCol: {fixedSpan: 6}, wrapperCol: {span: 18}}
         return (
             <Dialog
                 className="cluster-edit-dialog"
@@ -97,7 +98,7 @@ class ServiceDetail extends React.Component {
                 onCancel={hideDialog}
                 onClose={hideDialog}
             >
-                <Form {...formInit}>
+                <Form {...dialogFormLayout}>
                     <FormItem label={`${I18N.CHECK_TYPE}:`}>
                         <Select
                             className="in-select"
@@ -117,7 +118,7 @@ class ServiceDetail extends React.Component {
                     {
                         this.state.checkType === 'http'
                             ? (
-                                <Form {...formInit}>
+                                <Form {...dialogFormLayout}>
                                     <FormItem label={`${I18N.CHECK_PATH}:`}>
                                         <Input className="in-text"/>
                                     </FormItem>
@@ -148,10 +149,7 @@ class ServiceDetail extends React.Component {
                 onCancel={hideDialog}
                 onClose={hideDialog}
             >
-                <Form
-                    labelCol={{fixedSpan: 6}}
-                    wrapperCol={{span: 18}}
-                >
+                <Form {...dialogFormLayout}>
                     <FormItem label="IP:">
                         <p>1.1.1.1</p>
                     </FormItem>
