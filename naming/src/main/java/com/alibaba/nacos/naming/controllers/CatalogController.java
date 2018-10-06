@@ -17,12 +17,15 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.DomainsManager;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckConfig;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
 import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.collections.CollectionUtils;
@@ -33,9 +36,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author dungu.zpf
@@ -106,9 +107,7 @@ public class CatalogController {
     }
 
     @RequestMapping(value = "/serviceDetail")
-    public VirtualClusterDomain serviceDetail(HttpServletRequest request) throws Exception {
-
-        JSONObject result = new JSONObject();
+    public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
         String serviceName = BaseServlet.required(request, "serviceName");
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
@@ -116,6 +115,78 @@ public class CatalogController {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
-        return null;
+        ServiceDetailView detailView = new ServiceDetailView();
+
+        Service service = new Service(serviceName);
+        service.setName(serviceName);
+        service.setProtectThreshold(domain.getProtectThreshold());
+        service.setHealthCheckMode(HealthCheckMode.none.name());
+        if (domain.getEnableHealthCheck()) {
+            service.setHealthCheckMode(HealthCheckMode.server.name());
+        }
+        if (domain.getEnableClientBeat()) {
+            service.setHealthCheckMode(HealthCheckMode.client.name());
+        }
+        service.setMetadata(domain.getMetadata());
+        detailView.setService(service);
+
+        List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
+
+        for (Cluster cluster : domain.getClusterMap().values()) {
+            com.alibaba.nacos.api.naming.pojo.Cluster clusterView = new com.alibaba.nacos.api.naming.pojo.Cluster();
+            clusterView.setName(cluster.getName());
+            clusterView.setDefaultCheckPort(cluster.getDefCkport());
+            clusterView.setDefaultPort(cluster.getDefIPPort());
+            clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
+
+            switch (cluster.getHealthChecker().getType()) {
+                case "TCP":
+                    AbstractHealthChecker.Tcp tcp = new AbstractHealthChecker.Tcp();
+                    clusterView.setHealthChecker(tcp);
+                    break;
+                case "HTTP":
+                    AbstractHealthChecker.Http http = new AbstractHealthChecker.Http();
+                    http.setPath(((AbstractHealthCheckConfig.Http)cluster.getHealthChecker()).getPath());
+                    http.setExpectedResponseCode(((AbstractHealthCheckConfig.Http)cluster.getHealthChecker()).getExpectedResponseCode());
+                    http.setHeaders(((AbstractHealthCheckConfig.Http)cluster.getHealthChecker()).getHeaders());
+                    clusterView.setHealthChecker(http);
+                    break;
+                case "MYSQL":
+                    AbstractHealthChecker.Mysql mysql = new AbstractHealthChecker.Mysql();
+                    AbstractHealthCheckConfig.Mysql mysqlConfig = (AbstractHealthCheckConfig.Mysql)cluster.getHealthChecker();
+                    mysql.setCmd(mysqlConfig.getCmd());
+                    mysql.setPwd(mysqlConfig.getPwd());
+                    mysql.setUser(mysqlConfig.getUser());
+                    clusterView.setHealthChecker(mysql);
+                    break;
+                default:
+                    break;
+            }
+
+            clusterView.setMetadata(cluster.getMetadata());
+            clusters.add(clusterView);
+        }
+
+        detailView.setClusters(clusters);
+
+        Map<String, List<Instance>> instanceMap = new HashMap<String, List<Instance>>();
+        for (IpAddress ipAddress : domain.allIPs()) {
+            if (!instanceMap.containsKey(ipAddress.getClusterName())) {
+                instanceMap.put(ipAddress.getClusterName(), new ArrayList<Instance>());
+            }
+            Instance instance = new Instance();
+            instance.setIp(ipAddress.getIp());
+            instance.setPort(ipAddress.getPort());
+            instance.setWeight(ipAddress.getWeight());
+            instance.setMetadata(ipAddress.getMetadata());
+            instance.setHealthy(ipAddress.isValid());
+            instance.setInstanceId(ipAddress.generateInstanceId());
+
+            instanceMap.get(ipAddress.getClusterName()).add(instance);
+        }
+
+        detailView.setInstances(instanceMap);
+
+        return detailView;
     }
 }
