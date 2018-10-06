@@ -32,6 +32,8 @@ public abstract class AbstractHealthChecker implements Cloneable {
         this.type = type;
     }
 
+    public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
+
     public static class Http extends AbstractHealthChecker {
         public static final String TYPE = "HTTP";
 
@@ -93,6 +95,18 @@ public abstract class AbstractHealthChecker implements Cloneable {
             }
             return expectedResponseCode == other.getExpectedResponseCode();
         }
+
+        @Override
+        public Http clone() throws CloneNotSupportedException {
+            Http config = new Http();
+
+            config.setPath(this.getPath());
+            config.setHeaders(this.getHeaders());
+            config.setType(this.getType());
+            config.setExpectedResponseCode(this.getExpectedResponseCode());
+
+            return config;
+        }
     }
 
     public static class Tcp extends AbstractHealthChecker {
@@ -111,6 +125,12 @@ public abstract class AbstractHealthChecker implements Cloneable {
         public boolean equals(Object obj) {
             return obj instanceof Tcp;
 
+        }
+
+        public Tcp clone() throws CloneNotSupportedException {
+            Tcp config = new Tcp();
+            config.setType(this.type);
+            return config;
         }
     }
 
@@ -172,6 +192,17 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             return strEquals(cmd, other.getCmd());
 
+        }
+
+        @Override
+        public Mysql clone() throws CloneNotSupportedException {
+            Mysql config = new Mysql();
+            config.setUser(this.getUser());
+            config.setPwd(this.getPwd());
+            config.setCmd(this.getCmd());
+            config.setType(this.getType());
+
+            return config;
         }
     }
     

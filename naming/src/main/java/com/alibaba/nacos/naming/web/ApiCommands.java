@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtil;
@@ -179,7 +180,7 @@ public class ApiCommands {
         JSONArray ipArray = new JSONArray();
 
         for (IpAddress ip : ips) {
-            ipArray.add(ip.toIPAddr() + "_" + ip.isValid() + "_" + ip.getInvalidType());
+            ipArray.add(ip.toIPAddr() + "_" + ip.isValid());
         }
 
         result.put("ips", ipArray);
@@ -237,7 +238,6 @@ public class ApiCommands {
                 }
                 ipPac.put("checkRT", ip.getCheckRT());
                 ipPac.put("cluster", ip.getClusterName());
-                ipPac.put("invalidType", ip.getInvalidType());
 
                 ipArray.add(ipPac);
             }
@@ -410,25 +410,25 @@ public class ApiCommands {
                 }));
             }
 
-            if (AbstractHealthCheckConfig.Tcp.TYPE.equals(cktype)) {
-                AbstractHealthCheckConfig.Tcp config = new AbstractHealthCheckConfig.Tcp();
+            if (AbstractHealthChecker.Tcp.TYPE.equals(cktype)) {
+                AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 cluster.setHealthChecker(config);
-            } else if (AbstractHealthCheckConfig.Http.TYPE.equals(cktype)) {
+            } else if (AbstractHealthChecker.Http.TYPE.equals(cktype)) {
 
                 String path = BaseServlet.optional(request, "path", StringUtils.EMPTY);
                 String headers = BaseServlet.optional(request, "headers", StringUtils.EMPTY);
                 String expectedResponseCode = BaseServlet.optional(request, "expectedResponseCode", "200");
 
-                AbstractHealthCheckConfig.Http config = new AbstractHealthCheckConfig.Http();
+                AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(path);
                 config.setHeaders(headers);
                 config.setExpectedResponseCode(Integer.parseInt(expectedResponseCode));
                 cluster.setHealthChecker(config);
 
-            } else if (AbstractHealthCheckConfig.Mysql.TYPE.equals(cktype)) {
+            } else if (AbstractHealthChecker.Mysql.TYPE.equals(cktype)) {
 
-                AbstractHealthCheckConfig.Mysql config = new AbstractHealthCheckConfig.Mysql();
+                AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 String user = BaseServlet.optional(request, "user", StringUtils.EMPTY);
                 String pwd = BaseServlet.optional(request, "pwd", StringUtils.EMPTY);
                 String cmd = BaseServlet.optional(request, "cmd", StringUtils.EMPTY);
@@ -622,16 +622,16 @@ public class ApiCommands {
             }
 
             if (cktype.equals(AbstractHealthCheckProcessor.HTTP_PROCESSOR.getType())) {
-                AbstractHealthCheckConfig.Http config = new AbstractHealthCheckConfig.Http();
+                AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(BaseServlet.required(request, "path"));
                 cluster.setHealthChecker(config);
             } else if (cktype.equals(AbstractHealthCheckProcessor.TCP_PROCESSOR.getType())) {
-                AbstractHealthCheckConfig.Tcp config = new AbstractHealthCheckConfig.Tcp();
+                AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 config.setType(cktype);
                 cluster.setHealthChecker(config);
             } else if (cktype.equals(AbstractHealthCheckProcessor.MYSQL_PROCESSOR.getType())) {
-                AbstractHealthCheckConfig.Mysql config = new AbstractHealthCheckConfig.Mysql();
+                AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 config.setCmd(BaseServlet.required(request, "cmd"));
                 config.setPwd(BaseServlet.required(request, "pwd"));
                 config.setUser(BaseServlet.required(request, "user"));
@@ -1824,14 +1824,14 @@ public class ApiCommands {
     private Cluster getClusterFromJson(String json) {
         JSONObject object = JSON.parseObject(json);
         String type = object.getJSONObject("healthChecker").getString("type");
-        AbstractHealthCheckConfig abstractHealthCheckConfig;
+        AbstractHealthChecker abstractHealthCheckConfig;
 
         if (type.equals(HealthCheckType.HTTP.name())) {
-            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthCheckConfig.Http.class);
+            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthChecker.Http.class);
         } else if (type.equals(HealthCheckType.TCP.name())) {
-            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthCheckConfig.Tcp.class);
+            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthChecker.Tcp.class);
         } else if (type.equals(HealthCheckType.MYSQL.name())) {
-            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthCheckConfig.Mysql.class);
+            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthChecker.Mysql.class);
         } else {
             throw new IllegalArgumentException("can not prase cluster from json: " + json);
         }
@@ -1889,18 +1889,18 @@ public class ApiCommands {
             }
 
             if (StringUtils.equals(cktype, HealthCheckType.HTTP.name())) {
-                AbstractHealthCheckConfig.Http config = new AbstractHealthCheckConfig.Http();
+                AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(path);
                 config.setHeaders(headers);
                 config.setExpectedResponseCode(Integer.parseInt(expectedResponseCode));
                 cluster.setHealthChecker(config);
             } else if (StringUtils.equals(cktype, HealthCheckType.TCP.name())) {
-                AbstractHealthCheckConfig.Tcp config = new AbstractHealthCheckConfig.Tcp();
+                AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 config.setType(cktype);
                 cluster.setHealthChecker(config);
             } else if (StringUtils.equals(cktype, HealthCheckType.MYSQL.name())) {
-                AbstractHealthCheckConfig.Mysql config = new AbstractHealthCheckConfig.Mysql();
+                AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 String cmd = BaseServlet.required(request, "cmd");
                 String pwd = BaseServlet.required(request, "pwd");
                 String user = BaseServlet.required(request, "user");
