@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-
-import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
  * write response

@@ -15,23 +15,16 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * Notify Single server
@@ -77,13 +70,15 @@ public class NotifySingleService
                 this.isSuccess = PROCESSOR.process(GroupKey2.getKey(getDataId(), getGroup()), this);
             } catch (Exception e) { // never goes here, but in case (运行中never中断此通知线程)
                 this.isSuccess = false;
-                LogUtil.notifyLog.error("[notify-exception] target:{} dataid:{} group:{} ts:{}", new Object[]{target, getDataId(), getGroup(), getLastModified()});
+                LogUtil.notifyLog.error("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(),
+                    getGroup(), getLastModified());
 				LogUtil.notifyLog.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
 						new Object[] { target, getDataId(), getGroup(), getLastModified() }, e);
             }
 
             if (!this.isSuccess) {
-                LogUtil.notifyLog.error("[notify-retry] target:{} dataid:{} group:{} ts:{}", new Object[]{target, getDataId(), getGroup(), getLastModified()});
+                LogUtil.notifyLog.error("[notify-retry] target:{} dataid:{} group:{} ts:{}", target, getDataId(),
+                    getGroup(), getLastModified());
                 try {
                     ((ScheduledThreadPoolExecutor) executor).schedule(this, 500L, TimeUnit.MILLISECONDS);
                 } catch (Exception e) { // 通知虽然失败，但是同时此前节点也下线了

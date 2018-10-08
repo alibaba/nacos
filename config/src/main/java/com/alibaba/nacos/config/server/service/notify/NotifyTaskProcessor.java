@@ -15,14 +15,6 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
@@ -31,6 +23,13 @@ import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.SystemConfig;
+import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**

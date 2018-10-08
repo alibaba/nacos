@@ -15,15 +15,17 @@
  */
 package com.alibaba.nacos.config.server.monitor;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
 /**
  * Memory monitor
@@ -63,8 +65,7 @@ class PrintMemoryTask implements Runnable {
         int groupCount = ConfigService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
-        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}",
-                new Object[] { groupCount, subClientCount, subCount });
+        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount, subCount);
     }
 }
 
