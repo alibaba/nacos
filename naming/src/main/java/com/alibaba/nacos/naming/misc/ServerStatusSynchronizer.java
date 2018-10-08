@@ -20,9 +20,7 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 
 import java.net.HttpURLConnection;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
