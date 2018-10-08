@@ -24,4 +24,13 @@ public class Datum {
     public String value;
 
     public long timestamp;
+
+    @Override
+    public String toString() {
+        return "Datum{" +
+                "key='" + key + '\'' +
+                ", value='" + value + '\'' +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }

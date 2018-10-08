@@ -111,14 +111,10 @@ public class RaftCore {
                 break;
             }
             Thread.sleep(1000L);
-            System.out.println(notifier.tasks.size());
+            Loggers.RAFT.info("deal notifier`s task, remain task count: " + notifier.tasks.size());
         }
 
         Loggers.RAFT.info("finish to load data from disk,cost: " + (System.currentTimeMillis() - start) + " ms.");
-
-        GlobalExecutor.register(new MasterElection());
-        GlobalExecutor.register1(new HeartBeat());
-        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTVERAL_MS);
 
         if (peers.size() > 0) {
             if (lock.tryLock(INIT_LOCK_TIME_SECONDS, TimeUnit.SECONDS)) {
@@ -129,8 +125,12 @@ public class RaftCore {
             throw new Exception("peers is empty.");
         }
 
+        GlobalExecutor.register(new MasterElection());
+        GlobalExecutor.register1(new HeartBeat());
+        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTERVAL_MS);
+
         Loggers.RAFT.info("timer started: leader timeout ms: " + GlobalExecutor.LEADER_TIMEOUT_MS
-                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTVERAL_MS);
+                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
 
     public static List<RaftListener> getListeners() {
