@@ -37,6 +37,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+
 /**
  * @author nacos
  */
@@ -525,7 +527,7 @@ public class RaftCore {
 
         public static void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !UtilsAndCommons.STANDALONE_MODE) {
+            if (local.state != RaftPeer.State.LEADER && !STANDALONE_MODE) {
                 return;
             }
 

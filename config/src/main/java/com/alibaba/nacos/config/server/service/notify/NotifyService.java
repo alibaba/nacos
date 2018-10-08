@@ -15,20 +15,18 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.config.server.manager.TaskManager;
+import com.alibaba.nacos.config.server.service.ServerListService;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.service.ServerListService;
 
 
 /**

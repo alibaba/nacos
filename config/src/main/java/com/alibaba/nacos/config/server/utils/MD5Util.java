@@ -15,28 +15,21 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import static com.alibaba.nacos.config.server.constant.Constants.LINE_SEPARATOR;
-import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.ConfigService;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.CharArrayWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.Writer;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
-
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigService;
+import static com.alibaba.nacos.config.server.constant.Constants.LINE_SEPARATOR;
+import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 
 /**
  *  轮询逻辑封装类

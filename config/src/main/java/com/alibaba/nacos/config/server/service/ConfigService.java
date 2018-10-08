@@ -15,33 +15,25 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.dumpLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.config.server.utils.LogUtil.*;
 
 /**
  * config service
@@ -79,9 +71,10 @@ public class ConfigService {
 			final String md5 = MD5.getInstance().getMD5String(content);
 			if (md5.equals(ConfigService.getContentMd5(groupKey))) {
 				dumpLog.warn(
-						"[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}",
-						new Object[] { groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs });
-			} else if (!PropertyUtil.isStandaloneMode()) {
+					"[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+						+ "lastModifiedNew={}",
+					groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+			} else if (!STANDALONE_MODE) {
 				DiskUtil.saveToDisk(dataId, group, tenant, content);
 			}
             updateMd5(groupKey, md5, lastModifiedTs);
@@ -121,8 +114,11 @@ public class ConfigService {
     	try {
     		final String md5 = MD5.getInstance().getMD5String(content);
 			if(md5.equals(ConfigService.getContentBetaMd5(groupKey))) {
-				dumpLog.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}", new Object[]{groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs});
-			} else if (!PropertyUtil.isStandaloneMode()) {
+				dumpLog.warn(
+					"[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+						+ "lastModifiedNew={}",
+					groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+			} else if (!STANDALONE_MODE) {
 				DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
 			}
     		String[] betaIpsArr = betaIps.split(",");
@@ -156,8 +152,11 @@ public class ConfigService {
     	try {
     		final String md5 = MD5.getInstance().getMD5String(content);
 			if(md5.equals(ConfigService.getContentTagMd5(groupKey,tag))) {
-				dumpLog.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}", new Object[]{groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs});
-			} else if (!PropertyUtil.isStandaloneMode()) {
+				dumpLog.warn(
+					"[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+						+ "lastModifiedNew={}",
+					groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
+			} else if (!STANDALONE_MODE) {
 				DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
 			}
     		
@@ -189,10 +188,13 @@ public class ConfigService {
     	
     	try {
     		final String md5 = MD5.getInstance().getMD5String(content);
-			if (!PropertyUtil.isStandaloneMode()) {
+			if (!STANDALONE_MODE) {
 				String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
 				if(md5.equals(loacalMd5)) {
-					dumpLog.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}", new Object[]{groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs});
+					dumpLog.warn(
+						"[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+							+ "lastModifiedNew={}",
+						groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
 				} else {
 					DiskUtil.saveToDisk(dataId, group, tenant, content);
 				}
@@ -212,7 +214,7 @@ public class ConfigService {
     {
 		String aggreds = null;
 		try {
-			if (PropertyUtil.isStandaloneMode()) {
+			if (STANDALONE_MODE) {
 				ConfigInfoBase config = persistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP");
 				if (config != null) {
 					aggreds = config.getContent();
@@ -230,7 +232,7 @@ public class ConfigService {
 
 		String clientIpWhitelist = null;
 		try {
-			if (PropertyUtil.isStandaloneMode()) {
+			if (STANDALONE_MODE) {
 				ConfigInfoBase config = persistService.findConfigInfoBase(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
 				if (config != null) {
 					clientIpWhitelist = config.getContent();
@@ -249,7 +251,7 @@ public class ConfigService {
 
 		String switchContent= null;
 		try {
-			if (PropertyUtil.isStandaloneMode()) {
+			if (STANDALONE_MODE) {
 				ConfigInfoBase config = persistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP");
 				if (config != null) {
 					switchContent = config.getContent();
@@ -316,7 +318,7 @@ public class ConfigService {
         }
 
         try {
-			if (!PropertyUtil.isStandaloneMode()) {
+			if (!STANDALONE_MODE) {
 				DiskUtil.removeConfigInfo(dataId, group, tenant);
 			}
             CACHE.remove(groupKey);
@@ -349,7 +351,7 @@ public class ConfigService {
     	}
     	
     	try {
-			if (!PropertyUtil.isStandaloneMode()) {
+			if (!STANDALONE_MODE) {
 				DiskUtil.removeConfigInfo4Beta(dataId, group, tenant);
 			}
     		EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
@@ -384,7 +386,7 @@ public class ConfigService {
     	}
     	
 		try {
-			if (!PropertyUtil.isStandaloneMode()) {
+			if (!STANDALONE_MODE) {
 				DiskUtil.removeConfigInfo4Tag(dataId, group, tenant, tag);
 			}
 
