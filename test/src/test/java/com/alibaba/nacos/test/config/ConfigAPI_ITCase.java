@@ -15,11 +15,18 @@
  */
 package com.alibaba.nacos.test.config;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.impl.ServerHttpAgent;
+import com.alibaba.nacos.client.logger.json.JSONObject;
+import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.config.server.Config;
 import org.junit.After;
 import org.junit.Assert;
@@ -31,6 +38,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +56,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ConfigAPI_ITCase {
     public static final long TIME_OUT = 3000;
     public ConfigService iconfig = null;
+    ServerHttpAgent agent = null;
+
+    static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";
     String SPECIAL_CHARACTERS = "!@#$%^&*()_+-=_|/'?.";
     String dataId = "yanlin";
     String group = "yanlin";
@@ -59,6 +74,9 @@ public class ConfigAPI_ITCase {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         iconfig = NacosFactory.createConfigService(properties);
+
+        agent = new ServerHttpAgent(properties);
+        agent.start();
     }
 
     @After
@@ -559,6 +577,236 @@ public class ConfigAPI_ITCase {
     public void nacos_removeListener_4() {
         iconfig.removeListener(dataId, group, (Listener) null);
         Assert.assertTrue(true);
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_配置具体信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_detailConfig_1() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "show", "all");
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
+            if (result.code == HttpURLConnection.HTTP_OK) {
+                Assert.assertEquals(content, JSON.parseObject(result.content).getString("content"));
+            } else {
+                Assert.assertEquals(200, result.code);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_catalog信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_catalog() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group);
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH+"/catalog", null, params, agent.getEncode(), TIME_OUT);
+            if (result.code == HttpURLConnection.HTTP_OK) {
+                System.out.println(result.content);
+                Assert.assertNotNull(JSON.parseObject(result.content).getString("data"));
+            } else {
+                Assert.assertEquals(200, result.code);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_queryBeta信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_queryBeta_1() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(200, result.code);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_queryBeta删除信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_queryBeta_delete() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(200, result.code);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_模糊查询配置信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_fuzzySearchConfig() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test123";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "blur");
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            if (result.code == HttpURLConnection.HTTP_OK) {
+                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
+                Assert.assertTrue(JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content").startsWith(content));
+
+            } else {
+                Assert.assertEquals(200, result.code);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_模糊查询配置信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_fuzzySearchConfig_1() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test123";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId+"*", "group", group+"*", "pageNo","1", "pageSize","10", "search", "blur");
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            if (result.code == HttpURLConnection.HTTP_OK) {
+                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
+                Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+            } else {
+                Assert.assertEquals(200, result.code);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_模糊查询配置信息
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_searchConfig() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test123";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            if (result.code == HttpURLConnection.HTTP_OK) {
+                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
+                Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+            } else {
+                Assert.assertEquals(200, result.code);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
+    }
+
+    /**
+     * @TCDescription : nacos_openAPI_模糊查询配置信息，包含中文，utf-8
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test(timeout = 3*TIME_OUT)
+    public void nacos_openAPI_searchConfig_2() {
+        HttpResult result = null;
+
+        try {
+            final String content = "test测试";
+            boolean ret = iconfig.publishConfig(dataId, group, content);
+            Assert.assertTrue(ret);
+
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
+            result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, "utf-8", TIME_OUT);
+            if (result.code == HttpURLConnection.HTTP_OK) {
+                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
+                Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+            } else {
+                Assert.assertEquals(200, result.code);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.assertTrue(false);
+        }
     }
 
 }
