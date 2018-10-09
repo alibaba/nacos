@@ -145,9 +145,6 @@ public class Constants {
     public static final long TOTALTIME_INVALID_THRESHOLD = 60000;
 
     /**
-     * 批量操作时, 单条数据的状态码
-     */
-    /**
      *  发生异常
      */
     public static final int BATCH_OP_ERROR = -1;
