@@ -178,19 +178,23 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
      * @param sqlFile sql
      * @throws Exception Exception
      */
-    public void execute(Connection conn, String sqlFile) throws Exception {
+    private void execute(Connection conn, String sqlFile) throws Exception {
         Statement stmt = null;
-        List<String> sqlList = loadSql(sqlFile);
-        stmt = conn.createStatement();
-        for (String sql : sqlList) {
-            try {
-                stmt.execute(sql);
-            } catch (Exception e) {
-                LogUtil.defaultLog.info(e.getMessage());
+        try {
+            List<String> sqlList = loadSql(sqlFile);
+            stmt = conn.createStatement();
+            for (String sql : sqlList) {
+                try {
+                    stmt.execute(sql);
+                } catch (Exception e) {
+                    LogUtil.defaultLog.info(e.getMessage());
+                }
             }
-
+        } finally {
+            if (stmt != null) {
+                stmt.close();
+            }
         }
-        stmt.close();
     }
 
 	public static String getAppHome() {
