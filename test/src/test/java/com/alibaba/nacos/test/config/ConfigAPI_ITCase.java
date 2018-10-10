@@ -85,8 +85,8 @@ public class ConfigAPI_ITCase {
 
     /**
      * @TCDescription : nacos_正常获取数据
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep :
+     * @ExpectResult :
      */
     @Test(timeout = 3*TIME_OUT)
     public void nacos_getconfig_1() throws Exception {
@@ -330,15 +330,13 @@ public class ConfigAPI_ITCase {
         Listener ml = new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                // TODO Auto-generated method stub
-                System.out.println("recieve2:" + configInfo);
+                System.out.println("recieve23:" + configInfo);
                 count.incrementAndGet();
                 Assert.assertEquals(content, configInfo);
             }
 
             @Override
             public Executor getExecutor() {
-                // TODO Auto-generated method stub
                 return null;
             }
         };
@@ -346,14 +344,14 @@ public class ConfigAPI_ITCase {
         while (count.get() == 0) {
             Thread.sleep(2000);
         }
-        Assert.assertEquals(1, count.get());
+        Assert.assertTrue(count.get() >= 1);
         iconfig.removeListener(dataId, group, ml);
     }
 
     /**
      * @TCDescription : nacos_设置监听器为null，抛出异常信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep :
+     * @ExpectResult :
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -385,14 +383,12 @@ public class ConfigAPI_ITCase {
         Listener ml = new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                // TODO Auto-generated method stub
                 count.incrementAndGet();
                 Assert.assertEquals(content, configInfo);
             }
 
             @Override
             public Executor getExecutor() {
-                // TODO Auto-generated method stub
                 return null;
             }
         };
@@ -421,13 +417,11 @@ public class ConfigAPI_ITCase {
         Listener ml = new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                // TODO Auto-generated method stub
                 count.incrementAndGet();
             }
 
             @Override
             public Executor getExecutor() {
-                // TODO Auto-generated method stub
                 return null;
             }
         };
@@ -456,13 +450,11 @@ public class ConfigAPI_ITCase {
         iconfig.addListener(dataId, group, new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                // TODO Auto-generated method stub
                 Assert.assertTrue(false);
             }
 
             @Override
             public Executor getExecutor() {
-                // TODO Auto-generated method stub
                 return null;
             }
         });
@@ -471,13 +463,11 @@ public class ConfigAPI_ITCase {
             iconfig.removeListener(dataId, group, new Listener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    // TODO Auto-generated method stub
                     System.out.println("remove recieve:" + configInfo);
                 }
 
                 @Override
                 public Executor getExecutor() {
-                    // TODO Auto-generated method stub
                     return null;
                 }
             });
@@ -500,12 +490,11 @@ public class ConfigAPI_ITCase {
             iconfig.removeListener(dataId, group, new Listener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
-                    // TODO Auto-generated method stub
+
                 }
 
                 @Override
                 public Executor getExecutor() {
-                    // TODO Auto-generated method stub
                     return null;
                 }
             });
@@ -581,8 +570,8 @@ public class ConfigAPI_ITCase {
 
     /**
      * @TCDescription : nacos_openAPI_配置具体信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep :
+     * @ExpectResult :
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -593,25 +582,23 @@ public class ConfigAPI_ITCase {
         try {
             final String content = "test";
             boolean ret = iconfig.publishConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "show", "all");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), TIME_OUT);
-            if (result.code == HttpURLConnection.HTTP_OK) {
-                Assert.assertEquals(content, JSON.parseObject(result.content).getString("content"));
-            } else {
-                Assert.assertEquals(200, result.code);
-            }
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+
+            Assert.assertEquals(content, JSON.parseObject(result.content).getString("content"));
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
 
     /**
      * @TCDescription : nacos_openAPI_catalog信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep :
+     * @ExpectResult :
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -622,26 +609,25 @@ public class ConfigAPI_ITCase {
         try {
             final String content = "test";
             boolean ret = iconfig.publishConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group);
             result = agent.httpGet(CONFIG_CONTROLLER_PATH+"/catalog", null, params, agent.getEncode(), TIME_OUT);
-            if (result.code == HttpURLConnection.HTTP_OK) {
-                System.out.println(result.content);
-                Assert.assertNotNull(JSON.parseObject(result.content).getString("data"));
-            } else {
-                Assert.assertEquals(200, result.code);
-            }
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+
+            System.out.println(result.content);
+            Assert.assertNotNull(JSON.parseObject(result.content).getString("data"));
+
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
 
     /**
      * @TCDescription : nacos_openAPI_queryBeta信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep :
+     * @ExpectResult :
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -650,13 +636,18 @@ public class ConfigAPI_ITCase {
         HttpResult result = null;
 
         try {
-            final String content = "test";
-            boolean ret = iconfig.publishConfig(dataId, group, content);
-            Assert.assertTrue(ret);
+            final String content = "test-beta";
+            List<String> headers = Arrays.asList("betaIps", "127.0.0.1");
+            List<String> params1 = Arrays.asList("dataId", dataId, "group", group, "content", content);
+            result = agent.httpPost(CONFIG_CONTROLLER_PATH + "/", headers, params1, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertEquals("true", result.content);
+
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(200, result.code);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONObject("data").getString("content"));
         } catch (Exception e) {
             e.printStackTrace();
             Assert.assertTrue(false);
@@ -665,8 +656,9 @@ public class ConfigAPI_ITCase {
 
     /**
      * @TCDescription : nacos_openAPI_queryBeta删除信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep : 1. 发布配置
+     *             2. 删除Beta配置信息
+     * @ExpectResult :
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -675,23 +667,29 @@ public class ConfigAPI_ITCase {
         HttpResult result = null;
 
         try {
-            final String content = "test";
-            boolean ret = iconfig.publishConfig(dataId, group, content);
-            Assert.assertTrue(ret);
+            final String content = "test-beta";
+            List<String> headers = Arrays.asList("betaIps", "127.0.0.1");
+            List<String> params1 = Arrays.asList("dataId", dataId, "group", group, "content", content);
+            result = agent.httpPost(CONFIG_CONTROLLER_PATH + "/", headers, params1, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertEquals("true", result.content);
+
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            Assert.assertEquals(200, result.code);
+
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
 
     /**
      * @TCDescription : nacos_openAPI_模糊查询配置信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep : 1. 发布配置
+     *             2. 模糊查询
+     * @ExpectResult : 获取查询到配置
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -702,27 +700,25 @@ public class ConfigAPI_ITCase {
         try {
             final String content = "test123";
             boolean ret = iconfig.publishConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "blur");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            if (result.code == HttpURLConnection.HTTP_OK) {
-                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
-                Assert.assertTrue(JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content").startsWith(content));
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
-            } else {
-                Assert.assertEquals(200, result.code);
-            }
+            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
+            Assert.assertTrue(JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content").startsWith(content));
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
 
     /**
      * @TCDescription : nacos_openAPI_模糊查询配置信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TestStep : 1. 发布配置
+     *             2. 查询配置信息
+     * @ExpectResult : 获取查询到配置
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -733,26 +729,26 @@ public class ConfigAPI_ITCase {
         try {
             final String content = "test123";
             boolean ret = iconfig.publishConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
 
             List<String> params = Arrays.asList("dataId", dataId+"*", "group", group+"*", "pageNo","1", "pageSize","10", "search", "blur");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            if (result.code == HttpURLConnection.HTTP_OK) {
-                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
-                Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
-            } else {
-                Assert.assertEquals(200, result.code);
-            }
+
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
+            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
 
     /**
-     * @TCDescription : nacos_openAPI_模糊查询配置信息
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TCDescription : nacos_openAPI_查询配置信息
+     * @TestStep : 1. 发布配置
+     *             2. 查询配置信息
+     * @ExpectResult : 获取查询到配置
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -763,26 +759,26 @@ public class ConfigAPI_ITCase {
         try {
             final String content = "test123";
             boolean ret = iconfig.publishConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            if (result.code == HttpURLConnection.HTTP_OK) {
-                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
-                Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
-            } else {
-                Assert.assertEquals(200, result.code);
-            }
+
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
+            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
+
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
 
     /**
-     * @TCDescription : nacos_openAPI_模糊查询配置信息，包含中文，utf-8
-     * @TestStep : TODO Test steps
-     * @ExpectResult : TODO expect results
+     * @TCDescription : nacos_openAPI_查询配置信息，包含中文，utf-8
+     * @TestStep : 1. 发布配置
+     *             2. 查询配置信息
+     * @ExpectResult : 获取查询到配置
      * @author xiaochun.xxc
      * @since 3.6.8
      */
@@ -793,18 +789,15 @@ public class ConfigAPI_ITCase {
         try {
             final String content = "test测试";
             boolean ret = iconfig.publishConfig(dataId, group, content);
+            Thread.sleep(TIME_OUT);
             Assert.assertTrue(ret);
 
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, "utf-8", TIME_OUT);
-            if (result.code == HttpURLConnection.HTTP_OK) {
-                Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
-                Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
-            } else {
-                Assert.assertEquals(200, result.code);
-            }
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
+            Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
