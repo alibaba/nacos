@@ -55,6 +55,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
@@ -257,6 +258,41 @@ public class PersistService {
 	static final class ConfigAdvanceInfoRowMapper implements RowMapper<ConfigAdvanceInfo> {
 		public ConfigAdvanceInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigAdvanceInfo info = new ConfigAdvanceInfo();
+			info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
+			info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
+			info.setCreateUser(rs.getString("src_user"));
+			info.setCreateIp(rs.getString("src_ip"));
+			info.setDesc(rs.getString("c_desc"));
+			info.setUse(rs.getString("c_use"));
+			info.setEffect(rs.getString("effect"));
+			info.setType(rs.getString("type"));
+			info.setSchema(rs.getString("c_schema"));
+			return info;
+		}
+	}
+	
+	static final class ConfigAllInfoRowMapper implements RowMapper<ConfigAllInfo> {
+		public ConfigAllInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+			ConfigAllInfo info = new ConfigAllInfo();
+			info.setDataId(rs.getString("data_id"));
+			info.setGroup(rs.getString("group_id"));
+			info.setTenant(rs.getString("tenant_id"));
+			info.setAppName(rs.getString("app_name"));
+			try {
+				info.setContent(rs.getString("content"));
+			} catch (SQLException e) {
+				// ignore
+			}
+			try {
+				info.setMd5(rs.getString("md5"));
+			} catch (SQLException e) {
+				// ignore
+			}
+			try {
+				info.setId(rs.getLong("ID"));
+			} catch (SQLException e) {
+				// ignore
+			}
 			info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
 			info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
 			info.setCreateUser(rs.getString("src_user"));
@@ -2790,6 +2826,40 @@ public class PersistService {
 			throw e;
 		}
 	}
+	
+	/**
+	 *  查询配置信息；数据库原子操作，最小sql动作，无业务封装
+	 * @param dataId dataId
+	 * @param group group
+	 * @param tenant tenant
+	 * @return advance info
+	 */
+	public ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant) {
+		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+		try {
+			List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
+			ConfigAllInfo configAdvance = this.jt.queryForObject(
+					"select ID,data_id,group_id,tenant_id,app_name,content,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema from config_info where data_id=? and group_id=? and tenant_id=?",
+					new Object[] { dataId, group, tenantTmp }, CONFIG_ALL_INFO_ROW_MAPPER);
+			if (configTagList != null && !configTagList.isEmpty()) {
+				StringBuilder configTagsTmp = new StringBuilder();
+				for (String configTag : configTagList) {
+					if (configTagsTmp.length() == 0) {
+						configTagsTmp.append(configTag);
+					} else {
+						configTagsTmp.append(",").append(configTag);
+					}
+				}
+				configAdvance.setConfigTags(configTagsTmp.toString());
+			}
+			return configAdvance;
+		} catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
+			return null;
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
 
 	/**
 	 *  更新变更记录；数据库原子操作，最小sql动作，无业务封装
@@ -2834,7 +2904,7 @@ public class PersistService {
 	public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize) {
 		PaginationHelper<ConfigHistoryInfo> helper = new PaginationHelper<ConfigHistoryInfo>();
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-		String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+		String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
 		String sqlFetchRows = "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
 
 		Page<ConfigHistoryInfo> page = null;
@@ -3067,6 +3137,8 @@ public class PersistService {
 	static final ConfigInfoRowMapper CONFIG_INFO_ROW_MAPPER = new ConfigInfoRowMapper();
 	
 	static final ConfigAdvanceInfoRowMapper CONFIG_ADVANCE_INFO_ROW_MAPPER = new ConfigAdvanceInfoRowMapper();
+	
+	static final ConfigAllInfoRowMapper CONFIG_ALL_INFO_ROW_MAPPER = new ConfigAllInfoRowMapper();
 	
 	static final ConfigInfo4BetaRowMapper CONFIG_INFO4BETA_ROW_MAPPER = new ConfigInfo4BetaRowMapper();
 	

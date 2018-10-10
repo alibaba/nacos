@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.naming.utils.StringUtils;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -78,8 +77,7 @@ public class PushRecver implements Runnable {
                 PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type)) {
-                    // dom update
-                    hostReactor.processDomJSON(pushPacket.data);
+                    hostReactor.processServiceJSON(pushPacket.data);
 
                     // send ack to server
                     ack = "{\"type\": \"push-ack\""
@@ -90,7 +88,7 @@ public class PushRecver implements Runnable {
                     ack = "{\"type\": \"dump-ack\""
                             + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
                             + "\", \"data\":" + "\""
-                            + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getDomMap()))
+                            + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getServiceInfoMap()))
                             + "\"}";
                 } else {
                     // do nothing send ack only

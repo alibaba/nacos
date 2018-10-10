@@ -381,7 +381,7 @@ public class IpAddress implements Comparable {
     }
 
     public String generateInstanceId() {
-        return this.ip + "-" + this.port + "-" + this.cluster.getName() + "-" + this.cluster.getDom().getName();
+        return this.ip + "#" + this.port + "#" + this.cluster.getName() + "#" + this.cluster.getDom().getName();
     }
 
     @Override

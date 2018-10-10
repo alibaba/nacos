@@ -48,6 +48,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -76,7 +77,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	
 	@PostConstruct
 	public void init() {
-		serverPort = System.getProperty("nacos.server.port", "8080");
+		serverPort = System.getProperty("nacos.server.port", "8848");
 		String envDomainName = System.getenv("address_server_domain");
 		if (StringUtils.isBlank(envDomainName)) {
 			domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
@@ -335,7 +336,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 		long startCheckTime = System.currentTimeMillis();
 		for (String serverIp : serverList) {
 			// Compatible with old codes,use status.taobao
-			String url = "http://" + serverIp + servletContext.getContextPath() + "/health";
+			String url = "http://" + serverIp + servletContext.getContextPath() + Constants.HEALTH_CONTROLLER_PATH;
 			// "/nacos/health";
 			HttpGet request = new HttpGet(url);
 			httpclient.execute(request, new AyscCheckServerHealthCallBack(serverIp));

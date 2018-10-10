@@ -2,7 +2,7 @@
 management.security.enabled=false
 server.contextPath=/nacos
 server.servlet.contextPath=/nacos
-server.port=8080
+server.port=8848
 
 
 db.num=2

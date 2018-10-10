@@ -48,8 +48,6 @@ public class Constants {
 
     public static final String DAILY_DOMAINNAME = "commonconfig.taobao.net";
 
-    public static final int DEFAULT_PORT = 8080;
-
     public static final String NULL = "";
 
     public static final String DATAID = "dataId";
@@ -118,6 +116,8 @@ public class Constants {
 	public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
 
 	public static final String LISTENER_CONTROLLER_PATH = BASE_PATH + "/listener";
+	
+	public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
     
     public static final String ENCODE = "UTF-8";
 
@@ -144,9 +144,6 @@ public class Constants {
      */
     public static final long TOTALTIME_INVALID_THRESHOLD = 60000;
 
-    /**
-     * 批量操作时, 单条数据的状态码
-     */
     /**
      *  发生异常
      */

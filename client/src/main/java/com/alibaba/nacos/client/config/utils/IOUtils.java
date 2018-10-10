@@ -15,20 +15,11 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import java.io.BufferedReader;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import com.alibaba.nacos.api.common.Constants;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.alibaba.nacos.client.config.common.Constants;
 
 
 /**
@@ -91,11 +82,13 @@ public class IOUtils {
 
         if (fileOrDir.isDirectory()) {
             cleanDirectory(fileOrDir);
-        }
-
-		boolean isDeleteOk = fileOrDir.delete();
-		if (!isDeleteOk) {
-			throw new IOException("delete fail");
+		} else {
+			if (fileOrDir.exists()) {
+				boolean isDeleteOk = fileOrDir.delete();
+				if (!isDeleteOk) {
+					throw new IOException("delete fail");
+				}
+			}
 		}
     }
     

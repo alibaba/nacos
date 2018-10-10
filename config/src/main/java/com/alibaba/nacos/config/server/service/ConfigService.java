@@ -79,8 +79,9 @@ public class ConfigService {
 			final String md5 = MD5.getInstance().getMD5String(content);
 			if (md5.equals(ConfigService.getContentMd5(groupKey))) {
 				dumpLog.warn(
-						"[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}",
-						new Object[] { groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs });
+					"[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+						+ "lastModifiedNew={}",
+					groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
 			} else if (!PropertyUtil.isStandaloneMode()) {
 				DiskUtil.saveToDisk(dataId, group, tenant, content);
 			}
@@ -121,7 +122,10 @@ public class ConfigService {
     	try {
     		final String md5 = MD5.getInstance().getMD5String(content);
 			if(md5.equals(ConfigService.getContentBetaMd5(groupKey))) {
-				dumpLog.warn("[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}", new Object[]{groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs});
+				dumpLog.warn(
+					"[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+						+ "lastModifiedNew={}",
+					groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
 			} else if (!PropertyUtil.isStandaloneMode()) {
 				DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
 			}
@@ -156,7 +160,10 @@ public class ConfigService {
     	try {
     		final String md5 = MD5.getInstance().getMD5String(content);
 			if(md5.equals(ConfigService.getContentTagMd5(groupKey,tag))) {
-				dumpLog.warn("[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}", new Object[]{groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs});
+				dumpLog.warn(
+					"[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+						+ "lastModifiedNew={}",
+					groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
 			} else if (!PropertyUtil.isStandaloneMode()) {
 				DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
 			}
@@ -192,7 +199,10 @@ public class ConfigService {
 			if (!PropertyUtil.isStandaloneMode()) {
 				String loacalMd5 = DiskUtil.getLocalConfigMd5(dataId, group, tenant);
 				if(md5.equals(loacalMd5)) {
-					dumpLog.warn("[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, lastModifiedNew={}", new Object[]{groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs});
+					dumpLog.warn(
+						"[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
+							+ "lastModifiedNew={}",
+						groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
 				} else {
 					DiskUtil.saveToDisk(dataId, group, tenant, content);
 				}

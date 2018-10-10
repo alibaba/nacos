@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
@@ -35,7 +36,7 @@ public class EventDispatcher {
 
     private ExecutorService executor = null;
 
-    private BlockingQueue<Domain> changedDoms = new LinkedBlockingQueue<Domain>();
+    private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
     private ConcurrentMap<String, List<EventListener>> observerMap = new ConcurrentHashMap<String, List<EventListener>>();
 
@@ -54,26 +55,30 @@ public class EventDispatcher {
         executor.execute(new Notifier());
     }
 
-    public void addListener(Domain dom, String clusters, EventListener listener) {
-        addListener(dom, clusters, StringUtils.EMPTY, listener);
+    public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
+        addListener(serviceInfo, clusters, StringUtils.EMPTY, listener);
     }
 
-    public void addListener(Domain dom, String clusters, String env, EventListener listener) {
+    public void addListener(ServiceInfo serviceInfo, String clusters, String env, EventListener listener) {
+
+        LogUtils.LOG.info("LISTENER", "adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
 
-        observers = observerMap.putIfAbsent(Domain.getKey(dom.getName(), clusters, env), observers);
+        observers = observerMap.putIfAbsent(ServiceInfo.getKey(serviceInfo.getName(), clusters, env), observers);
         if (observers != null) {
             observers.add(listener);
         }
 
-        domChanged(dom);
+        serviceChanged(serviceInfo);
     }
 
-    public void removeListener(String dom, String clusters, EventListener listener) {
+    public void removeListener(String serviceName, String clusters, EventListener listener) {
+
+        LogUtils.LOG.info("LISTENER", "removing " + serviceName + " with " + clusters + " from listener map");
         String unit = "";
 
-        List<EventListener> observers = observerMap.get(Domain.getKey(dom, clusters, unit));
+        List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters, unit));
         if (observers != null) {
             Iterator<EventListener> iter = observers.iterator();
             while (iter.hasNext()) {
@@ -85,43 +90,41 @@ public class EventDispatcher {
         }
     }
 
-    public void domChanged(Domain dom) {
-        if (dom == null) {
+    public void serviceChanged(ServiceInfo serviceInfo) {
+        if (serviceInfo == null) {
             return;
         }
 
-        changedDoms.add(dom);
+        changedServices.add(serviceInfo);
     }
 
     private class Notifier implements Runnable {
         @Override
         public void run() {
             while (true) {
-                Domain dom = null;
+                ServiceInfo serviceInfo = null;
                 try {
-                    dom = changedDoms.poll(5, TimeUnit.MINUTES);
+                    serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
                 } catch (Exception ignore) {
                 }
 
-                if (dom == null) {
+                if (serviceInfo == null) {
                     continue;
                 }
 
                 try {
-                    List<EventListener> listeners = observerMap.get(dom.getKey());
+                    List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
 
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
-                            List<Instance> hosts = Collections.unmodifiableList(dom.getHosts());
-                            if (!CollectionUtils.isEmpty(hosts)) {
-                                listener.onEvent(new NamingEvent(dom.getName(), hosts));
-                            }
+                            List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
+                            listener.onEvent(new NamingEvent(serviceInfo.getName(), hosts));
                         }
                     }
 
                 } catch (Exception e) {
-                    LogUtils.LOG.error("NA", "notify error for dom: "
-                            + dom.getName() + ", clusters: " + dom.getClusters(), e);
+                    LogUtils.LOG.error("NA", "notify error for service: "
+                            + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
                 }
             }
         }
