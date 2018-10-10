@@ -30,7 +30,7 @@ import java.util.concurrent.*;
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r);
@@ -48,14 +48,16 @@ public class BeatReactor {
 
     public BeatReactor(NamingProxy serverProxy) {
         this.serverProxy = serverProxy;
-        executorService.execute(new BeatProcessor());
+        executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
+        LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
         dom2Beat.put(dom, beatInfo);
     }
 
     public void removeBeatInfo(String dom) {
+        LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
         dom2Beat.remove(dom);
     }
 
@@ -63,18 +65,14 @@ public class BeatReactor {
 
         @Override
         public void run() {
-            while (true) {
-                try {
-                    for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
-                        BeatInfo beatInfo = entry.getValue();
-                        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                        LogUtils.LOG.info("BEAT", "send beat to server: ", beatInfo.toString());
-                    }
-
-                    TimeUnit.MILLISECONDS.sleep(clientBeatInterval);
-                } catch (Exception e) {
-                    LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
+            try {
+                for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
+                    BeatInfo beatInfo = entry.getValue();
+                    executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
+                    LogUtils.LOG.debug("BEAT", "send beat to server: ", beatInfo.toString());
                 }
+            } catch (Exception e) {
+                LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
             }
         }
     }

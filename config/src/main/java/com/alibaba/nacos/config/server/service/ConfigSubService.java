@@ -124,7 +124,9 @@ public class ConfigSubService {
 										ipList.get(i));
 					}
 				} catch (TimeoutException e) {
-					f.cancel(true);
+					if (f != null) {
+						f.cancel(true);
+					}
 					LogUtil.defaultLog.warn(
 							"get task result with TimeoutException: {} ", e
 									.getMessage());
@@ -187,7 +189,7 @@ public class ConfigSubService {
 							.append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
 				}
 
-				String urlAll = getUrl(ip, url) + paramUrl;
+				String urlAll = getUrl(ip, url) + "?" + paramUrl;
 				com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
 						.invokeURL(urlAll, null, Constants.ENCODE);
 				/**

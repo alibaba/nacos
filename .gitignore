@@ -8,3 +8,5 @@ target
 .DS_Store
 /logs
 *.iml
+node_modules
+test/derby.log
