@@ -139,7 +139,23 @@ module.exports = {
             "title": "服务列表",
             "isVirtual": false,
             "projectName": "nacos",
-            "children": [],
+            "children": [
+                {
+                    "isExtend": false,
+                    "name": "服务详情",
+                    "title": "服务详情",
+                    "isVirtual": false,
+                    "projectName": "nacos",
+                    "serviceName": "serviceDetail",
+                    "link": "serviceDetail",
+                    "hasFusion": true,
+                    "template": "",
+                    "dontUseChild": false,
+                    "registerName": "com.alibaba.nacos.page.serviceDetail",
+                    "useRouter": false,
+                    "id": "serviceDetail"
+                }
+            ],
             "serviceName": "serviceManagement",
             "link": "serviceManagement",
             "hasFusion": true,
