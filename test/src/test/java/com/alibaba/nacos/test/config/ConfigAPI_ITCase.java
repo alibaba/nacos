@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
+import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
@@ -380,16 +381,11 @@ public class ConfigAPI_ITCase {
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
 
-        Listener ml = new Listener() {
+        Listener ml = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
                 Assert.assertEquals(content, configInfo);
-            }
-
-            @Override
-            public Executor getExecutor() {
-                return null;
             }
         };
         iconfig.addListener(dataId, group, ml);
@@ -414,15 +410,10 @@ public class ConfigAPI_ITCase {
         iconfig.removeConfig(dataId, group);
         Thread.sleep(TIME_OUT);
 
-        Listener ml = new Listener() {
+        Listener ml = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
-            }
-
-            @Override
-            public Executor getExecutor() {
-                return null;
             }
         };
         iconfig.addListener(dataId, group, ml);
@@ -447,28 +438,18 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = 5*TIME_OUT)
     public void nacos_removeListener_1() throws Exception {
-        iconfig.addListener(dataId, group, new Listener() {
+        iconfig.addListener(dataId, group, new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 Assert.assertTrue(false);
             }
-
-            @Override
-            public Executor getExecutor() {
-                return null;
-            }
         });
         Thread.sleep(TIME_OUT);
         try {
-            iconfig.removeListener(dataId, group, new Listener() {
+            iconfig.removeListener(dataId, group, new AbstractListener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
                     System.out.println("remove recieve:" + configInfo);
-                }
-
-                @Override
-                public Executor getExecutor() {
-                    return null;
                 }
             });
         } catch (Exception e) {
@@ -487,15 +468,10 @@ public class ConfigAPI_ITCase {
     public void nacos_removeListener_2() {
         group += "test.nacos";
         try {
-            iconfig.removeListener(dataId, group, new Listener() {
+            iconfig.removeListener(dataId, group, new AbstractListener() {
                 @Override
                 public void receiveConfigInfo(String configInfo) {
 
-                }
-
-                @Override
-                public Executor getExecutor() {
-                    return null;
                 }
             });
         } catch (Exception e) {
@@ -515,23 +491,13 @@ public class ConfigAPI_ITCase {
         final String contentRemove = "test-abc-two";
         final AtomicInteger count = new AtomicInteger(0);
 
-        Listener ml = new Listener() {
-            @Override
-            public Executor getExecutor() {
-                return null;
-            }
-
+        Listener ml = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 count.incrementAndGet();
             }
         };
-        Listener ml1 = new Listener() {
-            @Override
-            public Executor getExecutor() {
-                return null;
-            }
-
+        Listener ml1 = new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 //System.out.println("ml1 remove listener recieve:" + configInfo);
@@ -649,7 +615,6 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(content, JSON.parseObject(result.content).getJSONObject("data").getString("content"));
         } catch (Exception e) {
-            e.printStackTrace();
             Assert.assertTrue(false);
         }
     }
