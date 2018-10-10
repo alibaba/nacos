@@ -13,19 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client;
+package com.alibaba.nacos.api.config.filter;
 
-import org.junit.Test;
+import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * @author dungu.zpf
+ * Config Filter Chain Interface
+ * 
+ * @author Nacos
+ *
  */
-public class NamingTest {
-
-    @Test
-    public void testServiceList() {
-
-    }
-
-
+public interface ConfigFilterChain {
+	/**
+	 * Filter aciton
+	 * 
+	 * @param request
+	 *            request
+	 * @param response
+	 *            response
+	 * @throws NacosException
+	 *             NacosException
+	 */
+	public void doFilter(ConfigRequest request, ConfigResponse response) throws NacosException;
+	
 }

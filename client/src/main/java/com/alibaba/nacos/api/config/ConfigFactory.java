@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.api.config;
 
-import java.lang.reflect.Constructor;
 import java.util.Properties;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.NacosConfigService;
 
 /**
  * Config Factory
@@ -39,20 +39,13 @@ public class ConfigFactory {
 	 *             Exception
 	 */
 	public static ConfigService createConfigService(Properties properties) throws NacosException {
-		try {
-			Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
-			Constructor constructor = driverImplClass.getConstructor(Properties.class);
-			ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
-			return vendorImpl;
-		} catch (Throwable e) {
-			throw new NacosException(-400, e.getMessage());
-		}
+		return new NacosConfigService(properties);
 	}
 
 	/**
 	 * Create Config
 	 * 
-	 * @param ServerAddr
+	 * @param serverAddr
 	 *            serverlist
 	 * @return Config
 	 * @throws NacosException
@@ -61,14 +54,7 @@ public class ConfigFactory {
 	public static ConfigService createConfigService(String serverAddr) throws NacosException {
 		Properties properties = new Properties();
 		properties.put(PropertyKeyConst.SERVER_ADDR, serverAddr);
-		try {
-			Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
-			Constructor constructor = driverImplClass.getConstructor(Properties.class);
-			ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
-			return vendorImpl;
-		} catch (Throwable e) {
-			throw new NacosException(-400, e.getMessage());
-		}
+		return new NacosConfigService(properties);
 	}
 
 }

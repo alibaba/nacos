@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.nacos.client.naming.utils.StringUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +33,7 @@ public class Cluster {
     /**
      * Name of cluster
      */
-    private String name = "";
+    private String name = StringUtils.EMPTY;
 
     /**
      * Health check config of this cluster
@@ -54,7 +56,7 @@ public class Cluster {
     private boolean useIPPort4Check = true;
 
 
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
 
     public Cluster() {
 

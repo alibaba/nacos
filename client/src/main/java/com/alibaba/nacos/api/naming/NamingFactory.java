@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.filter;
+package com.alibaba.nacos.api.naming;
+
+import java.util.Properties;
+
+import com.alibaba.nacos.client.naming.NacosNamingService;
+
 /**
- * Filter Config Interface
- * @author Nacos
- *
+ * @author dungu.zpf
  */
-public interface IFilterConfig {
+public class NamingFactory {
 
-	/**
-	 * get filter name
-	 * 
-	 * @return
-	 */
-	public String getFilterName();
+	public static NamingService createNamingService(String serverList) {
+		return new NacosNamingService(serverList);
+	}
 
-	/**
-	 * get param
-	 * 
-	 * @param name
-	 * @return param
-	 */
-	public Object getInitParameter(String name);
-
+	public static NamingService createNamingService(Properties properties) {
+		return new NacosNamingService(properties);
+	}
 }

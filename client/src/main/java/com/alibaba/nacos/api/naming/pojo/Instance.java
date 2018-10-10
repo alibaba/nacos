@@ -17,7 +17,7 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.naming.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +68,7 @@ public class Instance {
     /**
      * User extended attributes
      */
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
 
     public String getInstanceId() {
         return instanceId;
@@ -76,14 +76,6 @@ public class Instance {
 
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
-    }
-
-    public String serviceName() {
-        String[] infos = instanceId.split(Constants.NAMING_INSTANCE_ID_SPLITTER);
-        if (infos.length < Constants.NAMING_INSTANCE_ID_SEG_COUNT) {
-            return null;
-        }
-        return infos[Constants.NAMING_INSTANCE_ID_SEG_COUNT - 1];
     }
 
     public String getIp() {
@@ -163,16 +155,12 @@ public class Instance {
 
         Instance host = (Instance) obj;
 
-        return strEquals(toString(), host.toString());
+        return StringUtils.equals(toString(), host.toString());
     }
 
     @Override
     public int hashCode() {
         return toString().hashCode();
-    }
-
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
     }
 
 }

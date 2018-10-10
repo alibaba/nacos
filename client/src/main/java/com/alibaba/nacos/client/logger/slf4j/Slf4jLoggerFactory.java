@@ -31,6 +31,7 @@ public class Slf4jLoggerFactory implements ILoggerFactory {
         Class.forName("org.slf4j.impl.StaticLoggerBinder");
     }
 
+    @Override
     public Logger getLogger(String name) {
         try {
             return new Slf4jLogger(org.slf4j.LoggerFactory.getLogger(name));
@@ -40,6 +41,7 @@ public class Slf4jLoggerFactory implements ILoggerFactory {
         }
     }
 
+    @Override
     public Logger getLogger(Class<?> clazz) {
         try {
             return new Slf4jLogger(org.slf4j.LoggerFactory.getLogger(clazz));

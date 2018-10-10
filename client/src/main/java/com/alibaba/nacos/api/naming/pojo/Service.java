@@ -52,7 +52,7 @@ public class Service {
         this.name = name;
     }
 
-    private Map<String, String> metadata = new HashMap<String, String>();
+    private Map<String, String> metadata = new HashMap<>();
 
     public String getName() {
         return name;

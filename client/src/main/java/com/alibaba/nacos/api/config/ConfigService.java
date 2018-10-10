@@ -99,12 +99,5 @@ public interface ConfigService {
 	 *            listener
 	 */
 	public void removeListener(String dataId, String group, Listener listener);
-	
-	/**
-	 * server health info
-	 * 
-	 * @return whether health
-	 */
-	public String getServerStatus();
 
 }

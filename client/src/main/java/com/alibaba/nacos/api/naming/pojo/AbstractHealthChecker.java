@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.nacos.client.naming.utils.StringUtils;
+
 import java.util.Objects;
 
 /**
@@ -35,8 +37,8 @@ public abstract class AbstractHealthChecker implements Cloneable {
     public static class Http extends AbstractHealthChecker {
         public static final String TYPE = "HTTP";
 
-        private String path = "";
-        private String headers = "";
+        private String path = StringUtils.EMPTY;
+        private String headers = StringUtils.EMPTY;
 
         private int expectedResponseCode = 200;
 
@@ -81,14 +83,14 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             Http other = (Http) obj;
 
-            if (!strEquals(type, other.getType())) {
+            if (!StringUtils.equals(type, other.getType())) {
                 return false;
             }
 
-            if (!strEquals(path, other.getPath())) {
+            if (!StringUtils.equals(path, other.getPath())) {
                 return false;
             }
-            if (!strEquals(headers, other.getHeaders())) {
+            if (!StringUtils.equals(headers, other.getHeaders())) {
                 return false;
             }
             return expectedResponseCode == other.getExpectedResponseCode();
@@ -162,20 +164,16 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             Mysql other = (Mysql) obj;
 
-            if (!strEquals(user, other.getUser())) {
+            if (!StringUtils.equals(user, other.getUser())) {
                 return false;
             }
 
-            if (!strEquals(pwd, other.getPwd())) {
+            if (!StringUtils.equals(pwd, other.getPwd())) {
                 return false;
             }
 
-            return strEquals(cmd, other.getCmd());
+            return StringUtils.equals(cmd, other.getCmd());
 
         }
     }
-    
-	private static boolean strEquals(String str1, String str2) {
-		return str1 == null ? str2 == null : str1.equals(str2);
-	}
 }

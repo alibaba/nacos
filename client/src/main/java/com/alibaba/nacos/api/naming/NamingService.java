@@ -15,13 +15,11 @@
  */
 package com.alibaba.nacos.api.naming;
 
+import java.util.List;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-
-import java.util.List;
 
 /**
  * @author dungu.zpf
@@ -74,7 +72,7 @@ public interface NamingService {
      * @param serviceName name of service
      * @param ip          instance ip
      * @param port        instance port
-     * @param clusterName instance cluster name
+     * @param clusterName     instance cluster name
      * @throws NacosException
      */
     void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
@@ -175,29 +173,4 @@ public interface NamingService {
      * @throws NacosException
      */
     void unsubscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
-
-    /**
-     * Get all service names from server
-     *
-     * @param pageNo   page index
-     * @param pageSize page size
-     * @return list of service names
-     * @throws NacosException
-     */
-    ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException;
-
-    /**
-     * Get all subscribed services of current client
-     *
-     * @return subscribed services
-     * @throws NacosException
-     */
-    List<ServiceInfo> getSubscribeServices() throws NacosException;
-
-    /**
-     * Get server health status
-     *
-     * @return is server healthy
-     */
-    String getServerStatus();
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.common;
+package com.alibaba.nacos.client.config.common;
 
 /**
  * Constant
@@ -38,6 +38,8 @@ public class Constants {
 	public static final String DEFAULT_DOMAINNAME = "commonconfig.config-host.taobao.com";
 
 	public static final String DAILY_DOMAINNAME = "commonconfig.taobao.net";
+
+	public static final int DEFAULT_PORT = 8080;
 
 	public static final String NULL = "";
 
@@ -122,7 +124,4 @@ public class Constants {
 	public static final String CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken";
 
 	public static final int ATOMIC_MAX_SIZE = 1000;
-
-	public static final String NAMING_INSTANCE_ID_SPLITTER = "#";
-	public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
 }

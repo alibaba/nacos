@@ -39,6 +39,7 @@ public class LogbackActivateOption extends Logback918ActivateOption {
         super(logger);
     }
 
+    @Override
     protected ch.qos.logback.core.Appender getLogbackDailyRollingFileAppender(String productName, String file,
                                                                               String encoding) {
         RollingFileAppender appender = new RollingFileAppender();
@@ -67,11 +68,14 @@ public class LogbackActivateOption extends Logback918ActivateOption {
         return appender;
     }
 
+    @Override
     protected ch.qos.logback.core.Appender getLogbackDailyAndSizeRollingFileAppender(String productName, String file,
                                                                                      String encoding, String size) {
         return getLogbackDailyAndSizeRollingFileAppender(productName, file, encoding, size, "yyyy-MM-dd", -1);
     }
 
+
+    @Override
     protected ch.qos.logback.core.Appender getLogbackDailyAndSizeRollingFileAppender(String productName, String file,
                                                                                      String encoding, String size,
                                                                                      String datePattern,
@@ -112,6 +116,8 @@ public class LogbackActivateOption extends Logback918ActivateOption {
         return appender;
     }
 
+
+    @Override
     protected ch.qos.logback.core.Appender getSizeRollingAppender(String productName, String file, String encoding,
                                                                   String size, int maxBackupIndex) {
         RollingFileAppender appender = new RollingFileAppender();

@@ -15,55 +15,27 @@
  */
 package com.alibaba.nacos.api.config.filter;
 
-import com.alibaba.nacos.api.exception.NacosException;
-
 /**
- * Config Filter Interface
+ * Config Response Interface
  * 
  * @author Nacos
  *
  */
-public interface IConfigFilter {
+public interface ConfigResponse {
 	/**
-	 * Init Fuction
+	 * get param
 	 * 
-	 * @param filterConfig
-	 *            Filter Config
+	 * @param key
+	 *            key
+	 * @return value
 	 */
-	void init(IFilterConfig filterConfig);
+	public Object getParameter(String key);
 
 	/**
-	 * do filter
+	 * get context
 	 * 
-	 * @param request
-	 *            request
-	 * @param response
-	 *            response
-	 * @param filterChain
-	 *            filter Chain
-	 * @throws NacosException
-	 *             exception
+	 * @return configContext
 	 */
-	void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
-			throws NacosException;
-
-	/**
-	 * deploy
-	 */
-	void deploy();
-
-	/**
-	 * order
-	 * 
-	 * @return
-	 */
-	int getOrder();
-
-	/**
-	 * filterName
-	 * 
-	 * @return
-	 */
-	String getFilterName();
+	public ConfigContext getConfigContext();
 
 }

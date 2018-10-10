@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.listener;
-
-import java.util.concurrent.Executor;
+package com.alibaba.nacos.api.config.filter;
 
 /**
- * Listner Adapter,use default notify thread
+ * Config Request Interface
  * 
- * @author water.lyl
+ * @author Nacos
  *
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class AbstractListener implements Listener {
+public interface ConfigRequest {
+	/**
+	 * get param
+	 * 
+	 * @param key
+	 *            key
+	 * @return value
+	 */
+	public Object getParameter(String key);
 
 	/**
-	 * use default Executor
+	 * get config context
+	 * 
+	 * @return
 	 */
-    public Executor getExecutor() {
-        return null;
-    }
+	public ConfigContext getConfigContext();
 
 }
