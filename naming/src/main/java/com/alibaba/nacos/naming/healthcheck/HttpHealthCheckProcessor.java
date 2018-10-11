@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -107,7 +108,7 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
                     continue;
                 }
 
-                AbstractHealthCheckConfig.Http healthChecker = (AbstractHealthCheckConfig.Http) cluster.getHealthChecker();
+                AbstractHealthChecker.Http healthChecker = (AbstractHealthChecker.Http) cluster.getHealthChecker();
 
                 int ckPort = cluster.isUseIPPort4Check() ? ip.getPort() : cluster.getDefCkport();
                 URL host = new URL("http://" + ip.getIp() + ":" + ckPort);

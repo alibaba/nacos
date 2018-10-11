@@ -15,6 +15,13 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -32,6 +39,12 @@ public abstract class AbstractHealthChecker implements Cloneable {
         this.type = type;
     }
 
+    /**
+     * Clone all fields of this instance to another one
+     *
+     * @return Another instance with exactly the same fields.
+     * @throws CloneNotSupportedException
+     */
     public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
 
     public static class Http extends AbstractHealthChecker {
@@ -68,6 +81,25 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         public void setHeaders(String headers) {
             this.headers = headers;
+        }
+
+        @JSONField(serialize = false)
+        public Map<String, String> getCustomHeaders() {
+            if (StringUtils.isBlank(headers)) {
+                return Collections.emptyMap();
+            }
+
+            Map<String, String> headerMap = new HashMap<String, String>(16);
+            for (String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
+                String[] splits = s.split(":");
+                if (splits.length != 2) {
+                    continue;
+                }
+
+                headerMap.put(StringUtils.trim(splits[0]), StringUtils.trim(splits[1]));
+            }
+
+            return headerMap;
         }
 
         @Override
@@ -205,8 +237,8 @@ public abstract class AbstractHealthChecker implements Cloneable {
             return config;
         }
     }
-    
-	private static boolean strEquals(String str1, String str2) {
-		return str1 == null ? str2 == null : str1.equals(str2);
-	}
+
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
 }

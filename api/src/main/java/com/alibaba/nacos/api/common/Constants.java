@@ -125,4 +125,5 @@ public class Constants {
 
 	public static final String NAMING_INSTANCE_ID_SPLITTER = "#";
 	public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
+	public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
 }
