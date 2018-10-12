@@ -1,47 +1,50 @@
 import React from 'react';
-import {Button, Card, Dialog, Table, Form, Pagination, Loading, Input, Switch, Select} from '@alifd/next';
+import {Button, Card, Form, Loading} from '@alifd/next';
+import EditServiceDialog from './EditServiceDialog'
+import EditClusterDialog from './EditClusterDialog'
+import InstanceTable from './InstanceTable'
+import queryString from 'query-string'
 import {I18N} from './constant'
 import './ServiceDetail.less'
 
 const FormItem = Form.Item;
-const Option = Select.Option
-
-const dataSource = () => {
-    const result = [];
-    for (let i = 0; i < 8; i++) {
-        result.push({ip: '1.1.1.1', port: '80', weight: '50', healthy: 'true', metadata: 'k1=v1', online: true});
-    }
-    return result;
+const pageFormLayout = {
+    labelCol: {fixedSpan: 10},
+    wrapperCol: {span: 14}
 };
-
-const dialogFormLayout = {
-    labelCol: {fixedSpan: 12},
-    wrapperCol: {span: 12}
-}
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class ServiceDetail extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            serviceName: queryString.parse(props.location.search).name,
             loading: false,
-            tableLoading: false,
             currentPage: 1,
-            instanceList: [],
-            editServiceDialogVisible: false,
-            editClusterDialogVisible: false,
-            editInstanceDialogVisible: false,
-            checkType: 'tcp'
+            clusters: [],
+            instances: {},
+            service: {},
+            pageSize: 10,
+            pageNum: {}
         }
     }
 
     componentDidMount() {
-        setTimeout(() => this.setState({loading: true}, () => {
-            this.setState({
-                instanceList: dataSource(),
-                loading: false
-            })
-        }), 300)
+        if (!this.state.serviceName) {
+            this.props.history.goBack()
+            return
+        }
+        this.getServiceDetail()
+    }
+
+    getServiceDetail() {
+        const {serviceName} = this.state
+        window.request({
+            url: `/nacos/v1/ns/catalog/serviceDetail?serviceName=${serviceName}`,
+            beforeSend: () => this.openLoading(),
+            success: ({clusters = [], service = {}}) => this.setState({service, clusters}),
+            complete: () => this.closeLoading()
+        })
     }
 
     openLoading() {
@@ -52,162 +55,26 @@ class ServiceDetail extends React.Component {
         this.setState({loading: false})
     }
 
-    editServiceDialog() {
-        const hideDialog = () => this.setState({editServiceDialogVisible: false})
-        const {editServiceDialogVisible} = this.state
-        return (
-            <Dialog
-                className="service-detail-edit-dialog"
-                title={I18N.UPDATE_SERVICE}
-                visible={editServiceDialogVisible}
-                onOk={hideDialog}
-                onCancel={hideDialog}
-                onClose={hideDialog}
-            >
-                <Form {...dialogFormLayout}>
-                    <FormItem label={`${I18N.SERVICE_NAME}:`}>
-                        <p>test.com</p>
-                    </FormItem>
-                    <FormItem label={`${I18N.PROTECT_THRESHOLD}:`}>
-                        <Input className="in-text" value="0.5"/>
-                    </FormItem>
-                    <FormItem label={`${I18N.HEALTH_CHECK_PATTERN}:`}>
-                        <Select defaultValue="service" className="in-select">
-                            <Option value="service">{I18N.HEALTH_CHECK_PATTERN_SERVICE}</Option>
-                            <Option value="client">{I18N.HEALTH_CHECK_PATTERN_CLIENT}</Option>
-                            <Option value="forbidden">{I18N.HEALTH_CHECK_PATTERN_FORBIDDEN}</Option>
-                        </Select>
-                    </FormItem>
-                    <FormItem label={`${I18N.METADATA}:`}>
-                        <Input className="in-text" value="k1=v1,k2=v2"/>
-                    </FormItem>
-                </Form>
-            </Dialog>
-        )
+    openEditServiceDialog() {
+        this.refs.editServiceDialog.show(this.state.service)
     }
 
-    editClusterDialog() {
-        const hideDialog = () => this.setState({editClusterDialogVisible: false})
-        const {editClusterDialogVisible} = this.state
-        return (
-            <Dialog
-                className="cluster-edit-dialog"
-                title={I18N.UPDATE_CLUSTER}
-                visible={editClusterDialogVisible}
-                onOk={hideDialog}
-                onCancel={hideDialog}
-                onClose={hideDialog}
-            >
-                <Form {...dialogFormLayout}>
-                    <FormItem label={`${I18N.CHECK_TYPE}:`}>
-                        <Select
-                            className="in-select"
-                            defaultValue={this.state.checkType}
-                            onChange={checkType => this.setState({checkType})}
-                        >
-                            <Select.Option value="tcp">TCP</Select.Option>
-                            <Select.Option value="http">HTTP</Select.Option>
-                        </Select>
-                    </FormItem>
-                    <FormItem label={`${I18N.CHECK_PORT}:`}>
-                        <Input className="in-text" value="80"/>
-                    </FormItem>
-                    <FormItem label={`${I18N.USE_IP_PORT_CHECK}:`}>
-                        <Switch onChange={f => f}/>
-                    </FormItem>
-                    {
-                        this.state.checkType === 'http'
-                            ? (
-                                <Form {...dialogFormLayout}>
-                                    <FormItem label={`${I18N.CHECK_PATH}:`}>
-                                        <Input className="in-text"/>
-                                    </FormItem>
-                                    <FormItem label={`${I18N.CHECK_HEADERS}:`}>
-                                        <Input className="in-text"/>
-                                    </FormItem>
-                                </Form>
-                            )
-                            : null
-                    }
-                    <FormItem label={`${I18N.METADATA}:`}>
-                        <Input className="in-text" value="k1=v1,k2=v2"/>
-                    </FormItem>
-                </Form>
-            </Dialog>
-        )
+    openClusterDialog(cluster) {
+        this.refs.editClusterDialog.show(cluster)
     }
-
-    editInstanceDialog() {
-        const hideDialog = () => this.setState({editInstanceDialogVisible: false})
-        const {editInstanceDialogVisible} = this.state
-        return (
-            <Dialog
-                className="instance-edit-dialog"
-                title={I18N.UPDATE_INSTANCE}
-                visible={editInstanceDialogVisible}
-                onOk={hideDialog}
-                onCancel={hideDialog}
-                onClose={hideDialog}
-            >
-                <Form {...dialogFormLayout}>
-                    <FormItem label="IP:">
-                        <p>1.1.1.1</p>
-                    </FormItem>
-                    <FormItem label={`${I18N.PORT}:`}>
-                        <p>8080</p>
-                    </FormItem>
-                    <FormItem label={`${I18N.WEIGHT}:`}>
-                        <Input className="in-text" value="0.5"/>
-                    </FormItem>
-                    <FormItem label={`${I18N.WHETHER_ONLINE}:`}>
-                        <Switch onChange={f => f}/>
-                    </FormItem>
-                    <FormItem label={`${I18N.METADATA}:`}>
-                        <Input className="in-text" value="k1=v1,k2=v2"/>
-                    </FormItem>
-                </Form>
-            </Dialog>
-        )
-    }
-
-
-    switchState(index, record) {
-        const {instanceList} = this.state
-        this.setState({tableLoading: true}, () => {
-            setTimeout(() => {
-                instanceList[index].online = !record.online
-                this.setState({
-                    instanceList,
-                    tableLoading: false
-                })
-            }, 300)
-        })
-    }
-
-    onChange(currentPage) {
-        this.setState({tableLoading: true})
-        setTimeout(() => {
-            this.setState({tableLoading: false, currentPage})
-        }, 200)
-    }
-
-    openEditServiceDialog = () => this.setState({editServiceDialogVisible: true})
-    openClusterDialog = () => this.setState({editClusterDialogVisible: true})
-    openInstanceDialog = () => this.setState({editInstanceDialogVisible: true})
 
     render() {
-        const {loading, tableLoading, instanceList} = this.state
-        const formItemLayout = {
-            labelCol: {fixedSpan: 10},
-            wrapperCol: {span: 14}
-        };
+        const {serviceName, loading, service = {}, clusters} = this.state
+        const {metadata = {}} = service
+        const metadataText = Object.keys(metadata).map(key => `${key}=${metadata[key]}`).join(',')
         return (
             <div className="main-container service-detail">
                 <Loading
                     shape={"flower"}
                     tip={"Loading..."}
                     className="loading"
-                    visible={loading} color={"#333"}
+                    visible={loading}
+                    color={"#333"}
                 >
                     <h1 style={{
                         position: 'relative',
@@ -217,67 +84,49 @@ class ServiceDetail extends React.Component {
                         <Button
                             type="normal"
                             className="edit-service-btn"
-                            onClick={this.openEditServiceDialog}
+                            onClick={() => this.openEditServiceDialog()}
                         >{I18N.EDIT_SERVICE}</Button>
                     </h1>
 
-                    <Form style={{width: '60%'}} {...formItemLayout}>
+                    <Form style={{width: '60%'}} {...pageFormLayout}>
                         <FormItem label={`${I18N.SERVICE_NAME}:`}>
-                            <p>test.com</p>
+                            <p>{service.name}</p>
                         </FormItem>
                         <FormItem label={`${I18N.PROTECT_THRESHOLD}:`}>
-                            <p>0.5</p>
+                            <p>{service.protectThreshold}</p>
                         </FormItem>
                         <FormItem label={`${I18N.HEALTH_CHECK_PATTERN}:`}>
-                            <p>true</p>
+                            <p>{service.healthCheckMode}</p>
                         </FormItem>
                         <FormItem label={`${I18N.METADATA}:`}>
-                            <p>k1=v1,k2=v2</p>
+                            <p>{metadataText}</p>
                         </FormItem>
                     </Form>
-
-                    <Card
-                        title={`${I18N.CLUSTER}:`}
-                        subTitle="DEFAULT"
-                        contentHeight="auto"
-                        extra={<Button type="normal" onClick={this.openClusterDialog}>{I18N.EDIT_CLUSTER}</Button>}
-                    >
-                        <Loading
-                            shape={"flower"}
-                            tip={"Loading..."}
-                            className="loading"
-                            visible={tableLoading} color={"#333"}
-                        >
-                            <Table dataSource={instanceList}>
-                                <Table.Column title="IP" dataIndex="ip"/>
-                                <Table.Column title={I18N.PORT} dataIndex="port"/>
-                                <Table.Column title={I18N.WEIGHT} dataIndex="weight"/>
-                                <Table.Column title={I18N.HEALTHY} dataIndex="healthy"/>
-                                <Table.Column title={I18N.METADATA} dataIndex="metadata"/>
-                                <Table.Column title={I18N.OPERATION} width={150} cell={(value, index, record) => (
-                                    <div>
-                                        <Button
-                                            type="normal"
-                                            className="edit-btn"
-                                            onClick={this.openInstanceDialog}
-                                        >{I18N.EDITOR}</Button>
-                                        <Button
-                                            type={record.online ? 'normal' : 'secondary'}
-                                            onClick={() => this.switchState(index, record)}
-                                        >{I18N[record.online ? 'OFFLINE' : 'ONLINE']}</Button>
-                                    </div>
-                                )}/>
-                            </Table>
-                        </Loading>
-                        <Pagination
-                            className="pagination"
-                            onChange={currentPage => this.onChange(currentPage)}
-                        />
-                    </Card>
-                    {this.editServiceDialog()}
-                    {this.editInstanceDialog()}
-                    {this.editClusterDialog()}
+                    {
+                        clusters.map(cluster => (
+                            <Card
+                                key={cluster.name}
+                                className="cluster-card"
+                                title={`${I18N.CLUSTER}:`}
+                                subTitle={cluster.name}
+                                contentHeight="auto"
+                                extra={(
+                                    <Button
+                                        type="normal"
+                                        onClick={() => this.openClusterDialog(cluster)}
+                                    >{I18N.EDIT_CLUSTER}</Button>
+                                )}
+                            >
+                                <InstanceTable
+                                    clusterName={cluster.name}
+                                    serviceName={serviceName}
+                                />
+                            </Card>
+                        ))
+                    }
                 </Loading>
+                <EditServiceDialog ref="editServiceDialog"/>
+                <EditClusterDialog ref="editClusterDialog"/>
             </div>
         );
     }
