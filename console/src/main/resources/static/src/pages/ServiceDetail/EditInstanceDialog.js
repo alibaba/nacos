@@ -51,20 +51,22 @@ class EditInstanceDialog extends React.Component {
             >
                 <Form {...DIALOG_FORM_LAYOUT}>
                     <FormItem label="IP:">
-                        <p>1.1.1.1</p>
+                        <p>{editInstance.ip}</p>
                     </FormItem>
                     <FormItem label={`${I18N.PORT}:`}>
-                        <p>8080</p>
+                        <p>{editInstance.port}</p>
                     </FormItem>
                     <FormItem label={`${I18N.WEIGHT}:`}>
                         <Input
                             className="in-text"
-                            value={editInstance.healthy}
-                            onChange={healthy => this.onChangeCluster({healthy})}
+                            value={editInstance.weight}
+                            onChange={weight => this.onChangeCluster({weight})}
                         />
                     </FormItem>
                     <FormItem label={`${I18N.WHETHER_ONLINE}:`}>
-                        <Switch onChange={f => f}/>
+                        <Switch
+                            checked={editInstance.enabled}
+                            onChange={enabled => this.onChangeCluster({enabled})}/>
                     </FormItem>
                     <FormItem label={`${I18N.METADATA}:`}>
                         <Input

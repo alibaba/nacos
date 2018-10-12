@@ -33,7 +33,7 @@ class InstanceTable extends React.Component {
                 startPg: pageNum
             },
             beforeSend: () => this.setState({loading: true}),
-            success: res => this.setState({instance: res}),
+            success: instance => this.setState({instance}),
             complete: () => this.setState({loading: false})
         })
     }
@@ -42,20 +42,41 @@ class InstanceTable extends React.Component {
         this.refs.editInstanceDialog.show(instance)
     }
 
-    switchState() {
+    switchState(index, record) {
+        const {instance} = this.state
+        const {ip, port, weight, enabled} = record
+        const {clusterName, serviceName} = this.props
+        const newVal = Object.assign({}, instance)
+        newVal.list[index]['enabled'] = !enabled
+        window.request({
+            method: 'POST',
+            url: '/nacos/v1/ns/instance/update',
+            data: {serviceName, clusterName, ip, port, weight, enable: !enabled},
+            dataType: 'text',
+            beforeSend: () => this.setState({loading: true}),
+            success: () => this.setState({instance: newVal}),
+            complete: () => this.setState({loading: false})
+        })
+    }
+
+    onChangePage(pageNum) {
+        this.setState({pageNum}, () => this.getInstanceList())
     }
 
     render() {
-        const {clusterName} = this.props
-        const {instance = {}, pageSize, loading} = this.state
+        const {instance, pageSize, loading} = this.state
         return instance.count ? (
             <div>
                 <Table dataSource={instance.list} loading={loading}>
                     <Table.Column title="IP" dataIndex="ip"/>
                     <Table.Column title={I18N.PORT} dataIndex="port"/>
                     <Table.Column title={I18N.WEIGHT} dataIndex="weight"/>
-                    <Table.Column title={I18N.HEALTHY} dataIndex="healthy"/>
-                    <Table.Column title={I18N.METADATA} dataIndex="metadata"/>
+                    <Table.Column title={I18N.HEALTHY} dataIndex="healthy" cell={val => `${val}`}/>
+                    <Table.Column
+                        title={I18N.METADATA}
+                        dataIndex="metadata"
+                        cell={metadata => Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')}
+                    />
                     <Table.Column
                         title={I18N.OPERATION}
                         width={150}
@@ -67,9 +88,9 @@ class InstanceTable extends React.Component {
                                     onClick={() => this.openInstanceDialog(record)}
                                 >{I18N.EDITOR}</Button>
                                 <Button
-                                    type={record.online ? 'normal' : 'secondary'}
+                                    type={record.enabled ? 'normal' : 'secondary'}
                                     onClick={() => this.switchState(index, record)}
-                                >{I18N[record.online ? 'OFFLINE' : 'ONLINE']}</Button>
+                                >{I18N[record.enabled ? 'OFFLINE' : 'ONLINE']}</Button>
                             </div>
                         )}/>
                 </Table>
@@ -78,7 +99,9 @@ class InstanceTable extends React.Component {
                         ? (
                             <Pagination
                                 className="pagination"
-                                onChange={currentPage => this.onChange(clusterName, currentPage)}
+                                total={instance.count}
+                                pageSize={pageSize}
+                                onChange={currentPage => this.onChangePage(currentPage)}
                             />
                         )
                         : null
