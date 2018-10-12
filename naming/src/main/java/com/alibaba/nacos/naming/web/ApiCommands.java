@@ -1195,7 +1195,7 @@ public class ApiCommands {
         result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
         result.put("useSpecifiedURL", false);
         result.put("env", env);
-
+        result.put("metadata",domObj.getMetadata());
         return result;
     }
 
