@@ -42,6 +42,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -476,12 +477,14 @@ public class ApiCommands {
         if (StringUtils.isEmpty(cluster)) {
             cluster = BaseServlet.required(request, "clusterName");
         }
+        boolean enabled = BooleanUtils.toBoolean(BaseServlet.required(request, "enable"));
 
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(Integer.parseInt(port));
         ipAddress.setIp(ip);
         ipAddress.setWeight(Double.parseDouble(weight));
         ipAddress.setClusterName(cluster);
+        ipAddress.setEnabled(enabled);
 
         return ipAddress;
     }
@@ -518,16 +521,15 @@ public class ApiCommands {
         String tenant = BaseServlet.optional(request, "tid", StringUtils.EMPTY);
         String app = BaseServlet.optional(request, "app", "DEFAULT");
         String env = BaseServlet.optional(request, "env", StringUtils.EMPTY);
-        String instanceMetadataJson = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         IpAddress ipAddress = getIPAddress(request);
         ipAddress.setApp(app);
         ipAddress.setLastBeat(System.currentTimeMillis());
-        if (StringUtils.isNotEmpty(instanceMetadataJson)) {
-            ipAddress.setMetadata(JSON.parseObject(instanceMetadataJson, new TypeReference<Map<String, String>>() {
-            }));
+        if (StringUtils.isNotEmpty(metadata)) {
+            ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
         Loggers.TENANT.debug("reg-service: " + dom + "|" + ipAddress.toJSON() + "|" + env + "|" + tenant + "|" + app);
@@ -1178,8 +1180,7 @@ public class ApiCommands {
                 ipObj.put("marked", ip.isMarked());
                 ipObj.put("instanceId", ip.generateInstanceId());
                 ipObj.put("metadata", ip.getMetadata());
-                double weight = ip.getWeight();
-
+                ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());
 
                 hosts.add(ipObj);
