@@ -17,9 +17,9 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.ApiCommands;
@@ -115,9 +115,13 @@ public class InstanceController extends ApiCommands {
         return deRegService(request);
     }
 
-    @RequestMapping(value = "/instance", method = RequestMethod.POST)
+    @RequestMapping(value = "/instance/update", method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
-        return addIP4Dom(request);
+        String serviceName = BaseServlet.required(request, "serviceName");
+        Map<String, String[]> params = new HashMap<>(request.getParameterMap());
+        MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(params);
+        mockHttpRequest.addParameter("dom", serviceName);
+        return regService(mockHttpRequest);
     }
 
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)

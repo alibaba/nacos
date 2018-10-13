@@ -17,8 +17,6 @@ public class ServiceDetailView {
 
     private List<Cluster> clusters;
 
-    private Map<String, List<Instance>> instances;
-
     public Service getService() {
         return service;
     }
@@ -33,14 +31,6 @@ public class ServiceDetailView {
 
     public void setClusters(List<Cluster> clusters) {
         this.clusters = clusters;
-    }
-
-    public Map<String, List<Instance>> getInstances() {
-        return instances;
-    }
-
-    public void setInstances(Map<String, List<Instance>> instances) {
-        this.instances = instances;
     }
 
     @Override

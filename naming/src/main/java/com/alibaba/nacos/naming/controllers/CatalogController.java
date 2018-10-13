@@ -134,21 +134,74 @@ public class CatalogController {
 
         List<Cluster> clusters = new ArrayList<>();
 
-        clusters.addAll(domain.getClusterMap().values());
+        for (com.alibaba.nacos.naming.core.Cluster cluster : domain.getClusterMap().values()) {
+            Cluster clusterView = new Cluster();
+            clusterView.setName(cluster.getName());
+            clusterView.setHealthChecker(cluster.getHealthChecker());
+            clusterView.setMetadata(cluster.getMetadata());
+            clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
+            clusterView.setDefaultPort(cluster.getDefIPPort());
+            clusterView.setDefaultCheckPort(cluster.getDefCkport());
+            clusterView.setServiceName(serviceName);
+            clusters.add(clusterView);
+        }
 
         detailView.setClusters(clusters);
 
-        Map<String, List<Instance>> instanceMap = new HashMap<String, List<Instance>>(domain.allIPs().size());
-        for (IpAddress ipAddress : domain.allIPs()) {
-            if (!instanceMap.containsKey(ipAddress.getClusterName())) {
-                instanceMap.put(ipAddress.getClusterName(), new ArrayList<Instance>());
-            }
+        return detailView;
+    }
 
-            instanceMap.get(ipAddress.getClusterName()).add(ipAddress);
+    @RequestMapping(value = "/instanceList")
+    public JSONObject instanceList(HttpServletRequest request) throws Exception {
+
+        String serviceName = BaseServlet.required(request, "serviceName");
+        String clusterName = BaseServlet.required(request, "clusterName");
+        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
+        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
+
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        if (domain == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
-        detailView.setInstances(instanceMap);
+        if (!domain.getClusterMap().containsKey(clusterName)) {
+            throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
+        }
 
-        return detailView;
+        List<Instance> instances = new ArrayList<>();
+
+        for (IpAddress ipAddress : domain.getClusterMap().get(clusterName).allIPs()) {
+            Instance instance = new Instance();
+            instance.setIp(ipAddress.getIp());
+            instance.setMetadata(ipAddress.getMetadata());
+            instance.setHealthy(ipAddress.isValid());
+            instance.setPort(ipAddress.getPort());
+            instance.setInstanceId(ipAddress.getInstanceId());
+            instance.setWeight(ipAddress.getWeight());
+            instance.setEnabled(ipAddress.isEnabled());
+
+            instances.add(instance);
+        }
+
+        int start = (page - 1) * pageSize;
+        int end = page * pageSize;
+
+        if (start < 0) {
+            start = 0;
+        }
+
+        if (start > instances.size()) {
+            start = instances.size();
+        }
+
+        if (end > instances.size()) {
+            end = instances.size();
+        }
+
+        JSONObject result = new JSONObject();
+        result.put("list", instances.subList(start, end));
+        result.put("count", instances.size());
+
+        return result;
     }
 }
