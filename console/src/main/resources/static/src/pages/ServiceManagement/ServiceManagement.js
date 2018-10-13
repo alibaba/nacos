@@ -23,9 +23,6 @@ class ServiceManagement extends React.Component {
         this.field = new Field(this);
     }
 
-    componentDidMount() {
-    }
-
     openLoading() {
         this.setState({loading: true})
     }
@@ -116,7 +113,10 @@ class ServiceManagement extends React.Component {
                                 <Column title={I18N.COLUMN_IP_COUNT} dataIndex="ipCount"/>
                                 <Column title={I18N.COLUMN_HEALTH_STATUS} dataIndex="status"/>
                                 <Column title={I18N.COLUMN_OPERATION} align="center" cell={(value, index, record) => (
-                                    <Button type="normal" disabled>详情</Button>
+                                    <Button
+                                        type="normal"
+                                        onClick={() => this.props.history.push(`/serviceDetail?name=${record.name}`)}
+                                    >详情</Button>
                                 )}/>
                             </Table>
                         </Col>

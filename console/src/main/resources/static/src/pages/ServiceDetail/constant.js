@@ -108,3 +108,8 @@ I18N.UPDATE_INSTANCE = getI18N('update_instance')
  * 是否上线
  */
 I18N.WHETHER_ONLINE = getI18N('whether_online')
+
+export const DIALOG_FORM_LAYOUT = {
+    labelCol: {fixedSpan: 12},
+    wrapperCol: {span: 12}
+}
