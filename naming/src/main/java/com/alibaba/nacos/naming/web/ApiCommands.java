@@ -477,7 +477,7 @@ public class ApiCommands {
         if (StringUtils.isEmpty(cluster)) {
             cluster = BaseServlet.required(request, "clusterName");
         }
-        boolean enabled = BooleanUtils.toBoolean(BaseServlet.required(request, "enable"));
+        boolean enabled = BooleanUtils.toBoolean(BaseServlet.optional(request, "enable", "true"));
 
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(Integer.parseInt(port));
