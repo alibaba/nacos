@@ -92,7 +92,7 @@ class EditServiceDialog extends React.Component {
                         >
                             <Option value="server">{I18N.HEALTH_CHECK_PATTERN_SERVICE}</Option>
                             <Option value="client">{I18N.HEALTH_CHECK_PATTERN_CLIENT}</Option>
-                            <Option value="forbidden">{I18N.HEALTH_CHECK_PATTERN_FORBIDDEN}</Option>
+                            <Option value="none">{I18N.HEALTH_CHECK_PATTERN_NONE}</Option>
                         </Select>
                     </FormItem>
                     <FormItem label={`${I18N.METADATA}:`}>

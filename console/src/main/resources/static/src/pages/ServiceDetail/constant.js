@@ -31,7 +31,7 @@ I18N.HEALTH_CHECK_PATTERN_CLIENT = getI18N('health_check_pattern.client')
 /**
  * 健康检查模式 - 禁止
  */
-I18N.HEALTH_CHECK_PATTERN_FORBIDDEN = getI18N('health_check_pattern.forbidden')
+I18N.HEALTH_CHECK_PATTERN_NONE = getI18N('health_check_pattern.none')
 /**
  * 元数据
  */
