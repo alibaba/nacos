@@ -125,8 +125,18 @@ class ServiceDetail extends React.Component {
                         ))
                     }
                 </Loading>
-                <EditServiceDialog ref="editServiceDialog"/>
-                <EditClusterDialog ref="editClusterDialog"/>
+                <EditServiceDialog
+                    ref="editServiceDialog"
+                    openLoading={() => this.openLoading()}
+                    closeLoading={() => this.closeLoading()}
+                    getServiceDetail={() => this.getServiceDetail()}
+                />
+                <EditClusterDialog
+                    ref="editClusterDialog"
+                    openLoading={() => this.openLoading()}
+                    closeLoading={() => this.closeLoading()}
+                    getServiceDetail={() => this.getServiceDetail()}
+                />
             </div>
         );
     }

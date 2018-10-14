@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dialog, Form, Input, Switch, Select} from '@alifd/next';
+import {Dialog, Form, Input, Switch, Select, Message} from '@alifd/next';
 import {I18N, DIALOG_FORM_LAYOUT} from './constant'
 
 const FormItem = Form.Item;
@@ -22,7 +22,7 @@ class EditClusterDialog extends React.Component {
         this.setState({
             editCluster,
             editClusterDialogVisible: true
-        }, () => console.log(this.state.editCluster))
+        })
     }
 
     hide() {
@@ -30,7 +30,29 @@ class EditClusterDialog extends React.Component {
     }
 
     onConfirm() {
-        console.log('confirm', this.props, this.state)
+        const {openLoading, closeLoading, getServiceDetail} = this.props
+        const {name, serviceName, metadataText, healthChecker} = this.state.editCluster
+        window.request({
+            method: 'POST',
+            url: '/nacos/v1/ns/cluster/update',
+            data: {
+                serviceName,
+                clusterName: name,
+                metadata: metadataText,
+                healthChecker: JSON.stringify(healthChecker)
+            },
+            dataType: 'text',
+            beforeSend: () => openLoading(),
+            success: res => {
+                if (res !== 'ok') {
+                    Message.error(res)
+                    return
+                }
+                this.hide()
+                getServiceDetail()
+            },
+            complete: () => closeLoading()
+        })
     }
 
     onChangeCluster(changeVal) {

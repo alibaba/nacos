@@ -20,6 +20,14 @@ class InstanceTable extends React.Component {
         this.getInstanceList()
     }
 
+    openLoading() {
+        this.setState({loading: true})
+    }
+
+    closeLoading() {
+        this.setState({loading: false})
+    }
+
     getInstanceList() {
         const {clusterName, serviceName} = this.props
         if (!clusterName) return
@@ -32,9 +40,9 @@ class InstanceTable extends React.Component {
                 pgSize: pageSize,
                 startPg: pageNum
             },
-            beforeSend: () => this.setState({loading: true}),
+            beforeSend: () => this.openLoading(),
             success: instance => this.setState({instance}),
-            complete: () => this.setState({loading: false})
+            complete: () => this.closeLoading()
         })
     }
 
@@ -53,9 +61,9 @@ class InstanceTable extends React.Component {
             url: '/nacos/v1/ns/instance/update',
             data: {serviceName, clusterName, ip, port, weight, enable: !enabled},
             dataType: 'text',
-            beforeSend: () => this.setState({loading: true}),
+            beforeSend: () => this.openLoading(),
             success: () => this.setState({instance: newVal}),
-            complete: () => this.setState({loading: false})
+            complete: () => this.closeLoading()
         })
     }
 
@@ -64,6 +72,7 @@ class InstanceTable extends React.Component {
     }
 
     render() {
+        const {clusterName, serviceName} = this.props
         const {instance, pageSize, loading} = this.state
         return instance.count ? (
             <div>
@@ -106,7 +115,14 @@ class InstanceTable extends React.Component {
                         )
                         : null
                 }
-                <EditInstanceDialog ref="editInstanceDialog"/>
+                <EditInstanceDialog
+                    ref="editInstanceDialog"
+                    serviceName={serviceName}
+                    clusterName={clusterName}
+                    openLoading={()=>this.openLoading()}
+                    closeLoading={()=>this.closeLoading()}
+                    getInstanceList={() => this.getInstanceList()}
+                />
             </div>
         ) : null
     }
