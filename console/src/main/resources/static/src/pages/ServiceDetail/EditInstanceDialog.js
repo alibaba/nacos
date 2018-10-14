@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dialog, Form, Input, Switch} from '@alifd/next';
+import {Dialog, Form, Input, Switch, Message} from '@alifd/next';
 import {I18N, DIALOG_FORM_LAYOUT} from './constant'
 
 const FormItem = Form.Item;
@@ -28,7 +28,24 @@ class EditInstanceDialog extends React.Component {
     }
 
     onConfirm() {
-        console.log('confirm', this.props, this.state)
+        const {serviceName, clusterName, getInstanceList, openLoading, closeLoading} = this.props
+        const {ip, port, weight, enabled, metadataText} = this.state.editInstance
+        window.request({
+            method: 'POST',
+            url: '/nacos/v1/ns/instance/update',
+            data: {serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText},
+            dataType: 'text',
+            beforeSend: () => openLoading(),
+            success: res => {
+                if (res !== 'ok') {
+                    Message.error(res)
+                    return
+                }
+                this.hide()
+                getInstanceList()
+            },
+            complete: () => closeLoading()
+        })
     }
 
     onChangeCluster(changeVal) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import {Dialog, Form, Input, Select} from '@alifd/next';
+import {Dialog, Form, Input, Select, Message} from '@alifd/next';
 import {I18N, DIALOG_FORM_LAYOUT} from './constant'
 
 const FormItem = Form.Item;
@@ -29,8 +29,23 @@ class EditServiceDialog extends React.Component {
     }
 
     onConfirm() {
-        const editService = Object.assign({}, this.state)
-        console.log('confirm', editService)
+        const editService = Object.assign({}, this.state.editService)
+        const {name, protectThreshold, healthCheckMode, metadataText} = editService
+        window.request({
+            method: 'POST',
+            url: '/nacos/v1/ns/service/update',
+            data: {serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText},
+            dataType: 'text',
+            beforeSend: () => this.setState({loading: true}),
+            success: res => {
+                if (res !== 'ok') {
+                    Message.error(res)
+                    return
+                }
+                this.props.getServiceDetail()
+            },
+            complete: () => this.setState({loading: false})
+        })
         this.hide()
     }
 
