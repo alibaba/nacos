@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtil;
@@ -526,7 +527,10 @@ public class ApiCommands {
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         IpAddress ipAddress = getIPAddress(request);
+        Service service = new Service(dom);
         ipAddress.setApp(app);
+        ipAddress.setService(service);
+        ipAddress.setInstanceId(ipAddress.generateInstanceId());
         ipAddress.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
             ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
@@ -1046,7 +1050,7 @@ public class ApiCommands {
             ipObj.put("valid", ip.isValid());
             ipObj.put("weight", ip.getWeight());
             ipObj.put("doubleWeight", ip.getWeight());
-            ipObj.put("instanceId", ip.generateInstanceId());
+            ipObj.put("instanceId", ip.getInstanceId());
             ipObj.put("metadata", ip.getMetadata());
             ipArray.add(ipObj);
         }
@@ -1178,7 +1182,7 @@ public class ApiCommands {
                 ipObj.put("port", ip.getPort());
                 ipObj.put("valid", entry.getKey());
                 ipObj.put("marked", ip.isMarked());
-                ipObj.put("instanceId", ip.generateInstanceId());
+                ipObj.put("instanceId", ip.getInstanceId());
                 ipObj.put("metadata", ip.getMetadata());
                 ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());

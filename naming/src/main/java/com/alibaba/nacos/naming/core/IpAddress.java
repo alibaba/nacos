@@ -307,7 +307,7 @@ public class IpAddress extends Instance implements Comparable {
     }
 
     public String generateInstanceId() {
-        return getIp() + "#" + getPort() + "#" + getCluster().getName() + "#" + serviceName();
+        return getIp() + "#" + getPort() + "#" + getCluster().getName() + "#" + getService().getName();
     }
 
     @Override

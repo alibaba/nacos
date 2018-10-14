@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
@@ -210,14 +211,19 @@ public class UtilsAndCommons {
     public static Map<String, String> parseMetadata(String metadata) throws NacosException {
 
         Map<String, String> metadataMap = new HashMap<>(16);
-        String[] datas = metadata.split(",");
-        if (datas.length > 0) {
-            for (String data : datas) {
-                String[] kv = data.split("=");
-                if (kv.length != 2) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "metadata format incorrect:" + metadata);
+
+        try {
+            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>(){});
+        } catch (Exception e) {
+            String[] datas = metadata.split(",");
+            if (datas.length > 0) {
+                for (String data : datas) {
+                    String[] kv = data.split("=");
+                    if (kv.length != 2) {
+                        throw new NacosException(NacosException.INVALID_PARAM, "metadata format incorrect:" + metadata);
+                    }
+                    metadataMap.put(kv[0], kv[1]);
                 }
-                metadataMap.put(kv[0], kv[1]);
             }
         }
 
