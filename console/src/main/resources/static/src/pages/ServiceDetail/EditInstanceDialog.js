@@ -17,7 +17,7 @@ class EditInstanceDialog extends React.Component {
 
     show(editInstance) {
         const {metadata = {}} = editInstance
-        if (!Object.keys(metadata).length) {
+        if (Object.keys(metadata).length) {
             editInstance.metadataText = Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')
         }
         this.setState({editInstance, editInstanceDialogVisible: true})
