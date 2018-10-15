@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.alibaba.nacos.config.server.constant.Constants;
 
 /**
  * md5

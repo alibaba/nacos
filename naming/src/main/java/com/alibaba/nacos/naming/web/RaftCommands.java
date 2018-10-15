@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.raft.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -107,7 +108,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject json = JSON.parseObject(value);
@@ -125,7 +126,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject json = JSON.parseObject(value);
@@ -186,7 +187,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject jsonObject = JSON.parseObject(value);
@@ -202,7 +203,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         RaftCore.onDelete(JSON.parseObject(value));

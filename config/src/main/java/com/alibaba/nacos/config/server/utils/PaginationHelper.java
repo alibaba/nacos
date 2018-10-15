@@ -15,12 +15,13 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.util.List;
-
+import com.alibaba.nacos.config.server.model.Page;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import com.alibaba.nacos.config.server.model.Page;
+import java.util.List;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
 
 /**
@@ -88,7 +89,7 @@ public class PaginationHelper<E> {
 
         final int startRow = (pageNo - 1) * pageSize;
         String selectSQL = "";
-        if (PropertyUtil.isStandaloneMode()) {
+        if (STANDALONE_MODE) {
             selectSQL = sqlFetchRows + " OFFSET "+startRow+" ROWS FETCH NEXT "+pageSize+" ROWS ONLY";
         } else if (lastMaxId != null) {
             selectSQL = sqlFetchRows + " and id > " + lastMaxId + " order by id asc" + " limit " + 0 + "," + pageSize;
@@ -132,7 +133,7 @@ public class PaginationHelper<E> {
         }
 
         String selectSQL = sqlFetchRows;
-        if (PropertyUtil.isStandaloneMode()) {
+        if (STANDALONE_MODE) {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
@@ -172,7 +173,7 @@ public class PaginationHelper<E> {
         }
 
         String selectSQL = sqlFetchRows;
-        if (PropertyUtil.isStandaloneMode()) {
+        if (STANDALONE_MODE) {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
@@ -192,7 +193,7 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
 
         String selectSQL = sqlFetchRows;
-        if (PropertyUtil.isStandaloneMode()) {
+        if (STANDALONE_MODE) {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
@@ -206,7 +207,7 @@ public class PaginationHelper<E> {
     public void updateLimit(final JdbcTemplate jt, final String sql, final Object args[]) {
         String sqlUpdate = sql;
 
-        if (PropertyUtil.isStandaloneMode()) {
+        if (STANDALONE_MODE) {
             sqlUpdate = sqlUpdate.replaceAll("limit \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         }
 

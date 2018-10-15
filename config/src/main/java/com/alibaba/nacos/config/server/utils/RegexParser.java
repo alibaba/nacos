@@ -15,9 +15,7 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang.CharUtils;
-import org.apache.commons.lang.NullArgumentException;
-
+import org.apache.commons.lang3.CharUtils;
 
 
 /**
@@ -28,7 +26,7 @@ import org.apache.commons.lang.NullArgumentException;
  */
 public class RegexParser {
 
-	private final static char QUESTION_MARK = '?';
+    private final static char QUESTION_MARK = '?';
 
     /**
      * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br>
@@ -40,7 +38,7 @@ public class RegexParser {
      */
     static public String regexFormat(String regex) {
         if (regex == null) {
-            throw new NullArgumentException("regex string can't be null");
+            throw new NullPointerException("regex string can't be null");
         }
         StringBuffer result = new StringBuffer();
         result.append("^");
@@ -75,8 +73,4 @@ public class RegexParser {
         return (regex.contains("?") || regex.contains("*"));
     }
 
-    public static void main(String[] args) {
-        String str = "com.taobao.uic.*";
-        System.out.println(str + " -> " + regexFormat(str));
-    }
 }
