@@ -82,8 +82,13 @@ class ServiceDetail extends React.Component {
                     }}>
                         {I18N.SERVICE_DETAILS}
                         <Button
+                            type="primary"
+                            className="header-btn"
+                            onClick={() => this.props.history.goBack()}
+                        >{I18N.BACK}</Button>
+                        <Button
                             type="normal"
-                            className="edit-service-btn"
+                            className="header-btn"
                             onClick={() => this.openEditServiceDialog()}
                         >{I18N.EDIT_SERVICE}</Button>
                     </h1>
