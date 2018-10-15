@@ -31,14 +31,15 @@ import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
 import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author dungu.zpf
@@ -84,20 +85,7 @@ public class CatalogController {
                 }
             }
 
-            double validRatio = validCount * 1.0 / vDomain.allIPs().size();
-
-            // FIXME:
-            validRatio = RandomUtils.nextDouble(0, 1.2);
-
-            if (validRatio > 0.9) {
-                serviceView.setStatus("优");
-            } else if (validRatio > 0.6) {
-                serviceView.setStatus("良");
-            } else if (validRatio > 0.3) {
-                serviceView.setStatus("中");
-            } else {
-                serviceView.setStatus("差");
-            }
+            serviceView.setStatus(validCount + "/" + vDomain.allIPs().size());
 
             domArray.add(serviceView);
         }
