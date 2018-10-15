@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import com.alibaba.nacos.config.server.constant.Constants;
 
 
 /**
