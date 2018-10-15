@@ -474,9 +474,9 @@ public class ApiCommands {
         String ip = BaseServlet.required(request, "ip");
         String port = BaseServlet.required(request, "port");
         String weight = BaseServlet.optional(request, "weight", "1");
-        String cluster = BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String cluster = BaseServlet.optional(request, "cluster", StringUtils.EMPTY);
         if (StringUtils.isEmpty(cluster)) {
-            cluster = BaseServlet.required(request, "clusterName");
+            cluster = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
         boolean enabled = BooleanUtils.toBoolean(BaseServlet.optional(request, "enable", "true"));
 
