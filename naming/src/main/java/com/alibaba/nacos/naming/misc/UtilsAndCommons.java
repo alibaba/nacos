@@ -212,6 +212,10 @@ public class UtilsAndCommons {
 
         Map<String, String> metadataMap = new HashMap<>(16);
 
+        if (StringUtils.isBlank(metadata)) {
+            return metadataMap;
+        }
+
         try {
             metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>(){});
         } catch (Exception e) {

@@ -24,6 +24,9 @@ import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.BaseServlet;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -47,7 +50,9 @@ public class ClusterController {
         String clusterName = BaseServlet.required(request, "clusterName");
         String serviceName = BaseServlet.required(request, "serviceName");
         String healthChecker = BaseServlet.required(request, "healthChecker");
-        String metadata = BaseServlet.required(request, "metadata");
+        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        String checkPort = BaseServlet.required(request, "checkPort");
+        String useInstancePort4Check = BaseServlet.required(request, "useInstancePort4Check");
 
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {
@@ -58,6 +63,9 @@ public class ClusterController {
         if (cluster == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "cluster not found:"+ clusterName + ", " + serviceName);
         }
+
+        cluster.setDefCkport(NumberUtils.toInt(checkPort));
+        cluster.setUseIPPort4Check(BooleanUtils.toBoolean(useInstancePort4Check));
 
         JSONObject healthCheckObj = JSON.parseObject(healthChecker);
         AbstractHealthChecker abstractHealthChecker;
