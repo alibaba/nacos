@@ -15,6 +15,24 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.sql.Timestamp;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
@@ -55,26 +73,27 @@ import java.util.Map;
  */
 @Controller
 @RequestMapping(Constants.CONFIG_CONTROLLER_PATH)
-public class ConfigController extends HttpServlet {
-	/**
-	 * uid
-	 */
-    private static final long serialVersionUID = 4339468526746635388L;
+public class ConfigController {
     
 	private static final Logger log = LoggerFactory.getLogger(ConfigController.class);
 	
-    @Autowired
-    private transient ConfigServletInner inner;
+    private final transient ConfigServletInner inner;
     
-	@Autowired
-	private transient PersistService persistService;
+	private final transient PersistService persistService;
 	
-	@Autowired
-	private transient MergeDatumService mergeService;
+	private final transient MergeDatumService mergeService;
+
+	private final transient ConfigSubService configSubService;
 
 	@Autowired
-	private transient ConfigSubService configSubService;
-	
+	public ConfigController(ConfigServletInner configServletInner, PersistService persistService, MergeDatumService mergeService,
+	                        ConfigSubService configSubService) {
+		this.inner = configServletInner;
+		this.persistService = persistService;
+		this.mergeService = mergeService;
+		this.configSubService = configSubService;
+	}
+
 	/**
 	 * 增加或更新非聚合数据。
 	 * 
@@ -123,7 +142,7 @@ public class ConfigController extends HttpServlet {
 
 		if (AggrWhitelist.isAggrDataId(dataId)) {
 			log.warn("[aggr-conflict] {} attemp to publish single data, {}, {}",
-					new Object[] { RequestUtil.getRemoteIp(request), dataId, group });
+				RequestUtil.getRemoteIp(request), dataId, group);
 			throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
 		}
 
@@ -171,9 +190,7 @@ public class ConfigController extends HttpServlet {
 	
 	/**
 	 * 取数据
-	 * 
-	 * @throws ServletException
-	 * @throws IOException
+	 *
 	 * @throws NacosException
 	 */
 	@RequestMapping(params = "show=all", method = RequestMethod.GET)
@@ -181,7 +198,7 @@ public class ConfigController extends HttpServlet {
 	public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
-			throws IOException, ServletException, NacosException {
+			throws NacosException {
 		// check params
 		ParamUtils.checkParam(dataId, group, "datumId", "content");
 		return persistService.findConfigAllInfo(dataId, group, tenant);
@@ -214,8 +231,7 @@ public class ConfigController extends HttpServlet {
 	@ResponseBody
 	public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			ModelMap modelMap) {
+			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
 		RestResult<ConfigAdvanceInfo> rr = new RestResult<ConfigAdvanceInfo>();
 		ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
 		rr.setCode(200);
@@ -227,8 +243,7 @@ public class ConfigController extends HttpServlet {
 	 * 比较MD5
 	 */
 	@RequestMapping(value = "/listener", method = RequestMethod.POST)
-	@Override
-	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+	public void listener(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true); 
 		String probeModify = request.getParameter("Listening-Configs");
@@ -238,7 +253,7 @@ public class ConfigController extends HttpServlet {
 		
 		probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
 		
-		Map<String, String> clientMd5Map = null;
+		Map<String, String> clientMd5Map;
 		try {
 			clientMd5Map = MD5Util.getClientMd5Map(probeModify);
 		} catch (Throwable e) {
@@ -257,8 +272,8 @@ public class ConfigController extends HttpServlet {
 	public GroupkeyListenserStatus getListeners(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false) String tenant,
-			@RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap)
-			throws IOException, ServletException, Exception {
+			@RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime)
+			throws Exception {
 		group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
 		SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
 		GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
@@ -282,7 +297,7 @@ public class ConfigController extends HttpServlet {
 			@RequestParam(value = "tenant", required = false, defaultValue=StringUtils.EMPTY) String tenant, 
 			@RequestParam(value = "config_tags", required = false) String configTags,
 			@RequestParam("pageNo") int pageNo,
-			@RequestParam("pageSize") int pageSize, ModelMap modelMap) {
+			@RequestParam("pageSize") int pageSize) {
 		Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
 		if (StringUtils.isNotBlank(appName)) {
 			configAdvanceInfo.put("appName", appName);
@@ -291,9 +306,8 @@ public class ConfigController extends HttpServlet {
 			configAdvanceInfo.put("config_tags", configTags);
 		}
 		try {
-			Page<ConfigInfo> page = persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
+			return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
 					configAdvanceInfo);
-			return page;
 		} catch (Exception e) {
 			String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
 			log.error(errorMsg, e);
@@ -307,14 +321,13 @@ public class ConfigController extends HttpServlet {
 	@RequestMapping(params = "search=blur", method = RequestMethod.GET)
 	@ResponseBody
 	public Page<ConfigInfo> fuzzySearchConfig(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, //
-			@RequestParam("group") String group, //
+			@RequestParam("dataId") String dataId,
+			@RequestParam("group") String group,
 			@RequestParam(value = "appName", required = false) String appName,
 			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
 			@RequestParam(value = "config_tags", required = false) String configTags,
-			@RequestParam("pageNo") int pageNo, //
-			@RequestParam("pageSize") int pageSize, //
-			ModelMap modelMap) {
+			@RequestParam("pageNo") int pageNo,
+			@RequestParam("pageSize") int pageSize) {
 		Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
 		if (StringUtils.isNotBlank(appName)) {
 			configAdvanceInfo.put("appName", appName);
@@ -323,9 +336,8 @@ public class ConfigController extends HttpServlet {
 			configAdvanceInfo.put("config_tags", configTags);
 		}
 		try {
-			Page<ConfigInfo> page = persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
+			return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
 					configAdvanceInfo);
-			return page;
 		} catch (Exception e) {
 			String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
 			log.error(errorMsg, e);
