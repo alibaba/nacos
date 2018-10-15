@@ -9,6 +9,10 @@ I18N.SERVICE_DETAILS = getI18N('service_details')
  */
 I18N.EDIT_SERVICE = getI18N('edit_service')
 /**
+ * 返回
+ */
+I18N.BACK = getI18N('back')
+/**
  * 服务名
  */
 I18N.SERVICE_NAME = getI18N('service_name')
