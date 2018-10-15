@@ -61,7 +61,7 @@ public class CatalogController {
         String keyword = BaseServlet.optional(request, "keyword", StringUtils.EMPTY);
 
         List<Domain> doms = new ArrayList<>();
-        int total = domainsManager.getPagedDom(page, pageSize, keyword, doms);
+        int total = domainsManager.getPagedDom(page - 1, pageSize, keyword, doms);
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("serviceList", Collections.emptyList());
