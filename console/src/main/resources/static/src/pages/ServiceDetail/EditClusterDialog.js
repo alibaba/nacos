@@ -31,7 +31,7 @@ class EditClusterDialog extends React.Component {
 
     onConfirm() {
         const {openLoading, closeLoading, getServiceDetail} = this.props
-        const {name, serviceName, metadataText, healthChecker} = this.state.editCluster
+        const {name, serviceName, metadataText, defaultCheckPort, useIPPort4Check, healthChecker} = this.state.editCluster
         window.request({
             method: 'POST',
             url: '/nacos/v1/ns/cluster/update',
@@ -39,6 +39,8 @@ class EditClusterDialog extends React.Component {
                 serviceName,
                 clusterName: name,
                 metadata: metadataText,
+                checkPort: defaultCheckPort,
+                useInstancePort4Check: useIPPort4Check,
                 healthChecker: JSON.stringify(healthChecker)
             },
             dataType: 'text',
