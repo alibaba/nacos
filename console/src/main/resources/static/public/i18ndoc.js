@@ -1,5 +1,8 @@
 window.i18ndoc = {
   "zh-cn": {
+    "com.alibaba.nacos.layout.noenv.nacosversion":"1.0",
+    "com.alibaba.nacos.page.configurationManagementVirtual":"配置管理",
+    "com.alibaba.nacos.page.serviceManagementVirtual":"服务管理",
     "nacos.component.ExportDialog.tags2": "标签:",
     "historyRollback": "历史版本",
     "com.alibaba.nacos.component.MiddleWareEnv.Spas_dedicated": "Spas专用",
@@ -474,6 +477,9 @@ window.i18ndoc = {
     "serviceManagement": "服务列表"
   },
   "en-us": {
+    "com.alibaba.nacos.layout.noenv.nacosversion":"1.0",
+    "com.alibaba.nacos.page.configurationManagementVirtual":"ConfigManagement",
+    "com.alibaba.nacos.page.serviceManagementVirtual":"ServiceManagement",
     "nacos.component.CloneDialog.the_same_configuration": "Conflict:",
     "to": "to",
     "nacos.page.newconfig.data_encryption3": "Data Encryption:",
