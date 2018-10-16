@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -33,54 +34,24 @@ import java.util.regex.Pattern;
  *
  * @author dungu.zpf
  */
-public class IpAddress implements Comparable {
+public class IpAddress extends Instance implements Comparable {
 
     private static final double MAX_WEIGHT_VALUE = 10000.0D;
     private static final double MIN_POSTIVE_WEIGHT_VALUE = 0.01D;
     private static final double MIN_WEIGHT_VALUE = 0.00D;
 
-    private String ip;
-    private int port = 0;
-    private double weight = 1.0;
     private String clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+
     private volatile long lastBeat = System.currentTimeMillis();
 
     @JSONField(serialize = false)
-    private String invalidType = InvalidType.VALID;
-
-    public static class InvalidType {
-        public final static String HTTP_404 = "404";
-        public final static String WEIGHT_0 = "weight_0";
-        public final static String NORMAL_INVALID = "invalid";
-        public final static String VALID = "valid";
-    }
-
-    public String getInvalidType() {
-        return invalidType;
-    }
-
-    public void setInvalidType(String invalidType) {
-        this.invalidType = invalidType;
-    }
-
-    @JSONField(serialize = false)
-    private Cluster cluster;
-
-    private volatile boolean valid = true;
-
-    @JSONField(serialize = false)
     private volatile boolean mockValid = false;
-
-    @JSONField(serialize = false)
-    private volatile boolean preValid = true;
 
     private volatile boolean marked = false;
 
     private String tenant;
 
     private String app;
-
-    private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     public static final Pattern IP_PATTERN
             = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
@@ -107,20 +78,20 @@ public class IpAddress implements Comparable {
     }
 
     public IpAddress(String ip, int port) {
-        this.ip = ip.trim();
-        this.port = port;
+        this.setIp(ip);
+        this.setPort(port);
         this.clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
     }
 
     public IpAddress(String ip, int port, String clusterName) {
-        this.ip = ip.trim();
-        this.port = port;
+        this.setIp(ip.trim());
+        this.setPort(port);
         this.clusterName = clusterName;
     }
 
     public IpAddress(String ip, int port, String clusterName, String tenant, String app) {
-        this.ip = ip.trim();
-        this.port = port;
+        this.setIp(ip.trim());
+        this.setPort(port);
         this.clusterName = clusterName;
         this.tenant = tenant;
         this.app = app;
@@ -192,12 +163,12 @@ public class IpAddress implements Comparable {
     }
 
     public String toIPAddr() {
-        return ip + ":" + port;
+        return getIp() + ":" + getPort();
     }
 
     @Override
     public String toString() {
-        return getDatumKey() + SPLITER + weight + SPLITER + valid + SPLITER + marked + SPLITER + clusterName;
+        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER + clusterName;
     }
 
     public String toJSON() {
@@ -241,30 +212,30 @@ public class IpAddress implements Comparable {
         IpAddress other = (IpAddress) obj;
 
         // 0 means wild
-        return ip.equals(other.getIp()) && (port == other.port || port == 0);
+        return getIp().equals(other.getIp()) && (getPort() == other.getPort() || getPort() == 0);
     }
 
     @JSONField(serialize = false)
     public String getDatumKey() {
-        if (port > 0) {
-            return ip + ":" + port + ":" + DistroMapper.LOCALHOST_SITE;
+        if (getPort() > 0) {
+            return getIp() + ":" + getPort() + ":" + DistroMapper.LOCALHOST_SITE;
         } else {
-            return ip + ":" + DistroMapper.LOCALHOST_SITE;
+            return getIp() + ":" + DistroMapper.LOCALHOST_SITE;
         }
     }
 
     @JSONField(serialize = false)
     public String getDefaultKey() {
-        if (port > 0) {
-            return ip + ":" + port + ":" + UtilsAndCommons.UNKNOWN_SITE;
+        if (getPort() > 0) {
+            return getIp() + ":" + getPort() + ":" + UtilsAndCommons.UNKNOWN_SITE;
         } else {
-            return ip + ":" + UtilsAndCommons.UNKNOWN_SITE;
+            return getIp() + ":" + UtilsAndCommons.UNKNOWN_SITE;
         }
     }
 
     @Override
     public int hashCode() {
-        return ip.hashCode();
+        return getIp().hashCode();
     }
 
     public void setBeingChecked(boolean isBeingChecked) {
@@ -295,14 +266,6 @@ public class IpAddress implements Comparable {
         HealthCheckStatus.get(this).checkRT = checkRT;
     }
 
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
     public String getClusterName() {
         return clusterName;
     }
@@ -311,41 +274,12 @@ public class IpAddress implements Comparable {
         this.clusterName = clusterName;
     }
 
-    public void setCluster(Cluster cluster) {
-        this.cluster = cluster;
-    }
-
-    public Cluster getCluster() {
-        return cluster;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
-    public String getIp() {
-        return ip;
-    }
-
-    public double getWeight() {
-        return weight;
-    }
-
-    public void setWeight(double weight) {
-        this.weight = weight;
-    }
-
     public synchronized void setValid(boolean valid) {
-        this.preValid = this.valid;
-        this.valid = valid;
+        setHealthy(valid);
     }
 
     public boolean isValid() {
-        return valid;
-    }
-
-    public boolean isPreValid() {
-        return preValid;
+        return isHealthy();
     }
 
     public boolean isMarked() {
@@ -372,16 +306,8 @@ public class IpAddress implements Comparable {
         this.tenant = tenant;
     }
 
-    public Map<String, String> getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
-    }
-
     public String generateInstanceId() {
-        return this.ip + "#" + this.port + "#" + this.cluster.getName() + "#" + this.cluster.getDom().getName();
+        return getIp() + "#" + getPort() + "#" + getCluster().getName() + "#" + getService().getName();
     }
 
     @Override

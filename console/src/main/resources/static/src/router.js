@@ -13,7 +13,8 @@ import ConfigRollback from './pages/ConfigRollback';
 import HistoryRollback from './pages/HistoryRollback';
 import ListeningToQuery from './pages/ListeningToQuery';
 import ConfigurationManagement from './pages/ConfigurationManagement';
-import ServiceManagement from './pages/ServiceManagement';
+import ServiceManagement from './pages/ServiceManagement/index';
+import ServiceDetail from './pages/ServiceDetail/ServiceDetail';
 
 function RouterConfig({ history }) {
 	window.hashHistory = history;
@@ -32,6 +33,7 @@ function RouterConfig({ history }) {
 					<Route path="/ListeningToQuery" component={ListeningToQuery} />
 					<Route path="/ConfigurationManagement" component={ConfigurationManagement} />
 					<Route path="/ServiceManagement" component={ServiceManagement} />
+                    <Route path="/ServiceDetail" component={ServiceDetail} />
 				</App>
 			</Switch>
 		</Router>

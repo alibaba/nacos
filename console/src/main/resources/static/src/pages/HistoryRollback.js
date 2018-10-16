@@ -232,7 +232,7 @@ class HistoryRollback extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape="flower" style={{ position: 'relative', width: "100%" }} visible={this.state.loading} tip="Loading..." color="#333">
-                <RegionGroup left={<h5 style={{ borderLeft: '2px solid rgb(136, 183, 224)', textIndent: 8, lineHeight: '32px', marginTop: 8, fontSize: '16px' }}>{window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.to_configure')}</h5>} namespaceCallBack={this.cleanAndGetData.bind(this)} />
+                <RegionGroup left={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.to_configure')} namespaceCallBack={this.cleanAndGetData.bind(this)} />
                     {/**<div className={'namespacewrapper'}>
                               <NameSpaceList namespaceCallBack={this.cleanAndGetData.bind(this)} />
                            </div>**/}

@@ -82,7 +82,7 @@ public class InstanceControllerTest extends BaseTest {
         ipAddress.setPort(9999);
         List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
-        domain.updateIPs(ipList, false);
+        domain.updateIPs(ipList);
 
         Mockito.when(domainsManager.getDomain("nacos.test.1")).thenReturn(domain);
 
@@ -129,7 +129,7 @@ public class InstanceControllerTest extends BaseTest {
         ipAddress.setWeight(2.0);
         List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
-        domain.updateIPs(ipList, false);
+        domain.updateIPs(ipList);
 
         Mockito.when(domainsManager.getDomain("nacos.test.1")).thenReturn(domain);
 
