@@ -85,7 +85,7 @@ public class CatalogController {
                 }
             }
 
-            serviceView.setStatus(validCount + "/" + vDomain.allIPs().size());
+            serviceView.setStatus(String.valueOf(validCount));
 
             domArray.add(serviceView);
         }
