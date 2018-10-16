@@ -134,7 +134,7 @@ public class NamingProxy {
 
             List<String> list = getServerListFromEndpoint();
 
-            if (list.isEmpty()) {
+            if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire vipserver list");
             }
 
