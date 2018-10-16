@@ -176,12 +176,12 @@ public class DomainsManager {
         JSONObject dom = JSON.parseObject(msg.getData());
 
         JSONArray ipList = dom.getJSONArray("ips");
-        Map<String, Pair> ipsMap = new HashMap<>(ipList.size());
+        Map<String, String> ipsMap = new HashMap<>(ipList.size());
         for (int i=0; i<ipList.size(); i++) {
 
             String ip = ipList.getString(i);
             String[] strings = ip.split("_");
-            ipsMap.put(strings[0], new Pair(strings[1], strings[2]));
+            ipsMap.put(strings[0], strings[1]);
         }
 
         VirtualClusterDomain raftVirtualClusterDomain = (VirtualClusterDomain) raftDomMap.get(domName);
@@ -192,14 +192,10 @@ public class DomainsManager {
 
         List<IpAddress> ipAddresses = raftVirtualClusterDomain.allIPs();
         for (IpAddress ipAddress : ipAddresses) {
-            Pair pair = ipsMap.get(ipAddress.toIPAddr());
-            if (pair == null) {
-                continue;
-            }
-            Boolean valid = Boolean.parseBoolean(pair.getKey());
+
+            Boolean valid = Boolean.parseBoolean(ipsMap.get(ipAddress.toIPAddr()));
             if (valid != ipAddress.isValid()) {
-                ipAddress.setValid(Boolean.parseBoolean(pair.getKey()));
-                ipAddress.setInvalidType(pair.getValue());
+                ipAddress.setValid(valid);
                 Loggers.EVT_LOG.info("{" + domName + "} {SYNC} " +
                         "{IP-" + (ipAddress.isValid() ? "ENABLED" : "DISABLED") + "} " + ipAddress.getIp()
                         + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName());

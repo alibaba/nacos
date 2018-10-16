@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -132,7 +133,7 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 Cluster cluster = task.getCluster();
                 String key = cluster.getDom().getName() + ":" + cluster.getName() + ":" + ip.getIp() + ":" + ip.getPort();
                 Connection connection = CONNECTION_POOL.get(key);
-                AbstractHealthCheckConfig.Mysql config = (AbstractHealthCheckConfig.Mysql) cluster.getHealthChecker();
+                AbstractHealthChecker.Mysql config = (AbstractHealthChecker.Mysql) cluster.getHealthChecker();
 
                 if (connection == null || connection.isClosed()) {
                     MysqlDataSource dataSource = new MysqlDataSource();

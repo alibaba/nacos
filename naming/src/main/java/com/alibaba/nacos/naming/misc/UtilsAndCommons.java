@@ -16,14 +16,19 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckConfig;
+import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -115,9 +120,9 @@ public class UtilsAndCommons {
     static {
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
-                .put(AbstractHealthCheckConfig.class, AbstractHealthCheckConfig.JsonAdapter.getInstance());
+                .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(AbstractHealthCheckConfig.class, AbstractHealthCheckConfig.JsonAdapter.getInstance());
+                .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
@@ -203,4 +208,29 @@ public class UtilsAndCommons {
         return UtilsAndCommons.DOMAINS_DATA_ID + "." + dom.getName();
     }
 
+    public static Map<String, String> parseMetadata(String metadata) throws NacosException {
+
+        Map<String, String> metadataMap = new HashMap<>(16);
+
+        if (StringUtils.isBlank(metadata)) {
+            return metadataMap;
+        }
+
+        try {
+            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>(){});
+        } catch (Exception e) {
+            String[] datas = metadata.split(",");
+            if (datas.length > 0) {
+                for (String data : datas) {
+                    String[] kv = data.split("=");
+                    if (kv.length != 2) {
+                        throw new NacosException(NacosException.INVALID_PARAM, "metadata format incorrect:" + metadata);
+                    }
+                    metadataMap.put(kv[0], kv[1]);
+                }
+            }
+        }
+
+        return metadataMap;
+    }
 }
