@@ -177,7 +177,23 @@ module.exports = {
                     "template": "",
                     "registerName": "com.alibaba.nacos.page.serviceManagement",
                     "useRouter": false,
-                    "id": "serviceManagement"
+                    "id": "serviceManagement",
+                    "children":[
+                        {
+                            "isExtend": true,
+                            "name": "服务详情",
+                            "title": "服务详情",
+                            "isVirtual": true,
+                            "projectName": "nacos",
+                            "serviceName": "serviceDetail",
+                            "link": "serviceDetail",
+                            "hasFusion": true,
+                            "template": "",
+                            "registerName": "com.alibaba.nacos.page.ServiceDetail",
+                            "useRouter": false,
+                            "id": "com.alibaba.nacos.page.ServiceDetail",
+                        }
+                    ]
                 }
             ]
         },
