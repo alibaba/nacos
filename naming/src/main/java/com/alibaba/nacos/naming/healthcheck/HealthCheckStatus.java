@@ -58,7 +58,7 @@ public class HealthCheckStatus {
         try {
 
             String clusterName = ip.getCluster().getName();
-            String dom = ip.getCluster().getServiceName();
+            String dom = ip.serviceName();
             String datumKey = ip.getDatumKey();
             return dom + ":"
                     + clusterName + ":"
