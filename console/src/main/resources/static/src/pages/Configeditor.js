@@ -727,7 +727,7 @@ class Configeditor extends React.Component {
                         </div>
 
                         <FormItem label={window.aliwareIntl.get('nacos.page.configeditor.Description')} {...formItemLayout}>
-                            <Input htmlType="text" multiple rows={3} {...init('desc')} />
+                            <Input.TextArea htmlType="text" multiple rows={3} {...init('desc')} />
                         </FormItem>
                         <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.configure_contents_of')} {...formItemLayout}>
                             <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />

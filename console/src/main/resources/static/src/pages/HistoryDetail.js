@@ -94,7 +94,7 @@ class HistoryDetail extends React.Component {
                         <Input htmlType="text" readOnly={true} {...init('md5')} />
                     </FormItem>
                     <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.configure_content')} required {...formItemLayout}>
-                        <Input htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
+                        <Input.TextArea htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
                         <Button type="primary" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.historyDetail.return')}</Button>

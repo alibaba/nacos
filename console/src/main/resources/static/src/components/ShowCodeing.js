@@ -92,6 +92,7 @@ public class ConfigController {
         this.cppCode = this.getCppCode(obj);
         this.shellCode = this.getShellCode(obj);
         this.pythonCode = this.getPythonCode(obj);
+        this.forceUpdate();
     }
 
     getJavaCode(data) {
