@@ -48,18 +48,24 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
     private static ConcurrentMap<String, Connection> CONNECTION_POOL
             = new ConcurrentHashMap<String, Connection>();
 
-    private static ExecutorService EXECUTOR
-            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2,
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.nacos.mysql.checker");
-                    return thread;
+    private static ExecutorService EXECUTOR;
+
+    static {
+
+        int processorCount = Runtime.getRuntime().availableProcessors();
+        EXECUTOR
+                = Executors.newFixedThreadPool(processorCount <= 1 ? 1 : processorCount / 2,
+                new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r);
+                        thread.setDaemon(true);
+                        thread.setName("com.nacos.mysql.checker");
+                        return thread;
+                    }
                 }
-            }
-    );
+        );
+    }
 
     public MysqlHealthCheckProcessor() {
     }
@@ -129,7 +135,8 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
             Statement statement = null;
             ResultSet resultSet = null;
 
-            try {;
+            try {
+                ;
                 Cluster cluster = task.getCluster();
                 String key = cluster.getDom().getName() + ":" + cluster.getName() + ":" + ip.getIp() + ":" + ip.getPort();
                 Connection connection = CONNECTION_POOL.get(key);
@@ -191,7 +198,7 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 reEvaluateCheckRT(Switch.getMysqlHealthParams().getMax(), task, Switch.getMysqlHealthParams());
             } finally {
                 ip.setCheckRT(System.currentTimeMillis() - startTime);
-                if (statement!=null) {
+                if (statement != null) {
                     try {
                         statement.close();
                     } catch (SQLException e) {
