@@ -63,7 +63,7 @@ public class ClientBeatCheckTask implements Runnable {
                 if (System.currentTimeMillis() - ipAddress.getLastBeat() > domain.getIpDeleteTimeout()) {
                     // delete ip
                     if (domain.allIPs().size() > 1) {
-                        Loggers.SRV_LOG.info("AUTO-DELETE-IP", "dom: " + domain.getName() + ", ip: " + JSON.toJSONString(ipAddress));
+                        Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: " + domain.getName() + ", ip: " + JSON.toJSONString(ipAddress));
                         deleteIP(ipAddress);
                     }
                 }

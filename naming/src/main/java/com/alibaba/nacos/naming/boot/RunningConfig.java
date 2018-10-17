@@ -43,8 +43,8 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
 
-        Loggers.SRV_LOG.info("SERVER-INIT", "got port:" + event.getWebServer().getPort());
-        Loggers.SRV_LOG.info("SERVER-INIT", "got path:" + servletContext.getContextPath());
+        Loggers.SRV_LOG.info("[SERVER-INIT] got port:" + event.getWebServer().getPort());
+        Loggers.SRV_LOG.info("[SERVER-INIT] got path:" + servletContext.getContextPath());
 
         serverPort = event.getWebServer().getPort();
         contextPath = servletContext.getContextPath();
