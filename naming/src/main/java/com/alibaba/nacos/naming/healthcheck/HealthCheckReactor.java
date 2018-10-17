@@ -21,16 +21,24 @@ import java.util.concurrent.*;
  * @author nacos
  */
 public class HealthCheckReactor {
-    private static final ScheduledExecutorService EXECUTOR = Executors
-            .newScheduledThreadPool(Runtime.getRuntime().availableProcessors() / 2, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.health");
-                    return thread;
-                }
-            });
+
+    private static final ScheduledExecutorService EXECUTOR;
+
+    static {
+
+        int processorCount = Runtime.getRuntime().availableProcessors();
+        EXECUTOR
+                = Executors
+                .newScheduledThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r);
+                        thread.setDaemon(true);
+                        thread.setName("com.alibaba.nacos.naming.health");
+                        return thread;
+                    }
+                });
+    }
 
     public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
         task.setStartTime(System.currentTimeMillis());
