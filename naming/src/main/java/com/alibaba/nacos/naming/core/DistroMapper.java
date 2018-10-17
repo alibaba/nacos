@@ -75,12 +75,12 @@ public class DistroMapper {
         List<String> servers = NamingProxy.getServers();
 
         while (servers == null || servers.size() == 0) {
-            Loggers.SRV_LOG.warn("DISTRO-MAPPER", "Server list is empty, sleep 3 seconds and try again.");
+            Loggers.SRV_LOG.warn("[DISTRO-MAPPER] Server list is empty, sleep 3 seconds and try again.");
             try {
                 TimeUnit.SECONDS.sleep(3);
                 servers = NamingProxy.getServers();
             } catch (InterruptedException e) {
-                Loggers.SRV_LOG.warn("DISTRO-MAPPER", "Sleeping thread is interupted, try again.");
+                Loggers.SRV_LOG.warn("[DISTRO-MAPPER] Sleeping thread is interupted, try again.");
             }
         }
 
@@ -165,7 +165,7 @@ public class DistroMapper {
         if (AUTO_DISABLED_HEALTH_CHECK
                 && curRatio > Switch.getDistroThreshold()
                 && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("VIPSRV-DISTRO", "distro threshold restored and " +
+            Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
                     "stable now, enable health check. current ratio: " + curRatio);
 
             Switch.setHeathCheckEnabled(true);
@@ -177,7 +177,7 @@ public class DistroMapper {
         if (!CollectionUtils.isEqualCollection(healthyList, newHealthyList)) {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("VIPSRV-DISTRO", "healthy server list changed, " +
+                Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
                         "disable health check for " + STABLE_PERIOD + "ms from now on, healthList: " + healthyList + ",newHealthyList " + newHealthyList);
 
                 Switch.setHeathCheckEnabled(false);
@@ -279,7 +279,7 @@ public class DistroMapper {
         if (AUTO_DISABLED_HEALTH_CHECK
                 && curRatio > Switch.getDistroThreshold()
                 && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("VIPSRV-DISTRO", "distro threshold restored and " +
+            Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
                     "stable now, enable health check. current ratio: " + curRatio);
 
             Switch.setHeathCheckEnabled(true);
@@ -291,7 +291,7 @@ public class DistroMapper {
         if (!CollectionUtils.isEqualCollection(healthyList, newHealthyList)) {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("VIPSRV-DISTRO", "healthy server list changed, " +
+                Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
                         "disable health check for " + STABLE_PERIOD + "ms from now on");
 
                 Switch.setHeathCheckEnabled(false);

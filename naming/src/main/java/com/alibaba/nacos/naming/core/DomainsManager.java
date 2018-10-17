@@ -92,7 +92,7 @@ public class DomainsManager {
             try {
                 leader = RaftCore.getPeerSet().getLeader();
                 if (leader != null) {
-                    Loggers.SRV_LOG.info("AUTO-INIT", "no leader now, sleep 3 seconds and try again.");
+                    Loggers.SRV_LOG.info("[AUTO-INIT] no leader now, sleep 3 seconds and try again.");
                     break;
                 }
 

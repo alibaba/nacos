@@ -82,7 +82,7 @@ public class NamingProxy {
             if (System.currentTimeMillis() - lastSrvSiteRefreshTime > VIP_SRV_SITE_REF_INTER_MILLIS ||
                     !CollectionUtils.isEqualCollection(servers, lastServers)) {
                 if (!CollectionUtils.isEqualCollection(servers, lastServers)) {
-                    Loggers.SRV_LOG.info("REFRESH-SERVER-SITE", "server list is changed, old: " + lastServers + ", new: " + servers);
+                    Loggers.SRV_LOG.info("[REFRESH-SERVER-SITE] server list is changed, old: " + lastServers + ", new: " + servers);
                 }
 
                 lastServers = servers;
@@ -128,7 +128,7 @@ public class NamingProxy {
                 serverListMap.put(env, list);
             } else {
                 if (!CollectionUtils.isEqualCollection(serverlistFromConfig, list) && CollectionUtils.isNotEmpty(serverlistFromConfig)) {
-                    Loggers.SRV_LOG.info("SERVER-LIST", "server list is not the same between AS and config file, use config file.");
+                    Loggers.SRV_LOG.info("[SERVER-LIST] server list is not the same between AS and config file, use config file.");
                     servers = serverlistFromConfig;
                 } else {
                     servers = list;
