@@ -428,6 +428,11 @@ public class DistroMapper {
         @Override
         public void run() {
             try {
+
+                if (RunningConfig.getServerPort() <= 0) {
+                    return;
+                }
+
                 for (String key : distroConfig.keySet()) {
                     for (Server server : distroConfig.get(key)) {
                         server.alive = System.currentTimeMillis() - server.lastRefTime < Switch.getdistroServerExpiredMillis();
