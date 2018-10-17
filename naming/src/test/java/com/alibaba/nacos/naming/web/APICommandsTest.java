@@ -108,7 +108,7 @@ public class APICommandsTest {
         IpAddress ipAddress = new IpAddress();
         ipAddress.setIp("1.1.1.1");
         ipAddress.setPort(1234);
-        List<IpAddress> list = new ArrayList<>();
+        List<IpAddress> list = new ArrayList<IpAddress>();
         list.add(ipAddress);
 
         domain.onChange("iplist", JSON.toJSONString(list));

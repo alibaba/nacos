@@ -44,7 +44,7 @@ public class AppendLicense {
         for (Iterator<File> iterator = targetFiles.iterator(); iterator.hasNext();) {
             File file = (File) iterator.next();
             List<String> srcFileContents = IOUtils.readLines(new FileInputStream(file), "utf-8");
-            List<String> writeContents = new ArrayList<>();
+            List<String> writeContents = new ArrayList<String>();
             writeContents.addAll(licenseContents);
             writeContents.addAll(srcFileContents);
             IOUtils.writeLines(writeContents, "\n", new FileOutputStream(file));

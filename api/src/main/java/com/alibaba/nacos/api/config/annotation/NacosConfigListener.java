@@ -16,6 +16,7 @@
  */
 package com.alibaba.nacos.api.config.annotation;
 
+import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.convert.NacosConfigConverter;
 
@@ -27,7 +28,7 @@ import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
  * Annotation that marks a method as a listener for Nacos Config change.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
- * @since 0.1.0
+ * @since 0.2.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

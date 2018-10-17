@@ -520,23 +520,6 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void domList() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/domList",
-                Params.newParams()
-                        .appendParam("startPg", "0")
-                        .appendParam("pgSize", "10")
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertTrue(json.getJSONArray("domList").size() > 0);
-    }
-
-    @Test
     public void distroStatus() throws Exception {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/distroStatus",
@@ -625,7 +608,7 @@ public class RestAPI_ITCase {
 
         HttpHeaders headers = new HttpHeaders();
 
-        HttpEntity<?> entity = new HttpEntity<>(headers);
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
                 .queryParams(params);
