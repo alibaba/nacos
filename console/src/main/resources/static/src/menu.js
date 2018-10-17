@@ -170,7 +170,6 @@ module.exports = {
                     "title": "服务列表",
                     "isVirtual": false,
                     "projectName": "nacos",
-                    "children": [],
                     "serviceName": "serviceManagement",
                     "link": "serviceManagement",
                     "hasFusion": true,

@@ -166,7 +166,7 @@ class ConfigRollback extends React.Component {
                         <Input htmlType="text" readOnly={true} {...init('md5')} />
                     </FormItem>
                     <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.configuration')} required {...formItemLayout}>
-                        <Input htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
+                        <Input.TextArea htmlType="text" multiple rows={15} readOnly={true} {...init('content')} />
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
                         <Button type="primary" style={{ marginRight: 10 }} onClick={this.onOpenConfirm.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback')}</Button>

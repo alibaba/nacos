@@ -239,7 +239,7 @@ export default class MainLayout extends React.Component {
 		}
 		return navRow;
 	}
-	componentWillMount() {
+	UNSAFE_componentWillMount() {
 		let nav = this.props.navList || [];
 		let navRow = this.nacosGetNav(nav);
 		this.setState({
@@ -251,9 +251,9 @@ export default class MainLayout extends React.Component {
 		this.nacosBodyDom = document.getElementById('viewFramework-product-body');
 		this.nacosToggleIconDom = document.getElementById('viewFramework-product-navbar-collapse');
 		this.nacosOutDom = document.getElementById('page-header-mask');
-		let parentNav = this.initNav[0] || [];
+		// let parentNav = this.initNav[0] || [];
 		let defaultNav = '/configurationManagement';
-		let childrenNav = parentNav.children || [];
+		// let childrenNav = parentNav.children || [];
 		window.hashHistory.listen((location) => {
 			if (this.preSimplePath && this.preSimplePath !== '/') {
 				if (location.pathname.indexOf(this.preSimplePath) !== -1) {

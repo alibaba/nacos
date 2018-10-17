@@ -592,7 +592,7 @@ class Newconfig extends React.Component {
                         </div>
 
                         <FormItem label={window.aliwareIntl.get('nacos.page.newconfig.Description')} {...formItemLayout}>
-                            <Input htmlType={"text"} multiple rows={3} {...init('desc')} />
+                            <Input.TextArea htmlType={"text"} multiple rows={3} {...init('desc')} />
                         </FormItem>
 
                         <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')} {...formItemLayout}>
