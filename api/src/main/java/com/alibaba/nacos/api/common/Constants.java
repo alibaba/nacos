@@ -39,8 +39,6 @@ public class Constants {
 
 	public static final String DAILY_DOMAINNAME = "commonconfig.taobao.net";
 
-	public static final int DEFAULT_PORT = 8080;
-
 	public static final String NULL = "";
 
 	public static final String DATAID = "dataId";
@@ -124,4 +122,8 @@ public class Constants {
 	public static final String CLIENT_REQUEST_TOKEN_HEADER = "Client-RequestToken";
 
 	public static final int ATOMIC_MAX_SIZE = 1000;
+
+	public static final String NAMING_INSTANCE_ID_SPLITTER = "#";
+	public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
+	public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
 }

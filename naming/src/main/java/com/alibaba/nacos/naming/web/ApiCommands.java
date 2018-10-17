@@ -19,6 +19,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtil;
@@ -34,12 +36,14 @@ import com.alibaba.nacos.naming.raft.Datum;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftPeer;
 import com.alibaba.nacos.naming.raft.RaftProxy;
+import com.alibaba.nacos.naming.view.ServiceView;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.catalina.util.ParameterMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -57,7 +61,8 @@ import java.security.AccessControlException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -74,30 +79,34 @@ public class ApiCommands {
     protected DomainsManager domainsManager;
 
 
-    private DataSource pushDataSource = client -> {
+    private DataSource pushDataSource = new DataSource() {
 
-        Map<String, String[]> params = new HashMap<String, String[]>(10);
-        params.put("dom", new String[]{client.getDom()});
-        params.put("clusters", new String[]{client.getClusters()});
+        @Override
+        public String getData(PushService.PushClient client) throws Exception {
 
-        // set udp port to 0, otherwise will cause recursion
-        params.put("udpPort", new String[]{"0"});
+            Map<String, String[]> params = new HashMap<String, String[]>(10);
+            params.put("dom", new String[]{client.getDom()});
+            params.put("clusters", new String[]{client.getClusters()});
 
-        InetAddress inetAddress = client.getSocketAddr().getAddress();
-        params.put("clientIP", new String[]{inetAddress.getHostAddress()});
-        params.put("header:Client-Version", new String[]{client.getAgent()});
+            // set udp port to 0, otherwise will cause recursion
+            params.put("udpPort", new String[]{"0"});
 
-        JSONObject result = new JSONObject();
-        try {
-            result = srvIPXT(MockHttpRequest.buildRequest(params));
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("PUSH-SERVICE", "dom is not modified");
+            InetAddress inetAddress = client.getSocketAddr().getAddress();
+            params.put("clientIP", new String[]{inetAddress.getHostAddress()});
+            params.put("header:Client-Version", new String[]{client.getAgent()});
+
+            JSONObject result = new JSONObject();
+            try {
+                result = ApiCommands.this.srvIPXT(MockHttpRequest.buildRequest(params));
+            } catch (Exception e) {
+                Loggers.SRV_LOG.warn("PUSH-SERVICE: dom is not modified", e);
+            }
+
+            // overdrive the cache millis to push mode
+            result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
+
+            return result.toJSONString();
         }
-
-        // overdrive the cache millis to push mode
-        result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
-
-        return result.toJSONString();
     };
 
 
@@ -173,7 +182,7 @@ public class ApiCommands {
         JSONArray ipArray = new JSONArray();
 
         for (IpAddress ip : ips) {
-            ipArray.add(ip.toIPAddr() + "_" + ip.isValid() + "_" + ip.getInvalidType());
+            ipArray.add(ip.toIPAddr() + "_" + ip.isValid());
         }
 
         result.put("ips", ipArray);
@@ -231,7 +240,6 @@ public class ApiCommands {
                 }
                 ipPac.put("checkRT", ip.getCheckRT());
                 ipPac.put("cluster", ip.getClusterName());
-                ipPac.put("invalidType", ip.getInvalidType());
 
                 ipArray.add(ipPac);
             }
@@ -404,25 +412,25 @@ public class ApiCommands {
                 }));
             }
 
-            if (AbstractHealthCheckConfig.Tcp.TYPE.equals(cktype)) {
-                AbstractHealthCheckConfig.Tcp config = new AbstractHealthCheckConfig.Tcp();
+            if (AbstractHealthChecker.Tcp.TYPE.equals(cktype)) {
+                AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 cluster.setHealthChecker(config);
-            } else if (AbstractHealthCheckConfig.Http.TYPE.equals(cktype)) {
+            } else if (AbstractHealthChecker.Http.TYPE.equals(cktype)) {
 
                 String path = BaseServlet.optional(request, "path", StringUtils.EMPTY);
                 String headers = BaseServlet.optional(request, "headers", StringUtils.EMPTY);
                 String expectedResponseCode = BaseServlet.optional(request, "expectedResponseCode", "200");
 
-                AbstractHealthCheckConfig.Http config = new AbstractHealthCheckConfig.Http();
+                AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(path);
                 config.setHeaders(headers);
                 config.setExpectedResponseCode(Integer.parseInt(expectedResponseCode));
                 cluster.setHealthChecker(config);
 
-            } else if (AbstractHealthCheckConfig.Mysql.TYPE.equals(cktype)) {
+            } else if (AbstractHealthChecker.Mysql.TYPE.equals(cktype)) {
 
-                AbstractHealthCheckConfig.Mysql config = new AbstractHealthCheckConfig.Mysql();
+                AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 String user = BaseServlet.optional(request, "user", StringUtils.EMPTY);
                 String pwd = BaseServlet.optional(request, "pwd", StringUtils.EMPTY);
                 String cmd = BaseServlet.optional(request, "cmd", StringUtils.EMPTY);
@@ -466,16 +474,18 @@ public class ApiCommands {
         String ip = BaseServlet.required(request, "ip");
         String port = BaseServlet.required(request, "port");
         String weight = BaseServlet.optional(request, "weight", "1");
-        String cluster = BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String cluster = BaseServlet.optional(request, "cluster", StringUtils.EMPTY);
         if (StringUtils.isEmpty(cluster)) {
-            cluster = BaseServlet.required(request, "clusterName");
+            cluster = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
+        boolean enabled = BooleanUtils.toBoolean(BaseServlet.optional(request, "enable", "true"));
 
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(Integer.parseInt(port));
         ipAddress.setIp(ip);
         ipAddress.setWeight(Double.parseDouble(weight));
         ipAddress.setClusterName(cluster);
+        ipAddress.setEnabled(enabled);
 
         return ipAddress;
     }
@@ -512,16 +522,18 @@ public class ApiCommands {
         String tenant = BaseServlet.optional(request, "tid", StringUtils.EMPTY);
         String app = BaseServlet.optional(request, "app", "DEFAULT");
         String env = BaseServlet.optional(request, "env", StringUtils.EMPTY);
-        String instanceMetadataJson = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         IpAddress ipAddress = getIPAddress(request);
+        Service service = new Service(dom);
         ipAddress.setApp(app);
+        ipAddress.setService(service);
+        ipAddress.setInstanceId(ipAddress.generateInstanceId());
         ipAddress.setLastBeat(System.currentTimeMillis());
-        if (StringUtils.isNotEmpty(instanceMetadataJson)) {
-            ipAddress.setMetadata(JSON.parseObject(instanceMetadataJson, new TypeReference<Map<String, String>>() {
-            }));
+        if (StringUtils.isNotEmpty(metadata)) {
+            ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
         Loggers.TENANT.debug("reg-service: " + dom + "|" + ipAddress.toJSON() + "|" + env + "|" + tenant + "|" + app);
@@ -616,16 +628,16 @@ public class ApiCommands {
             }
 
             if (cktype.equals(AbstractHealthCheckProcessor.HTTP_PROCESSOR.getType())) {
-                AbstractHealthCheckConfig.Http config = new AbstractHealthCheckConfig.Http();
+                AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(BaseServlet.required(request, "path"));
                 cluster.setHealthChecker(config);
             } else if (cktype.equals(AbstractHealthCheckProcessor.TCP_PROCESSOR.getType())) {
-                AbstractHealthCheckConfig.Tcp config = new AbstractHealthCheckConfig.Tcp();
+                AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 config.setType(cktype);
                 cluster.setHealthChecker(config);
             } else if (cktype.equals(AbstractHealthCheckProcessor.MYSQL_PROCESSOR.getType())) {
-                AbstractHealthCheckConfig.Mysql config = new AbstractHealthCheckConfig.Mysql();
+                AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 config.setCmd(BaseServlet.required(request, "cmd"));
                 config.setPwd(BaseServlet.required(request, "pwd"));
                 config.setUser(BaseServlet.required(request, "user"));
@@ -1038,7 +1050,7 @@ public class ApiCommands {
             ipObj.put("valid", ip.isValid());
             ipObj.put("weight", ip.getWeight());
             ipObj.put("doubleWeight", ip.getWeight());
-            ipObj.put("instanceId", ip.generateInstanceId());
+            ipObj.put("instanceId", ip.getInstanceId());
             ipObj.put("metadata", ip.getMetadata());
             ipArray.add(ipObj);
         }
@@ -1066,6 +1078,7 @@ public class ApiCommands {
         }
 
         String dom = BaseServlet.required(request, "dom");
+
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
         String agent = request.getHeader("Client-Version");
         String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
@@ -1118,12 +1131,6 @@ public class ApiCommands {
             String msg = "no ip to serve for dom: " + dom;
 
             Loggers.SRV_LOG.debug(msg);
-
-            if (isCheck) {
-                result.put("errorMsg", msg);
-            } else {
-                throw new NacosException(NacosException.NOT_FOUND, msg);
-            }
         }
 
         Map<Boolean, List<IpAddress>> ipMap = new HashMap<>(2);
@@ -1175,11 +1182,9 @@ public class ApiCommands {
                 ipObj.put("port", ip.getPort());
                 ipObj.put("valid", entry.getKey());
                 ipObj.put("marked", ip.isMarked());
-                ipObj.put("instanceId", ip.generateInstanceId());
+                ipObj.put("instanceId", ip.getInstanceId());
                 ipObj.put("metadata", ip.getMetadata());
-                ipObj.put("clusterName",ip.getClusterName());
-                double weight = ip.getWeight();
-
+                ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());
 
                 hosts.add(ipObj);
@@ -1825,14 +1830,14 @@ public class ApiCommands {
     private Cluster getClusterFromJson(String json) {
         JSONObject object = JSON.parseObject(json);
         String type = object.getJSONObject("healthChecker").getString("type");
-        AbstractHealthCheckConfig abstractHealthCheckConfig;
+        AbstractHealthChecker abstractHealthCheckConfig;
 
         if (type.equals(HealthCheckType.HTTP.name())) {
-            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthCheckConfig.Http.class);
+            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthChecker.Http.class);
         } else if (type.equals(HealthCheckType.TCP.name())) {
-            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthCheckConfig.Tcp.class);
+            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthChecker.Tcp.class);
         } else if (type.equals(HealthCheckType.MYSQL.name())) {
-            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthCheckConfig.Mysql.class);
+            abstractHealthCheckConfig = JSON.parseObject(object.getString("healthChecker"), AbstractHealthChecker.Mysql.class);
         } else {
             throw new IllegalArgumentException("can not prase cluster from json: " + json);
         }
@@ -1890,18 +1895,18 @@ public class ApiCommands {
             }
 
             if (StringUtils.equals(cktype, HealthCheckType.HTTP.name())) {
-                AbstractHealthCheckConfig.Http config = new AbstractHealthCheckConfig.Http();
+                AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(path);
                 config.setHeaders(headers);
                 config.setExpectedResponseCode(Integer.parseInt(expectedResponseCode));
                 cluster.setHealthChecker(config);
             } else if (StringUtils.equals(cktype, HealthCheckType.TCP.name())) {
-                AbstractHealthCheckConfig.Tcp config = new AbstractHealthCheckConfig.Tcp();
+                AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 config.setType(cktype);
                 cluster.setHealthChecker(config);
             } else if (StringUtils.equals(cktype, HealthCheckType.MYSQL.name())) {
-                AbstractHealthCheckConfig.Mysql config = new AbstractHealthCheckConfig.Mysql();
+                AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 String cmd = BaseServlet.required(request, "cmd");
                 String pwd = BaseServlet.required(request, "pwd");
                 String user = BaseServlet.required(request, "user");
@@ -1940,33 +1945,6 @@ public class ApiCommands {
     @RequestMapping("/addCluster4Dom")
     public String addCluster4Dom(HttpServletRequest request) throws Exception {
         return doAddCluster4Dom(request);
-    }
-
-    /**
-     * This API returns dom names only. you should use API: dom to retrieve dom details
-     */
-    @RequestMapping("/domList")
-    public JSONObject domList(HttpServletRequest request) {
-
-        JSONObject result = new JSONObject();
-
-        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
-        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
-
-        List<Domain> doms = domainsManager.getPagedDom(page, pageSize);
-        if (CollectionUtils.isEmpty(doms)) {
-            result.put("domList", Collections.emptyList());
-            return result;
-        }
-
-        JSONArray domArray = new JSONArray();
-        for (Domain dom : doms) {
-            domArray.add(dom.getName());
-        }
-
-        result.put("domList", domArray);
-
-        return result;
     }
 
     @RequestMapping("/distroStatus")

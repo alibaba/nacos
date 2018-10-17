@@ -175,7 +175,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             }
         }
 
-        updateIPs(ips, false);
+        updateIPs(ips);
 
         recalculateChecksum();
     }
@@ -185,7 +185,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         // ignore
     }
 
-    public void updateIPs(List<IpAddress> ips, boolean diamond) {
+    public void updateIPs(List<IpAddress> ips) {
         if (CollectionUtils.isEmpty(ips) && allIPs().size() > 1) {
             return;
         }
@@ -236,7 +236,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
                 ip.setCluster(clusterMap.get(ip.getClusterName()));
             }
 
-            clusterMap.get(entry.getKey()).updateIPs(entryIPs, diamond);
+            clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
         PushService.domChanged(name);

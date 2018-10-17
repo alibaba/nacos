@@ -78,10 +78,6 @@ public class RaftPeer {
 
         RaftPeer other = (RaftPeer) obj;
 
-        if (StringUtils.equals(ip, other.ip)) {
-            return true;
-        }
-
-        return false;
+        return StringUtils.equals(ip, other.ip);
     }
 }
