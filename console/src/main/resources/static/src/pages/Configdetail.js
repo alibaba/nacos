@@ -214,19 +214,19 @@ class Configdetail extends React.Component {
                         </div> : ''}
 
                         <FormItem label={window.aliwareIntl.get('nacos.page.configdetail.Description')} {...formItemLayout}>
-                            <Input htmlType={"text"} multiple rows={3} readOnly={true} {...init('desc')} />
+                            <Input.TextArea htmlType={"text"} multiple rows={3} readOnly={true} {...init('desc')} />
                         </FormItem>
                         {activeKey === 'normal' ? '' : <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.beta_release')} {...formItemLayout}>
 
                             <div style={{ width: '100%' }} id={'betaips'}>
-                                <Input multiple style={{ width: '100%' }} value={this.state.ips} readOnly={true} placeholder={'127.0.0.1,127.0.0.2'} />
+                                <Input.TextArea multiple style={{ width: '100%' }} value={this.state.ips} readOnly={true} placeholder={'127.0.0.1,127.0.0.2'} />
                             </div>
                         </FormItem>}
                         <FormItem label={"MD5:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('md5')} />
                         </FormItem>
                         <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration')} required {...formItemLayout}>
-                            <Input htmlType={"text"} multiple rows={15} readOnly={true} {...init('content')} />
+                            <Input.TextArea htmlType={"text"} multiple rows={15} readOnly={true} {...init('content')} />
                         </FormItem>
                         <FormItem label={" "} {...formItemLayout}>
 
