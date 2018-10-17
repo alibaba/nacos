@@ -47,7 +47,7 @@ class ListeningToQuery extends React.Component {
         var self = this;
         var queryUrl = "";
         var type = this.getValue('type');
-        if (type === '1') {
+        if (type === 1) {
             var ip = this.getValue('ip');
             queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
 //            queryUrl = `/diamond-ops/configList/listenerByIp/serverId/${serverId}?ip=${ip}&tenant=${tenant}`;
@@ -168,11 +168,11 @@ class ListeningToQuery extends React.Component {
                         </Col>
                     </Row>
                     <div style={{ position: 'relative' }}>
-                        <h3 style={{ height: 28, lineHeight: '28px', paddingLeft: 10, borderLeft: '3px solid #09c' }}>{window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_results:_query')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.article_meet_the_requirements_of_the_configuration.')}</h3>
+                        <h3 style={{ height: 28, lineHeight: '28px', paddingLeft: 10, borderLeft: '3px solid #09c', margin: 0, marginBottom: 10 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_results:_query')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.article_meet_the_requirements_of_the_configuration.')}</h3>
                     </div>
                     <Row style={{ padding: 0 }}>
                         <Col span="24" style={{ padding: 0 }}>
-                            {this.getValue('type') ==='1' ? <Table dataSource={this.state.dataSource} fixedHeader={true} maxBodyHeight={500} locale={locale} language={window.aliwareIntl.currentLanguageCode}>
+                            {this.getValue('type') === 1 ? <Table dataSource={this.state.dataSource} fixedHeader={true} maxBodyHeight={500} locale={locale} language={window.aliwareIntl.currentLanguageCode}>
                                 <Table.Column title="Data ID" dataIndex="dataId" />
                                 <Table.Column title="Group" dataIndex="group" />
                                 <Table.Column title="MD5" dataIndex="md5" />

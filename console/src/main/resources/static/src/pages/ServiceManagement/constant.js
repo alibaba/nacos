@@ -40,6 +40,10 @@ I18N.COLUMN_HEALTH_STATUS = getI18N('table.column.health_status')
  * 操作
  */
 I18N.COLUMN_OPERATION = getI18N('table.column.operation')
+/**
+ * 详情
+ */
+I18N.DETAIL = getI18N('detail')
 
 export const STATUS_COLOR_MAPPING = {
     优: 'green',

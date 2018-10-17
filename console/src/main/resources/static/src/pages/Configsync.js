@@ -233,7 +233,7 @@ class Configsync extends React.Component {
                         </Form.Item>
 
                         <Form.Item label={window.aliwareIntl.get('com.alibaba.nacos.page.configsync.configuration')} required {...formItemLayout}>
-                            <Input htmlType="text" multiple rows={15} disabled={'disabled'} {...init('content')} />
+                            <Input.TextArea htmlType="text" multiple rows={15} disabled={'disabled'} {...init('content')} />
                         </Form.Item>
                         <Form.Item label={window.aliwareIntl.get('com.alibaba.nacos.page.configsync.target')} required {...formItemLayout}>
                             <div>

@@ -116,7 +116,7 @@ class ServiceManagement extends React.Component {
                                     <Button
                                         type="normal"
                                         onClick={() => this.props.history.push(`/serviceDetail?name=${record.name}`)}
-                                    >详情</Button>
+                                    >{I18N.DETAIL}</Button>
                                 )}/>
                             </Table>
                         </Col>
