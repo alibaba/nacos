@@ -118,7 +118,7 @@ public class ApiCommands {
             name = BaseServlet.required(request, "dom");
         }
 
-        Loggers.SRV_LOG.info("DOM", "request dom:" + name);
+        Loggers.SRV_LOG.info("[DOM] request dom:" + name);
 
         Domain dom = domainsManager.getDomain(name);
         if (dom == null) {
@@ -359,7 +359,7 @@ public class ApiCommands {
         String serviceMetadataJson = BaseServlet.optional(request, "serviceMetadata", StringUtils.EMPTY);
         String clusterMetadataJson = BaseServlet.optional(request, "clusterMetadata", StringUtils.EMPTY);
 
-        Loggers.SRV_LOG.info("RESET-WEIGHT", String.valueOf(resetWeight));
+        Loggers.SRV_LOG.info("[RESET-WEIGHT] " + String.valueOf(resetWeight));
 
         VirtualClusterDomain domObj = new VirtualClusterDomain();
         domObj.setName(dom);
@@ -2010,7 +2010,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
 
-            Loggers.SRV_LOG.info("UPDATE-CLUSTER", "new ips:" + sb.toString());
+            Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
             IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
             return result;
         }
@@ -2021,7 +2021,7 @@ public class ApiCommands {
             for (String ip : ips.split(ipSpliter)) {
                 sb.append(ip).append("\r\n");
             }
-            Loggers.SRV_LOG.info("UPDATE-CLUSTER", "new ips:" + sb.toString());
+            Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
             IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
             return result;
         }
@@ -2303,7 +2303,7 @@ public class ApiCommands {
         String port = BaseServlet.required(request, "port");
         String state = BaseServlet.optional(request, "state", StringUtils.EMPTY);
 
-        Loggers.SRV_LOG.info("CONTAINER_NOTFY", "received notify event, type:" + type + ", domain:" + domain +
+        Loggers.SRV_LOG.info("[CONTAINER_NOTFY] received notify event, type:" + type + ", domain:" + domain +
                 ", ip:" + ip + ", port:" + port + ", state:" + state);
 
         return "ok";

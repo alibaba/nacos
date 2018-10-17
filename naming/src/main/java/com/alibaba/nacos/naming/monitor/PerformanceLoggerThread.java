@@ -55,7 +55,7 @@ public class PerformanceLoggerThread {
     }
 
     private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("HEALTH-CHECK", "health check is " + Switch.isHealthCheckEnabled());
+        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is " + Switch.isHealthCheckEnabled());
     }
 
     class HealthCheckSwitchTask implements Runnable {
