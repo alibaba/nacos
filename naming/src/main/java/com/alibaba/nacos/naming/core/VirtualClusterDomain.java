@@ -161,7 +161,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             Loggers.SRV_LOG.warn("VIPSRV-DOM", "received empty iplist config for dom: " + name);
         }
 
-        Loggers.RAFT.info("VIPSRV-RAFT", "datum is changed, key: " + key + ", value: " + value);
+        Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
 
         List<IpAddress> ips = JSON.parseObject(value, new TypeReference<List<IpAddress>>() {
         });
@@ -246,7 +246,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("IP-UPDATED", "dom: " + getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + getName() + ", ips: " + stringBuilder.toString());
 
     }
 
