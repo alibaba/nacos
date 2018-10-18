@@ -262,12 +262,20 @@ public class DistroMapper {
         //local site servers
         List<String> allLocalSiteSrvs = new ArrayList<String>();
         for (Server server : servers) {
+
+            if (server.ip.endsWith(":0")) {
+                continue;
+            }
+
             server.adWeight = Switch.getAdWeight(server.ip) == null ? 0 : Switch.getAdWeight(server.ip);
 
             for (int i = 0; i < server.weight + server.adWeight; i++) {
-                allLocalSiteSrvs.add(server.ip);
 
-                if (server.alive) {
+                if (!allLocalSiteSrvs.contains(server.ip)) {
+                    allLocalSiteSrvs.add(server.ip);
+                }
+
+                if (server.alive && !newHealthyList.contains(server.ip)) {
                     newHealthyList.add(server.ip);
                 }
             }
@@ -421,6 +429,25 @@ public class DistroMapper {
         public long lastRefTime = 0L;
         public String lastRefTimeStr;
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Server server = (Server) o;
+
+            return ip.equals(server.ip);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return ip.hashCode();
+        }
     }
 
     private static class ServerStatusReporter implements Runnable {
