@@ -190,7 +190,7 @@ module.exports = {
                             "template": "",
                             "registerName": "com.alibaba.nacos.page.ServiceDetail",
                             "useRouter": false,
-                            "id": "com.alibaba.nacos.page.ServiceDetail",
+                            "id": "serviceDetail",
                         }
                     ]
                 }
