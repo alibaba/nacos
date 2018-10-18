@@ -3,7 +3,7 @@ import $ from 'jquery';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
 import './index.less';
-import { Balloon, Button, Dialog, Field, Form, Icon, Input, Loading, Radio, Select, Tab } from '@alifd/next';
+import { Balloon, Button, Dialog, Field, Form, Icon, Input, Loading, Radio, Select, Tab, Message } from '@alifd/next';
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
@@ -386,8 +386,13 @@ class ConfigEditor extends React.Component {
                 content = this.codeValue;
             }
             if (!content) {
+                Message.error({
+                    content: window.aliwareIntl.get("nacos.page.ConfigEditor.submit_failed"),
+                    align: "cc cc"
+                });
                 return;
             }
+            this.codeValue = content;
             this.tenant = window.getParams('namespace') || '';
             this.serverId = window.getParams('serverId') || 'center';
 
