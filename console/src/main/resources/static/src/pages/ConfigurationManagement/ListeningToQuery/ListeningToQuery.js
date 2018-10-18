@@ -51,13 +51,11 @@ class ListeningToQuery extends React.Component {
         if (type === 1) {
             var ip = this.getValue('ip');
             queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
-//            queryUrl = `/diamond-ops/configList/listenerByIp/serverId/${serverId}?ip=${ip}&tenant=${tenant}`;
         } else {
             var dataId = this.getValue('dataId');
             var group = this.getValue('group');
             if(!dataId) return false;
             queryUrl = `/nacos/v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
-//            queryUrl = `/diamond-ops/configList/listenerIp/serverId/${serverId}?dataId=${dataId}&group=${group}`;
         }
         window.request({
             url: queryUrl,
@@ -69,7 +67,7 @@ class ListeningToQuery extends React.Component {
                 	let dataSoureTmp = [];
                 	let status = data.lisentersGroupkeyStatus;
                 	for (var key in status) {
-                		if (type === '1') {
+                		if (type === 1) {
                 			let obj = {};
                             obj.dataId = key.split("+")[0];
                             obj.group = key.split("+")[1];
