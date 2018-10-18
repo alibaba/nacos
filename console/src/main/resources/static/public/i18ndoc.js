@@ -989,7 +989,7 @@ window.i18ndoc = {
     "com.alibaba.nacos.page.serviceManagement.table.column.ip_count": "Instance Count",
     "com.alibaba.nacos.page.serviceManagement.table.column.health_status": "Healthy Instance Count",
     "com.alibaba.nacos.page.serviceManagement.table.column.operation": "Operation",
-    "com.alibaba.nacos.page.serviceManagement.detail": "detail",
+    "com.alibaba.nacos.page.serviceManagement.detail": "Details",
     "com.alibaba.nacos.page.serviceManagement.query": "Search",
     "serviceManagement": "Service Management",
     "com.alibaba.nacos.page.serviceDetail.service_details": "Service Details",

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Button, Pagination, Table} from '@alifd/next';
-import {I18N} from './constant'
+import {I18N, HEALTHY_COLOR_MAPPING} from './constant'
 import EditInstanceDialog from "./EditInstanceDialog";
 
 
@@ -71,12 +71,14 @@ class InstanceTable extends React.Component {
         this.setState({pageNum}, () => this.getInstanceList())
     }
 
+    rowColor = ({healthy}) => ({className: `row-bg-${HEALTHY_COLOR_MAPPING[`${healthy}`]}`})
+
     render() {
         const {clusterName, serviceName} = this.props
         const {instance, pageSize, loading} = this.state
         return instance.count ? (
             <div>
-                <Table dataSource={instance.list} loading={loading}>
+                <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
                     <Table.Column title="IP" dataIndex="ip"/>
                     <Table.Column title={I18N.PORT} dataIndex="port"/>
                     <Table.Column title={I18N.WEIGHT} dataIndex="weight"/>
@@ -119,8 +121,8 @@ class InstanceTable extends React.Component {
                     ref="editInstanceDialog"
                     serviceName={serviceName}
                     clusterName={clusterName}
-                    openLoading={()=>this.openLoading()}
-                    closeLoading={()=>this.closeLoading()}
+                    openLoading={() => this.openLoading()}
+                    closeLoading={() => this.closeLoading()}
                     getInstanceList={() => this.getInstanceList()}
                 />
             </div>
