@@ -24,7 +24,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then jdk_switcher use "$CUSTOM_JDK"; fi
 
 script:
-
+  - mvn clean install -Pit-test
 after_success:
   - mvn clean install -Pit-test
   - mvn sonar:sonar -Psonar-apache
