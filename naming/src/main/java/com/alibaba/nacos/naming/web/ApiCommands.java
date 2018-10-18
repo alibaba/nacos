@@ -1946,6 +1946,33 @@ public class ApiCommands {
         return doAddCluster4Dom(request);
     }
 
+    /**
+     * This API returns dom names only. you should use API: dom to retrieve dom details
+     */
+    @RequestMapping("/domList")
+    public JSONObject domList(HttpServletRequest request) {
+
+        JSONObject result = new JSONObject();
+
+        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
+        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
+
+        List<Domain> doms = domainsManager.getPagedDom(page, pageSize);
+        if (CollectionUtils.isEmpty(doms)) {
+            result.put("domList", Collections.emptyList());
+            return result;
+        }
+
+        JSONArray domArray = new JSONArray();
+        for (Domain dom : doms) {
+            domArray.add(dom.getName());
+        }
+
+        result.put("domList", domArray);
+
+        return result;
+    }
+
     @RequestMapping("/distroStatus")
     public JSONObject distroStatus(HttpServletRequest request) {
 

@@ -229,9 +229,6 @@ public class ConcurrentDiskUtil {
 		}
 	}
 
-	public static void main(String[] args) {
-	}
-
 	static final public Logger log = LogUtils.LOG;
 	static final int RETRY_COUNT = 10;
 	static final int SLEEP_BASETIME = 10; 

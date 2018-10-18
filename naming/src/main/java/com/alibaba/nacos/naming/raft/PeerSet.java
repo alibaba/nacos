@@ -19,7 +19,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
@@ -28,6 +27,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.*;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
@@ -44,7 +45,7 @@ public class PeerSet {
     }
 
     public RaftPeer getLeader() {
-        if (UtilsAndCommons.STANDALONE_MODE) {
+        if (STANDALONE_MODE) {
             return local();
         }
         return leader;
@@ -62,7 +63,7 @@ public class PeerSet {
             peers.put(server, peer);
         }
 
-        if (UtilsAndCommons.STANDALONE_MODE) {
+        if (STANDALONE_MODE) {
             RaftPeer local = local();
             local.state = RaftPeer.State.LEADER;
             local.voteFor = NetUtils.localIP();
@@ -82,7 +83,7 @@ public class PeerSet {
     }
 
     public boolean isLeader(String ip) {
-        if (UtilsAndCommons.STANDALONE_MODE) {
+        if (STANDALONE_MODE) {
             return true;
         }
 

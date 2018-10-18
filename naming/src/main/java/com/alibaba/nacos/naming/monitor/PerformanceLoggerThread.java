@@ -136,7 +136,4 @@ public class PerformanceLoggerThread {
         }
         return avgCost;
     }
-
-    public static void main(String[] args) {
-    }
 }
