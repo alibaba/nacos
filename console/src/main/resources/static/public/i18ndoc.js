@@ -509,7 +509,8 @@ window.i18ndoc = {
     "com.alibaba.nacos.page.serviceDetail.update_cluster": "更新集群",
     "com.alibaba.nacos.page.serviceDetail.update_instance": "编辑实例",
     "com.alibaba.nacos.page.serviceDetail.whether_online": "是否上线",
-    "serviceDetail": "服务详情"
+    "serviceDetail": "服务详情",
+    "nacos.page.ConfigEditor.submit_failed": "不能为空, 提交失败",
   },
   "en-us": {
     "com.alibaba.nacos.layout.noenv.nacosversion":"1.0",
@@ -1020,6 +1021,7 @@ window.i18ndoc = {
     "com.alibaba.nacos.page.serviceDetail.update_cluster": "Update Cluster",
     "com.alibaba.nacos.page.serviceDetail.update_instance": "Update Instance",
     "com.alibaba.nacos.page.serviceDetail.whether_online": "Whether Online",
-    "serviceDetail": "Service Details"
+    "serviceDetail": "Service Details",
+    "nacos.page.ConfigEditor.submit_failed": "Cannot be empty, submit failed",
   }
 }
