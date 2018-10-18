@@ -16,8 +16,11 @@
 package com.alibaba.nacos.common.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -43,6 +46,42 @@ public class IoUtils {
         }
 
         return null;
+    }
+
+    static private BufferedReader toBufferedReader(Reader reader) {
+        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
+                reader);
+    }
+
+    public static void writeStringToFile(File file, String data, String encoding)
+            throws IOException {
+        OutputStream os = null;
+        try {
+            os = new FileOutputStream(file);
+            os.write(data.getBytes(encoding));
+            os.flush();
+        } finally {
+            if (null != os) {
+                os.close();
+            }
+        }
+    }
+
+    static public List<String> readLines(Reader input) throws IOException {
+        BufferedReader reader = toBufferedReader(input);
+        List<String> list = new ArrayList<String>();
+        String line = null;
+        for (; ; ) {
+            line = reader.readLine();
+            if (null != line) {
+                if (StringUtils.isNotEmpty(line)) {
+                    list.add(line.trim());
+                }
+            } else {
+                break;
+            }
+        }
+        return list;
     }
 
 }
