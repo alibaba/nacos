@@ -94,8 +94,15 @@ public class SelectInstances_ITCase {
     }
 
     @Test
-    public void deregister() throws NacosException {
-//        String serviceName = "dungu.test.100";
+    public void deregister() throws NacosException, InterruptedException {
+
+        naming = NamingFactory.createNamingService("11.163.128.34:8848");
+        String serviceName = "dungu.test.23";
+
+//        Thread.sleep(15000L);
+        System.out.println(naming.selectInstances(serviceName, true));
+
+
 //        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
     }
 
