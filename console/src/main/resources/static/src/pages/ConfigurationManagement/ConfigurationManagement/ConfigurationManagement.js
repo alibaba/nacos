@@ -444,14 +444,16 @@ class ConfigurationManagement extends React.Component {
     changePage(value) {
         this.setState({
             currentPage: value
+        }, () => {
+            this.getData(value, false);
         });
-        this.getData(value, false);
     }
     handlePageSizeChange(pageSize) {
         this.setState({
             pageSize
+        }, () => {
+            this.changePage(1);
         });
-        this.changePage(1);
     }
     onInputUpdate() {}
     chooseFieldChange(fieldValue) {
