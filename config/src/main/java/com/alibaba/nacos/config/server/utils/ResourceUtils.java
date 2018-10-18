@@ -15,15 +15,11 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import com.alibaba.nacos.config.server.constant.Constants;
+
+import java.io.*;
 import java.net.URL;
 import java.util.Properties;
-
-import com.alibaba.nacos.config.server.constant.Constants;
 
 
 /**

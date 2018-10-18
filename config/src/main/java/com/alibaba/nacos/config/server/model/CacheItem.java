@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.config.server.model;
 
-import java.util.List;
-import java.util.Map;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.config.server.utils.SingletonRepository.DataIdGroupIdCache;
+
+import java.util.List;
+import java.util.Map;
 /**
  * cache item
  * @author Nacos

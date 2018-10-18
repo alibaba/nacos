@@ -18,8 +18,7 @@ package com.alibaba.nacos.config.server.service.trace;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.SystemConfig;
-
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 /**
  * Config trace
@@ -56,7 +55,8 @@ public class ConfigTraceService {
 		}
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1] | ext(md5)
         String md5 = content == null ? null : MD5.getInstance().getMD5String(content);
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", new Object[]{SystemConfig.LOCAL_IP, dataId, group, tenant, requestIpAppName, ts, handleIp, "persist", type, -1, md5});
+        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", SystemConfig.LOCAL_IP, dataId, group, tenant,
+	        requestIpAppName, ts, handleIp, "persist", type, -1, md5);
     }
 
     public static void logNotifyEvent(String dataId, String group, String tenant, String requestIpAppName, long ts, String handleIp, String type,long delayed, String targetIp) {
@@ -68,7 +68,8 @@ public class ConfigTraceService {
 			tenant = null;
 		}
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | ext(targetIp)
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", new Object[]{SystemConfig.LOCAL_IP, dataId, group, tenant, requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp});
+        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", SystemConfig.LOCAL_IP, dataId, group, tenant,
+	        requestIpAppName, ts, handleIp, "notify", type, delayed, targetIp);
     }
 
     public static void logDumpEvent(String dataId, String group, String tenant, String requestIpAppName, long ts, String handleIp, String type, long delayed, long length) {
@@ -80,7 +81,8 @@ public class ConfigTraceService {
 			tenant = null;
 		}
         //localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed] | length
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", new Object[]{SystemConfig.LOCAL_IP, dataId, group, tenant, requestIpAppName, ts, handleIp, "dump", type, delayed, length});
+        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", SystemConfig.LOCAL_IP, dataId, group, tenant,
+	        requestIpAppName, ts, handleIp, "dump", type, delayed, length);
     }
 
     public static void logDumpAllEvent(String dataId, String group, String tenant, String requestIpAppName, long ts, String handleIp, String type) {
@@ -92,7 +94,8 @@ public class ConfigTraceService {
 			tenant = null;
 		}
     	//localIp | dataid | group | tenant | requestIpAppName | ts | handleIp | event | type | [delayed = -1]
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", new Object[]{SystemConfig.LOCAL_IP, dataId, group, tenant, requestIpAppName, ts, handleIp, "dump-all", type, -1});
+        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", SystemConfig.LOCAL_IP, dataId, group, tenant,
+	        requestIpAppName, ts, handleIp, "dump-all", type, -1);
     }
 
     public static void logPullEvent(String dataId, String group, String tenant, String requestIpAppName, long ts, String type, long delayed, String clientIp) {
@@ -104,6 +107,7 @@ public class ConfigTraceService {
 			tenant = null;
 		}
     	//localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] | ext(clientIp)
-        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", new Object[]{SystemConfig.LOCAL_IP, dataId, group, tenant, requestIpAppName, ts, "pull", type, delayed, clientIp});
+        LogUtil.traceLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", SystemConfig.LOCAL_IP, dataId, group, tenant,
+	        requestIpAppName, ts, "pull", type, delayed, clientIp);
     }
 }

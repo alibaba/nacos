@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.io.IOException;
-
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.DeserializationConfig.Feature;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
+
+import java.io.IOException;
 
 /**
  * json util
