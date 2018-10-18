@@ -117,3 +117,8 @@ export const DIALOG_FORM_LAYOUT = {
     labelCol: {fixedSpan: 12},
     wrapperCol: {span: 12}
 }
+
+export const HEALTHY_COLOR_MAPPING = {
+    'true': 'green',
+    'false': 'red'
+}

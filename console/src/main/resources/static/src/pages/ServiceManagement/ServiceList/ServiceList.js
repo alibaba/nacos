@@ -1,15 +1,15 @@
 import React from 'react';
-import RegionGroup from '../../components/RegionGroup' ;
+import RegionGroup from '../../../components/RegionGroup/index' ;
 import {Button, Field, Form, Grid, Input, Loading, Pagination, Table} from '@alifd/next';
 import {I18N, STATUS_COLOR_MAPPING} from './constant'
-import './ServiceManagement.less'
+import './ServiceList.less'
 
 const FormItem = Form.Item;
 const {Row, Col} = Grid;
 const {Column} = Table
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
-class ServiceManagement extends React.Component {
+class ServiceList extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -137,4 +137,4 @@ class ServiceManagement extends React.Component {
 }
 
 /*****************************此行为标记行, 请勿删和修改此行, 主体代码请写在此行上面的class中, 组件导出语句及其他信息请写在此行下面*****************************/
-export default ServiceManagement;
+export default ServiceList;
