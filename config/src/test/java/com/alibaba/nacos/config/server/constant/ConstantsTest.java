@@ -18,9 +18,14 @@ package com.alibaba.nacos.config.server.constant;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.mock.env.MockEnvironment;
 
-import static com.alibaba.nacos.config.server.constant.Constants.*;
+import static com.alibaba.nacos.config.server.constant.Constants.CAPACITY_CONTROLLER_PATH;
+import static com.alibaba.nacos.config.server.constant.Constants.COMMUNICATION_CONTROLLER_PATH;
+import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_CONTROLLER_PATH;
+import static com.alibaba.nacos.config.server.constant.Constants.HEALTH_CONTROLLER_PATH;
+import static com.alibaba.nacos.config.server.constant.Constants.HISTORY_CONTROLLER_PATH;
+import static com.alibaba.nacos.config.server.constant.Constants.LISTENER_CONTROLLER_PATH;
+import static com.alibaba.nacos.config.server.constant.Constants.NAMESPACE_CONTROLLER_PATH;
 
 /**
  * {@link Constants} Test
@@ -33,23 +38,12 @@ public class ConstantsTest {
     @Test
     public void testControllerPathsDefaultValues() {
 
-        MockEnvironment environment = new MockEnvironment();
-
-        Assert.assertEquals(DEFAULT_CAPACITY_CONTROLLER_PATH, environment.resolvePlaceholders(CAPACITY_CONTROLLER_PATH));
-        Assert.assertEquals(DEFAULT_COMMUNICATION_CONTROLLER_PATH, environment.resolvePlaceholders(COMMUNICATION_CONTROLLER_PATH));
-        Assert.assertEquals(DEFAULT_CONFIG_CONTROLLER_PATH, environment.resolvePlaceholders(CONFIG_CONTROLLER_PATH));
-        Assert.assertEquals(DEFAULT_HEALTH_CONTROLLER_PATH, environment.resolvePlaceholders(HEALTH_CONTROLLER_PATH));
-        Assert.assertEquals(DEFAULT_HISTORY_CONTROLLER_PATH, environment.resolvePlaceholders(HISTORY_CONTROLLER_PATH));
-        Assert.assertEquals(DEFAULT_LISTENER_CONTROLLER_PATH, environment.resolvePlaceholders(LISTENER_CONTROLLER_PATH));
-        Assert.assertEquals(DEFAULT_NAMESPACE_CONTROLLER_PATH, environment.resolvePlaceholders(NAMESPACE_CONTROLLER_PATH));
-
-
-        Assert.assertEquals("/nacos/v1/cs/capacity", DEFAULT_CAPACITY_CONTROLLER_PATH);
-        Assert.assertEquals("/nacos/v1/cs/communication", DEFAULT_COMMUNICATION_CONTROLLER_PATH);
-        Assert.assertEquals("/nacos/v1/cs/configs", DEFAULT_CONFIG_CONTROLLER_PATH);
-        Assert.assertEquals("/nacos/v1/cs/health", DEFAULT_HEALTH_CONTROLLER_PATH);
-        Assert.assertEquals("/nacos/v1/cs/history", DEFAULT_HISTORY_CONTROLLER_PATH);
-        Assert.assertEquals("/nacos/v1/cs/listener", DEFAULT_LISTENER_CONTROLLER_PATH);
-        Assert.assertEquals("/nacos/v1/cs/namespaces", DEFAULT_NAMESPACE_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/capacity", CAPACITY_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/communication", COMMUNICATION_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/configs", CONFIG_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/health", HEALTH_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/history", HISTORY_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/listener", LISTENER_CONTROLLER_PATH);
+        Assert.assertEquals("/v1/cs/namespaces", NAMESPACE_CONTROLLER_PATH);
     }
 }
