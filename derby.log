@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Mon Oct 15 17:16:12 CST 2018:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.10.1.1 - (1458268): instance a816c00e-0166-7702-eeee-00000a25bb50 
+on database directory /Users/mercy/nacos/data/derby-data with class loader sun.misc.Launcher$AppClassLoader@18b4aac2 
+Loaded from file:/Users/mercy/.m2/open-source/org/apache/derby/derby/10.10.1.1/derby-10.10.1.1.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_172-b11
+user.dir=/Users/mercy/workspace/github/mercyblitz/nacos
+os.name=Mac OS X
+os.arch=x86_64
+os.version=10.13.6
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
