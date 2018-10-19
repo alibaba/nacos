@@ -53,6 +53,8 @@ public class Instance {
     @JSONField(name = "valid")
     private boolean healthy = true;
 
+    private boolean enabled = true;
+
     /**
      * Cluster information of instance
      */
@@ -144,6 +146,14 @@ public class Instance {
 
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     @Override

@@ -43,6 +43,8 @@ public class HostReactor {
 
     private Map<String, ServiceInfo> serviceInfoMap;
 
+    private Map<String, Object> updatingMap;
+
     private PushRecver pushRecver;
 
     private EventDispatcher eventDispatcher;
@@ -58,6 +60,7 @@ public class HostReactor {
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
         this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+        this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushRecver = new PushRecver(this);
     }
@@ -218,12 +221,16 @@ public class HostReactor {
 
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
 
+            updatingMap.put(serviceName, new Object());
+
             if (allIPs) {
                 updateService4AllIPNow(serviceName, clusters, env);
             } else {
                 updateServiceNow(serviceName, clusters, env);
             }
-        } else if (serviceObj.getHosts().isEmpty()) {
+            updatingMap.remove(serviceName);
+
+        } else if (updatingMap.containsKey(serviceName)) {
 
             if (updateHoldInterval > 0) {
                 // hold a moment waiting for update finish

@@ -1,0 +1,61 @@
+
+html, body, :global(#root) {
+  height: 100%;
+}
+:global(.mainwrapper) {
+  position: absolute !important;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+:global(.sideleft) {
+  float: left;
+  background-color: #EAEDF1;
+  position: absolute;
+  top: 0px;
+  bottom: 0px;
+  z-index: 2;
+  overflow: hidden;
+  width: 180px;
+}
+:global(.sideleft .toptitle) {
+  width: 100%;
+  height: 70px;
+  line-height: 70px;
+  background: #D9DEE4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: bold;
+  text-indent: 20px;
+}
+:global(.maincontainer) {
+  position: absolute;
+  width: auto;
+  top: 0px;
+  bottom: 0px;
+  left: 180px;
+  right: 0px;
+  overflow: hidden;
+  overflow-y: auto;
+  -o-transition: all 0.2s ease;
+  -ms-transition: all 0.2s ease;
+  -moz-transition: all 0.2s ease;
+  -webkit-transition: all 0.2s ease;
+}
+:global(.viewFramework-product-navbar .product-nav-list li .active) {
+  background-color: #fff !important;
+}
+/* 
+:global(.naruto-loading-component) {
+  opacity: .7;
+  -webkit-filter: blur(1px);
+  filter: blur(1px);
+  filter: "progid:DXImageTransform.Microsoft.Blur(PixelRadius=1, MakeShadow=false)";
+  pointer-events: none
+}
+:global(.naruto-loading>.next-loading-component) {
+  width: 100%;
+  height: 100%;
+} */

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -29,7 +30,9 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -55,6 +58,55 @@ public class SelectInstances_ITCase {
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
     }
+
+
+    @Test
+    public void getAllInstances() throws Exception {
+
+//        final String serviceName = "dungu.test.100";
+//        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
+//
+//
+//
+//        Thread thread = new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    TimeUnit.SECONDS.sleep(10);
+//                    naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
+//                    System.out.println("deregister ok!");
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        });
+//
+//        thread.start();
+//
+//
+//        while (true) {
+//
+//            System.out.println(new Date());
+//            System.out.println(naming.getAllInstances("dungu.test.100"));
+//
+//            TimeUnit.SECONDS.sleep(1);
+//        }
+    }
+
+    @Test
+    public void deregister() throws NacosException, InterruptedException {
+
+        naming = NamingFactory.createNamingService("11.163.128.34:8848");
+        String serviceName = "dungu.test.23";
+
+//        Thread.sleep(15000L);
+        System.out.println(naming.selectInstances(serviceName, true));
+
+
+//        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
+    }
+
+
 
     /**
      * 获取所有健康的Instance
