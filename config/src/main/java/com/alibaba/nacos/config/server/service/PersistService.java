@@ -15,14 +15,25 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.model.*;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
-import com.alibaba.nacos.config.server.utils.PaginationHelper;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.lang3.StringUtils;
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.annotation.PostConstruct;
+
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -42,18 +53,26 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
+import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
+import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
+import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigKey;
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.SubInfo;
+import com.alibaba.nacos.config.server.model.TenantInfo;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.MD5;
+import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.google.common.collect.Lists;
 
-import javax.annotation.PostConstruct;
-import java.io.IOException;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * 数据库服务，提供ConfigInfo在数据库的存取<br>
@@ -427,6 +446,15 @@ public class PersistService {
 		}
 	};
 	
+	static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
+		public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+			TenantInfo info = new TenantInfo();
+			info.setTenantId(rs.getString("tenant_id"));
+			info.setTenantName(rs.getString("tenant_name"));
+			info.setTenantDesc(rs.getString("tenant_desc"));
+			return info;
+		}
+	}
 
 	public synchronized void reload() throws IOException {
 		this.dataSourceService.reload();
@@ -2956,6 +2984,93 @@ public class PersistService {
 		}
 	}
 
+	/**
+	 * insert tenant info
+	 *
+	 * @param kp
+	 *            kp
+	 * @param tenantId
+	 *            tenant Id
+	 * @param tenantName
+	 *            tenant name
+	 * @param tenantDesc
+	 *            tenant description
+	 * @param time time
+	 */
+	public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+			String createResoure, final long time) {
+		try {
+			jt.update(
+					"insert into tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) values(?,?,?,?,?,?,?)",
+					kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
+		} catch (DataAccessException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
+
+	/**
+	 * Update tenantInfo showname
+	 *
+	 * @param kp
+	 *            kp
+	 * @param tenantId
+	 *            tenant Id
+	 * @param tenantName
+	 *            tenant name
+	 * @param tenantDesc
+	 *            tenant description
+	 */
+	public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+		try {
+			jt.update(
+					"update tenant_info set tenant_name = ?, tenant_desc = ?, gmt_modified= ? where kp=? and tenant_id=?",
+					tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId);
+		} catch (DataAccessException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
+
+	public List<TenantInfo> findTenantByKp(String kp) {
+		String sql = "select tenant_id,tenant_name,tenant_desc from tenant_info where kp=?";
+		try {
+			return this.jt.query(sql, new Object[] { kp }, TENANT_INFO_ROW_MAPPER);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		} catch (EmptyResultDataAccessException e) {
+			return Collections.emptyList();
+		} catch (Exception e) {
+			fatalLog.error("[db-other-error]" + e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	public TenantInfo findTenantByKp(String kp, String tenantId) {
+		String sql = "select tenant_id,tenant_name,tenant_desc from tenant_info where kp=? and tenant_id=?";
+		try {
+			return this.jt.queryForObject(sql, new Object[] { kp, tenantId }, TENANT_INFO_ROW_MAPPER);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		} catch (Exception e) {
+			fatalLog.error("[db-other-error]" + e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void removeTenantInfoAtomic(final String kp, final String tenantId) {
+		try {
+			jt.update("delete from tenant_info where kp=? and tenant_id=?", kp, tenantId);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
+
 	private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
 		List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
 		for (Map<String, Object> map : list) {
@@ -3107,6 +3222,8 @@ public class PersistService {
 		return true;
 	}
     
+	static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
+
 	static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 
 	static final ConfigKeyRowMapper CONFIG_KEY_ROW_MAPPER = new ConfigKeyRowMapper();

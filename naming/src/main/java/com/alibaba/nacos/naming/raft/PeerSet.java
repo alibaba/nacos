@@ -87,7 +87,7 @@ public class PeerSet {
             return true;
         }
 
-        Loggers.RAFT.info("IS LEADER", "leader: " + leader.ip + ", ip: " + ip);
+        Loggers.RAFT.info("[IS LEADER] leader: " + leader.ip + ", ip: " + ip);
 
         return StringUtils.equals(leader.ip, ip);
     }
