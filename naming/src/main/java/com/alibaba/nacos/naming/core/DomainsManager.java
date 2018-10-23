@@ -209,7 +209,7 @@ public class DomainsManager {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("IP-UPDATED", "dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
 
     }
 
@@ -640,7 +640,7 @@ public class DomainsManager {
                         throw new IllegalStateException("dom parsing failed, json: " + value);
                     }
 
-                    Loggers.RAFT.info("RAFT-NOTIFIER", "datum is changed, key:" + key + ", value:" + value);
+                    Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key:" + key + ", value:" + value);
 
                     Domain oldDom = raftDomMap.get(dom.getName());
                     if (oldDom != null) {
@@ -672,7 +672,7 @@ public class DomainsManager {
             public void onDelete(String key, String value) throws Exception {
                 String name = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
                 Domain dom = raftDomMap.remove(name);
-                Loggers.RAFT.info("RAFT-NOTIFIER", "datum is deleted, key:" + key + ", value:" + value);
+                Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key:" + key + ", value:" + value);
 
                 if (dom != null) {
                     dom.destroy();

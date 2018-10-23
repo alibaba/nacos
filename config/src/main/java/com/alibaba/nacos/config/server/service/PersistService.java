@@ -241,7 +241,7 @@ public class PersistService {
 			return info;
 		}
 	}
-	
+
 	static final class ConfigKeyRowMapper implements
 			RowMapper<ConfigKey> {
 		public ConfigKey mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -2983,10 +2983,10 @@ public class PersistService {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * insert tenant info
-	 * 
+	 *
 	 * @param kp
 	 *            kp
 	 * @param tenantId
@@ -3011,7 +3011,7 @@ public class PersistService {
 
 	/**
 	 * Update tenantInfo showname
-	 * 
+	 *
 	 * @param kp
 	 *            kp
 	 * @param tenantId
@@ -3046,7 +3046,7 @@ public class PersistService {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public TenantInfo findTenantByKp(String kp, String tenantId) {
 		String sql = "select tenant_id,tenant_name,tenant_desc from tenant_info where kp=? and tenant_id=?";
 		try {
@@ -3061,7 +3061,7 @@ public class PersistService {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	public void removeTenantInfoAtomic(final String kp, final String tenantId) {
 		try {
 			jt.update("delete from tenant_info where kp=? and tenant_id=?", kp, tenantId);
@@ -3070,7 +3070,7 @@ public class PersistService {
 			throw e;
 		}
 	}
-	
+
 	private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
 		List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
 		for (Map<String, Object> map : list) {

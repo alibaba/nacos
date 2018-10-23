@@ -15,19 +15,13 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.ServerListService;
+import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -41,17 +35,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.ServerListService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.config.server.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.*;
 
 /**
  * Async notify service

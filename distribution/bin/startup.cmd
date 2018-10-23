@@ -34,5 +34,6 @@ set "JAVA_OPT=%JAVA_OPT% -XX:-OmitStackTraceInFastThrow"
 set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
 set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location="%CUSTOM_SEARCH_LOCATIONS%""
+set "JAVA_OPT=%JAVA_OPT% --logging.config="%BASE_DIR%/conf/nacos-logback.xml""
 
 call "%JAVA%" %JAVA_OPT% %*

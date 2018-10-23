@@ -45,10 +45,10 @@ public class ServiceListTest {
     private int port;
 
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
 

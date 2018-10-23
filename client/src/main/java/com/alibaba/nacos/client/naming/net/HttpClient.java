@@ -175,12 +175,6 @@ public class HttpClient {
         return sb.toString();
     }
 
-    public static void main(String[] args) throws UnsupportedEncodingException {
-        Map<String, String> params = new HashMap<String, String>(2);
-        params.put("s", "Wms+rkGG8jlaBBbpl8FIDxxNQGA=");
-        System.out.println(encodingParams(params, "utf-8"));
-    }
-
     public static class HttpResult {
         final public int code;
         final public String content;
