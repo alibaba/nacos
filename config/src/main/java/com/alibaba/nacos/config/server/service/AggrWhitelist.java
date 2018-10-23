@@ -15,8 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import com.alibaba.nacos.config.server.utils.RegexParser;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -24,11 +26,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.stereotype.Service;
-
-import com.alibaba.nacos.config.server.utils.RegexParser;
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 
 /**

@@ -4,6 +4,7 @@ notifications:
       - xchaos8@126.com
       - nacos_dev@linux.alibaba.com
       - dev-nacos@googlegroups.com
+      - mw_configcenter@list.alibaba-inc.com
   on_success: change
   on_failure: always
 

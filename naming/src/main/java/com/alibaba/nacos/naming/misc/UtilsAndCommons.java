@@ -42,13 +42,15 @@ public class UtilsAndCommons {
 
     private static final String NACOS_CONF_FILE_NAME = "cluster.conf";
 
-    private static String NACOS_CONF_FILE = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
+    private static String NACOS_CONF_FILE_PATH = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
 
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
     public static final String NACOS_SERVER_VERSION = "/v1";
 
-    public static final String NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+    public static final String DEFAULT_NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+
+    public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
 
     public static final String NACOS_NAMING_CATALOG_CONTEXT = "/catalog";
 
@@ -86,8 +88,6 @@ public class UtilsAndCommons {
     public static final String SERVER_VERSION = NACOS_SERVER_HEADER + ":" + NACOS_VERSION;
 
     public static final String SELF_SERVICE_CLUSTER_ENV = "naming_self_service_cluster_ips";
-
-    public static final boolean STANDALONE_MODE = Boolean.parseBoolean(System.getProperty("nacos.standalone", "false"));
 
     public static final String CACHE_KEY_SPLITER = "@@@@";
 
@@ -134,7 +134,7 @@ public class UtilsAndCommons {
         String nacosHome = System.getProperty("nacos.home");
 
         if (StringUtils.isNotBlank(nacosHome)) {
-            NACOS_CONF_FILE = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
+            NACOS_CONF_FILE_PATH = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
         }
 
         DOMAIN_SYNCHRONIZATION_EXECUTOR
@@ -195,8 +195,12 @@ public class UtilsAndCommons {
         return strBuilder.toString();
     }
 
-    public static String getConfFile() {
-        return NACOS_CONF_FILE;
+    public static String getConfFilePath() {
+        return NACOS_CONF_FILE_PATH;
+    }
+
+    public static File getConfFile() {
+        return new File(getConfFilePath());
     }
 
 

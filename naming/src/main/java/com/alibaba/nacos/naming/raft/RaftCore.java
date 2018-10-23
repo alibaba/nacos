@@ -37,6 +37,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+
 /**
  * @author nacos
  */
@@ -525,11 +527,11 @@ public class RaftCore {
 
         public static void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !UtilsAndCommons.STANDALONE_MODE) {
+            if (local.state != RaftPeer.State.LEADER && !STANDALONE_MODE) {
                 return;
             }
 
-            Loggers.RAFT.info("RAFT", "send beat with " + datums.size() + " keys.");
+            Loggers.RAFT.info("[RAFT] send beat with " + datums.size() + " keys.");
 
             local.resetLeaderDue();
 
@@ -540,7 +542,7 @@ public class RaftCore {
             JSONArray array = new JSONArray();
 
             if (Switch.isSendBeatOnly()) {
-                Loggers.RAFT.info("SEND-BEAT-ONLY", String.valueOf(Switch.isSendBeatOnly()));
+                Loggers.RAFT.info("[SEND-BEAT-ONLY] " + String.valueOf(Switch.isSendBeatOnly()));
             }
 
             if (!Switch.isSendBeatOnly()) {
@@ -567,7 +569,7 @@ public class RaftCore {
                     array.add(element);
                 }
             } else {
-                Loggers.RAFT.info("RAFT", "send beat only.");
+                Loggers.RAFT.info("[RAFT] send beat only.");
             }
 
             packet.put("datums", array);
@@ -630,12 +632,12 @@ public class RaftCore {
             remote.voteFor = beat.getJSONObject("peer").getString("voteFor");
 
             if (remote.state != RaftPeer.State.LEADER) {
-                Loggers.RAFT.info("RAFT", "invalid state from master, state=" + remote.state + ", remote peer: " + JSON.toJSONString(remote));
+                Loggers.RAFT.info("[RAFT] invalid state from master, state=" + remote.state + ", remote peer: " + JSON.toJSONString(remote));
                 throw new IllegalArgumentException("invalid state from master, state=" + remote.state);
             }
 
             if (local.term.get() > remote.term.get()) {
-                Loggers.RAFT.info("RAFT", "out of date beat, beat-from-term: " + remote.term.get()
+                Loggers.RAFT.info("[RAFT] out of date beat, beat-from-term: " + remote.term.get()
                         + ", beat-to-term: " + local.term.get() + ", remote peer: " + JSON.toJSONString(remote) + ", and leaderDueMs: " + local.leaderDueMs);
                 throw new IllegalArgumentException("out of date beat, beat-from-term: " + remote.term.get()
                         + ", beat-to-term: " + local.term.get());
@@ -643,7 +645,7 @@ public class RaftCore {
 
             if (local.state != RaftPeer.State.FOLLOWER) {
 
-                Loggers.RAFT.info("RAFT", "make remote as leader " + ", remote peer: " + JSON.toJSONString(remote));
+                Loggers.RAFT.info("[RAFT] make remote as leader " + ", remote peer: " + JSON.toJSONString(remote));
                 // mk follower
                 local.state = RaftPeer.State.FOLLOWER;
                 local.voteFor = remote.ip;
@@ -665,7 +667,7 @@ public class RaftCore {
             List<String> batch = new ArrayList<String>();
             if (!Switch.isSendBeatOnly()) {
                 int processedCount = 0;
-                Loggers.RAFT.info("RAFT", "received beat with " + beatDatums.size() + " keys, RaftCore.datums' size is "
+                Loggers.RAFT.info("[RAFT] received beat with " + beatDatums.size() + " keys, RaftCore.datums' size is "
                         + RaftCore.datums.size() + ",  remote server: " + remote.ip + ", term: " + remote.term + ",  local term: " + local.term);
                 for (Object object : beatDatums) {
                     processedCount = processedCount + 1;
@@ -734,7 +736,7 @@ public class RaftCore {
                                         Datum oldDatum = RaftCore.getDatum(datum.key);
 
                                         if (oldDatum != null && datum.timestamp <= oldDatum.timestamp) {
-                                            Loggers.RAFT.info("VIPSRV-RAFT", "timestamp is smaller than that of mine, key: " + datum.key
+                                            Loggers.RAFT.info("[VIPSRV-RAFT] timestamp is smaller than that of mine, key: " + datum.key
                                                     + ",remote: " + datum.timestamp + ", local: " + oldDatum.timestamp);
                                             continue;
                                         }
@@ -817,16 +819,16 @@ public class RaftCore {
                 List<String> newServers = (List<String>) CollectionUtils.subtract(servers, oldServers);
                 if (!CollectionUtils.isEmpty(newServers)) {
                     peers.add(newServers);
-                    Loggers.RAFT.info("RAFT", "server list is updated, new (" + newServers.size() + ") servers: " + newServers);
+                    Loggers.RAFT.info("[RAFT] server list is updated, new (" + newServers.size() + ") servers: " + newServers);
                 }
 
                 List<String> deadServers = (List<String>) CollectionUtils.subtract(oldServers, servers);
                 if (!CollectionUtils.isEmpty(deadServers)) {
                     peers.remove(deadServers);
-                    Loggers.RAFT.info("RAFT", "server list is updated, dead (" + deadServers.size() + ") servers: " + deadServers);
+                    Loggers.RAFT.info("[RAFT] server list is updated, dead (" + deadServers.size() + ") servers: " + deadServers);
                 }
             } catch (Exception e) {
-                Loggers.RAFT.info("RAFT", "error while updating server list.", e);
+                Loggers.RAFT.info("[RAFT] error while updating server list.", e);
             }
         }
     }

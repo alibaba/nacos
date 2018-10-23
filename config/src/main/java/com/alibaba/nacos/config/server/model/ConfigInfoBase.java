@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.config.server.model;
 
+import com.alibaba.nacos.config.server.utils.MD5;
+
 import java.io.PrintWriter;
 import java.io.Serializable;
-
-import com.alibaba.nacos.config.server.utils.MD5;
 
 /**
  * 不能增加字段，为了兼容老前台接口（老接口增加一个字段会出现不兼容问题）设置的model。

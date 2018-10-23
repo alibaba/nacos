@@ -201,21 +201,11 @@ public class NacosNamingService implements NamingService {
             return new ArrayList<Instance>();
         }
 
-        if (healthy) {
-            Iterator<Instance> iterator = list.iterator();
-            while (iterator.hasNext()) {
-                Instance instance = iterator.next();
-                if (!instance.isHealthy()) {
-                    iterator.remove();
-                }
-            }
-        } else {
-            Iterator<Instance> iterator = list.iterator();
-            while (iterator.hasNext()) {
-                Instance instance = iterator.next();
-                if (instance.isHealthy()) {
-                    iterator.remove();
-                }
+        Iterator<Instance> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            Instance instance = iterator.next();
+            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
+                iterator.remove();
             }
         }
 

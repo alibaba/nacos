@@ -15,23 +15,9 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
 import org.apache.commons.dbcp.BasicDataSource;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
@@ -41,291 +27,302 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Base data source
- * @author Nacos
  *
+ * @author Nacos
  */
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
-	private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
+    private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
 
-	/**
-	 *  JDBC执行超时时间, 单位秒
-	 */
-	private int queryTimeout = 3;
+    /**
+     * JDBC执行超时时间, 单位秒
+     */
+    private int queryTimeout = 3;
 
-	private static final int TRANSACTION_QUERY_TIMEOUT = 5;
+    private static final int TRANSACTION_QUERY_TIMEOUT = 5;
 
-	private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
+    private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
 
-	private List<BasicDataSource> dataSourceList = new ArrayList<BasicDataSource>();
-	private JdbcTemplate jt;
-	private DataSourceTransactionManager tm;
-	private TransactionTemplate tjt;
+    private List<BasicDataSource> dataSourceList = new ArrayList<BasicDataSource>();
+    private JdbcTemplate jt;
+    private DataSourceTransactionManager tm;
+    private TransactionTemplate tjt;
 
-	private JdbcTemplate testMasterJT;
-	private JdbcTemplate testMasterWritableJT;
+    private JdbcTemplate testMasterJT;
+    private JdbcTemplate testMasterWritableJT;
 
-	volatile private List<JdbcTemplate> testJTList;
-	volatile private List<Boolean> isHealthList;
-	private volatile int masterIndex;
-	private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    volatile private List<JdbcTemplate> testJTList;
+    volatile private List<Boolean> isHealthList;
+    private volatile int masterIndex;
+    private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
-	@Autowired
-	private Environment env;
+    @Autowired
+    private Environment env;
 
-	@PostConstruct
-	public void init() {
-		queryTimeout = NumberUtils
-				.toInt(System.getProperty("QUERYTIMEOUT"), 3);
-		jt = new JdbcTemplate();
-		/**
-		 *  设置最大记录数，防止内存膨胀
-		 */
-		jt.setMaxRows(50000); 
-		jt.setQueryTimeout(queryTimeout);
+    @PostConstruct
+    public void init() {
+        queryTimeout = NumberUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
+        jt = new JdbcTemplate();
+        /**
+         *  设置最大记录数，防止内存膨胀
+         */
+        jt.setMaxRows(50000);
+        jt.setQueryTimeout(queryTimeout);
 
-		testMasterJT = new JdbcTemplate();
-		testMasterJT.setQueryTimeout(queryTimeout);
+        testMasterJT = new JdbcTemplate();
+        testMasterJT.setQueryTimeout(queryTimeout);
 
-		testMasterWritableJT = new JdbcTemplate();
-		/**
-		 * 防止login接口因为主库不可用而rt太长
-		 */
-		testMasterWritableJT.setQueryTimeout(1);
-		/**
-		 * 数据库健康检测
-		 */
-		testJTList = new ArrayList<JdbcTemplate>();
-		isHealthList = new ArrayList<Boolean>();
+        testMasterWritableJT = new JdbcTemplate();
+        /**
+         * 防止login接口因为主库不可用而rt太长
+         */
+        testMasterWritableJT.setQueryTimeout(1);
+        /**
+         * 数据库健康检测
+         */
+        testJTList = new ArrayList<JdbcTemplate>();
+        isHealthList = new ArrayList<Boolean>();
 
-		tm = new DataSourceTransactionManager();
-		tjt = new TransactionTemplate(tm);
-		/**
-		 *  事务的超时时间需要与普通操作区分开
-		 */
-		tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-		if (!PropertyUtil.isStandaloneMode()) {
-			try {
-				reload();
-			} catch (IOException e) {
-				e.printStackTrace();
-				throw new RuntimeException(DB_LOAD_ERROR_MSG);
-			}
+        tm = new DataSourceTransactionManager();
+        tjt = new TransactionTemplate(tm);
+        /**
+         *  事务的超时时间需要与普通操作区分开
+         */
+        tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
+        if (!STANDALONE_MODE) {
+            try {
+                reload();
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException(DB_LOAD_ERROR_MSG);
+            }
 
-			TimerTaskService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
-					TimeUnit.SECONDS);
-			TimerTaskService.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
-					TimeUnit.SECONDS);
-		}
-	}
+            TimerTaskService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
+                    TimeUnit.SECONDS);
+            TimerTaskService.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
+                    TimeUnit.SECONDS);
+        }
+    }
 
-	public synchronized void reload() throws IOException {
-		List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
-		try {
-			String val = null;
-			val = env.getProperty("db.num");
-			if (null == val) {
-				throw new IllegalArgumentException("db.num is null");
-			}
-			int dbNum = Integer.parseInt(val.trim());
+    public synchronized void reload() throws IOException {
+        List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
+        try {
+            String val = null;
+            val = env.getProperty("db.num");
+            if (null == val) {
+                throw new IllegalArgumentException("db.num is null");
+            }
+            int dbNum = Integer.parseInt(val.trim());
 
-			for (int i = 0; i < dbNum; i++) {
-				BasicDataSource ds = new BasicDataSource();
-				ds.setDriverClassName(JDBC_DRIVER_NAME);
+            for (int i = 0; i < dbNum; i++) {
+                BasicDataSource ds = new BasicDataSource();
+                ds.setDriverClassName(JDBC_DRIVER_NAME);
 
-				val = env.getProperty("db.url." + i);
-				if (null == val) {
-					fatalLog.error("db.url." + i + " is null");
-					throw new IllegalArgumentException();
-				}
-				ds.setUrl(val.trim());
+                val = env.getProperty("db.url." + i);
+                if (null == val) {
+                    fatalLog.error("db.url." + i + " is null");
+                    throw new IllegalArgumentException();
+                }
+                ds.setUrl(val.trim());
 
-				val = env.getProperty("db.user");
-				if (null == val) {
-					fatalLog.error("db.user is null");
-					throw new IllegalArgumentException();
-				}
-				ds.setUsername(val.trim());
+                val = env.getProperty("db.user");
+                if (null == val) {
+                    fatalLog.error("db.user is null");
+                    throw new IllegalArgumentException();
+                }
+                ds.setUsername(val.trim());
 
-				val = env.getProperty("db.password");
-				if (null == val) {
-					fatalLog.error("db.password is null");
-					throw new IllegalArgumentException();
-				}
-				ds.setPassword(val.trim());
+                val = env.getProperty("db.password");
+                if (null == val) {
+                    fatalLog.error("db.password is null");
+                    throw new IllegalArgumentException();
+                }
+                ds.setPassword(val.trim());
 
-				val = env.getProperty("db.initialSize");
-				ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
+                val = env.getProperty("db.initialSize");
+                ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
 
-				val = env.getProperty("db.maxActive");
-				ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
+                val = env.getProperty("db.maxActive");
+                ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
 
-				val = env.getProperty("db.maxIdle");
-				ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
+                val = env.getProperty("db.maxIdle");
+                ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
 
-				ds.setMaxWait(3000L);
-				ds.setPoolPreparedStatements(true);
+                ds.setMaxWait(3000L);
+                ds.setPoolPreparedStatements(true);
 
-				// 每10分钟检查一遍连接池
-				ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-						.toMillis(10L));
-				ds.setTestWhileIdle(true);
-				ds.setValidationQuery("SELECT 1 FROM dual");
+                // 每10分钟检查一遍连接池
+                ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
+                        .toMillis(10L));
+                ds.setTestWhileIdle(true);
+                ds.setValidationQuery("SELECT 1 FROM dual");
 
-				dblist.add(ds);
+                dblist.add(ds);
 
-				JdbcTemplate jdbcTemplate = new JdbcTemplate();
-				jdbcTemplate.setQueryTimeout(queryTimeout);
-				jdbcTemplate.setDataSource(ds);
+                JdbcTemplate jdbcTemplate = new JdbcTemplate();
+                jdbcTemplate.setQueryTimeout(queryTimeout);
+                jdbcTemplate.setDataSource(ds);
 
-				testJTList.add(jdbcTemplate);
-				isHealthList.add(Boolean.TRUE);
-			}
+                testJTList.add(jdbcTemplate);
+                isHealthList.add(Boolean.TRUE);
+            }
 
-			if (dblist == null || dblist.size() == 0) {
-				throw new RuntimeException("no datasource available");
-			}
+            if (dblist == null || dblist.size() == 0) {
+                throw new RuntimeException("no datasource available");
+            }
 
-			dataSourceList = dblist;
-			new SelectMasterTask().run();
-			new CheckDBHealthTask().run();
-		} catch (RuntimeException e) {
-			fatalLog.error(DB_LOAD_ERROR_MSG, e);
-			throw new IOException(e);
-		} finally {
-		}
-	}
+            dataSourceList = dblist;
+            new SelectMasterTask().run();
+            new CheckDBHealthTask().run();
+        } catch (RuntimeException e) {
+            fatalLog.error(DB_LOAD_ERROR_MSG, e);
+            throw new IOException(e);
+        } finally {
+        }
+    }
 
-	public boolean checkMasterWritable() {
+    public boolean checkMasterWritable() {
 
-		testMasterWritableJT.setDataSource(jt.getDataSource());
-		/**
-		 *  防止login接口因为主库不可用而rt太长
-		 */
-		testMasterWritableJT.setQueryTimeout(1); 
-		String sql = " select @@read_only ";
+        testMasterWritableJT.setDataSource(jt.getDataSource());
+        /**
+         *  防止login接口因为主库不可用而rt太长
+         */
+        testMasterWritableJT.setQueryTimeout(1);
+        String sql = " select @@read_only ";
 
-		try {
-			Integer result = testMasterWritableJT.queryForObject(sql, Integer.class);
-			if (result == null) {
-				return false;
-			} else {
-				return result.intValue() == 0 ? true : false;
-			}
-		} catch (CannotGetJdbcConnectionException e) {
-			fatalLog.error("[db-error] " + e.toString(), e);
-			return false;
-		}
+        try {
+            Integer result = testMasterWritableJT.queryForObject(sql, Integer.class);
+            if (result == null) {
+                return false;
+            } else {
+                return result.intValue() == 0 ? true : false;
+            }
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            return false;
+        }
 
-	}
+    }
 
-	public JdbcTemplate getJdbcTemplate() {
-		return this.jt;
-	}
+    public JdbcTemplate getJdbcTemplate() {
+        return this.jt;
+    }
 
-	public TransactionTemplate getTransactionTemplate() {
-		return this.tjt;
-	}
+    public TransactionTemplate getTransactionTemplate() {
+        return this.tjt;
+    }
 
-	public String getCurrentDBUrl() {
-		DataSource ds = this.jt.getDataSource();
-		if (ds == null) {
-			return StringUtils.EMPTY;
-		}
-		BasicDataSource bds = (BasicDataSource) ds;
-		return bds.getUrl();
-	}
+    public String getCurrentDBUrl() {
+        DataSource ds = this.jt.getDataSource();
+        if (ds == null) {
+            return StringUtils.EMPTY;
+        }
+        BasicDataSource bds = (BasicDataSource) ds;
+        return bds.getUrl();
+    }
 
-	public String getHealth() {
-		for (int i = 0 ; i < isHealthList.size(); i++) {
-			if (!isHealthList.get(i)) {
-				if (i == masterIndex) {    
-					/**
-					 * 主库不健康
-					 */
-					return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
-				} else {      
-					/**
-					 * 从库不健康
-					 */
-					return "WARN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
-				}
-			}
-		}
+    public String getHealth() {
+        for (int i = 0; i < isHealthList.size(); i++) {
+            if (!isHealthList.get(i)) {
+                if (i == masterIndex) {
+                    /**
+                     * 主库不健康
+                     */
+                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
+                } else {
+                    /**
+                     * 从库不健康
+                     */
+                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
+                }
+            }
+        }
 
-		return "UP";
-	}
+        return "UP";
+    }
 
-	private String getIpFromUrl(String url) {
-		
-		Matcher m = ipPattern.matcher(url);
-		if (m.find()) {
-			return m.group();
-		}
+    private String getIpFromUrl(String url) {
 
-		return "";
-	}
+        Matcher m = ipPattern.matcher(url);
+        if (m.find()) {
+            return m.group();
+        }
 
-	static String defaultIfNull(String value, String defaultValue) {
-		return null == value ? defaultValue : value;
-	}
+        return "";
+    }
 
-	class SelectMasterTask implements Runnable {
-		public void run() {
-			defaultLog.info("check master db.");
-			boolean isFound = false;
+    static String defaultIfNull(String value, String defaultValue) {
+        return null == value ? defaultValue : value;
+    }
 
-			int index = -1;
-			for (BasicDataSource ds : dataSourceList) {
-				index++;
-				testMasterJT.setDataSource(ds);
-				testMasterJT.setQueryTimeout(queryTimeout);
-				try {
-					testMasterJT
-							.update("delete from config_info where data_id='com.alibaba.nacos.testMasterDB'");
-					if (jt.getDataSource() != ds) {
-						fatalLog.warn("[master-db] {}", ds.getUrl());
-					}
-					jt.setDataSource(ds);
-					tm.setDataSource(ds);
-					isFound = true;
-					masterIndex = index;
-					break;
-				} catch (DataAccessException e) { // read only
-					e.printStackTrace(); // TODO remove
-				}
-			}
+    class SelectMasterTask implements Runnable {
+        public void run() {
+            defaultLog.info("check master db.");
+            boolean isFound = false;
 
-			if (!isFound) {
-				fatalLog.error("[master-db] master db not found.");
-			}
-		}
-	}
+            int index = -1;
+            for (BasicDataSource ds : dataSourceList) {
+                index++;
+                testMasterJT.setDataSource(ds);
+                testMasterJT.setQueryTimeout(queryTimeout);
+                try {
+                    testMasterJT
+                            .update("delete from config_info where data_id='com.alibaba.nacos.testMasterDB'");
+                    if (jt.getDataSource() != ds) {
+                        fatalLog.warn("[master-db] {}", ds.getUrl());
+                    }
+                    jt.setDataSource(ds);
+                    tm.setDataSource(ds);
+                    isFound = true;
+                    masterIndex = index;
+                    break;
+                } catch (DataAccessException e) { // read only
+                    e.printStackTrace(); // TODO remove
+                }
+            }
 
-	@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
-	class CheckDBHealthTask implements Runnable {
-		public void run() {
-			defaultLog.info("check db health.");
-			String sql = "SELECT * FROM config_info_beta WHERE id = 1";
+            if (!isFound) {
+                fatalLog.error("[master-db] master db not found.");
+            }
+        }
+    }
 
-			for (int i = 0; i < testJTList.size(); i++) {
-				JdbcTemplate jdbcTemplate = testJTList.get(i);
-				try {
-					jdbcTemplate.query(sql, CONFIG_INFO4BETA_ROW_MAPPER);
-					isHealthList.set(i, Boolean.TRUE);
-				} catch (DataAccessException e) {
-					if (i == masterIndex) {
-						fatalLog.error("[db-error] master db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
-					} else {
-						fatalLog.error("[db-error] slave db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
-					}
-					isHealthList.set(i, Boolean.FALSE);
-				}
-			}
-		}
-	}
+    @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
+    class CheckDBHealthTask implements Runnable {
+        public void run() {
+            defaultLog.info("check db health.");
+            String sql = "SELECT * FROM config_info_beta WHERE id = 1";
+
+            for (int i = 0; i < testJTList.size(); i++) {
+                JdbcTemplate jdbcTemplate = testJTList.get(i);
+                try {
+                    jdbcTemplate.query(sql, CONFIG_INFO4BETA_ROW_MAPPER);
+                    isHealthList.set(i, Boolean.TRUE);
+                } catch (DataAccessException e) {
+                    if (i == masterIndex) {
+                        fatalLog.error("[db-error] master db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
+                    } else {
+                        fatalLog.error("[db-error] slave db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
+                    }
+                    isHealthList.set(i, Boolean.FALSE);
+                }
+            }
+        }
+    }
 }

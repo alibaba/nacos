@@ -23,11 +23,14 @@ import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
-import com.alibaba.nacos.common.util.SystemUtil;
+import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.healthcheck.*;
+import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckProcessor;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
+import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
@@ -36,7 +39,6 @@ import com.alibaba.nacos.naming.raft.Datum;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftPeer;
 import com.alibaba.nacos.naming.raft.RaftProxy;
-import com.alibaba.nacos.naming.view.ServiceView;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -77,7 +79,6 @@ public class ApiCommands {
 
     @Autowired
     protected DomainsManager domainsManager;
-
 
     private DataSource pushDataSource = new DataSource() {
 
@@ -1947,6 +1948,7 @@ public class ApiCommands {
         return doAddCluster4Dom(request);
     }
 
+
     @RequestMapping("/distroStatus")
     public JSONObject distroStatus(HttpServletRequest request) {
 
@@ -1981,9 +1983,9 @@ public class ApiCommands {
         result.put("ipCount", ipCount);
         result.put("responsibleDomCount", responsibleDomCount);
         result.put("responsibleIPCount", responsibleIPCount);
-        result.put("cpu", SystemUtil.getCPU());
-        result.put("load", SystemUtil.getLoad());
-        result.put("mem", SystemUtil.getMem());
+        result.put("cpu", SystemUtils.getCPU());
+        result.put("load", SystemUtils.getLoad());
+        result.put("mem", SystemUtils.getMem());
 
         return result;
     }
@@ -2011,7 +2013,7 @@ public class ApiCommands {
             }
 
             Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
-            IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
+            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
             return result;
         }
 
@@ -2022,7 +2024,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
             Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
-            IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
+            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
             return result;
         }
 
@@ -2051,7 +2053,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
 
-            IoUtils.writeStringToFile(new File(UtilsAndCommons.getConfFile()), sb.toString(), "utf-8");
+            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
 
             return result;
         }
