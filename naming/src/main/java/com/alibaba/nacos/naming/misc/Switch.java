@@ -58,7 +58,7 @@ public class Switch {
 
             @Override
             public void onChange(String key, String value) throws Exception {
-                Loggers.RAFT.info("VIPSRV-RAFT", "datum is changed, key: " + key + ", value: " + value);
+                Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
                 if (StringUtils.isEmpty(value)) {
                     return;
                 }

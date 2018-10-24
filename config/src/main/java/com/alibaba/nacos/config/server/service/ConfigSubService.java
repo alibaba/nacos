@@ -15,30 +15,6 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import java.net.HttpURLConnection;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.type.TypeReference;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -46,6 +22,18 @@ import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.type.TypeReference;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.net.HttpURLConnection;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.*;
 /**
  * config sub service
  * @author Nacos
@@ -124,7 +112,9 @@ public class ConfigSubService {
 										ipList.get(i));
 					}
 				} catch (TimeoutException e) {
-					f.cancel(true);
+					if (f != null) {
+						f.cancel(true);
+					}
 					LogUtil.defaultLog.warn(
 							"get task result with TimeoutException: {} ", e
 									.getMessage());
@@ -187,7 +177,7 @@ public class ConfigSubService {
 							.append(URLEncoder.encode(param.getValue(), Constants.ENCODE));
 				}
 
-				String urlAll = getUrl(ip, url) + paramUrl;
+				String urlAll = getUrl(ip, url) + "?" + paramUrl;
 				com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
 						.invokeURL(urlAll, null, Constants.ENCODE);
 				/**

@@ -92,7 +92,7 @@ public class DomainsManager {
             try {
                 leader = RaftCore.getPeerSet().getLeader();
                 if (leader != null) {
-                    Loggers.SRV_LOG.info("AUTO-INIT", "no leader now, sleep 3 seconds and try again.");
+                    Loggers.SRV_LOG.info("[AUTO-INIT] leader is: " + leader.ip);
                     break;
                 }
 
@@ -176,12 +176,12 @@ public class DomainsManager {
         JSONObject dom = JSON.parseObject(msg.getData());
 
         JSONArray ipList = dom.getJSONArray("ips");
-        Map<String, Pair> ipsMap = new HashMap<>(ipList.size());
+        Map<String, String> ipsMap = new HashMap<>(ipList.size());
         for (int i=0; i<ipList.size(); i++) {
 
             String ip = ipList.getString(i);
             String[] strings = ip.split("_");
-            ipsMap.put(strings[0], new Pair(strings[1], strings[2]));
+            ipsMap.put(strings[0], strings[1]);
         }
 
         VirtualClusterDomain raftVirtualClusterDomain = (VirtualClusterDomain) raftDomMap.get(domName);
@@ -192,14 +192,10 @@ public class DomainsManager {
 
         List<IpAddress> ipAddresses = raftVirtualClusterDomain.allIPs();
         for (IpAddress ipAddress : ipAddresses) {
-            Pair pair = ipsMap.get(ipAddress.toIPAddr());
-            if (pair == null) {
-                continue;
-            }
-            Boolean valid = Boolean.parseBoolean(pair.getValue0());
+
+            Boolean valid = Boolean.parseBoolean(ipsMap.get(ipAddress.toIPAddr()));
             if (valid != ipAddress.isValid()) {
-                ipAddress.setValid(Boolean.parseBoolean(pair.getValue0()));
-                ipAddress.setInvalidType(pair.getValue1());
+                ipAddress.setValid(valid);
                 Loggers.EVT_LOG.info("{" + domName + "} {SYNC} " +
                         "{IP-" + (ipAddress.isValid() ? "ENABLED" : "DISABLED") + "} " + ipAddress.getIp()
                         + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName());
@@ -213,12 +209,16 @@ public class DomainsManager {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("IP-UPDATED", "dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
 
     }
 
     public Set<String> getAllDomNames() {
         return new HashSet<String>(chooseDomMap().keySet());
+    }
+
+    public List<String> getAllDomNamesList() {
+        return new ArrayList<>(chooseDomMap().keySet());
     }
 
     public void setAllDomNames(List<String> allDomNames) {
@@ -451,11 +451,6 @@ public class DomainsManager {
 
             ipAddrs.removeAll(ips);
 
-            if (ipAddrs.size() <= 0 && dom.allIPs().size() > 1) {
-                throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
-                        + JSON.toJSONString(ipAddrs));
-            }
-
             RaftCore.signalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
         } finally {
             lock.unlock();
@@ -499,26 +494,34 @@ public class DomainsManager {
         return raftDomMap;
     }
 
-    public List<Domain> getPagedDom(int startPage, int pageSize) {
-        ArrayList<Domain> domainList = new ArrayList<Domain>(chooseDomMap().values());
-        if (pageSize >= chooseDomMap().size()) {
-            return Collections.unmodifiableList(domainList);
+    public int getPagedDom(int startPage, int pageSize, String keyword, List<Domain> domainList) {
+
+
+        List<Domain> matchList;
+        if (StringUtils.isNotBlank(keyword)) {
+            matchList = searchDomains(".*" + keyword + ".*");
+        } else {
+            matchList = new ArrayList<Domain>(chooseDomMap().values());
         }
 
-        List<Domain> resultList = new ArrayList<Domain>();
-        for (int i = 0; i < domainList.size(); i++) {
+        if (pageSize >= matchList.size()) {
+            domainList.addAll(matchList);
+            return matchList.size();
+        }
+
+        for (int i = 0; i < matchList.size(); i++) {
             if (i < startPage * pageSize) {
                 continue;
             }
 
-            resultList.add(domainList.get(i));
+            domainList.add(matchList.get(i));
 
-            if (resultList.size() >= pageSize) {
+            if (domainList.size() >= pageSize) {
                 break;
             }
         }
 
-        return resultList;
+        return matchList.size();
     }
 
     public static class DomainChecksum {
@@ -637,7 +640,7 @@ public class DomainsManager {
                         throw new IllegalStateException("dom parsing failed, json: " + value);
                     }
 
-                    Loggers.RAFT.info("RAFT-NOTIFIER", "datum is changed, key:" + key + ", value:" + value);
+                    Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key:" + key + ", value:" + value);
 
                     Domain oldDom = raftDomMap.get(dom.getName());
                     if (oldDom != null) {
@@ -669,7 +672,7 @@ public class DomainsManager {
             public void onDelete(String key, String value) throws Exception {
                 String name = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
                 Domain dom = raftDomMap.remove(name);
-                Loggers.RAFT.info("RAFT-NOTIFIER", "datum is deleted, key:" + key + ", value:" + value);
+                Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key:" + key + ", value:" + value);
 
                 if (dom != null) {
                     dom.destroy();

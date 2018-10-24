@@ -51,4 +51,8 @@ public class LogUtils {
         return LoggerFactory.getLogger(clazz);
     }
 
+    public static void setLogLevel(String level) {
+        LOG.setLevel(Level.codeOf(level.toUpperCase()));
+    }
+
 }

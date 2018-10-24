@@ -78,11 +78,11 @@ public class DomainStatusSynchronizer implements Synchronizer {
 
         String result;
         try {
-            Loggers.SRV_LOG.info("STATUS-SYNCHRONIZE", "sync dom status from: "
+            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync dom status from: "
                     + serverIP + ", dom: " + key);
             result = NamingProxy.reqAPI("ip4Dom2", params, serverIP, false);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE","Failed to get domain status from " + serverIP, e);
+            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "Failed to get domain status from " + serverIP, e);
             return null;
         }
 
