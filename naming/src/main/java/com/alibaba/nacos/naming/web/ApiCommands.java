@@ -65,6 +65,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -272,10 +273,17 @@ public class ApiCommands {
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
         String beat = BaseServlet.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
+        if (StringUtils.isBlank(clientBeat.getCluster())) {
+            clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
         String dom = BaseServlet.required(request, "dom");
         String app;
         app = BaseServlet.optional(request, "app", StringUtils.EMPTY);
         String clusterName = clientBeat.getCluster();
+
+        if (StringUtils.isBlank(clusterName)) {
+            clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+        }
 
         Loggers.TENANT.debug("client-beat", "beat: " + beat);
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
@@ -544,9 +552,13 @@ public class ApiCommands {
             regDom(request);
 
             Lock lock = domainsManager.addLock(dom);
+            Condition condition = domainsManager.addCondtion(dom);
 
-            synchronized (lock) {
-                lock.wait(5000L);
+            try {
+                lock.lock();
+                condition.await(5000, TimeUnit.MILLISECONDS);
+            } finally {
+                lock.unlock();
             }
 
             virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
