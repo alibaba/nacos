@@ -167,6 +167,23 @@
         </encoder>
     </appender>
 
+    <appender name="naming-tenant"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${nacos.home}/logs/naming-tenant.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${nacos.home}/logs/naming-tenant.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <appender name="naming-debug"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/naming-debug.log</file>
@@ -434,6 +451,10 @@
     <logger name="com.alibaba.nacos.naming.cache" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="naming-cache"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.tenant" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="naming-tenant"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.debug" additivity="false">
         <level value="INFO"/>
