@@ -265,7 +265,7 @@ public class CatalogController {
             ipAddressInfo.setMetadata(ipAddress.getMetadata());
             ipAddressInfo.setValid(ipAddress.isValid());
             ipAddressInfo.setWeight(ipAddress.getWeight());
-
+            ipAddressInfo.setEnabled(ipAddress.isEnabled());
             ipAddressInfos.add(ipAddressInfo);
 
         });
