@@ -19,6 +19,16 @@ public class IpAddressInfo implements Serializable {
 
     private Double              weight;
 
+    private boolean             enabled;
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+
     public boolean isValid() {
         return valid;
     }

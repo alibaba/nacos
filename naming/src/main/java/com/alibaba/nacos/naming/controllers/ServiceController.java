@@ -115,4 +115,16 @@ public class ServiceController {
 
         return "ok";
     }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
+    public String removeService(HttpServletRequest request) throws Exception {
+
+        String serviceName = BaseServlet.required(request, "serviceName");
+        if (domainsManager.getDomain(serviceName) == null) {
+            throw new IllegalStateException("service doesn't exists.");
+        }
+        domainsManager.easyRemoveDom(serviceName);
+        return "ok";
+    }
+
 }
