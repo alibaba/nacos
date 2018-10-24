@@ -79,10 +79,10 @@ class InstanceTable extends React.Component {
         return instance.count ? (
             <div>
                 <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
-                    <Table.Column title="IP" dataIndex="ip"/>
-                    <Table.Column title={I18N.PORT} dataIndex="port"/>
-                    <Table.Column title={I18N.WEIGHT} dataIndex="weight"/>
-                    <Table.Column title={I18N.HEALTHY} dataIndex="healthy" cell={val => `${val}`}/>
+                    <Table.Column width={138} title="IP" dataIndex="ip"/>
+                    <Table.Column width={100} title={I18N.PORT} dataIndex="port"/>
+                    <Table.Column width={100} title={I18N.WEIGHT} dataIndex="weight"/>
+                    <Table.Column width={100} title={I18N.HEALTHY} dataIndex="healthy" cell={val => `${val}`}/>
                     <Table.Column
                         title={I18N.METADATA}
                         dataIndex="metadata"
