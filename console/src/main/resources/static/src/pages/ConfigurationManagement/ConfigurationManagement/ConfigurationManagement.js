@@ -94,9 +94,9 @@ class ConfigurationManagement extends React.Component {
     }
 
     componentDidMount() {
-        this.getGroup();
+        // this.getGroup();
         if (window.pageLanguage === 'zh-cn') {
-            this.getContentList(); //在中文站获取概览页
+            // this.getContentList(); //在中文站获取概览页
             this.setState({
                 isCn: true
             });
@@ -295,8 +295,8 @@ class ConfigurationManagement extends React.Component {
             });
         }
         this.getData();
-        this.getGroupsList();
-        this.getTagLst();
+        // this.getGroupsList();
+        // this.getTagLst();
     }
     getData(pageNo = 1, clearSelect = true) {
         let self = this;

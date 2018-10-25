@@ -36,7 +36,7 @@ class ConfigDetail extends React.Component {
             });
         }
         this.getDataDetail();
-        this.getTags();
+        // this.getTags();
     }
     openLoading() {
         this.setState({

@@ -53,8 +53,8 @@ class ConfigEditor extends React.Component {
         this.betaips = document.getElementById('betaips');
         this.getDataDetail();
         this.chontenttab = document.getElementById('chontenttab'); //diff标签
-        this.getTags();
-        this.getTagLst();
+        // this.getTags();
+        // this.getTagLst();
     }
 
     initMoacoEditor(language, value) {
