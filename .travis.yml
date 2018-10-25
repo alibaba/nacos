@@ -26,7 +26,8 @@ before_install:
 
 script:
   - mvn -B clean apache-rat:check findbugs:findbugs
-  - mvn clean install -Pit-test
+  - mvn -Prelease-nacos clean install -U
+  - mvn clean package -Pit-test
 after_success:
-  - mvn clean install -Pit-test
+  - mvn clean package -Pit-test
   - mvn sonar:sonar -Psonar-apache
