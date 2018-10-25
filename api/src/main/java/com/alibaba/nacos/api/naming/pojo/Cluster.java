@@ -33,7 +33,7 @@ public class Cluster {
     /**
      * Name of cluster
      */
-    private String name = Constants.NAMING_DEFAULT_CLUSTER_NAME;
+    private String name;
 
     /**
      * Health check config of this cluster

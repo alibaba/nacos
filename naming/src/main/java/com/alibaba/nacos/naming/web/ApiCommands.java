@@ -1203,7 +1203,6 @@ public class ApiCommands {
                 ipObj.put("metadata", ip.getMetadata());
                 ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());
-
                 hosts.add(ipObj);
 
             }
@@ -1216,6 +1215,7 @@ public class ApiCommands {
         result.put("lastRefTime", System.currentTimeMillis());
         result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
         result.put("useSpecifiedURL", false);
+        result.put("clusters", clusters);
         result.put("env", env);
         result.put("metadata",domObj.getMetadata());
         return result;
