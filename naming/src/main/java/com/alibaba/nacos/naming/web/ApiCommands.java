@@ -287,31 +287,35 @@ public class ApiCommands {
 
         Loggers.TENANT.debug("client-beat", "beat: " + beat);
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
+        Map<String, String[]> stringMap = new HashMap<>(16);
+        stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
+        stringMap.put("enableClientBeat", Arrays.asList("true").toArray(new String[1]));
+        stringMap.put("cktype", Arrays.asList("TCP").toArray(new String[1]));
+        stringMap.put("appName", Arrays.asList(app).toArray(new String[1]));
+        stringMap.put("clusterName", Arrays.asList(clusterName).toArray(new String[1]));
 
         //if domain does not exist, register it.
         if (virtualClusterDomain == null) {
-            Map<String, String[]> stringMap = new HashMap<>(16);
-            stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
-            stringMap.put("enableClientBeat", Arrays.asList("true").toArray(new String[1]));
-            stringMap.put("cktype", Arrays.asList("TCP").toArray(new String[1]));
-            stringMap.put("appName", Arrays.asList(app).toArray(new String[1]));
-            stringMap.put("clusterName", Arrays.asList(clusterName).toArray(new String[1]));
             regDom(MockHttpRequest.buildRequest(stringMap));
+            Loggers.SRV_LOG.warn("dom not found, register it, dom:" + dom);
+        }
 
-            virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
-            String ip = clientBeat.getIp();
-            int port = clientBeat.getPort();
+        virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
-            IpAddress ipAddress = new IpAddress();
-            ipAddress.setPort(port);
-            ipAddress.setIp(ip);
-            ipAddress.setWeight(1);
-            ipAddress.setClusterName(clusterName);
+        String ip = clientBeat.getIp();
+        int port = clientBeat.getPort();
 
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.setPort(port);
+        ipAddress.setIp(ip);
+        ipAddress.setWeight(1);
+        ipAddress.setClusterName(clusterName);
+
+        if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             addIP4Dom(MockHttpRequest.buildRequest(stringMap));
-            Loggers.SRV_LOG.warn("dom not found, register it, dom:" + dom);
+            Loggers.SRV_LOG.warn("ip not found, register it, dom:" + dom + ", ip:" + ipAddress);
         }
 
         if (!DistroMapper.responsible(dom)) {
