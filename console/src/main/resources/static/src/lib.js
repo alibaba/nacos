@@ -160,16 +160,16 @@ window.importEditor = callback => {
 
 window._getLink = function () {
     let _linkObj = {};
-    window.request({
-        url: "com.alibaba.nacos.service.getLinks",
-        async: false,
-        data: {},
-        success: res => {
-            if (res.code === 200) {
-                _linkObj = res.data;
-            }
-        }
-    });
+    // window.request({
+    //     url: "com.alibaba.nacos.service.getLinks",
+    //     async: false,
+    //     data: {},
+    //     success: res => {
+    //         if (res.code === 200) {
+    //             _linkObj = res.data;
+    //         }
+    //     }
+    // });
     return function (linkName) {
         return _linkObj[linkName] || "";
     };

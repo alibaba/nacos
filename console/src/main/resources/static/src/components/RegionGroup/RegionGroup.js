@@ -46,15 +46,16 @@ class RegionGroup extends React.Component {
 
     componentDidMount() {
         //this.setRegionWidth();
-        window.postMessage({ type: 'CONSOLE_HAS_REGION' }, window.location)
-        $(".aliyun-console-regionbar").show();
-        $(window).bind("resize", this.handleResize);
-        window.addEventListener("message", this.handleAliyunNav);
-        this.getRegionList();
-        setTimeout(() => {
-            this.setRegionWidth();
-            this.handleRegionListStatus();
-        });
+        // window.postMessage({ type: 'CONSOLE_HAS_REGION' }, window.location)
+        // $(".aliyun-console-regionbar").show();
+        // $(window).bind("resize", this.handleResize);
+        // window.addEventListener("message", this.handleAliyunNav);
+        // this.getRegionList();
+        // setTimeout(() => {
+        //     this.setRegionWidth();
+        //     this.handleRegionListStatus();
+        // });
+        this.nameSpaceList && this.nameSpaceList.getNameSpaces();
     }
     componentWillUnmount() {
         $(window).unbind('resize', this.handleResize);
