@@ -24,6 +24,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author xxc
  */
 @SpringBootApplication
+
 public class NamingApp {
 
     public static void main(String[] args) {

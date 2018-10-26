@@ -235,13 +235,14 @@
                         <exclude>.github/*</exclude>
                         <exclude>.github/ISSUE_TEMPLATE/bug_report.md</exclude>
                         <exclude>.github/ISSUE_TEMPLATE/feature_request.md</exclude>
+                        <exclude>src/main/resources/*/*/*</exclude>
                         <exclude>src/main/resources/*/*</exclude>
                         <exclude>src/main/resources/*</exclude>
                         <exclude>src/test/resources/*</exclude>
+                        <exclude>src/main/resources/static/*.js</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
-
                     </excludes>
                 </configuration>
             </plugin>

@@ -27,24 +27,31 @@ import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.ClusterInfo;
+import com.alibaba.nacos.naming.pojo.IpAddressInfo;
+import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
 import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author dungu.zpf
  */
 @RestController
+
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
 public class CatalogController {
 
@@ -192,4 +199,77 @@ public class CatalogController {
 
         return result;
     }
+
+    @RequestMapping(value = "/services", method = RequestMethod.GET)
+    public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
+
+        List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
+
+        domainsManager
+                .getRaftDomMap()
+                .forEach(
+                        (serviceName, domain) -> {
+
+                            if (domain instanceof VirtualClusterDomain) {
+
+                                VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domain;
+                                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+                                serviceDetailInfo.setServiceName(serviceName);
+                                serviceDetailInfo.setMetadata(virtualClusterDomain.getMetadata());
+
+                                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(virtualClusterDomain);
+                                serviceDetailInfo.setClusterMap(clusterInfoMap);
+
+                                serviceDetailInfoList.add(serviceDetailInfo);
+                            }
+                        });
+
+        return serviceDetailInfoList;
+
+    }
+
+    /**
+     * getStringClusterInfoMap
+     *
+     * @param virtualClusterDomain
+     * @return
+     */
+    private Map<String, ClusterInfo> getStringClusterInfoMap(VirtualClusterDomain virtualClusterDomain) {
+        Map<String, ClusterInfo> clusterInfoMap = new HashedMap();
+
+        virtualClusterDomain.getClusterMap().forEach((clusterName, cluster) -> {
+
+            ClusterInfo clusterInfo = new ClusterInfo();
+            List<IpAddressInfo> ipAddressInfos = getIpAddressInfos(cluster.allIPs());
+            clusterInfo.setHosts(ipAddressInfos);
+            clusterInfoMap.put(clusterName, clusterInfo);
+
+        });
+        return clusterInfoMap;
+    }
+
+    /**
+     * getIpAddressInfos
+     *
+     * @param ipAddresses
+     * @return
+     */
+    private List<IpAddressInfo> getIpAddressInfos(List<IpAddress> ipAddresses) {
+        List<IpAddressInfo> ipAddressInfos = new ArrayList<>();
+
+        ipAddresses.forEach((ipAddress) -> {
+
+            IpAddressInfo ipAddressInfo = new IpAddressInfo();
+            ipAddressInfo.setIp(ipAddress.getIp());
+            ipAddressInfo.setPort(ipAddress.getPort());
+            ipAddressInfo.setMetadata(ipAddress.getMetadata());
+            ipAddressInfo.setValid(ipAddress.isValid());
+            ipAddressInfo.setWeight(ipAddress.getWeight());
+            ipAddressInfo.setEnabled(ipAddress.isEnabled());
+            ipAddressInfos.add(ipAddressInfo);
+
+        });
+        return ipAddressInfos;
+    }
+
 }

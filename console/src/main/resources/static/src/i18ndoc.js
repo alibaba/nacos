@@ -1,3 +1,15 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 module.exports = {
   "zh-cn": {
     "com.alibaba.nacos.layout.noenv.nacosversion": "0.3.0",
@@ -46,6 +58,7 @@ module.exports = {
     "com.alibaba.nacos.page.configsync.sync": "同步",
     "com.alibaba.nacos.component.NewDatePicker.24_hours": "24小时",
     "com.alibaba.nacos.page.listAllEnvironmental.environment_name": "环境名称",
+    "nacos.component.ShowCodeing.package_com.alibaba.cloud.acm.sample;import_org.springframework.bea": "package com.alibaba.cloud.acm.sample;import org.springframework.beans.factory.annotation.Value;import org.springframework.boot.ApplicationArguments;import org.springframework.boot.ApplicationRunner;import org.springframework.boot.SpringApplication;import org.springframework.boot.autoconfigure.SpringBootApplication;import org.springframework.cloud.context.config.annotation.RefreshScope;import org.springframework.stereotype.Component;import org.springframework.web.bind.annotation.RequestMapping;import org.springframework.web.bind.annotation.RestController;/** * Created on 01/10/2017. * 假设用户配置内容为 * user.id = 0 * user.name = juven.xxxb * user.age = 18 * @author juven.xuxb */@SpringBootApplicationpublic class SampleApplication {    public static void main(String[] args) {        SpringApplication.run(SampleApplication.class, args);    }}@Componentclass SampleRunner implements ApplicationRunner {    @Value(\"${user.id}\")    String userId;    @Value(\"${user.name}\")    String userName;    @Value(\"${user.age}\")    int userAge;    public void run(ApplicationArguments args) throws Exception {        System.out.println(userId);        System.out.println(userName);        System.out.println(userAge);    }}@RestController@RequestMapping(\"/sample\")@RefreshScopeclass SampleController {    @Value(\"${user.name}\")    String userName;    @RequestMapping(\"/acm\")    public String simple() {        return \"Hello Spring Cloud ACM!\"   \"Hello \"   userName   \"!\";    }}",
     "nacos.component.validateDialog.Click_to_get_verification_code": "点击获取验证码",
     "com.alibaba.nacos.page.consistencyEfficacy.environment_marked": "环境标示",
     "com.alibaba.nacos.component.NameSpaceList.Announcement_nodejs_version_is_developed,supports_a_custom_message": "公告：Node.js版上线,支持定制消息。",
@@ -512,9 +525,9 @@ module.exports = {
     "nacos.page.ConfigEditor.submit_failed": "不能为空, 提交失败",
   },
   "en-us": {
-    "com.alibaba.nacos.layout.noenv.nacosversion": "0.3.0",
-    "com.alibaba.nacos.page.configurationManagementVirtual": "ConfigManagement",
-    "com.alibaba.nacos.page.serviceManagementVirtual": "ServiceManagement",
+    "com.alibaba.nacos.layout.noenv.nacosversion":"1.0",
+    "com.alibaba.nacos.page.configurationManagementVirtual":"ConfigManagement",
+    "com.alibaba.nacos.page.serviceManagementVirtual":"ServiceManagement",
     "nacos.component.CloneDialog.the_same_configuration": "Conflict:",
     "to": "to",
     "nacos.page.newconfig.data_encryption3": "Data Encryption:",
@@ -809,6 +822,7 @@ module.exports = {
     "nacos.page.configurationManagement.HOME_Application0": "Application:",
     "com.alibaba.nacos.component.NewDatePicker.24_hours": "24 hours",
     "com.alibaba.nacos.component.DiffEditorDialog.confirm_that_the": "Publish",
+    "nacos.component.ShowCodeing.package_com.alibaba.cloud.acm.sample;import_org.springframework.bea": "package com.alibaba.cloud.acm.sample;import org.springframework.beans.factory.annotation.Value;import org.springframework.boot.ApplicationArguments;import org.springframework.boot.ApplicationRunner;import org.springframework.boot.SpringApplication;import org.springframework.boot.autoconfigure.SpringBootApplication;import org.springframework.cloud.context.config.annotation.RefreshScope;import org.springframework.stereotype.Component;import org.springframework.web.bind.annotation.RequestMapping;import org.springframework.web.bind.annotation.RestController;/** * Created on 01/10/2017. * 假设用户配置内容为 * user.id = 0 * user.name = juven.xxxb * user.age = 18 * @author juven.xuxb */@SpringBootApplicationpublic class SampleApplication {    public static void main(String[] args) {        SpringApplication.run(SampleApplication.class, args);    }}@Componentclass SampleRunner implements ApplicationRunner {    @Value(\"${user.id}\")    String userId;    @Value(\"${user.name}\")    String userName;    @Value(\"${user.age}\")    int userAge;    public void run(ApplicationArguments args) throws Exception {        System.out.println(userId);        System.out.println(userName);        System.out.println(userAge);    }}@RestController@RequestMapping(\"/sample\")@RefreshScopeclass SampleController {    @Value(\"${user.name}\")    String userName;    @RequestMapping(\"/acm\")    public String simple() {        return \"Hello Spring Cloud ACM!\"   \"Hello \"   userName   \"!\";    }}",
     "com.alibaba.nacos.component.EditorNameSpace.prompt": "Notice",
     "nacos.page.namespace.AccessKey_recommended1": "AccessKey (Recommended for development environment):",
     "com.alibaba.nacos.page.configsync.sync": "Synchronize",

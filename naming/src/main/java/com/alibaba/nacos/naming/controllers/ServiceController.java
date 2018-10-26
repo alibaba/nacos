@@ -15,6 +15,10 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -29,9 +33,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -71,6 +72,7 @@ public class ServiceController {
         return result;
 
     }
+
 
     @RequestMapping(value = "/update", method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
@@ -113,4 +115,16 @@ public class ServiceController {
 
         return "ok";
     }
+
+    @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
+    public String removeService(HttpServletRequest request) throws Exception {
+
+        String serviceName = BaseServlet.required(request, "serviceName");
+        if (domainsManager.getDomain(serviceName) == null) {
+            throw new IllegalStateException("service doesn't exists.");
+        }
+        domainsManager.easyRemoveDom(serviceName);
+        return "ok";
+    }
+
 }

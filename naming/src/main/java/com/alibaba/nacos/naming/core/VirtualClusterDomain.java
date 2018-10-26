@@ -271,6 +271,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             RaftCore.signalDelete(UtilsAndCommons.getIPListStoreKey(this));
         }
 
+        HealthCheckReactor.cancelCheck(clientBeatCheckTask);
+
         RaftCore.unlisten(UtilsAndCommons.getIPListStoreKey(this));
     }
 
