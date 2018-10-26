@@ -239,7 +239,10 @@
                         <exclude>src/main/resources/*/*</exclude>
                         <exclude>src/main/resources/*</exclude>
                         <exclude>src/test/resources/*</exclude>
-                        <exclude>src/main/resources/static/*.js</exclude>
+                        <exclude>src/main/resources/static/**/*.js</exclude>
+                        <exclude>src/main/resources/**/*.svg</exclude>
+                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
