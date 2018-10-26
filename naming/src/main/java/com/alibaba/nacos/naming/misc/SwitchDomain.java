@@ -88,6 +88,7 @@ public class SwitchDomain implements Domain, RaftListener {
     /**
      * since which version, push can be enabled
      */
+    public String pushGoVersion = "0.1.0";
     public String pushJavaVersion = "0.1.0";
     public String pushPythonVersion = "0.4.3";
     public String pushCVersion = "1.0.12";

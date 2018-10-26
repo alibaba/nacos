@@ -205,6 +205,9 @@ public class Switch {
     public static String getPushJavaVersion() {
         return dom.pushJavaVersion;
     }
+    public static String getPushGoVersion() {
+        return dom.pushGoVersion;
+    }
 
     public static String getPushPythonVersion() {
         return dom.pushPythonVersion;
@@ -216,6 +219,9 @@ public class Switch {
 
     public static void setPushJavaVersion(String pushJavaVersion) {
         dom.pushJavaVersion = pushJavaVersion;
+    }
+    public static void setPushGoVersion(String pushGoVersion) {
+        dom.pushGoVersion = pushGoVersion;
     }
 
     public static void setPushPythonVersion(String pushPythonVersion) {
@@ -346,4 +352,5 @@ public class Switch {
     public static void setAllDomNameCache(boolean enable) {
         dom.setAllDomNameCache(enable);
     }
+
 }

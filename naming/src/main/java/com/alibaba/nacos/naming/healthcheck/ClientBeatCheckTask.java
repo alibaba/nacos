@@ -37,6 +37,10 @@ public class ClientBeatCheckTask implements Runnable {
     public ClientBeatCheckTask(VirtualClusterDomain domain) {
         this.domain = domain;
     }
+    public String taskKey() {
+        return domain.getName();
+    }
+
     @Override
     public void run() {
         try {
@@ -71,7 +75,7 @@ public class ClientBeatCheckTask implements Runnable {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         } finally {
-            HealthCheckReactor.scheduleCheck(this);
+//            HealthCheckReactor.scheduleCheck(this);
         }
 
     }

@@ -35,6 +35,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -57,6 +58,8 @@ public class DomainsManager {
     private final static int DOMAIN_UPDATE_EXECUTOR_NUM = 2;
 
     private final Lock lock = new ReentrantLock();
+
+    private Map<String, Condition> dom2ContionMap = new ConcurrentHashMap<>();
 
     private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
 
@@ -651,16 +654,20 @@ public class DomainsManager {
                             dom2LockMap.put(dom.getName(), new ReentrantLock());
                         }
 
-                        Lock lock = dom2LockMap.get(dom.getName());
-
-
-                        synchronized (lock) {
-                            raftDomMap.put(dom.getName(), dom);
-                            dom.init();
-                            lock.notifyAll();
-                        }
+                        raftDomMap.put(dom.getName(), dom);
+                        dom.init();
 
                         Loggers.SRV_LOG.info("[NEW-DOM-raft] " + dom.toJSON());
+                    }
+
+                    Lock lock = dom2LockMap.get(dom.getName());
+                    Condition condition = dom2ContionMap.get(dom.getName());
+
+                    try {
+                        lock.lock();
+                        condition.signalAll();
+                    } finally {
+                        lock.unlock();
                     }
 
                 } catch (Throwable e) {
@@ -688,6 +695,12 @@ public class DomainsManager {
         Lock lock = new ReentrantLock();
         dom2LockMap.put(domName, lock);
         return lock;
+    }
+
+    public Condition addCondtion(String domName) {
+        Condition condition = dom2LockMap.get(domName).newCondition();
+        dom2ContionMap.put(domName, condition);
+        return condition;
     }
 
     public Map<String, Domain> getDomMap() {
