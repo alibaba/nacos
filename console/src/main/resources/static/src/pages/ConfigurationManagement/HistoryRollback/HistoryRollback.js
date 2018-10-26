@@ -102,7 +102,6 @@ class HistoryRollback extends React.Component {
                 self.openLoading();
             },
             url: `/nacos/v1/cs/history?search=accurate&dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
-//            url: `/diamond-ops/historys/listData/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
             success: function (data) {
                 if (data != null) {
                     self.setState({

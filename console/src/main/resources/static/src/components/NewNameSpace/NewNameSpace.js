@@ -97,7 +97,6 @@ class NewNameSpace extends React.Component {
                     this.setState({
                         disabled: false
                     });
-                    debugger;
                     if (res === true) {
                         this.closeDialog();
                         this.props.getNameSpaces();
@@ -116,21 +115,7 @@ class NewNameSpace extends React.Component {
             });
         });
     }
-    refreshNameSpace() {
 
-        let serverId = window.getParams('serverId') || 'center';
-        setTimeout(() => {
-            window.request({
-                type: 'get',
-                url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
-                success: res => {
-                    if (res.code === 200) {
-                        window.namespaceList = res.data;
-                    }
-                }
-            });
-        }, 2000);
-    }
     validateChart(rule, value, callback) {
         const chartReg = /[@#\$%\^&\*]+/g;
 

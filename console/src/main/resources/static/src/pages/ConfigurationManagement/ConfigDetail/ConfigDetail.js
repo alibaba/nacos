@@ -36,7 +36,6 @@ class ConfigDetail extends React.Component {
             });
         }
         this.getDataDetail();
-        // this.getTags();
     }
     openLoading() {
         this.setState({
@@ -48,64 +47,7 @@ class ConfigDetail extends React.Component {
             loading: false
         });
     }
-    getTags() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-
-                    if (result.data.length > 0) {
-                        //如果存在beta
-                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
-                        self.setState({
-                            tag: tag,
-                            hasbeta: true
-                        });
-                        self.getBeta();
-                    }
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
-    getBeta() {
-
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-                    self.valueMap['beta'] = result.data;
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
+   
     changeTab(value) {
 
         let self = this;

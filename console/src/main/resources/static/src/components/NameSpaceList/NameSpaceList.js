@@ -81,20 +81,7 @@ class NameSpaceList extends React.Component {
                 url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
-                        let edasAppId = window.getParams('edasAppId');
-                        if (edasAppId && edasAppId !== '') {
-                            console.log("======", edasAppId);
-                            window.request({
-                                type: 'get',
-                                url: `/diamond-ops/service/namespaceId?edasAppId=${edasAppId}`,
-                                success: res => {
-                                    this._namespace = res.data;
-                                    this.handleNameSpaces([{ namespace: res.data }]);
-                                }
-                            });
-                        } else {
-                            this.handleNameSpaces(res.data);
-                        }
+                        this.handleNameSpaces(res.data);    
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
@@ -105,11 +92,6 @@ class NameSpaceList extends React.Component {
                 },
                 error: res => {
                     window.namespaceList = [];
-                    //                    window.namespaceList = [{
-                    //                    	"namespace": "",
-                    //                    	"namespaceShowName": "公共空间",
-                    //                    	"type": 0
-                    //                    }];
                     this.handleNameSpaces(window.namespaceList);
                 }
             });
