@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.misc.Loggers;
+
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -23,6 +26,8 @@ import java.util.concurrent.*;
 public class HealthCheckReactor {
 
     private static final ScheduledExecutorService EXECUTOR;
+
+    private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
 
     static {
 
@@ -46,9 +51,23 @@ public class HealthCheckReactor {
         return EXECUTOR.schedule(task, task.getCheckRTNormalized(), TimeUnit.MILLISECONDS);
     }
 
-    public static ScheduledFuture<?> scheduleCheck(ClientBeatCheckTask task) {
-        return EXECUTOR.schedule(task, 5000, TimeUnit.MILLISECONDS);
+    public static void scheduleCheck(ClientBeatCheckTask task) {
+        futureMap.putIfAbsent(task.taskKey(), EXECUTOR.scheduleWithFixedDelay(task, 5000, 5000, TimeUnit.MILLISECONDS));
+//        return EXECUTOR.schedule(task, 5000, TimeUnit.MILLISECONDS);
     }
+
+    public static void cancelCheck(ClientBeatCheckTask task) {
+        ScheduledFuture scheduledFuture = futureMap.get(task.taskKey());
+        if (scheduledFuture == null) {
+            return;
+        }
+        try {
+            scheduledFuture.cancel(true);
+        } catch (Exception e) {
+            Loggers.EVT_LOG.error("CANCEL-CHECK", "cancel failed!", e);
+        }
+    }
+
 
     public static ScheduledFuture<?> scheduleNow(Runnable task) {
         return EXECUTOR.schedule(task, 0, TimeUnit.MILLISECONDS);
