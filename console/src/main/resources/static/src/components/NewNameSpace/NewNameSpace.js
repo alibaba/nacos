@@ -110,7 +110,6 @@ class NewNameSpace extends React.Component {
                     this.setState({
                         disabled: false
                     });
-                    debugger;
                     if (res === true) {
                         this.closeDialog();
                         this.props.getNameSpaces();
@@ -129,13 +128,12 @@ class NewNameSpace extends React.Component {
             });
         });
     }
+    
     refreshNameSpace() {
-
-        let serverId = window.getParams('serverId') || 'center';
         setTimeout(() => {
             window.request({
                 type: 'get',
-                url: `/diamond-ops/service/serverId/${serverId}/namespaceInfo`,
+                url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
                         window.namespaceList = res.data;
@@ -144,6 +142,7 @@ class NewNameSpace extends React.Component {
             });
         }, 2000);
     }
+
     validateChart(rule, value, callback) {
         const chartReg = /[@#\$%\^&\*]+/g;
 

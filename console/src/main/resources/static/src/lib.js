@@ -112,7 +112,7 @@ window.request.middleWare(config => {
 /**
  * 配置 monaco
  */
-window.require.config({ paths: { 'vs': '//midwayfe.oss-cn-shanghai.aliyuncs.com/monaco-editor/min/vs' } });
+window.require.config({ paths: { 'vs': process.env.NODE_ENV === 'development' ? 'js/vs' : 'public/js/vs' } });
 window.require.config({
     'vs/nls': {
         availableLanguages: {
@@ -173,16 +173,16 @@ window.importEditor = callback => {
 
 window._getLink = function () {
     let _linkObj = {};
-    window.request({
-        url: "com.alibaba.nacos.service.getLinks",
-        async: false,
-        data: {},
-        success: res => {
-            if (res.code === 200) {
-                _linkObj = res.data;
-            }
-        }
-    });
+    // window.request({
+    //     url: "com.alibaba.nacos.service.getLinks",
+    //     async: false,
+    //     data: {},
+    //     success: res => {
+    //         if (res.code === 200) {
+    //             _linkObj = res.data;
+    //         }
+    //     }
+    // });
     return function (linkName) {
         return _linkObj[linkName] || "";
     };
