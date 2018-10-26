@@ -317,19 +317,6 @@ class NewConfig extends React.Component {
             label: 'Properties'
         }];
 
-        const groupInput = <FormItem label={"Group:"} required {...formItemLayout}>
-            <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={window.aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
-                rules: [{
-                    required: true,
-                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
-                }, {
-                    max: 127,
-                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
-                }, { validator: this.validateChart.bind(this) }]
-            })} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
-            </Combobox>
-        </FormItem>;
-
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape={"flower"} tip={"Loading..."} style={{ width: '100%', position: 'relative' }} visible={this.state.loading} color={"#333"}>
@@ -347,7 +334,18 @@ class NewConfig extends React.Component {
                             })} addonTextBefore={this.state.addonBefore ? <div style={{ minWidth: 100, color: "#373D41" }}>{this.state.addonBefore}</div> : null} />
 
                         </FormItem>
-                        {this.inEdas ? groupInput : ""}
+                        <FormItem label={"Group:"} required {...formItemLayout}>
+                            <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={window.aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
+                                rules: [{
+                                    required: true,
+                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
+                                }, {
+                                    max: 127,
+                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
+                                }, { validator: this.validateChart.bind(this) }]
+                            })} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
+                            </Combobox>
+                        </FormItem>
                         <FormItem label={" "} {...formItemLayout} style={{ display: this.state.showGroupWarning ? "block" : "none" }}>
                             <Message type={'warning'} size={'medium'} animation={false}>{window.aliwareIntl.get('nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0')}</Message>
                         </FormItem>
@@ -356,10 +354,8 @@ class NewConfig extends React.Component {
                                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length') : window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}</a>
                             </div>
                         </FormItem>
-
+                        
                         <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-                            {this.inEdas ? "" : groupInput}
-
                             <FormItem label={window.aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
                                 <Select size={"medium"} hasArrow style={{ width: '100%', height: '100%!important' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
                                 </Select>
