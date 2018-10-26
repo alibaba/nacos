@@ -10,12 +10,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-window.i18ndoc = {
+module.exports = {
   "zh-cn": {
-    "com.alibaba.nacos.layout.noenv.nacosversion":"1.0",
-    "com.alibaba.nacos.page.configurationManagementVirtual":"配置管理",
-    "com.alibaba.nacos.page.serviceManagementVirtual":"服务管理",
+    "com.alibaba.nacos.layout.noenv.nacosversion": "0.3.0",
+    "com.alibaba.nacos.page.configurationManagementVirtual": "配置管理",
+    "com.alibaba.nacos.page.serviceManagementVirtual": "服务管理",
     "nacos.component.ExportDialog.tags2": "标签:",
     "historyRollback": "历史版本",
     "com.alibaba.nacos.component.MiddleWareEnv.Spas_dedicated": "Spas专用",
@@ -1038,3 +1037,4 @@ window.i18ndoc = {
     "nacos.page.ConfigEditor.submit_failed": "Cannot be empty, submit failed",
   }
 }
+

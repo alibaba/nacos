@@ -62,11 +62,7 @@ class NewConfig extends React.Component {
         //this.createCodeMirror('text', '');
         this.chontenttab = document.getElementById('chontenttab'); //diff标签
         this.tenant = window.getParams('namespace') || '';
-        this.getGroupInfo();
         this.field.setValue('group', this.group);
-        this.getGroupsList();
-        this.getTags();
-        this.getTagLst();
         if (!window.monaco) {
             window.importEditor(() => {
                 this.initMoacoEditor();
@@ -94,39 +90,7 @@ class NewConfig extends React.Component {
     }
     initMoacoEditor() {
 
-        // require(['vs/editor/editor.main'], () => {
 
-        //     this.monacoEditor = monaco.editor.create(document.getElementById('container'), {
-        //         value: this.codeValue,
-        //         language: this.state.configType,
-        //         folding: false,
-        //         codeLens: true,
-        //         selectOnLineNumbers: true,
-        //         roundedSelection: false,
-        //         readOnly: false,
-        //         lineNumbersMinChars: true,
-        //         theme: 'vs-dark',
-        //         wordWrapColumn: 120,
-        //         folding: true,
-        //         showFoldingControls: 'always',
-        //         wordWrap: 'wordWrapColumn',
-        //         cursorStyle: 'line',
-        //         automaticLayout: true,
-        //     });
-        //     // this.monacoEditor.onDidChangeModelContent((event) => {
-        //     //     const value = this.monacoEditor.getValue();
-
-        //     //     // Always refer to the latest value
-        //     //     this.__current_value = value;
-
-        //     //     // Only invoking when user input changed
-        //     //     if (!this.__prevent_trigger_change_event) {
-        //     //         this.props.onChange(value, event);
-        //     //     }
-        //     // });
-
-
-        // });
         this.monacoEditor = window.monaco.editor.create(document.getElementById('container'), {
             value: this.codeValue,
             language: this.state.configType,
@@ -145,104 +109,7 @@ class NewConfig extends React.Component {
         });
     }
 
-    getGroupsList() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
-        this.serverId = window.getParams('serverId') || '';
-        window.request({
-            type: 'get',
-            beforeSend: function () { },
-            url: self.inEdas ? '/diamond-ops/service/group' : `/diamond-ops/configList/groups_by_tenant/serverId/${this.serverId}/tenant/${this.tenant}`,
-            success: res => {
-                if (res.code === 200) {
-                    let data = res.data;
-                    let groups = [];
-                    let groupNames = [];
-                    for (let i = 0; i < data.length; i++) {
-                        groups.push({
-                            label: data[i],
-                            value: data[i]
-                        });
-                        groupNames.push(data[i]);
-                    }
-                    this.setState({
-                        groups: groups,
-                        groupNames: groupNames
-                    });
-                    if (this.inEdas) {
-                        if (groups.length === 0) {
-                            this.setState({
-                                showGroupWarning: this.state.groupNames.indexOf(this.group) < 0
-                            });
-                        } else {
-                            this.setGroup('');
-                        }
-                    } else {
-                        this.setGroup(data[0] || 'DEFAULT_GROUP');
-                    }
-                }
-            }
-        });
-    }
 
-    getTags() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-
-                    if (result.data.length > 0) {
-                        //如果存在beta
-                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
-                        self.setState({
-                            tag: tag,
-                            hasbeta: true
-                        });
-                        self.getBeta();
-                    }
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
-    getTagLst() {
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
-        this.serverId = window.getParams('serverId') || '';
-        window.request({
-
-            type: 'get',
-            beforeSend: function () { },
-            url: `/diamond-ops/configList/tags/serverId/${this.serverId}/tenant/${this.tenant}`,
-            success: res => {
-                if (res.code === 200) {
-                    let data = res.data;
-                    let tagLst = [];
-                    for (let i = 0; i < data.length; i++) {
-                        tagLst.push({
-                            label: data[i],
-                            value: data[i]
-                        });
-                    }
-                    this.setState({
-                        tagLst: tagLst
-                    });
-                }
-            }
-        });
-    }
     setGroup(value) {
         this.group = value || '';
         this.field.setValue('group', this.group);
@@ -394,100 +261,12 @@ class NewConfig extends React.Component {
             });
         });
     }
-    getGroupInfo() {
-        let self = this;
-        this.serverId = window.getParams('serverId') || 'center';
-        window.request({
-            url: `/diamond-ops/env/serverId/${this.serverId}/groupInfo`,
-            success: function (res) {
-
-                if (res.code === 0) {
-
-                    let data = res.data;
-                    let envvalues = [];
-                    let envlist = [];
-                    let serverId = window.getParams('serverId') || 'daily';
-                    for (let i = 0; i < data.length; i++) {
-                        envlist.push({
-                            label: data[i].name,
-                            value: data[i].serverId
-                        });
-                        if (serverId === data[i].serverId) {
-                            //如果查到的serverId更路径id相关
-                            envvalues.push(data[i].serverId);
-                        }
-                    }
-                    self.targetEnvs = envvalues;
-                    self.setState({
-                        envvalues: envvalues,
-                        envlist: envvalues //只保留当前环境
-                    });
-                }
-            }
-        });
-    }
 
     changeEnv(values) {
         this.targetEnvs = values;
         this.setState({
             envvalues: values
         });
-    }
-
-    switchEncrypt(value) {
-        if (value) {
-            window.request({
-                type: 'get',
-                beforeSend: function () { },
-                url: `/diamond-ops/configList/isOpenKMS`,
-                success: res => {
-                    if (res.code === 200) {
-                        this.setState({
-                            encrypt: value
-                        });
-                        this.setState({
-                            addonBefore: "cipher-"
-                        });
-                    } else if (res.code === 1403) {
-                        let data = res.data;
-                        let titleTmp = window.aliwareIntl.get('nacos.page.newconfig.The_opening_of_the_data_encryption-related_services0');
-                        let contentTmp1 = "";
-                        let contentTmp2 = "";
-                        if (data.kmsServiceStatus !== 200) {
-                            contentTmp1 = <div>{data.kmsMsg}<a href={window._getLink && window._getLink("kmsOpen")} target={"_blank"}>{window.aliwareIntl.get('nacos.page.newconfig._to_go_to_the_opening_of1')}</a></div>;
-                        }
-                        if (data.sts2KmsRightStatus !== 200) {
-                            contentTmp2 = <div>{data.sts2KmsMsg}<a style={{ marginLeft: 10 }} href={window._getLink && window._getLink("kmsAuthorize")} target={"_blank"}>{window.aliwareIntl.get('nacos.page.newconfig.to_the_authorization_of2')}</a></div>;
-                        }
-                        let contentTmp = <div style={{ "font-size": "14px" }}>{contentTmp1}{contentTmp2}</div>;
-                        Dialog.alert({
-                            language: window.pageLanguage || 'zh-cn',
-                            title: titleTmp,
-                            content: contentTmp
-                        });
-                        this.setState({
-                            encrypt: false
-                        });
-                    } else {
-                        Dialog.alert({
-                            language: window.pageLanguage || 'zh-cn',
-                            title: window.aliwareIntl.get('nacos.page.newconfig.The_opening_of_the_data_encryption-related_services0'),
-                            content: res.message
-                        });
-                        this.setState({
-                            encrypt: false
-                        });
-                    }
-                }
-            });
-        } else {
-            this.setState({
-                encrypt: value
-            });
-            this.setState({
-                addonBefore: ""
-            });
-        }
     }
 
     changeBeta(selected) {
@@ -551,19 +330,6 @@ class NewConfig extends React.Component {
             label: 'Properties'
         }];
 
-        const groupInput = <FormItem label={"Group:"} required {...formItemLayout}>
-            <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={window.aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
-                rules: [{
-                    required: true,
-                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
-                }, {
-                    max: 127,
-                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
-                }, { validator: this.validateChart.bind(this) }]
-            })} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
-            </Combobox>
-        </FormItem>;
-
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape={"flower"} tip={"Loading..."} style={{ width: '100%', position: 'relative' }} visible={this.state.loading} color={"#333"}>
@@ -581,7 +347,18 @@ class NewConfig extends React.Component {
                             })} addonTextBefore={this.state.addonBefore ? <div style={{ minWidth: 100, color: "#373D41" }}>{this.state.addonBefore}</div> : null} />
 
                         </FormItem>
-                        {this.inEdas ? groupInput : ""}
+                        <FormItem label={"Group:"} required {...formItemLayout}>
+                            <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={window.aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
+                                rules: [{
+                                    required: true,
+                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
+                                }, {
+                                    max: 127,
+                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
+                                }, { validator: this.validateChart.bind(this) }]
+                            })} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
+                            </Combobox>
+                        </FormItem>
                         <FormItem label={" "} {...formItemLayout} style={{ display: this.state.showGroupWarning ? "block" : "none" }}>
                             <Message type={'warning'} size={'medium'} animation={false}>{window.aliwareIntl.get('nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0')}</Message>
                         </FormItem>
@@ -590,10 +367,8 @@ class NewConfig extends React.Component {
                                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length') : window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}</a>
                             </div>
                         </FormItem>
-
+                        
                         <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-                            {this.inEdas ? "" : groupInput}
-
                             <FormItem label={window.aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
                                 <Select size={"medium"} hasArrow style={{ width: '100%', height: '100%!important' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
                                 </Select>

@@ -26,18 +26,13 @@ const spawnAsync = (...args) => new Promise((resolve, reject) => {
 });
 
 spawnAsync('roadhog', ['build'])
-.then(() => {
-    const _buildDir = path.join(__dirname, buildDir);
-    if (!fs.statSync(_buildDir).isDirectory()) {
-        return;
-    }
-    let fileList = fs.readdirSync(_buildDir, "utf8");
-    fileList.forEach((fileName) => {
-        if (fileName === "." || fileName === "..") {
-            return;
-        }
-        const _buildPath = path.join(buildDir, fileName);
-        const _targetPath = path.join(targetDir, fileName);
-        fs.writeFileSync(_targetPath, fs.readFileSync(_buildPath, "utf8"), "utf8");
-    })
-});
+    .then(() => {
+        // 复制index.js
+        const copyFileList = ['index.js', 'index.css'];
+        copyFileList.forEach((fileName) => {
+            const _srcFileName = path.join(buildDir, fileName);
+            const _targetFileName = path.join(targetDir, fileName);
+
+            fs.writeFileSync(_targetFileName, fs.readFileSync(_srcFileName, "utf8"), "utf8");
+        });
+    });

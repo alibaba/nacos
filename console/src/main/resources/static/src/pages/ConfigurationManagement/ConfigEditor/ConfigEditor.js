@@ -66,8 +66,7 @@ class ConfigEditor extends React.Component {
         this.betaips = document.getElementById('betaips');
         this.getDataDetail();
         this.chontenttab = document.getElementById('chontenttab'); //diff标签
-        this.getTags();
-        this.getTagLst();
+
     }
 
     initMoacoEditor(language, value) {
@@ -121,113 +120,7 @@ class ConfigEditor extends React.Component {
         this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
         window.hashHistory.push(`${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&group=${this.group}&namespace=${this.tenant}`);
     }
-    getTagLst() {
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
-        this.serverId = window.getParams('serverId') || '';
-        window.request({
 
-            type: 'get',
-            beforeSend: function () { },
-            url: `/diamond-ops/configList/tags/serverId/${this.serverId}/tenant/${this.tenant}`,
-            success: res => {
-                console.log("res:", res);
-                if (res.code === 200) {
-                    let data = res.data;
-                    let tagLst = [];
-                    for (let i = 0; i < data.length; i++) {
-                        tagLst.push({
-                            label: data[i],
-                            value: data[i]
-                        });
-                    }
-                    this.setState({
-                        tagLst: tagLst
-                    });
-                }
-            }
-        });
-    }
-
-    getTags() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-
-                    if (result.data.length > 0) {
-                        //如果存在beta
-                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
-                        self.setState({
-                            tag: tag,
-                            hasbeta: true
-                        });
-                        self.getBeta();
-                    }
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
-    getBeta() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-
-                    self.valueMap['beta'] = result.data;
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
-    getConfigList() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) { } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
     openLoading() {
         this.setState({
             loading: true
@@ -452,11 +345,6 @@ class ConfigEditor extends React.Component {
                             //如果是在normal面板选择了发布
                             self.valueMap['normal'] = payload; //赋值正式
                         }
-                        if (activeKey === 'beta' && self.hasips === false) {
-                            //如果是在beta面板选择了正式发布需要停止beta                      
-                            self.valueMap['normal'] = payload; //赋值正式
-                            self.stopPublishConfig();
-                        }
                         if (activeKey === 'beta' && self.hasips === true) {
                             //如果是在beta面板继续beta发布                              
                             self.valueMap['beta'] = payload; //赋值beta
@@ -481,66 +369,7 @@ class ConfigEditor extends React.Component {
             callback();
         }
     }
-    stopPublishConfig() {
-        this.field.validate((errors, values) => {
-            if (errors) {
-                return;
-            }
-            let self = this;
-            this.tenant = window.getParams('namespace') || '';
-            let payload = {
-                dataId: this.field.getValue('dataId'),
-                appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-                group: this.field.getValue('group'),
-                content: this.field.getValue('content'),
-                targetEnvs: this.targetEnvs,
-                tenant: this.tenant
-            };
 
-            let url = `/diamond-ops/configList/stopBeta/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}?id=`;
-            if (this.tenant) {
-                //添加tenant
-                url = `/diamond-ops/configList/stopBeta/serverId/${this.serverId}/dataId/${payload.dataId}/group/${payload.group}/tenant/${this.tenant}?id=`;
-            }
-            window.request({
-                type: 'put',
-                contentType: 'application/json',
-                url: url,
-                data: JSON.stringify(payload),
-                success: function (res) {
-                    let _payload = {};
-
-                    _payload.maintitle = window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta');
-                    _payload.title = <div>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta')}<a onClick={self.navTo.bind(self, '/pushTrajectory')}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.look')}</a></div>;
-                    _payload.content = '';
-                    _payload.dataId = payload.dataId;
-                    _payload.group = payload.group;
-                    if (res.code === 200) {
-                        _payload.isok = true;
-                    } else {
-                        _payload.isok = false;
-                        _payload.title = window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta');
-                        _payload.message = res.message;
-                    }
-                    setTimeout(() => {
-                        let sufex = new Date().getTime();
-                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: `normal-${sufex}` }];
-                        self.setState({
-                            tag: tag,
-                            checkedBeta: false,
-                            activeKey: 'normal' + sufex,
-                            hasbeta: false
-
-                        });
-                        self.changeTab(`normal-${sufex}`);
-                    });
-
-                    self.refs['success'].openDialog(_payload);
-                },
-                error: function () { }
-            });
-        });
-    }
     changeEnv(values) {
         this.targetEnvs = values;
         this.setState({
@@ -720,27 +549,28 @@ class ConfigEditor extends React.Component {
                             })} />
 
                         </FormItem>
+                        <FormItem label="Group:" {...formItemLayout}>
+                            <Input disabled={true} {...init('group', {
+                                rules: [{
+                                    required: true,
+                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.Home_application:')
+                                }, { validator: this.validateChart.bind(this) }]
+                            })} />
+                        </FormItem>
                         <FormItem label="" {...formItemLayout}>
                             <div>
                                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.more_advanced_options') : window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.group_is_not_empty')}</a>
                             </div>
                         </FormItem>
                         <div style={{ height: this.state.showmore ? 'auto' : '0', overflow: 'hidden' }}>
-                            <FormItem label="Group:" {...formItemLayout}>
-                                <Input disabled={true} {...init('group', {
-                                    rules: [{
-                                        required: true,
-                                        message: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.Home_application:')
-                                    }, { validator: this.validateChart.bind(this) }]
-                                })} />
-                            </FormItem>
+
                             <FormItem label={window.aliwareIntl.get('nacos.page.configeditor.Tags')} {...formItemLayout}>
                                 <Select size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
                                 </Select>
                             </FormItem>
 
                             <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.the_target_environment:')} {...formItemLayout}>
-                                <Input {...init('appName')} readOnly={this.inApp} />
+                                <Input {...init('appName')} readOnly={!!this.inApp} />
                             </FormItem>
                         </div>
 
@@ -754,17 +584,14 @@ class ConfigEditor extends React.Component {
                             <p>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.Esc_exit')}</p>
                             <p>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.release_beta')}</p>
                         </Balloon>:</span>} {...formItemLayout}>
-
                             <div style={{ clear: 'both', height: 300 }} id="container"></div>
                         </FormItem>
-                        {}
                         <FormItem {...formItemLayout} label="">
                             <div style={{ textAlign: 'right' }}>
-                                {activeKey === 'normal' ? '' : <Button type="primary" style={{ marginRight: 10 }} onClick={this.stopPublishConfig.bind(this, false)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.stop_beta')}</Button>}
                                 {activeKey === 'beta' ? <Button style={{ marginRight: 10 }} type="primary" onClick={this.openDiff.bind(this, true)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.release')}</Button> : ''}
                                 {activeKey === 'normal' ? <Button type="primary" disabled={this.state.hasbeta} style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, this.state.checkedBeta)}>{this.state.checkedBeta ? window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.release') : window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}</Button> : <Button type="primary" style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, false)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}</Button>}
 
-                                <Button type="light" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.')}</Button>
+                                <Button type="normal" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.')}</Button>
                             </div>
                         </FormItem>
                     </Form>
