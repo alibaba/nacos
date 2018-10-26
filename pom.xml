@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.3.0-rc1</version>
+    <version>0.3.0-RC1</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.3.0-rc1</tag>
+        <tag>nacos-all-0.3.0-RC1</tag>
     </scm>
 
     <mailingLists>
@@ -357,6 +357,11 @@
                     <value>true</value>
                 </property>
             </activation>
+
+            <properties>
+                <maven.javadoc.skip>false</maven.javadoc.skip>
+            </properties>
+
             <build>
                 <plugins>
                     <plugin>
@@ -374,6 +379,18 @@
                     </plugin>
                 </plugins>
             </build>
+
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>sona</id>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+                </snapshotRepository>
+                <repository>
+                    <id>sona</id>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
+                </repository>
+            </distributionManagement>
+
         </profile>
         <profile>
             <id>it-test</id>
