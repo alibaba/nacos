@@ -115,6 +115,20 @@ class NewNameSpace extends React.Component {
             });
         });
     }
+    
+    refreshNameSpace() {
+        setTimeout(() => {
+            window.request({
+                type: 'get',
+                url: `/nacos/v1/console/namespaces`,
+                success: res => {
+                    if (res.code === 200) {
+                        window.namespaceList = res.data;
+                    }
+                }
+            });
+        }, 2000);
+    }
 
     validateChart(rule, value, callback) {
         const chartReg = /[@#\$%\^&\*]+/g;
