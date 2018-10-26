@@ -42,7 +42,7 @@ public class LogUtils {
 
         // logger init
         LOG = LoggerFactory.getLogger("com.alibaba.nacos.client.naming");
-        LOG.setLevel(Level.INFO);
+        LOG.setLevel(Level.DEBUG);
         LOG.setAdditivity(false);
         LOG.activateAppenderWithSizeRolling("nacos", "naming.log", "UTF-8", JM_LOG_FILE_SIZE, JM_LOG_RETAIN_COUNT);
     }
