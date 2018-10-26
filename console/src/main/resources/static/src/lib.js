@@ -99,7 +99,7 @@ window.request.middleWare(config => {
 /**
  * 配置 monaco
  */
-window.require.config({ paths: { 'vs': '//midwayfe.oss-cn-shanghai.aliyuncs.com/monaco-editor/min/vs' } });
+window.require.config({ paths: { 'vs': process.env.NODE_ENV === 'development' ? 'js/vs' : 'public/js/vs' } });
 window.require.config({
     'vs/nls': {
         availableLanguages: {
