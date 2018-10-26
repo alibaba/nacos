@@ -2,6 +2,7 @@ import projectConfig from './config';
 import serviceConfig from './serviceMock';
 import moment from 'moment';
 import $ from 'jquery';
+import i18DocObj from './i18ndoc';
 
 /**
  * 获取cookie值
@@ -213,7 +214,7 @@ window.aliwareIntl = (function (window) {
      * @param {String} local 语言信息
      */
     aliwareI18n.prototype.changeLanguage = function (local) {
-        this.nowData = window[`i18n_${local}_doc`] || (window.i18ndoc && window.i18ndoc[local]) || {}
+        this.nowData = i18DocObj[local] || {}
     }
     /**
      * 数字国际化
@@ -279,7 +280,7 @@ window.aliwareIntl = (function (window) {
 
     return new aliwareI18n({
         currentLocal: `${aliwareLocal}`,
-        locals: window[`i18n_${aliwareLocal}_doc`] || window[`i18n_en_doc`] || (window.i18ndoc && window.i18ndoc[aliwareI18n.prototype.currentLanguageCode]) || {}
+        locals: i18DocObj[aliwareI18n.prototype.currentLanguageCode] || i18DocObj["en-us"] || i18DocObj["zh-cn"] || {}
     });
 })(window);
 /**

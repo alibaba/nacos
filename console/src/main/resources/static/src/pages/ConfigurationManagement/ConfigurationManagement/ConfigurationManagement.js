@@ -7,7 +7,7 @@ import CloneDialog from '../../../components/CloneDialog' ;
 import ImportDialog from '../../../components/ImportDialog' ;
 import ExportDialog from '../../../components/ExportDialog' ;
 import './index.less';
-import { Balloon, Button, Checkbox, Collapse, Dialog, Dropdown, Field, Form, Icon, Input, Loading, Menu, Message, Pagination, Select, Slider, Table } from '@alifd/next';
+import { Balloon, Button, Checkbox, Collapse, Dialog, Dropdown, Field, Form, Icon, Input, Loading, Menu, Pagination, Select, Slider, Table } from '@alifd/next';
 const Accordion = Collapse; 
 const FormItem = Form.Item; 
 const { Panel } = Collapse; 
