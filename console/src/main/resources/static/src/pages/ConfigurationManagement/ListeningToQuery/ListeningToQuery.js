@@ -141,7 +141,7 @@ class ListeningToQuery extends React.Component {
                     <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
                         <Col span="24">
                             <Form inline field={this.field}>
-                                <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_dimension')} initValue="0">
+                                <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_dimension')}>
                                     <Select dataSource={selectDataSource} style={{ width: 200 }} {...this.init('type')} language={window.aliwareIntl.currentLanguageCode} />
                                 </FormItem>
                                 <FormItem label="Data ID:" style={{
