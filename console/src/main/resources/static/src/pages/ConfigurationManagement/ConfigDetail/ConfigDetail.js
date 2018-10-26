@@ -138,15 +138,14 @@ class ConfigDetail extends React.Component {
 
                         <FormItem label={"Data ID:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('dataId')} />
-                            <div style={{ marginTop: 10 }}>
-                                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
-                            </div>
                         </FormItem>
-
-                        {this.state.showmore ? <div>
-                            <FormItem label={"Group:"} required {...formItemLayout}>
+                        <FormItem label={"Group:"} required {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('group')} />
-                            </FormItem>
+                        </FormItem>
+                        <div style={{ marginTop: 10 }}>
+                            <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
+                        </div>
+                        {this.state.showmore ? <div>
                             <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.home')} {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('appName')} />
                             </FormItem>

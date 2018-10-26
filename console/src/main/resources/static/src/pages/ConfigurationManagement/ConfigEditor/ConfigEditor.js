@@ -536,20 +536,21 @@ class ConfigEditor extends React.Component {
                             })} />
 
                         </FormItem>
+                        <FormItem label="Group:" {...formItemLayout}>
+                            <Input disabled={true} {...init('group', {
+                                rules: [{
+                                    required: true,
+                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.Home_application:')
+                                }, { validator: this.validateChart.bind(this) }]
+                            })} />
+                        </FormItem>
                         <FormItem label="" {...formItemLayout}>
                             <div>
                                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.more_advanced_options') : window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.group_is_not_empty')}</a>
                             </div>
                         </FormItem>
                         <div style={{ height: this.state.showmore ? 'auto' : '0', overflow: 'hidden' }}>
-                            <FormItem label="Group:" {...formItemLayout}>
-                                <Input disabled={true} {...init('group', {
-                                    rules: [{
-                                        required: true,
-                                        message: window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.Home_application:')
-                                    }, { validator: this.validateChart.bind(this) }]
-                                })} />
-                            </FormItem>
+                            
                             <FormItem label={window.aliwareIntl.get('nacos.page.configeditor.Tags')} {...formItemLayout}>
                                 <Select size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
                                 </Select>
@@ -570,7 +571,6 @@ class ConfigEditor extends React.Component {
                             <p>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.Esc_exit')}</p>
                             <p>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.release_beta')}</p>
                         </Balloon>:</span>} {...formItemLayout}>
-
                             <div style={{ clear: 'both', height: 300 }} id="container"></div>
                         </FormItem>
                         {}
