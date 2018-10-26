@@ -107,7 +107,7 @@ class ConfigEditor extends React.Component {
         this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
         window.hashHistory.push(`${url}?serverId=${this.serverId || ''}&dataId=${this.dataId}&group=${this.group}&namespace=${this.tenant}`);
     }
-    
+
     openLoading() {
         this.setState({
             loading: true
@@ -356,7 +356,7 @@ class ConfigEditor extends React.Component {
             callback();
         }
     }
-    
+
     changeEnv(values) {
         this.targetEnvs = values;
         this.setState({
@@ -550,14 +550,14 @@ class ConfigEditor extends React.Component {
                             </div>
                         </FormItem>
                         <div style={{ height: this.state.showmore ? 'auto' : '0', overflow: 'hidden' }}>
-                            
+
                             <FormItem label={window.aliwareIntl.get('nacos.page.configeditor.Tags')} {...formItemLayout}>
                                 <Select size="medium" hasArrow style={{ width: '100%' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
                                 </Select>
                             </FormItem>
 
                             <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.the_target_environment:')} {...formItemLayout}>
-                                <Input {...init('appName')} readOnly={this.inApp} />
+                                <Input {...init('appName')} readOnly={!!this.inApp} />
                             </FormItem>
                         </div>
 
@@ -573,13 +573,12 @@ class ConfigEditor extends React.Component {
                         </Balloon>:</span>} {...formItemLayout}>
                             <div style={{ clear: 'both', height: 300 }} id="container"></div>
                         </FormItem>
-                        {}
                         <FormItem {...formItemLayout} label="">
                             <div style={{ textAlign: 'right' }}>
                                 {activeKey === 'beta' ? <Button style={{ marginRight: 10 }} type="primary" onClick={this.openDiff.bind(this, true)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.release')}</Button> : ''}
                                 {activeKey === 'normal' ? <Button type="primary" disabled={this.state.hasbeta} style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, this.state.checkedBeta)}>{this.state.checkedBeta ? window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.release') : window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}</Button> : <Button type="primary" style={{ marginRight: 10 }} onClick={this.openDiff.bind(this, false)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}</Button>}
 
-                                <Button type="light" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.')}</Button>
+                                <Button type="normal" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configeditor.')}</Button>
                             </div>
                         </FormItem>
                     </Form>

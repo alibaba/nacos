@@ -111,10 +111,10 @@ class ConfigRollback extends React.Component {
 
                 let url = `/nacos/v1/cs/configs`;
                 if (self.opType.trim() === 'I') {
-                	url = `/nacos/v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
-                	postData = {};
+                    url = `/nacos/v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+                    postData = {};
                 }
-                
+
                 // ajax
                 window.request({
                     type: type,
@@ -171,7 +171,7 @@ class ConfigRollback extends React.Component {
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
                         <Button type="primary" style={{ marginRight: 10 }} onClick={this.onOpenConfirm.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback')}</Button>
-                        <Button type="light" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.return')}</Button>
+                        <Button type="normal" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.return')}</Button>
                     </FormItem>
 
                 </Form>

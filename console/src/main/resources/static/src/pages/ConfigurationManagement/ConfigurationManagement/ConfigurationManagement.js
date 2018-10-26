@@ -11,7 +11,6 @@ import { Balloon, Button, Checkbox, Collapse, Dialog, Dropdown, Field, Form, Ico
 const Accordion = Collapse; 
 const FormItem = Form.Item; 
 const { Panel } = Collapse; 
-const { AutoComplete: Combobox } = Select;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 const DashboardCard = ({ data, height }) => <div>
@@ -601,8 +600,8 @@ class ConfigurationManagement extends React.Component {
                             </FormItem>	
         
                             <FormItem label={"Group:"}>	
-                                <Combobox style={{ width: 200 }} size={"medium"} hasArrow placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>	
-                                </Combobox>	
+                                <Select.AutoComplete style={{ width: 200 }} size={"medium"} placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.fuzzyg')} dataSource={this.state.groups} value={this.state.group} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>	
+                                </Select.AutoComplete>	
                             </FormItem>	
                             <FormItem label={""}>	
                                 <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)} data-spm-click={"gostr=/aliyun;locaid=dashsearch"}>{window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.query')}</Button>	
