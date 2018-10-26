@@ -167,82 +167,7 @@ class ConfigurationManagement extends React.Component {
             return false;
         }
     }
-    getGroupsList() {
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数	
-        this.serverId = window.getParams('serverId') || '';
-        window.request({
-
-            type: 'get',
-            beforeSend: function () {},
-            url: `/diamond-ops/configList/groups_by_tenant/serverId/${this.serverId}/tenant/${this.tenant}`,
-            success: res => {
-                console.log("res:", res);
-                if (res.code === 200) {
-                    let data = res.data;
-                    let groups = [];
-                    for (let i = 0; i < data.length; i++) {
-                        groups.push({
-                            label: data[i],
-                            value: data[i]
-                        });
-                    }
-                    this.setState({
-                        groups: groups
-                    });
-                }
-            }
-        });
-    }
-
-    getTagLst() {
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数	
-        this.serverId = window.getParams('serverId') || '';
-        window.request({
-
-            type: 'get',
-            beforeSend: function () {},
-            url: `/diamond-ops/configList/tags/serverId/${this.serverId}/tenant/${this.tenant}`,
-            success: res => {
-                console.log("res:", res);
-                if (res.code === 200) {
-                    let data = res.data;
-                    let tagLst = [];
-                    for (let i = 0; i < data.length; i++) {
-                        tagLst.push({
-                            label: data[i],
-                            value: data[i]
-                        });
-                    }
-                    this.setState({
-                        tagLst: tagLst
-                    });
-                }
-            }
-        });
-    }
-
-    getGroup() {
-        window.request({
-            type: 'get',
-            beforeSend: function () {},
-            url: '/diamond-ops/service/group',
-            success: res => {
-                if (res.code === 200) {
-                    let data = res.data;
-                    let groupList = [];
-                    for (let i = 0; i < data.length; i++) {
-                        groupList.push({
-                            label: data[i],
-                            value: data[i]
-                        });
-                    }
-                    this.setState({
-                        groupList: groupList
-                    });
-                }
-            }
-        });
-    }
+   
     /**	
      * 回车事件	
      */
@@ -295,8 +220,6 @@ class ConfigurationManagement extends React.Component {
             });
         }
         this.getData();
-        // this.getGroupsList();
-        // this.getTagLst();
     }
     getData(pageNo = 1, clearSelect = true) {
         let self = this;
@@ -312,7 +235,6 @@ class ConfigurationManagement extends React.Component {
        
         window.request({
             url: `${urlPrefix}&dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
-            //            url: `/diamond-ops/configList/serverId/${this.serverId}?dataId=${this.dataId}&group=${this.group}&appName=${this.appName}&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
             beforeSend: function () {
                 self.openLoading();
             },
@@ -523,18 +445,6 @@ class ConfigurationManagement extends React.Component {
         window.setParam('dataId', this.dataId);
         window.setParam('group', this.group);
         window.setParam('appName', this.appName);
-        // if (this.dataId !== this.preDataId) {	
-        //     window.setParam('dataId', this.dataId);	
-        //     this.preDataId = this.dataId;	
-        // }	
-        // if (this.group !== this.preGroup) {	
-        //     window.setParam('group', this.preGroup);	
-        //     this.preGroup = this.group;	
-        // }	
-        // if (this.appName !== this.preAppName) {	
-        //     window.setParam('appName', this.appName);	
-        //     this.preAppName = this.appName;	
-        // }	
         this.getData();
     }
     resetAll() {
@@ -578,248 +488,7 @@ class ConfigurationManagement extends React.Component {
         this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数	
         window.hashHistory.push(`/configsync?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${record.group}&namespace=${this.tenant}`);
     }
-    doBatch(key) {
-        switch (key) {
-            case 'clone':
-                this.checkForClone();
-                break;
-            case 'delete':
-                this.doBatchDelete();
-                break;
-            case 'import':
-                this.doImport();
-                break;
-            default:
-            case 'export':
-                this.checkForExport();
-                break;
-        }
-    }
-    checkForClone() {
-        let self = this;
-        if (this.state.selectedRecord.length < 1) {
-            Dialog.alert({
-                title: window.aliwareIntl.get('nacos.page.configurationManagement.Configuration_cloning0'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{window.aliwareIntl.get('nacos.page.configurationManagement.select_need_to_clone_the_configuration_items1')}</div>,
-                // content: <div ><span style={{fontSize:18,color:"#373D41"}}>您未选择配置项，确定按以下条件克隆所有数据？</span><p>DataId:2321, Group:testgroup, 标签:tag, 归属应用:testapp</p></div>,	
-                language: window.aliwareIntl.currentLanguageCode
-                // onOk: () => {	
-                //	
-                // }	
-            });
-            return;
-        }
-        let data = [];
-        this.state.selectedRecord.forEach(record => {
-            data.push({ dataId: record.dataId, group: record.group });
-        });
-        let reqData = {
-            policy: 'abort',
-            tenantFrom: this.tenant,
-            tenantTo: '',
-            dataId: this.dataId,
-            group: this.group,
-            appName: this.appName,
-            configTags: this.state.config_tags,
-            data: data
-        };
-        window.request({
-            type: 'post',
-            contentType: 'application/json',
-            url: `/diamond-ops/batch/checkForClone/serverId/${this.serverId}`,
-            data: JSON.stringify(reqData),
-            beforeSend: function () {
-                self.openLoading();
-            },
-            complete: function () {
-                self.closeLoading();
-            },
-            success: res => {
-                if (res.code === 200) {
-                    let payload = {};
-                    payload.serverId = this.serverId;
-                    payload.tenantFrom = { id: this.tenant, name: this.state.nownamespace_name };
-                    payload.dataId = this.dataId;
-                    payload.group = this.group;
-                    payload.appName = this.appName;
-                    payload.configTags = this.state.config_tags;
-                    payload.records = this.state.selectedRecord;
-                    payload.total = res.data.total;
-                    payload.checkData = reqData;
-                    this.refs["cloneDialog"].openDialog(payload, this.doClone.bind(this));
-                } else {
-                    Dialog.alert({
-                        language: window.pageLanguage || 'zh-cn',
-                        title: window.aliwareIntl.get('nacos.page.configurationManagement.Cloning_check_fails'),
-                        content: res.message
-                    });
-                }
-            }
-        });
-    }
-    doClone(payload, policy) {
-        let self = this;
-        window.request({
-            type: 'post',
-            contentType: 'application/json',
-            url: `/diamond-ops/batch/clone/serverId/${this.serverId}`,
-            data: JSON.stringify(payload),
-            beforeSend: function () {
-                self.openLoading();
-            },
-            complete: function () {
-                self.closeLoading();
-            },
-            success: res => {
-                if (res.code === 200) {
-                    let msg = window.aliwareIntl.get('nacos.page.configurationManagement.process_is_successful,_the_cloned') + res.data.processedNum + window.aliwareIntl.get('nacos.page.configurationManagement.configuration');
-                    if (res.data.duplicatedNum > 0) {
-                        msg += window.aliwareIntl.get('nacos.page.configurationManagement.,_wherein') + res.data.duplicatedNum + window.aliwareIntl.get('nacos.page.configurationManagement.items_for') + policy;
-                    }
-                    Message.success(msg);
-                } else {
-                    Dialog.alert({
-                        language: window.pageLanguage || 'zh-cn',
-                        title: window.aliwareIntl.get('nacos.page.configurationManagement.Clone_failed'),
-                        content: self.getBatchFailedContent(res)
-                    });
-                }
-            }
-        });
-    }
-    doBatchDelete() {
-        let self = this;
-        if (this.state.selectedRecord.length < 1) {
-            Dialog.alert({
-                title: window.aliwareIntl.get('nacos.page.configurationManagement.bulk_delete'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{window.aliwareIntl.get('nacos.page.configurationManagement.please_select_the_required_delete_the_configuration_item')}</div>,
-                language: window.aliwareIntl.currentLanguageCode
-            });
-            return;
-        }
-
-        Dialog.confirm({
-            language: window.pageLanguage || 'zh-cn',
-            title: window.aliwareIntl.get('nacos.page.configurationManagement.bulk_delete'),
-            content: <div style={{ fontSize: 18, color: "#373D41" }}>	
-                {window.aliwareIntl.get('nacos.page.configurationManagement.whether_to_delete_the_selected')}<span style={{ color: '#33cde5', margin: 5 }}>{this.state.selectedRecord.length}</span>{window.aliwareIntl.get('nacos.page.configurationManagement.configuration_item?')}	
-                </div>,
-            onOk: () => {
-                let payload = {
-                    data: []
-                };
-                this.state.selectedRecord.forEach(value => {
-                    payload.data.push({
-                        dataId: value.dataId,
-                        group: value.group
-                    });
-                });
-                window.request({
-                    type: 'post',
-                    contentType: 'application/json',
-                    url: `/diamond-ops/batch/delete/serverId/${this.serverId}/tenant/${this.tenant}`,
-                    data: JSON.stringify(payload),
-                    beforeSend: function () {
-                        self.openLoading();
-                    },
-                    complete: function () {
-                        self.closeLoading();
-                    },
-                    success: res => {
-                        if (res.code === 200) {
-                            Message.success(window.aliwareIntl.get('nacos.page.configurationManagement._The_process_is_successful,_delete_the') + res.data.processedNum + window.aliwareIntl.get('nacos.page.configurationManagement.configuration'));
-                        } else {
-                            Dialog.alert({
-                                language: window.pageLanguage || 'zh-cn',
-                                title: window.aliwareIntl.get('nacos.page.configurationManagement.Delete_failed'),
-                                content: self.getBatchFailedContent(res)
-                            });
-                        }
-                        self.getData();
-                    }
-                });
-            }
-        });
-    }
-
-    doImport() {
-        let payload = {
-            tenant: { id: this.tenant, name: this.state.nownamespace_name },
-            serverId: this.serverId
-        };
-        this.refs["importDialog"].openDialog(payload, this.showImportResult.bind(this));
-    }
-    showImportResult(res, policy) {
-        let self = this;
-        if (res.code === 200) {
-            let msg = window.aliwareIntl.get('nacos.page.configurationManagement.process_is_successful,_import_the') + res.data.processedNum + window.aliwareIntl.get('nacos.page.configurationManagement.configuration');
-            if (res.data.duplicatedNum > 0) {
-                msg += window.aliwareIntl.get('nacos.page.configurationManagement.,_wherein') + res.data.duplicatedNum + window.aliwareIntl.get('nacos.page.configurationManagement.items_for') + policy;
-            }
-            Message.success(msg);
-        } else {
-            Dialog.alert({
-                language: window.pageLanguage || 'zh-cn',
-                title: window.aliwareIntl.get('nacos.page.configurationManagement.import_failed'),
-                content: self.getBatchFailedContent(res)
-            });
-        }
-        self.getData();
-    }
-    checkForExport() {
-        if (this.state.selectedRecord.length < 1) {
-            Dialog.alert({
-                title: window.aliwareIntl.get('nacos.page.configurationManagement.configuration_export9'),
-                content: <div style={{ fontSize: 18, color: "#373D41" }}>{window.aliwareIntl.get('nacos.page.configurationManagement.please_choose_the_required_export_configuration_items10')}</div>,
-                language: window.aliwareIntl.currentLanguageCode
-            });
-            return;
-        }
-        let data = [];
-        let self = this;
-        this.state.selectedRecord.forEach(record => {
-            data.push({ dataId: record.dataId, group: record.group });
-        });
-        let reqData = {
-            dataId: this.dataId,
-            group: this.group,
-            appName: this.appName,
-            configTags: this.state.config_tags,
-            data: data
-        };
-        window.request({
-            type: 'post',
-            contentType: 'application/json',
-            url: `/diamond-ops/batch/checkForExport/serverId/${this.serverId}/tenant/${this.tenant}`,
-            data: JSON.stringify(reqData),
-            beforeSend: function () {
-                self.openLoading();
-            },
-            complete: function () {
-                self.closeLoading();
-            },
-            success: res => {
-                if (res.code === 200) {
-                    let payload = {};
-                    payload.serverId = this.serverId;
-                    payload.tenant = { id: this.tenant, name: this.state.nownamespace_name };
-                    payload.dataId = this.dataId;
-                    payload.group = this.group;
-                    payload.appName = this.appName;
-                    payload.configTags = this.state.config_tags;
-                    payload.records = this.state.selectedRecord;
-                    payload.total = res.data.total;
-                    this.refs["exportDialog"].openDialog(payload);
-                } else {
-                    Dialog.alert({
-                        language: window.pageLanguage || 'zh-cn',
-                        title: window.aliwareIntl.get('nacos.page.configurationManagement.export_check_failed'),
-                        content: <div style={{ fontSize: 18, color: "#373D41" }}>{res.message}</div>
-                    });
-                }
-            }
-        });
-    }
+    
     onSelectChange(...args) {
         let record = [];
         console.log(args, 'args');

@@ -380,12 +380,16 @@ export default class MainLayout extends React.Component {
                                             'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
                                         )}
                                     >
-                                        {window.aliwareIntl.get(
-                                            'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
-                                        )}
-                                        {window.aliwareIntl.get(
-                                            'com.alibaba.nacos.layout.noenv.nacosversion'
-                                        )}
+                                        <span>
+                                            {window.aliwareIntl.get(
+                                                'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
+                                            )}
+                                        </span>
+                                        <span style={{ marginLeft: 5 }}>
+                                            {window.aliwareIntl.get(
+                                                'com.alibaba.nacos.layout.noenv.nacosversion'
+                                            )}
+                                        </span>
                                     </div>
                                 )}
 
