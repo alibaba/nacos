@@ -29,6 +29,7 @@ public class SwitchEntry {
     public static final String PUSH_VERSION = "pushVersion";
     public static final String CLIENT_JAVA = "java";
     public static final String CLIENT_C = "c";
+    public static final String CLIENT_GO = "go";
     public static final String CLIENT_PYTHON = "python";
     public static final String CLIENT_TENGINE = "python";
     public static final String TRAFFIC_SCHEDULING_VERSION = "trafficSchedulingVersion";

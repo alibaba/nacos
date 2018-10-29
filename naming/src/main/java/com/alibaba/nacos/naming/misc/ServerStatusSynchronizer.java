@@ -20,9 +20,7 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 
 import java.net.HttpURLConnection;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,7 +50,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                        Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "failed to requerst serverStatus, remote server: " + serverIP);
+                        Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "failed to request serverStatus, remote server: " + serverIP);
 
                         return 1;
                     }
@@ -60,7 +58,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 }
             });
        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "failed to requerst serverStatus, remote server: " + serverIP, e);
+            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "failed to request serverStatus, remote server: " + serverIP, e);
         }
     }
 

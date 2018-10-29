@@ -33,8 +33,8 @@ public class ConfigExample {
 
 	public static void main(String[] args) throws NacosException, InterruptedException {
 		String serverAddr = "localhost";
-		String dataId = "testDataId";
-		String group = "testGroup";
+		String dataId = "test";
+		String group = "DEFAULT_GROUP";
 		Properties properties = new Properties();
 		properties.put("serverAddr", serverAddr);
 		ConfigService configService = NacosFactory.createConfigService(properties);
@@ -65,7 +65,7 @@ public class ConfigExample {
 
 		content = configService.getConfig(dataId, group, 5000);
 		System.out.println(content);
-		Thread.sleep(3000);
+		Thread.sleep(300000);
 
 	}
 }

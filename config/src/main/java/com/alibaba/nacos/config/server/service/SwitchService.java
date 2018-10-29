@@ -15,18 +15,17 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.stereotype.Service;
-
 import com.alibaba.nacos.config.server.utils.LogUtil;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Switch
@@ -52,7 +51,7 @@ public class SwitchService {
             rtn =  value != null ? Boolean.valueOf(value).booleanValue() : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
-            LogUtil.fatalLog.error("corrupt switch value {}={}", new Object[]{key, switches.get(key)});
+            LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
         }
         return rtn;
     }
@@ -64,7 +63,7 @@ public class SwitchService {
             rtn =  status != null ? Integer.parseInt(status) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
-            LogUtil.fatalLog.error("corrupt switch value {}={}", new Object[]{key, switches.get(key)});
+            LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
         }
         return rtn;
     }

@@ -29,13 +29,12 @@ import com.alibaba.nacos.config.server.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.SystemConfig;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 
 /**

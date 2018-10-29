@@ -55,7 +55,7 @@ public class PerformanceLoggerThread {
     }
 
     private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("HEALTH-CHECK", "health check is " + Switch.isHealthCheckEnabled());
+        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is " + Switch.isHealthCheckEnabled());
     }
 
     class HealthCheckSwitchTask implements Runnable {
@@ -135,8 +135,5 @@ public class PerformanceLoggerThread {
             avgCost = totalCost / size;
         }
         return avgCost;
-    }
-
-    public static void main(String[] args) {
     }
 }

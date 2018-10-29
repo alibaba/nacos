@@ -17,7 +17,7 @@ package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.core.Domain;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
@@ -36,7 +36,7 @@ import java.util.Map;
  */
 public class DiskCache {
 
-    public static void write(Domain dom, String dir) {
+    public static void write(ServiceInfo dom, String dir) {
 
         try {
             makeSureCacheDirExists(dir);
@@ -72,8 +72,8 @@ public class DiskCache {
         return lineSeparator;
     }
 
-    public static Map<String, Domain> read(String cacheDir) {
-        Map<String, Domain> domMap = new HashMap<String, Domain>(16);
+    public static Map<String, ServiceInfo> read(String cacheDir) {
+        Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
 
         BufferedReader reader = null;
         try {
@@ -87,12 +87,12 @@ public class DiskCache {
                     continue;
                 }
 
-                if (!(file.getName().endsWith(Domain.SPLITER + "meta") || file.getName().endsWith(Domain.SPLITER + "special-url"))) {
-                    Domain dom = new Domain(file.getName());
+                if (!(file.getName().endsWith(ServiceInfo.SPLITER + "meta") || file.getName().endsWith(ServiceInfo.SPLITER + "special-url"))) {
+                    ServiceInfo dom = new ServiceInfo(file.getName());
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);
 
-                    Domain newFormat = null;
+                    ServiceInfo newFormat = null;
 
                     try {
                         String dataString = ConcurrentDiskUtil.getFileContent(file, Charset.defaultCharset().toString());
@@ -105,7 +105,7 @@ public class DiskCache {
                                     continue;
                                 }
 
-                                newFormat = JSON.parseObject(json, Domain.class);
+                                newFormat = JSON.parseObject(json, ServiceInfo.class);
 
                                 if (StringUtils.isEmpty(newFormat.getName())) {
                                     ips.add(JSON.parseObject(json, Instance.class));

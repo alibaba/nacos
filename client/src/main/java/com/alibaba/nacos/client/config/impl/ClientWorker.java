@@ -15,30 +15,9 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import static com.alibaba.nacos.client.config.common.Constants.LINE_SEPARATOR;
-import static com.alibaba.nacos.client.config.common.Constants.WORD_SEPARATOR;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.common.Constants;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
@@ -50,8 +29,18 @@ import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URLDecoder;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
 /**
  * Longpulling
