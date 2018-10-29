@@ -13,8 +13,9 @@
 
 import React from 'react';
 import './index.less';
+import { getParams, aliwareIntl } from '../../globalLib';
 import { Dialog, Loading, Tab } from '@alifd/next';
-const TabPane = Tab.Item; 
+const TabPane = Tab.Item;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class ShowCodeing extends React.Component {
@@ -57,7 +58,7 @@ public class ConfigController {
         return useLocalCache;
     }
 }`;
-     this.sprigcloud_code = `// Refer to document:  https://github.com/nacos-group/nacos-examples/tree/master/nacos-spring-cloud-example/nacos-spring-cloud-config-example
+        this.sprigcloud_code = `// Refer to document:  https://github.com/nacos-group/nacos-examples/tree/master/nacos-spring-cloud-example/nacos-spring-cloud-config-example
 package com.alibaba.nacos.example.spring.cloud.controller;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -80,7 +81,7 @@ public class ConfigController {
 }`;
     }
 
-    componentDidMount() {}
+    componentDidMount() { }
     openLoading() {
         this.setState({
             loading: true
@@ -93,7 +94,7 @@ public class ConfigController {
     }
 
     getData() {
-        let namespace = window.getParams('namespace'); //获取ak,sk
+        let namespace = getParams('namespace'); //获取ak,sk
         let obj = {
             group: this.record.group || '',
             dataId: this.record.dataId || '',
@@ -178,7 +179,7 @@ public class ConfigExample {
     }
 
     getNodejsCode(data) {
-       return `TODO`;
+        return `TODO`;
     }
 
     getCppCode(data) {
@@ -190,7 +191,7 @@ public class ConfigExample {
     }
 
     getPythonCode(data) {
-    	return `TODO`;
+        return `TODO`;
     }
 
     openDialog(record) {
@@ -250,28 +251,28 @@ public class ConfigExample {
         const footer = <div></div>;
         return (
             <div>
-                <Dialog title={window.aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.Sample_code')} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)} language={window.aliwareIntl.currentLanguageCode}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.Sample_code')} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
                     <div style={{ height: 500 }}>
-                        <Loading tip={window.aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.loading')} style={{ width: '100%' }} visible={this.state.loading}>
+                        <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.loading')} style={{ width: '100%' }} visible={this.state.loading}>
                             <Tab shape={'text'} style={{ height: 40, paddingBottom: 10 }}>
                                 <TabPane title={'Java'} key={1} onClick={this.changeTab.bind(this, 'commoneditor1', this.defaultCode)}>
 
                                 </TabPane>
                                 <TabPane title={'Spring Boot'} key={2} onClick={this.changeTab.bind(this, 'commoneditor2', this.sprigboot_code)}>
                                 </TabPane>
-                                
+
                                 <TabPane title={'Spring Cloud'} key={21} onClick={this.changeTab.bind(this, 'commoneditor21', this.sprigcloud_code)}>
                                 </TabPane>
-                                
+
                                 <TabPane title={'Node.js'} key={3} onClick={this.changeTab.bind(this, 'commoneditor3', this.nodejsCode)}>
                                 </TabPane>
-                                
+
                                 <TabPane title={'C++'} key={4} onClick={this.changeTab.bind(this, 'commoneditor4', this.cppCode)}>
                                 </TabPane>
 
                                 <TabPane title={'Shell'} key={5} onClick={this.changeTab.bind(this, 'commoneditor5', this.shellCode)}>
                                 </TabPane>
-                                
+
                                 <TabPane title={'Python'} key={6} onClick={this.changeTab.bind(this, 'commoneditor6', this.pythonCode)}>
                                 </TabPane>
                                 {}

@@ -11,9 +11,10 @@
  * limitations under the License.
  */
 
-import React from 'react'; 
+import React from 'react';
 import { Button, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
-import RegionGroup from '../../../components/RegionGroup' ;
+import RegionGroup from '../../../components/RegionGroup';
+import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import './index.less';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
@@ -22,14 +23,14 @@ class HistoryRollback extends React.Component {
         super(props);
 
         this.field = new Field(this);
-        this.appName = window.getParams('appName') || '';
+        this.appName = getParams('appName') || '';
         this.preAppName = this.appName;
-        this.group = window.getParams('group') || '';
+        this.group = getParams('group') || '';
         this.preGroup = this.group;
 
-        this.dataId = window.getParams('dataId') || '';
+        this.dataId = getParams('dataId') || '';
         this.preDataId = this.dataId;
-        this.serverId = window.getParams('serverId') || '';
+        this.serverId = getParams('serverId') || '';
         this.state = {
             value: "",
             visible: false,
@@ -52,7 +53,7 @@ class HistoryRollback extends React.Component {
             appName: this.appName || '',
             serverId: this.serverId || ''
         };
-        window.setParams(obj);
+        setParams(obj);
     }
 
     componentDidMount() {
@@ -87,9 +88,9 @@ class HistoryRollback extends React.Component {
     componentWillUnMount() {
         window.removeEventListener('keydown', this.keyDownSearch.bind(this));
     }
-    onSearch() {}
+    onSearch() { }
 
-    onChange() {}
+    onChange() { }
     cleanAndGetData(needclean = false) {
         if (needclean) {
             this.dataId = '';
@@ -98,7 +99,7 @@ class HistoryRollback extends React.Component {
                 group: '',
                 dataId: ''
             });
-            window.setParams({
+            setParams({
                 group: '',
                 dataId: ''
             });
@@ -108,9 +109,9 @@ class HistoryRollback extends React.Component {
     }
     getData(pageNo = 1) {
         let self = this;
-        this.serverId = window.getParams('serverId') || '';
-        if(!this.dataId) return false;
-        window.request({
+        this.serverId = getParams('serverId') || '';
+        if (!this.dataId) return false;
+        request({
             beforeSend: function () {
                 self.openLoading();
             },
@@ -129,12 +130,12 @@ class HistoryRollback extends React.Component {
             }
         });
     }
-    showMore() {}
+    showMore() { }
     renderCol(value, index, record) {
         return <div>
-            <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.details')}</a>
+            <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.details')}</a>
             <span style={{ marginRight: 5 }}>|</span>
-            <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>{window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.rollback')}</a>
+            <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.rollback')}</a>
         </div>;
     }
     changePage(value) {
@@ -143,7 +144,7 @@ class HistoryRollback extends React.Component {
         });
         this.getData(value);
     }
-    onInputUpdate() {}
+    onInputUpdate() { }
     chooseFieldChange(fieldValue) {
 
         this.setState({
@@ -195,11 +196,11 @@ class HistoryRollback extends React.Component {
     }
     selectAll() {
         if (this.dataId !== this.preDataId) {
-            window.setParam('dataId', this.dataId);
+            setParams('dataId', this.dataId);
             this.preDataId = this.dataId;
         }
         if (this.group !== this.preGroup) {
-            window.setParam('group', this.preGroup);
+            setParams('group', this.preGroup);
             this.preGroup = this.group;
         }
         this.getData();
@@ -215,7 +216,7 @@ class HistoryRollback extends React.Component {
             showAppName: false,
             showgroup: false
         });
-        window.setParams({
+        setParams({
             group: '',
             dataId: ''
         });
@@ -224,20 +225,20 @@ class HistoryRollback extends React.Component {
         console.log(value);
     }
     renderLastTime(value, index, record) {
-        return window.aliwareIntl.intlTimeFormat(record.lastModifiedTime);
+        return aliwareIntl.intlTimeFormat(record.lastModifiedTime);
     }
     goDetail(record) {
-        this.serverId = window.getParams('serverId') || 'center';
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
-        window.hashHistory.push(`/historyDetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${record.group}&nid=${record.id}&namespace=${this.tenant}`);
+        this.serverId = getParams('serverId') || 'center';
+        this.tenant = getParams('namespace') || ''; //为当前实例保存tenant参数
+        this.props.history.push(`/historyDetail?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${record.group}&nid=${record.id}&namespace=${this.tenant}`);
     }
     goRollBack(record) {
-        this.serverId = window.getParams('serverId') || 'center';
-        this.tenant = window.getParams('namespace') || ''; //为当前实例保存tenant参数
-        window.hashHistory.push(`/configRollback?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${record.group}&nid=${record.id}&namespace=${this.tenant}&nid=${record.id}`);
+        this.serverId = getParams('serverId') || 'center';
+        this.tenant = getParams('namespace') || ''; //为当前实例保存tenant参数
+        this.props.history.push(`/configRollback?serverId=${this.serverId || ''}&dataId=${record.dataId}&group=${record.group}&nid=${record.id}&namespace=${this.tenant}&nid=${record.id}`);
     }
     render() {
-        const pubnodedata = window.aliwareIntl.get('pubnodata');
+        const pubnodedata = aliwareIntl.get('pubnodata');
 
         const locale = {
             empty: pubnodedata
@@ -245,27 +246,27 @@ class HistoryRollback extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape="flower" style={{ position: 'relative', width: "100%" }} visible={this.state.loading} tip="Loading..." color="#333">
-                <RegionGroup left={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.to_configure')} namespaceCallBack={this.cleanAndGetData.bind(this)} />
+                    <RegionGroup left={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.to_configure')} namespaceCallBack={this.cleanAndGetData.bind(this)} />
                     {/**<div className={'namespacewrapper'}>
                               <NameSpaceList namespaceCallBack={this.cleanAndGetData.bind(this)} />
                            </div>**/}
-                    
+
                     <div>
                         <Form inline>
 
                             <Form.Item label="Data ID:">
-                                <Input htmlType="text" placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')} 
-                                style={{ width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
+                                <Input htmlType="text" placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')}
+                                    style={{ width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
                             </Form.Item>
                             <Form.Item label="Group:">
-                                <Input placeholder={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')} id="userName" name="userName" value={this.state.group} 
-                                style={{ width: 200 }} onChange={this.getGroup.bind(this)} />
+                                <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')} id="userName" name="userName" value={this.state.group}
+                                    style={{ width: 200 }} onChange={this.getGroup.bind(this)} />
                             </Form.Item>
 
                             <Form.Item label="">
                                 <Button type="primary" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)}>
-                                {window.aliwareIntl.get('com.alibaba.nacos.page.historyrollback.query')}</Button>
-                              {} 
+                                    {aliwareIntl.get('com.alibaba.nacos.page.historyrollback.query')}</Button>
+                                {}
 
                             </Form.Item>
 
@@ -275,21 +276,21 @@ class HistoryRollback extends React.Component {
                     </div>
                     <div style={{ position: 'relative', width: '100%', overflow: 'hidden', height: '40px' }}>
 
-                        <h3 style={{ height: 30, width: '100%', lineHeight: '30px', padding: 0, margin: 0, paddingLeft: 10, borderLeft: '3px solid #09c' }}>{window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.queryresult')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.article_meet')}</h3>
+                        <h3 style={{ height: 30, width: '100%', lineHeight: '30px', padding: 0, margin: 0, paddingLeft: 10, borderLeft: '3px solid #09c' }}>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.queryresult')}<strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>{aliwareIntl.get('com.alibaba.nacos.page.historyRollback.article_meet')}</h3>
 
                     </div>
                     <div>
 
-                        <Table dataSource={this.state.dataSource} locale={locale} language={window.aliwareIntl.currentLanguageCode}>
+                        <Table dataSource={this.state.dataSource} locale={locale} language={aliwareIntl.currentLanguageCode}>
                             <Table.Column title="Data ID" dataIndex="dataId" />
                             <Table.Column title="Group" dataIndex="group" />
-                            <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.last_update_time')} dataIndex="time" cell={this.renderLastTime.bind(this)} />
-                            <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.historyRollback.operation')} cell={this.renderCol.bind(this)} />
+                            <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.last_update_time')} dataIndex="time" cell={this.renderLastTime.bind(this)} />
+                            <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.operation')} cell={this.renderCol.bind(this)} />
                         </Table>
 
                     </div>
                     <div style={{ marginTop: 10, textAlign: 'right' }}>
-                        <Pagination current={this.state.currentPage} language={window.pageLanguage} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />,
+                        <Pagination current={this.state.currentPage} language={aliwareIntl.currentLanguageCode} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} />,
                 </div>
                 </Loading>
             </div>

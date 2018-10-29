@@ -60,15 +60,3 @@ html, body, :global(#root) {
 :global(.viewFramework-product-navbar .product-nav-list li .active) {
   background-color: #fff !important;
 }
-/* 
-:global(.naruto-loading-component) {
-  opacity: .7;
-  -webkit-filter: blur(1px);
-  filter: blur(1px);
-  filter: "progid:DXImageTransform.Microsoft.Blur(PixelRadius=1, MakeShadow=false)";
-  pointer-events: none
-}
-:global(.naruto-loading>.next-loading-component) {
-  width: 100%;
-  height: 100%;
-} */
