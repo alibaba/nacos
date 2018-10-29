@@ -172,11 +172,7 @@ public class RaftCore {
 
             RaftPeer local = peers.local();
 
-            JSONObject packet = new JSONObject();
-            packet.put("datum", datum);
-            packet.put("source", local);
-
-            onPublish(packet);
+            onPublish(datum, local);
         } finally {
             OPERATE_LOCK.unlock();
         }
@@ -199,9 +195,8 @@ public class RaftCore {
             throw new IllegalStateException("I'm not leader, can not handle update/delete operation");
         }
 
-        OPERATE_LOCK.lock();
-
         try {
+            RaftCore.OPERATE_LOCK.lock();
             long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;
@@ -212,7 +207,7 @@ public class RaftCore {
             json.put("datum", datum);
             json.put("source", peers.local());
 
-            onPublish(json);
+            onPublish(datum, peers.local());
 
             final String content = JSON.toJSONString(json);
 
@@ -242,16 +237,10 @@ public class RaftCore {
 
             }
 
-            // only majority servers return success can we consider this update success
-            if (!latch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-                Loggers.RAFT.info("data publish failed, caused failed to notify majority, key=" + key);
-                throw new IllegalStateException("data publish failed, caused failed to notify majority, key=" + key);
-            }
-
             long end = System.currentTimeMillis();
             Loggers.RAFT.info("signalPublish cost " + (end - start) + " ms" + " : " + key);
         } finally {
-            OPERATE_LOCK.unlock();
+            RaftCore.OPERATE_LOCK.unlock();
         }
     }
 
@@ -309,16 +298,14 @@ public class RaftCore {
         }
     }
 
-    public static void onPublish(JSONObject params) throws Exception {
-        RaftPeer source = new RaftPeer();
-        source.ip = params.getJSONObject("source").getString("ip");
-        source.state = RaftPeer.State.valueOf(params.getJSONObject("source").getString("state"));
-        source.term.set(params.getJSONObject("source").getLongValue("term"));
-        source.heartbeatDueMs = params.getJSONObject("source").getLongValue("heartbeatDueMs");
-        source.leaderDueMs = params.getJSONObject("source").getLongValue("leaderDueMs");
-        source.voteFor = params.getJSONObject("source").getString("voteFor");
+    public static void onPublish(JSONObject json) throws Exception {
+        Datum datum = JSON.parseObject(json.getString("datum"), Datum.class);
+        RaftPeer source = JSON.parseObject(json.getString("source"), RaftPeer.class);
+        onPublish(datum, source);
+    }
+
+    public static void onPublish(Datum datum, RaftPeer source) throws Exception {
         RaftPeer local = peers.local();
-        Datum datum = params.getObject("datum", Datum.class);
         if (StringUtils.isBlank(datum.value)) {
             Loggers.RAFT.warn("received empty datum");
             throw new IllegalStateException("received empty datum");
@@ -341,7 +328,7 @@ public class RaftCore {
         local.resetLeaderDue();
 
         // do apply
-        RaftStore.write(datum);
+//        RaftStore.write(datum);
         RaftCore.datums.put(datum.key, datum);
 
         if (isLeader()) {
@@ -356,8 +343,7 @@ public class RaftCore {
             }
         }
 
-        RaftStore.updateTerm(local.term.get());
-
+//        RaftStore.updateTerm(local.term.get());
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
         Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);

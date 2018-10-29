@@ -54,6 +54,8 @@ public class HttpClient {
 
     private static AsyncHttpClient asyncHttpClient;
 
+    private static CloseableHttpClient postClient;
+
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
         builder.setMaximumConnectionsTotal(-1);
@@ -68,6 +70,16 @@ public class HttpClient {
         builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
 
         asyncHttpClient = new AsyncHttpClient(builder.build());
+
+        HttpClientBuilder builder2 = HttpClients.custom();
+        builder2.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+        builder2.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
+        builder2.setMaxConnPerRoute(256);
+        builder2.setMaxConnTotal(-1);
+        builder2.disableAutomaticRetries();
+//        builder2.disableConnectionState()
+
+        postClient = builder2.build();
     }
 
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues) {
@@ -230,11 +242,7 @@ public class HttpClient {
 
     public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
         try {
-            HttpClientBuilder builder = HttpClients.custom();
-            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-            builder.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
 
-            CloseableHttpClient httpClient = builder.build();
             HttpPost httpost = new HttpPost(url);
 
             RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(5000).setConnectTimeout(5000).setSocketTimeout(5000).setRedirectsEnabled(true).setMaxRedirects(5).build();
@@ -248,7 +256,7 @@ public class HttpClient {
 
 
             httpost.setEntity(new UrlEncodedFormEntity(nvps, encoding));
-            HttpResponse response = httpClient.execute(httpost);
+            HttpResponse response = postClient.execute(httpost);
             HttpEntity entity = response.getEntity();
 
             String charset = encoding;

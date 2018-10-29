@@ -326,7 +326,6 @@ public class DomainsManager {
                 }
             }
 
-
             Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
             String oldJson = StringUtils.EMPTY;
 
@@ -384,11 +383,7 @@ public class DomainsManager {
                 peer.leaderDueMs = RaftCore.getLeader().leaderDueMs;
                 peer.state = RaftCore.getLeader().state;
 
-                JSONObject json = new JSONObject();
-                json.put("datum", datum);
-                json.put("source", peer);
-
-                RaftCore.onPublish(json);
+                RaftCore.onPublish(datum, peer);
             }
         } finally {
 //            lock.unlock();

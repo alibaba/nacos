@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.naming.beat;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -53,12 +54,16 @@ public class BeatReactor {
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
         LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
-        dom2Beat.put(dom, beatInfo);
+        dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
     }
 
-    public void removeBeatInfo(String dom) {
+    public void removeBeatInfo(String dom, String ip, int port) {
         LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
-        dom2Beat.remove(dom);
+        dom2Beat.remove(buildKey(dom, ip, port));
+    }
+
+    public String buildKey(String dom, String ip, int port) {
+        return dom + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
 
     class BeatProcessor implements Runnable {
