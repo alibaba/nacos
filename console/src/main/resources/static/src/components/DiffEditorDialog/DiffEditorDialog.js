@@ -12,9 +12,10 @@
  */
 
 import React from 'react';
+import { aliwareIntl } from '../../globalLib';
 import './index.less';
 import { Button, Dialog, Grid } from '@alifd/next';
-const { Row, Col } = Grid; 
+const { Row, Col } = Grid;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class DiffEditorDialog extends React.Component {
@@ -25,7 +26,7 @@ class DiffEditorDialog extends React.Component {
         };
     }
 
-    componentDidMount() {}
+    componentDidMount() { }
     openDialog(letfcode, rightcode) {
         this.setState({
             dialogvisible: true
@@ -67,19 +68,19 @@ class DiffEditorDialog extends React.Component {
         this.props.publishConfig();
     }
     render() {
-        const footer = <div> <Button type="primary" onClick={this.confirmPub.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.confirm_that_the')}</Button></div>;
+        const footer = <div> <Button type="primary" onClick={this.confirmPub.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.confirm_that_the')}</Button></div>;
         return <div>
-            <Dialog title={window.aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.contents')} language={window.pageLanguage || 'zh-cn'} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)}>
-            <div style={{ height: 400 }}>
-                <div>
-                    <Row>
-                        <Col style={{ textAlign: 'center' }}>{window.aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.of_the_current_area')}</Col>
-                        <Col style={{ textAlign: 'center' }}>{window.aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.original_value')}</Col>
-                    </Row>
+            <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.contents')} language={aliwareIntl.currentLanguageCode || 'zh-cn'} style={{ width: '80%' }} visible={this.state.dialogvisible} footer={footer} onClose={this.closeDialog.bind(this)}>
+                <div style={{ height: 400 }}>
+                    <div>
+                        <Row>
+                            <Col style={{ textAlign: 'center' }}>{aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.of_the_current_area')}</Col>
+                            <Col style={{ textAlign: 'center' }}>{aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.original_value')}</Col>
+                        </Row>
+                    </div>
+                    <div style={{ clear: 'both', height: 480 }} ref="diffeditor"></div>
+
                 </div>
-                <div style={{ clear: 'both', height: 480 }} ref="diffeditor"></div>
-               
-            </div>
             </Dialog>
         </div>;
     }

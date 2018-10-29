@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
-import {Dialog, Form, Input, Switch, Message} from '@alifd/next';
-import {I18N, DIALOG_FORM_LAYOUT} from './constant'
+import { request } from '../../../globalLib';
+import { Dialog, Form, Input, Switch, Message } from '@alifd/next';
+import { I18N, DIALOG_FORM_LAYOUT } from './constant'
 
 const FormItem = Form.Item;
 
@@ -29,24 +30,24 @@ class EditInstanceDialog extends React.Component {
     }
 
     show(editInstance) {
-        const {metadata = {}} = editInstance
+        const { metadata = {} } = editInstance
         if (Object.keys(metadata).length) {
             editInstance.metadataText = Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')
         }
-        this.setState({editInstance, editInstanceDialogVisible: true})
+        this.setState({ editInstance, editInstanceDialogVisible: true })
     }
 
     hide() {
-        this.setState({editInstanceDialogVisible: false})
+        this.setState({ editInstanceDialogVisible: false })
     }
 
     onConfirm() {
-        const {serviceName, clusterName, getInstanceList, openLoading, closeLoading} = this.props
-        const {ip, port, weight, enabled, metadataText} = this.state.editInstance
-        window.request({
+        const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props
+        const { ip, port, weight, enabled, metadataText } = this.state.editInstance
+        request({
             method: 'POST',
             url: '/nacos/v1/ns/instance/update',
-            data: {serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText},
+            data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
             dataType: 'text',
             beforeSend: () => openLoading(),
             success: res => {
@@ -62,14 +63,14 @@ class EditInstanceDialog extends React.Component {
     }
 
     onChangeCluster(changeVal) {
-        const {editInstance = {}} = this.state
+        const { editInstance = {} } = this.state
         this.setState({
             editInstance: Object.assign({}, editInstance, changeVal)
         })
     }
 
     render() {
-        const {editInstanceDialogVisible, editInstance} = this.state
+        const { editInstanceDialogVisible, editInstance } = this.state
         return (
             <Dialog
                 className="instance-edit-dialog"
@@ -90,19 +91,19 @@ class EditInstanceDialog extends React.Component {
                         <Input
                             className="in-text"
                             value={editInstance.weight}
-                            onChange={weight => this.onChangeCluster({weight})}
+                            onChange={weight => this.onChangeCluster({ weight })}
                         />
                     </FormItem>
                     <FormItem label={`${I18N.WHETHER_ONLINE}:`}>
                         <Switch
                             checked={editInstance.enabled}
-                            onChange={enabled => this.onChangeCluster({enabled})}/>
+                            onChange={enabled => this.onChangeCluster({ enabled })} />
                     </FormItem>
                     <FormItem label={`${I18N.METADATA}:`}>
                         <Input
                             className="in-text"
                             value={editInstance.metadataText}
-                            onChange={metadataText => this.onChangeCluster({metadataText})}
+                            onChange={metadataText => this.onChangeCluster({ metadataText })}
                         />
                     </FormItem>
                 </Form>
