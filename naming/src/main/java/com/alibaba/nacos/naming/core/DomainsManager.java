@@ -670,6 +670,10 @@ public class DomainsManager {
                         lock.unlock();
                     }
 
+                    // clean up lock resources since they are no longer in need:
+                    dom2LockMap.remove(dom.getName());
+                    dom2ContionMap.remove(dom.getName());
+
                 } catch (Throwable e) {
                     Loggers.SRV_LOG.error("VIPSRV-DOM", "error while processing dom update", e);
                 }
