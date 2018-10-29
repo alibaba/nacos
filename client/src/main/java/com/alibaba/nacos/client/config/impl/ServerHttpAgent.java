@@ -15,22 +15,9 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
-
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.type.TypeReference;
-
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.common.Constants;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
@@ -40,6 +27,18 @@ import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
+import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.type.TypeReference;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Server Agent 
@@ -96,7 +95,7 @@ public class ServerHttpAgent {
 						new Object[] { serverListMgr.getCurrentServerAddr()});
 				throw ioe;
 			}
-		} while (System.currentTimeMillis() > endTime);
+		} while (System.currentTimeMillis() <= endTime);
 
 		log.error("NACOS-0002",
 				LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
@@ -138,7 +137,7 @@ public class ServerHttpAgent {
 				throw ioe;
 			}
 
-		} while (System.currentTimeMillis() > endTime);
+		} while (System.currentTimeMillis() <= endTime);
 
 		log.error("NACOS-0002",
 				LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
@@ -180,7 +179,7 @@ public class ServerHttpAgent {
 				throw ioe;
 			}
 			
-		} while (System.currentTimeMillis() > endTime);
+		} while (System.currentTimeMillis() <= endTime);
 		
 		log.error("NACOS-0002",
 				LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));

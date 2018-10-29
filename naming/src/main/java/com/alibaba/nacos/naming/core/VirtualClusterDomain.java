@@ -161,7 +161,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             Loggers.SRV_LOG.warn("VIPSRV-DOM", "received empty iplist config for dom: " + name);
         }
 
-        Loggers.RAFT.info("VIPSRV-RAFT", "datum is changed, key: " + key + ", value: " + value);
+        Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
 
         List<IpAddress> ips = JSON.parseObject(value, new TypeReference<List<IpAddress>>() {
         });
@@ -175,7 +175,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             }
         }
 
-        updateIPs(ips, false);
+        updateIPs(ips);
 
         recalculateChecksum();
     }
@@ -185,7 +185,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         // ignore
     }
 
-    public void updateIPs(List<IpAddress> ips, boolean diamond) {
+    public void updateIPs(List<IpAddress> ips) {
         if (CollectionUtils.isEmpty(ips) && allIPs().size() > 1) {
             return;
         }
@@ -236,7 +236,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
                 ip.setCluster(clusterMap.get(ip.getClusterName()));
             }
 
-            clusterMap.get(entry.getKey()).updateIPs(entryIPs, diamond);
+            clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
         PushService.domChanged(name);
@@ -246,7 +246,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("IP-UPDATED", "dom: " + getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + getName() + ", ips: " + stringBuilder.toString());
 
     }
 
@@ -270,6 +270,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         if (RaftCore.isLeader(NetUtils.localIP())) {
             RaftCore.signalDelete(UtilsAndCommons.getIPListStoreKey(this));
         }
+
+        HealthCheckReactor.cancelCheck(clientBeatCheckTask);
 
         RaftCore.unlisten(UtilsAndCommons.getIPListStoreKey(this));
     }

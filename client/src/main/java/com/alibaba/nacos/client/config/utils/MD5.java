@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.api.common.Constants;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.alibaba.nacos.client.config.common.Constants;
 
 /**
  * MD5 util
@@ -104,7 +104,7 @@ public class MD5 {
     /**
      * 对二进制数据进行md5
      * 
-     * @param str
+     * @param data
      * @return md5 byte[16]
      */
     public byte[] hash(byte[] data) {

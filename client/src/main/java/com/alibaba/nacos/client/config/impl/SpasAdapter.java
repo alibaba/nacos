@@ -15,19 +15,15 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
-import com.alibaba.nacos.client.config.common.Constants;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.identify.Base64;
 import com.alibaba.nacos.client.identify.CredentialService;
 import com.alibaba.nacos.client.utils.StringUtils;
+
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.util.*;
 
 /**
  * 适配spas接口

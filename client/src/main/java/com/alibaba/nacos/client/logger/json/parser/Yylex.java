@@ -17,9 +17,9 @@
 
 package com.alibaba.nacos.client.logger.json.parser;
 
-import java.io.UnsupportedEncodingException;
+import com.alibaba.nacos.api.common.Constants;
 
-import com.alibaba.nacos.client.config.common.Constants;
+import java.io.UnsupportedEncodingException;
 
 /**
  * Yylex

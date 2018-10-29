@@ -283,7 +283,6 @@ public class PushService {
 
         if (ClientInfo.ClientType.JAVA == clientInfo.type
                 && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushJavaVersion())) >= 0) {
-
             return true;
         } else if (ClientInfo.ClientType.DNS == clientInfo.type
                 && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushPythonVersion())) >= 0) {
@@ -291,7 +290,11 @@ public class PushService {
         } else if (ClientInfo.ClientType.C == clientInfo.type
                 && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushCVersion())) >= 0) {
             return true;
+        } else if (ClientInfo.ClientType.GO == clientInfo.type
+                   && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushGoVersion())) >= 0) {
+            return true;
         }
+
         return false;
     }
 

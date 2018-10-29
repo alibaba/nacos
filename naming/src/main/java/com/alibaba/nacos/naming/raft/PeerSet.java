@@ -19,16 +19,16 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.*;
+
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
@@ -45,7 +45,7 @@ public class PeerSet {
     }
 
     public RaftPeer getLeader() {
-        if (UtilsAndCommons.STANDALONE_MODE) {
+        if (STANDALONE_MODE) {
             return local();
         }
         return leader;
@@ -63,7 +63,7 @@ public class PeerSet {
             peers.put(server, peer);
         }
 
-        if (UtilsAndCommons.STANDALONE_MODE) {
+        if (STANDALONE_MODE) {
             RaftPeer local = local();
             local.state = RaftPeer.State.LEADER;
             local.voteFor = NetUtils.localIP();
@@ -83,11 +83,11 @@ public class PeerSet {
     }
 
     public boolean isLeader(String ip) {
-        if (UtilsAndCommons.STANDALONE_MODE) {
+        if (STANDALONE_MODE) {
             return true;
         }
 
-        Loggers.RAFT.info("IS LEADER", "leader: " + leader.ip + ", ip: " + ip);
+        Loggers.RAFT.info("[IS LEADER] leader: " + leader.ip + ", ip: " + ip);
 
         return StringUtils.equals(leader.ip, ip);
     }
@@ -130,7 +130,7 @@ public class PeerSet {
             RaftPeer peer = peers.get(first);
             peer.state = RaftPeer.State.LEADER;
 
-            if (!ObjectUtils.equals(leader, peer)) {
+            if (!Objects.equals(leader, peer)) {
                 leader = peer;
                 Loggers.RAFT.info(leader.ip + " has become the LEADER");
             }
@@ -140,14 +140,14 @@ public class PeerSet {
     }
 
     public RaftPeer makeLeader(RaftPeer candidate) {
-        if (!ObjectUtils.equals(leader, candidate)) {
+        if (!Objects.equals(leader, candidate)) {
             leader = candidate;
             Loggers.RAFT.info(leader.ip + " has become the LEADER" + ",local :" + JSON.toJSONString(local()) + ", leader: " + JSON.toJSONString(leader));
         }
 
         for (final RaftPeer peer : peers.values()) {
             Map<String, String> params = new HashMap<String, String>(1);
-            if (!ObjectUtils.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
+            if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);
                     HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {

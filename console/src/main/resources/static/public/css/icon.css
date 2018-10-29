@@ -1,0 +1,262 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@font-face {
+    /*无边框*/
+    font-family: "iconfont-1";
+    src: url('icon1/iconfont.eot?t=1458627591'); /* IE9*/
+    src: url('icon1/iconfont.eot?t=1458627591#iefix') format('embedded-opentype'), /* IE6-IE8 */ url('icon1/iconfont.woff?t=1458627591') format('woff'), /* chrome, firefox */ url('icon1/iconfont.ttf?t=1458627591') format('truetype'), /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/ url('icon1/iconfont.svg?t=1458627591#iconfont') format('svg'); /* iOS 4.1- */
+}
+
+@font-face {
+    /*有边框*/
+    font-family: "iconfont-2";
+    src: url('icon/iconfont.eot'); /* IE9*/
+    src: url('icon/iconfont.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */ url('icon/iconfont.woff') format('woff'), /* chrome, firefox */ url('icon/iconfont.ttf') format('truetype'), /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/ url('icon/iconfont.svg#iconfont') format('svg'); /* iOS 4.1- */
+}
+
+.iconfont {
+    /* 有边框 */
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-stroke-width: 0.2px;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.iconfont-1 {
+    /*无边框*/
+
+    font-family: "iconfont-1" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-stroke-width: 0.2px;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.iconfont-2 {
+    /*有边框*/
+    font-family: "iconfont-2" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -webkit-text-stroke-width: 0.2px;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.logo {
+
+}
+
+.panel-logo {
+    padding-right: 2px;
+    font-size: 18px;
+    display: inline-block;
+    color: #333;
+}
+
+.icon-lg {
+    font-size: 80px !important;
+}
+
+.icon-size-md {
+    font-size: 40px !important;
+    vertical-align: middle;
+}
+
+.icon-size-lg {
+    font-size: 80px !important;
+    vertical-align: middle;
+}
+
+.icon-hsf:before {
+    content: "\e62f" !important;
+}
+
+.icon-rocketmq:before {
+    content: "\e632" !important;
+}
+
+.icon-notify:before {
+    content: "\e61e" !important;
+}
+
+.icon-tddl:before {
+    content: "\e61e" !important;
+}
+
+.icon-pandora:before {
+    content: "\e622" !important;
+}
+
+.icon-ailtomcat:before {
+    content: "\e628" !important;
+}
+
+.icon-configserver:before {
+    content: "\e61e" !important;
+}
+
+.icon-diamondserver:before {
+    content: "\e62a" !important;
+}
+
+.icon-vipserver:before {
+    content: "\e625" !important;
+}
+
+.icon-eagleeye:before {
+    content: "\e62c" !important;
+}
+
+.icon-tengine:before {
+    content: "\e635" !important;
+}
+
+.icon-tair:before {
+    content: "\e634" !important;
+}
+
+.icon-hbase:before {
+    content: "\e62d" !important;
+}
+
+.icon-jstorm:before {
+    content: "\e627" !important;
+}
+
+.icon-histore:before {
+    content: "\e62e" !important;
+}
+
+.icon-jingwei:before {
+    content: "\e61e" !important;
+}
+
+.icon-txc:before {
+    content: "\e636" !important;
+}
+
+.icon-edas:before {
+    content: "\e620" !important;
+}
+
+.icon-csb:before {
+    content: "\e61e" !important;
+}
+
+.icon-ons:before {
+    content: "\e630" !important;
+}
+
+.icon-drds:before {
+    content: "\e61f" !important;
+}
+
+.icon-duct:before {
+    content: "\e62b" !important;
+}
+
+.icon-amazon:before {
+    content: "\e61e" !important;
+}
+
+.icon-autoload:before {
+    content: "\e61e" !important;
+}
+
+.icon-switch:before {
+    content: "\e633" !important;
+}
+
+.icon-sentinel:before {
+    content: "\e623" !important;
+}
+
+.icon-preplan:before {
+    content: "\e631" !important;
+}
+
+.icon-moses:before {
+    content: "\e61e" !important;
+}
+
+.icon-zeus:before {
+    content: "\e61e" !important;
+}
+
+.icon-athena:before {
+    content: "\e61e" !important;
+}
+
+.icon-bcp:before {
+    content: "\e61e" !important;
+}
+
+.icon-lark:before {
+    content: "\e61e" !important;
+}
+
+.icon-nest:before {
+    content: "\e61e" !important;
+}
+
+.icon-monkeyking:before {
+    content: "\e61e" !important;
+}
+
+.icon-tab:before {
+    content: "\e61e" !important;
+}
+
+.icon-oceanus:before {
+    content: "\e61e" !important;
+}
+
+.icon-eos :before {
+    content: "\e61e" !important;
+}
+
+.icon-sonar:before {
+    content: "\e61e" !important;
+}
+
+.icon-ai:before {
+    content: "\e605" !important;
+}
+
+.icon-hotcode:before {
+    content: "\e621" !important;
+}
+
+.icon-taokeeper:before {
+    content: "\e624" !important;
+}
+
+.icon-mdl:before {
+    content: "\e61e" !important;
+}
+
+.icon-mw:before {
+    content: "\e61e" !important;
+}
+
+.icon-default:before {
+    content: "\e607" !important;
+}
+
+.icon-alitomcat:before {
+    content: "\e607" !important;
+}

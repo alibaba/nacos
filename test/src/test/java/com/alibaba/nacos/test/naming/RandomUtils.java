@@ -263,21 +263,6 @@ public class RandomUtils {
         return getIntegerMoreThanZeroLessThan(3) == 1;
     }
 
-    public static void main(String[] args) {
-        for(int t = 0; t < 20; ++t) {
-            Collection<Integer> arrs = getRandomCollection(1, 5, 5);
-            Iterator var3 = arrs.iterator();
-
-            while(var3.hasNext()) {
-                int i = (Integer)var3.next();
-                System.out.println(i);
-            }
-
-            System.out.println("----");
-        }
-
-    }
-
     public static String getStringByUUID() {
         return UUID.randomUUID().toString();
     }

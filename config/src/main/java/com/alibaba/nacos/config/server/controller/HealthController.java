@@ -15,17 +15,18 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import javax.annotation.PostConstruct;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.utils.SystemConfig;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.annotation.PostConstruct;
 
 /**
  * health service

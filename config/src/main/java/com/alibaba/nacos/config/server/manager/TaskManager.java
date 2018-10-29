@@ -15,6 +15,11 @@
  */
 package com.alibaba.nacos.config.server.manager;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import org.slf4j.Logger;
+
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.Map;
@@ -23,11 +28,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.management.ObjectName;
-import org.slf4j.Logger;
-
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.utils.LogUtil;
 
 
 /**

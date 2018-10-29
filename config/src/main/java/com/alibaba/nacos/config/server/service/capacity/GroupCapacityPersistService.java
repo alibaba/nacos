@@ -17,16 +17,11 @@ package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
-import com.alibaba.nacos.config.server.service.BasicDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.LocalDataSourceServiceImpl;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.collect.Lists;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -35,12 +30,12 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
+import javax.annotation.PostConstruct;
 import java.sql.*;
 import java.util.List;
 
-import javax.annotation.PostConstruct;
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Group Capacity Service
@@ -284,7 +279,7 @@ public class GroupCapacityPersistService {
 	public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
 		String sql = "select id, group_id from group_capacity where id>? limit ?";
 
-		if (PropertyUtil.isStandaloneMode()) {
+		if (STANDALONE_MODE) {
 			sql = "select id, group_id from group_capacity where id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
 		}
 		try {

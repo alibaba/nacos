@@ -53,8 +53,8 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
-
 import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
@@ -65,6 +65,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.SubInfo;
+import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
@@ -270,6 +271,41 @@ public class PersistService {
 		}
 	}
 	
+	static final class ConfigAllInfoRowMapper implements RowMapper<ConfigAllInfo> {
+		public ConfigAllInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+			ConfigAllInfo info = new ConfigAllInfo();
+			info.setDataId(rs.getString("data_id"));
+			info.setGroup(rs.getString("group_id"));
+			info.setTenant(rs.getString("tenant_id"));
+			info.setAppName(rs.getString("app_name"));
+			try {
+				info.setContent(rs.getString("content"));
+			} catch (SQLException e) {
+				// ignore
+			}
+			try {
+				info.setMd5(rs.getString("md5"));
+			} catch (SQLException e) {
+				// ignore
+			}
+			try {
+				info.setId(rs.getLong("ID"));
+			} catch (SQLException e) {
+				// ignore
+			}
+			info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
+			info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
+			info.setCreateUser(rs.getString("src_user"));
+			info.setCreateIp(rs.getString("src_ip"));
+			info.setDesc(rs.getString("c_desc"));
+			info.setUse(rs.getString("c_use"));
+			info.setEffect(rs.getString("effect"));
+			info.setType(rs.getString("type"));
+			info.setSchema(rs.getString("c_schema"));
+			return info;
+		}
+	}
+	
 	static final class ConfigInfo4BetaRowMapper implements
 	RowMapper<ConfigInfo4Beta> {
 		public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -410,6 +446,15 @@ public class PersistService {
 		}
 	};
 	
+	static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
+		public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+			TenantInfo info = new TenantInfo();
+			info.setTenantId(rs.getString("tenant_id"));
+			info.setTenantName(rs.getString("tenant_name"));
+			info.setTenantDesc(rs.getString("tenant_desc"));
+			return info;
+		}
+	}
 
 	public synchronized void reload() throws IOException {
 		this.dataSourceService.reload();
@@ -2790,6 +2835,40 @@ public class PersistService {
 			throw e;
 		}
 	}
+	
+	/**
+	 *  查询配置信息；数据库原子操作，最小sql动作，无业务封装
+	 * @param dataId dataId
+	 * @param group group
+	 * @param tenant tenant
+	 * @return advance info
+	 */
+	public ConfigAllInfo findConfigAllInfo(final String dataId, final String group, final String tenant) {
+		final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+		try {
+			List<String> configTagList = this.selectTagByConfig(dataId, group, tenant);
+			ConfigAllInfo configAdvance = this.jt.queryForObject(
+					"select ID,data_id,group_id,tenant_id,app_name,content,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema from config_info where data_id=? and group_id=? and tenant_id=?",
+					new Object[] { dataId, group, tenantTmp }, CONFIG_ALL_INFO_ROW_MAPPER);
+			if (configTagList != null && !configTagList.isEmpty()) {
+				StringBuilder configTagsTmp = new StringBuilder();
+				for (String configTag : configTagList) {
+					if (configTagsTmp.length() == 0) {
+						configTagsTmp.append(configTag);
+					} else {
+						configTagsTmp.append(",").append(configTag);
+					}
+				}
+				configAdvance.setConfigTags(configTagsTmp.toString());
+			}
+			return configAdvance;
+		} catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
+			return null;
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
 
 	/**
 	 *  更新变更记录；数据库原子操作，最小sql动作，无业务封装
@@ -2834,7 +2913,7 @@ public class PersistService {
 	public Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize) {
 		PaginationHelper<ConfigHistoryInfo> helper = new PaginationHelper<ConfigHistoryInfo>();
 		String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-		String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
+		String sqlCountRows = "select count(*) from his_config_info where data_id = ? and group_id = ? and tenant_id = ?";
 		String sqlFetchRows = "select nid,data_id,group_id,tenant_id,app_name,src_ip,op_type,gmt_create,gmt_modified from his_config_info where data_id = ? and group_id = ? and tenant_id = ? order by nid desc";
 
 		Page<ConfigHistoryInfo> page = null;
@@ -2901,6 +2980,93 @@ public class PersistService {
 			return historyInfo;
 		} catch (DataAccessException e) {
 			fatalLog.error("[list-config-history] error, nid:{}", new Object[] { nid }, e);
+			throw e;
+		}
+	}
+
+	/**
+	 * insert tenant info
+	 *
+	 * @param kp
+	 *            kp
+	 * @param tenantId
+	 *            tenant Id
+	 * @param tenantName
+	 *            tenant name
+	 * @param tenantDesc
+	 *            tenant description
+	 * @param time time
+	 */
+	public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
+			String createResoure, final long time) {
+		try {
+			jt.update(
+					"insert into tenant_info(kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) values(?,?,?,?,?,?,?)",
+					kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
+		} catch (DataAccessException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
+
+	/**
+	 * Update tenantInfo showname
+	 *
+	 * @param kp
+	 *            kp
+	 * @param tenantId
+	 *            tenant Id
+	 * @param tenantName
+	 *            tenant name
+	 * @param tenantDesc
+	 *            tenant description
+	 */
+	public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
+		try {
+			jt.update(
+					"update tenant_info set tenant_name = ?, tenant_desc = ?, gmt_modified= ? where kp=? and tenant_id=?",
+					tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId);
+		} catch (DataAccessException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		}
+	}
+
+	public List<TenantInfo> findTenantByKp(String kp) {
+		String sql = "select tenant_id,tenant_name,tenant_desc from tenant_info where kp=?";
+		try {
+			return this.jt.query(sql, new Object[] { kp }, TENANT_INFO_ROW_MAPPER);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		} catch (EmptyResultDataAccessException e) {
+			return Collections.emptyList();
+		} catch (Exception e) {
+			fatalLog.error("[db-other-error]" + e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	public TenantInfo findTenantByKp(String kp, String tenantId) {
+		String sql = "select tenant_id,tenant_name,tenant_desc from tenant_info where kp=? and tenant_id=?";
+		try {
+			return this.jt.queryForObject(sql, new Object[] { kp, tenantId }, TENANT_INFO_ROW_MAPPER);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		} catch (Exception e) {
+			fatalLog.error("[db-other-error]" + e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+
+	public void removeTenantInfoAtomic(final String kp, final String tenantId) {
+		try {
+			jt.update("delete from tenant_info where kp=? and tenant_id=?", kp, tenantId);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
 			throw e;
 		}
 	}
@@ -3056,6 +3222,8 @@ public class PersistService {
 		return true;
 	}
     
+	static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
+
 	static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 
 	static final ConfigKeyRowMapper CONFIG_KEY_ROW_MAPPER = new ConfigKeyRowMapper();
@@ -3067,6 +3235,8 @@ public class PersistService {
 	static final ConfigInfoRowMapper CONFIG_INFO_ROW_MAPPER = new ConfigInfoRowMapper();
 	
 	static final ConfigAdvanceInfoRowMapper CONFIG_ADVANCE_INFO_ROW_MAPPER = new ConfigAdvanceInfoRowMapper();
+	
+	static final ConfigAllInfoRowMapper CONFIG_ALL_INFO_ROW_MAPPER = new ConfigAllInfoRowMapper();
 	
 	static final ConfigInfo4BetaRowMapper CONFIG_INFO4BETA_ROW_MAPPER = new ConfigInfo4BetaRowMapper();
 	
