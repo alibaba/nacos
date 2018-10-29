@@ -63,7 +63,6 @@ import java.security.AccessControlException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -580,6 +579,7 @@ public class ApiCommands {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             stringMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
+
             doAddIP4Dom(MockHttpRequest.buildRequest(stringMap));
         } else {
             throw new IllegalArgumentException("dom not found: " + dom);
@@ -873,6 +873,8 @@ public class ApiCommands {
 
     private String doAddIP4Dom(HttpServletRequest request) throws Exception {
 
+        long start = System.currentTimeMillis();
+
         if (Switch.getDisableAddIP()) {
             throw new AccessControlException("Adding IP for dom is forbidden now.");
         }
@@ -947,10 +949,12 @@ public class ApiCommands {
         String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
 
         long timestamp = System.currentTimeMillis();
+
+        Loggers.EVT_LOG.info("[ADD IP] before raft:" + (System.currentTimeMillis() - start));
+
         if (RaftCore.isLeader()) {
-            RaftCore.OPERATE_LOCK.lock();
             try {
-                final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
+                RaftCore.OPERATE_LOCK.lock();
                 proxyParams.put("clientIP", NetUtils.localIP());
                 proxyParams.put("notify", "true");
 
@@ -958,30 +962,36 @@ public class ApiCommands {
                 proxyParams.put("timestamp", String.valueOf(timestamp));
 
                 for (final RaftPeer peer : RaftCore.getPeers()) {
-                    String server = peer.ip;
-                    if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                        server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-                    }
-                    String url = "http://" + server
-                            + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
-                    HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
+
+
+                    UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
-                                        + ",ipList = " + ipList + ",code: " + response.getStatusCode()
-                                        + ", caused " + response.getResponseBody() + ", server: " + peer.ip);
-                                return 1;
+                        public void run() {
+                            String server = peer.ip;
+                            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+                                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
                             }
-                            countDownLatch.countDown();
-                            return 0;
+                            String url = "http://" + server
+                                    + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
+
+                            try {
+                                HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
+                                    @Override
+                                    public Integer onCompleted(Response response) throws Exception {
+                                        if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                            Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
+                                                    + ",ipList = " + ipList + ",code: " + response.getStatusCode()
+                                                    + ", caused " + response.getResponseBody() + ", server: " + peer.ip);
+                                            return 1;
+                                        }
+                                        return 0;
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Loggers.SRV_LOG.error("ADD-IP", "failed when publish to peer." + url, e);
+                            }
                         }
                     });
-                }
-
-                if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-                    Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
-                    throw new IllegalArgumentException("data publish failed, key=" + key);
                 }
 
                 Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-ADD}" + " new: "
@@ -991,6 +1001,8 @@ public class ApiCommands {
                 RaftCore.OPERATE_LOCK.unlock();
             }
         }
+
+        Loggers.EVT_LOG.info("[ADD IP] after raft:" + (System.currentTimeMillis() - start));
 
         return "ok";
     }
@@ -1217,7 +1229,7 @@ public class ApiCommands {
         result.put("useSpecifiedURL", false);
         result.put("clusters", clusters);
         result.put("env", env);
-        result.put("metadata",domObj.getMetadata());
+        result.put("metadata", domObj.getMetadata());
         return result;
     }
 
@@ -1454,7 +1466,7 @@ public class ApiCommands {
                     Switch.setPushCVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
                     Switch.setPushGoVersion(version);
-                } else{
+                } else {
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
 
