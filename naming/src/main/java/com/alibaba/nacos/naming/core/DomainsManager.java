@@ -435,7 +435,7 @@ public class DomainsManager {
                 return;
             }
 
-            Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
+            Map<String, IpAddress> map = new ConcurrentHashMap<String, IpAddress>(currentIPs.size());
 
             for (IpAddress ipAddress : currentIPs) {
                 map.put(ipAddress.toIPAddr(), ipAddress);

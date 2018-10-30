@@ -245,6 +245,7 @@ public class RaftCore {
     }
 
     public static void signalDelete(final String key) throws Exception {
+
         OPERATE_LOCK.lock();
         try {
 
@@ -264,7 +265,6 @@ public class RaftCore {
             json.put("key", key);
             json.put("source", peers.local());
 
-            final CountDownLatch latch = new CountDownLatch(peers.majorityCount());
             for (final String server : peers.allServersIncludeMyself()) {
                 String url = buildURL(server, API_ON_DEL);
                 HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(json)
@@ -276,8 +276,6 @@ public class RaftCore {
                                     return 1;
                                 }
 
-                                latch.countDown();
-
                                 RaftPeer local = peers.local();
 
                                 local.resetLeaderDue();
@@ -285,13 +283,6 @@ public class RaftCore {
                                 return 0;
                             }
                         });
-            }
-
-            // only majority servers return success can we consider this update success
-            if (!latch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-                Loggers.RAFT.info("data delete failed, key=" + key);
-
-                throw new IllegalStateException("data delete failed, caused failed to notify majority, key=" + key);
             }
         } finally {
             OPERATE_LOCK.unlock();
@@ -328,7 +319,6 @@ public class RaftCore {
         local.resetLeaderDue();
 
         // do apply
-//        RaftStore.write(datum);
         RaftCore.datums.put(datum.key, datum);
 
         if (isLeader()) {
@@ -343,7 +333,6 @@ public class RaftCore {
             }
         }
 
-//        RaftStore.updateTerm(local.term.get());
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
         Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);
@@ -378,7 +367,7 @@ public class RaftCore {
 
         // do apply
         String key = params.getString("key");
-        deleteDatum(key);
+//        deleteDatum(key);
 
         if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
             //set leader term:
@@ -388,7 +377,7 @@ public class RaftCore {
             local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
         }
 
-        RaftStore.updateTerm(local.term.get());
+//        RaftStore.updateTerm(local.term.get());
 
     }
 
@@ -574,8 +563,6 @@ public class RaftCore {
             String compressedContent = new String(compressedBytes, "UTF-8");
             Loggers.RAFT.info("raw beat data size: " + content.length() + ", size of compressed data: " + compressedContent.length());
 
-            final CountDownLatch latch = new CountDownLatch(peers.majorityCount() - 1);
-
             for (final String server : peers.allServersWithoutMySelf()) {
                 try {
                     final String url = buildURL(server, API_BEAT);
@@ -587,8 +574,6 @@ public class RaftCore {
                                 Loggers.RAFT.error("VIPSRV-RAFT", "beat failed: " + response.getResponseBody() + ", peer: " + server);
                                 return 1;
                             }
-
-                            latch.countDown();
 
                             peers.update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
                             Loggers.RAFT.info("receive beat response from: " + url);
@@ -679,7 +664,6 @@ public class RaftCore {
                     long timestamp = entry.getLong("timestamp");
 
                     receivedKeysMap.put(datumKey, 1);
-
 
                     try {
                         if (RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp >= timestamp && processedCount < beatDatums.size()) {
