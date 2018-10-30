@@ -972,7 +972,6 @@ public class ApiCommands {
 
                 for (final RaftPeer peer : RaftCore.getPeers()) {
 
-
                     UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
                         @Override
                         public void run() {
