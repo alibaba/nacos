@@ -1,8 +1,20 @@
-window.i18ndoc = {
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+module.exports = {
   "zh-cn": {
-    "com.alibaba.nacos.layout.noenv.nacosversion":"1.0",
-    "com.alibaba.nacos.page.configurationManagementVirtual":"配置管理",
-    "com.alibaba.nacos.page.serviceManagementVirtual":"服务管理",
+    "com.alibaba.nacos.layout.noenv.nacosversion": "0.3.0",
+    "com.alibaba.nacos.page.configurationManagementVirtual": "配置管理",
+    "com.alibaba.nacos.page.serviceManagementVirtual": "服务管理",
     "nacos.component.ExportDialog.tags2": "标签:",
     "historyRollback": "历史版本",
     "com.alibaba.nacos.component.MiddleWareEnv.Spas_dedicated": "Spas专用",
@@ -1025,3 +1037,4 @@ window.i18ndoc = {
     "nacos.page.ConfigEditor.submit_failed": "Cannot be empty, submit failed",
   }
 }
+

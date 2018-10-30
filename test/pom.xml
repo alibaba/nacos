@@ -17,7 +17,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.4.0-raft-SNAPSHOT</version>
+        <version>0.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -97,14 +97,6 @@
                 <version>2.9</version>
                 <configuration>
                     <argLine>-Dnacos.standalone=true</argLine>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
                 </configuration>
             </plugin>
         </plugins>

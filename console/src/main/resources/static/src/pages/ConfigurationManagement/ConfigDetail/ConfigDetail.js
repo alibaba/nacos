@@ -1,3 +1,16 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React from 'react';
 import './index.less';
 import { Button, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
@@ -36,7 +49,6 @@ class ConfigDetail extends React.Component {
             });
         }
         this.getDataDetail();
-        this.getTags();
     }
     openLoading() {
         this.setState({
@@ -48,64 +60,7 @@ class ConfigDetail extends React.Component {
             loading: false
         });
     }
-    getTags() {
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/configTags/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-
-                    if (result.data.length > 0) {
-                        //如果存在beta
-                        let tag = [{ title: window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' }, { title: 'BETA', key: 'beta' }];
-                        self.setState({
-                            tag: tag,
-                            hasbeta: true
-                        });
-                        self.getBeta();
-                    }
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
-    getBeta() {
-
-        let self = this;
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || 'center';
-        let url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}/tenant/${this.tenant}?id=`;
-        if (this.tenant === 'global' || !this.tenant) {
-            url = `/diamond-ops/configList/edit/beta/serverId/${this.serverId}/dataId/${this.dataId}/group/${this.group}?id=`;
-        }
-        window.request({
-            url: url,
-            beforeSend: function () {
-                self.openLoading();
-            },
-            success: function (result) {
-
-                if (result.code === 200) {
-                    self.valueMap['beta'] = result.data;
-                } else { }
-            },
-            complete: function () {
-                self.closeLoading();
-            }
-        });
-    }
+   
     changeTab(value) {
 
         let self = this;
@@ -196,15 +151,14 @@ class ConfigDetail extends React.Component {
 
                         <FormItem label={"Data ID:"} required {...formItemLayout}>
                             <Input htmlType={"text"} readOnly={true} {...init('dataId')} />
-                            <div style={{ marginTop: 10 }}>
-                                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
-                            </div>
                         </FormItem>
-
-                        {this.state.showmore ? <div>
-                            <FormItem label={"Group:"} required {...formItemLayout}>
+                        <FormItem label={"Group:"} required {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('group')} />
-                            </FormItem>
+                        </FormItem>
+                        <div style={{ marginTop: 10 }}>
+                            <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from') : window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}</a>
+                        </div>
+                        {this.state.showmore ? <div>
                             <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.configdetail.home')} {...formItemLayout}>
                                 <Input htmlType={"text"} readOnly={true} {...init('appName')} />
                             </FormItem>
