@@ -39,7 +39,7 @@ public interface ConfigService {
 	 * @throws NacosException
 	 *             NacosException
 	 */
-	public String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
+	String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
 
 	/**
 	 * Add a listener to the configuration, after the server to modify the
@@ -58,7 +58,7 @@ public interface ConfigService {
 	 * @throws NacosException
 	 *             NacosException
 	 */
-	public void addListener(String dataId, String group, Listener listener) throws NacosException;
+	void addListener(String dataId, String group, Listener listener) throws NacosException;
 
 	/**
 	 * publish config.
@@ -73,7 +73,7 @@ public interface ConfigService {
 	 * @throws NacosException
 	 *             NacosException
 	 */
-	public boolean publishConfig(String dataId, String group, String content) throws NacosException;
+	boolean publishConfig(String dataId, String group, String content) throws NacosException;
 
 	/**
 	 * Remove Config
@@ -86,7 +86,7 @@ public interface ConfigService {
 	 * @throws NacosException
 	 *             NacosException
 	 */
-	public boolean removeConfig(String dataId, String group) throws NacosException;
+	boolean removeConfig(String dataId, String group) throws NacosException;
 
 	/**
 	 * Remove Listener
@@ -98,13 +98,13 @@ public interface ConfigService {
 	 * @param listener
 	 *            listener
 	 */
-	public void removeListener(String dataId, String group, Listener listener);
+	void removeListener(String dataId, String group, Listener listener);
 	
 	/**
 	 * server health info
 	 * 
 	 * @return whether health
 	 */
-	public String getServerStatus();
+	String getServerStatus();
 
 }
