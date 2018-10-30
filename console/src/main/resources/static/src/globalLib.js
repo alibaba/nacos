@@ -1,7 +1,21 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import projectConfig from './config';
 import serviceConfig from './serviceMock';
 import moment from 'moment';
 import $ from 'jquery';
+import i18DocObj from './i18ndoc';
 
 /**
  * 获取cookie值
@@ -213,7 +227,7 @@ window.aliwareIntl = (function (window) {
      * @param {String} local 语言信息
      */
     aliwareI18n.prototype.changeLanguage = function (local) {
-        this.nowData = window[`i18n_${local}_doc`] || (window.i18ndoc && window.i18ndoc[local]) || {}
+        this.nowData = i18DocObj[local] || {}
     }
     /**
      * 数字国际化
@@ -279,7 +293,7 @@ window.aliwareIntl = (function (window) {
 
     return new aliwareI18n({
         currentLocal: `${aliwareLocal}`,
-        locals: window[`i18n_${aliwareLocal}_doc`] || window[`i18n_en_doc`] || (window.i18ndoc && window.i18ndoc[aliwareI18n.prototype.currentLanguageCode]) || {}
+        locals: i18DocObj[aliwareI18n.prototype.currentLanguageCode] || i18DocObj["en-us"] || i18DocObj["zh-cn"] || {}
     });
 })(window);
 /**

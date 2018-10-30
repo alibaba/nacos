@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.4.0-raft-SNAPSHOT</version>
+    <version>0.3.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.4.0-raft-SNAPSHOT</tag>
+        <tag>nacos-all-0.3.0</tag>
     </scm>
 
     <mailingLists>
@@ -184,40 +184,40 @@
                     </execution>
                 </executions>
             </plugin>
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-pmd-plugin</artifactId>-->
-                <!--<version>3.8</version>-->
-                <!--<configuration>-->
-                    <!--<rulesets>-->
-                        <!--<ruleset>rulesets/java/ali-comment.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-concurrent.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-constant.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-exception.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-naming.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-oop.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-orm.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-other.xml</ruleset>-->
-                        <!--<ruleset>rulesets/java/ali-set.xml</ruleset>-->
-                    <!--</rulesets>-->
-                    <!--<printFailingErrors>true</printFailingErrors>-->
-                <!--</configuration>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>check</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-                <!--<dependencies>-->
-                    <!--<dependency>-->
-                        <!--<groupId>com.alibaba.p3c</groupId>-->
-                        <!--<artifactId>p3c-pmd</artifactId>-->
-                        <!--<version>1.3.0</version>-->
-                    <!--</dependency>-->
-                <!--</dependencies>-->
-            <!--</plugin>-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-pmd-plugin</artifactId>
+                <version>3.8</version>
+                <configuration>
+                    <rulesets>
+                        <ruleset>rulesets/java/ali-comment.xml</ruleset>
+                        <ruleset>rulesets/java/ali-concurrent.xml</ruleset>
+                        <ruleset>rulesets/java/ali-constant.xml</ruleset>
+                        <ruleset>rulesets/java/ali-exception.xml</ruleset>
+                        <ruleset>rulesets/java/ali-flowcontrol.xml</ruleset>
+                        <ruleset>rulesets/java/ali-naming.xml</ruleset>
+                        <ruleset>rulesets/java/ali-oop.xml</ruleset>
+                        <ruleset>rulesets/java/ali-orm.xml</ruleset>
+                        <ruleset>rulesets/java/ali-other.xml</ruleset>
+                        <ruleset>rulesets/java/ali-set.xml</ruleset>
+                    </rulesets>
+                    <printFailingErrors>true</printFailingErrors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.alibaba.p3c</groupId>
+                        <artifactId>p3c-pmd</artifactId>
+                        <version>1.3.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
             <plugin>
                 <groupId>org.apache.rat</groupId>
                 <artifactId>apache-rat-plugin</artifactId>
@@ -235,13 +235,17 @@
                         <exclude>.github/*</exclude>
                         <exclude>.github/ISSUE_TEMPLATE/bug_report.md</exclude>
                         <exclude>.github/ISSUE_TEMPLATE/feature_request.md</exclude>
+                        <exclude>src/main/resources/*/*/*</exclude>
                         <exclude>src/main/resources/*/*</exclude>
                         <exclude>src/main/resources/*</exclude>
                         <exclude>src/test/resources/*</exclude>
+                        <exclude>src/main/resources/static/**/*.js</exclude>
+                        <exclude>src/main/resources/**/*.svg</exclude>
+                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
-
                     </excludes>
                 </configuration>
             </plugin>
@@ -429,15 +433,15 @@
             </properties>
         </profile>
     </profiles>
-    <!--<reporting>-->
-        <!--<plugins>-->
-            <!--<plugin>-->
-                <!--<groupId>org.codehaus.mojo</groupId>-->
-                <!--<artifactId>findbugs-maven-plugin</artifactId>-->
-                <!--<version>3.0.1</version>-->
-            <!--</plugin>-->
-        <!--</plugins>-->
-    <!--</reporting>-->
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>3.0.1</version>
+            </plugin>
+        </plugins>
+    </reporting>
 
     <!-- 子模块管理 -->
     <modules>

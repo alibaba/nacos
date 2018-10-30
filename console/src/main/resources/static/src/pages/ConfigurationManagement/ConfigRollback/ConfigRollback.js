@@ -1,3 +1,16 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React from 'react';
 import './index.less';
 import { Button, Dialog, Field, Form, Input } from '@alifd/next';
@@ -111,10 +124,10 @@ class ConfigRollback extends React.Component {
 
                 let url = `/nacos/v1/cs/configs`;
                 if (self.opType.trim() === 'I') {
-                	url = `/nacos/v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
-                	postData = {};
+                    url = `/nacos/v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+                    postData = {};
                 }
-                
+
                 // ajax
                 window.request({
                     type: type,
@@ -171,7 +184,7 @@ class ConfigRollback extends React.Component {
                     </FormItem>
                     <FormItem label=" " {...formItemLayout}>
                         <Button type="primary" style={{ marginRight: 10 }} onClick={this.onOpenConfirm.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback')}</Button>
-                        <Button type="light" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.return')}</Button>
+                        <Button type="normal" onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.configRollback.return')}</Button>
                     </FormItem>
 
                 </Form>

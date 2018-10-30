@@ -1,5 +1,18 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React from 'react';
-import {Icon} from '@alifd/next';
+import { Icon } from '@alifd/next';
 import siteConfig from '../config';
 import Header from './Header';
 import $ from 'jquery';
@@ -186,10 +199,10 @@ export default class MainLayout extends React.Component {
                 if (item.isVirtual) {
                     //如果是虚拟菜单需要增加展开箭头
                     let icon = item.isExtend ? (
-                        <span className="icon-arrow-down iconshow"/>
+                        <span className="icon-arrow-down iconshow" />
                     ) : (
-                        <span className="icon-arrow-right iconshow"/>
-                    );
+                            <span className="icon-arrow-right iconshow" />
+                        );
                     let hiddenClass = item.isExtend ? '' : 'hidden';
                     return (
                         <li
@@ -218,7 +231,7 @@ export default class MainLayout extends React.Component {
                                 id={`${item.serviceName}`}
                                 onClick={this.activeNav.bind(this, `nav${index}`)}
                             >
-                                <div className="nav-icon"/>
+                                <div className="nav-icon" />
                                 <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
                             </a>
                         </li>
@@ -236,7 +249,7 @@ export default class MainLayout extends React.Component {
                         id={`${item.serviceName}`}
                         onClick={this.activeNav.bind(this, `nav${index}`)}
                     >
-                        <div className="nav-icon"/>
+                        <div className="nav-icon" />
                         <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
                     </a>
                 </li>
@@ -349,10 +362,10 @@ export default class MainLayout extends React.Component {
     render() {
         let language = window.aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
 
-        const {headerType, showLink, navRow, leftBarClose, noChild} = this.state;
-        const headerLogo = 'https://img.alicdn.com/tfs/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg';
+        const { headerType, showLink, navRow, leftBarClose, noChild } = this.state;
+        const headerLogo = `${process.env.NODE_ENV === 'development' ? '' : 'public/'}img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg`;
         return (
-            <div className="viewFramework-product" style={{top: 66}}>
+            <div className="viewFramework-product" style={{ top: 66 }}>
                 <Header
                     type={headerType}
                     logo={headerLogo}
@@ -361,7 +374,7 @@ export default class MainLayout extends React.Component {
                 />
                 <div
                     className="viewFramework-product-navbar"
-                    style={{width: 180, marginLeft: 0}}
+                    style={{ width: 180, marginLeft: 0 }}
                     id="viewFramework-product-navbar"
                     data-spm="acm_nav"
                 >
@@ -369,29 +382,33 @@ export default class MainLayout extends React.Component {
                         <div>
                             <div className="product-nav-scene product-nav-main-scene">
                                 {showLink ? (
-                                    <div className="product-nav-icon env" style={{height: 80, paddingTop: 25}}>
+                                    <div className="product-nav-icon env" style={{ height: 80, paddingTop: 25 }}>
                                         {showLink}
                                     </div>
                                 ) : (
-                                    <div
-                                        style={{textIndent: 0}}
-                                        className={'product-nav-title'}
-                                        title={window.aliwareIntl.get(
-                                            'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
-                                        )}
-                                    >
-                                        {window.aliwareIntl.get(
-                                            'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
-                                        )}
-                                        {window.aliwareIntl.get(
-                                            'com.alibaba.nacos.layout.noenv.nacosversion'
-                                        )}
-                                    </div>
-                                )}
+                                        <div
+                                            style={{ textIndent: 0 }}
+                                            className={'product-nav-title'}
+                                            title={window.aliwareIntl.get(
+                                                'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
+                                            )}
+                                        >
+                                            <span>
+                                                {window.aliwareIntl.get(
+                                                    'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
+                                                )}
+                                            </span>
+                                            <span style={{ marginLeft: 5 }}>
+                                                {window.aliwareIntl.get(
+                                                    'com.alibaba.nacos.layout.noenv.nacosversion'
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
 
                                 <div
                                     className="product-nav-list"
-                                    style={{position: 'relative', top: 0, height: '100%'}}
+                                    style={{ position: 'relative', top: 0, height: '100%' }}
                                 >
                                     {navRow}
                                 </div>
@@ -405,25 +422,25 @@ export default class MainLayout extends React.Component {
                     onClick={this.nacosToggleLeftBar.bind(this)}
                 >
                     <div className="product-navbar-collapse-inner">
-                        <div className="product-navbar-collapse-bg"/>
+                        <div className="product-navbar-collapse-bg" />
                         <div className="product-navbar-collapse">
                             {leftBarClose ? (
-                                <span className="icon-collapse-right" style={{display: 'block'}}/>
+                                <span className="icon-collapse-right" style={{ display: 'block' }} />
                             ) : (
-                                <span className="icon-collapse-left"/>
-                            )}
+                                    <span className="icon-collapse-left" />
+                                )}
                         </div>
                     </div>
                 </div>
-                <div className="viewFramework-product-body" style={{marginLeft: 180}} id="viewFramework-product-body">
+                <div className="viewFramework-product-body" style={{ marginLeft: 180 }} id="viewFramework-product-body">
                     <div>
                         {!noChild ? (
                             <div>{this.props.children}</div>
                         ) : (
-                            <div style={{height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px'}}>
-                                {window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}
-                            </div>
-                        )}
+                                <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>
+                                    {window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}
+                                </div>
+                            )}
                     </div>
                 </div>
             </div>
