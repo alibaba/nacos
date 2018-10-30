@@ -308,7 +308,8 @@ public class ApiCommands {
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(port);
         ipAddress.setIp(ip);
-        ipAddress.setWeight(1);
+        ipAddress.setWeight(clientBeat.getWeight());
+        ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
 
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
