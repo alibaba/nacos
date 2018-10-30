@@ -17,6 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 
+import java.util.Map;
+
 /**
  * Metrics info of server
  *
@@ -33,6 +35,8 @@ public class RsInfo {
     private String dom;
     private String ak;
     private String cluster;
+    private double weight;
+    private Map<String, String> metadata;
 
     public String getDom() {
         return dom;
@@ -112,6 +116,22 @@ public class RsInfo {
 
     public void setMem(double mem) {
         this.mem = mem;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(double weight) {
+        this.weight = weight;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
     }
 
     public String toString() {
