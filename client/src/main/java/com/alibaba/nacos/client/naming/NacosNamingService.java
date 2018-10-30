@@ -155,6 +155,8 @@ public class NacosNamingService implements NamingService {
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
         beatInfo.setCluster(instance.getCluster().getName());
+        beatInfo.setWeight(instance.getWeight());
+        beatInfo.setMetadata(instance.getMetadata());
 
         beatReactor.addBeatInfo(serviceName, beatInfo);
 
