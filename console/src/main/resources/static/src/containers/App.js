@@ -20,6 +20,7 @@ import { connect } from 'dva';
 import MainLayout from '../layouts/MainLayout';
 import { Message, Loading } from '@alifd/next';
 import _menu from '../menu';
+import { nacosEvent } from '../globalLib';
 
 class App extends Component {
 
@@ -27,14 +28,15 @@ class App extends Component {
         super(props);
         this.state = {
             shownotice: 'none',
-            noticecontent: ''
+            noticecontent: '',
+            nacosLoading: {}
         }
     }
     componentDidMount() {
         //监听loading事件
-        window.narutoEvent.listenAllTask("narutoLoadingEvent", (narutoLoading) => {
+        nacosEvent.listenAllTask("nacosLoadingEvent", (nacosLoading) => {
             this.setState({
-                narutoLoading
+                nacosLoading
             })
         });
     }
@@ -46,7 +48,7 @@ class App extends Component {
     }
 
     componentWillUnmount() {
-        window.narutoEvent.remove("narutoLoadingEvent");
+        nacosEvent.remove("nacosLoadingEvent");
     }
 
     openErr(message) {
@@ -60,10 +62,9 @@ class App extends Component {
     }
     render() {
         const { errcode, errinfo } = this.props;
-
         return (
-            <Loading className="naruto-loading" shape="flower" tip="loading..." visible={false} fullScreen {...this.state.narutoLoading}>
-                <MainLayout navList={_menu.data}>
+            <Loading className="nacos-loading" shape="flower" tip="loading..." visible={false} fullScreen {...this.state.nacosLoading}>
+                <MainLayout {...this.props} navList={_menu.data}>
                     {errcode === 1 ? <Message title={errinfo} closable style={{ position: 'absolute', zIndex: 99999, width: 800, left: '50%', marginLeft: -400 }} /> : null}
                     {this.props.children}
                 </MainLayout>

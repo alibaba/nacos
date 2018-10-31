@@ -270,8 +270,7 @@ class DumpAllProcessor implements TaskProcessor {
 					final String content = cf.getContent();
 					final String md5 = MD5.getInstance().getMD5String(content);
 					LogUtil.dumpLog.info("[dump-all-ok] {}, {}, length={}, md5={}",
-							new Object[] { GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
-									content.length(), md5 });
+						GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(), md5);
 				}
 				defaultLog.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
 			} else {
@@ -307,9 +306,9 @@ class DumpAllBetaProcessor implements TaskProcessor {
 				for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
 					boolean result = ConfigService.dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(),
 							cf.getContent(), cf.getLastModified(), cf.getBetaIps());
-					LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}",
-							new Object[] { result, GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
-									cf.getLastModified(), cf.getContent().length(), cf.getMd5() });
+					LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
+						GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), cf.getContent()
+							.length(), cf.getMd5());
 				}
 
 				actualRowCount += page.getPageItems().size();
@@ -345,9 +344,9 @@ class DumpAllTagProcessor implements TaskProcessor {
 				for (ConfigInfoTagWrapper cf : page.getPageItems()) {
 					boolean result = ConfigService.dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(),
 							cf.getContent(), cf.getLastModified());
-					LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}",
-							new Object[] { result, GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
-									cf.getLastModified(), cf.getContent().length(), cf.getMd5() });
+					LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
+						GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), cf.getContent()
+							.length(), cf.getMd5());
 				}
 				
 				actualRowCount += page.getPageItems().size();

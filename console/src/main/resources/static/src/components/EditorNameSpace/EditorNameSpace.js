@@ -13,6 +13,7 @@
 
 import React from 'react';
 import './index.less';
+import { request, aliwareIntl } from '../../globalLib';
 import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 const FormItem = Form.Item;
 
@@ -28,9 +29,9 @@ class EditorNameSpace extends React.Component {
     }
 
     componentDidMount() {
-    	
+
     }
-    
+
     openDialog(record) {
         this.getNamespaceDetail(record);
         this.setState({
@@ -56,9 +57,9 @@ class EditorNameSpace extends React.Component {
         });
     }
 
-    getNamespaceDetail(record){
+    getNamespaceDetail(record) {
         this.field.setValues(record);
-        window.request({
+        request({
             type: 'get',
             url: `/nacos/v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
             success: res => {
@@ -66,8 +67,8 @@ class EditorNameSpace extends React.Component {
                     this.field.setValue('namespaceDesc', res.namespaceDesc);
                 } else {
                     Dialog.alert({
-                        language: window.pageLanguage || 'zh-cn',
-                        title: window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
+                        language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                        title: aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
                         content: res.message
                     });
                 }
@@ -84,7 +85,7 @@ class EditorNameSpace extends React.Component {
             if (errors) {
                 return;
             }
-            window.request({
+            request({
                 type: 'put',
                 beforeSend: () => {
                     this.openLoading();
@@ -92,9 +93,9 @@ class EditorNameSpace extends React.Component {
                 url: `/nacos/v1/console/namespaces`,
                 contentType: 'application/x-www-form-urlencoded',
                 data: {
-                	"namespace":values.namespace,
-                	"namespaceShowName":values.namespaceShowName,
-                	"namespaceDesc":values.namespaceDesc
+                    "namespace": values.namespace,
+                    "namespaceShowName": values.namespaceShowName,
+                    "namespaceDesc": values.namespaceDesc
                 },
                 success: res => {
                     if (res === true) {
@@ -103,8 +104,8 @@ class EditorNameSpace extends React.Component {
                         this.refreshNameSpace(); //刷新全局namespace
                     } else {
                         Dialog.alert({
-                            language: window.pageLanguage || 'zh-cn',
-                            title: window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.prompt'),
+                            language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                            title: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.prompt'),
                             content: res.message
                         });
                     }
@@ -115,11 +116,11 @@ class EditorNameSpace extends React.Component {
             });
         });
     }
-    
+
     refreshNameSpace() {
 
         setTimeout(() => {
-            window.request({
+            request({
                 type: 'get',
                 url: `/nacos/v1/console/namespaces`,
                 success: res => {
@@ -134,7 +135,7 @@ class EditorNameSpace extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.please_do'));
+            callback(aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.please_do'));
         } else {
             callback();
         }
@@ -149,26 +150,26 @@ class EditorNameSpace extends React.Component {
             }
         };
 
-        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.public_space')}</Button>;
+        let footer = this.state.type === 0 ? <div></div> : <Button type="primary" onClick={this.handleSubmit.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.public_space')}</Button>;
         return (
             <div>
-                <Dialog title={window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={window.aliwareIntl.currentLanguageCode}>
-                    <Loading tip={window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.confirm_modify')} style={{ width: '50%' }} visible={this.state.dialogvisible} footer={footer} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}>
+                    <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.edit_namespace')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
                         <Form field={this.field}>
-                            <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.load')} required {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.load')} required {...formItemLayout}>
                                 <Input {...this.field.init('namespaceShowName', {
                                     rules: [{
                                         required: true,
-                                        message: window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
+                                        message: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
                                     }, { validator: this.validateChart.bind(this) }]
                                 })} disabled={this.state.type === 0 ? true : false} />
                             </FormItem>
-                            <FormItem label={window.aliwareIntl.get('nacos.page.configdetail.Description')} required {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('nacos.page.configdetail.Description')} required {...formItemLayout}>
                                 <Input {...this.field.init('namespaceDesc', {
-                                	rules: [{
-                                		required: true,
-                                		message: window.aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
-                                	}, { validator: this.validateChart.bind(this) }]
+                                    rules: [{
+                                        required: true,
+                                        message: aliwareIntl.get('com.alibaba.nacos.component.EditorNameSpace.namespace')
+                                    }, { validator: this.validateChart.bind(this) }]
                                 })} disabled={this.state.type === 0 ? true : false} />
                             </FormItem>
                         </Form>
