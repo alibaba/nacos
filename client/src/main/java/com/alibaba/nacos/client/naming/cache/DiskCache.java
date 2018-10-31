@@ -87,7 +87,8 @@ public class DiskCache {
                     continue;
                 }
 
-                if (!(file.getName().endsWith(ServiceInfo.SPLITER + "meta") || file.getName().endsWith(ServiceInfo.SPLITER + "special-url"))) {
+                if (!(file.getName().endsWith(ServiceInfo.SPLITTER
+                    + "meta") || file.getName().endsWith(ServiceInfo.SPLITTER + "special-url"))) {
                     ServiceInfo dom = new ServiceInfo(file.getName());
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);

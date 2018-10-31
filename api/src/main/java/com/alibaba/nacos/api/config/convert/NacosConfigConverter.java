@@ -41,5 +41,4 @@ public interface NacosConfigConverter<T> {
      */
     T convert(String config);
 
-
 }

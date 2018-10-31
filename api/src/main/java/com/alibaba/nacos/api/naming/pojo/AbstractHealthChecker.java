@@ -15,14 +15,15 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.common.Constants;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * @author dungu.zpf
@@ -30,6 +31,10 @@ import java.util.Objects;
 public abstract class AbstractHealthChecker implements Cloneable {
 
     protected String type = "unknown";
+
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
 
     public String getType() {
         return type;
@@ -113,7 +118,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Http other = (Http) obj;
+            Http other = (Http)obj;
 
             if (!strEquals(type, other.getType())) {
                 return false;
@@ -181,8 +186,16 @@ public abstract class AbstractHealthChecker implements Cloneable {
             return cmd;
         }
 
+        public void setCmd(String cmd) {
+            this.cmd = cmd;
+        }
+
         public String getPwd() {
             return pwd;
+        }
+
+        public void setPwd(String pwd) {
+            this.pwd = pwd;
         }
 
         public String getUser() {
@@ -191,14 +204,6 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         public void setUser(String user) {
             this.user = user;
-        }
-
-        public void setCmd(String cmd) {
-            this.cmd = cmd;
-        }
-
-        public void setPwd(String pwd) {
-            this.pwd = pwd;
         }
 
         @Override
@@ -212,7 +217,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Mysql other = (Mysql) obj;
+            Mysql other = (Mysql)obj;
 
             if (!strEquals(user, other.getUser())) {
                 return false;
@@ -236,9 +241,5 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             return config;
         }
-    }
-
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
     }
 }

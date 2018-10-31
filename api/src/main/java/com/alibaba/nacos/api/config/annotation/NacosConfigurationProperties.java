@@ -16,14 +16,17 @@
  */
 package com.alibaba.nacos.api.config.annotation;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.common.Constants;
 
-import java.lang.annotation.*;
-
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
-
 
 /**
  * An annotation for Nacos configuration Properties for binding POJO as Properties Object.
@@ -58,7 +61,6 @@ public @interface NacosConfigurationProperties {
      * @return default value is <code>false</code>
      */
     boolean autoRefreshed() default false;
-
 
     /**
      * Flag to indicate that when binding to this object invalid fields should be ignored.

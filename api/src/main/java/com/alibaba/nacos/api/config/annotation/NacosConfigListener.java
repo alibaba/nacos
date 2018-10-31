@@ -16,11 +16,15 @@
  */
 package com.alibaba.nacos.api.config.annotation;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.convert.NacosConfigConverter;
-
-import java.lang.annotation.*;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 
