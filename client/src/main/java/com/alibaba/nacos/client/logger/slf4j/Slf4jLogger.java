@@ -65,12 +65,17 @@ public class Slf4jLogger extends LoggerSupport implements Logger {
             activateOptionClass = "com.alibaba.nacos.client.logger.option.Slf4jLog4j2AdapterActivateOption";
         }
 
-        try {
-            Class<ActivateOption> clazz = (Class<ActivateOption>) Class.forName(activateOptionClass);
-            Constructor<ActivateOption> c = clazz.getConstructor(Object.class);
-            this.activateOption = c.newInstance(delegate);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("delegate must be logback impl or slf4j-log4j impl", e);
+        // log4j的场合 存在delegate.getClass().getName()==org.slf4j.impl.log4jLoggerAdapter的可能，
+        // 所以需要判断activateOptionClass是否等于空来避免 NPE
+        // 其他替代解决方案 可以把日志的初期处理 交给使用者，相关代码可以全部删除
+        if (activateOptionClass != null) {
+            try {
+                Class<ActivateOption> clazz = (Class<ActivateOption>) Class.forName(activateOptionClass);
+                Constructor<ActivateOption> c = clazz.getConstructor(Object.class);
+                this.activateOption = c.newInstance(delegate);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("delegate must be logback impl or slf4j-log4j impl", e);
+            }
         }
     }
 
