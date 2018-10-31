@@ -12,14 +12,15 @@
  */
 
 import React from 'react';
-import RegionGroup from '../../../components/RegionGroup/index' ;
-import {Button, Field, Form, Grid, Input, Loading, Pagination, Table} from '@alifd/next';
-import {I18N, STATUS_COLOR_MAPPING} from './constant'
+import RegionGroup from '../../../components/RegionGroup/index';
+import { request, aliwareIntl } from '../../../globalLib';
+import { Button, Field, Form, Grid, Input, Loading, Pagination, Table } from '@alifd/next';
+import { I18N, STATUS_COLOR_MAPPING } from './constant'
 import './ServiceList.less'
 
 const FormItem = Form.Item;
-const {Row, Col} = Grid;
-const {Column} = Table
+const { Row, Col } = Grid;
+const { Column } = Table
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class ServiceList extends React.Component {
@@ -37,20 +38,20 @@ class ServiceList extends React.Component {
     }
 
     openLoading() {
-        this.setState({loading: true})
+        this.setState({ loading: true })
     }
 
     closeLoading() {
-        this.setState({loading: false})
+        this.setState({ loading: false })
     }
 
     queryServiceList() {
-        const {currentPage, pageSize, keyword} = this.state
+        const { currentPage, pageSize, keyword } = this.state
         const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`]
-        window.request({
+        request({
             url: `/nacos/v1/ns/catalog/serviceList?${parameter.join('&')}`,
             beforeSend: () => this.openLoading(),
-            success: ({count = 0, serviceList = []} = {}) => this.setState({
+            success: ({ count = 0, serviceList = [] } = {}) => this.setState({
                 dataSource: serviceList,
                 total: count
             }),
@@ -67,20 +68,20 @@ class ServiceList extends React.Component {
         setTimeout(() => this.queryServiceList());
     }
 
-    rowColor = ({status}) => ({className: `row-bg-${STATUS_COLOR_MAPPING[status]}`})
+    rowColor = ({ status }) => ({ className: `row-bg-${STATUS_COLOR_MAPPING[status]}` })
 
     render() {
-        const {keyword} = this.state
-        const {init, getValue} = this.field;
+        const { keyword } = this.state
+        const { init, getValue } = this.field;
         this.init = init;
         this.getValue = getValue;
-        const locale = {empty: I18N.PUBNODEDATA}
+        const locale = { empty: I18N.PUBNODEDATA }
 
         return (
             <div className="main-container service-management">
                 <Loading
                     shape="flower"
-                    style={{position: 'relative'}}
+                    style={{ position: 'relative' }}
                     visible={this.state.loading}
                     tip="Loading..."
                     color="#333"
@@ -89,58 +90,58 @@ class ServiceList extends React.Component {
                         left={I18N.SERVICE_LIST}
                         namespaceCallBack={this.getQueryLater.bind(this)}
                     />
-                    <Row className="demo-row" style={{marginBottom: 10, padding: 0}}>
+                    <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
                         <Col span="24">
                             <Form inline field={this.field}>
                                 <FormItem label={I18N.SERVICE_NAME}>
                                     <Input
                                         placeholder={I18N.ENTER_SERVICE_NAME}
-                                        style={{width: 200}}
+                                        style={{ width: 200 }}
                                         value={keyword}
-                                        onChange={keyword => this.setState({keyword})}
+                                        onChange={keyword => this.setState({ keyword })}
                                     />
                                 </FormItem>
                                 <FormItem label="">
                                     <Button
                                         type="primary"
-                                        onClick={() => this.setState({currentPage: 1}, () => this.queryServiceList())}
-                                        style={{marginRight: 10}}
+                                        onClick={() => this.setState({ currentPage: 1 }, () => this.queryServiceList())}
+                                        style={{ marginRight: 10 }}
                                     >{I18N.QUERY}</Button>
                                 </FormItem>
                             </Form>
                         </Col>
                     </Row>
-                    <Row style={{padding: 0}}>
-                        <Col span="24" style={{padding: 0}}>
+                    <Row style={{ padding: 0 }}>
+                        <Col span="24" style={{ padding: 0 }}>
                             <Table
                                 dataSource={this.state.dataSource}
                                 fixedHeader={true}
                                 maxBodyHeight={530}
                                 locale={locale}
-                                language={window.aliwareIntl.currentLanguageCode}
+                                language={aliwareIntl.currentLanguageCode}
                                 className={r => this.rowColor[r.status]}
                                 getRowProps={this.rowColor}
                             >
-                                <Column title={I18N.COLUMN_SERVICE_NAME} dataIndex="name"/>
-                                <Column title={I18N.COLUMN_CLUSTER_COUNT} dataIndex="clusterCount"/>
-                                <Column title={I18N.COLUMN_IP_COUNT} dataIndex="ipCount"/>
-                                <Column title={I18N.COLUMN_HEALTH_STATUS} dataIndex="status"/>
+                                <Column title={I18N.COLUMN_SERVICE_NAME} dataIndex="name" />
+                                <Column title={I18N.COLUMN_CLUSTER_COUNT} dataIndex="clusterCount" />
+                                <Column title={I18N.COLUMN_IP_COUNT} dataIndex="ipCount" />
+                                <Column title={I18N.COLUMN_HEALTH_STATUS} dataIndex="status" />
                                 <Column title={I18N.COLUMN_OPERATION} align="center" cell={(value, index, record) => (
                                     <Button
                                         type="normal"
                                         onClick={() => this.props.history.push(`/serviceDetail?name=${record.name}`)}
                                     >{I18N.DETAIL}</Button>
-                                )}/>
+                                )} />
                             </Table>
                         </Col>
                     </Row>
-                    <div style={{marginTop: 10, textAlign: 'right'}}>
+                    <div style={{ marginTop: 10, textAlign: 'right' }}>
                         <Pagination
                             current={this.state.currentPage}
                             total={this.state.total}
                             pageSize={this.state.pageSize}
-                            onChange={currentPage => this.setState({currentPage}, () => this.queryServiceList())}
-                            language={window.pageLanguage}
+                            onChange={currentPage => this.setState({ currentPage }, () => this.queryServiceList())}
+                            language={aliwareIntl.currentLanguageCode}
                         />
                     </div>
                 </Loading>
