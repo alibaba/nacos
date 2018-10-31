@@ -34,6 +34,7 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -100,7 +101,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, false);
     }
 
     public NacosNamingService(Properties properties) {
@@ -124,10 +125,15 @@ public class NacosNamingService implements NamingService {
 
         cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
 
+        boolean loadCacheAtStart = false;
+        if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
+            loadCacheAtStart = BooleanUtils.toBoolean(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
+        }
+
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, loadCacheAtStart);
 
     }
 
