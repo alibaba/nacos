@@ -195,7 +195,7 @@ public class ConfigAPI_ITCase {
      * @TCDescription : nacos_发布配置时包含特殊字符
      * @throws Exception
      */
-    @Test(timeout = 500*TIME_OUT)
+    @Test(timeout = 5*TIME_OUT)
     public void nacos_publishConfig_3() throws Exception {
         String content = "test" + SPECIAL_CHARACTERS;
         boolean result = iconfig.publishConfig(dataId, group, content);
