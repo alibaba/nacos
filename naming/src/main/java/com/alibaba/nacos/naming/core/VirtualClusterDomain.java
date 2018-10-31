@@ -58,7 +58,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     /**
      * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
      */
-    private long ipDeleteTimeout = 1800 * 1000;
+    private long ipDeleteTimeout = 30 * 1000;
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -496,10 +496,17 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             enableHealthCheck = vDom.getEnableHealthCheck();
         }
 
+        if (enableClientBeat != vDom.getEnableClientBeat().booleanValue()) {
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enableClientBeat: " + enableClientBeat + " -> " + vDom.getEnableClientBeat());
+            enableClientBeat = vDom.getEnableClientBeat();
+        }
+
         if (enabled != vDom.getEnabled().booleanValue()) {
             Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enabled: " + enabled + " -> " + vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
+
+        metadata = vDom.getMetadata();
 
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);
