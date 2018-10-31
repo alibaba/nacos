@@ -553,10 +553,19 @@ public class ApiCommands {
 
         if (virtualClusterDomain == null) {
 
-            regDom(request);
-
             Lock lock = domainsManager.addLock(dom);
             Condition condition = domainsManager.addCondtion(dom);
+
+            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        regDom(request);
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
+                    }
+                }
+            });
 
             try {
                 lock.lock();
