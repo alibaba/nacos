@@ -17,6 +17,8 @@ package com.alibaba.nacos.client.naming.beat;
 
 import com.alibaba.fastjson.JSON;
 
+import java.util.Map;
+
 /**
  * @author dungu.zpf
  */
@@ -24,8 +26,10 @@ public class BeatInfo {
 
     private int port;
     private String ip;
+    private double weight;
     private String dom;
     private String cluster;
+    private Map<String, String> metadata;
 
     @Override
     public String toString() {
@@ -62,5 +66,21 @@ public class BeatInfo {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
+    }
+
+    public double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(double weight) {
+        this.weight = weight;
     }
 }
