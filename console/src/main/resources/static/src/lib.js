@@ -10,10 +10,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { getParams, request, aliwareIntl } from './globalLib';
 
 var hasAlert = false;
-
-window.pageLanguage = window.aliwareIntl.currentLanguageCode;
 
 window.edasprefix = 'acm'; //固定的edas网关需要的项目名
 
@@ -28,9 +27,9 @@ window.globalConfig = {
     }
 };
 
-window.request.middleWare(config => {
+request.middleWare(config => {
     let url = config.url;
-    let tenant = window.nownamespace || window.getParams('namespace') || '';
+    let tenant = window.nownamespace || getParams('namespace') || '';
     tenant = tenant === 'global' ? '' : tenant;
     let splitArr = url.split('?');
     if (splitArr.length > 1) {
@@ -49,21 +48,10 @@ window.request.middleWare(config => {
         if (res.code === 'ConsoleNeedLogin' && window.location.host.indexOf('acm') !== -1) {
             window.location.reload();
         }
-        //鉴权
-        if (res.code && res.code === -403) {
-            window.narutoEvent && window.narutoEvent.trigger("validate", {
-                codeType: res.data.codeType,
-                verifyDetail: res.data.verifyDetail,
-                config: Object.assign({}, config, {
-                    success: preSucess
-                })
-            });
-            return;
-        }
         if (res.code === 403 && !hasAlert) {
             hasAlert = true;
             window.Dialog.alert({
-                language: window.pageLanguage || 'zh-cn',
+                language: aliwareIntl.currentLanguageCode || 'zh-cn',
                 style: { width: 400 },
                 content: res.message,
                 onOk: () => {
@@ -87,9 +75,9 @@ window.request.middleWare(config => {
             hasAlert = true;
 
             window.Dialog.alert({
-                language: window.pageLanguage || 'zh-cn',
+                language: aliwareIntl.currentLanguageCode || 'zh-cn',
                 style: { width: 400 },
-                content: window.aliwareIntl.get('com.alibaba.nacos.pubshow'), //'子账号没有权限，请联系主账号负责人RAM上授权',
+                content: aliwareIntl.get('com.alibaba.nacos.pubshow'), //'子账号没有权限，请联系主账号负责人RAM上授权',
                 onOk: () => {
                     hasAlert = false;
                 },
@@ -173,7 +161,7 @@ window.importEditor = callback => {
 
 window._getLink = function () {
     let _linkObj = {};
-    // window.request({
+    // request({
     //     url: "com.alibaba.nacos.service.getLinks",
     //     async: false,
     //     data: {},
