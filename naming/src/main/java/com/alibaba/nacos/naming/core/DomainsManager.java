@@ -19,7 +19,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.util.Pair;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
 import com.alibaba.nacos.naming.push.PushService;
@@ -180,7 +179,7 @@ public class DomainsManager {
 
         JSONArray ipList = dom.getJSONArray("ips");
         Map<String, String> ipsMap = new HashMap<>(ipList.size());
-        for (int i=0; i<ipList.size(); i++) {
+        for (int i = 0; i < ipList.size(); i++) {
 
             String ip = ipList.getString(i);
             String[] strings = ip.split("_");
@@ -661,6 +660,7 @@ public class DomainsManager {
                     try {
                         lock.lock();
                         condition.signalAll();
+                    } catch (Exception ignore) {
                     } finally {
                         lock.unlock();
                     }
