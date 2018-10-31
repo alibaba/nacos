@@ -257,7 +257,6 @@ public class ApiCommands {
     @RequestMapping("/regDom")
     public String regDom(HttpServletRequest request) throws Exception {
 
-
         String dom = BaseServlet.required(request, "dom");
         if (domainsManager.getDomain(dom) != null) {
             throw new IllegalArgumentException("specified dom already exists, dom : " + dom);
