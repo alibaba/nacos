@@ -1,4 +1,17 @@
-import React from 'react'; 
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import React from 'react';
 import './index.less';
 import { Dialog, Loading, Tab } from '@alifd/next';
 const TabPane = Tab.Item; 
@@ -98,25 +111,18 @@ public class ConfigController {
 
     getJavaCode(data) {
         return `/*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+* Demo for Nacos
+* pom.xml
+    <dependency>
+        <groupId>com.alibaba.nacos</groupId>
+        <artifactId>nacos-client</artifactId>
+        <version>\${version}</version>
+    </dependency>
+*/
 package com.alibaba.nacos.example;
 
 import java.util.Properties;
 import java.util.concurrent.Executor;
-
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -135,7 +141,7 @@ public class ConfigExample {
 		String dataId = "${data.dataId}";
 		String group = "${data.group}";
 		Properties properties = new Properties();
-		properties.put("serverAddr", serverAddr);
+		properties.put(PropertyKeyConst.SERVER_ADDR, serverAddr);
 		ConfigService configService = NacosFactory.createConfigService(properties);
 		String content = configService.getConfig(dataId, group, 5000);
 		System.out.println(content);

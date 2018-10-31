@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.3.0-RC1</version>
+    <version>0.3.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.3.0-RC1</tag>
+        <tag>nacos-all-0.3.0</tag>
     </scm>
 
     <mailingLists>
@@ -235,13 +235,17 @@
                         <exclude>.github/*</exclude>
                         <exclude>.github/ISSUE_TEMPLATE/bug_report.md</exclude>
                         <exclude>.github/ISSUE_TEMPLATE/feature_request.md</exclude>
+                        <exclude>src/main/resources/*/*/*</exclude>
                         <exclude>src/main/resources/*/*</exclude>
                         <exclude>src/main/resources/*</exclude>
                         <exclude>src/test/resources/*</exclude>
+                        <exclude>src/main/resources/static/**/*.js</exclude>
+                        <exclude>src/main/resources/**/*.svg</exclude>
+                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
-
                     </excludes>
                 </configuration>
             </plugin>

@@ -1,3 +1,16 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React from 'react';
 import './index.less';
 import { Dialog } from '@alifd/next';
@@ -81,20 +94,7 @@ class NameSpaceList extends React.Component {
                 url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
-                        let edasAppId = window.getParams('edasAppId');
-                        if (edasAppId && edasAppId !== '') {
-                            console.log("======", edasAppId);
-                            window.request({
-                                type: 'get',
-                                url: `/diamond-ops/service/namespaceId?edasAppId=${edasAppId}`,
-                                success: res => {
-                                    this._namespace = res.data;
-                                    this.handleNameSpaces([{ namespace: res.data }]);
-                                }
-                            });
-                        } else {
-                            this.handleNameSpaces(res.data);
-                        }
+                        this.handleNameSpaces(res.data);    
                     } else {
                         Dialog.alert({
                             language: window.pageLanguage || 'zh-cn',
@@ -105,11 +105,6 @@ class NameSpaceList extends React.Component {
                 },
                 error: res => {
                     window.namespaceList = [];
-                    //                    window.namespaceList = [{
-                    //                    	"namespace": "",
-                    //                    	"namespaceShowName": "公共空间",
-                    //                    	"type": 0
-                    //                    }];
                     this.handleNameSpaces(window.namespaceList);
                 }
             });

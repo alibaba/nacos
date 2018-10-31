@@ -65,6 +65,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -272,38 +273,50 @@ public class ApiCommands {
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
         String beat = BaseServlet.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
+        if (StringUtils.isBlank(clientBeat.getCluster())) {
+            clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
         String dom = BaseServlet.required(request, "dom");
         String app;
         app = BaseServlet.optional(request, "app", StringUtils.EMPTY);
         String clusterName = clientBeat.getCluster();
 
+        if (StringUtils.isBlank(clusterName)) {
+            clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+        }
+
         Loggers.TENANT.debug("client-beat", "beat: " + beat);
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
+        Map<String, String[]> stringMap = new HashMap<>(16);
+        stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
+        stringMap.put("enableClientBeat", Arrays.asList("true").toArray(new String[1]));
+        stringMap.put("cktype", Arrays.asList("TCP").toArray(new String[1]));
+        stringMap.put("appName", Arrays.asList(app).toArray(new String[1]));
+        stringMap.put("clusterName", Arrays.asList(clusterName).toArray(new String[1]));
 
         //if domain does not exist, register it.
         if (virtualClusterDomain == null) {
-            Map<String, String[]> stringMap = new HashMap<>(16);
-            stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
-            stringMap.put("enableClientBeat", Arrays.asList("true").toArray(new String[1]));
-            stringMap.put("cktype", Arrays.asList("TCP").toArray(new String[1]));
-            stringMap.put("appName", Arrays.asList(app).toArray(new String[1]));
-            stringMap.put("clusterName", Arrays.asList(clusterName).toArray(new String[1]));
             regDom(MockHttpRequest.buildRequest(stringMap));
+            Loggers.SRV_LOG.warn("dom not found, register it, dom:" + dom);
+        }
 
-            virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
-            String ip = clientBeat.getIp();
-            int port = clientBeat.getPort();
+        virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
-            IpAddress ipAddress = new IpAddress();
-            ipAddress.setPort(port);
-            ipAddress.setIp(ip);
-            ipAddress.setWeight(1);
-            ipAddress.setClusterName(clusterName);
+        String ip = clientBeat.getIp();
+        int port = clientBeat.getPort();
 
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.setPort(port);
+        ipAddress.setIp(ip);
+        ipAddress.setWeight(clientBeat.getWeight());
+        ipAddress.setMetadata(clientBeat.getMetadata());
+        ipAddress.setClusterName(clusterName);
+
+        if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             addIP4Dom(MockHttpRequest.buildRequest(stringMap));
-            Loggers.SRV_LOG.warn("dom not found, register it, dom:" + dom);
+            Loggers.SRV_LOG.warn("ip not found, register it, dom:" + dom + ", ip:" + ipAddress);
         }
 
         if (!DistroMapper.responsible(dom)) {
@@ -541,12 +554,25 @@ public class ApiCommands {
 
         if (virtualClusterDomain == null) {
 
-            regDom(request);
-
             Lock lock = domainsManager.addLock(dom);
+            Condition condition = domainsManager.addCondtion(dom);
 
-            synchronized (lock) {
-                lock.wait(5000L);
+            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        regDom(request);
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
+                    }
+                }
+            });
+
+            try {
+                lock.lock();
+                condition.await(5000, TimeUnit.MILLISECONDS);
+            } finally {
+                lock.unlock();
             }
 
             virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
@@ -1187,7 +1213,6 @@ public class ApiCommands {
                 ipObj.put("metadata", ip.getMetadata());
                 ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());
-
                 hosts.add(ipObj);
 
             }
@@ -1196,13 +1221,13 @@ public class ApiCommands {
         result.put("hosts", hosts);
 
         result.put("dom", dom);
-        result.put("clusters", clusters);
         result.put("cacheMillis", cacheMillis);
         result.put("lastRefTime", System.currentTimeMillis());
         result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
         result.put("useSpecifiedURL", false);
+        result.put("clusters", clusters);
         result.put("env", env);
-
+        result.put("metadata",domObj.getMetadata());
         return result;
     }
 
@@ -1437,7 +1462,9 @@ public class ApiCommands {
                     Switch.setPushPythonVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
                     Switch.setPushCVersion(version);
-                } else {
+                } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
+                    Switch.setPushGoVersion(version);
+                } else{
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
 

@@ -1,3 +1,16 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React from 'react';
 import classnames from 'classnames';
 import siteConfig from '../config';
@@ -16,7 +29,7 @@ const languageSwitch = [
     value: 'zh-cn',
   },
 ];
-const noop = () => {};
+const noop = () => { };
 
 const defaultProps = {
   type: 'primary',
@@ -32,7 +45,7 @@ class Header extends React.Component {
       menuBodyVisible: false,
       language: props.language,
     };
-    
+
     this.switchLang = this.switchLang.bind(this);
   }
 
@@ -79,19 +92,19 @@ class Header extends React.Component {
           </a>
           {
             onLanguageChange !== noop ?
-            (<span
-              className={
-                classnames({
-                  'language-switch': true,
-                  [`language-switch-${type}`]: true,
-                })
-              }
-              onClick={this.switchLang}
-            >
-              {languageSwitch.find(lang => lang.value === language).text}
-            </span>)
-            :
-            null
+              (<span
+                className={
+                  classnames({
+                    'language-switch': true,
+                    [`language-switch-${type}`]: true,
+                  })
+                }
+                onClick={this.switchLang}
+              >
+                {languageSwitch.find(lang => lang.value === language).text}
+              </span>)
+              :
+              null
           }
           <div
             className={
@@ -101,24 +114,18 @@ class Header extends React.Component {
               })
             }
           >
-            <img
-              className="header-menu-toggle"
-              onClick={this.toggleMenu}
-              alt=""
-              src={type === 'primary' ? getLink('/img/menu_white.png') : getLink('/img/menu_gray.png')}
-            />
             <ul>
               {siteConfig[language].pageMenu.map((item) => (
-                  <li
-                    key={item.link}
-                    className={classnames({
-                      'menu-item': true,
-                      [`menu-item-${type}`]: true,
-                      [`menu-item-${type}-active`]: currentKey === item.key,
-                    })}
-                  >
-                    <a href={getLink(item.link)}  target="_blank" rel="noopener noreferrer">{item.text}</a>
-                  </li>
+                <li
+                  key={item.link}
+                  className={classnames({
+                    'menu-item': true,
+                    [`menu-item-${type}`]: true,
+                    [`menu-item-${type}-active`]: currentKey === item.key,
+                  })}
+                >
+                  <a href={getLink(item.link)} target="_blank" rel="noopener noreferrer">{item.text}</a>
+                </li>
               ))}
             </ul>
           </div>
