@@ -311,6 +311,10 @@ public class ApiCommands {
         ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
 
+        if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
+            doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));
+        }
+
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
