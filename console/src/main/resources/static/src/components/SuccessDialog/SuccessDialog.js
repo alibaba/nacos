@@ -11,10 +11,11 @@
  * limitations under the License.
  */
 
-import React from 'react'; 
+import React from 'react';
+import { aliwareIntl } from '../../globalLib';
 import './index.less';
 import { Button, Dialog, Grid, Icon } from '@alifd/next';
-const { Row, Col } = Grid; 
+const { Row, Col } = Grid;
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class SuccessDialog extends React.Component {
@@ -22,7 +23,7 @@ class SuccessDialog extends React.Component {
         super(props);
         this.state = {
             visible: false,
-            title: window.aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.Configuration_management'),
+            title: aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.Configuration_management'),
             maintitle: '',
             content: '',
             isok: true,
@@ -32,9 +33,9 @@ class SuccessDialog extends React.Component {
         };
     }
 
-    componentDidMount() {}
+    componentDidMount() { }
     openDialog(payload) {
-        if(this.props.unpushtrace) {
+        if (this.props.unpushtrace) {
             payload.title = '';
         }
         this.setState({
@@ -54,18 +55,18 @@ class SuccessDialog extends React.Component {
         });
     }
     render() {
-        const footer = <div style={{ textAlign: 'right' }}><Button type="primary" onClick={this.closeDialog.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.determine')}</Button></div>;
+        const footer = <div style={{ textAlign: 'right' }}><Button type="primary" onClick={this.closeDialog.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.determine')}</Button></div>;
         return <div>
-            <Dialog visible={this.state.visible} footer={footer} style={{ width: 555 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={this.state.maintitle || this.state.title} language={window.aliwareIntl.currentLanguageCode}>
+            <Dialog visible={this.state.visible} footer={footer} style={{ width: 555 }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} title={this.state.maintitle || this.state.title} language={aliwareIntl.currentLanguageCode}>
                 <div>
                     <Row>
                         <Col span={'4'} style={{ paddingTop: 16 }}>
                             {this.state.isok ? <Icon type="success-filling" style={{ color: 'green' }} size={'xl'} /> : <Icon type="delete-filling" style={{ color: 'red' }} size={'xl'} />}
-                           
+
                         </Col>
                         <Col span={'20'}>
                             <div>
-                                {this.state.isok ? <h3>{this.state.title}</h3> : <h3>{this.state.title} {window.aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.failure')}</h3>}
+                                {this.state.isok ? <h3>{this.state.title}</h3> : <h3>{this.state.title} {aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.failure')}</h3>}
                                 <p>
                                     <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
                                     <span style={{ color: '#c7254e' }}>

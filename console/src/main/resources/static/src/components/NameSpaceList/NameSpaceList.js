@@ -14,6 +14,7 @@
 import React from 'react';
 import './index.less';
 import { Dialog } from '@alifd/next';
+import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 /**
@@ -22,8 +23,8 @@ import { Dialog } from '@alifd/next';
 class NameSpaceList extends React.Component {
     constructor(props) {
         super(props);
-        this._namespace = window.getParams('namespace') || '';
-        // this._namespaceShowName = window.getParams('namespaceShowName') || '';
+        this._namespace = getParams('namespace') || '';
+        // this._namespaceShowName = getParams('namespaceShowName') || '';
         this.state = {
             nownamespace: window.nownamespace || this._namespace || '',
             namespaceList: window.namespaceList || []
@@ -39,7 +40,7 @@ class NameSpaceList extends React.Component {
 
     getLink(linkKey, keyName) {
         if (window[keyName] === null) {
-            window.request({
+            request({
                 url: "com.alibaba.nacos.service.getLink",
                 data: {
                     linkKey
@@ -72,7 +73,7 @@ class NameSpaceList extends React.Component {
     changeNameSpace(ns, nsName) {
 
         this.setnamespace(ns || "");
-        window.setParams({
+        setParams({
             namespace: ns || "",
             namespaceShowName: nsName
         });
@@ -89,16 +90,16 @@ class NameSpaceList extends React.Component {
         if (window.namespaceList) {
             this.handleNameSpaces(window.namespaceList);
         } else {
-            window.request({
+            request({
                 type: 'get',
                 url: `/nacos/v1/console/namespaces`,
                 success: res => {
                     if (res.code === 200) {
-                        this.handleNameSpaces(res.data);    
+                        this.handleNameSpaces(res.data);
                     } else {
                         Dialog.alert({
-                            language: window.pageLanguage || 'zh-cn',
-                            title: window.aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
+                            language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                            title: aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
                             content: res.message
                         });
                     }
@@ -111,7 +112,7 @@ class NameSpaceList extends React.Component {
         }
     }
     handleNameSpaces(data) {
-        let nownamespace = window.getParams("namespace") || "";
+        let nownamespace = getParams("namespace") || "";
 
         // let namespaceShowName = this._namespaceShowName || data[0].namespaceShowName || '';
         window.namespaceList = data;
@@ -124,8 +125,8 @@ class NameSpaceList extends React.Component {
             }
         }
         window.namespaceShowName = namespaceShowName;
-        window.setParams('namespace', nownamespace || "");
-        // window.setParams('namespaceShowName', namespaceShowName);
+        setParams('namespace', nownamespace || "");
+        // setParams('namespaceShowName', namespaceShowName);
         this.props.setNowNameSpace && this.props.setNowNameSpace(namespaceShowName, nownamespace);
         this.setState({
             nownamespace: nownamespace,
