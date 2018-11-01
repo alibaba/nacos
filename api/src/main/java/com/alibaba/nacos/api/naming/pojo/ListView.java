@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.JSON;
-
 import java.util.List;
+
+import com.alibaba.fastjson.JSON;
 
 /**
  * @author dungu.zpf

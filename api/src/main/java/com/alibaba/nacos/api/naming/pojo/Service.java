@@ -47,12 +47,11 @@ public class Service {
      * Health check mode.
      */
     private String healthCheckMode;
+    private Map<String, String> metadata = new HashMap<String, String>();
 
     public Service(String name) {
         this.name = name;
     }
-
-    private Map<String, String> metadata = new HashMap<String, String>();
 
     public String getName() {
         return name;

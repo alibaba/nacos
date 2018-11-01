@@ -15,48 +15,34 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.fastjson.annotation.JSONField;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import com.alibaba.fastjson.annotation.JSONField;
 
 /**
  * @author dungu.zpf
  */
 public class ServiceInfo {
 
+    public static final String SPLITER = "@@";
+    private static final String EMPTY = "";
+    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
     @JSONField(serialize = false)
     private String jsonFromServer = EMPTY;
-    public static final String SPLITER = "@@";
-
     @JSONField(name = "dom")
     private String name;
-
     private String clusters;
-
     private long cacheMillis = 1000L;
-
     @JSONField(name = "hosts")
     private List<Instance> hosts = new ArrayList<Instance>();
-
     private long lastRefTime = 0L;
-
     private String checksum = "";
-
     private String env = "";
-
     private volatile boolean allIPs = false;
 
     public ServiceInfo() {
-    }
-
-    public boolean isAllIPs() {
-        return allIPs;
-    }
-
-    public void setAllIPs(boolean allIPs) {
-        this.allIPs = allIPs;
     }
 
     public ServiceInfo(String key) {
@@ -105,16 +91,61 @@ public class ServiceInfo {
         this.env = env;
     }
 
+    @JSONField(serialize = false)
+    public static String getKey(String name, String clusters, String unit) {
+        return getKey(name, clusters, unit, false);
+    }
+
+    @JSONField(serialize = false)
+    public static String getKey(String name, String clusters, String unit, boolean isAllIPs) {
+
+        if (isEmpty(unit)) {
+            unit = EMPTY;
+        }
+
+        if (!isEmpty(clusters) && !isEmpty(unit)) {
+            return isAllIPs ? name + SPLITER + clusters + SPLITER + unit + SPLITER + ALL_IPS
+                : name + SPLITER + clusters + SPLITER + unit;
+        }
+
+        if (!isEmpty(clusters)) {
+            return isAllIPs ? name + SPLITER + clusters + SPLITER + ALL_IPS : name + SPLITER + clusters;
+        }
+
+        if (!isEmpty(unit)) {
+            return isAllIPs ? name + SPLITER + EMPTY + SPLITER + unit + SPLITER + ALL_IPS :
+                name + SPLITER + EMPTY + SPLITER + unit;
+        }
+
+        return isAllIPs ? name + SPLITER + ALL_IPS : name;
+    }
+
+    private static boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
+    }
+
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
+
+    private static boolean isEmpty(Collection coll) {
+        return (coll == null || coll.isEmpty());
+    }
+
+    public boolean isAllIPs() {
+        return allIPs;
+    }
+
+    public void setAllIPs(boolean allIPs) {
+        this.allIPs = allIPs;
+    }
+
     public int ipCount() {
         return hosts.size();
     }
 
     public boolean expired() {
         return System.currentTimeMillis() - lastRefTime > cacheMillis;
-    }
-
-    public void setHosts(List<Instance> hosts) {
-        this.hosts = hosts;
     }
 
     public boolean isValid() {
@@ -129,12 +160,12 @@ public class ServiceInfo {
         this.name = name;
     }
 
-    public void setLastRefTime(long lastRefTime) {
-        this.lastRefTime = lastRefTime;
-    }
-
     public long getLastRefTime() {
         return lastRefTime;
+    }
+
+    public void setLastRefTime(long lastRefTime) {
+        this.lastRefTime = lastRefTime;
     }
 
     public String getClusters() {
@@ -156,6 +187,10 @@ public class ServiceInfo {
     public List<Instance> getHosts() {
 
         return new ArrayList<Instance>(hosts);
+    }
+
+    public void setHosts(List<Instance> hosts) {
+        this.hosts = hosts;
     }
 
     public boolean validate() {
@@ -191,35 +226,6 @@ public class ServiceInfo {
         return getKey(name, clusters, env, isAllIPs());
     }
 
-    @JSONField(serialize = false)
-    public static String getKey(String name, String clusters, String unit) {
-        return getKey(name, clusters, unit, false);
-    }
-
-    @JSONField(serialize = false)
-    public static String getKey(String name, String clusters, String unit, boolean isAllIPs) {
-
-        if (isEmpty(unit)) {
-            unit = EMPTY;
-        }
-
-        if (!isEmpty(clusters) && !isEmpty(unit)) {
-            return isAllIPs ? name + SPLITER + clusters + SPLITER + unit + SPLITER + ALL_IPS
-                    : name + SPLITER + clusters + SPLITER + unit;
-        }
-
-        if (!isEmpty(clusters)) {
-            return isAllIPs ? name + SPLITER + clusters + SPLITER + ALL_IPS : name + SPLITER + clusters;
-        }
-
-        if (!isEmpty(unit)) {
-            return isAllIPs ? name + SPLITER + EMPTY + SPLITER + unit + SPLITER + ALL_IPS :
-                    name + SPLITER + EMPTY + SPLITER + unit;
-        }
-
-        return isAllIPs ? name + SPLITER + ALL_IPS : name;
-    }
-
     @Override
     public String toString() {
         return getKey();
@@ -232,20 +238,4 @@ public class ServiceInfo {
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
-
-    private static boolean isEmpty(String str) {
-        return str == null || str.length() == 0;
-    }
-
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
-    }
-
-    private static boolean isEmpty(Collection coll) {
-        return (coll == null || coll.isEmpty());
-    }
-
-    private static final String EMPTY = "";
-
-    private static final String ALL_IPS = "000--00-ALL_IPS--00--000";
 }

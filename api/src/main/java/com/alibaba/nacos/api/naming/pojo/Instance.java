@@ -15,12 +15,12 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.common.Constants;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author dungu.zpf
@@ -71,6 +71,10 @@ public class Instance {
      * User extended attributes
      */
     private Map<String, String> metadata = new HashMap<String, String>();
+
+    private static boolean strEquals(String str1, String str2) {
+        return str1 == null ? str2 == null : str1.equals(str2);
+    }
 
     public String getInstanceId() {
         return instanceId;
@@ -171,7 +175,7 @@ public class Instance {
             return false;
         }
 
-        Instance host = (Instance) obj;
+        Instance host = (Instance)obj;
 
         return strEquals(toString(), host.toString());
     }
@@ -179,10 +183,6 @@ public class Instance {
     @Override
     public int hashCode() {
         return toString().hashCode();
-    }
-
-    private static boolean strEquals(String str1, String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
     }
 
 }

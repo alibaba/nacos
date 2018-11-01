@@ -18,17 +18,17 @@ package com.alibaba.nacos.api.config.listener;
 import java.util.concurrent.Executor;
 
 /**
- * Listner Adapter,use default notify thread
- * 
- * @author water.lyl
+ * Listener Adapter,use default notify thread
  *
+ * @author water.lyl
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractListener implements Listener {
 
-	/**
-	 * use default Executor
-	 */
+    /**
+     * use default Executor
+     */
+    @Override
     public Executor getExecutor() {
         return null;
     }

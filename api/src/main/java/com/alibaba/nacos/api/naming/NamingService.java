@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.api.naming;
 
+import java.util.List;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-
-import java.util.List;
 
 /**
  * @author dungu.zpf
