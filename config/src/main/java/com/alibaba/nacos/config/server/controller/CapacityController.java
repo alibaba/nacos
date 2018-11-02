@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * capcity manage
+ * Capacity Management
  * 
  * @author hexu.hxy
  */
@@ -42,8 +42,10 @@ public class CapacityController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CapacityController.class);
 
+	private final CapacityService capacityService;
+
 	@Autowired
-	private CapacityService capacityService;
+	public CapacityController(CapacityService capacityService) {this.capacityService = capacityService;}
 
 	@ResponseBody
 	@RequestMapping(method = RequestMethod.GET)
