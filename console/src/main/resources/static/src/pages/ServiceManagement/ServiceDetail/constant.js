@@ -60,6 +60,10 @@ I18N.METADATA = getI18N('metadata')
  */
 I18N.UPDATE_SERVICE = getI18N('update_service')
 /**
+ * 创建服务
+ */
+I18N.CREATE_SERVICE = getI18N('create_service')
+/**
  * 集群
  */
 I18N.CLUSTER = getI18N('cluster')
