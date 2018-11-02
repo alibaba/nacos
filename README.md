@@ -76,6 +76,12 @@ You can view full documentation on the Nacos website:
 
 * [nacos.io](https://nacos.io/en-us/docs/what-is-nacos.html)
 
+### Other Related Project Repositories
+
+* [nacos-spring-project](https://github.com/nacos-group/nacos-spring-project) provides the integration functionality for Spring.
+* [nacos-sync](https://github.com/nacos-group/nacos-sync) is a tool to synchronize the service registration information from other tools like eureka, zookeeper, etc, to Nacos.
+* [spring-cloud-alibaba](https://github.com/spring-cloud-incubator/spring-cloud-alibaba) provides the one-stop solution for application development over Alibaba middleware which includes Nacos.
+
 ### Contact
 
 * #### Gitter-[Nacos Gitter](https://gitter.im/alibaba/nacos)
