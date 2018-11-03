@@ -433,7 +433,7 @@ public class RaftCore {
                 return;
             }
 
-            RaftPeer local = peers.get(NetUtils.localIP());
+            RaftPeer local = peers.get(NetUtils.localServer());
             Loggers.RAFT.info("leader timeout, start voting,leader: " + JSON.toJSONString(getLeader()) + ", term: " + local.term);
 
             peers.reset();
@@ -481,7 +481,7 @@ public class RaftCore {
                 throw new IllegalStateException("not ready yet");
             }
 
-            RaftPeer local = peers.get(NetUtils.localIP());
+            RaftPeer local = peers.get(NetUtils.localServer());
             if (remote.term.get() <= local.term.get()) {
                 String msg = "received illegitimate vote" +
                         ", voter-term:" + remote.term + ", votee-term:" + local.term;
@@ -894,7 +894,7 @@ public class RaftCore {
     }
 
     public static boolean isLeader() {
-        return peers.isLeader(NetUtils.localIP());
+        return peers.isLeader(NetUtils.localServer());
     }
 
     public static String buildURL(String ip, String api) {
