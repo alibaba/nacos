@@ -19,7 +19,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.util.Pair;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
 import com.alibaba.nacos.naming.push.PushService;
@@ -577,12 +576,12 @@ public class DomainsManager {
 
                 List<String> sameSiteServers = NamingProxy.getSameSiteServers().get("sameSite");
 
-                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localIP())) {
+                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localServer())) {
                     return;
                 }
 
                 for (String server : sameSiteServers) {
-                    if (server.equals(NetUtils.localIP())) {
+                    if (server.equals(NetUtils.localServer())) {
                         continue;
                     }
                     synchronizer.send(server, msg);

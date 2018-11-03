@@ -951,7 +951,7 @@ public class ApiCommands {
             RaftCore.OPERATE_LOCK.lock();
             try {
                 final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
-                proxyParams.put("clientIP", NetUtils.localIP());
+                proxyParams.put("clientIP", NetUtils.localServer());
                 proxyParams.put("notify", "true");
 
                 proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
@@ -2296,7 +2296,7 @@ public class ApiCommands {
                     diff.add(ip + "_" + domString);
                 }
 
-                if (ip.equals(NetUtils.localIP())) {
+                if (ip.equals(NetUtils.localServer())) {
                     localDomString = domString;
                 }
 

@@ -17,13 +17,13 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -109,7 +109,7 @@ public class NamingProxy {
 
             if (STANDALONE_MODE) {
                 servers = new ArrayList<>();
-                servers.add(InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort());
+                servers.add(NetUtils.localServer());
                 return;
             }
 
