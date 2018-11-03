@@ -201,9 +201,13 @@ public class ConfigController {
 		ParamUtils.checkParam(tag);
 		String clientIp = RequestUtil.getRemoteIp(request);
 		if (StringUtils.isBlank(tag)) {
-			persistService.removeAggrConfigInfo(dataId, group, tenant);
+			persistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
+		} else {
+			persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
 		}
-		mergeService.addMergeTask(dataId, group, tenant, tag, clientIp);
+		final Timestamp time = TimeUtils.getCurrentTime();
+		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+		EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
 		return true;
 	}
 	

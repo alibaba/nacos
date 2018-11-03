@@ -12,18 +12,19 @@
  */
 
 import React from 'react';
-import {Button, Card, Form, Loading} from '@alifd/next';
+import { request } from '../../../globalLib';
+import { Button, Card, Form, Loading } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog'
 import EditClusterDialog from './EditClusterDialog'
 import InstanceTable from './InstanceTable'
 import queryString from 'query-string'
-import {I18N} from './constant'
+import { I18N } from './constant'
 import './ServiceDetail.less'
 
 const FormItem = Form.Item;
 const pageFormLayout = {
-    labelCol: {fixedSpan: 10},
-    wrapperCol: {span: 14}
+    labelCol: { fixedSpan: 10 },
+    wrapperCol: { span: 14 }
 };
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
@@ -51,21 +52,21 @@ class ServiceDetail extends React.Component {
     }
 
     getServiceDetail() {
-        const {serviceName} = this.state
-        window.request({
+        const { serviceName } = this.state
+        request({
             url: `/nacos/v1/ns/catalog/serviceDetail?serviceName=${serviceName}`,
             beforeSend: () => this.openLoading(),
-            success: ({clusters = [], service = {}}) => this.setState({service, clusters}),
+            success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
             complete: () => this.closeLoading()
         })
     }
 
     openLoading() {
-        this.setState({loading: true})
+        this.setState({ loading: true })
     }
 
     closeLoading() {
-        this.setState({loading: false})
+        this.setState({ loading: false })
     }
 
     openEditServiceDialog() {
@@ -77,8 +78,8 @@ class ServiceDetail extends React.Component {
     }
 
     render() {
-        const {serviceName, loading, service = {}, clusters} = this.state
-        const {metadata = {}} = service
+        const { serviceName, loading, service = {}, clusters } = this.state
+        const { metadata = {} } = service
         const metadataText = Object.keys(metadata).map(key => `${key}=${metadata[key]}`).join(',')
         return (
             <div className="main-container service-detail">
@@ -106,7 +107,7 @@ class ServiceDetail extends React.Component {
                         >{I18N.EDIT_SERVICE}</Button>
                     </h1>
 
-                    <Form style={{width: '60%'}} {...pageFormLayout}>
+                    <Form style={{ width: '60%' }} {...pageFormLayout}>
                         <FormItem label={`${I18N.SERVICE_NAME}:`}>
                             <p>{service.name}</p>
                         </FormItem>

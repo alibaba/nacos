@@ -29,9 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 /**
  * @author nacos
@@ -117,6 +115,8 @@ public class UtilsAndCommons {
 
     public static final ScheduledExecutorService INIT_CONFIG_EXECUTOR;
 
+    public static final Executor RAFT_PUBLISH_EXECUTOR;
+
     static {
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
@@ -176,6 +176,17 @@ public class UtilsAndCommons {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
                 t.setName("nacos.naming.status.worker");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        RAFT_PUBLISH_EXECUTOR
+                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("nacos.naming.raft.publisher");
                 t.setDaemon(true);
                 return t;
             }

@@ -333,7 +333,8 @@ public class DumpService {
     					Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
     					if (page != null) {
     						datumList.addAll(page.getPageItems());
-    						log.info("[merge-query] {}, {}, size/total={}/{}", new Object[] { dataId, group, datumList.size(), rowCount });
+						    log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
+							    rowCount);
     					}
     				}
 
@@ -346,8 +347,9 @@ public class DumpService {
     					String aggrConetentMD5 =  MD5.getInstance().getMD5String(aggrContent);
     					if(!StringUtils.equals(localContentMD5, aggrConetentMD5)){
 	    					persistService.insertOrUpdate(null, null, cf, time, null, false);
-	    					log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", new Object[] { dataId, group, datumList.size(),
-	    							cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()) });
+						    log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+							    datumList.size(), cf.getContent().length(), cf.getMd5(),
+							    ContentUtils.truncateContent(cf.getContent()));
     					}
     				}
     				// 删除

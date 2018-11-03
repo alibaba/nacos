@@ -11,7 +11,9 @@
  * limitations under the License.
  */
 
-const getI18N = (key, prefix = 'com.alibaba.nacos.page.serviceDetail.') => window.aliwareIntl.get(prefix + key)
+import { aliwareIntl } from '../../../globalLib';
+
+const getI18N = (key, prefix = 'com.alibaba.nacos.page.serviceDetail.') => aliwareIntl.get(prefix + key)
 export const I18N = {}
 /**
  * 服务列表
@@ -127,8 +129,8 @@ I18N.UPDATE_INSTANCE = getI18N('update_instance')
 I18N.WHETHER_ONLINE = getI18N('whether_online')
 
 export const DIALOG_FORM_LAYOUT = {
-    labelCol: {fixedSpan: 12},
-    wrapperCol: {span: 12}
+    labelCol: { fixedSpan: 12 },
+    wrapperCol: { span: 12 }
 }
 
 export const HEALTHY_COLOR_MAPPING = {

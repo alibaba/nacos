@@ -40,17 +40,17 @@ public class RequestLogAspect {
 	/**
 	 * publish config
 	 */
-	public static final String CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args(request,response,dataId,group,tenant,content,..)";
+	private static final String CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.publishConfig(..)) && args(request,response,dataId,group,tenant,content,..)";
 
 	/**
 	 * get config
 	 */
-	public static final String CLIENT_INTERFACE_GET_CONFIG = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getConfig(..)) && args(request,response,dataId,group,tenant,..)";
+	private static final String CLIENT_INTERFACE_GET_CONFIG = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.getConfig(..)) && args(request,response,dataId,group,tenant,..)";
 
 	/**
 	 * remove config
 	 */
-	public static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,response,dataId,group,..)";
+	private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,response,dataId,group,..)";
 
 	/**
 	 * publishSingle
@@ -95,8 +95,8 @@ public class RequestLogAspect {
 		final long rt = System.currentTimeMillis() - st;
 		// rt | status | requestIp | opType | dataId | group | datumId | md5 |
 		// appName
-		LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}",
-				new Object[] { rt, retVal, requestIp, requestType, dataId, group, tenant, md5, appName });
+		LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}|{}|{}", rt, retVal, requestIp, requestType, dataId, group, tenant,
+			md5, appName);
 		return retVal;
 	}
 

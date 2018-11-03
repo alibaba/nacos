@@ -13,6 +13,7 @@
 
 import React from 'react';
 import './index.less';
+import { request, aliwareIntl } from '../../globalLib';
 import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 const FormItem = Form.Item;
 
@@ -84,17 +85,16 @@ class NewNameSpace extends React.Component {
             });
             if (!flag) {
                 Dialog.alert({
-                    content: window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.norepeat'),
-                    language: window.aliwareIntl.currentLanguageCode
+                    content: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.norepeat'),
+                    language: aliwareIntl.currentLanguageCode
                 });
                 return;
             }
-            // let serverId = window.getParams('serverId') || 'daily';
             this.disabled = true;
             this.setState({
                 disabled: true
             });
-            window.request({
+            request({
                 type: 'post',
                 url: `/nacos/v1/console/namespaces`,
                 contentType: 'application/x-www-form-urlencoded',
@@ -116,9 +116,9 @@ class NewNameSpace extends React.Component {
                         this.refreshNameSpace(); //刷新全局namespace
                     } else {
                         Dialog.alert({
-                            title: window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.prompt'),
+                            title: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.prompt'),
                             content: res.message,
-                            language: window.aliwareIntl.currentLanguageCode
+                            language: aliwareIntl.currentLanguageCode
                         });
                     }
                 },
@@ -128,10 +128,10 @@ class NewNameSpace extends React.Component {
             });
         });
     }
-    
+
     refreshNameSpace() {
         setTimeout(() => {
-            window.request({
+            request({
                 type: 'get',
                 url: `/nacos/v1/console/namespaces`,
                 success: res => {
@@ -147,7 +147,7 @@ class NewNameSpace extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.input'));
+            callback(aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.input'));
         } else {
             callback();
         }
@@ -163,30 +163,30 @@ class NewNameSpace extends React.Component {
         };
 
         let footer = <div>
-            <Button type="primary" onClick={this.handleSubmit.bind(this)} disabled={this.disabled}>{window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.confirm')}</Button>
-            <Button type="normal" onClick={this.closeDialog.bind(this)} style={{ marginLeft: 5 }}>{window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.cancel')}</Button>
+            <Button type="primary" onClick={this.handleSubmit.bind(this)} disabled={this.disabled}>{aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.confirm')}</Button>
+            <Button type="normal" onClick={this.closeDialog.bind(this)} style={{ marginLeft: 5 }}>{aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.cancel')}</Button>
         </div>;
         return (
             <div>
-                <Dialog title={window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.newnamespce')} style={{ width: '50%' }} visible={this.state.dialogvisible} onOk={this.handleSubmit.bind(this)} onCancel={this.closeDialog.bind(this)} footer={footer} onClose={this.closeDialog.bind(this)} language={window.aliwareIntl.currentLanguageCode}><Form field={this.field}>
+                <Dialog title={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.newnamespce')} style={{ width: '50%' }} visible={this.state.dialogvisible} onOk={this.handleSubmit.bind(this)} onCancel={this.closeDialog.bind(this)} footer={footer} onClose={this.closeDialog.bind(this)} language={aliwareIntl.currentLanguageCode}><Form field={this.field}>
 
-                    <Loading tip={window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.loading')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
-                        <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.name')} required {...formItemLayout}>
+                    <Loading tip={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.loading')} style={{ width: '100%', position: 'relative' }} visible={this.state.loading}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.name')} required {...formItemLayout}>
                             <Input {...this.field.init('namespaceShowName', {
                                 rules: [{
                                     required: true,
-                                    message: window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.namespacenotnull')
+                                    message: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.namespacenotnull')
                                 }, { validator: this.validateChart.bind(this) }]
                             })} style={{ width: '100%' }} />
                         </FormItem>
-                        <FormItem label={window.aliwareIntl.get('nacos.page.configdetail.Description')} required {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('nacos.page.configdetail.Description')} required {...formItemLayout}>
                             <Input {...this.field.init('namespaceDesc', {
-                            	rules: [{
-                            		required: true,
-                            		message: window.aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.namespacenotnull')
-                            	}, { validator: this.validateChart.bind(this) }]
+                                rules: [{
+                                    required: true,
+                                    message: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.namespacenotnull')
+                                }, { validator: this.validateChart.bind(this) }]
                             })} style={{ width: '100%' }} />
-                       </FormItem>
+                        </FormItem>
                     </Loading>
                 </Form>
                 </Dialog>
