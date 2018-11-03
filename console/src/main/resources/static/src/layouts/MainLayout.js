@@ -16,6 +16,7 @@ import { Icon } from '@alifd/next';
 import siteConfig from '../config';
 import Header from './Header';
 import $ from 'jquery';
+import { aliwareGetCookieByKeyName, setParams, aliwareIntl } from '../globalLib';
 
 export default class MainLayout extends React.Component {
     constructor(props) {
@@ -32,7 +33,7 @@ export default class MainLayout extends React.Component {
     }
 
     goBack() {
-        window.hashHistory.goBack();
+        this.props.history.goBack();
     }
 
     nacosToggleNav(id, event) {
@@ -76,7 +77,7 @@ export default class MainLayout extends React.Component {
                 }
             }
         }
-        window.hashHistory.push(`/${url}?${queryParams.join('&')}`);
+        this.props.history.push(`/${url}?${queryParams.join('&')}`);
     }
 
     nacosEnterBack() {
@@ -110,7 +111,7 @@ export default class MainLayout extends React.Component {
     navTo(url) {
         if (url !== '/configdetail' && url !== '/configeditor') {
             //二级菜单不清空
-            window.setParams({
+            setParams({
                 dataId: '',
                 group: ''
             });
@@ -125,7 +126,7 @@ export default class MainLayout extends React.Component {
             }
         }
 
-        window.hashHistory.push(`${url}?${queryParams.join('&')}`);
+        this.props.history.push(`${url}?${queryParams.join('&')}`);
     }
 
     nacosSetSpecialNav(item) {
@@ -213,7 +214,7 @@ export default class MainLayout extends React.Component {
                             <div>
                                 <a href="" onClick={this.nacosToggleNav.bind(this, item.serviceName)}>
                                     <div className="nav-icon">{icon}</div>
-                                    <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
+                                    <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
                                 </a>
                             </div>
                             <ul className={`subnavlist ${hiddenClass}`}>{self.nacosLoopNav(item.children, index)}</ul>
@@ -232,7 +233,7 @@ export default class MainLayout extends React.Component {
                                 onClick={this.activeNav.bind(this, `nav${index}`)}
                             >
                                 <div className="nav-icon" />
-                                <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
+                                <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
                             </a>
                         </li>
                     );
@@ -250,7 +251,7 @@ export default class MainLayout extends React.Component {
                         onClick={this.activeNav.bind(this, `nav${index}`)}
                     >
                         <div className="nav-icon" />
-                        <div className="nav-title">{window.aliwareIntl.get(item.id) || item.name}</div>
+                        <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
                     </a>
                 </li>
             );
@@ -282,7 +283,7 @@ export default class MainLayout extends React.Component {
         // let parentNav = this.initNav[0] || [];
         let defaultNav = '/configurationManagement';
         // let childrenNav = parentNav.children || [];
-        window.hashHistory.listen((location) => {
+        this.props.history.listen((location) => {
             if (this.preSimplePath && this.preSimplePath !== '/') {
                 if (location.pathname.indexOf(this.preSimplePath) !== -1) {
                     return;
@@ -293,7 +294,7 @@ export default class MainLayout extends React.Component {
             this.preSimplePath = simplePath;
 
             if (navName === '') {
-                window.hashHistory.push(defaultNav);
+                this.props.history.push(defaultNav);
                 setTimeout(() => {
                     this.activeNav('configurationManagement');
                 });
@@ -354,13 +355,13 @@ export default class MainLayout extends React.Component {
     }
 
     onLanguageChange = (language) => {
-        window.aliwareIntl.changeLanguage(language);
+        aliwareIntl.changeLanguage(language);
         document.cookie = `docsite_language=${language}`;
         window.location.reload();
     };
 
     render() {
-        let language = window.aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
+        let language = aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
 
         const { headerType, showLink, navRow, leftBarClose, noChild } = this.state;
         const headerLogo = `${process.env.NODE_ENV === 'development' ? '' : 'public/'}img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg`;
@@ -389,17 +390,17 @@ export default class MainLayout extends React.Component {
                                         <div
                                             style={{ textIndent: 0 }}
                                             className={'product-nav-title'}
-                                            title={window.aliwareIntl.get(
+                                            title={aliwareIntl.get(
                                                 'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
                                             )}
                                         >
                                             <span>
-                                                {window.aliwareIntl.get(
+                                                {aliwareIntl.get(
                                                     'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
                                                 )}
                                             </span>
                                             <span style={{ marginLeft: 5 }}>
-                                                {window.aliwareIntl.get(
+                                                {aliwareIntl.get(
                                                     'com.alibaba.nacos.layout.noenv.nacosversion'
                                                 )}
                                             </span>
@@ -438,7 +439,7 @@ export default class MainLayout extends React.Component {
                             <div>{this.props.children}</div>
                         ) : (
                                 <div style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}>
-                                    {window.aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}
+                                    {aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}
                                 </div>
                             )}
                     </div>

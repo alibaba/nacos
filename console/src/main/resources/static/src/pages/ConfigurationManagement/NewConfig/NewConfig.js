@@ -14,6 +14,7 @@
 import React from 'react';
 import $ from 'jquery';
 import SuccessDialog from '../../../components/SuccessDialog';
+import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import './index.less';
 import { Balloon, Button, Dialog, Field, Form, Icon, Input, Loading, Message, Select, Radio } from '@alifd/next';
 const FormItem = Form.Item;
@@ -26,15 +27,15 @@ class NewConfig extends React.Component {
     constructor(props) {
         super(props);
         this.field = new Field(this);
-        this.edasAppName = window.getParams('edasAppName') || '';
-        this.edasAppId = window.getParams('edasAppId') || '';
+        this.edasAppName = getParams('edasAppName') || '';
+        this.edasAppId = getParams('edasAppId') || '';
         this.inApp = this.edasAppName;
         this.field.setValue('appName', this.inApp ? this.edasAppName : '');
         this.inEdas = window.globalConfig.isParentEdas();
-        this.dataId = window.getParams('dataId') || '';
-        this.group = window.getParams('group') || 'DEFAULT_GROUP';
-        this.searchDataId = window.getParams('searchDataId') || '';
-        this.searchGroup = window.getParams('searchGroup') || '';
+        this.dataId = getParams('dataId') || '';
+        this.group = getParams('group') || 'DEFAULT_GROUP';
+        this.searchDataId = getParams('searchDataId') || '';
+        this.searchGroup = getParams('searchGroup') || '';
         this.state = {
             configType: 'text',
             codeValue: ``,
@@ -61,7 +62,7 @@ class NewConfig extends React.Component {
         this.betaips = document.getElementById('betaips');
         //this.createCodeMirror('text', '');
         this.chontenttab = document.getElementById('chontenttab'); //diff标签
-        this.tenant = window.getParams('namespace') || '';
+        this.tenant = getParams('namespace') || '';
         this.field.setValue('group', this.group);
         if (!window.monaco) {
             window.importEditor(() => {
@@ -163,10 +164,10 @@ class NewConfig extends React.Component {
         });
     }
     goList() {
-        this.tenant = window.getParams('namespace') || '';
-        this.serverId = window.getParams('serverId') || '';
+        this.tenant = getParams('namespace') || '';
+        this.serverId = getParams('serverId') || '';
         //console.log(`/configurationManagement?serverId=${this.serverId}&group=${this.group}&dataId=${this.dataId}`)
-        window.hashHistory.push(`/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${this.searchDataId}&namespace=${this.tenant}`);
+        this.props.history.push(`/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${this.searchDataId}&namespace=${this.tenant}`);
     }
     openLoading() {
         this.setState({
@@ -208,7 +209,7 @@ class NewConfig extends React.Component {
             if (!content) {
                 return;
             }
-            this.tenant = window.getParams('namespace') || '';
+            this.tenant = getParams('namespace') || '';
             let payload = {
                 dataId: self.state.addonBefore + this.field.getValue('dataId'),
                 group: this.field.getValue('group'),
@@ -219,9 +220,9 @@ class NewConfig extends React.Component {
                 appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
                 tenant: this.tenant
             };
-            this.serverId = window.getParams('serverId') || 'center';
+            this.serverId = getParams('serverId') || 'center';
             let url = `/nacos/v1/cs/configs`;
-            window.request({
+            request({
                 type: 'post',
                 contentType: 'application/x-www-form-urlencoded',
                 url: url,
@@ -231,15 +232,15 @@ class NewConfig extends React.Component {
                 },
                 success: function (res) {
                     let _payload = {};
-                    _payload.maintitle = window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
-                    _payload.title = window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
+                    _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
+                    _payload.title = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
                     _payload.content = '';
                     _payload.dataId = payload.dataId;
                     _payload.group = payload.group;
                     if (res === true) {
                         self.group = payload.group;
                         self.dataId = payload.dataId;
-                        window.setParams({ group: payload.group, dataId: payload.dataId }); //设置参数
+                        setParams({ group: payload.group, dataId: payload.dataId }); //设置参数
                         _payload.isok = true;
                     } else {
                         _payload.isok = false;
@@ -252,8 +253,8 @@ class NewConfig extends React.Component {
                 },
                 error: function (res) {
                     Dialog.alert({
-                        language: window.pageLanguage || 'zh-cn',
-                        content: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed')
+                        language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                        content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed')
                     });
                     self.closeLoading();
                 }
@@ -284,7 +285,7 @@ class NewConfig extends React.Component {
         const chartReg = /[@#\$%\^&\*]+/g;
 
         if (chartReg.test(value)) {
-            callback(window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.do_not_ente'));
+            callback(aliwareIntl.get('com.alibaba.nacos.page.newconfig.do_not_ente'));
         } else {
             callback();
         }
@@ -333,63 +334,63 @@ class NewConfig extends React.Component {
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape={"flower"} tip={"Loading..."} style={{ width: '100%', position: 'relative' }} visible={this.state.loading} color={"#333"}>
-                    <h1>{window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing')}</h1>
+                    <h1>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing')}</h1>
                     <Form field={this.field}>
                         <FormItem label={"Data ID:"} required {...formItemLayout}>
                             <Input {...init('dataId', {
                                 rules: [{
                                     required: true,
-                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig')
                                 }, {
                                     max: 255,
-                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.dataId_is_not_empty')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig.dataId_is_not_empty')
                                 }, { validator: this.validateChart.bind(this) }]
                             })} addonTextBefore={this.state.addonBefore ? <div style={{ minWidth: 100, color: "#373D41" }}>{this.state.addonBefore}</div> : null} />
 
                         </FormItem>
                         <FormItem label={"Group:"} required {...formItemLayout}>
-                            <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={window.aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
+                            <Combobox style={{ width: '100%' }} size={"large"} hasArrow dataSource={this.state.groups} placeholder={aliwareIntl.get("com.alibaba.nacos.page.newconfig.group_placeholder")} defaultValue={this.group} {...init('group', {
                                 rules: [{
                                     required: true,
-                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_more_advanced')
                                 }, {
                                     max: 127,
-                                    message: window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
+                                    message: aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_is_not_empty')
                                 }, { validator: this.validateChart.bind(this) }]
-                            })} onChange={this.setGroup.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
+                            })} onChange={this.setGroup.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                             </Combobox>
                         </FormItem>
                         <FormItem label={" "} {...formItemLayout} style={{ display: this.state.showGroupWarning ? "block" : "none" }}>
-                            <Message type={'warning'} size={'medium'} animation={false}>{window.aliwareIntl.get('nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0')}</Message>
+                            <Message type={'warning'} size={'medium'} animation={false}>{aliwareIntl.get('nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0')}</Message>
                         </FormItem>
                         <FormItem label={""} {...formItemLayout}>
                             <div>
-                                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length') : window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}</a>
+                                <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>{this.state.showmore ? aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length') : aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}</a>
                             </div>
                         </FormItem>
-                        
+
                         <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-                            <FormItem label={window.aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
-                                <Select size={"medium"} hasArrow style={{ width: '100%', height: '100%!important' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={window.aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={window.aliwareIntl.currentLanguageCode}>
+                            <FormItem label={aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
+                                <Select size={"medium"} hasArrow style={{ width: '100%', height: '100%!important' }} autoWidth={true} multiple={true} mode="tag" filterLocal={true} placeholder={aliwareIntl.get('nacos.page.configurationManagement.Please_enter_tag')} dataSource={this.state.tagLst} value={this.state.config_tags} onChange={this.setConfigTags.bind(this)} hasClear language={aliwareIntl.currentLanguageCode}>
                                 </Select>
                             </FormItem>
 
-                            <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.Group_ID_cannot_be_longer')} {...formItemLayout}>
+                            <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.Group_ID_cannot_be_longer')} {...formItemLayout}>
                                 <Input {...init('appName')} readOnly={this.inApp} />
 
                             </FormItem>
                         </div>
 
-                        <FormItem label={window.aliwareIntl.get('nacos.page.newconfig.Description')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('nacos.page.newconfig.Description')} {...formItemLayout}>
                             <Input.TextArea htmlType={"text"} multiple rows={3} {...init('desc')} />
                         </FormItem>
 
-                        <FormItem label={window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')} {...formItemLayout}>
+                        <FormItem label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')} {...formItemLayout}>
                             <RadioGroup dataSource={list} value={this.state.configType} onChange={this.newChangeConfig.bind(this)} />
                         </FormItem>
-                        <FormItem label={<span>{window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_format')}<Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginTop: 2 }} />} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>
-                            <p>{window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.configure_contents_of')}</p>
-                            <p>{window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.full_screen')}</p>
+                        <FormItem label={<span>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_format')}<Balloon trigger={<Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle', marginTop: 2 }} />} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>
+                            <p>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.configure_contents_of')}</p>
+                            <p>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.full_screen')}</p>
                         </Balloon>:</span>} required {...formItemLayout}>
                             <div id={"container"} style={{ width: '100%', height: 300 }}></div>
                         </FormItem>
@@ -397,9 +398,9 @@ class NewConfig extends React.Component {
                         <FormItem {...formItemLayout} label={""}>
 
                             <div style={{ textAlign: 'right' }}>
-                                <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.publishConfig.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.esc_exit')}</Button>
+                                <Button type={"primary"} style={{ marginRight: 10 }} onClick={this.publishConfig.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.esc_exit')}</Button>
 
-                                <Button type={"light"} onClick={this.goList.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.newconfig.release')}</Button>
+                                <Button type={"light"} onClick={this.goList.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.release')}</Button>
                             </div>
                         </FormItem>
                     </Form>

@@ -14,8 +14,8 @@
 import React from 'react';
 import { Button } from '@alifd/next';
 import $ from 'jquery';
-import ValidateDialog from '../ValidateDialog';
 import NameSpaceList from '../NameSpaceList';
+import { setParams, request } from '../../globalLib';
 import './index.less';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
@@ -136,7 +136,7 @@ class RegionGroup extends React.Component {
             // TODO
             this.nameSpaceList && this.nameSpaceList.getNameSpaces();
 
-            window.request({
+            request({
                 url: this.state.url,
                 data: {},
                 success: res => {
@@ -152,7 +152,6 @@ class RegionGroup extends React.Component {
     handleRegionList(data) {
         let envcontent = '';
         let envGroups = data.envGroups;
-        // let serverId = window.getParams('serverId') || '';
         let instanceData = [];
         for (let i = 0; i < envGroups.length; i++) {
             let obj = envGroups[i].envs || [];
@@ -165,7 +164,7 @@ class RegionGroup extends React.Component {
         }
 
         this.currRegionId = envcontent || instanceData[0] && instanceData[0].serverId;
-        window.setParam("serverId", this.currRegionId);
+        setParams("serverId", this.currRegionId);
 
         this.setRegionBarRegionList(instanceData, this.currRegionId);
         this.changeRegionBarRegionId(this.currRegionId);
@@ -181,7 +180,7 @@ class RegionGroup extends React.Component {
     changeTableData(serverId) {
         console.log(serverId);
         console.log(this.state.currRegionId);
-        window.setParam("serverId", serverId);
+        setParams("serverId", serverId);
         if (this.state.currRegionId === serverId) {
             return;
         }
@@ -196,8 +195,8 @@ class RegionGroup extends React.Component {
             if (obj.serverId === serverId) {
                 let lastHash = window.location.hash.split("?")[0];
                 if (inEdas) {
-                    window.setParam("serverId", obj.serverId);
-                    // window.setParam('regionId', obj.serverId);
+                    setParams("serverId", obj.serverId);
+                    // setParams('regionId', obj.serverId);
                     let url = window.location.href;
 
                     console.log("url: ", url);
@@ -219,7 +218,7 @@ class RegionGroup extends React.Component {
         });
         //window.location.href = '';
         // return;
-        // window.setParam("serverId", serverId);
+        // setParams("serverId", serverId);
         // this.setState({
         //     currRegionId: serverId
         // });
@@ -248,7 +247,6 @@ class RegionGroup extends React.Component {
     render() {
 
         return <div>
-            <ValidateDialog />
             <div ref={ref => this.mainRef = ref} className="clearfix" >
                 <div style={{ overflow: "hidden" }}>
                     <div id="left" style={{ float: 'left', display: 'inline-block', marginRight: 20 }}>

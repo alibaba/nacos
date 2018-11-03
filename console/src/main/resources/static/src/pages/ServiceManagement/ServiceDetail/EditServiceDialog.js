@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
-import {Dialog, Form, Input, Select, Message} from '@alifd/next';
-import {I18N, DIALOG_FORM_LAYOUT} from './constant'
+import { request } from '../../../globalLib';
+import { Dialog, Form, Input, Select, Message } from '@alifd/next';
+import { I18N, DIALOG_FORM_LAYOUT } from './constant'
 
 const FormItem = Form.Item;
 const Option = Select.Option
@@ -30,26 +31,26 @@ class EditServiceDialog extends React.Component {
     }
 
     show(editService) {
-        const {metadata = {}} = editService
+        const { metadata = {} } = editService
         if (Object.keys(metadata).length) {
             editService.metadataText = Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')
         }
-        this.setState({editService, editServiceDialogVisible: true})
+        this.setState({ editService, editServiceDialogVisible: true })
     }
 
     hide() {
-        this.setState({editServiceDialogVisible: false})
+        this.setState({ editServiceDialogVisible: false })
     }
 
     onConfirm() {
         const editService = Object.assign({}, this.state.editService)
-        const {name, protectThreshold, healthCheckMode, metadataText} = editService
-        window.request({
+        const { name, protectThreshold, healthCheckMode, metadataText } = editService
+        request({
             method: 'POST',
             url: '/nacos/v1/ns/service/update',
-            data: {serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText},
+            data: { serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText },
             dataType: 'text',
-            beforeSend: () => this.setState({loading: true}),
+            beforeSend: () => this.setState({ loading: true }),
             success: res => {
                 if (res !== 'ok') {
                     Message.error(res)
@@ -57,20 +58,20 @@ class EditServiceDialog extends React.Component {
                 }
                 this.props.getServiceDetail()
             },
-            complete: () => this.setState({loading: false})
+            complete: () => this.setState({ loading: false })
         })
         this.hide()
     }
 
     onChangeCluster(changeVal) {
-        const {editService = {}} = this.state
+        const { editService = {} } = this.state
         this.setState({
             editService: Object.assign({}, editService, changeVal)
         })
     }
 
     render() {
-        const {editService, editServiceDialogVisible} = this.state
+        const { editService, editServiceDialogVisible } = this.state
         const {
             name,
             protectThreshold,
@@ -94,14 +95,14 @@ class EditServiceDialog extends React.Component {
                         <Input
                             className="in-text"
                             value={protectThreshold}
-                            onChange={protectThreshold => this.onChangeCluster({protectThreshold})}
+                            onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
                         />
                     </FormItem>
                     <FormItem label={`${I18N.HEALTH_CHECK_PATTERN}:`}>
                         <Select
                             className="in-select"
                             defaultValue={healthCheckMode}
-                            onChange={healthCheckMode => this.onChangeCluster({healthCheckMode})}
+                            onChange={healthCheckMode => this.onChangeCluster({ healthCheckMode })}
                         >
                             <Option value="server">{I18N.HEALTH_CHECK_PATTERN_SERVICE}</Option>
                             <Option value="client">{I18N.HEALTH_CHECK_PATTERN_CLIENT}</Option>
@@ -112,7 +113,7 @@ class EditServiceDialog extends React.Component {
                         <Input
                             className="in-text"
                             value={metadataText}
-                            onChange={metadataText => this.onChangeCluster({metadataText})}
+                            onChange={metadataText => this.onChangeCluster({ metadataText })}
                         />
                     </FormItem>
                 </Form>

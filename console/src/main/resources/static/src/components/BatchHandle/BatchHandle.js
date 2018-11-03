@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { Dialog, Pagination, Transfer } from '@alifd/next';
+import { request, aliwareIntl } from '../../globalLib';
 import './index.less';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
@@ -29,7 +30,7 @@ class BatchHandle extends React.Component {
 			dataSource: {}
 		};
 	}
-	componentDidMount() {}
+	componentDidMount() { }
 	openDialog(dataSource) {
 		this.setState({
 			visible: true,
@@ -69,7 +70,7 @@ class BatchHandle extends React.Component {
 	}
 	getData() {
 		const dataSource = this.state.dataSource;
-		window.request({
+		request({
 			url: `/diamond-ops/configList/serverId/${dataSource.serverId}?dataId=${dataSource.dataId}&group=${dataSource.group}&appName=${dataSource.appName}&config_tags=${dataSource.config_tags || ''}&pageNo=${this.state.currentPage}&pageSize=${dataSource.pageSize}`,
 			success: res => {
 				if (res.code === 200) {
@@ -104,15 +105,12 @@ class BatchHandle extends React.Component {
 	render() {
 		// console.log("valueList: ", this.state.valueList, this.transfer);
 
-		return <Dialog visible={this.state.visible} language={window.pageLanguage || 'zh-cn'} style={{ width: "500px" }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} onOk={this.onSubmit.bind(this)} title={"批量操作"}>
-		<div>
-			<Transfer ref={ref => this.transfer = ref} listStyle={{ height: 350 }} dataSource={this.state.dataSourceList || []} value={this.state.valueList} onChange={this.onChange.bind(this)} language={window.pageLanguage || 'zh-cn'} />
-			{/* <div>
-      <Table  dataSource={this.state.dataSourceList} language={window.aliwareIntl.currentLanguageCode}></Table>
-      </div> */}
-			<Pagination style={{ marginTop: 10 }} current={this.state.currentPage} language={window.pageLanguage || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} type="simple" />
-		</div>
-	</Dialog>;
+		return <Dialog visible={this.state.visible} language={aliwareIntl.currentLanguageCode || 'zh-cn'} style={{ width: "500px" }} onCancel={this.closeDialog.bind(this)} onClose={this.closeDialog.bind(this)} onOk={this.onSubmit.bind(this)} title={"批量操作"}>
+			<div>
+				<Transfer ref={ref => this.transfer = ref} listStyle={{ height: 350 }} dataSource={this.state.dataSourceList || []} value={this.state.valueList} onChange={this.onChange.bind(this)} language={aliwareIntl.currentLanguageCode || 'zh-cn'} />
+				<Pagination style={{ marginTop: 10 }} current={this.state.currentPage} language={aliwareIntl.currentLanguageCode || 'zh-cn'} total={this.state.total} pageSize={this.state.pageSize} onChange={this.changePage.bind(this)} type="simple" />
+			</div>
+		</Dialog>;
 	}
 }
 /*****************************此行为标记行, 请勿删和修改此行, 主体代码请写在此行上面的class中, 组件导出语句及其他信息请写在此行下面*****************************/

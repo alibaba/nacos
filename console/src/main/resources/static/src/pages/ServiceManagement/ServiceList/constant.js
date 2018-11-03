@@ -11,7 +11,9 @@
  * limitations under the License.
  */
 
-const getI18N = (key, prefix = 'com.alibaba.nacos.page.serviceManagement.') => window.aliwareIntl.get(prefix + key)
+import { aliwareIntl } from '../../../globalLib';
+
+const getI18N = (key, prefix = 'com.alibaba.nacos.page.serviceManagement.') => aliwareIntl.get(prefix + key)
 export const I18N = {}
 /**
  * 服务列表

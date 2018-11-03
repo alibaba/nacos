@@ -82,6 +82,15 @@ public class ConfigAPI_ITCase {
 
     @After
     public void cleanup() throws Exception {
+        HttpResult result = null;
+        try {
+            List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
+            Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
+        } catch (Exception e) {
+            Assert.assertTrue(false);
+        }
     }
 
     /**
@@ -609,11 +618,13 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals("true", result.content);
 
-
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "beta", "true");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(content, JSON.parseObject(result.content).getJSONObject("data").getString("content"));
+            // delete data
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
         } catch (Exception e) {
             Assert.assertTrue(false);
         }
