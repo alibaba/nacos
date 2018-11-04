@@ -59,6 +59,26 @@ I18N.COLUMN_OPERATION = getI18N('table.column.operation')
  * 详情
  */
 I18N.DETAIL = getI18N('detail')
+/**
+ * 删除
+ */
+I18N.DELETE = getI18N('delete')
+/**
+ * 提示
+ */
+I18N.PROMPT = getI18N('prompt')
+/**
+ * 提示
+ */
+I18N.PROMPT_DELETE = getI18N('prompt_delete')
+/**
+ * 删除
+ */
+I18N.DELETE = getI18N('delete')
+/**
+ * 创建服务
+ */
+I18N.CREATE = getI18N('create')
 
 export const STATUS_COLOR_MAPPING = {
     优: 'green',
