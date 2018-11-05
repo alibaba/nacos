@@ -79,10 +79,3 @@ I18N.DELETE = getI18N('delete')
  * 创建服务
  */
 I18N.CREATE = getI18N('create')
-
-export const STATUS_COLOR_MAPPING = {
-    优: 'green',
-    良: 'light-green',
-    中: 'orange',
-    差: 'red'
-}
