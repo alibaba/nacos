@@ -65,6 +65,12 @@ class ListeningToQuery extends React.Component {
         if (type === 1) {
             var ip = this.getValue('ip');
             queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
+
+            let tenant = window.nownamespace || getParams('namespace') || '';
+            if (tenant) {
+                queryUrl += '&tenant=' + tenant;
+            }
+
         } else {
             var dataId = this.getValue('dataId');
             var group = this.getValue('group');
