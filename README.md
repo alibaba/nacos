@@ -62,7 +62,7 @@ For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.htm
 
 3. #### Quick start for other open-source projects:
 
-* [quick start with spring cloud](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html)
+* [quick start with spring cloud](https://nacos.io/en-us/docs/quick-start-spring-cloud.html)
 
 * [quick start with dubbo](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)
 

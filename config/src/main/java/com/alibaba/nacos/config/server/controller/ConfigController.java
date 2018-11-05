@@ -23,7 +23,6 @@ import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
@@ -61,17 +60,13 @@ public class ConfigController {
     private final transient ConfigServletInner inner;
     
 	private final transient PersistService persistService;
-	
-	private final transient MergeDatumService mergeService;
 
 	private final transient ConfigSubService configSubService;
 
 	@Autowired
-	public ConfigController(ConfigServletInner configServletInner, PersistService persistService, MergeDatumService mergeService,
-	                        ConfigSubService configSubService) {
+	public ConfigController(ConfigServletInner configServletInner, PersistService persistService, ConfigSubService configSubService) {
 		this.inner = configServletInner;
 		this.persistService = persistService;
-		this.mergeService = mergeService;
 		this.configSubService = configSubService;
 	}
 
