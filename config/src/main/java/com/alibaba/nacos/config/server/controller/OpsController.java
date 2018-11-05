@@ -40,11 +40,15 @@ public class OpsController {
 
 	private static final Logger log = LoggerFactory.getLogger(OpsController.class);
 
-	@Autowired
-	protected PersistService persistService;
+	protected final PersistService persistService;
+
+	private final DumpService dumpService;
 
 	@Autowired
-	DumpService dumpService;
+	public OpsController(PersistService persistService, DumpService dumpService) {
+		this.persistService = persistService;
+		this.dumpService = dumpService;
+	}
 
 	// ops call
 	@RequestMapping(value = "/localCache", method = RequestMethod.POST)
