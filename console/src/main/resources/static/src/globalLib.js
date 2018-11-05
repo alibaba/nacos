@@ -16,12 +16,13 @@ import serviceConfig from './serviceMock';
 import moment from 'moment';
 import $ from 'jquery';
 import i18DocObj from './i18ndoc';
+const global = window;
 
 /**
  * 获取cookie值
  * @param {*String} keyName cookie名
  */
-window.aliwareGetCookieByKeyName = function (keyName) {
+const aliwareGetCookieByKeyName = function (keyName) {
     let result = '';
     let cookieList = document.cookie && document.cookie.split(';') || [];
     cookieList.forEach((str) => {
@@ -33,10 +34,11 @@ window.aliwareGetCookieByKeyName = function (keyName) {
 
     return result.trim();
 };
+
 /** 
  * 监听事件对象
  */
-window.narutoEvent = (function (window) {
+const nacosEvent = (function (_global) {
     let eventListObj = {};
     let ignoreEventListObj = {};
     return {
@@ -129,11 +131,12 @@ window.narutoEvent = (function (window) {
             }
         }
     }
-})(window);
+})(global);
+
 /**
- * Naruto的工具类
+ * nacos的工具类
  */
-window.narutoUtils = (function (window) {
+const nacosUtils = (function (_global) {
     let loadingCount = 0;
     let loadingState = {
         visible: false,
@@ -156,7 +159,7 @@ window.narutoUtils = (function (window) {
          */
         openLoading: function () {
             loadingCount++;
-            window.narutoEvent.trigger("narutoLoadingEvent", Object.assign(loadingState, {
+            nacosEvent.trigger("nacosLoadingEvent", Object.assign(loadingState, {
                 visible: true,
                 spinning: true
             }))
@@ -168,7 +171,7 @@ window.narutoUtils = (function (window) {
             loadingCount--;
             if (loadingCount <= 0) {
                 loadingCount = 0;
-                window.narutoEvent.trigger("narutoLoadingEvent", Object.assign(loadingState, {
+                nacosEvent.trigger("nacosLoadingEvent", Object.assign(loadingState, {
                     visible: false,
                     spinning: false
                 }));
@@ -179,7 +182,7 @@ window.narutoUtils = (function (window) {
          */
         closeAllLoading: function () {
             loadingCount = 0;
-            window.narutoEvent.trigger("narutoLoadingEvent", Object.assign(loadingState, {
+            nacosEvent.trigger("nacosLoadingEvent", Object.assign(loadingState, {
                 visible: false,
                 spinning: false
             }));
@@ -191,9 +194,9 @@ window.narutoUtils = (function (window) {
             return url;
         }
     }
-})(window);
+})(global);
 
-window.aliwareIntl = (function (window) {
+const aliwareIntl = (function (_global) {
     /**
      * 国际化构造方法
      * @param {Object} options 配置信息
@@ -205,8 +208,8 @@ window.aliwareIntl = (function (window) {
         this.nowData = nowData;
         this.setMomentLocale(this.currentLanguageCode);
     }
-    var aliwareLocal = window.aliwareGetCookieByKeyName('aliyun_lang') || 'zh';
-    var aliwareLocalSite = window.aliwareGetCookieByKeyName('aliyun_country') || 'cn';
+    let aliwareLocal = aliwareGetCookieByKeyName('aliyun_lang') || 'zh';
+    let aliwareLocalSite = aliwareGetCookieByKeyName('aliyun_country') || 'cn';
     aliwareLocal = aliwareLocal.toLowerCase();
     aliwareLocalSite = aliwareLocalSite.toLowerCase();
     //当前语言
@@ -214,7 +217,7 @@ window.aliwareIntl = (function (window) {
     //当前地区
     aliwareI18n.prototype.currentSite = aliwareLocalSite;
     //当前语言-地区
-    aliwareI18n.prototype.currentLanguageCode = window.aliwareGetCookieByKeyName('docsite_language') || `${aliwareLocal}-${aliwareLocalSite}`;
+    aliwareI18n.prototype.currentLanguageCode = aliwareGetCookieByKeyName('docsite_language') || `${aliwareLocal}-${aliwareLocalSite}`;
     /**
      * 通过key获取对应国际化文案
      * @param {String} key 国际化key
@@ -250,8 +253,8 @@ window.aliwareIntl = (function (window) {
      */
     aliwareI18n.prototype.intlTimeFormat = function (num = Date.now(), initOption = {}) {
         try {
-            var date = Object.prototype.toString.call(num) === '[object Date]' ? num : new Date(num);
-            var options = Object.assign({}, {
+            let date = Object.prototype.toString.call(num) === '[object Date]' ? num : new Date(num);
+            let options = Object.assign({}, {
                 // weekday: "short",
                 hour12: false,
                 year: "numeric",
@@ -295,43 +298,41 @@ window.aliwareIntl = (function (window) {
         currentLocal: `${aliwareLocal}`,
         locals: i18DocObj[aliwareI18n.prototype.currentLanguageCode] || i18DocObj["en-us"] || i18DocObj["zh-cn"] || {}
     });
-})(window);
+})(global);
+
 /**
  * 获取url中的参数
  */
-window.getParams = function (name) {
-    let reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
-    let result = [];
-    if (window.location.hash !== '') {
-        result = window.location.hash.split('?'); //优先判别hash
-    } else {
-        result = window.location.href.split('?');
-    }
-
-    if (result.length === 1) {
-        result = window.parent.location.hash.split('?');
-    }
-
-    if (result.length > 1) {
-        let r = result[1].match(reg);
-        if (r != null) {
-            return decodeURIComponent(r[2]);
+const getParams = (function (_global) {
+    return function (name) {
+        let reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
+        let result = [];
+        if (_global.location.hash !== '') {
+            result = _global.location.hash.split('?'); //优先判别hash
+        } else {
+            result = _global.location.href.split('?');
         }
-    }
 
-    return null;
-};
+        if (result.length === 1) {
+            result = _global.parent.location.hash.split('?');
+        }
+
+        if (result.length > 1) {
+            let r = result[1].match(reg);
+            if (r != null) {
+                return decodeURIComponent(r[2]);
+            }
+        }
+
+        return null;
+    };
+})(global);
+
 /**
  * 设置参数
  */
-window.setParam = function (name, value) {
-    return window.setParams.apply(this, arguments);
-};
-/**
- * 设置参数
- */
-window.setParams = (function (window) {
-    const _originHref = window.location.href.split("#")[0];
+const setParams = (function (_global) {
+    const _originHref = _global.location.href.split("#")[0];
     return function (name, value) {
         if (!name) {
             return;
@@ -349,15 +350,15 @@ window.setParams = (function (window) {
         }
 
         let hashArr = [];
-        if (window.location.hash) {
-            hashArr = window.location.hash.split('?');
+        if (_global.location.hash) {
+            hashArr = _global.location.hash.split('?');
         }
 
         let paramArr = hashArr[1] && hashArr[1].split('&') || [];
 
         let paramObj = {};
         paramArr.forEach((val) => {
-            var tmpArr = val.split('=');
+            let tmpArr = val.split('=');
             paramObj[tmpArr[0]] = decodeURIComponent(tmpArr[1] || "");
         });
         paramObj = Object.assign({}, paramObj, obj);
@@ -368,19 +369,29 @@ window.setParams = (function (window) {
 
         hashArr[1] = resArr.join('&');
         let hashStr = hashArr.join('?');
-        if (window.history.replaceState) {
+        if (_global.history.replaceState) {
             let url = _originHref + hashStr;
-            window.history.replaceState(null, '', url);
+            _global.history.replaceState(null, '', url);
         } else {
-            window.location.hash = hashStr;
+            _global.location.hash = hashStr;
         }
     }
-})(window);
+})(global);
+
+
+/**
+ * 设置参数
+ */
+const setParam = function (name, value) {
+    return setParams.apply(this, arguments);
+};
+
+
 /**
  * 删除参数
  */
-window.removeParams = (function (window) {
-    const _originHref = window.location.href.split("#")[0];
+const removeParams = (function (_global) {
+    const _originHref = _global.location.href.split("#")[0];
     return function (name) {
         let removeList = [];
 
@@ -396,46 +407,47 @@ window.removeParams = (function (window) {
         }
 
         let hashArr = [];
-        if (window.location.hash) {
-            hashArr = window.location.hash.split('?');
+        if (_global.location.hash) {
+            hashArr = _global.location.hash.split('?');
         }
 
         let paramArr = hashArr[1] && hashArr[1].split('&') || [];
 
         // let paramObj = {};
         paramArr = paramArr.filter((val) => {
-            var tmpArr = val.split('=');
+            let tmpArr = val.split('=');
             return removeList.indexOf(tmpArr[0]) === -1;
         });
 
         hashArr[1] = paramArr.join('&');
         let hashStr = hashArr.join('?');
-        if (window.history.replaceState) {
+        if (_global.history.replaceState) {
             let url = _originHref + hashStr;
-            window.history.replaceState(null, '', url);
+            _global.history.replaceState(null, '', url);
         } else {
-            window.location.hash = hashStr;
+            _global.location.hash = hashStr;
         }
     }
-})(window);
+})(global);
+
 /**
  * 封装的ajax请求
  */
-window.request = (function (window) {
-    var middlewareList = [];
-    var middlewareBackList = [];
-    var serviceMap = {};
-    var serviceList = serviceConfig.serviceList || [];
-    var methodList = serviceConfig.method || [];
+const request = (function (_global) {
+    let middlewareList = [];
+    let middlewareBackList = [];
+    let serviceMap = {};
+    let serviceList = serviceConfig.serviceList || [];
+    let methodList = serviceConfig.method || [];
     /**
      * 获取真实url信息
      */
-    var NarutoRealUrlMapper = (function () {
+    let NacosRealUrlMapper = (function () {
         serviceList.forEach(obj => {
             serviceMap[obj.registerName] = obj;
         })
         return function (registerName) {
-            var serviceObj = serviceMap[registerName];
+            let serviceObj = serviceMap[registerName];
             if (!serviceObj) {
                 return null;
             }
@@ -482,12 +494,12 @@ window.request = (function (window) {
     function handleCustomService(config) {
         //只处理com.alibaba.开头的url
         if (config && config.url && config.url.indexOf('com.alibaba.') === 0) {
-            var registerName = config.url;
-            var serviceObj = NarutoRealUrlMapper(registerName);
+            let registerName = config.url;
+            let serviceObj = NacosRealUrlMapper(registerName);
             if (serviceObj && serviceObj.url && serviceObj.url.replace) {
                 //有mock数据 直接返回 生产环境失效
                 if (projectConfig.is_preview && serviceObj.is_mock && config.success) {
-                    var code = null;
+                    let code = null;
                     try {
                         code = JSON.parse(serviceObj.defaults);
                     } catch (error) {
@@ -521,7 +533,7 @@ window.request = (function (window) {
                 try {
                     //设置临时代理 生产环境失效
                     if (projectConfig.is_preview && serviceObj.is_proxy) {
-                        var beforeSend = config.beforeSend;
+                        let beforeSend = config.beforeSend;
                         config.beforeSend = function (xhr) {
                             serviceObj.cookie && xhr.setRequestHeader('tmpCookie', serviceObj.cookie);
                             serviceObj.header && xhr.setRequestHeader('tmpHeader', serviceObj.header);
@@ -534,10 +546,10 @@ window.request = (function (window) {
                 }
                 //设置自动loading效果
                 if (serviceObj.autoLoading) {
-                    window.narutoUtils.openLoading();
+                    nacosUtils.openLoading();
                     const prevComplete = config.complete;
                     config.complete = function () {
-                        window.narutoUtils.closeLoading();
+                        nacosUtils.closeLoading();
                         typeof prevComplete === "function" && prevComplete.apply($, Array.prototype.slice.call(arguments));
                     }
                 }
@@ -546,29 +558,10 @@ window.request = (function (window) {
         }
         return config;
     }
-    /**
-     * 处理edas的Url
-     * @param {*Object} config ajax请求配置信息
-     */
-    function handleEdasUrl(config, noprefix) {
-        var _url = config.url;
-        var edasprefix = window.edasprefix || ''
-        try {
-            if (window.parent.location && window.parent.location.host && window.parent.location.host.indexOf('edas') !== -1) { //如果是包含在edas里面需要增加前缀
-                if (!noprefix) {//如果没有显示指明不加前缀
-                    if (_url.indexOf('/authgw/') === -1) { //如果没有添加edas网关前缀则添加
-                        _url = '/authgw/' + edasprefix + _url;
-                    }
-                }
-            }
-            config.url = _url;
-        } catch (error) {
-        }
-        return config;
-    }
+
     function Request(config) {
         //除了config外的传参
-        var args = [].slice.call(arguments, 1);
+        let args = [].slice.call(arguments, 1);
         //处理前置中间件
         config = handleMiddleWare.apply(this, [config, ...args, middlewareList]);
         //处理自定义url
@@ -577,11 +570,9 @@ window.request = (function (window) {
             return;
         //xsrf
         if (config.type && config.type.toLowerCase() === 'post' && config.data && Object.prototype.toString.call(config.data) === '[object Object]' && !config.data.sec_token) {
-            var sec_token = window.aliwareGetCookieByKeyName('XSRF-TOKEN')
+            let sec_token = aliwareGetCookieByKeyName('XSRF-TOKEN')
             sec_token && (config.data.sec_token = sec_token);
         }
-        //处理edas的url
-        config = handleEdasUrl.apply(this, [config, ...args]);
 
         //处理后置中间件
         config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
@@ -592,8 +583,6 @@ window.request = (function (window) {
             data: config.data || '',
             dataType: config.dataType || 'json',
             beforeSend: function (xhr) {
-                xhr.setRequestHeader('poweredBy', 'naruto');
-                xhr.setRequestHeader('projectName', 'newDiamond');
                 config.beforeSend && config.beforeSend(xhr);
             }
         }))
@@ -601,10 +590,22 @@ window.request = (function (window) {
     //暴露方法
     Request.handleCustomService = handleCustomService;
     Request.handleMiddleWare = handleMiddleWare;
-    Request.NarutoRealUrlMapper = NarutoRealUrlMapper;
+    Request.NacosRealUrlMapper = NacosRealUrlMapper;
     Request.serviceList = serviceList;
     Request.serviceMap = serviceMap;
     Request.middleWare = middleWare;
 
     return Request;
-})(window);
+})(global);
+
+export {
+    nacosEvent,
+    nacosUtils,
+    aliwareGetCookieByKeyName,
+    aliwareIntl,
+    getParams,
+    setParam,
+    setParams,
+    removeParams,
+    request
+}

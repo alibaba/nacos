@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
-import {Dialog, Form, Input, Switch, Select, Message} from '@alifd/next';
-import {I18N, DIALOG_FORM_LAYOUT} from './constant'
+import { request } from '../../../globalLib';
+import { Dialog, Form, Input, Switch, Select, Message } from '@alifd/next';
+import { I18N, DIALOG_FORM_LAYOUT } from './constant'
 
 const FormItem = Form.Item;
 const Option = Select.Option
@@ -30,7 +31,7 @@ class EditClusterDialog extends React.Component {
     }
 
     show(editCluster) {
-        const {metadata = {}} = editCluster
+        const { metadata = {} } = editCluster
         editCluster.metadataText = Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')
         this.setState({
             editCluster,
@@ -39,13 +40,13 @@ class EditClusterDialog extends React.Component {
     }
 
     hide() {
-        this.setState({editClusterDialogVisible: false})
+        this.setState({ editClusterDialogVisible: false })
     }
 
     onConfirm() {
-        const {openLoading, closeLoading, getServiceDetail} = this.props
-        const {name, serviceName, metadataText, defaultCheckPort, useIPPort4Check, healthChecker} = this.state.editCluster
-        window.request({
+        const { openLoading, closeLoading, getServiceDetail } = this.props
+        const { name, serviceName, metadataText, defaultCheckPort, useIPPort4Check, healthChecker } = this.state.editCluster
+        request({
             method: 'POST',
             url: '/nacos/v1/ns/cluster/update',
             data: {
@@ -71,21 +72,21 @@ class EditClusterDialog extends React.Component {
     }
 
     onChangeCluster(changeVal) {
-        const {editCluster = {}} = this.state
+        const { editCluster = {} } = this.state
         this.setState({
             editCluster: Object.assign({}, editCluster, changeVal)
         })
     }
 
     render() {
-        const {editCluster = {}, editClusterDialogVisible} = this.state
+        const { editCluster = {}, editClusterDialogVisible } = this.state
         const {
             healthChecker = {},
             useIPPort4Check,
             defaultCheckPort = '80',
             metadataText = ''
         } = editCluster
-        const {type, path, headers} = healthChecker
+        const { type, path, headers } = healthChecker
         const healthCheckerChange = changeVal => this.onChangeCluster({
             healthChecker: Object.assign({}, healthChecker, changeVal)
         })
@@ -103,7 +104,7 @@ class EditClusterDialog extends React.Component {
                         <Select
                             className="in-select"
                             defaultValue={type}
-                            onChange={type => healthCheckerChange({type})}
+                            onChange={type => healthCheckerChange({ type })}
                         >
                             <Option value="TCP">TCP</Option>
                             <Option value="HTTP">HTTP</Option>
@@ -111,14 +112,14 @@ class EditClusterDialog extends React.Component {
                     </FormItem>
                     <FormItem label={`${I18N.CHECK_PORT}:`}>
                         <Input className="in-text"
-                               value={defaultCheckPort}
-                               onChange={defaultCheckPort => this.onChangeCluster({defaultCheckPort})}
+                            value={defaultCheckPort}
+                            onChange={defaultCheckPort => this.onChangeCluster({ defaultCheckPort })}
                         />
                     </FormItem>
                     <FormItem label={`${I18N.USE_IP_PORT_CHECK}:`}>
                         <Switch
                             checked={useIPPort4Check}
-                            onChange={useIPPort4Check => this.onChangeCluster({useIPPort4Check})}
+                            onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
                         />
                     </FormItem>
                     {
@@ -132,7 +133,7 @@ class EditClusterDialog extends React.Component {
                                         <Input
                                             className="in-text"
                                             value={path}
-                                            onChange={path => healthCheckerChange({path})}
+                                            onChange={path => healthCheckerChange({ path })}
                                         />
                                     </div>
                                 </div>
@@ -144,7 +145,7 @@ class EditClusterDialog extends React.Component {
                                         <Input
                                             className="in-text"
                                             value={headers}
-                                            onChange={headers => healthCheckerChange({headers})}
+                                            onChange={headers => healthCheckerChange({ headers })}
                                         />
                                     </div>
                                 </div>
@@ -155,7 +156,7 @@ class EditClusterDialog extends React.Component {
                         <Input
                             className="in-text"
                             value={metadataText}
-                            onChange={metadataText => this.onChangeCluster({metadataText})}
+                            onChange={metadataText => this.onChangeCluster({ metadataText })}
                         />
                     </FormItem>
                 </Form>
