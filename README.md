@@ -63,11 +63,12 @@ For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.htm
 ## Quick start for other open-source projects:
 * [Quick start with Nacos command and console](https://nacos.io/en-us/docs/quick-start.html)
 
-* [Quick start with spring cloud](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html)
-
 * [Quick start with dubbo](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)
 
+* [quick start with spring cloud](https://nacos.io/en-us/docs/quick-start-spring-cloud.html)
+
 * [Quick start with kubernetes](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html)
+
 
 ## Documentation
 
@@ -79,9 +80,7 @@ You can view the full documentation from the [Nacos website](https://nacos.io/en
 * [nacos-sync](https://github.com/nacos-group/nacos-sync) is a tool to synchronize the service registration information from other tools like eureka, zookeeper, etc, to Nacos.
 * [spring-cloud-alibaba](https://github.com/spring-cloud-incubator/spring-cloud-alibaba) provides the one-stop solution for application development over Alibaba middleware which includes Nacos.
 
-
-
-## Contact
+### Contact
 
 * #### Gitter-[Nacos Gitter](https://gitter.im/alibaba/nacos)
 
