@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
-import {Button, Pagination, Table} from '@alifd/next';
-import {I18N, HEALTHY_COLOR_MAPPING} from './constant'
+import { request } from '../../../globalLib';
+import { Button, Pagination, Table } from '@alifd/next';
+import { I18N, HEALTHY_COLOR_MAPPING } from './constant'
 import EditInstanceDialog from "./EditInstanceDialog";
 
 
@@ -23,7 +24,7 @@ class InstanceTable extends React.Component {
         super(props);
         this.state = {
             loading: false,
-            instance: {count: 0, list: []},
+            instance: { count: 0, list: [] },
             pageNum: 1,
             pageSize: 10
         }
@@ -34,18 +35,18 @@ class InstanceTable extends React.Component {
     }
 
     openLoading() {
-        this.setState({loading: true})
+        this.setState({ loading: true })
     }
 
     closeLoading() {
-        this.setState({loading: false})
+        this.setState({ loading: false })
     }
 
     getInstanceList() {
-        const {clusterName, serviceName} = this.props
+        const { clusterName, serviceName } = this.props
         if (!clusterName) return
-        const {pageSize, pageNum} = this.state
-        window.request({
+        const { pageSize, pageNum } = this.state
+        request({
             url: '/nacos/v1/ns/catalog/instanceList',
             data: {
                 serviceName,
@@ -54,7 +55,7 @@ class InstanceTable extends React.Component {
                 startPg: pageNum
             },
             beforeSend: () => this.openLoading(),
-            success: instance => this.setState({instance}),
+            success: instance => this.setState({ instance }),
             complete: () => this.closeLoading()
         })
     }
@@ -64,38 +65,38 @@ class InstanceTable extends React.Component {
     }
 
     switchState(index, record) {
-        const {instance} = this.state
-        const {ip, port, weight, enabled} = record
-        const {clusterName, serviceName} = this.props
+        const { instance } = this.state
+        const { ip, port, weight, enabled } = record
+        const { clusterName, serviceName } = this.props
         const newVal = Object.assign({}, instance)
         newVal.list[index]['enabled'] = !enabled
-        window.request({
+        request({
             method: 'POST',
             url: '/nacos/v1/ns/instance/update',
-            data: {serviceName, clusterName, ip, port, weight, enable: !enabled},
+            data: { serviceName, clusterName, ip, port, weight, enable: !enabled },
             dataType: 'text',
             beforeSend: () => this.openLoading(),
-            success: () => this.setState({instance: newVal}),
+            success: () => this.setState({ instance: newVal }),
             complete: () => this.closeLoading()
         })
     }
 
     onChangePage(pageNum) {
-        this.setState({pageNum}, () => this.getInstanceList())
+        this.setState({ pageNum }, () => this.getInstanceList())
     }
 
-    rowColor = ({healthy}) => ({className: `row-bg-${HEALTHY_COLOR_MAPPING[`${healthy}`]}`})
+    rowColor = ({ healthy }) => ({ className: `row-bg-${HEALTHY_COLOR_MAPPING[`${healthy}`]}` })
 
     render() {
-        const {clusterName, serviceName} = this.props
-        const {instance, pageSize, loading} = this.state
+        const { clusterName, serviceName } = this.props
+        const { instance, pageSize, loading } = this.state
         return instance.count ? (
             <div>
                 <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
-                    <Table.Column width={138} title="IP" dataIndex="ip"/>
-                    <Table.Column width={100} title={I18N.PORT} dataIndex="port"/>
-                    <Table.Column width={100} title={I18N.WEIGHT} dataIndex="weight"/>
-                    <Table.Column width={100} title={I18N.HEALTHY} dataIndex="healthy" cell={val => `${val}`}/>
+                    <Table.Column width={138} title="IP" dataIndex="ip" />
+                    <Table.Column width={100} title={I18N.PORT} dataIndex="port" />
+                    <Table.Column width={100} title={I18N.WEIGHT} dataIndex="weight" />
+                    <Table.Column width={100} title={I18N.HEALTHY} dataIndex="healthy" cell={val => `${val}`} />
                     <Table.Column
                         title={I18N.METADATA}
                         dataIndex="metadata"
@@ -116,7 +117,7 @@ class InstanceTable extends React.Component {
                                     onClick={() => this.switchState(index, record)}
                                 >{I18N[record.enabled ? 'OFFLINE' : 'ONLINE']}</Button>
                             </div>
-                        )}/>
+                        )} />
                 </Table>
                 {
                     instance.count > pageSize
