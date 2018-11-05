@@ -308,7 +308,8 @@ public class ApiCommands {
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(port);
         ipAddress.setIp(ip);
-        ipAddress.setWeight(1);
+        ipAddress.setWeight(clientBeat.getWeight());
+        ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
 
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
@@ -553,10 +554,19 @@ public class ApiCommands {
 
         if (virtualClusterDomain == null) {
 
-            regDom(request);
-
             Lock lock = domainsManager.addLock(dom);
             Condition condition = domainsManager.addCondtion(dom);
+
+            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        regDom(request);
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
+                    }
+                }
+            });
 
             try {
                 lock.lock();
