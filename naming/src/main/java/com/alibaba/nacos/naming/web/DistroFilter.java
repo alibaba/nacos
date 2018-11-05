@@ -19,8 +19,10 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.raft.RaftCore;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpMethod;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -54,6 +56,16 @@ public class DistroFilter implements Filter {
                     return;
                 }
             }
+        }
+
+        if (HttpMethod.PUT.name().equals(req.getMethod()) && req.getRequestURI().contains("instance") && !RaftCore.isLeader()) {
+            String url = "http://" + RaftCore.getLeader().ip + req.getRequestURI() + "?" + req.getQueryString();
+            try {
+                resp.sendRedirect(url);
+            } catch (Exception ignore) {
+                Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+            }
+            return;
         }
 
         if (!Switch.isDistroEnabled()) {

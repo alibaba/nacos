@@ -366,10 +366,10 @@ public class ApiCommands {
         boolean isUseSpecifiedURL = Boolean.parseBoolean(BaseServlet.optional(request, "isUseSpecifiedURL", "false"));
         String envAndSite = BaseServlet.optional(request, "envAndSites", StringUtils.EMPTY);
         boolean resetWeight = Boolean.parseBoolean(BaseServlet.optional(request, "resetWeight", "false"));
-        boolean enableHealthCheck = Boolean.parseBoolean(BaseServlet.optional(request, "enableHealthCheck", "true"));
+        boolean enableHealthCheck = Boolean.parseBoolean(BaseServlet.optional(request, "enableHealthCheck", "false"));
         boolean enable = Boolean.parseBoolean(BaseServlet.optional(request, "enable", "true"));
         String disabledSites = BaseServlet.optional(request, "disabledSites", StringUtils.EMPTY);
-        boolean eanbleClientBeat = Boolean.parseBoolean(BaseServlet.optional(request, "enableClientBeat", "false"));
+        boolean eanbleClientBeat = Boolean.parseBoolean(BaseServlet.optional(request, "enableClientBeat", "true"));
         String clusterName = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
         String serviceMetadataJson = BaseServlet.optional(request, "serviceMetadata", StringUtils.EMPTY);
@@ -886,8 +886,6 @@ public class ApiCommands {
 
     private String doAddIP4Dom(HttpServletRequest request) throws Exception {
 
-        long start = System.currentTimeMillis();
-
         if (Switch.getDisableAddIP()) {
             throw new AccessControlException("Adding IP for dom is forbidden now.");
         }
@@ -963,11 +961,9 @@ public class ApiCommands {
 
         long timestamp = System.currentTimeMillis();
 
-        Loggers.EVT_LOG.info("[ADD IP] before raft:" + (System.currentTimeMillis() - start));
-
         if (RaftCore.isLeader()) {
             try {
-                RaftCore.OPERATE_LOCK.lock();
+                domainsManager.getDom2LockMap().get(dom).lock();
                 proxyParams.put("clientIP", NetUtils.localIP());
                 proxyParams.put("notify", "true");
 
@@ -1010,11 +1006,9 @@ public class ApiCommands {
                         + Arrays.toString(ipList.toArray()) + " operatorIP: "
                         + BaseServlet.optional(request, "clientIP", "unknown"));
             } finally {
-                RaftCore.OPERATE_LOCK.unlock();
+                domainsManager.getDom2LockMap().get(dom).unlock();
             }
         }
-
-        Loggers.EVT_LOG.info("[ADD IP] after raft:" + (System.currentTimeMillis() - start));
 
         return "ok";
     }

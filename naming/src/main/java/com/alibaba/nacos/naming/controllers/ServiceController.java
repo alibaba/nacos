@@ -15,9 +15,7 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -60,8 +58,7 @@ public class ServiceController {
         String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
         if (StringUtils.isNotBlank(metadata)) {
-            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>() {
-            });
+            metadataMap = UtilsAndCommons.parseMetadata(metadata);
         }
 
         VirtualClusterDomain domObj = new VirtualClusterDomain();

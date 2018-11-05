@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.util.IoUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -25,15 +24,19 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
+import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,6 +59,8 @@ public class HttpClient {
 
     private static CloseableHttpClient postClient;
 
+    private static PoolingHttpClientConnectionManager connectionManager;
+
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
         builder.setMaximumConnectionsTotal(-1);
@@ -74,7 +79,7 @@ public class HttpClient {
         HttpClientBuilder builder2 = HttpClients.custom();
         builder2.setUserAgent(UtilsAndCommons.SERVER_VERSION);
         builder2.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
-        builder2.setMaxConnPerRoute(256);
+        builder2.setMaxConnPerRoute(-1);
         builder2.setMaxConnTotal(-1);
         builder2.disableAutomaticRetries();
 //        builder2.disableConnectionState()
