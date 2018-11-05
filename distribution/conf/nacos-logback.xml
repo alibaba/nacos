@@ -20,7 +20,8 @@
 
     <appender name="async-naming-server" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
-        <queueSize>512</queueSize>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
         <appender-ref ref="naming-server"/>
     </appender>
 
@@ -43,7 +44,8 @@
 
     <appender name="async-naming-raft" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
-        <queueSize>512</queueSize>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
         <appender-ref ref="naming-raft"/>
     </appender>
 
@@ -66,7 +68,8 @@
 
     <appender name="async-naming-event" class="ch.qos.logback.classic.AsyncAppender">
         <discardingThreshold>0</discardingThreshold>
-        <queueSize>512</queueSize>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
         <appender-ref ref="naming-event"/>
     </appender>
 

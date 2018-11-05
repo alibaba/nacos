@@ -62,6 +62,10 @@ public class DomainsManager {
 
     private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
 
+    public Map<String, Lock> getDom2LockMap() {
+        return dom2LockMap;
+    }
+
     /**
      * thread pool that processes getting domain detail from other server asynchronously
      */
