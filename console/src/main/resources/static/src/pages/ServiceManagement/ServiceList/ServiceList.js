@@ -88,7 +88,7 @@ class ServiceList extends React.Component {
                             Message.error(res)
                             return
                         }
-                        this.props.queryServiceList()
+                        this.queryServiceList()
                     },
                     error: res => Message.error(res.responseText || res.statusText),
                     complete: () => this.closeLoading()
