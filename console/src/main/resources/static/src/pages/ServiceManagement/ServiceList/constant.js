@@ -48,9 +48,9 @@ I18N.COLUMN_CLUSTER_COUNT = getI18N('table.column.cluster_count')
  */
 I18N.COLUMN_IP_COUNT = getI18N('table.column.ip_count')
 /**
- * 健康程度
+ * 健康实例数
  */
-I18N.COLUMN_HEALTH_STATUS = getI18N('table.column.health_status')
+I18N.COLUMN_HEALTHY_INSTANCE_COUNT = getI18N('table.column.healthy_instance_count')
 /**
  * 操作
  */

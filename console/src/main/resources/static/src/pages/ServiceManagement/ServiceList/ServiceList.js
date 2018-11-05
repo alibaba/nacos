@@ -97,7 +97,7 @@ class ServiceList extends React.Component {
         });
     }
 
-    rowColor = ({status}) => ({className: `row-bg-${STATUS_COLOR_MAPPING[status]}`})
+    rowColor = row => ({className: !row.healthyInstanceCount ? 'row-bg-red' : ''})
 
     render() {
         const {keyword} = this.state
@@ -157,7 +157,7 @@ class ServiceList extends React.Component {
                                 <Column title={I18N.COLUMN_SERVICE_NAME} dataIndex="name"/>
                                 <Column title={I18N.COLUMN_CLUSTER_COUNT} dataIndex="clusterCount"/>
                                 <Column title={I18N.COLUMN_IP_COUNT} dataIndex="ipCount"/>
-                                <Column title={I18N.COLUMN_HEALTH_STATUS} dataIndex="status"/>
+                                <Column title={I18N.COLUMN_HEALTHY_INSTANCE_COUNT} dataIndex="healthyInstanceCount"/>
                                 <Column title={I18N.COLUMN_OPERATION} align="center" cell={(value, index, record) => (
                                     <div>
                                         <Button
@@ -174,15 +174,22 @@ class ServiceList extends React.Component {
                             </Table>
                         </Col>
                     </Row>
-                    <div style={{marginTop: 10, textAlign: 'right'}}>
-                        <Pagination
-                            current={this.state.currentPage}
-                            total={this.state.total}
-                            pageSize={this.state.pageSize}
-                            onChange={currentPage => this.setState({currentPage}, () => this.queryServiceList())}
-                            language={aliwareIntl.currentLanguageCode}
-                        />
-                    </div>
+                    {
+                        this.state.total > this.state.pageSize
+                            ? (
+                                <div style={{marginTop: 10, textAlign: 'right'}}>
+                                    <Pagination
+                                        current={this.state.currentPage}
+                                        total={this.state.total}
+                                        pageSize={this.state.pageSize}
+                                        onChange={currentPage => this.setState({currentPage}, () => this.queryServiceList())}
+                                        language={aliwareIntl.currentLanguageCode}
+                                    />
+                                </div>
+                            )
+                            : null
+                    }
+
                 </Loading>
                 <EditServiceDialog
                     ref="editServiceDialog"
