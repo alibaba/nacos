@@ -322,9 +322,7 @@ public class ConfigServletInner {
 
 	private static boolean isUseTag(CacheItem cacheItem, String tag) {
 		if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
-			if (StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag)) {
-				return true;
-			}
+			return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);
 		}
 		return false;
 	}
