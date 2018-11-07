@@ -37,7 +37,7 @@ If you just want to contribute directly
 
 We use the `develop` branch as the development branch, which indicates that this is a unstable branch.
 
-Here are the workflow for contributors:
+Here is the workflow for contributors:
 
 1. Fork to your own
 2. Clone fork to local repository
@@ -61,7 +61,7 @@ The final commit message should be clear and concise.
 
 ### Code review guidance
 
-Our PMC will rotate reviewing the code to make sure all the PR will be reviewed timely and by at least one committer. If we aren't doing our job (sometimes we drop things). And as always, we welcome volunteers for code review. 
+Our PMC will rotate reviewing the code to make sure all the PR will be reviewed timely and by at least one committer before merge. If we aren't doing our job (sometimes we drop things). And as always, we welcome volunteers for code review. 
 
 Some principles:
 
