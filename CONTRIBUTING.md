@@ -45,7 +45,7 @@ Here are the workflow for contributors:
 4. Keep your branch in sync
 5. Commit your changes (make sure your commit message concise)
 6. Push your commits to your forked repository
-7. Create a pull request. please follow the [contribution workflow](#github-workflow) to create a new pull request.
+7. Create a pull request.
 
 When creating pull request:
 
