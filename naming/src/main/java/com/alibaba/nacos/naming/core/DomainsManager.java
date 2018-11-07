@@ -285,7 +285,7 @@ public class DomainsManager {
             virtualClusterDomain = (VirtualClusterDomain) newDom;
             newDom = virtualClusterDomain;
         }
-        RaftCore.signalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
+        RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
     }
 
     public void easyReplaceIP4Dom(String domName, String clusterName, List<IpAddress> ips) throws Exception {
@@ -367,7 +367,7 @@ public class DomainsManager {
             }
 
             if (timestamp == -1) {
-                RaftCore.signalPublish(UtilsAndCommons.getIPListStoreKey(dom),
+                RaftCore.doSignalPublish(UtilsAndCommons.getIPListStoreKey(dom),
                         JSON.toJSONString(ipAddressMap.values()));
             } else {
                 String key = UtilsAndCommons.getIPListStoreKey(dom);
@@ -452,7 +452,7 @@ public class DomainsManager {
 
             ipAddrs.removeAll(ips);
 
-            RaftCore.signalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
+            RaftCore.doSignalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
         } finally {
             lock.unlock();
         }
