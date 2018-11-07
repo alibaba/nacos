@@ -79,6 +79,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessorTest {
     public void testDefaultPropertyNames() {
 
         assertPropertyNames(
+                "nacos.version",
                 "server.servlet.contextPath",
                 "server.port",
                 "server.tomcat.uri-encoding",

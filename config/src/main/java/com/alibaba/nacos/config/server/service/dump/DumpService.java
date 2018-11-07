@@ -46,6 +46,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -354,7 +355,7 @@ public class DumpService {
     				}
     				// 删除
     				else {
-    					persistService.removeConfigInfo(dataId, group, tenant, SystemConfig.LOCAL_IP, null);
+    					persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
     					log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId=" + group);
     				}
     				
