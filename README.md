@@ -1,12 +1,16 @@
-## Nacos 
 
+<img src="doc/Nacos_Logo.png" width="50%" height="50%" />
+
+# Nacos: Dynamic  *Na*ming and *Co*nfiguration *S*ervice
 
 [![Gitter](https://badges.gitter.im/alibaba/nacos.svg)](https://gitter.im/alibaba/nacos?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)   [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![Gitter](https://travis-ci.org/alibaba/nacos.svg?branch=master)](https://travis-ci.org/alibaba/nacos)
 
 -------
-<img src="doc/Nacos_Logo.png" width="50%" height="50%" />
-Nacos is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
+
+## What does it do
+
+Nacos (official site: [http://nacos.io](http://nacos.io)) is an easy-to-use platform designed for dynamic service discovery and configuration and service management. It helps you to build cloud native applications and microservices platform easily.
 
 Service is a first-class citizen in Nacos. Nacos supports almost all type of services，for example，[Dubbo/gRPC service](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)、[Spring Cloud RESTFul service](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html) or [Kubernetes service](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html).
 
@@ -29,60 +33,68 @@ Nacos provides four major functions.
 	Nacos provides an easy-to-use service dashboard to help you manage your services metadata, configuration, kubernetes DNS, service health and metrics statistics.
  
 
-### Quick Start
+## Quick Start
 It is super easy to get started with your first project.
 
-1. #### Download run package 
-[Download](https://github.com/alibaba/nacos/releases/download/0.2.1/nacos-server-0.2.1.zip)
+#### Step 1: Download the binary package 
 
+You can download the package from the  [latest stable release](https://github.com/alibaba/nacos/releases).  
+
+Take release nacos-server-0.3.0.zip for example.
 ```
-unzip nacos-server-0.2.1.zip
+unzip nacos-server-0.3.0.zip
 cd nacos/bin 
 ``` 
 
-2. #### Start Server
-* ##### Linux/Unix/Mac
+#### Step 2: Start Server
 
+On the **Linux/Unix/Mac** platform, run the following command to start server with standalone mode: 
 ```
-Run the following command to start (standalone means non-cluster mode): 
-
 sh startup.sh -m standalone
 ```
 
-* ##### Windows
+On the **Windows** platform, run the following command to start server with standalone mode.  Alternatively, you can also double-click the startup.cmd to run NacosServer.
 ```
-Run the following command to start:
-
-cmd startup.cmd
-
-Or double-click the startup.cmd to run NacosServer.
+cmd startup.cmd -m standalone
 ```
 
 For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.html)
 
-3. #### Quick start for other open-source projects:
+## Quick start for other open-source projects:
+* [Quick start with Nacos command and console](https://nacos.io/en-us/docs/quick-start.html)
 
-* [quick start with spring cloud](https://nacos.io/en-us/docs/use-nacos-with-springcloud.html)
+* [Quick start with dubbo](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)
 
-* [quick start with dubbo](https://nacos.io/en-us/docs/use-nacos-with-dubbo.html)
+* [Quick start with spring cloud](https://nacos.io/en-us/docs/quick-start-spring-cloud.html)
 
-* [quick start with kubernetes](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html)
+* [Quick start with kubernetes](https://nacos.io/en-us/docs/use-nacos-with-kubernetes.html)
 
-* [more...](https://nacos.io/)
 
-### Documentation
+## Documentation
 
-You can view full documentation on the Nacos website:
+You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
-* [nacos.io](https://nacos.io/en-us/docs/what-is-nacos.html)
 
-### Contact
+## Contributing
 
-* #### Gitter-[Nacos Gitter](https://gitter.im/alibaba/nacos)
+Contributors are welcome to join Nacos project. 
 
-* #### Weibo-[Nacos Weibo](https://weibo.com/u/6574374908)
+ - Contributing guide (constructing): describe general contributing procedure for Nacos project, such as issue submitting, milestone plan, etc.
+ - Developing guide (constructing): describe detailed developing procedure including how to fork, choosing correct branch, PR review procedure, etc.
 
-* #### Segmentfault-[Nacos Segmentfault](https://segmentfault.com/t/nacos)
+## Other Related Project Repositories
 
-* #### Mailing list-[nacos\_dev@linux.alibaba.com](mailto:nacos_dev@linux.alibaba.com).
+* [nacos-spring-project](https://github.com/nacos-group/nacos-spring-project) provides the integration functionality for Spring.
+* [nacos-group](https://github.com/nacos-group) is the reposity that hosts the eco tools for Nacos, such as SDK, synchronization tool, etc.
+* [spring-cloud-alibaba](https://github.com/spring-cloud-incubator/spring-cloud-alibaba) provides the one-stop solution for application development over Alibaba middleware which includes Nacos.
+
+## Contact
+
+* [Gitter](https://gitter.im/alibaba/nacos): Nacos's IM tool for community messaging, collaboration and discovery.
+* [Twitter](https://twitter.com/nacos2): Follow along for latest nacos news on Twitter.
+* [Weibo](https://weibo.com/u/6574374908): Follow along for latest nacos news on Weibo (Twitter of China version).
+* [User Mail Group](users-nacos@googlegroups.com): Nacos usage general discussion.
+* [Dev Mail Group](dev-nacos@googlegroups.com): Nacos developer discussion (APIs, feature design, etc).
+* [Commit Mail Group](commits-nacos@googlegroups.com): Commits notice, very high frequency.
+* [Nacos Segmentfault](https://segmentfault.com/t/nacos): Get latest notice and prompt help from Segmentfault.
 
