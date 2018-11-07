@@ -77,8 +77,7 @@ You can view the full documentation from the [Nacos website](https://nacos.io/en
 
 ## Contributing
 
-Contributors are welcomed to join Nacos project. 
- - Please check [contributing guide](https://github.com/alibaba/nacos/blob/master/CONTRIBUTING.md) about how to contribute to this project.
+Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](https://github.com/alibaba/nacos/blob/master/CONTRIBUTING.md) about how to contribute to this project.
 
 ## Other Related Project Repositories
 
