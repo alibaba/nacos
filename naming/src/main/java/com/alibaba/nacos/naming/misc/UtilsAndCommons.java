@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -35,12 +34,6 @@ import java.util.concurrent.*;
  * @author nacos
  */
 public class UtilsAndCommons {
-
-    private static final String NACOS_CONF_DIR_PATH = System.getProperty("user.home") + "/conf";
-
-    private static final String NACOS_CONF_FILE_NAME = "cluster.conf";
-
-    private static String NACOS_CONF_FILE_PATH = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
 
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
@@ -131,12 +124,6 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteMapNullValue.getMask();
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
-        String nacosHome = System.getProperty("nacos.home");
-
-        if (StringUtils.isNotBlank(nacosHome)) {
-            NACOS_CONF_FILE_PATH = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
-        }
-
         DOMAIN_SYNCHRONIZATION_EXECUTOR
                 = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
@@ -204,14 +191,6 @@ public class UtilsAndCommons {
         }
 
         return strBuilder.toString();
-    }
-
-    public static String getConfFilePath() {
-        return NACOS_CONF_FILE_PATH;
-    }
-
-    public static File getConfFile() {
-        return new File(getConfFilePath());
     }
 
 
