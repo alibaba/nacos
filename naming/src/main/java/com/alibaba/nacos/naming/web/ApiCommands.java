@@ -973,14 +973,23 @@ public class ApiCommands {
                     UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
                         @Override
                         public void run() {
+
                             String server = peer.ip;
+
                             if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
                                 server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
                             }
+
                             String url = "http://" + server
                                     + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
 
                             try {
+
+                                if (server.equals(NetUtils.localIP())) {
+                                    onAddIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
+                                    return;
+                                }
+
                                 HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
                                     @Override
                                     public Integer onCompleted(Response response) throws Exception {
