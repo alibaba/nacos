@@ -734,7 +734,7 @@ public class ApiCommands {
             dom.setEnableHealthCheck(Boolean.parseBoolean(enableHealthCheck));
         }
 
-        String enabled = BaseServlet.optional(request, "serviceEnabled", StringUtils.EMPTY);
+        String enabled = BaseServlet.optional(request, "serviceEnabled", "true");
         if (!StringUtils.isEmpty(enabled)) {
             dom.setEnabled(Boolean.parseBoolean(enabled));
         }
