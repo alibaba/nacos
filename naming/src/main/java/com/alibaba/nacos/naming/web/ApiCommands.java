@@ -20,7 +20,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
@@ -543,9 +542,8 @@ public class ApiCommands {
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         IpAddress ipAddress = getIPAddress(request);
-        Service service = new Service(dom);
         ipAddress.setApp(app);
-        ipAddress.setService(service);
+        ipAddress.setServiceName(dom);
         ipAddress.setInstanceId(ipAddress.generateInstanceId());
         ipAddress.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {

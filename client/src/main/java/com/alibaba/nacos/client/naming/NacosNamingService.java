@@ -148,7 +148,7 @@ public class NacosNamingService implements NamingService {
         instance.setIp(ip);
         instance.setPort(port);
         instance.setWeight(1.0);
-        instance.setCluster(new Cluster(clusterName));
+        instance.setClusterName(clusterName);
 
         registerInstance(serviceName, instance);
     }
@@ -160,7 +160,7 @@ public class NacosNamingService implements NamingService {
         beatInfo.setDom(serviceName);
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
-        beatInfo.setCluster(instance.getCluster().getName());
+        beatInfo.setCluster(instance.getClusterName());
         beatInfo.setWeight(instance.getWeight());
         beatInfo.setMetadata(instance.getMetadata());
 

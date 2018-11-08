@@ -232,10 +232,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         for (Map.Entry<String, List<IpAddress>> entry : ipMap.entrySet()) {
             //make every ip mine
             List<IpAddress> entryIPs = entry.getValue();
-            for (IpAddress ip : entryIPs) {
-                ip.setCluster(clusterMap.get(ip.getClusterName()));
-            }
-
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());

@@ -58,14 +58,17 @@ public class DistroFilter implements Filter {
             }
         }
 
-        if (HttpMethod.PUT.name().equals(req.getMethod()) && req.getRequestURI().contains("instance") && !RaftCore.isLeader()) {
-            String url = "http://" + RaftCore.getLeader().ip + req.getRequestURI() + "?" + req.getQueryString();
-            try {
-                resp.sendRedirect(url);
-            } catch (Exception ignore) {
-                Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+        if (req.getRequestURI().contains(UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT) && !RaftCore.isLeader()) {
+
+            if (HttpMethod.PUT.name().equals(req.getMethod()) && HttpMethod.DELETE.name().equals(req.getMethod())) {
+                String url = "http://" + RaftCore.getLeader().ip + req.getRequestURI() + "?" + req.getQueryString();
+                try {
+                    resp.sendRedirect(url);
+                } catch (Exception ignore) {
+                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+                }
+                return;
             }
-            return;
         }
 
         if (!Switch.isDistroEnabled()) {
