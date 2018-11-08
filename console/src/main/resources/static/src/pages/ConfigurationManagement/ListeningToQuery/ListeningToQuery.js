@@ -164,13 +164,25 @@ class ListeningToQuery extends React.Component {
                                 </FormItem>
                                 <FormItem label="Data ID:" style={{
                                     display: this.getValue('type') === 0 ? '' : 'none'
-                                }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')} style={{ width: 200 }} {...this.init('dataId')} />
+                                }} required>
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')} 
+                                            style={{ width: 200 }} 
+                                            {...this.init('dataId', {
+                                                rules: [{
+                                                    required: true,
+                                                    message: aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.Data_Id_can_not_be_empty')
+                                                }]
+                                    })} />
                                 </FormItem>
                                 <FormItem label="Group:" style={{
                                     display: this.getValue('type') === 0 ? '' : 'none'
-                                }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ width: 200 }} {...this.init('group')} />
+                                }} required>
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ width: 200 }} {...this.init('group', {
+                                                rules: [{
+                                                    required: true,
+                                                    message: aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty')
+                                                }]
+                                    })} />
                                 </FormItem>
                                 <FormItem label="IP:" style={{
                                     display: this.getValue('type') === 0 ? 'none' : ''

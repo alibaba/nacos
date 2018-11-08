@@ -83,11 +83,11 @@ class ConfigEditor extends React.Component {
                     lineNumbersMinChars: true,
                     theme: 'vs-dark',
                     wordWrapColumn: 120,
-                    folding: true,
+                    folding: false,
                     showFoldingControls: 'always',
                     wordWrap: 'wordWrapColumn',
                     cursorStyle: 'line',
-                    automaticLayout: true
+                    automaticLayout: true,
                 });
             });
         } else {
@@ -101,11 +101,11 @@ class ConfigEditor extends React.Component {
                 lineNumbersMinChars: true,
                 theme: 'vs-dark',
                 wordWrapColumn: 120,
-                folding: true,
+                folding: false,
                 showFoldingControls: 'always',
                 wordWrap: 'wordWrapColumn',
                 cursorStyle: 'line',
-                automaticLayout: true
+                automaticLayout: true,
             });
         }
     }
