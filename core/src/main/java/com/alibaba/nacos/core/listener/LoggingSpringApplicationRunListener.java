@@ -87,18 +87,14 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
 
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-        System.out.printf("Log files: %s/logs/", NACOS_HOME);
-        System.out.println();
-        System.out.printf("Conf files: %s/conf/", NACOS_HOME);
-        System.out.println();
-        System.out.printf("Data files: %s/data/", NACOS_HOME);
-        System.out.println();
+        System.out.printf("Log files: %s/logs/%n", NACOS_HOME);
+        System.out.printf("Conf files: %s/conf/%n", NACOS_HOME);
+        System.out.printf("Data files: %s/data/%n", NACOS_HOME);
 
         if (!STANDALONE_MODE) {
             try {
                 List<String> clusterConf = readClusterConf();
-                System.out.printf("The server IP list of Nacos is %s", clusterConf);
-                System.out.println();
+                System.out.printf("The server IP list of Nacos is %s%n", clusterConf);
             } catch (IOException e) {
                 logger.error("read cluster conf fail", e);
             }
