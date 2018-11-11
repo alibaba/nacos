@@ -29,11 +29,16 @@ public class NetUtils {
 
     public static String localServer() {
         try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            String serverAddress = inetAddress.getHostAddress();
             if (PREFER_HOSTNAME_OVER_IP) {
-                return InetAddress.getLocalHost().getHostName() + ":" + RunningConfig.getServerPort();
-            } else {
-                return InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort();
+                if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
+                    serverAddress = inetAddress.getHostName();
+                } else {
+                    serverAddress = inetAddress.getCanonicalHostName();
+                }
             }
+            return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
         } catch (UnknownHostException e) {
             return "resolve_failed";
         }
