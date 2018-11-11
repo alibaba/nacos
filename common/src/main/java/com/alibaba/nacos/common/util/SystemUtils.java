@@ -35,6 +35,16 @@ public class SystemUtils {
     public static final String STANDALONE_MODE_PROPERTY_NAME = "nacos.standalone";
 
     /**
+     * The System property name of prefer hostname over ip
+     */
+    public static final String PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME ="nacos.preferHostnameOverIp";
+    /**
+     * Flag to say that, when guessing a hostname, the hostname of the server should be
+     * used in preference to the IP address reported by the OS.
+     */
+    public static final boolean PREFER_HOSTNAME_OVER_IP=Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME);
+
+    /**
      * Standalone mode or not
      */
     public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);

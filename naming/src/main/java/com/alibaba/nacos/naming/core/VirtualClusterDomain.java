@@ -267,7 +267,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             entry.getValue().destroy();
         }
 
-        if (RaftCore.isLeader(NetUtils.localIP())) {
+        if (RaftCore.isLeader(NetUtils.localServer())) {
             RaftCore.signalDelete(UtilsAndCommons.getIPListStoreKey(this));
         }
 

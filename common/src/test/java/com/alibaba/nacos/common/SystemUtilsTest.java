@@ -34,10 +34,12 @@ public class SystemUtilsTest {
     private static final Random random = new Random();
 
     private static boolean standaloneMode = random.nextBoolean();
+    private static boolean preferHostMode = random.nextBoolean();
 
     @BeforeClass
     public static void init() {
         System.setProperty("nacos.standalone", String.valueOf(standaloneMode));
+        System.setProperty("nacos.preferHostnameOverIp", String.valueOf(preferHostMode));
     }
 
     @Test
@@ -52,6 +54,21 @@ public class SystemUtilsTest {
         }
 
         Assert.assertEquals(standaloneMode, SystemUtils.STANDALONE_MODE);
+
+    }
+
+    @Test
+    public void testPreferHostModeConstants() {
+
+        System.out.printf("System property \"%s\" = %s \n", "nacos.preferrHostnameOverIp", preferHostMode);
+
+        if ("true".equalsIgnoreCase(System.getProperty("nacos.preferHostnameOverIp"))) {
+            Assert.assertTrue(SystemUtils.PREFER_HOSTNAME_OVER_IP);
+        } else {
+            Assert.assertFalse(SystemUtils.PREFER_HOSTNAME_OVER_IP);
+        }
+
+        Assert.assertEquals(preferHostMode, SystemUtils.PREFER_HOSTNAME_OVER_IP);
 
     }
 }
