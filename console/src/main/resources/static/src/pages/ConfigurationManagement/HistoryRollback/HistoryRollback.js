@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import { Button, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
+import { Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import './index.less';
@@ -57,7 +57,8 @@ class HistoryRollback extends React.Component {
     }
 
     componentDidMount() {
-
+        this.field.setValue('group', this.group);
+        this.field.setValue('dataId', this.dataId);
         //this.getData()
     }
     openLoading() {
@@ -195,6 +196,11 @@ class HistoryRollback extends React.Component {
         });
     }
     selectAll() {
+        this.dataId = this.field.getValue("dataId");
+        this.group = this.field.getValue("group");
+        if (!this.dataId || !this.group) {
+            return false;
+        }
         if (this.dataId !== this.preDataId) {
             setParams('dataId', this.dataId);
             this.preDataId = this.dataId;
@@ -243,6 +249,10 @@ class HistoryRollback extends React.Component {
         const locale = {
             empty: pubnodedata
         };
+
+        const { init } = this.field;
+        this.init = init;
+
         return (
             <div style={{ padding: 10 }}>
                 <Loading shape="flower" style={{ position: 'relative', width: "100%" }} visible={this.state.loading} tip="Loading..." color="#333">
@@ -252,22 +262,29 @@ class HistoryRollback extends React.Component {
                            </div>**/}
 
                     <div>
-                        <Form inline>
+                        <Form inline field={this.field}>
 
-                            <Form.Item label="Data ID:">
-                                <Input htmlType="text" placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')}
-                                    style={{ width: 200 }} value={this.state.dataId} onChange={this.getDataId.bind(this)} />
+                            <Form.Item label="Data ID:" required>
+                                <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')}
+                                        style={{ width: 200 }}
+                                        {...this.init('dataId', {
+                                            rules: [{
+                                                required: true,
+                                                message: aliwareIntl.get('com.alibaba.nacos.page.form.Data_Id_can_not_be_empty')
+                                            }]
+                                })} />
                             </Form.Item>
-                            <Form.Item label="Group:">
-                                <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')} id="userName" name="userName" value={this.state.group}
-                                    style={{ width: 200 }} onChange={this.getGroup.bind(this)} />
+                            <Form.Item label="Group:" required>
+                                <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')} style={{ width: 200 }} {...this.init('group', {
+                                            rules: [{
+                                                required: true,
+                                                message: aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty')
+                                            }]
+                                })} />
                             </Form.Item>
 
                             <Form.Item label="">
-                                <Button type="primary" style={{ marginRight: 10 }} onClick={this.selectAll.bind(this)}>
-                                    {aliwareIntl.get('com.alibaba.nacos.page.historyrollback.query')}</Button>
-                                {}
-
+                                <Form.Submit validate type="primary" onClick={this.selectAll.bind(this)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.nacos.page.historyrollback.query')}</Form.Submit>
                             </Form.Item>
 
                         </Form>
