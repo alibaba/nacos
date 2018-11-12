@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +30,7 @@ import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * 通知服务。数据库变更后，通知所有server，包括自己，加载新数据。
@@ -67,18 +67,18 @@ public class NotifyTaskProcessor implements TaskProcessor {
             // XXX 為了方便系统beta，不改变notify.do接口，新增lastModifed参数通过Http header传递
             List<String> headers = Arrays.asList(
                     NotifyService.NOTIFY_HEADER_LAST_MODIFIED, String.valueOf(lastModified),
-                    NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, SystemConfig.LOCAL_IP);
+                    NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
 			String urlString = MessageFormat.format(URL_PATTERN, serverIp, RunningConfigUtils.getContextPath(), dataId,
 					group);
 
             HttpResult result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
             if (result.code == HttpStatus.SC_OK) {
-                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified,  SystemConfig.LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
+                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified,  LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
                 return true;
             } else {
                 log.error("[notify-error] {}, {}, to {}, result {}", new Object[] { dataId, group,
                         serverIp, result.code });
-                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, SystemConfig.LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
+                ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
             }
         } catch (Exception e) {
@@ -86,7 +86,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
                     "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
                             + e.toString());
 			log.debug("[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", " + e.toString(), e);
-            ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, SystemConfig.LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
+            ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed, serverIp);
             return false;
         }
     }

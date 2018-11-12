@@ -26,17 +26,16 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Properties;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
 
 /**
  * @author nacos
  */
 public class RaftStore {
 
-    private static String BASE_DIR = System.getProperty("user.home") + File.separator + "nacos" + File.separator + "raft";
+    private static String BASE_DIR = NACOS_HOME + File.separator + "raft";
 
     private static String META_FILE_NAME;
 
@@ -46,9 +45,8 @@ public class RaftStore {
 
     static {
 
-        String nacosHome = System.getProperty("nacos.home");
-        if (StringUtils.isNotBlank(nacosHome)) {
-            BASE_DIR = nacosHome + File.separator + "data" + File.separator + "naming";
+        if (StringUtils.isNotBlank(System.getProperty(NACOS_HOME_KEY))) {
+            BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
         }
 
         META_FILE_NAME = BASE_DIR + File.separator + "meta.properties";
