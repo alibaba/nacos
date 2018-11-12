@@ -21,7 +21,7 @@ import ImportDialog from '../../../components/ImportDialog';
 import ExportDialog from '../../../components/ExportDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import './index.less';
-import { Balloon, Button, Checkbox, Collapse, Dialog, Dropdown, Field, Form, Icon, Input, Loading, Menu, Pagination, Select, Slider, Table } from '@alifd/next';
+import { Button, Checkbox, Collapse, Dialog, Dropdown, Field, Form, Icon, Input, Loading, Menu, Pagination, Select, Slider, Table } from '@alifd/next';
 const Accordion = Collapse;
 const FormItem = Form.Item;
 const { Panel } = Collapse;
@@ -579,12 +579,6 @@ class ConfigurationManagement extends React.Component {
         const locale = {
             empty: pubnodedata
         };
-        const helpDataId = <Balloon trigger={<span>Data ID <Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} /></span>} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>
-            <a href={window._getLink && window._getLink("knowDataid")} target={"_blank"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_DataId')}</a>
-        </Balloon>;
-        const helpGroup = <Balloon trigger={<span>Group <Icon type={"help"} size={'small'} style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }} /></span>} align={"t"} style={{ marginRight: 5 }} triggerType={"hover"}>
-            <a href={window._getLink && window._getLink("knowGoup")} target={"_blank"}>{aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_Group')}</a>
-        </Balloon>;
         return (
             <div>
                 <BatchHandle ref={ref => this.batchHandle = ref} />
@@ -641,8 +635,8 @@ class ConfigurationManagement extends React.Component {
                             <div>
 
                                 <Table dataSource={this.state.dataSource} locale={locale} fixedHeader={true} maxBodyHeight={400} language={aliwareIntl.currentLanguageCode} ref={"dataTable"}>
-                                    <Table.Column title={helpDataId} dataIndex={"dataId"} />
-                                    <Table.Column title={helpGroup} dataIndex={"group"} />
+                                    <Table.Column title={'Data Id'} dataIndex={"dataId"} />
+                                    <Table.Column title={'Group'} dataIndex={"group"} />
                                     {!this.inApp ? <Table.Column title={aliwareIntl.get('nacos.page.configurationManagement.HOME_Application')} dataIndex={"appName"} /> : <div></div>}
                                     <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.operation')} cell={this.renderCol.bind(this)} />
                                 </Table>
