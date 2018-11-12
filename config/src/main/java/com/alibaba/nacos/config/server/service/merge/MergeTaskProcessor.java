@@ -26,7 +26,6 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.slf4j.Logger;
@@ -36,6 +35,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * Merge task processor
@@ -81,7 +81,7 @@ public class MergeTaskProcessor implements TaskProcessor {
                 log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group, datumList.size(),
                     cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()));
 
-                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), SystemConfig.LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_MERGE, cf.getContent());
+                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_MERGE, cf.getContent());
             }
             // 删除
             else {
@@ -94,7 +94,7 @@ public class MergeTaskProcessor implements TaskProcessor {
                 log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId
                         + ", groupId=" + group);
 
-                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(),  SystemConfig.LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(),  LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
             }
 
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));

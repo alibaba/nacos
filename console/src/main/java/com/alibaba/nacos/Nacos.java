@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos;
 
-import java.net.UnknownHostException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
@@ -28,7 +27,7 @@ import org.springframework.boot.web.servlet.ServletComponentScan;
 @ServletComponentScan
 public class Nacos {
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) {
         SpringApplication.run(Nacos.class, args);
     }
 }

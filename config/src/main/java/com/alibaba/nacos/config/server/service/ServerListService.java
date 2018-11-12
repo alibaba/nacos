@@ -21,7 +21,6 @@ import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +36,7 @@ import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
@@ -47,7 +47,9 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -150,7 +152,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	}
 
 	public static Boolean isFirstIp() {
-		return serverList.get(0).contains(SystemConfig.LOCAL_IP);
+		return serverList.get(0).contains(LOCAL_IP);
 	}
 
 	public boolean isHealthCheck() {
@@ -166,7 +168,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
 		boolean isContainSelfIp = false;
 		for (String ipPortTmp : newList) {
-			if (ipPortTmp.contains(SystemConfig.LOCAL_IP)) {
+			if (ipPortTmp.contains(LOCAL_IP)) {
 				isContainSelfIp = true;
 				break;
 			}
@@ -176,7 +178,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 			isInIpList = true;
 		} else {
 			isInIpList = false;
-			String selfAddr = getFormatServerAddr(SystemConfig.LOCAL_IP);
+			String selfAddr = getFormatServerAddr(LOCAL_IP);
 			newList.add(selfAddr);
 			fatalLog.error("########## [serverlist] self ip {} not in serverlist {}", selfAddr, newList);
 		}
@@ -224,11 +226,9 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 		// 优先从文件读取服务列表
 		try {
 			List<String> serverIps = new ArrayList<String>();
-			String serverIpsStr = DiskUtil.getServerList();
-			if (!StringUtils.isBlank(serverIpsStr)) {
-				String split = System.getProperty("line.separator");
-				String[] serverAddrArr = serverIpsStr.split(split);
-				for (String serverAddr : serverAddrArr) {
+			List<String> serverAddrLines = readClusterConf();
+			if (!CollectionUtils.isEmpty(serverAddrLines)) {
+				for (String serverAddr : serverAddrLines) {
 					if (StringUtils.isNotBlank(serverAddr.trim())) {
 						serverIps.add(getFormatServerAddr(serverAddr));
 					}
@@ -277,7 +277,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
 		} else {
 			List<String> serverIps = new ArrayList<String>();
-			serverIps.add(getFormatServerAddr(SystemConfig.LOCAL_IP));
+			serverIps.add(getFormatServerAddr(LOCAL_IP));
 			return serverIps;
 		}
 	}

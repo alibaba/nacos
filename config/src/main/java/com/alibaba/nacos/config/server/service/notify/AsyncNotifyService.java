@@ -44,6 +44,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.*;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+
 /**
  * Async notify service
  * @author Nacos
@@ -132,7 +134,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 							&& ServerListService.getServerListUnhealth().contains(targetIp)) {
 						// target ip 不健康，则放入通知列表中
 						ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
-								SystemConfig.LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
+								LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
 						// get delay time and set fail count to the task
 						int delay = getDelayTime(task);
 						Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
@@ -143,7 +145,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 						HttpGet request = new HttpGet(task.url);
 						request.setHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
 								String.valueOf(task.getLastModified()));
-						request.setHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, SystemConfig.LOCAL_IP);
+						request.setHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
 						if (task.isBeta) {
 							request.setHeader("isBeta", "true");
 						}
@@ -175,7 +177,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 				ConfigTraceService.logNotifyEvent(task.getDataId(),
 						task.getGroup(), task.getTenant(), null, task.getLastModified(),
-						SystemConfig.LOCAL_IP,
+						LOCAL_IP,
 						ConfigTraceService.NOTIFY_EVENT_OK, delayed,
 						task.target);
 			} else {
@@ -185,7 +187,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 								response.getStatusLine().getStatusCode() });
 				ConfigTraceService.logNotifyEvent(task.getDataId(),
 						task.getGroup(), task.getTenant(), null, task.getLastModified(),
-						SystemConfig.LOCAL_IP,
+						LOCAL_IP,
 						ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
 						task.target);
 
@@ -218,7 +220,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 					+ ex.toString(), ex);
 			ConfigTraceService.logNotifyEvent(task.getDataId(),
 					task.getGroup(), task.getTenant(), null, task.getLastModified(),
-					SystemConfig.LOCAL_IP,
+					LOCAL_IP,
 					ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
 					task.target);
 
