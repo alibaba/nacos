@@ -41,7 +41,8 @@
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-prettier": "^3.0.0",
     "eslint-plugin-react": "^7.11.1",
-    "husky": "^0.12.0",
+    "husky": "^1.1.4",
+    "lint-staged": "^8.0.4",
     "roadhog": "^2.0.0"
   }
 }
