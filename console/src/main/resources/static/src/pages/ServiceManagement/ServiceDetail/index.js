@@ -11,6 +11,6 @@
  * limitations under the License.
  */
 
-import ServiceDetail from './ServiceDetail'
+import ServiceDetail from './ServiceDetail';
 
-export default ServiceDetail
+export default ServiceDetail;

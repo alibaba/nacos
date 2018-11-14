@@ -12,137 +12,150 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Button, Pagination, Table } from '@alifd/next';
-import { I18N, HEALTHY_COLOR_MAPPING } from './constant'
-import EditInstanceDialog from "./EditInstanceDialog";
+import { I18N, HEALTHY_COLOR_MAPPING } from './constant';
+import EditInstanceDialog from './EditInstanceDialog';
 
-
-/*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class InstanceTable extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            loading: false,
-            instance: { count: 0, list: [] },
-            pageNum: 1,
-            pageSize: 10
-        }
-    }
+  static propTypes = {
+    clusterName: PropTypes.string,
+    serviceName: PropTypes.string,
+  };
 
-    componentDidMount() {
-        this.getInstanceList()
-    }
+  constructor(props) {
+    super(props);
+    this.state = {
+      loading: false,
+      instance: { count: 0, list: [] },
+      pageNum: 1,
+      pageSize: 10,
+    };
+  }
 
-    openLoading() {
-        this.setState({ loading: true })
-    }
+  componentDidMount() {
+    this.getInstanceList();
+  }
 
-    closeLoading() {
-        this.setState({ loading: false })
-    }
+  openLoading() {
+    this.setState({ loading: true });
+  }
 
-    getInstanceList() {
-        const { clusterName, serviceName } = this.props
-        if (!clusterName) return
-        const { pageSize, pageNum } = this.state
-        request({
-            url: '/nacos/v1/ns/catalog/instanceList',
-            data: {
-                serviceName,
-                clusterName,
-                pgSize: pageSize,
-                startPg: pageNum
-            },
-            beforeSend: () => this.openLoading(),
-            success: instance => this.setState({ instance }),
-            complete: () => this.closeLoading()
-        })
-    }
+  closeLoading() {
+    this.setState({ loading: false });
+  }
 
-    openInstanceDialog(instance) {
-        this.refs.editInstanceDialog.show(instance)
-    }
+  getInstanceList() {
+    const { clusterName, serviceName } = this.props;
+    if (!clusterName) return;
+    const { pageSize, pageNum } = this.state;
+    request({
+      url: '/nacos/v1/ns/catalog/instanceList',
+      data: {
+        serviceName,
+        clusterName,
+        pgSize: pageSize,
+        startPg: pageNum,
+      },
+      beforeSend: () => this.openLoading(),
+      success: instance => this.setState({ instance }),
+      complete: () => this.closeLoading(),
+    });
+  }
 
-    switchState(index, record) {
-        const { instance } = this.state
-        const { ip, port, weight, enabled } = record
-        const { clusterName, serviceName } = this.props
-        const newVal = Object.assign({}, instance)
-        newVal.list[index]['enabled'] = !enabled
-        request({
-            method: 'POST',
-            url: '/nacos/v1/ns/instance/update',
-            data: { serviceName, clusterName, ip, port, weight, enable: !enabled },
-            dataType: 'text',
-            beforeSend: () => this.openLoading(),
-            success: () => this.setState({ instance: newVal }),
-            complete: () => this.closeLoading()
-        })
-    }
+  openInstanceDialog(instance) {
+    this.refs.editInstanceDialog.show(instance);
+  }
 
-    onChangePage(pageNum) {
-        this.setState({ pageNum }, () => this.getInstanceList())
-    }
+  switchState(index, record) {
+    const { instance } = this.state;
+    const { ip, port, weight, enabled } = record;
+    const { clusterName, serviceName } = this.props;
+    const newVal = Object.assign({}, instance);
+    newVal.list[index].enabled = !enabled;
+    request({
+      method: 'POST',
+      url: '/nacos/v1/ns/instance/update',
+      data: { serviceName, clusterName, ip, port, weight, enable: !enabled },
+      dataType: 'text',
+      beforeSend: () => this.openLoading(),
+      success: () => this.setState({ instance: newVal }),
+      complete: () => this.closeLoading(),
+    });
+  }
 
-    rowColor = ({ healthy }) => ({ className: `row-bg-${HEALTHY_COLOR_MAPPING[`${healthy}`]}` })
+  onChangePage(pageNum) {
+    this.setState({ pageNum }, () => this.getInstanceList());
+  }
 
-    render() {
-        const { clusterName, serviceName } = this.props
-        const { instance, pageSize, loading } = this.state
-        return instance.count ? (
-            <div>
-                <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
-                    <Table.Column width={138} title="IP" dataIndex="ip" />
-                    <Table.Column width={100} title={I18N.PORT} dataIndex="port" />
-                    <Table.Column width={100} title={I18N.WEIGHT} dataIndex="weight" />
-                    <Table.Column width={100} title={I18N.HEALTHY} dataIndex="healthy" cell={val => `${val}`} />
-                    <Table.Column
-                        title={I18N.METADATA}
-                        dataIndex="metadata"
-                        cell={metadata => Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')}
-                    />
-                    <Table.Column
-                        title={I18N.OPERATION}
-                        width={150}
-                        cell={(value, index, record) => (
-                            <div>
-                                <Button
-                                    type="normal"
-                                    className="edit-btn"
-                                    onClick={() => this.openInstanceDialog(record)}
-                                >{I18N.EDITOR}</Button>
-                                <Button
-                                    type={record.enabled ? 'normal' : 'secondary'}
-                                    onClick={() => this.switchState(index, record)}
-                                >{I18N[record.enabled ? 'OFFLINE' : 'ONLINE']}</Button>
-                            </div>
-                        )} />
-                </Table>
-                {
-                    instance.count > pageSize
-                        ? (
-                            <Pagination
-                                className="pagination"
-                                total={instance.count}
-                                pageSize={pageSize}
-                                onChange={currentPage => this.onChangePage(currentPage)}
-                            />
-                        )
-                        : null
-                }
-                <EditInstanceDialog
-                    ref="editInstanceDialog"
-                    serviceName={serviceName}
-                    clusterName={clusterName}
-                    openLoading={() => this.openLoading()}
-                    closeLoading={() => this.closeLoading()}
-                    getInstanceList={() => this.getInstanceList()}
-                />
-            </div>
-        ) : null
-    }
+  rowColor = ({ healthy }) => ({ className: `row-bg-${HEALTHY_COLOR_MAPPING[`${healthy}`]}` });
+
+  render() {
+    const { clusterName, serviceName } = this.props;
+    const { instance, pageSize, loading } = this.state;
+    return instance.count ? (
+      <div>
+        <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
+          <Table.Column width={138} title="IP" dataIndex="ip" />
+          <Table.Column width={100} title={I18N.PORT} dataIndex="port" />
+          <Table.Column width={100} title={I18N.WEIGHT} dataIndex="weight" />
+          <Table.Column
+            width={100}
+            title={I18N.HEALTHY}
+            dataIndex="healthy"
+            cell={val => `${val}`}
+          />
+          <Table.Column
+            title={I18N.METADATA}
+            dataIndex="metadata"
+            cell={metadata =>
+              Object.keys(metadata)
+                .map(k => `${k}=${metadata[k]}`)
+                .join(',')
+            }
+          />
+          <Table.Column
+            title={I18N.OPERATION}
+            width={150}
+            cell={(value, index, record) => (
+              <div>
+                <Button
+                  type="normal"
+                  className="edit-btn"
+                  onClick={() => this.openInstanceDialog(record)}
+                >
+                  {I18N.EDITOR}
+                </Button>
+                <Button
+                  type={record.enabled ? 'normal' : 'secondary'}
+                  onClick={() => this.switchState(index, record)}
+                >
+                  {I18N[record.enabled ? 'OFFLINE' : 'ONLINE']}
+                </Button>
+              </div>
+            )}
+          />
+        </Table>
+        {instance.count > pageSize ? (
+          <Pagination
+            className="pagination"
+            total={instance.count}
+            pageSize={pageSize}
+            onChange={currentPage => this.onChangePage(currentPage)}
+          />
+        ) : null}
+        <EditInstanceDialog
+          ref="editInstanceDialog"
+          serviceName={serviceName}
+          clusterName={clusterName}
+          openLoading={() => this.openLoading()}
+          closeLoading={() => this.closeLoading()}
+          getInstanceList={() => this.getInstanceList()}
+        />
+      </div>
+    ) : null;
+  }
 }
 
-/*****************************此行为标记行, 请勿删和修改此行, 主体代码请写在此行上面的class中, 组件导出语句及其他信息请写在此行下面*****************************/
 export default InstanceTable;

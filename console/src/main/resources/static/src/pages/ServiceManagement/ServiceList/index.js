@@ -11,6 +11,6 @@
  * limitations under the License.
  */
 
-import ServiceList from './ServiceList'
+import ServiceList from './ServiceList';
 
-export default ServiceList
+export default ServiceList;

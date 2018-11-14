@@ -12,14 +12,14 @@
  */
 
 module.exports = {
-	set: function(key,value){
-		window.localStorage.setItem(key,value);
-	},
-	get: function(key) {
-		return window.localStorage.getItem(key);
-	},
-	remove: function(key) {
-		window.localStorage.removeItem(key);
-	}
+  set(key, value) {
+    window.localStorage.setItem(key, value);
+  },
+  get(key) {
+    return window.localStorage.getItem(key);
+  },
+  remove(key) {
+    window.localStorage.removeItem(key);
+  },
 
-}
+};

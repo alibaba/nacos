@@ -14,103 +14,103 @@
 import React from 'react';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Message } from '@alifd/next';
-import { I18N, DIALOG_FORM_LAYOUT } from './constant'
+import { I18N, DIALOG_FORM_LAYOUT } from './constant';
 
-const FormItem = Form.Item;
-
-/*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
 class EditInstanceDialog extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            editInstance: {},
-            editInstanceDialogVisible: false
+  constructor(props) {
+    super(props);
+    this.state = {
+      editInstance: {},
+      editInstanceDialogVisible: false,
+    };
+    this.show = this.show.bind(this);
+  }
+
+  show(_editInstance) {
+    let editInstance = _editInstance;
+    const { metadata = {} } = editInstance;
+    if (Object.keys(metadata).length) {
+      editInstance.metadataText = Object.keys(metadata)
+        .map(k => `${k}=${metadata[k]}`)
+        .join(',');
+    }
+    this.setState({ editInstance, editInstanceDialogVisible: true });
+  }
+
+  hide() {
+    this.setState({ editInstanceDialogVisible: false });
+  }
+
+  onConfirm() {
+    const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props;
+    const { ip, port, weight, enabled, metadataText } = this.state.editInstance;
+    request({
+      method: 'POST',
+      url: '/nacos/v1/ns/instance/update',
+      data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
+      dataType: 'text',
+      beforeSend: () => openLoading(),
+      success: res => {
+        if (res !== 'ok') {
+          Message.error(res);
+          return;
         }
-        this.show = this.show.bind(this)
-    }
+        this.hide();
+        getInstanceList();
+      },
+      complete: () => closeLoading(),
+    });
+  }
 
-    show(editInstance) {
-        const { metadata = {} } = editInstance
-        if (Object.keys(metadata).length) {
-            editInstance.metadataText = Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')
-        }
-        this.setState({ editInstance, editInstanceDialogVisible: true })
-    }
+  onChangeCluster(changeVal) {
+    const { editInstance = {} } = this.state;
+    this.setState({
+      editInstance: Object.assign({}, editInstance, changeVal),
+    });
+  }
 
-    hide() {
-        this.setState({ editInstanceDialogVisible: false })
-    }
-
-    onConfirm() {
-        const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props
-        const { ip, port, weight, enabled, metadataText } = this.state.editInstance
-        request({
-            method: 'POST',
-            url: '/nacos/v1/ns/instance/update',
-            data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
-            dataType: 'text',
-            beforeSend: () => openLoading(),
-            success: res => {
-                if (res !== 'ok') {
-                    Message.error(res)
-                    return
-                }
-                this.hide()
-                getInstanceList()
-            },
-            complete: () => closeLoading()
-        })
-    }
-
-    onChangeCluster(changeVal) {
-        const { editInstance = {} } = this.state
-        this.setState({
-            editInstance: Object.assign({}, editInstance, changeVal)
-        })
-    }
-
-    render() {
-        const { editInstanceDialogVisible, editInstance } = this.state
-        return (
-            <Dialog
-                className="instance-edit-dialog"
-                title={I18N.UPDATE_INSTANCE}
-                visible={editInstanceDialogVisible}
-                onOk={() => this.onConfirm()}
-                onCancel={() => this.hide()}
-                onClose={() => this.hide()}
-            >
-                <Form {...DIALOG_FORM_LAYOUT}>
-                    <FormItem label="IP:">
-                        <p>{editInstance.ip}</p>
-                    </FormItem>
-                    <FormItem label={`${I18N.PORT}:`}>
-                        <p>{editInstance.port}</p>
-                    </FormItem>
-                    <FormItem label={`${I18N.WEIGHT}:`}>
-                        <Input
-                            className="in-text"
-                            value={editInstance.weight}
-                            onChange={weight => this.onChangeCluster({ weight })}
-                        />
-                    </FormItem>
-                    <FormItem label={`${I18N.WHETHER_ONLINE}:`}>
-                        <Switch
-                            checked={editInstance.enabled}
-                            onChange={enabled => this.onChangeCluster({ enabled })} />
-                    </FormItem>
-                    <FormItem label={`${I18N.METADATA}:`}>
-                        <Input
-                            className="in-text"
-                            value={editInstance.metadataText}
-                            onChange={metadataText => this.onChangeCluster({ metadataText })}
-                        />
-                    </FormItem>
-                </Form>
-            </Dialog>
-        )
-    }
+  render() {
+    const { editInstanceDialogVisible, editInstance } = this.state;
+    return (
+      <Dialog
+        className="instance-edit-dialog"
+        title={I18N.UPDATE_INSTANCE}
+        visible={editInstanceDialogVisible}
+        onOk={() => this.onConfirm()}
+        onCancel={() => this.hide()}
+        onClose={() => this.hide()}
+      >
+        <Form {...DIALOG_FORM_LAYOUT}>
+          <Form.Item label="IP:">
+            <p>{editInstance.ip}</p>
+          </Form.Item>
+          <Form.Item label={`${I18N.PORT}:`}>
+            <p>{editInstance.port}</p>
+          </Form.Item>
+          <Form.Item label={`${I18N.WEIGHT}:`}>
+            <Input
+              className="in-text"
+              value={editInstance.weight}
+              onChange={weight => this.onChangeCluster({ weight })}
+            />
+          </Form.Item>
+          <Form.Item label={`${I18N.WHETHER_ONLINE}:`}>
+            <Switch
+              checked={editInstance.enabled}
+              onChange={enabled => this.onChangeCluster({ enabled })}
+            />
+          </Form.Item>
+          <Form.Item label={`${I18N.METADATA}:`}>
+            <Input
+              className="in-text"
+              value={editInstance.metadataText}
+              onChange={metadataText => this.onChangeCluster({ metadataText })}
+            />
+          </Form.Item>
+        </Form>
+      </Dialog>
+    );
+  }
 }
 
-/*****************************此行为标记行, 请勿删和修改此行, 主体代码请写在此行上面的class中, 组件导出语句及其他信息请写在此行下面*****************************/
 export default EditInstanceDialog;

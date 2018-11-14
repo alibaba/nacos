@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Router, Route, Switch } from 'dva/router';
 import './lib.js';
 import App from './containers/App';
@@ -29,26 +30,29 @@ import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 
 function RouterConfig({ history }) {
-    return (
-        <Router history={history}>
-            <Switch>
-                <App history={history}>
-                    <Route path="/Namespace" component={Namespace} />
-                    <Route path="/Newconfig" component={Newconfig} />
-                    <Route path="/Configsync" component={Configsync} />
-                    <Route path="/Configdetail" component={Configdetail} />
-                    <Route path="/Configeditor" component={Configeditor} />
-                    <Route path="/HistoryDetail" component={HistoryDetail} />
-                    <Route path="/ConfigRollback" component={ConfigRollback} />
-                    <Route path="/HistoryRollback" component={HistoryRollback} />
-                    <Route path="/ListeningToQuery" component={ListeningToQuery} />
-                    <Route path="/ConfigurationManagement" component={ConfigurationManagement} />
-                    <Route path="/ServiceManagement" component={ServiceList} />
-                    <Route path="/ServiceDetail" component={ServiceDetail} />
-                </App>
-            </Switch>
-        </Router>
-    );
+  return (
+    <Router history={history}>
+      <Switch>
+        <App history={history}>
+          <Route path="/Namespace" component={Namespace} />
+          <Route path="/Newconfig" component={Newconfig} />
+          <Route path="/Configsync" component={Configsync} />
+          <Route path="/Configdetail" component={Configdetail} />
+          <Route path="/Configeditor" component={Configeditor} />
+          <Route path="/HistoryDetail" component={HistoryDetail} />
+          <Route path="/ConfigRollback" component={ConfigRollback} />
+          <Route path="/HistoryRollback" component={HistoryRollback} />
+          <Route path="/ListeningToQuery" component={ListeningToQuery} />
+          <Route path="/ConfigurationManagement" component={ConfigurationManagement} />
+          <Route path="/ServiceManagement" component={ServiceList} />
+          <Route path="/ServiceDetail" component={ServiceDetail} />
+        </App>
+      </Switch>
+    </Router>
+  );
 }
+RouterConfig.propTypes = {
+  history: PropTypes.object,
+};
 
 export default RouterConfig;

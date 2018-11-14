@@ -23,66 +23,69 @@ import _menu from '../menu';
 import { nacosEvent } from '../globalLib';
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      shownotice: 'none',
+      noticecontent: '',
+      nacosLoading: {},
+    };
+  }
 
-    constructor(props) {
-        super(props);
-        this.state = {
-            shownotice: 'none',
-            noticecontent: '',
-            nacosLoading: {}
-        }
-    }
-    componentDidMount() {
-        //监听loading事件
-        nacosEvent.listenAllTask("nacosLoadingEvent", (nacosLoading) => {
-            this.setState({
-                nacosLoading
-            })
-        });
-    }
-    UNSAFE_componentWillUpdate(nextProps, nextState) {
-        const { errcode, errinfo } = nextProps;
-        if (errcode === 1) {
-            this.openErr(errinfo);
-        }
-    }
+  componentDidMount() {
+    // 监听loading事件
+    nacosEvent.listenAllTask('nacosLoadingEvent', (nacosLoading) => {
+      this.setState({
+        nacosLoading,
+      });
+    });
+  }
 
-    componentWillUnmount() {
-        nacosEvent.remove("nacosLoadingEvent");
+  UNSAFE_componentWillUpdate(nextProps, nextState) {
+    const { errcode, errinfo } = nextProps;
+    if (errcode === 1) {
+      this.openErr(errinfo);
     }
+  }
 
-    openErr(message) {
-        const self = this;
-        setTimeout(function () {
-            self.props.dispatch({ type: 'error/clear' })
-        }, 3000);
-    }
-    getChildContext() {
-        return { history: this.props.history };
-    }
-    render() {
-        const { errcode, errinfo } = this.props;
-        return (
-            <Loading className="nacos-loading" shape="flower" tip="loading..." visible={false} fullScreen {...this.state.nacosLoading}>
-                <MainLayout {...this.props} navList={_menu.data}>
-                    {errcode === 1 ? <Message title={errinfo} closable style={{ position: 'absolute', zIndex: 99999, width: 800, left: '50%', marginLeft: -400 }} /> : null}
-                    {this.props.children}
-                </MainLayout>
-            </Loading>)
-    }
+  componentWillUnmount() {
+    nacosEvent.remove('nacosLoadingEvent');
+  }
+
+  openErr(message) {
+    const self = this;
+    setTimeout(() => {
+      self.props.dispatch({ type: 'error/clear' });
+    }, 3000);
+  }
+
+  getChildContext() {
+    return { history: this.props.history };
+  }
+
+  render() {
+    const { errcode, errinfo } = this.props;
+    return (
+      <Loading className="nacos-loading" shape="flower" tip="loading..." visible={false} fullScreen {...this.state.nacosLoading}>
+        <MainLayout {...this.props} navList={_menu.data}>
+          {errcode === 1 ? <Message title={errinfo} closable style={{ position: 'absolute', zIndex: 99999, width: 800, left: '50%', marginLeft: -400 }} /> : null}
+          {this.props.children}
+        </MainLayout>
+      </Loading>);
+  }
 }
 
 App.propTypes = {
 
 };
 App.childContextTypes = {
-    history: PropTypes.object
+  history: PropTypes.object,
 };
 function mapStateToProps(state) {
-    const { errinfo, errcode } = state.error;
-    return {
-        errinfo,
-        errcode
-    };
+  const { errinfo, errcode } = state.error;
+  return {
+    errinfo,
+    errcode,
+  };
 }
 export default connect(mapStateToProps)(App);
