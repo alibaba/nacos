@@ -97,4 +97,4 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
 * Join us from wechat. Welcome words: Nacos.
 
-![cwex](http://acm-public.oss-cn-hangzhou.aliyuncs.com/cgwx.png)
+![cwex](http://acm-public.oss-cn-hangzhou.aliyuncs.com/xuc.png)
