@@ -12,12 +12,11 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import siteConfig from '../config';
 import { getLink } from '../utils/nacosutil';
 import './index.css';
-
-
 
 const languageSwitch = [
   {
@@ -29,7 +28,7 @@ const languageSwitch = [
     value: 'zh-cn',
   },
 ];
-const noop = () => { };
+const noop = () => {};
 
 const defaultProps = {
   type: 'primary',
@@ -37,8 +36,15 @@ const defaultProps = {
   onLanguageChange: noop,
 };
 
-
 class Header extends React.Component {
+  static propTypes = {
+    language: PropTypes.string,
+    type: PropTypes.string,
+    logo: PropTypes.string,
+    currentKey: PropTypes.string,
+    onLanguageChange: PropTypes.func,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -79,43 +85,34 @@ class Header extends React.Component {
     const { menuBodyVisible, language } = this.state;
     return (
       <header
-        className={
-          classnames({
-            'header-container': true,
-            [`header-container-${type}`]: true,
-          })
-        }
+        className={classnames({
+          'header-container': true,
+          [`header-container-${type}`]: true,
+        })}
       >
         <div className="header-body">
           <a href={'https://nacos.io/zh-cn/'} target="_blank" rel="noopener noreferrer">
             <img className="logo" alt={siteConfig.name} title={siteConfig.name} src={logo} />
           </a>
-          {
-            onLanguageChange !== noop ?
-              (<span
-                className={
-                  classnames({
-                    'language-switch': true,
-                    [`language-switch-${type}`]: true,
-                  })
-                }
-                onClick={this.switchLang}
-              >
-                {languageSwitch.find(lang => lang.value === language).text}
-              </span>)
-              :
-              null
-          }
+          {onLanguageChange !== noop ? (
+            <span
+              className={classnames({
+                'language-switch': true,
+                [`language-switch-${type}`]: true,
+              })}
+              onClick={this.switchLang}
+            >
+              {languageSwitch.find(lang => lang.value === language).text}
+            </span>
+          ) : null}
           <div
-            className={
-              classnames({
-                'header-menu': true,
-                'header-menu-open': menuBodyVisible,
-              })
-            }
+            className={classnames({
+              'header-menu': true,
+              'header-menu-open': menuBodyVisible,
+            })}
           >
             <ul>
-              {siteConfig[language].pageMenu.map((item) => (
+              {siteConfig[language].pageMenu.map(item => (
                 <li
                   key={item.link}
                   className={classnames({
@@ -124,7 +121,9 @@ class Header extends React.Component {
                     [`menu-item-${type}-active`]: currentKey === item.key,
                   })}
                 >
-                  <a href={getLink(item.link)} target="_blank" rel="noopener noreferrer">{item.text}</a>
+                  <a href={getLink(item.link)} target="_blank" rel="noopener noreferrer">
+                    {item.text}
+                  </a>
                 </li>
               ))}
             </ul>

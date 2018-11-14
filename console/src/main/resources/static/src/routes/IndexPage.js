@@ -18,7 +18,7 @@ import styles from './IndexPage.css';
 function IndexPage() {
   return (
     <div className={styles.normal}>
-    <div className="test"></div>
+      <div className="test" />
       <h1 className={styles.title}>Yay! Welcome to dva!</h1>
       <div className={styles.welcome} />
       <ul className={styles.list}>
