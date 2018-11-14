@@ -144,17 +144,33 @@ public class SystemUtils {
         return nacosHome;
     }
 
+    public static String getConfFilePath() {
+        return NACOS_HOME + File.separator + "conf" + File.separator;
+    }
+
     private static String getClusterConfFilePath() {
         return NACOS_HOME + File.separator + "conf" + File.separator + "cluster.conf";
     }
 
     public static List<String> readClusterConf() throws IOException {
-        try {
-            return IoUtils.readLines(
-                new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
-        } catch (IOException e){
-            throw e;
+        List<String> instanceList = new ArrayList<String>();
+        List<String> lines = IoUtils.readLines(
+            new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
+        String comment = "#";
+        for (String line : lines) {
+            String instance = line.trim();
+            if (instance.startsWith(comment)) {
+                // # it is ip
+                continue;
+            }
+            if (instance.contains(comment)) {
+                // 192.168.71.52:8848 # Instance A
+                instance = instance.substring(0, instance.indexOf(comment));
+                instance = instance.trim();
+            }
+            instanceList.add(instance);
         }
+        return instanceList;
     }
 
     public static void writeClusterConf(String content) throws IOException {
