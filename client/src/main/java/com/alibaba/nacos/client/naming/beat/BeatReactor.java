@@ -74,7 +74,7 @@ public class BeatReactor {
                 for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
                     BeatInfo beatInfo = entry.getValue();
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                    LogUtils.LOG.debug("BEAT", "send beat to server: " + beatInfo.toString());
+                    LogUtils.LOG.info("BEAT", "send beat to server: " + beatInfo.toString());
                 }
             } catch (Exception e) {
                 LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
