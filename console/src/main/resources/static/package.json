@@ -1,10 +1,22 @@
 {
   "private": true,
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "git add"
+    ]
+  },
   "scripts": {
     "start": "roadhog dev",
     "build": "node build.js",
     "dist": "roadhog build",
-    "lint": "eslint --ext .js src test"
+    "eslint": "eslint --ext .js src/",
+    "eslint-fix": "eslint  --ext .js --fix src/"
   },
   "dependencies": {
     "@alifd/next": "^1.7.6",
@@ -17,17 +29,18 @@
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
+    "babel-eslint": "^10.0.1",
     "babel-plugin-dva-hmr": "^0.3.2",
+    "babel-plugin-transform-decorators-legacy": "^1.3.5",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-react": "^6.24.1",
-    "babel-plugin-transform-decorators-legacy": "^1.3.5",
     "babel-preset-stage-2": "^6.24.1",
-    "eslint": "^4.14.0",
-    "eslint-config-umi": "^0.1.1",
-    "eslint-plugin-flowtype": "^2.34.1",
-    "eslint-plugin-import": "^2.6.0",
-    "eslint-plugin-jsx-a11y": "^5.1.1",
-    "eslint-plugin-react": "^7.1.0",
+    "eslint": "^5.9.0",
+    "eslint-config-ali": "^4.0.0",
+    "eslint-config-prettier": "^3.3.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-prettier": "^3.0.0",
+    "eslint-plugin-react": "^7.11.1",
     "husky": "^0.12.0",
     "roadhog": "^2.0.0"
   }
