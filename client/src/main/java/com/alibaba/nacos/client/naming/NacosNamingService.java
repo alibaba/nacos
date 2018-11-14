@@ -265,4 +265,8 @@ public class NacosNamingService implements NamingService {
     public String getServerStatus() {
         return serverProxy.serverHealthy() ? "UP" : "DOWN";
     }
+
+    public BeatReactor getBeatReactor() {
+        return beatReactor;
+    }
 }

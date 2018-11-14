@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -127,4 +128,47 @@ public class DeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
     }
+
+
+
+
+    /**
+     * 删除service中最后一个Instance，允许删除，结果返回null
+     *
+     * @throws Exception
+     */
+    @Test
+    public void dregLastDomTest() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
+
+        TimeUnit.SECONDS.sleep(5);
+
+        List<Instance> instances;
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 2);
+
+        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+
+        TimeUnit.SECONDS.sleep(2);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 1);
+
+        instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
+        Assert.assertEquals(instances.size(), 1);
+
+        naming.deregisterInstance(serviceName,"127.0.0.2", TEST_PORT, "c2");
+        TimeUnit.SECONDS.sleep(5);
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(instances.size(), 0);
+    }
+
+
+
 }
