@@ -41,7 +41,7 @@ public class BeatReactor {
         }
     });
 
-    private long clientBeatInterval = 10 * 1000;
+    private long clientBeatInterval = 5 * 1000;
 
     private NamingProxy serverProxy;
 
