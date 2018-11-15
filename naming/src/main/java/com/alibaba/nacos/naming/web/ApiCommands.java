@@ -268,7 +268,9 @@ public class ApiCommands {
 
     @RequestMapping("/clientBeat")
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
+
         String beat = BaseServlet.required(request, "beat");
+        Loggers.SRV_LOG.info("receive beat: " + beat);
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
@@ -557,16 +559,16 @@ public class ApiCommands {
             Lock lock = domainsManager.addLock(dom);
             Condition condition = domainsManager.addCondtion(dom);
 
-            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        regDom(request);
-                    } catch (Exception e) {
-                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
-                    }
-                }
-            });
+//            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+//                @Override
+//                public void run() {
+//                    try {
+            regDom(request);
+//                    } catch (Exception e) {
+//                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
+//                    }
+//                }
+//            });
 
             try {
                 lock.lock();
@@ -957,7 +959,22 @@ public class ApiCommands {
 
         String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
 
-        long timestamp = System.currentTimeMillis();
+        Datum datum = RaftCore.getDatum(key);
+        if (datum == null) {
+            try {
+                domainsManager.getDom2LockMap().get(dom).lock();
+                datum = RaftCore.getDatum(key);
+                if (datum == null) {
+                    datum = new Datum();
+                    datum.key = key;
+                    RaftCore.addDatum(datum);
+                }
+            } finally {
+                domainsManager.getDom2LockMap().get(dom).unlock();
+            }
+        }
+
+        long timestamp = RaftCore.getDatum(key).timestamp.incrementAndGet();
 
         if (RaftCore.isLeader()) {
             try {
@@ -984,11 +1001,11 @@ public class ApiCommands {
                                     + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
 
                             try {
-
-                                if (server.equals(NetUtils.localIP())) {
-                                    onAddIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
-                                    return;
-                                }
+//
+//                                if (server.equals(NetUtils.localIP())) {
+//                                    onAddIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
+//                                    return;
+//                                }
 
                                 HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
                                     @Override
@@ -1024,33 +1041,6 @@ public class ApiCommands {
     @RequestMapping("/addIP4Dom")
     public String addIP4Dom(HttpServletRequest request) throws Exception {
         return doAddIP4Dom(request);
-    }
-
-    @NeedAuth
-    @RequestMapping("/replaceIP4Dom")
-    public synchronized String replaceIP4Dom(HttpServletRequest request) throws Exception {
-        String dom = BaseServlet.required(request, "dom");
-        String cluster = BaseServlet.required(request, "cluster");
-
-        List<String> ips = Arrays.asList(BaseServlet.required(request, "ipList").split(","));
-        List<IpAddress> ipObjList = new ArrayList<IpAddress>(ips.size());
-        for (String ip : ips) {
-            IpAddress ipObj = IpAddress.fromJSON(ip);
-            if (ipObj == null || ipObj.getPort() <= 0) {
-                throw new IllegalArgumentException("malformed ip: " + ip + ", format: ip:port[_weight][_cluster]");
-            }
-
-            ipObj.setClusterName(cluster);
-            ipObjList.add(ipObj);
-        }
-
-        if (CollectionUtils.isEmpty(ipObjList)) {
-            throw new IllegalArgumentException("empty ip list");
-        }
-
-        domainsManager.easyReplaceIP4Dom(dom, cluster, ipObjList);
-
-        return "ok";
     }
 
     @RequestMapping("/srvAllIP")

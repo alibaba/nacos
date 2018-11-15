@@ -168,7 +168,7 @@ public class RaftCore {
             Datum datum = new Datum();
             datum.key = key;
             datum.value = value;
-            datum.timestamp = System.currentTimeMillis();
+            datum.timestamp.set(RaftCore.getDatum(key).timestamp.incrementAndGet());
 
             RaftPeer local = peers.local();
 
@@ -184,7 +184,12 @@ public class RaftCore {
         final Datum datum = new Datum();
         datum.key = key;
         datum.value = value;
-        datum.timestamp = System.currentTimeMillis();
+
+        if (RaftCore.getDatum(key) == null) {
+            datum.timestamp.set(1L);
+        } else {
+            datum.timestamp.set(RaftCore.getDatum(key).timestamp.incrementAndGet());
+        }
 
         JSONObject json = new JSONObject();
         json.put("datum", datum);
@@ -254,7 +259,11 @@ public class RaftCore {
             final Datum datum = new Datum();
             datum.key = key;
             datum.value = value;
-            datum.timestamp = System.currentTimeMillis();
+            if (RaftCore.getDatum(key) == null) {
+                datum.timestamp.set(1L);
+            } else {
+                datum.timestamp.set(RaftCore.getDatum(key).timestamp.incrementAndGet());
+            }
 
             JSONObject json = new JSONObject();
             json.put("datum", datum);
@@ -377,6 +386,15 @@ public class RaftCore {
 
         local.resetLeaderDue();
 
+        Datum datumOrigin = RaftCore.getDatum(datum.key);
+
+        if (datumOrigin != null && datumOrigin.timestamp.get() > datum.timestamp.get()) {
+            // refuse operation:
+            Loggers.RAFT.warn("out of date publish, pub-timestamp:"
+                    + datumOrigin.timestamp.get() + ", cur-timestamp: " + datum.timestamp.get());
+            return;
+        }
+
         // do apply
         if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
             RaftStore.write(datum);
@@ -400,7 +418,8 @@ public class RaftCore {
 
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
-        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);
+        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " +
+                local.term + ", data1:" + RaftCore.datums.get(datum.key) + ", data2:" + datum.value);
     }
 
     public static void onDelete(JSONObject params) throws Exception {
@@ -734,11 +753,11 @@ public class RaftCore {
                     receivedKeysMap.put(datumKey, 1);
 
                     try {
-                        if (RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp >= timestamp && processedCount < beatDatums.size()) {
+                        if (RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp.get() >= timestamp && processedCount < beatDatums.size()) {
                             continue;
                         }
 
-                        if (!(RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp >= timestamp)) {
+                        if (!(RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp.get() >= timestamp)) {
                             batch.add(datumKey);
                         }
 
@@ -773,7 +792,7 @@ public class RaftCore {
 
                                         Datum oldDatum = RaftCore.getDatum(datum.key);
 
-                                        if (oldDatum != null && datum.timestamp <= oldDatum.timestamp) {
+                                        if (oldDatum != null && datum.timestamp.get() <= oldDatum.timestamp.get()) {
                                             Loggers.RAFT.info("[VIPSRV-RAFT] timestamp is smaller than that of mine, key: " + datum.key
                                                     + ",remote: " + datum.timestamp + ", local: " + oldDatum.timestamp);
                                             continue;
@@ -998,10 +1017,10 @@ public class RaftCore {
             if (services.containsKey(datum.key) && action == ApplyAction.CHANGE) {
                 return;
             }
-            tasks.add(Pair.with(datum, action));
             if (action == ApplyAction.CHANGE) {
                 services.put(datum.key, StringUtils.EMPTY);
             }
+            tasks.add(Pair.with(datum, action));
         }
 
         @Override

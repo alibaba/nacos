@@ -57,8 +57,9 @@ public class SelectInstances_ITCase {
     public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-//            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
-            naming = NamingFactory.createNamingService("10.101.109.214:8848,11.163.128.34:8848,11.163.128.36:8848");
+            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+//            naming = NamingFactory.createNamingService("10.101.109.214:8848,11.163.128.34:8848,11.163.128.36:8848");
+//            naming = NamingFactory.createNamingService("11.239.112.230:8848,11.239.113.118:8848,11.239.113.156:8848");
         }
     }
 
@@ -116,6 +117,7 @@ public class SelectInstances_ITCase {
      * @throws Exception
      */
     @Test
+    @Ignore
     public void selectHealthyInstances() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
@@ -147,6 +149,7 @@ public class SelectInstances_ITCase {
      * @throws Exception
      */
     @Test
+    @Ignore
     public void selectUnhealthyInstances() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT);
@@ -345,10 +348,11 @@ public class SelectInstances_ITCase {
     @Test
     public void selectAllEnabledInstancesClusters() throws Exception {
         String serviceName = randomDomainName();
+        System.out.println(serviceName);
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "1.1.1.1", 9090, "c2");
 
-        TimeUnit.SECONDS.sleep(10);
+        TimeUnit.SECONDS.sleep(5);
 
         List<Instance> instances = naming.getAllInstances(serviceName);
 
