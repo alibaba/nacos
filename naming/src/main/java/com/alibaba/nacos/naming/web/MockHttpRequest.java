@@ -42,7 +42,7 @@ public class MockHttpRequest implements HttpServletRequest {
     public static MockHttpRequest buildRequest2(Map<String, String> params) {
 
         MockHttpRequest request = new MockHttpRequest();
-        Map<String, String[]> arrayMap = new HashMap<>();
+        Map<String, String[]> arrayMap = new HashMap<>(16);
         for (String key : params.keySet()) {
             arrayMap.put(key, new String[]{params.get(key)});
         }

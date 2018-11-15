@@ -58,8 +58,8 @@ public class AutoDeregisterInstance_ITCase {
     public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-//            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-            naming = NamingFactory.createNamingService("11.239.112.230:8848,11.239.113.118:8848,11.239.113.156:8848");
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+//            naming = NamingFactory.createNamingService("11.239.112.230:8848,11.239.113.118:8848,11.239.113.156:8848");
 
         }
     }
@@ -76,13 +76,13 @@ public class AutoDeregisterInstance_ITCase {
     public void autoDregDomTest() throws Exception {
 
         String serviceName = randomDomainName();
-//        String serviceName="jinhanH0Gkc.cyS1n.com";
+//        String serviceName="test.1";
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT,"c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT,"c2");
 
-        TimeUnit.SECONDS.sleep(8);
+        TimeUnit.SECONDS.sleep(5);
 
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
@@ -93,9 +93,11 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(40);
+        TimeUnit.SECONDS.sleep(35);
 
         instances = naming.getAllInstances(serviceName);
+
+//        TimeUnit.SECONDS.sleep(1000000L);
 
         Assert.assertEquals(1, instances.size());
 
@@ -104,6 +106,8 @@ public class AutoDeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
         Assert.assertEquals(0, instances.size());
+
+//        TimeUnit.SECONDS.sleep(1000000L);
 
     }
 
