@@ -105,6 +105,8 @@ public class DeregisterInstance_ITCase {
 
         String serviceName = randomDomainName();
 
+        System.out.println(serviceName);
+
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
@@ -117,7 +119,7 @@ public class DeregisterInstance_ITCase {
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(5);
 
         instances = naming.getAllInstances(serviceName);
 
