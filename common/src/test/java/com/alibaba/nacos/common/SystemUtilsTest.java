@@ -17,10 +17,14 @@
 package com.alibaba.nacos.common;
 
 import com.alibaba.nacos.common.util.SystemUtils;
+import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -71,4 +75,33 @@ public class SystemUtilsTest {
         Assert.assertEquals(preferHostMode, SystemUtils.PREFER_HOSTNAME_OVER_IP);
 
     }
+
+    @Test
+    public void testReadClusterConf() throws IOException {
+        FileUtils.forceMkdir(new File(SystemUtils.getConfFilePath()));
+
+        String lineSeparator = System.getProperty("line.separator");
+
+        /*
+         * #it is ip
+         * #example
+         * 192.168.1.1:8848
+         */
+        SystemUtils.writeClusterConf("#it is ip" + lineSeparator + "#example" + lineSeparator + "192.168.1.1:8848");
+        Assert.assertEquals(SystemUtils.readClusterConf().get(0), "192.168.1.1:8848");
+
+        /*
+         * #it is ip
+         *   #example
+         *   # 192.168.1.1:8848
+         *   192.168.1.2:8848 # Instance A
+         */
+        SystemUtils.writeClusterConf(
+            "#it is ip" + lineSeparator + "  #example" + lineSeparator + "  # 192.168.1.1:8848" + lineSeparator
+                + "  192.168.1.2:8848 # Instance A  " + lineSeparator + "192.168.1.3#:8848");
+        List<String> instanceList = SystemUtils.readClusterConf();
+        Assert.assertEquals(instanceList.get(0), "192.168.1.2:8848");
+        Assert.assertEquals(instanceList.get(1), "192.168.1.3");
+    }
+
 }
