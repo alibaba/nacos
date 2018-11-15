@@ -104,7 +104,7 @@ class ListeningToQuery extends React.Component {
           }
           self.setState({
             dataSource: dataSoureTmp || [],
-            total: data.length,
+            total: dataSoureTmp.length || 0,
           });
         }
       },

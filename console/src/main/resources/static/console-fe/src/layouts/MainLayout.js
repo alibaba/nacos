@@ -376,9 +376,7 @@ export default class MainLayout extends React.Component {
     const language = aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
 
     const { headerType, showLink, navRow, leftBarClose, noChild } = this.state;
-    const headerLogo = `${
-      process.env.NODE_ENV === 'development' ? '' : 'public/'
-    }img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg`;
+    const headerLogo = 'img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg';
     return (
       <div className="viewFramework-product" style={{ top: 66 }}>
         <Header
