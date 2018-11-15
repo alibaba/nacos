@@ -99,7 +99,7 @@ request.middleWare((_config = {}) => {
  * 配置 monaco
  */
 window.require.config({
-  paths: { vs: process.env.NODE_ENV === 'development' ? 'js/vs' : 'public/js/vs' },
+  paths: { vs: 'js/vs' },
 });
 window.require.config({
   'vs/nls': {

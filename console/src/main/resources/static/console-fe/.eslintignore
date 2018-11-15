@@ -1,2 +1,5 @@
-node_modules
+*.svg
+*.ejs
+.DS_Store
 build
+node_modules
