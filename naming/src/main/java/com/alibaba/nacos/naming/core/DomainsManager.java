@@ -329,8 +329,9 @@ public class DomainsManager {
 
             for (IpAddress ipAddress : ips) {
                 if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                    Loggers.SRV_LOG.info("cluster: " + ipAddress.getClusterName() + "  not found, ip: " + ipAddress.toJSON());
-                    continue;
+                    dom.getClusterMap().put(ipAddress.getClusterName(), new Cluster(ipAddress.getClusterName()));
+                    Loggers.SRV_LOG.warn("cluster: " + ipAddress.getClusterName() + "  not found, ip: " + ipAddress.toJSON()
+                            + ", will create new cluster with default configuration.");
                 }
 
                 ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
