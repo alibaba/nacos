@@ -100,7 +100,7 @@ class InstanceTable extends React.Component {
                     <Table.Column
                         title={I18N.METADATA}
                         dataIndex="metadata"
-                        cell={metadata => Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')}
+                        cell={metadata => Object.keys(metadata).map(k => <p>{k}={metadata[k]}</p>)}
                     />
                     <Table.Column
                         title={I18N.OPERATION}

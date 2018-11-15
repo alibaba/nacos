@@ -15,7 +15,7 @@ import React from 'react';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
 import './index.less';
-import { Button, Field, Form, Grid, Input, Loading, Pagination, Select, Table } from '@alifd/next';
+import { Field, Form, Grid, Input, Loading, Pagination, Select, Table } from '@alifd/next';
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
 
@@ -65,10 +65,14 @@ class ListeningToQuery extends React.Component {
         if (type === 1) {
             var ip = this.getValue('ip');
             queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
+            let tenant = window.nownamespace || getParams('namespace') || '';
+            if (tenant) {
+                queryUrl += '&tenant=' + tenant;
+            }
         } else {
             var dataId = this.getValue('dataId');
             var group = this.getValue('group');
-            if (!dataId) return false;
+            if (!dataId || !group) return false;
             queryUrl = `/nacos/v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
         }
         request({
@@ -96,7 +100,7 @@ class ListeningToQuery extends React.Component {
                     }
                     self.setState({
                         dataSource: dataSoureTmp || [],
-                        total: data.length
+                        total: dataSoureTmp.length || 0
                     });
                 }
             },
@@ -160,13 +164,25 @@ class ListeningToQuery extends React.Component {
                                 </FormItem>
                                 <FormItem label="Data ID:" style={{
                                     display: this.getValue('type') === 0 ? '' : 'none'
-                                }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')} style={{ width: 200 }} {...this.init('dataId')} />
+                                }} required>
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid')}
+                                            style={{ width: 200 }}
+                                            {...this.init('dataId', {
+                                                rules: [{
+                                                    required: true,
+                                                    message: aliwareIntl.get('com.alibaba.nacos.page.form.Data_Id_can_not_be_empty')
+                                                }]
+                                    })} />
                                 </FormItem>
                                 <FormItem label="Group:" style={{
                                     display: this.getValue('type') === 0 ? '' : 'none'
-                                }}>
-                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ width: 200 }} {...this.init('group')} />
+                                }} required>
+                                    <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_group')} style={{ width: 200 }} {...this.init('group', {
+                                                rules: [{
+                                                    required: true,
+                                                    message: aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty')
+                                                }]
+                                    })} />
                                 </FormItem>
                                 <FormItem label="IP:" style={{
                                     display: this.getValue('type') === 0 ? 'none' : ''
@@ -174,7 +190,7 @@ class ListeningToQuery extends React.Component {
                                     <Input placeholder={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.please_input_ip')} style={{ width: 200, boxSize: 'border-box' }} {...this.init('ip')} />
                                 </FormItem>
                                 <FormItem label="">
-                                    <Button type="primary" onClick={this.queryTrackQuery.bind(this)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query')}</Button>
+                                    <Form.Submit validate type="primary" onClick={this.queryTrackQuery.bind(this)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query')}</Form.Submit>
                                     {}
                                 </FormItem>
                             </Form>

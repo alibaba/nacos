@@ -267,7 +267,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             entry.getValue().destroy();
         }
 
-        if (RaftCore.isLeader(NetUtils.localIP())) {
+        if (RaftCore.isLeader(NetUtils.localServer())) {
             RaftCore.signalDelete(UtilsAndCommons.getIPListStoreKey(this));
         }
 
@@ -496,10 +496,17 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             enableHealthCheck = vDom.getEnableHealthCheck();
         }
 
+        if (enableClientBeat != vDom.getEnableClientBeat().booleanValue()) {
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enableClientBeat: " + enableClientBeat + " -> " + vDom.getEnableClientBeat());
+            enableClientBeat = vDom.getEnableClientBeat();
+        }
+
         if (enabled != vDom.getEnabled().booleanValue()) {
             Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enabled: " + enabled + " -> " + vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
+
+        metadata = vDom.getMetadata();
 
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);

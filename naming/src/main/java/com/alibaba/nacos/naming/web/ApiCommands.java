@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
@@ -68,6 +67,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
 
 /**
  * Old API entry
@@ -961,7 +963,7 @@ public class ApiCommands {
             RaftCore.OPERATE_LOCK.lock();
             try {
                 final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
-                proxyParams.put("clientIP", NetUtils.localIP());
+                proxyParams.put("clientIP", NetUtils.localServer());
                 proxyParams.put("notify", "true");
 
                 proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
@@ -2028,8 +2030,7 @@ public class ApiCommands {
 
         if (SwitchEntry.ACTION_ADD.equals(action)) {
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "UTF-8"));
+            List<String> oldList = readClusterConf();
             StringBuilder sb = new StringBuilder();
             for (String ip : oldList) {
                 sb.append(ip).append("\r\n");
@@ -2039,7 +2040,7 @@ public class ApiCommands {
             }
 
             Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
-            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
+            writeClusterConf(sb.toString());
             return result;
         }
 
@@ -2050,7 +2051,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
             Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
-            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
+            writeClusterConf(sb.toString());
             return result;
         }
 
@@ -2061,8 +2062,7 @@ public class ApiCommands {
                 removeIps.add(ip);
             }
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "utf-8"));
+            List<String> oldList = readClusterConf();
 
             Iterator<String> iterator = oldList.iterator();
 
@@ -2079,15 +2079,14 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
 
-            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
+            writeClusterConf(sb.toString());
 
             return result;
         }
 
         if (SwitchEntry.ACTION_VIEW.equals(action)) {
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "utf-8"));
+            List<String> oldList = readClusterConf();
             result.put("list", oldList);
 
             return result;
@@ -2306,7 +2305,7 @@ public class ApiCommands {
                     diff.add(ip + "_" + domString);
                 }
 
-                if (ip.equals(NetUtils.localIP())) {
+                if (ip.equals(NetUtils.localServer())) {
                     localDomString = domString;
                 }
 

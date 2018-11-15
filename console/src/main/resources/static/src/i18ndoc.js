@@ -12,7 +12,7 @@
  */
 module.exports = {
   "zh-cn": {
-    "com.alibaba.nacos.layout.noenv.nacosversion": "0.3.0",
+    "com.alibaba.nacos.layout.noenv.nacosversion": "0.4.0",
     "com.alibaba.nacos.page.configurationManagementVirtual": "配置管理",
     "com.alibaba.nacos.page.serviceManagementVirtual": "服务管理",
     "nacos.component.ExportDialog.tags2": "标签:",
@@ -418,6 +418,8 @@ module.exports = {
     "com.alibaba.nacos.page.configurationManagement.details": "详情",
     "nacos.page.namespace.details": "详情",
     "com.alibaba.nacos.page.listeningToQuery.query_results:_query": "查询结果：共查询到",
+    "com.alibaba.nacos.page.form.Data_Id_can_not_be_empty": "Data ID不能为空",
+    "com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty": "Group不能为空",
     "com.alibaba.nacos.page.configurationManagement.fuzzyg": "模糊查询请输入Group",
     "nacos.component.NameSpaceList.Forum": "论坛",
     "nacos.component.ShowCodeing.,_new_ConfigChangeListener()_{_public_void_receiveConfigInfo(String": "\", new ConfigChangeListener() {\t\t\t\tpublic void receiveConfigInfo(String configInfo) {\t\t\t\t\t// 当配置更新后，通过该回调函数将最新值吐给用户。\t\t\t\t\t// 注意回调函数中不要做阻塞操作，否则阻塞通知线程。\t\t\t\t\tconfig = configInfo;\t\t\t\t\tSystem.out.println(configInfo);\t\t\t\t}\t\t\t});\t\t\t\t\t\t/**\t\t\t * 如果配置值的內容为properties格式（key=value）, 可使用下面监听器。以便一个配置管理多个配置项\t\t\t */\t\t\t\t\t\t/**\t\t\tConfigService.addListener(\"",
@@ -529,7 +531,7 @@ module.exports = {
     "nacos.page.ConfigEditor.submit_failed": "不能为空, 提交失败",
   },
   "en-us": {
-    "com.alibaba.nacos.layout.noenv.nacosversion": "1.0",
+    "com.alibaba.nacos.layout.noenv.nacosversion": "0.4.0",
     "com.alibaba.nacos.page.configurationManagementVirtual": "ConfigManagement",
     "com.alibaba.nacos.page.serviceManagementVirtual": "ServiceManagement",
     "nacos.component.CloneDialog.the_same_configuration": "Conflict:",
@@ -915,6 +917,8 @@ module.exports = {
     "com.alibaba.nacos.page.pushTrajectory.interval:": "Time Range:",
     "nacos.component.ImportDialog.skip1": "Skip",
     "com.alibaba.nacos.page.listeningToQuery.query_results:_query": "Search Results: Found",
+    "com.alibaba.nacos.page.form.Data_Id_can_not_be_empty": "Data ID cannot be empty",
+    "com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty": "Group cannot be empty",
     "com.alibaba.nacos.page.pushTrajectory.please_input_Group": "Enter Group",
     "com.alibaba.nacos.page.configRollback.rollback_successful": "Rollback Successful",
     "com.alibaba.nacos.component.MiddleWareEnv.payTM_daily": "payTM Daily",

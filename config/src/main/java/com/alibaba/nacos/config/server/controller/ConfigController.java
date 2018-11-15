@@ -23,7 +23,6 @@ import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
@@ -46,6 +45,8 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+
 /**
  * 软负载客户端发布数据专用控制器
  * 
@@ -61,17 +62,13 @@ public class ConfigController {
     private final transient ConfigServletInner inner;
     
 	private final transient PersistService persistService;
-	
-	private final transient MergeDatumService mergeService;
 
 	private final transient ConfigSubService configSubService;
 
 	@Autowired
-	public ConfigController(ConfigServletInner configServletInner, PersistService persistService, MergeDatumService mergeService,
-	                        ConfigSubService configSubService) {
+	public ConfigController(ConfigServletInner configServletInner, PersistService persistService, ConfigSubService configSubService) {
 		this.inner = configServletInner;
 		this.persistService = persistService;
-		this.mergeService = mergeService;
 		this.configSubService = configSubService;
 	}
 
@@ -143,7 +140,7 @@ public class ConfigController {
 			EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
 		}
 		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-				SystemConfig.LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+				LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 
 		return true;
 	}

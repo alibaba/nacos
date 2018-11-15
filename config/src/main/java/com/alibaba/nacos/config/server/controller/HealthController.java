@@ -19,7 +19,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.service.ServerListService;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +26,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.PostConstruct;
+
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * health service
@@ -38,12 +39,14 @@ import javax.annotation.PostConstruct;
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
 	
-	@Autowired
-	private DynamicDataSource dynamicDataSource;
+	private final DynamicDataSource dynamicDataSource;
 	private DataSourceService dataSourceService;
 	private String heathUpStr = "UP";
 	private String heathDownStr = "DOWN";
 	private String heathWarnStr = "WARN";
+
+	@Autowired
+	public HealthController(DynamicDataSource dynamicDataSource) {this.dynamicDataSource = dynamicDataSource;}
 
 	@PostConstruct
 	public void init() {
@@ -63,14 +66,14 @@ public class HealthController {
 			sb.append("从数据库 ").append(dbStatus.split(":")[1]).append(" down. ");
 		} else {
 			sb.append("DOWN:");
-			if (dbStatus.indexOf(heathDownStr) != -1) {
+			if (dbStatus.contains(heathDownStr)) {
 				sb.append("主数据库 ").append(dbStatus.split(":")[1]).append(" down. ");
 			}
 			if (!ServerListService.isAddressServerHealth()) {
 				sb.append("地址服务器 down. ");
 			}
 			if (!ServerListService.isInIpList()) {
-				sb.append("server ").append(SystemConfig.LOCAL_IP).append(" 不在地址服务器的IP列表中. ");
+				sb.append("server ").append(LOCAL_IP).append(" 不在地址服务器的IP列表中. ");
 			}
 		}
 
