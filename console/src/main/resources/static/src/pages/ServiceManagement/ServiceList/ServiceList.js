@@ -137,6 +137,10 @@ class ServiceList extends React.Component {
                                         style={{marginRight: 10}}
                                     >{I18N.QUERY}</Button>
                                 </FormItem>
+                                <FormItem label="" style={{float: 'right'}}>
+                                    <Button type="secondary"
+                                            onClick={() => this.openEditServiceDialog()}>{I18N.CREATE}</Button>
+                                </FormItem>
                             </Form>
                         </Col>
                     </Row>
@@ -160,6 +164,11 @@ class ServiceList extends React.Component {
                                             type="normal"
                                             onClick={() => this.props.history.push(`/serviceDetail?name=${record.name}`)}
                                         >{I18N.DETAIL}</Button>
+                                        <Button
+                                            style={{marginLeft: 12}}
+                                            type="normal"
+                                            onClick={() => this.deleteService(record.name)}
+                                        >{I18N.DELETE}</Button>
                                     </div>
                                 )}/>
                             </Table>
