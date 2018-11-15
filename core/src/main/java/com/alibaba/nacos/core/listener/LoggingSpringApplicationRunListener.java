@@ -25,13 +25,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import java.io.IOException;
-import java.util.List;
-
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
 import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
 
@@ -46,10 +39,6 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
     private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
 
     private static final Logger logger = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
-
-    private static final String MODE_PROPERTY_KEY = "nacos.mode";
-
-    private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
 
     private final SpringApplication application;
 
@@ -75,32 +64,11 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
                         DEFAULT_NACOS_LOGBACK_LOCATION);
             }
         }
-
-        if (STANDALONE_MODE) {
-            System.setProperty(MODE_PROPERTY_KEY, "stand alone");
-        } else {
-            System.setProperty(MODE_PROPERTY_KEY, "cluster");
-        }
-
-        System.setProperty(LOCAL_IP_PROPERTY_KEY, LOCAL_IP);
     }
 
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-        System.out.printf("Log files: %s/logs/%n", NACOS_HOME);
-        System.out.printf("Conf files: %s/conf/%n", NACOS_HOME);
-        System.out.printf("Data files: %s/data/%n", NACOS_HOME);
 
-        if (!STANDALONE_MODE) {
-            try {
-                List<String> clusterConf = readClusterConf();
-                System.out.printf("The server IP list of Nacos is %s%n", clusterConf);
-            } catch (IOException e) {
-                logger.error("read cluster conf fail", e);
-            }
-        }
-
-        System.out.println();
     }
 
     @Override
