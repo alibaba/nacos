@@ -15,11 +15,9 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,9 +29,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -46,7 +42,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SelectInstances_ITCase {
 
     private NamingService naming;
@@ -57,9 +53,7 @@ public class SelectInstances_ITCase {
     public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
-//            naming = NamingFactory.createNamingService("10.101.109.214:8848,11.163.128.34:8848,11.163.128.36:8848");
-//            naming = NamingFactory.createNamingService("11.239.112.230:8848,11.239.113.118:8848,11.239.113.156:8848");
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
 
@@ -96,20 +90,6 @@ public class SelectInstances_ITCase {
 //            TimeUnit.SECONDS.sleep(1);
 //        }
     }
-
-    @Test
-    public void deregister() throws NacosException, InterruptedException {
-
-        naming = NamingFactory.createNamingService("11.163.128.34:8848");
-        String serviceName = "dungu.test.23";
-
-//        Thread.sleep(15000L);
-        System.out.println(naming.selectInstances(serviceName, true));
-
-
-//        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
-    }
-
 
     /**
      * 获取所有健康的Instance
@@ -271,7 +251,7 @@ public class SelectInstances_ITCase {
 
         Assert.assertEquals(instances.size(), 2);
 
-        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"),true);
+        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), true);
 
         Assert.assertEquals(2, instances.size());
 
@@ -358,7 +338,7 @@ public class SelectInstances_ITCase {
 
         Assert.assertEquals(instances.size(), 2);
 
-        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"),true);
+        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), true);
 
         Assert.assertEquals(2, instances.size());
 
