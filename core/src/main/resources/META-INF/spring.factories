@@ -8,4 +8,5 @@ com.alibaba.nacos.core.env.NacosDefaultPropertySourceEnvironmentPostProcessor
 
 # SpringApplicationRunListener
 org.springframework.boot.SpringApplicationRunListener=\
-com.alibaba.nacos.core.listener.LoggingSpringApplicationRunListener
+com.alibaba.nacos.core.listener.LoggingSpringApplicationRunListener,\
+com.alibaba.nacos.core.listener.StartingSpringApplicationRunListener
