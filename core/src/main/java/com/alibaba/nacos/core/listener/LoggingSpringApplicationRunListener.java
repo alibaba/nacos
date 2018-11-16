@@ -1,12 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,13 +24,6 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import java.io.IOException;
-import java.util.List;
-
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static org.springframework.boot.context.logging.LoggingApplicationListener.CONFIG_PROPERTY;
 import static org.springframework.core.io.ResourceLoader.CLASSPATH_URL_PREFIX;
 
@@ -46,10 +38,6 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
     private static final String DEFAULT_NACOS_LOGBACK_LOCATION = CLASSPATH_URL_PREFIX + "META-INF/logback/nacos.xml";
 
     private static final Logger logger = LoggerFactory.getLogger(LoggingSpringApplicationRunListener.class);
-
-    private static final String MODE_PROPERTY_KEY = "nacos.mode";
-
-    private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
 
     private final SpringApplication application;
 
@@ -75,32 +63,11 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
                         DEFAULT_NACOS_LOGBACK_LOCATION);
             }
         }
-
-        if (STANDALONE_MODE) {
-            System.setProperty(MODE_PROPERTY_KEY, "stand alone");
-        } else {
-            System.setProperty(MODE_PROPERTY_KEY, "cluster");
-        }
-
-        System.setProperty(LOCAL_IP_PROPERTY_KEY, LOCAL_IP);
     }
 
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
-        System.out.printf("Log files: %s/logs/%n", NACOS_HOME);
-        System.out.printf("Conf files: %s/conf/%n", NACOS_HOME);
-        System.out.printf("Data files: %s/data/%n", NACOS_HOME);
 
-        if (!STANDALONE_MODE) {
-            try {
-                List<String> clusterConf = readClusterConf();
-                System.out.printf("The server IP list of Nacos is %s%n", clusterConf);
-            } catch (IOException e) {
-                logger.error("read cluster conf fail", e);
-            }
-        }
-
-        System.out.println();
     }
 
     @Override
