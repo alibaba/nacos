@@ -63,4 +63,8 @@
 
     </springProfile>
 
+    <logger name="com.alibaba.nacos.core.listener.StartingSpringApplicationRunListener">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
 </configuration>

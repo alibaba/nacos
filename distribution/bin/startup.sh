@@ -63,11 +63,17 @@ JAVA_OPT="${JAVA_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
 if [ ! -d "${BASE_DIR}/logs" ]; then
   mkdir ${BASE_DIR}/logs
 fi
-if [ ! -f "${BASE_DIR}/logs/start.log" ]; then
-  touch "${BASE_DIR}/logs/start.log"
-fi
 
 echo "$JAVA ${JAVA_OPT}"
-echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.log 2>&1 &
-nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/start.log 2>&1 &
-echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.log"
+
+if [[ "${MODE}" == "standalone" ]]; then
+    $JAVA ${JAVA_OPT}
+else
+    if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
+      touch "${BASE_DIR}/logs/start.out"
+    fi
+
+    echo "$JAVA ${JAVA_OPT}" >> ${BASE_DIR}/logs/start.out 2>&1 &
+    nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/start.out 2>&1 &
+    echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
+fi
