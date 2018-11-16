@@ -55,17 +55,11 @@ public class HostReactor {
 
     private String cacheDir;
 
-
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir, boolean loadCacheAtStart) {
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
-        if (loadCacheAtStart) {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
-        } else {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
-        }
-
+        this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushRecver = new PushRecver(this);

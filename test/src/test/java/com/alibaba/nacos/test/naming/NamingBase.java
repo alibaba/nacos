@@ -70,8 +70,28 @@ public class NamingBase {
         instanceMeta.put("site", "et2");
         instance.setMetadata(instanceMeta);
 
-        instance.setServiceName(serviceName);
-        instance.setClusterName("c1");
+        Service service = new Service(serviceName);
+        service.setApp("nacos-naming");
+        service.setHealthCheckMode("server");
+        service.setProtectThreshold(0.8F);
+        service.setGroup("CNCF");
+        Map<String, String> serviceMeta = new HashMap<String, String>();
+        serviceMeta.put("symmetricCall", "true");
+        service.setMetadata(serviceMeta);
+        instance.setService(service);
+
+        Cluster cluster = new Cluster();
+        cluster.setName("c1");
+        AbstractHealthChecker.Http healthChecker = new AbstractHealthChecker.Http();
+        healthChecker.setExpectedResponseCode(400);
+        healthChecker.setHeaders("Client-Version|Nacos");
+        healthChecker.setPath("/xxx.html");
+        cluster.setHealthChecker(healthChecker);
+        Map<String, String> clusterMeta = new HashMap<String, String>();
+        clusterMeta.put("xxx", "yyyy");
+        cluster.setMetadata(clusterMeta);
+
+        instance.setCluster(cluster);
 
         return instance;
     }

@@ -106,6 +106,7 @@ public class InstanceController extends ApiCommands {
             mockHttpRequest.addParameter("clusterMetadata", cluster.getString("metadata"));
 
         }
+
         return regService(mockHttpRequest);
     }
 
