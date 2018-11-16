@@ -19,7 +19,7 @@ We strongly value documentation and integration with other projects such as Spri
 We are very glad to accept improvements for these aspects.
 
 
-### Open an issue / PR
+### Open or Pickup an issue / PR
 
 We use [GitHub Issues](https://github.com/alibaba/Nacos/issues) and [Pull Requests](https://github.com/alibaba/Nacos/pulls) for trackers.
 
@@ -27,13 +27,14 @@ If you find a typo in document, find a bug in code, or want new features, or wan
 you can [open an issue on GitHub](https://github.com/alibaba/Nacos/issues/new) to report it.
 Please follow the guideline message in the issue template.
 
-If you want to contribute, please follow the [contribution workflow](#github-workflow) and create a new pull request.
-If your PR contains large changes, e.g. component refactor or new components, please write detailed documents
-about its design and usage. 
+If you just want to contribute directly you can choose the issue below.
 
-If you just want to contribute directly
+ - [Contribution Welcome](https://github.com/alibaba/nacos/labels/contribution%20welcome): Heavily needed issue, but currently short of hand. 
+ - [good first issue](https://github.com/alibaba/nacos/labels/good%20first%20issue): Good for newcomers, new comer can pickup one for warm-up.
+ 
+Now if you want to contribute, please follow the [contribution workflow](#github-workflow) and create a new pull request.
 
-### Begin yoru development
+### Begin your contribution
 
 We use the `develop` branch as the development branch, which indicates that this is a unstable branch.
 
@@ -59,6 +60,10 @@ to a few individual PRs.
 6. Before merging a PR, squash any fix review feedback, typo, merged, and rebased sorts of commits.
 The final commit message should be clear and concise.
 
+
+If your PR contains large changes, e.g. component refactor or new components, please write detailed documents
+about its design and usage. 
+
 ### Code review guidance
 
 Our PMC will rotate reviewing the code to make sure all the PR will be reviewed timely and by at least one committer before merge. If we aren't doing our job (sometimes we drop things). And as always, we welcome volunteers for code review. 
@@ -69,4 +74,6 @@ Some principles:
 - Elegance: New functions, classes or components should be well designed.
 - Testability - 80% of the new code should be covered by unit test cases. 
 - Maintainability - Comply with our [PMD spec](style/codeStyle.xml), and 3-month-frequency update should be maintained at least.
+
+
 
