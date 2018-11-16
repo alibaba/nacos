@@ -57,8 +57,7 @@ public class HistoryController {
 		pageSize = null == pageSize ? Integer.valueOf(100) : pageSize;
 		pageSize = pageSize > 500 ? Integer.valueOf(500) : pageSize;
 		// configInfoBase没有appName字段
-		Page<ConfigHistoryInfo> page = persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
-		return page;
+		return persistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
 	}
 	
 	/**
@@ -68,8 +67,7 @@ public class HistoryController {
 	@ResponseBody
 	public ConfigHistoryInfo getConfigHistoryInfo(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("nid") Long nid, ModelMap modelMap) {
-		ConfigHistoryInfo configInfo = persistService.detailConfigHistory(nid);
-		return configInfo;
+		return persistService.detailConfigHistory(nid);
 	}
 
 }

@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import {request} from '../../../globalLib';
 import {Dialog, Form, Input, Select, Message} from '@alifd/next';
 import {I18N, DIALOG_FORM_LAYOUT} from './constant'
 
@@ -23,18 +24,19 @@ class EditServiceDialog extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
+            isCreate: false,
             editService: {},
             editServiceDialogVisible: false
         }
         this.show = this.show.bind(this)
     }
 
-    show(editService) {
-        const {metadata = {}} = editService
+    show(editService = {}) {
+        const {metadata = {}, name} = editService
         if (Object.keys(metadata).length) {
             editService.metadataText = Object.keys(metadata).map(k => `${k}=${metadata[k]}`).join(',')
         }
-        this.setState({editService, editServiceDialogVisible: true})
+        this.setState({editService, editServiceDialogVisible: true, isCreate: !name})
     }
 
     hide() {
@@ -42,11 +44,12 @@ class EditServiceDialog extends React.Component {
     }
 
     onConfirm() {
+        const {isCreate} = this.state
         const editService = Object.assign({}, this.state.editService)
         const {name, protectThreshold, healthCheckMode, metadataText} = editService
-        window.request({
-            method: 'POST',
-            url: '/nacos/v1/ns/service/update',
+        request({
+            method: isCreate ? 'PUT' : 'POST',
+            url: `/nacos/v1/ns/service/${isCreate ? 'create' : 'update'}`,
             data: {serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText},
             dataType: 'text',
             beforeSend: () => this.setState({loading: true}),
@@ -55,8 +58,13 @@ class EditServiceDialog extends React.Component {
                     Message.error(res)
                     return
                 }
-                this.props.getServiceDetail()
+                if (isCreate) {
+                    this.props.queryServiceList()
+                } else {
+                    this.props.getServiceDetail()
+                }
             },
+            error: res => Message.error(res.responseText || res.statusText),
             complete: () => this.setState({loading: false})
         })
         this.hide()
@@ -70,7 +78,7 @@ class EditServiceDialog extends React.Component {
     }
 
     render() {
-        const {editService, editServiceDialogVisible} = this.state
+        const {isCreate, editService, editServiceDialogVisible} = this.state
         const {
             name,
             protectThreshold,
@@ -80,7 +88,7 @@ class EditServiceDialog extends React.Component {
         return (
             <Dialog
                 className="service-detail-edit-dialog"
-                title={I18N.UPDATE_SERVICE}
+                title={isCreate ? I18N.CREATE_SERVICE : I18N.UPDATE_SERVICE}
                 visible={editServiceDialogVisible}
                 onOk={() => this.onConfirm()}
                 onCancel={() => this.hide()}
@@ -88,7 +96,15 @@ class EditServiceDialog extends React.Component {
             >
                 <Form {...DIALOG_FORM_LAYOUT}>
                     <FormItem label={`${I18N.SERVICE_NAME}:`}>
-                        <p>{name}</p>
+                        {
+                            !isCreate
+                                ? <p>{name}</p>
+                                : <Input
+                                    className="in-text"
+                                    value={name}
+                                    onChange={name => this.onChangeCluster({name})}
+                                />
+                        }
                     </FormItem>
                     <FormItem label={`${I18N.PROTECT_THRESHOLD}:`}>
                         <Input

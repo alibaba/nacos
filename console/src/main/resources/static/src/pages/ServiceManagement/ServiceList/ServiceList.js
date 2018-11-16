@@ -12,8 +12,10 @@
  */
 
 import React from 'react';
-import RegionGroup from '../../../components/RegionGroup/index' ;
-import {Button, Field, Form, Grid, Input, Loading, Pagination, Table} from '@alifd/next';
+import RegionGroup from '../../../components/RegionGroup/index';
+import {request, aliwareIntl} from '../../../globalLib';
+import {Button, Field, Form, Grid, Input, Loading, Pagination, Table, Dialog, Message} from '@alifd/next';
+import EditServiceDialog from '../ServiceDetail/EditServiceDialog'
 import {I18N, STATUS_COLOR_MAPPING} from './constant'
 import './ServiceList.less'
 
@@ -44,10 +46,14 @@ class ServiceList extends React.Component {
         this.setState({loading: false})
     }
 
+    openEditServiceDialog() {
+        this.refs.editServiceDialog.show(this.state.service)
+    }
+
     queryServiceList() {
         const {currentPage, pageSize, keyword} = this.state
         const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`]
-        window.request({
+        request({
             url: `/nacos/v1/ns/catalog/serviceList?${parameter.join('&')}`,
             beforeSend: () => this.openLoading(),
             success: ({count = 0, serviceList = []} = {}) => this.setState({
@@ -65,6 +71,30 @@ class ServiceList extends React.Component {
 
     getQueryLater() {
         setTimeout(() => this.queryServiceList());
+    }
+
+    deleteService(serviceName) {
+        Dialog.confirm({
+            title: I18N.PROMPT,
+            content: I18N.PROMPT_DELETE,
+            onOk: () => {
+                request({
+                    method: 'DELETE',
+                    url: `/nacos/v1/ns/service/remove?serviceName=${serviceName}`,
+                    dataType: 'text',
+                    beforeSend: () => this.openLoading(),
+                    success: res => {
+                        if (res !== 'ok') {
+                            Message.error(res)
+                            return
+                        }
+                        this.queryServiceList()
+                    },
+                    error: res => Message.error(res.responseText || res.statusText),
+                    complete: () => this.closeLoading()
+                })
+            }
+        });
     }
 
     rowColor = ({status}) => ({className: `row-bg-${STATUS_COLOR_MAPPING[status]}`})
@@ -117,19 +147,20 @@ class ServiceList extends React.Component {
                                 fixedHeader={true}
                                 maxBodyHeight={530}
                                 locale={locale}
-                                language={window.aliwareIntl.currentLanguageCode}
-                                className={r => this.rowColor[r.status]}
-                                getRowProps={this.rowColor}
+                                language={aliwareIntl.currentLanguageCode}
+                                getRowProps={row => this.rowColor(row)}
                             >
                                 <Column title={I18N.COLUMN_SERVICE_NAME} dataIndex="name"/>
                                 <Column title={I18N.COLUMN_CLUSTER_COUNT} dataIndex="clusterCount"/>
                                 <Column title={I18N.COLUMN_IP_COUNT} dataIndex="ipCount"/>
                                 <Column title={I18N.COLUMN_HEALTH_STATUS} dataIndex="status"/>
                                 <Column title={I18N.COLUMN_OPERATION} align="center" cell={(value, index, record) => (
-                                    <Button
-                                        type="normal"
-                                        onClick={() => this.props.history.push(`/serviceDetail?name=${record.name}`)}
-                                    >{I18N.DETAIL}</Button>
+                                    <div>
+                                        <Button
+                                            type="normal"
+                                            onClick={() => this.props.history.push(`/serviceDetail?name=${record.name}`)}
+                                        >{I18N.DETAIL}</Button>
+                                    </div>
                                 )}/>
                             </Table>
                         </Col>
@@ -140,10 +171,16 @@ class ServiceList extends React.Component {
                             total={this.state.total}
                             pageSize={this.state.pageSize}
                             onChange={currentPage => this.setState({currentPage}, () => this.queryServiceList())}
-                            language={window.pageLanguage}
+                            language={aliwareIntl.currentLanguageCode}
                         />
                     </div>
                 </Loading>
+                <EditServiceDialog
+                    ref="editServiceDialog"
+                    openLoading={() => this.openLoading()}
+                    closeLoading={() => this.closeLoading()}
+                    queryServiceList={() => this.setState({currentPage: 1}, () => this.queryServiceList())}
+                />
             </div>
         );
     }

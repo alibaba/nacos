@@ -115,7 +115,8 @@ public class MergeDatumService {
     					Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
     					if (page != null) {
     						datumList.addAll(page.getPageItems());
-    						log.info("[merge-query] {}, {}, size/total={}/{}", new Object[] { dataId, group, datumList.size(), rowCount });
+						    log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
+							    rowCount);
     					}
     				}
 
@@ -124,8 +125,9 @@ public class MergeDatumService {
     				if (datumList.size() > 0) {
     					ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
     					persistService.insertOrUpdate(null, null, cf, time, null, false);
-    					log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", new Object[] { dataId, group, datumList.size(),
-    							cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()) });
+					    log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+						    datumList.size(), cf.getContent().length(), cf.getMd5(),
+						    ContentUtils.truncateContent(cf.getContent()));
     				}
     				// 删除
     				else {
