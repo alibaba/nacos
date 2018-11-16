@@ -558,18 +558,7 @@ public class ApiCommands {
 
             Lock lock = domainsManager.addLock(dom);
             Condition condition = domainsManager.addCondtion(dom);
-
-//            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-//                @Override
-//                public void run() {
-//                    try {
             regDom(request);
-//                    } catch (Exception e) {
-//                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
-//                    }
-//                }
-//            });
-
             try {
                 lock.lock();
                 condition.await(5000, TimeUnit.MILLISECONDS);
@@ -1001,12 +990,6 @@ public class ApiCommands {
                                     + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
 
                             try {
-//
-//                                if (server.equals(NetUtils.localIP())) {
-//                                    onAddIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
-//                                    return;
-//                                }
-
                                 HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
                                     @Override
                                     public Integer onCompleted(Response response) throws Exception {
