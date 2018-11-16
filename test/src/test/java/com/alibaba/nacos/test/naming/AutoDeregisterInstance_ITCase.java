@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
+import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,8 +59,8 @@ public class AutoDeregisterInstance_ITCase {
     public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-//            naming = NamingFactory.createNamingService("11.239.112.230:8848,11.239.113.118:8848,11.239.113.156:8848");
+//            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            naming = NamingFactory.createNamingService("11.239.113.204:8848,11.239.112.161:8848,11.239.114.187:8848");
 
         }
     }
@@ -68,15 +69,15 @@ public class AutoDeregisterInstance_ITCase {
 
 
     /**
-     * 客户端停止上报实例心跳，服务端自动注销实例
+     * 指定cluster中（单个、多个）实例，客户端停止上报实例心跳，服务端自动注销实例
      *
      * @throws Exception
      */
     @Test
-    public void autoDregDomTest() throws Exception {
+    public void autoDregDomClustersTest() throws Exception {
 
         String serviceName = randomDomainName();
-//        String serviceName="test.1";
+//        String serviceName="jinhanH0Gkc.cyS1n.com";
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT,"c1");
@@ -93,11 +94,9 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(35);
+        TimeUnit.SECONDS.sleep(40);
 
         instances = naming.getAllInstances(serviceName);
-
-//        TimeUnit.SECONDS.sleep(1000000L);
 
         Assert.assertEquals(1, instances.size());
 
@@ -107,7 +106,41 @@ public class AutoDeregisterInstance_ITCase {
         instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
         Assert.assertEquals(0, instances.size());
 
-//        TimeUnit.SECONDS.sleep(1000000L);
+    }
+
+
+    /**
+     * 客户端停止上报实例心跳，服务端自动注销实例
+     *
+     * @throws Exception
+     */
+    @Test
+    public void autoDregDomTest() throws Exception {
+
+        String serviceName = randomDomainName();
+//        String serviceName="jinhanH0Gkc.cyS1n.com";
+//        System.out.println(serviceName);
+
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
+        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
+
+        TimeUnit.SECONDS.sleep(5);
+
+        List<Instance> instances;
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(2, instances.size());
+
+        NacosNamingService namingServiceImpl = (NacosNamingService) naming;
+
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+
+        TimeUnit.SECONDS.sleep(40);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(1, instances.size());
+
 
     }
 
@@ -136,15 +169,78 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(35);
+        TimeUnit.SECONDS.sleep(40);
 
-      //  namingServiceImpl.getBeatReactor().
+        instances = naming.getAllInstances(serviceName);
 
+        Assert.assertEquals(instances.size(), 1);
+        BeatInfo beatInfo=new BeatInfo();
+        beatInfo.setDom(serviceName);
+        beatInfo.setIp("127.0.0.1");
+        beatInfo.setPort(TEST_PORT);
+
+        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName,beatInfo);
+        TimeUnit.SECONDS.sleep(15);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 2);
 
 
     }
 
 
+    /**
+     * 指定cluster中（单个、多个）实例,客户端停止上报实例心跳，服务端自动注销实例,恢复心跳，服务端自动注册实例
+     *
+     * @throws Exception
+     */
+    @Test
+    public void autoRegDomClustersTest() throws Exception {
 
+        String serviceName = randomDomainName();
+
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT,"c1");
+        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT,"c2");
+
+        TimeUnit.SECONDS.sleep(5);
+
+        List<Instance> instances;
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals( 2,instances.size());
+
+        NacosNamingService namingServiceImpl = (NacosNamingService) naming;
+
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+
+        TimeUnit.SECONDS.sleep(40);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 1);
+        BeatInfo beatInfo=new BeatInfo();
+        beatInfo.setDom(serviceName);
+        beatInfo.setIp("127.0.0.1");
+        beatInfo.setPort(TEST_PORT);
+        beatInfo.setCluster("c1");
+
+
+        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName,beatInfo);
+        TimeUnit.SECONDS.sleep(15);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 2);
+
+        instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
+        Assert.assertEquals(1,instances.size());
+
+        instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
+        Assert.assertEquals(1, instances.size());
+
+
+
+    }
 
 }
