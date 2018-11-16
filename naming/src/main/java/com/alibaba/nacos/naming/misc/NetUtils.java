@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -27,8 +28,15 @@ import static com.alibaba.nacos.common.util.SystemUtils.PREFER_HOSTNAME_OVER_IP;
  */
 public class NetUtils {
 
+    private static String localIpAddress = null;
+
+    public static String localIP() {
     public static String localServer() {
         try {
+            if (StringUtils.isBlank(localIpAddress)) {
+                localIpAddress = InetAddress.getLocalHost().getHostAddress();
+            }
+            return localIpAddress + ":" + RunningConfig.getServerPort();
             InetAddress inetAddress = InetAddress.getLocalHost();
             String serverAddress = inetAddress.getHostAddress();
             if (PREFER_HOSTNAME_OVER_IP) {

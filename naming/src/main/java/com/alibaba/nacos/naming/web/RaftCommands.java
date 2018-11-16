@@ -119,7 +119,7 @@ public class RaftCommands {
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject json = JSON.parseObject(value);
 
-        RaftCore.signalPublish(json.getString("key"), json.getString("value"));
+        RaftCore.doSignalPublish(json.getString("key"), json.getString("value"));
 
         return "ok";
     }
@@ -197,6 +197,7 @@ public class RaftCommands {
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject jsonObject = JSON.parseObject(value);
+
         RaftCore.onPublish(jsonObject);
         return "ok";
     }

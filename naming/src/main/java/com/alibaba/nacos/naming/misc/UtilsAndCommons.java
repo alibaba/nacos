@@ -71,6 +71,8 @@ public class UtilsAndCommons {
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
+    public static final int RAFT_PUBLISH_TIMEOUT = 5000;
+
     static public final String RAFT_DOM_PRE = "meta";
     static public final String RAFT_IPLIST_PRE = "iplist.";
     static public final String RAFT_TAG_DOM_PRE = "tag.meta";
