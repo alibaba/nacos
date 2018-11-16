@@ -65,7 +65,6 @@ public class RegisterInstance_ITCase {
     @Ignore
     public void regService() throws NacosException, InterruptedException {
 
-        naming = NamingFactory.createNamingService("10.101.109.214:8848");
         String serviceName = "dungu.test.99";
         naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
@@ -76,7 +75,6 @@ public class RegisterInstance_ITCase {
     @Ignore
     public void deregService() throws NacosException, InterruptedException {
 
-        naming = NamingFactory.createNamingService("10.101.109.214:8848,11.163.128.34:8848,11.163.128.36:8848");
         String serviceName = "dungu.test.98";
         System.out.println(naming.getAllInstances(serviceName));
 //        Thread.sleep(100000000L);
