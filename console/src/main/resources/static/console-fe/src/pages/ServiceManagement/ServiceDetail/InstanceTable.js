@@ -110,9 +110,11 @@ class InstanceTable extends React.Component {
             title={I18N.METADATA}
             dataIndex="metadata"
             cell={metadata =>
-              Object.keys(metadata)
-                .map(k => `${k}=${metadata[k]}`)
-                .join(',')
+              Object.keys(metadata).map(k => (
+                <p>
+                  {k}={metadata[k]}
+                </p>
+              ))
             }
           />
           <Table.Column
