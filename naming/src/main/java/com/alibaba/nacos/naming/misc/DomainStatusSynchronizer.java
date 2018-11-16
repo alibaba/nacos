@@ -37,7 +37,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
         Map<String,String> params = new HashMap<String, String>(10);
 
         params.put("domsStatus", msg.getData());
-        params.put("clientIP", NetUtils.localIP());
+        params.put("clientIP", NetUtils.localServer());
 
 
         String url = "http://" + serverIP + ":" + RunningConfig.getServerPort() + RunningConfig.getContextPath() +

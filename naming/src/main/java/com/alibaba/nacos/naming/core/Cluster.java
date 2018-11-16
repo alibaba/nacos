@@ -73,6 +73,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     public Cluster() {
     }
 
+    public Cluster(String clusterName) {
+        this.setName(clusterName);
+    }
+
     public int getDefIPPort() {
         // for compatibility with old entries
         return defIPPort == -1 ? defCkport : defIPPort;
