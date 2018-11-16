@@ -973,7 +973,7 @@ public class ApiCommands {
         if (RaftCore.isLeader()) {
             try {
                 domainsManager.getDom2LockMap().get(dom).lock();
-                proxyParams.put("clientIP", NetUtils.localIP());
+                proxyParams.put("clientIP", NetUtils.localServer());
                 proxyParams.put("notify", "true");
 
                 proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
