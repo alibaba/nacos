@@ -20,17 +20,17 @@ $ echo '\n#alias for cnpm\nalias cnpm="npm --registry=https://registry.npm.taoba
 
 ## 安装依赖
 ```sh
-cnpm install
+yarn
 ```
 
 ## 启动
 ```sh
-npm start
+yarn start
 ```
 
 ## 构建打包
 ```sh
-npm run build
+yarn build
 ```
 
 ## 
