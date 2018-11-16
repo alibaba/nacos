@@ -69,6 +69,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
+
 /**
  * Old API entry
  *
@@ -258,7 +261,6 @@ public class ApiCommands {
     @RequestMapping("/regDom")
     public String regDom(HttpServletRequest request) throws Exception {
 
-
         String dom = BaseServlet.required(request, "dom");
         if (domainsManager.getDomain(dom) != null) {
             throw new IllegalArgumentException("specified dom already exists, dom : " + dom);
@@ -271,6 +273,7 @@ public class ApiCommands {
 
     @RequestMapping("/clientBeat")
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
+
         String beat = BaseServlet.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
         if (StringUtils.isBlank(clientBeat.getCluster())) {
@@ -311,6 +314,10 @@ public class ApiCommands {
         ipAddress.setWeight(clientBeat.getWeight());
         ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
+
+        if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
+            doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));
+        }
 
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
@@ -366,8 +373,9 @@ public class ApiCommands {
         boolean resetWeight = Boolean.parseBoolean(BaseServlet.optional(request, "resetWeight", "false"));
         boolean enableHealthCheck = Boolean.parseBoolean(BaseServlet.optional(request, "enableHealthCheck", "true"));
         boolean enable = Boolean.parseBoolean(BaseServlet.optional(request, "serviceEnabled", "true"));
+
         String disabledSites = BaseServlet.optional(request, "disabledSites", StringUtils.EMPTY);
-        boolean eanbleClientBeat = Boolean.parseBoolean(BaseServlet.optional(request, "enableClientBeat", "false"));
+        boolean eanbleClientBeat = Boolean.parseBoolean(BaseServlet.optional(request, "enableClientBeat", "true"));
         String clusterName = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
         String serviceMetadataJson = BaseServlet.optional(request, "serviceMetadata", StringUtils.EMPTY);
@@ -541,9 +549,8 @@ public class ApiCommands {
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         IpAddress ipAddress = getIPAddress(request);
-        Service service = new Service(dom);
         ipAddress.setApp(app);
-        ipAddress.setService(service);
+        ipAddress.setServiceName(dom);
         ipAddress.setInstanceId(ipAddress.generateInstanceId());
         ipAddress.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
@@ -556,18 +563,7 @@ public class ApiCommands {
 
             Lock lock = domainsManager.addLock(dom);
             Condition condition = domainsManager.addCondtion(dom);
-
-            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        regDom(request);
-                    } catch (Exception e) {
-                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
-                    }
-                }
-            });
-
+            regDom(request);
             try {
                 lock.lock();
                 condition.await(5000, TimeUnit.MILLISECONDS);
@@ -590,6 +586,7 @@ public class ApiCommands {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             stringMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
+
             doAddIP4Dom(MockHttpRequest.buildRequest(stringMap));
         } else {
             throw new IllegalArgumentException("dom not found: " + dom);
@@ -956,49 +953,72 @@ public class ApiCommands {
 
         String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
 
-        long timestamp = System.currentTimeMillis();
-        if (RaftCore.isLeader()) {
-            RaftCore.OPERATE_LOCK.lock();
+        Datum datum = RaftCore.getDatum(key);
+        if (datum == null) {
             try {
-                final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
-                proxyParams.put("clientIP", NetUtils.localIP());
+                domainsManager.getDom2LockMap().get(dom).lock();
+                datum = RaftCore.getDatum(key);
+                if (datum == null) {
+                    datum = new Datum();
+                    datum.key = key;
+                    RaftCore.addDatum(datum);
+                }
+            } finally {
+                domainsManager.getDom2LockMap().get(dom).unlock();
+            }
+        }
+
+        long timestamp = RaftCore.getDatum(key).timestamp.incrementAndGet();
+
+        if (RaftCore.isLeader()) {
+            try {
+                domainsManager.getDom2LockMap().get(dom).lock();
+                proxyParams.put("clientIP", NetUtils.localServer());
                 proxyParams.put("notify", "true");
 
                 proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
                 proxyParams.put("timestamp", String.valueOf(timestamp));
 
                 for (final RaftPeer peer : RaftCore.getPeers()) {
-                    String server = peer.ip;
-                    if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                        server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-                    }
-                    String url = "http://" + server
-                            + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
-                    HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
+
+                    UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
                         @Override
-                        public Integer onCompleted(Response response) throws Exception {
-                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
-                                        + ",ipList = " + ipList + ",code: " + response.getStatusCode()
-                                        + ", caused " + response.getResponseBody() + ", server: " + peer.ip);
-                                return 1;
+                        public void run() {
+
+                            String server = peer.ip;
+
+                            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+                                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
                             }
-                            countDownLatch.countDown();
-                            return 0;
+
+                            String url = "http://" + server
+                                    + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
+
+                            try {
+                                HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
+                                    @Override
+                                    public Integer onCompleted(Response response) throws Exception {
+                                        if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                            Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
+                                                    + ",ipList = " + ipList + ",code: " + response.getStatusCode()
+                                                    + ", caused " + response.getResponseBody() + ", server: " + peer.ip);
+                                            return 1;
+                                        }
+                                        return 0;
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Loggers.SRV_LOG.error("ADD-IP", "failed when publish to peer." + url, e);
+                            }
                         }
                     });
-                }
-
-                if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-                    Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
-                    throw new IllegalArgumentException("data publish failed, key=" + key);
                 }
 
                 Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-ADD}" + " new: "
                         + Arrays.toString(ipList.toArray()) + " operatorIP: "
                         + BaseServlet.optional(request, "clientIP", "unknown"));
             } finally {
-                RaftCore.OPERATE_LOCK.unlock();
+                domainsManager.getDom2LockMap().get(dom).unlock();
             }
         }
 
@@ -1009,33 +1029,6 @@ public class ApiCommands {
     @RequestMapping("/addIP4Dom")
     public String addIP4Dom(HttpServletRequest request) throws Exception {
         return doAddIP4Dom(request);
-    }
-
-    @NeedAuth
-    @RequestMapping("/replaceIP4Dom")
-    public synchronized String replaceIP4Dom(HttpServletRequest request) throws Exception {
-        String dom = BaseServlet.required(request, "dom");
-        String cluster = BaseServlet.required(request, "cluster");
-
-        List<String> ips = Arrays.asList(BaseServlet.required(request, "ipList").split(","));
-        List<IpAddress> ipObjList = new ArrayList<IpAddress>(ips.size());
-        for (String ip : ips) {
-            IpAddress ipObj = IpAddress.fromJSON(ip);
-            if (ipObj == null || ipObj.getPort() <= 0) {
-                throw new IllegalArgumentException("malformed ip: " + ip + ", format: ip:port[_weight][_cluster]");
-            }
-
-            ipObj.setClusterName(cluster);
-            ipObjList.add(ipObj);
-        }
-
-        if (CollectionUtils.isEmpty(ipObjList)) {
-            throw new IllegalArgumentException("empty ip list");
-        }
-
-        domainsManager.easyReplaceIP4Dom(dom, cluster, ipObjList);
-
-        return "ok";
     }
 
     @RequestMapping("/srvAllIP")
@@ -1227,7 +1220,7 @@ public class ApiCommands {
         result.put("useSpecifiedURL", false);
         result.put("clusters", clusters);
         result.put("env", env);
-        result.put("metadata",domObj.getMetadata());
+        result.put("metadata", domObj.getMetadata());
         return result;
     }
 
@@ -1464,7 +1457,7 @@ public class ApiCommands {
                     Switch.setPushCVersion(version);
                 } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
                     Switch.setPushGoVersion(version);
-                } else{
+                } else {
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
 
@@ -2028,8 +2021,7 @@ public class ApiCommands {
 
         if (SwitchEntry.ACTION_ADD.equals(action)) {
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "UTF-8"));
+            List<String> oldList = readClusterConf();
             StringBuilder sb = new StringBuilder();
             for (String ip : oldList) {
                 sb.append(ip).append("\r\n");
@@ -2039,7 +2031,7 @@ public class ApiCommands {
             }
 
             Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
-            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
+            writeClusterConf(sb.toString());
             return result;
         }
 
@@ -2050,7 +2042,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
             Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
-            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
+            writeClusterConf(sb.toString());
             return result;
         }
 
@@ -2061,8 +2053,7 @@ public class ApiCommands {
                 removeIps.add(ip);
             }
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "utf-8"));
+            List<String> oldList = readClusterConf();
 
             Iterator<String> iterator = oldList.iterator();
 
@@ -2079,15 +2070,14 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
 
-            IoUtils.writeStringToFile(UtilsAndCommons.getConfFile(), sb.toString(), "utf-8");
+            writeClusterConf(sb.toString());
 
             return result;
         }
 
         if (SwitchEntry.ACTION_VIEW.equals(action)) {
 
-            List<String> oldList =
-                    IoUtils.readLines(new InputStreamReader(new FileInputStream(UtilsAndCommons.getConfFile()), "utf-8"));
+            List<String> oldList = readClusterConf();
             result.put("list", oldList);
 
             return result;
@@ -2306,7 +2296,7 @@ public class ApiCommands {
                     diff.add(ip + "_" + domString);
                 }
 
-                if (ip.equals(NetUtils.localIP())) {
+                if (ip.equals(NetUtils.localServer())) {
                     localDomString = domString;
                 }
 
