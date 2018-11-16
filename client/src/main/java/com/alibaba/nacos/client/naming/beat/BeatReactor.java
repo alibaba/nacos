@@ -17,7 +17,6 @@ package com.alibaba.nacos.client.naming.beat;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -41,7 +40,7 @@ public class BeatReactor {
         }
     });
 
-    private long clientBeatInterval = 5 * 1000;
+    private long clientBeatInterval = 10 * 1000;
 
     private NamingProxy serverProxy;
 
@@ -54,16 +53,12 @@ public class BeatReactor {
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
         LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
-        dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        dom2Beat.put(dom, beatInfo);
     }
 
-    public void removeBeatInfo(String dom, String ip, int port) {
+    public void removeBeatInfo(String dom) {
         LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
-        dom2Beat.remove(buildKey(dom, ip, port));
-    }
-
-    public String buildKey(String dom, String ip, int port) {
-        return dom + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
+        dom2Beat.remove(dom);
     }
 
     class BeatProcessor implements Runnable {
@@ -74,7 +69,7 @@ public class BeatReactor {
                 for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
                     BeatInfo beatInfo = entry.getValue();
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                    LogUtils.LOG.info("BEAT", "send beat to server: " + beatInfo.toString());
+                    LogUtils.LOG.debug("BEAT", "send beat to server: " + beatInfo.toString());
                 }
             } catch (Exception e) {
                 LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);

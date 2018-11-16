@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.lang3.BooleanUtils;
@@ -45,7 +44,7 @@ public class ClusterController {
     @Autowired
     protected DomainsManager domainsManager;
 
-    @RequestMapping(value = {"/update", "/add"}, method = RequestMethod.POST)
+    @RequestMapping(value = "/update", method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
 
         String clusterName = BaseServlet.required(request, "clusterName");
@@ -62,11 +61,7 @@ public class ClusterController {
 
         Cluster cluster = domain.getClusterMap().get(clusterName);
         if (cluster == null) {
-            Loggers.SRV_LOG.warn("UPDATE-CLUSTER", "cluster not exist, will create it: " + clusterName + ", service:" + serviceName);
-            cluster = new Cluster();
-            cluster.setName(clusterName);
-
-//            throw new NacosException(NacosException.INVALID_PARAM, "cluster not found:"+ clusterName + ", " + serviceName);
+            throw new NacosException(NacosException.INVALID_PARAM, "cluster not found:"+ clusterName + ", " + serviceName);
         }
 
         cluster.setDefCkport(NumberUtils.toInt(checkPort));

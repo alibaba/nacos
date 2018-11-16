@@ -25,7 +25,7 @@ public class ServiceView {
     private String name;
     private int clusterCount;
     private int ipCount;
-    private int healthyInstanceCount;
+    private String status;
 
     public String getName() {
         return name;
@@ -51,12 +51,12 @@ public class ServiceView {
         this.ipCount = ipCount;
     }
 
-    public int getHealthyInstanceCount() {
-        return healthyInstanceCount;
+    public String getStatus() {
+        return status;
     }
 
-    public void setHealthyInstanceCount(int healthyInstanceCount) {
-        this.healthyInstanceCount = healthyInstanceCount;
+    public void setStatus(String status) {
+        this.status = status;
     }
 
     @Override
