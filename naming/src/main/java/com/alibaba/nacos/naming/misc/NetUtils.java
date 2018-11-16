@@ -28,17 +28,16 @@ import static com.alibaba.nacos.common.util.SystemUtils.PREFER_HOSTNAME_OVER_IP;
  */
 public class NetUtils {
 
-    private static String localIpAddress = null;
+    private static String serverAddress = null;
 
-    public static String localIP() {
     public static String localServer() {
         try {
-            if (StringUtils.isBlank(localIpAddress)) {
-                localIpAddress = InetAddress.getLocalHost().getHostAddress();
+            if (StringUtils.isNotBlank(serverAddress)) {
+                return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
             }
-            return localIpAddress + ":" + RunningConfig.getServerPort();
+
             InetAddress inetAddress = InetAddress.getLocalHost();
-            String serverAddress = inetAddress.getHostAddress();
+            serverAddress = inetAddress.getHostAddress();
             if (PREFER_HOSTNAME_OVER_IP) {
                 if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
                     serverAddress = inetAddress.getHostName();
