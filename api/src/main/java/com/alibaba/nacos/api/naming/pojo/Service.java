@@ -39,7 +39,7 @@ public class Service {
     private String app;
 
     /**
-     * Service group is meant to classify services into different sets.
+     * Service group which is meant to classify services into different sets.
      */
     private String group;
 
@@ -48,11 +48,11 @@ public class Service {
      */
     private String healthCheckMode;
 
-    private Map<String, String> metadata = new HashMap<String, String>();
-
     public Service(String name) {
         this.name = name;
     }
+
+    private Map<String, String> metadata = new HashMap<String, String>();
 
     public String getName() {
         return name;

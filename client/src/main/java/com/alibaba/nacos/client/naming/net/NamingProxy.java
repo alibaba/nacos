@@ -161,8 +161,12 @@ public class NamingProxy {
         params.put("enable", String.valueOf(instance.isEnabled()));
         params.put("healthy", String.valueOf(instance.isHealthy()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
-        params.put("serviceName", serviceName);
-        params.put("clusterName", instance.getClusterName());
+        if (instance.getService() == null) {
+            params.put("serviceName", serviceName);
+        } else {
+            params.put("service", JSON.toJSONString(instance.getService()));
+        }
+        params.put("cluster", JSON.toJSONString(instance.getCluster()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, "PUT");
     }

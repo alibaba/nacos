@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -29,7 +30,9 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -42,18 +45,17 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SelectInstances_ITCase {
 
     private NamingService naming;
     @LocalServerPort
     private int port;
-
     @Before
-    public void init() throws Exception {
+    public void init() throws Exception{
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
     }
 
@@ -91,9 +93,23 @@ public class SelectInstances_ITCase {
 //        }
     }
 
+    @Test
+    public void deregister() throws NacosException, InterruptedException {
+
+        naming = NamingFactory.createNamingService("11.163.128.34:8848");
+        String serviceName = "dungu.test.23";
+
+//        Thread.sleep(15000L);
+        System.out.println(naming.selectInstances(serviceName, true));
+
+
+//        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
+    }
+
+
+
     /**
      * 获取所有健康的Instance
-     *
      * @throws Exception
      */
     @Test
@@ -107,7 +123,7 @@ public class SelectInstances_ITCase {
 
         List<Instance> instances = naming.selectInstances(serviceName, true);
 
-        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals(instances.size(), 1);
 
 
         Instance instanceNotH = null;
@@ -125,7 +141,6 @@ public class SelectInstances_ITCase {
 
     /**
      * 获取所有不健康的Instance
-     *
      * @throws Exception
      */
     @Test
@@ -139,7 +154,7 @@ public class SelectInstances_ITCase {
         List<Instance> instances = naming.selectInstances(serviceName, false);
 
         TimeUnit.SECONDS.sleep(2);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(instances.size(), 2);
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
@@ -148,7 +163,6 @@ public class SelectInstances_ITCase {
 
     /**
      * 获取指定cluster中（单个、多个）所有健康的Instance
-     *
      * @throws Exception
      */
     @Test
@@ -170,7 +184,6 @@ public class SelectInstances_ITCase {
 
     /**
      * 获取指定cluster中（单个、多个）不所有健康的Instance
-     *
      * @throws Exception
      */
     @Test
@@ -189,181 +202,4 @@ public class SelectInstances_ITCase {
 
         Assert.assertTrue(verifyInstanceList(instances, instancesGet));
     }
-
-
-    /**
-     * 获取权重不为0的Instance
-     *
-     * @throws Exception
-     */
-    @Test
-    public void selectAllWeightedInstances() throws Exception {
-        String serviceName = randomDomainName();
-        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
-        naming.registerInstance(serviceName, "1.1.1.1", 9090);
-
-        TimeUnit.SECONDS.sleep(10);
-
-        List<Instance> instances = naming.getAllInstances(serviceName);
-
-        Assert.assertEquals(instances.size(), 2);
-
-        instances = naming.selectInstances(serviceName, true);
-
-        Assert.assertEquals(2, instances.size());
-
-        instances.get(0).setWeight(0);
-
-        instances = naming.selectInstances(serviceName, true);
-
-        Assert.assertEquals(1, instances.size());
-
-        Instance instanceNotH = null;
-        List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
-        for (Instance instance : instancesGet) {
-            if (!instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-
-                instanceNotH = instance;
-            }
-        }
-
-        instancesGet.remove(instanceNotH);
-
-        Assert.assertTrue(verifyInstanceList(instances, instancesGet));
-    }
-
-
-    /**
-     * 获取指定cluster中（单个、多个）所有权重不为0的Instance
-     *
-     * @throws Exception
-     */
-    @Test
-    public void selectAllWeightedInstancesClusters() throws Exception {
-        String serviceName = randomDomainName();
-        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "1.1.1.1", 9090, "c2");
-
-        TimeUnit.SECONDS.sleep(10);
-
-        List<Instance> instances = naming.getAllInstances(serviceName);
-
-        Assert.assertEquals(instances.size(), 2);
-
-        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), true);
-
-        Assert.assertEquals(2, instances.size());
-
-        instances.get(0).setWeight(0);
-
-        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), true);
-
-        Assert.assertEquals(1, instances.size());
-
-        Instance instanceNotH = null;
-        List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
-        for (Instance instance : instancesGet) {
-            if (!instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-
-                instanceNotH = instance;
-            }
-        }
-
-        instancesGet.remove(instanceNotH);
-
-        Assert.assertTrue(verifyInstanceList(instances, instancesGet));
-    }
-
-
-    /**
-     * 获取所有Enable的Instance
-     *
-     * @throws Exception
-     */
-    @Test
-    public void selectAllEnabledInstances() throws Exception {
-        String serviceName = randomDomainName();
-        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
-        naming.registerInstance(serviceName, "1.1.1.1", 9090);
-
-        TimeUnit.SECONDS.sleep(10);
-
-        List<Instance> instances = naming.getAllInstances(serviceName);
-
-        Assert.assertEquals(instances.size(), 2);
-
-        instances = naming.selectInstances(serviceName, true);
-
-        Assert.assertEquals(2, instances.size());
-
-        instances.get(0).setEnabled(false);
-
-        instances = naming.selectInstances(serviceName, true);
-
-        Assert.assertEquals(1, instances.size());
-
-        Instance instanceNotH = null;
-        List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
-        for (Instance instance : instancesGet) {
-            if (!instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-
-                instanceNotH = instance;
-            }
-        }
-
-        instancesGet.remove(instanceNotH);
-
-        Assert.assertTrue(verifyInstanceList(instances, instancesGet));
-    }
-
-
-    /**
-     * 获取指定cluster中（单个、多个）所有Enabled的Instance
-     *
-     * @throws Exception
-     */
-    @Test
-    public void selectAllEnabledInstancesClusters() throws Exception {
-        String serviceName = randomDomainName();
-        System.out.println(serviceName);
-        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-        naming.registerInstance(serviceName, "1.1.1.1", 9090, "c2");
-
-        TimeUnit.SECONDS.sleep(5);
-
-        List<Instance> instances = naming.getAllInstances(serviceName);
-
-        Assert.assertEquals(instances.size(), 2);
-
-        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), true);
-
-        Assert.assertEquals(2, instances.size());
-
-        instances.get(0).setEnabled(false);
-
-        instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), true);
-
-        TimeUnit.SECONDS.sleep(5);
-
-        Assert.assertEquals(1, instances.size());
-
-        Instance instanceNotH = null;
-        List<Instance> instancesGet = naming.getAllInstances(serviceName);
-
-        for (Instance instance : instancesGet) {
-            if (!instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-
-                instanceNotH = instance;
-            }
-        }
-
-        instancesGet.remove(instanceNotH);
-
-        Assert.assertTrue(verifyInstanceList(instances, instancesGet));
-    }
-
-
 }
