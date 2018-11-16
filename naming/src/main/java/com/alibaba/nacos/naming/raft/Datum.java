@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.naming.raft;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author nacos
  */
@@ -23,5 +25,5 @@ public class Datum {
 
     public String value;
 
-    public long timestamp;
+    public AtomicLong timestamp = new AtomicLong(0L);
 }
