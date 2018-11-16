@@ -38,8 +38,6 @@ public class IpAddress extends Instance implements Comparable {
     private static final double MIN_POSTIVE_WEIGHT_VALUE = 0.01D;
     private static final double MIN_WEIGHT_VALUE = 0.00D;
 
-    private String clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-
     private volatile long lastBeat = System.currentTimeMillis();
 
     @JSONField(serialize = false)
@@ -78,19 +76,19 @@ public class IpAddress extends Instance implements Comparable {
     public IpAddress(String ip, int port) {
         this.setIp(ip);
         this.setPort(port);
-        this.clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
+        this.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
     }
 
     public IpAddress(String ip, int port, String clusterName) {
         this.setIp(ip.trim());
         this.setPort(port);
-        this.clusterName = clusterName;
+        this.setClusterName(clusterName);
     }
 
     public IpAddress(String ip, int port, String clusterName, String tenant, String app) {
         this.setIp(ip.trim());
         this.setPort(port);
-        this.clusterName = clusterName;
+        this.setClusterName(clusterName);
         this.tenant = tenant;
         this.app = app;
     }
@@ -166,7 +164,7 @@ public class IpAddress extends Instance implements Comparable {
 
     @Override
     public String toString() {
-        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER + clusterName;
+        return getDatumKey() + SPLITER + getWeight() + SPLITER + isHealthy() + SPLITER + marked + SPLITER + getClusterName();
     }
 
     public String toJSON() {
@@ -264,14 +262,6 @@ public class IpAddress extends Instance implements Comparable {
         HealthCheckStatus.get(this).checkRT = checkRT;
     }
 
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
     public synchronized void setValid(boolean valid) {
         setHealthy(valid);
     }
@@ -305,7 +295,7 @@ public class IpAddress extends Instance implements Comparable {
     }
 
     public String generateInstanceId() {
-        return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getService().getName();
+        return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
     }
 
     @Override
