@@ -61,7 +61,7 @@ public class ClientBeatProcessor implements Runnable {
             return;
         }
 
-        Loggers.EVT_LOG.info("[CLIENT-BEAT] processing beat: " + rsInfo.toString());
+        Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: " + rsInfo.toString());
 
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
@@ -74,7 +74,7 @@ public class ClientBeatProcessor implements Runnable {
         for (IpAddress ipAddress: ipAddresses) {
             if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
                 processed = true;
-                Loggers.EVT_LOG.info("[CLIENT-BEAT] refresh beat: " + rsInfo.toString());
+                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: " + rsInfo.toString());
                 ipAddress.setLastBeat(System.currentTimeMillis());
                 if (!ipAddress.isMarked()) {
                     if (!ipAddress.isValid()) {

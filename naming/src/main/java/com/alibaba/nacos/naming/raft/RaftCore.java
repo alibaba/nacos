@@ -418,8 +418,7 @@ public class RaftCore {
 
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
-        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " +
-                local.term + ", data1:" + RaftCore.datums.get(datum.key) + ", data2:" + datum.value);
+        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);
     }
 
     public static void onDelete(JSONObject params) throws Exception {

@@ -449,7 +449,7 @@
         <appender-ref ref="async-naming-server"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.raft" additivity="false">
-        <level value="DEBUG"/>
+        <level value="INFO"/>
         <appender-ref ref="async-naming-raft"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.event" additivity="false">
