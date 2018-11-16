@@ -12,8 +12,7 @@
  */
 
 import React from 'react';
-import {Router, Route, Switch} from 'dva/router';
-import './globalLib';
+import { Router, Route, Switch } from 'dva/router';
 import './lib.js';
 import App from './containers/App';
 import Namespace from './pages/NameSpace';
@@ -29,24 +28,23 @@ import ConfigurationManagement from './pages/ConfigurationManagement/Configurati
 import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 
-function RouterConfig({history}) {
-    window.hashHistory = history;
+function RouterConfig({ history }) {
     return (
         <Router history={history}>
             <Switch>
-                <App>
-                    <Route path="/Namespace" component={Namespace}/>
-                    <Route path="/Newconfig" component={Newconfig}/>
-                    <Route path="/Configsync" component={Configsync}/>
-                    <Route path="/Configdetail" component={Configdetail}/>
-                    <Route path="/Configeditor" component={Configeditor}/>
-                    <Route path="/HistoryDetail" component={HistoryDetail}/>
-                    <Route path="/ConfigRollback" component={ConfigRollback}/>
-                    <Route path="/HistoryRollback" component={HistoryRollback}/>
-                    <Route path="/ListeningToQuery" component={ListeningToQuery}/>
-                    <Route path="/ConfigurationManagement" component={ConfigurationManagement}/>
-                    <Route path="/ServiceManagement" component={ServiceList}/>
-                    <Route path="/ServiceDetail" component={ServiceDetail}/>
+                <App history={history}>
+                    <Route path="/Namespace" component={Namespace} />
+                    <Route path="/Newconfig" component={Newconfig} />
+                    <Route path="/Configsync" component={Configsync} />
+                    <Route path="/Configdetail" component={Configdetail} />
+                    <Route path="/Configeditor" component={Configeditor} />
+                    <Route path="/HistoryDetail" component={HistoryDetail} />
+                    <Route path="/ConfigRollback" component={ConfigRollback} />
+                    <Route path="/HistoryRollback" component={HistoryRollback} />
+                    <Route path="/ListeningToQuery" component={ListeningToQuery} />
+                    <Route path="/ConfigurationManagement" component={ConfigurationManagement} />
+                    <Route path="/ServiceManagement" component={ServiceList} />
+                    <Route path="/ServiceDetail" component={ServiceDetail} />
                 </App>
             </Switch>
         </Router>

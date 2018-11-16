@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="10 seconds">
 
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>utf8</charset>
+        </encoder>
+    </appender>
+
     <appender name="naming-server"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/naming-server.log</file>
@@ -539,6 +546,31 @@
     <logger name="com.alibaba.nacos.config.startLog" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="startLog"/>
+    </logger>
+
+    <logger name="org.springframework">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+
+    <logger name="org.apache.catalina.startup.DigesterFactory">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+
+    <logger name="org.apache.catalina.util.LifecycleBase">
+        <appender-ref ref="CONSOLE"/>
+        <level value="ERROR"/>
+    </logger>
+
+    <logger name="org.apache.coyote.http11.Http11NioProtocol">
+        <appender-ref ref="CONSOLE"/>
+        <level value="WARN"/>
+    </logger>
+
+    <logger name="org.apache.tomcat.util.net.NioSelectorPool">
+        <appender-ref ref="CONSOLE"/>
+        <level value="WARN"/>
     </logger>
 
     <root>

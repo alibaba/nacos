@@ -67,8 +67,7 @@ public class MergeTaskProcessor implements TaskProcessor {
 						PAGE_SIZE);
 				if (page != null) {
 					datumList.addAll(page.getPageItems());
-					log.info("[merge-query] {}, {}, size/total={}/{}",
-							new Object[] { dataId, group, datumList.size(), rowCount });
+                    log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(), rowCount);
 				}
 			}
 
@@ -79,9 +78,8 @@ public class MergeTaskProcessor implements TaskProcessor {
 
                 persistService.insertOrUpdate(null, null, cf, time, null);
 
-                log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", new Object[] {
-                        dataId, group, datumList.size(), cf.getContent().length(), cf.getMd5(),
-                        ContentUtils.truncateContent(cf.getContent()) });
+                log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group, datumList.size(),
+                    cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()));
 
                 ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), SystemConfig.LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_MERGE, cf.getContent());
             }

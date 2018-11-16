@@ -44,7 +44,7 @@ public class DiskUtil {
 	static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
 	static final String TENANT_BASE_DIR = File.separator + "data" + File.separator + "tenant-config-data";
 	static final String BETA_DIR = File.separator + "data" + File.separator + "beta-data";
-	static final String TENANT_BETA_DIR = File.separator + "data " + File.separator + "tenant-beta-data";
+	static final String TENANT_BETA_DIR = File.separator + "data" + File.separator + "tenant-beta-data";
 	static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
 	static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
 	static String SERVERLIST_DIR = File.separator + "conf";

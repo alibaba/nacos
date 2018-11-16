@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.3.0</tag>
+        <tag>nacos-all-0.4.0</tag>
     </scm>
 
     <mailingLists>
@@ -228,6 +228,7 @@
                     <excludes>
                         <exclude>.travis.yml</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
+                        <exclude>CODE_OF_CONDUCT.md</exclude>
                         <exclude>CHANGELOG.md</exclude>
                         <exclude>style/codeStyle.md</exclude>
                         <exclude>REPORTING-BUGS.md</exclude>

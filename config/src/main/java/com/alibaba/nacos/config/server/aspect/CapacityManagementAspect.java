@@ -425,9 +425,7 @@ public class CapacityManagementAspect {
 		OVER_CLUSTER_QUOTA("超过集群配置个数上限", 429),
 		OVER_GROUP_QUOTA("超过该Group配置个数上限", 429),
 		OVER_TENANT_QUOTA("超过该租户配置个数上限", 429),
-		OVER_MAX_SIZE("超过配置的内容大小上限", 429),
-		OVER_MAX_AGGR_COUNT("超过聚合子配置个数上限", 429),
-		OVER_MAX_AGGR_SIZE("超过聚合数据子配置的内容大小上限", 429);
+		OVER_MAX_SIZE("超过配置的内容大小上限", 429);
 		public final String description;
 		public final int status;
 

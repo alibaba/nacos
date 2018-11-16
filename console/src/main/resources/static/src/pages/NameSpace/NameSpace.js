@@ -17,6 +17,7 @@ import RegionGroup from '../../components/RegionGroup';
 import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
+import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
 import './index.less';
 
 /*****************************此行为标记行, 请勿删和修改此行, 文件和组件依赖请写在此行上面, 主体代码请写在此行下面的class中*****************************/
@@ -36,10 +37,10 @@ class NameSpace extends React.Component {
     }
     getNameSpaces(delayTime = 2000) {
         let self = this;
-        // let serverId = window.getParams('serverId') || 'center';
+        // let serverId = getParams('serverId') || 'center';
         self.openLoading();
         setTimeout(() => {
-            window.request({
+            request({
                 type: 'get',
                 beforeSend: function () { },
                 url: `/nacos/v1/console/namespaces`,
@@ -61,8 +62,8 @@ class NameSpace extends React.Component {
                         });
                     } else {
                         Dialog.alert({
-                            language: window.pageLanguage || 'zh-cn',
-                            title: window.aliwareIntl.get('com.alibaba.nacos.page.namespace.prompt'),
+                            language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                            title: aliwareIntl.get('com.alibaba.nacos.page.namespace.prompt'),
                             content: res.message
                         });
                     }
@@ -94,43 +95,43 @@ class NameSpace extends React.Component {
 
     detailNamespace(record) {
         let namespace = record.namespace; //获取ak,sk
-        window.request({
+        request({
             url: `/nacos/v1/console/namespaces?show=all&namespaceId=${namespace}`,
             beforeSend: () => {
                 this.openLoading();
             },
             success: res => {
-            	if (res !== null) {
+                if (res !== null) {
                     Dialog.alert({
                         style: { width: "500px" },
                         needWrapper: false,
-                        language: window.pageLanguage || 'zh-cn',
-                        title: window.aliwareIntl.get('nacos.page.namespace.Namespace_details'),
+                        language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                        title: aliwareIntl.get('nacos.page.namespace.Namespace_details'),
                         content: <div>
                             <div style={{ marginTop: '10px' }}>
                                 <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>
+                                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>
                                     <span style={{ color: '#c7254e' }}>
                                         {res.namespaceShowName}
                                     </span>
                                 </p>
                                 <p>
-                                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>
+                                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>
                                     <span style={{ color: '#c7254e' }}>
                                         {res.namespace}
                                     </span>
                                 </p>
                                 <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')}</span>
-                                <span style={{ color: '#c7254e' }}>
-                                {res.configCount} / {res.quota}
-                                </span>
+                                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')}</span>
+                                    <span style={{ color: '#c7254e' }}>
+                                        {res.configCount} / {res.quota}
+                                    </span>
                                 </p>
                                 <p>
-                                <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.configdetail.Description')}</span>
-                                <span style={{ color: '#c7254e' }}>
-                                {res.namespaceDesc}
-                                </span>
+                                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.configdetail.Description')}</span>
+                                    <span style={{ color: '#c7254e' }}>
+                                        {res.namespaceDesc}
+                                    </span>
                                 </p>
                             </div>
                         </div>
@@ -144,46 +145,46 @@ class NameSpace extends React.Component {
     }
 
     removeNamespace(record) {
-        // let serverId = window.getParams('serverId') || 'center';
+        // let serverId = getParams('serverId') || 'center';
         Dialog.confirm({
-            title: window.aliwareIntl.get('nacos.page.namespace.remove_the_namespace'),
+            title: aliwareIntl.get('nacos.page.namespace.remove_the_namespace'),
             content: <div style={{ marginTop: '-20px' }}>
-                <h3>{window.aliwareIntl.get('nacos.page.namespace.sure_you_want_to_delete_the_following_namespaces?')}</h3>
+                <h3>{aliwareIntl.get('nacos.page.namespace.sure_you_want_to_delete_the_following_namespaces?')}</h3>
                 <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_name')}</span>
                     <span style={{ color: '#c7254e' }}>
                         {record.namespaceShowName}
                     </span>
                 </p>
                 <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>{window.aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{aliwareIntl.get('nacos.page.namespace.namespace_ID')}</span>
                     <span style={{ color: '#c7254e' }}>
                         {record.namespace}
                     </span>
                 </p>
             </div>,
-            language: window.pageLanguage || 'zh-cn',
+            language: aliwareIntl.currentLanguageCode || 'zh-cn',
             onOk: () => {
-            	let url = `/nacos/v1/console/namespaces?namespaceId=${record.namespace}`;
-                window.request({
+                let url = `/nacos/v1/console/namespaces?namespaceId=${record.namespace}`;
+                request({
                     url: url,
                     type: 'delete',
                     success: res => {
                         let _payload = {};
-                        _payload.title = window.aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.configuration_management');
+                        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.configuration_management');
                         if (res === true) {
-                            let urlnamespace = window.getParams('namespace');
+                            let urlnamespace = getParams('namespace');
                             if (record.namespace === urlnamespace) {
-                                window.setParams('namespace', this.state.defaultNamespace);
+                                setParams('namespace', this.state.defaultNamespace);
                             }
                             Dialog.confirm({
-                                language: window.pageLanguage || 'zh-cn',
-                                content: window.aliwareIntl.get('nacos.page.namespace._Remove_the_namespace_success'),
-                                title: window.aliwareIntl.get('nacos.page.namespace.deleted_successfully')
+                                language: aliwareIntl.currentLanguageCode || 'zh-cn',
+                                content: aliwareIntl.get('nacos.page.namespace._Remove_the_namespace_success'),
+                                title: aliwareIntl.get('nacos.page.namespace.deleted_successfully')
                             });
                         } else {
                             Dialog.confirm({
-                                language: window.pageLanguage || 'zh-cn',
+                                language: aliwareIntl.currentLanguageCode || 'zh-cn',
                                 content: res.message,
                                 title: "删除失败"
                             });
@@ -197,7 +198,7 @@ class NameSpace extends React.Component {
     }
 
     refreshNameSpace() {
-        window.request({
+        request({
             type: 'get',
             url: `/nacos/v1/console/namespaces`,
             success: res => {
@@ -219,15 +220,15 @@ class NameSpace extends React.Component {
         this.refs['editgroup'].openDialog(record);
     }
     renderOption(value, index, record) {
-        let _delinfo = <a onClick={this.removeNamespace.bind(this, record)} style={{ marginRight: 10 }}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.delete')}</a>;
+        let _delinfo = <a onClick={this.removeNamespace.bind(this, record)} style={{ marginRight: 10 }}>{aliwareIntl.get('com.alibaba.nacos.page.namespace.delete')}</a>;
         if (record.type === 1 || record.type === 0) {
-            _delinfo = <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled={true}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.delete')}</span>;
+            _delinfo = <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled={true}>{aliwareIntl.get('com.alibaba.nacos.page.namespace.delete')}</span>;
         }
-        let _detailinfo = <a onClick={this.detailNamespace.bind(this, record)} style={{ marginRight: 10 }}>{window.aliwareIntl.get('nacos.page.namespace.details')}</a>;
+        let _detailinfo = <a onClick={this.detailNamespace.bind(this, record)} style={{ marginRight: 10 }}>{aliwareIntl.get('nacos.page.namespace.details')}</a>;
 
-        let _editinfo = <a onClick={this.openToEdit.bind(this, record)}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.edit')}</a>;
+        let _editinfo = <a onClick={this.openToEdit.bind(this, record)}>{aliwareIntl.get('com.alibaba.nacos.page.namespace.edit')}</a>;
         if (record.type === 0 || record.type === 1) {
-            _editinfo = <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled={true}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.edit')}</span>;
+            _editinfo = <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled={true}>{aliwareIntl.get('com.alibaba.nacos.page.namespace.edit')}</span>;
         }
         return <div>
             {_detailinfo}
@@ -242,7 +243,7 @@ class NameSpace extends React.Component {
 
         let name = record.namespaceShowName;
         if (record.type === 0) {
-            name = window.aliwareIntl.get('com.alibaba.nacos.page.namespace.public');
+            name = aliwareIntl.get('com.alibaba.nacos.page.namespace.public');
         }
         return <div>{name}</div>;
     }
@@ -250,27 +251,27 @@ class NameSpace extends React.Component {
         return <div>{value} / {record.quota}</div>;
     }
     render() {
-        const pubnodedata = window.aliwareIntl.get('pubnodata');
+        const pubnodedata = aliwareIntl.get('pubnodata');
 
         const locale = {
             empty: pubnodedata
         };
         return <div style={{ padding: 10 }} className='clearfix'>
-            <RegionGroup left={window.aliwareIntl.get('nacos.page.namespace.Namespace')} />
+            <RegionGroup left={aliwareIntl.get('nacos.page.namespace.Namespace')} />
             <div className="fusion-demo">
                 <Loading shape="flower" tip="Loading..." color="#333" style={{ width: '100%' }} visible={this.state.loading}>
                     <div>
                         <div style={{ textAlign: 'right', marginBottom: 10 }}>
 
-                            <Button type="primary" style={{ marginRight: 0, marginTop: 10 }} onClick={this.addNameSpace.bind(this)}>{window.aliwareIntl.get('com.alibaba.nacos.page.namespace.add')}</Button>
+                            <Button type="primary" style={{ marginRight: 0, marginTop: 10 }} onClick={this.addNameSpace.bind(this)}>{aliwareIntl.get('com.alibaba.nacos.page.namespace.add')}</Button>
                         </div>
                         <div>
-                            <Table dataSource={this.state.dataSource} locale={locale} language={window.aliwareIntl.currentLanguageCode}>
-                                <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.namespace.namespace_names')} dataIndex="namespaceShowName" cell={this.renderName.bind(this)} />
-                                <Table.Column title={window.aliwareIntl.get('nacos.page.namespace.namespace_number')} dataIndex="namespace" />
-                                <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')} dataIndex="configCount" cell={this.renderConfigCount.bind(this)} />
+                            <Table dataSource={this.state.dataSource} locale={locale} language={aliwareIntl.currentLanguageCode}>
+                                <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.namespace.namespace_names')} dataIndex="namespaceShowName" cell={this.renderName.bind(this)} />
+                                <Table.Column title={aliwareIntl.get('nacos.page.namespace.namespace_number')} dataIndex="namespace" />
+                                <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')} dataIndex="configCount" cell={this.renderConfigCount.bind(this)} />
 
-                                <Table.Column title={window.aliwareIntl.get('com.alibaba.nacos.page.namespace.operation')} dataIndex="time" cell={this.renderOption.bind(this)} />
+                                <Table.Column title={aliwareIntl.get('com.alibaba.nacos.page.namespace.operation')} dataIndex="time" cell={this.renderOption.bind(this)} />
                             </Table>
                         </div>
                     </div>

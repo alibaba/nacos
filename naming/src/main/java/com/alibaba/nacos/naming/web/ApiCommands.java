@@ -367,8 +367,9 @@ public class ApiCommands {
         boolean isUseSpecifiedURL = Boolean.parseBoolean(BaseServlet.optional(request, "isUseSpecifiedURL", "false"));
         String envAndSite = BaseServlet.optional(request, "envAndSites", StringUtils.EMPTY);
         boolean resetWeight = Boolean.parseBoolean(BaseServlet.optional(request, "resetWeight", "false"));
-        boolean enableHealthCheck = Boolean.parseBoolean(BaseServlet.optional(request, "enableHealthCheck", "false"));
-        boolean enable = Boolean.parseBoolean(BaseServlet.optional(request, "enable", "true"));
+        boolean enableHealthCheck = Boolean.parseBoolean(BaseServlet.optional(request, "enableHealthCheck", "true"));
+        boolean enable = Boolean.parseBoolean(BaseServlet.optional(request, "serviceEnabled", "true"));
+
         String disabledSites = BaseServlet.optional(request, "disabledSites", StringUtils.EMPTY);
         boolean eanbleClientBeat = Boolean.parseBoolean(BaseServlet.optional(request, "enableClientBeat", "true"));
         String clusterName = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
@@ -726,7 +727,7 @@ public class ApiCommands {
             dom.setEnableHealthCheck(Boolean.parseBoolean(enableHealthCheck));
         }
 
-        String enabled = BaseServlet.optional(request, "enabled", StringUtils.EMPTY);
+        String enabled = BaseServlet.optional(request, "serviceEnabled", "true");
         if (!StringUtils.isEmpty(enabled)) {
             dom.setEnabled(Boolean.parseBoolean(enabled));
         }

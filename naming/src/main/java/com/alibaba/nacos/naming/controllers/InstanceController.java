@@ -102,7 +102,7 @@ public class InstanceController extends ApiCommands {
             mockHttpRequest.addParameter("cluster", StringUtils.EMPTY);
             mockHttpRequest.addParameter("defIPPort", cluster.getString("defaultPort"));
             mockHttpRequest.addParameter("defCkport", cluster.getString("defaultCheckPort"));
-            mockHttpRequest.addParameter("ipPort4Check", cluster.getString("userIPPort4Check"));
+            mockHttpRequest.addParameter("ipPort4Check", cluster.getString("useIPPort4Check"));
             mockHttpRequest.addParameter("clusterMetadata", cluster.getString("metadata"));
 
         }
