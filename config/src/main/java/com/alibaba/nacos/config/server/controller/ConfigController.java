@@ -45,6 +45,8 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+
 /**
  * 软负载客户端发布数据专用控制器
  * 
@@ -138,7 +140,7 @@ public class ConfigController {
 			EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
 		}
 		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-				SystemConfig.LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+				LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 
 		return true;
 	}

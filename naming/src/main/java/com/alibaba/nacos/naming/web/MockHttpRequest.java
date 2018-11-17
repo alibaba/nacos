@@ -39,6 +39,19 @@ public class MockHttpRequest implements HttpServletRequest {
         return request;
     }
 
+    public static MockHttpRequest buildRequest2(Map<String, String> params) {
+
+        MockHttpRequest request = new MockHttpRequest();
+        Map<String, String[]> arrayMap = new HashMap<>(16);
+        for (String key : params.keySet()) {
+            arrayMap.put(key, new String[]{params.get(key)});
+        }
+        request.params = arrayMap;
+        request.params.put("encoding", new String[]{"UTF-8"});
+
+        return request;
+    }
+
     public void addParameter(String key, String value) {
         params.put(key, new String[]{value});
     }

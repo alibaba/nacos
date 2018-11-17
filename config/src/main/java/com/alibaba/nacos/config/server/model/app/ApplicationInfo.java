@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.model.app;
 
-import com.alibaba.nacos.config.server.utils.SystemConfig;
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * app info
@@ -92,8 +92,8 @@ public class ApplicationInfo {
 	}
 
 	public boolean canCurrentServerOwnTheLock() {
-		boolean currentOwnerIsMe = subInfoCollectLockOwner==null? true:SystemConfig.LOCAL_IP
-				.equals(subInfoCollectLockOwner);
+		boolean currentOwnerIsMe = subInfoCollectLockOwner == null || LOCAL_IP
+			.equals(subInfoCollectLockOwner);
 
 		if (currentOwnerIsMe) {
 			return true;
@@ -106,7 +106,7 @@ public class ApplicationInfo {
 	}
 	
 	public String currentServer(){
-		return SystemConfig.LOCAL_IP;
+		return LOCAL_IP;
 	}
 
 }

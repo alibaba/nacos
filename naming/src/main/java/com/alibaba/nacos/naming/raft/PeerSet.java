@@ -66,7 +66,7 @@ public class PeerSet {
         if (STANDALONE_MODE) {
             RaftPeer local = local();
             local.state = RaftPeer.State.LEADER;
-            local.voteFor = NetUtils.localIP();
+            local.voteFor = NetUtils.localServer();
 
         }
     }
@@ -87,7 +87,10 @@ public class PeerSet {
             return true;
         }
 
-        Loggers.RAFT.info("[IS LEADER] leader: " + leader.ip + ", ip: " + ip);
+        if (leader == null) {
+            Loggers.RAFT.warn("[IS LEADER] no leader is available now!");
+            return false;
+        }
 
         return StringUtils.equals(leader.ip, ip);
     }
@@ -175,9 +178,9 @@ public class PeerSet {
     }
 
     public RaftPeer local() {
-        RaftPeer peer = peers.get(NetUtils.localIP());
+        RaftPeer peer = peers.get(NetUtils.localServer());
         if (peer == null) {
-            throw new IllegalStateException("unable to find local peer: " + NetUtils.localIP() + ", all peers: "
+            throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
                     + Arrays.toString(peers.keySet().toArray()));
         }
 
