@@ -24,6 +24,14 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <appender name="async-naming-server" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="naming-server"/>
+    </appender>
+
     <appender name="naming-raft"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/naming-raft.log</file>
@@ -40,6 +48,14 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <appender name="async-naming-raft" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="naming-raft"/>
+    </appender>
+
     <appender name="naming-event"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/naming-event.log</file>
@@ -56,6 +72,14 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <appender name="async-naming-event" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="naming-event"/>
+    </appender>
+
     <appender name="naming-push"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/naming-push.log</file>
@@ -392,24 +416,24 @@
             <charset>GBK</charset>
         </encoder>
     </appender>
-    
+
     <appender name="startLog"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/config-server.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${nacos.home}/logs/config-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>50MB</maxFileSize>  
+            <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-			<charset>GBK</charset>
+            <charset>GBK</charset>
         </encoder>
     </appender>
-    
+
     <appender name="rootFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${nacos.home}/logs/nacos.log</file>
@@ -429,15 +453,15 @@
 
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
         <level value="INFO"/>
-        <appender-ref ref="naming-server"/>
+        <appender-ref ref="async-naming-server"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.raft" additivity="false">
-        <level value="DEBUG"/>
-        <appender-ref ref="naming-raft"/>
+        <level value="INFO"/>
+        <appender-ref ref="async-naming-raft"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.event" additivity="false">
         <level value="INFO"/>
-        <appender-ref ref="naming-event"/>
+        <appender-ref ref="async-naming-event"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.push" additivity="false">
         <level value="INFO"/>
@@ -518,35 +542,42 @@
         <level value="INFO"/>
         <appender-ref ref="appCollectorLog"/>
     </logger>
-    
+
     <logger name="com.alibaba.nacos.config.startLog" additivity="false">
-        <level value="INFO" />
-        <appender-ref ref="startLog" />
+        <level value="INFO"/>
+        <appender-ref ref="startLog"/>
     </logger>
 
-    <logger name="org.springframework">
+    <springProfile name="standalone">
+        <logger name="org.springframework">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </logger>
+
+        <logger name="org.apache.catalina.startup.DigesterFactory">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </logger>
+
+        <logger name="org.apache.catalina.util.LifecycleBase">
+            <appender-ref ref="CONSOLE"/>
+            <level value="ERROR"/>
+        </logger>
+
+        <logger name="org.apache.coyote.http11.Http11NioProtocol">
+            <appender-ref ref="CONSOLE"/>
+            <level value="WARN"/>
+        </logger>
+
+        <logger name="org.apache.tomcat.util.net.NioSelectorPool">
+            <appender-ref ref="CONSOLE"/>
+            <level value="WARN"/>
+        </logger>
+    </springProfile>
+
+    <logger name="com.alibaba.nacos.core.listener.StartingSpringApplicationRunListener">
         <appender-ref ref="CONSOLE"/>
         <level value="INFO"/>
-    </logger>
-
-    <logger name="org.apache.catalina.startup.DigesterFactory">
-        <appender-ref ref="CONSOLE"/>
-        <level value="INFO"/>
-    </logger>
-
-    <logger name="org.apache.catalina.util.LifecycleBase">
-        <appender-ref ref="CONSOLE"/>
-        <level value="ERROR"/>
-    </logger>
-
-    <logger name="org.apache.coyote.http11.Http11NioProtocol">
-        <appender-ref ref="CONSOLE"/>
-        <level value="WARN"/>
-    </logger>
-
-    <logger name="org.apache.tomcat.util.net.NioSelectorPool">
-        <appender-ref ref="CONSOLE"/>
-        <level value="WARN"/>
     </logger>
 
     <root>

@@ -17,13 +17,12 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +30,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.common.util.SystemUtils.CLUSTER_CONF_FILE_PATH;
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 
 /**
  * @author nacos
@@ -109,7 +110,7 @@ public class NamingProxy {
 
             if (STANDALONE_MODE) {
                 servers = new ArrayList<>();
-                servers.add(InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort());
+                servers.add(NetUtils.localServer());
                 return;
             }
 
@@ -157,9 +158,9 @@ public class NamingProxy {
         List<String> result = new ArrayList<>();
         // read nacos config if necessary.
         try {
-            result = FileUtils.readLines(UtilsAndCommons.getConfFile(), "UTF-8");
+            result = readClusterConf();
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to get config: " + UtilsAndCommons.getConfFilePath(), e);
+            Loggers.SRV_LOG.warn("failed to get config: " + CLUSTER_CONF_FILE_PATH, e);
         }
 
         Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST1", result);
