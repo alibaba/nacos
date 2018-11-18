@@ -14,8 +14,9 @@
 import React from 'react';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import { Field, Form, Grid, Input, Loading, Pagination, Select, Table } from '@alifd/next';
+
+import './index.scss';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;

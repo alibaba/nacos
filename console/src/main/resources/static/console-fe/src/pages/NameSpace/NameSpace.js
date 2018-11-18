@@ -18,7 +18,7 @@ import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
 import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
-import './index.less';
+import './index.scss';
 
 class NameSpace extends React.Component {
   constructor(props) {

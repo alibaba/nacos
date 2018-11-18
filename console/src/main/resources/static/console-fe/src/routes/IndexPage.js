@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { connect } from 'dva';
-import styles from './IndexPage.css';
+import styles from './IndexPage.scss';
 
 function IndexPage() {
   return (

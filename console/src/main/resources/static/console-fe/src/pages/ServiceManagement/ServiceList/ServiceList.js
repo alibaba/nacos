@@ -29,7 +29,7 @@ import {
 } from '@alifd/next';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import { I18N, STATUS_COLOR_MAPPING } from './constant';
-import './ServiceList.less';
+import './ServiceList.scss';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;

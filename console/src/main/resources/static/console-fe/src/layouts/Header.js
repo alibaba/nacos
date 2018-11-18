@@ -16,7 +16,7 @@ import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import siteConfig from '../config';
 import { getLink } from '../utils/nacosutil';
-import './index.css';
+import './index.scss';
 
 const languageSwitch = [
   {

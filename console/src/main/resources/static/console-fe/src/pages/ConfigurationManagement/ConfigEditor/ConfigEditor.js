@@ -16,7 +16,7 @@ import $ from 'jquery';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
-import './index.less';
+import './index.scss';
 import {
   Balloon,
   Button,
