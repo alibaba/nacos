@@ -15,7 +15,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Pagination, Transfer } from '@alifd/next';
 import { request, aliwareIntl } from '../../globalLib';
-import './index.less';
+import './index.scss';
 
 class BatchHandle extends React.Component {
   static propTypes = {

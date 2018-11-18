@@ -197,9 +197,5 @@ window.addEventListener('resize', () => {
 // 判断是否是国际站国际用户
 window.isIntel = function() {
   const { host } = window.location;
-  if (host.indexOf('alibabacloud.com') !== -1) {
-    return true;
-  } else {
-    return false;
-  }
+  return host.indexOf('alibabacloud.com') !== -1;
 };

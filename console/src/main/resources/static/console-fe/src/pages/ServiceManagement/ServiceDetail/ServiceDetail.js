@@ -19,7 +19,7 @@ import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
 import queryString from 'query-string';
 import { I18N } from './constant';
-import './ServiceDetail.less';
+import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
 const pageFormLayout = {

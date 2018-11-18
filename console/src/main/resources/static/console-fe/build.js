@@ -16,9 +16,9 @@ const cp = require('child_process');
 const fs = require('fs');
 const path = require('path');
 // 默认打包存放地址
-const buildDir = path.join(__dirname, 'build');
+const buildDir = path.join(__dirname, '../dist');
 // 打包后文件存放地址
-const targetDir = path.join(__dirname, '../');
+const targetDir = path.join(__dirname, '../../');
 
 const spawnAsync = (...args) =>
   new Promise((resolve, reject) => {

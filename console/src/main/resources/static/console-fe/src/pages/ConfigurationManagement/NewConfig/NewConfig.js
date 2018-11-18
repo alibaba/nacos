@@ -15,7 +15,6 @@ import React from 'react';
 import $ from 'jquery';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import {
   Balloon,
   Button,
@@ -29,6 +28,8 @@ import {
   Select,
   Radio,
 } from '@alifd/next';
+
+import './index.scss';
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;

@@ -12,9 +12,10 @@
  */
 
 import React from 'react';
-import './index.less';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
 import { Button, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
+import { getParams, request, aliwareIntl } from '../../../globalLib';
+
+import './index.scss';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;

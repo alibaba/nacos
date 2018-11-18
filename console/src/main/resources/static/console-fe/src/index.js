@@ -13,8 +13,8 @@
 
 import dva from 'dva';
 import '@alifd/next/dist/next.css';
-import './index.css';
-import './index.less';
+import './index.scss';
+import './index1.scss';
 
 // 1. Initialize
 const app = dva();

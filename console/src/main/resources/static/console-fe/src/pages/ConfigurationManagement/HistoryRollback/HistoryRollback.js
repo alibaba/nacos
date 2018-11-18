@@ -15,7 +15,7 @@ import React from 'react';
 import { Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
+import './index.scss';
 
 class HistoryRollback extends React.Component {
   constructor(props) {

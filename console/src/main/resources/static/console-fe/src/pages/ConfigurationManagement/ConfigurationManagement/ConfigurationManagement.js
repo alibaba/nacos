@@ -21,7 +21,7 @@ import CloneDialog from '../../../components/CloneDialog';
 import ImportDialog from '../../../components/ImportDialog';
 import ExportDialog from '../../../components/ExportDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
+import './index.scss';
 import {
   Balloon,
   Button,
