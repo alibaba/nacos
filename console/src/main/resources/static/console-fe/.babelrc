@@ -1,6 +1,5 @@
 {
   "presets": [
-    "env",
     "react-app"
   ],
   "plugins": [

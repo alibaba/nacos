@@ -281,6 +281,7 @@ class ListeningToQuery extends React.Component {
                 borderLeft: '3px solid #09c',
                 margin: 0,
                 marginBottom: 10,
+                fontSize: 16,
               }}
             >
               {aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_results:_query')}

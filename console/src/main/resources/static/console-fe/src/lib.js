@@ -16,15 +16,11 @@ let hasAlert = false;
 
 window.edasprefix = 'acm'; // 固定的edas网关需要的项目名
 
+export const isParentEdas = () =>
+  window.parent && window.parent.location.host.indexOf('edas') !== -1;
+
 window.globalConfig = {
-  isParentEdas() {
-    try {
-      if (window.parent.location.host.indexOf('edas') !== -1) {
-        return true;
-      }
-    } catch (error) {}
-    return false;
-  },
+  isParentEdas,
 };
 
 request.middleWare((_config = {}) => {
@@ -199,3 +195,5 @@ window.isIntel = function() {
   const { host } = window.location;
   return host.indexOf('alibabacloud.com') !== -1;
 };
+
+export default {};
