@@ -13,15 +13,14 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import BatchHandle from '../../../components/BatchHandle';
-import RegionGroup from '../../../components/RegionGroup';
-import ShowCodeing from '../../../components/ShowCodeing';
-import DeleteDialog from '../../../components/DeleteDialog';
-import CloneDialog from '../../../components/CloneDialog';
-import ImportDialog from '../../../components/ImportDialog';
-import ExportDialog from '../../../components/ExportDialog';
+import BatchHandle from 'components/BatchHandle';
+import RegionGroup from 'components/RegionGroup';
+import ShowCodeing from 'components/ShowCodeing';
+import DeleteDialog from 'components/DeleteDialog';
+import CloneDialog from 'components/CloneDialog';
+import ImportDialog from 'components/ImportDialog';
+import ExportDialog from 'components/ExportDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.scss';
 import {
   Balloon,
   Button,
@@ -40,6 +39,8 @@ import {
   Slider,
   Table,
 } from '@alifd/next';
+
+import './index.scss';
 
 const { Panel } = Collapse;
 

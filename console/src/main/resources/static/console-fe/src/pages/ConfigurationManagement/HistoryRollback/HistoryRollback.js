@@ -362,6 +362,7 @@ class HistoryRollback extends React.Component {
                 margin: 0,
                 paddingLeft: 10,
                 borderLeft: '3px solid #09c',
+                fontSize: 16,
               }}
             >
               {aliwareIntl.get('com.alibaba.nacos.page.historyRollback.queryresult')}

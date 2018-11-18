@@ -40,14 +40,14 @@ module.exports = {
       include: [resolve('src')],
     }, {
       test: /\.(js|jsx)$/,
-      exclude: /node_modules/,
+      include: [resolve('src')],
       use: ['babel-loader'],
     }, {
       test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
       loader: 'url-loader',
       options: {
         limit: 10000,
-        name: '/images/[name].[hash:8].[ext]',
+        name: '/img/[name].[hash:8].[ext]',
       },
     }, {
       test: /\.(ttf|woff|svg)$/,
@@ -66,12 +66,10 @@ module.exports = {
       template: './public/index.html',
       minify: !isDev,
     }),
-    new CopyWebpackPlugin([
-      {
-        from: path.resolve(__dirname, '../public'),
-        to: './',
-        ignore: ['index.html'],
-      },
-    ]),
+    new CopyWebpackPlugin([{
+      from: resolve('public'),
+      to: './',
+      ignore: ['index.html'],
+    }]),
   ],
 };

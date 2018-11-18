@@ -62,15 +62,8 @@ class Header extends React.Component {
   }
 
   switchLang() {
-    let language;
-    if (this.state.language === 'zh-cn') {
-      language = 'en-us';
-    } else {
-      language = 'zh-cn';
-    }
-    this.setState({
-      language,
-    });
+    const language = this.state.language === 'zh-cn' ? 'en-us' : 'zh-cn';
+    this.setState({ language });
     this.props.onLanguageChange(language);
   }
 

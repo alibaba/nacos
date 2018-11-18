@@ -17,7 +17,6 @@ import { Button, Card, Form, Loading } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
-import queryString from 'query-string';
 import { I18N } from './constant';
 import './ServiceDetail.scss';
 
@@ -31,7 +30,7 @@ class ServiceDetail extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      serviceName: queryString.parse(props.location.search).name,
+      serviceName: props.location.search.name,
       loading: false,
       currentPage: 1,
       clusters: [],
