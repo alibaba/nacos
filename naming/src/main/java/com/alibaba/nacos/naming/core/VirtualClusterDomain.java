@@ -158,7 +158,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     public void onChange(String key, String value) throws Exception {
 
         if (StringUtils.isEmpty(value)) {
-            Loggers.SRV_LOG.warn("VIPSRV-DOM", "received empty iplist config for dom: " + name);
+            Loggers.SRV_LOG.warn("[VIPSRV-DOM] received empty iplist config for dom: " + name);
+            return;
         }
 
         Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
@@ -302,7 +303,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster);
+                throw new IllegalArgumentException("can not find cluster: " + cluster + ", dom:" + getName());
             }
 
             allIPs.addAll(clusterObj.allIPs());
