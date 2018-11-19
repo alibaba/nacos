@@ -58,7 +58,7 @@ public class DomainsManager {
 
     private final Lock lock = new ReentrantLock();
 
-    private Map<String, Condition> dom2ContionMap = new ConcurrentHashMap<>();
+    private Map<String, Condition> dom2ConditionMap = new ConcurrentHashMap<>();
 
     private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
 
@@ -328,7 +328,9 @@ public class DomainsManager {
 
         for (IpAddress ipAddress : ips) {
             if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                dom.getClusterMap().put(ipAddress.getClusterName(), new Cluster(ipAddress.getClusterName()));
+                Cluster cluster = new Cluster(ipAddress.getClusterName());
+                cluster.setDom(dom);
+                dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: " + ipAddress.getClusterName() + "  not found, ip: " + ipAddress.toJSON()
                         + ", will create new cluster with default configuration.");
             }
@@ -627,7 +629,7 @@ public class DomainsManager {
                     }
 
                     Lock lock = dom2LockMap.get(dom.getName());
-                    Condition condition = dom2ContionMap.get(dom.getName());
+                    Condition condition = dom2ConditionMap.get(dom.getName());
 
                     try {
                         lock.lock();
@@ -666,7 +668,7 @@ public class DomainsManager {
 
     public Condition addCondtion(String domName) {
         Condition condition = dom2LockMap.get(domName).newCondition();
-        dom2ContionMap.put(domName, condition);
+        dom2ConditionMap.put(domName, condition);
         return condition;
     }
 
