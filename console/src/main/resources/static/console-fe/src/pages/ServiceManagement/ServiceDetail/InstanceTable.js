@@ -119,7 +119,7 @@ class InstanceTable extends React.Component {
           />
           <Table.Column
             title={I18N.OPERATION}
-            width={150}
+            width={160}
             cell={(value, index, record) => (
               <div>
                 <Button
