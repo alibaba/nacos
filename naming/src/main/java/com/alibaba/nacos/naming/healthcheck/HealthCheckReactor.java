@@ -47,13 +47,11 @@ public class HealthCheckReactor {
 
     public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
         task.setStartTime(System.currentTimeMillis());
-
         return EXECUTOR.schedule(task, task.getCheckRTNormalized(), TimeUnit.MILLISECONDS);
     }
 
     public static void scheduleCheck(ClientBeatCheckTask task) {
         futureMap.putIfAbsent(task.taskKey(), EXECUTOR.scheduleWithFixedDelay(task, 5000, 5000, TimeUnit.MILLISECONDS));
-//        return EXECUTOR.schedule(task, 5000, TimeUnit.MILLISECONDS);
     }
 
     public static void cancelCheck(ClientBeatCheckTask task) {

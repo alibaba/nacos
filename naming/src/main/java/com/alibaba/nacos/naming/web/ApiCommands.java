@@ -20,8 +20,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
@@ -55,7 +53,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -63,7 +64,6 @@ import java.security.AccessControlException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -563,7 +563,16 @@ public class ApiCommands {
 
             Lock lock = domainsManager.addLock(dom);
             Condition condition = domainsManager.addCondtion(dom);
-            regDom(request);
+            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        regDom(request);
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
+                    }
+                }
+            });
             try {
                 lock.lock();
                 condition.await(5000, TimeUnit.MILLISECONDS);
