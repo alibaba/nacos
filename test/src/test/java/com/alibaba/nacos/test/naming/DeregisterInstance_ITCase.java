@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,26 +43,29 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class DeregisterInstance_ITCase {
 
     private NamingService naming;
     @LocalServerPort
     private int port;
+
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
 
     /**
      * 删除service中默认cluster的一个ip
+     *
      * @throws Exception
      */
     @Test
     public void dregDomTest() throws Exception {
+
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
@@ -93,18 +97,60 @@ public class DeregisterInstance_ITCase {
 
     /**
      * 删除service中指定cluster的一个ip
+     *
      * @throws Exception
      */
     @Test
     public void dregDomClusterTest() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        System.out.println(serviceName);
+
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
+
+        TimeUnit.SECONDS.sleep(5);
+
+        List<Instance> instances;
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 2);
+
+        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+
+        TimeUnit.SECONDS.sleep(5);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(instances.size(), 1);
+
+        instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
+        Assert.assertEquals(instances.size(), 1);
+
+        instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
+    }
+
+
+
+
+    /**
+     * 删除service中最后一个Instance，允许删除，结果返回null
+     *
+     * @throws Exception
+     */
+    @Test
+    public void dregLastDomTest() throws Exception {
+
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
-        TimeUnit.SECONDS.sleep(3);
+        TimeUnit.SECONDS.sleep(5);
 
-        List<Instance> instances = naming.getAllInstances(serviceName);
+        List<Instance> instances;
+        instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(instances.size(), 2);
 
@@ -119,6 +165,12 @@ public class DeregisterInstance_ITCase {
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
         Assert.assertEquals(instances.size(), 1);
 
-        instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
+        naming.deregisterInstance(serviceName,"127.0.0.2", TEST_PORT, "c2");
+        TimeUnit.SECONDS.sleep(5);
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(instances.size(), 0);
     }
+
+
+
 }

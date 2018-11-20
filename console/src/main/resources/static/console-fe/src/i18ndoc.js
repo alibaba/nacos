@@ -12,7 +12,7 @@
  */
 module.exports = {
   'zh-cn': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.4.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.5.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': '配置管理',
     'com.alibaba.nacos.page.serviceManagementVirtual': '服务管理',
     'nacos.component.ExportDialog.tags2': '标签:',
@@ -532,7 +532,7 @@ module.exports = {
     'com.alibaba.nacos.page.serviceManagement.table.column.service_name': '服务名',
     'com.alibaba.nacos.page.serviceManagement.table.column.cluster_count': '集群数目',
     'com.alibaba.nacos.page.serviceManagement.table.column.ip_count': '实例数',
-    'com.alibaba.nacos.page.serviceManagement.table.column.health_status': '健康实例数',
+    'com.alibaba.nacos.page.serviceManagement.table.column.healthy_instance_count': '健康实例数',
     'com.alibaba.nacos.page.serviceManagement.table.column.operation': '操作',
     'com.alibaba.nacos.page.serviceManagement.detail': '详情',
     'com.alibaba.nacos.page.serviceManagement.delete': '删除',
@@ -574,7 +574,7 @@ module.exports = {
     'nacos.page.ConfigEditor.submit_failed': '不能为空, 提交失败',
   },
   'en-us': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.4.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.5.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': 'ConfigManagement',
     'com.alibaba.nacos.page.serviceManagementVirtual': 'ServiceManagement',
     'nacos.component.CloneDialog.the_same_configuration': 'Conflict:',
@@ -1122,7 +1122,8 @@ module.exports = {
     'com.alibaba.nacos.page.serviceManagement.table.column.service_name': 'Service Name',
     'com.alibaba.nacos.page.serviceManagement.table.column.cluster_count': 'Cluster Count',
     'com.alibaba.nacos.page.serviceManagement.table.column.ip_count': 'Instance Count',
-    'com.alibaba.nacos.page.serviceManagement.table.column.health_status': 'Healthy Instance Count',
+    'com.alibaba.nacos.page.serviceManagement.table.column.healthy_instance_count':
+      'Healthy Instance Count',
     'com.alibaba.nacos.page.serviceManagement.table.column.operation': 'Operation',
     'com.alibaba.nacos.page.serviceManagement.detail': 'Details',
     'com.alibaba.nacos.page.serviceManagement.delete': 'Delete',
