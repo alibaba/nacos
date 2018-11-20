@@ -11,31 +11,13 @@
  * limitations under the License.
  */
 
-.normal {
-  font-family: Georgia, sans-serif;
-  margin-top: 3em;
-  text-align: center;
-}
-
-.title {
-  font-size: 2.5rem;
-  font-weight: normal;
-  letter-spacing: -1px;
-}
-
-.welcome {
-  height: 328px;
-  background: url(../assets/yay.jpg) no-repeat center 0;
-  background-size: 388px 328px;
-}
-
-.list {
-  font-size: 1.2em;
-  margin-top: 1.8em;
-  list-style: none;
-  line-height: 1.5em;
-}
-
-.list code {
-  background: #f7f7f7;
-}
+const I18N_CONF = {
+  Header: {
+    home: 'HOME',
+    docs: 'DOCS',
+    blog: 'BLOG',
+    community: 'COMMUNITY',
+    languageSwitchButton: '中',
+  },
+};
+export default I18N_CONF;

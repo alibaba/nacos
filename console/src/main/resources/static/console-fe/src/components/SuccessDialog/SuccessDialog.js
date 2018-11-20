@@ -14,8 +14,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { aliwareIntl } from '../../globalLib';
-import './index.less';
 import { Button, Dialog, Grid, Icon } from '@alifd/next';
+
+import './index.scss';
 
 const { Row, Col } = Grid;
 

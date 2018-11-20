@@ -13,9 +13,10 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import { Button, Field, Form, Input } from '@alifd/next';
+import { getParams, request, aliwareIntl } from '../../../globalLib';
+
+import './index.scss';
 
 class HistoryDetail extends React.Component {
   static propTypes = {
