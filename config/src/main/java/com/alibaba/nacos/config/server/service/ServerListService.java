@@ -223,6 +223,12 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	 * @return serverlist
 	 */
 	private List<String> getApacheServerList() {
+		if (STANDALONE_MODE) {
+			List<String> serverIps = new ArrayList<String>();
+			serverIps.add(getFormatServerAddr(LOCAL_IP));
+			return serverIps;
+		}
+
 		// 优先从文件读取服务列表
 		try {
 			List<String> serverIps = new ArrayList<String>();
@@ -241,7 +247,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 			defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
 		}
 
-		if (isUseAddressServer() && !STANDALONE_MODE) {
+		if (isUseAddressServer()) {
 			try {
 				HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
 
