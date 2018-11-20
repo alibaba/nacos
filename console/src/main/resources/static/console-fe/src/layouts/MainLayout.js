@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
 import { Icon } from '@alifd/next';
 import siteConfig from '../config';
@@ -19,7 +20,8 @@ import Header from './Header';
 import $ from 'jquery';
 import { aliwareGetCookieByKeyName, setParams, aliwareIntl } from '../globalLib';
 
-export default class MainLayout extends React.Component {
+@withRouter
+class MainLayout extends React.Component {
   static propTypes = {
     navList: PropTypes.array,
     history: PropTypes.object,
@@ -464,3 +466,5 @@ export default class MainLayout extends React.Component {
     );
   }
 }
+
+export default MainLayout;

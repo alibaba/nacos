@@ -13,7 +13,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import './index.less';
+import './index.scss';
 import { Dialog } from '@alifd/next';
 import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
 
