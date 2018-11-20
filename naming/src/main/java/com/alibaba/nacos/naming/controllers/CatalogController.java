@@ -92,7 +92,7 @@ public class CatalogController {
                 }
             }
 
-            serviceView.setStatus(String.valueOf(validCount));
+            serviceView.setHealthyInstanceCount(validCount);
 
             domArray.add(serviceView);
         }

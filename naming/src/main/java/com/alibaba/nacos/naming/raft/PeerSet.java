@@ -87,7 +87,10 @@ public class PeerSet {
             return true;
         }
 
-        Loggers.RAFT.info("[IS LEADER] leader: " + leader.ip + ", ip: " + ip);
+        if (leader == null) {
+            Loggers.RAFT.warn("[IS LEADER] no leader is available now!");
+            return false;
+        }
 
         return StringUtils.equals(leader.ip, ip);
     }

@@ -40,9 +40,9 @@ It is super easy to get started with your first project.
 
 You can download the package from the  [latest stable release](https://github.com/alibaba/nacos/releases).  
 
-Take release nacos-server-0.3.0.zip for example.
+Take release nacos-server-0.4.0.zip for example.
 ```
-unzip nacos-server-0.3.0.zip
+unzip nacos-server-0.4.0.zip
 cd nacos/bin 
 ``` 
 
@@ -74,13 +74,12 @@ For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.htm
 
 You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
 
+All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice)
+
 
 ## Contributing
 
-Contributors are welcome to join Nacos project. 
-
- - Contributing guide (constructing): describe general contributing procedure for Nacos project, such as issue submitting, milestone plan, etc.
- - Developing guide (constructing): describe detailed developing procedure including how to fork, choosing correct branch, PR review procedure, etc.
+Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./CONTRIBUTING.md) about how to contribute to this project.
 
 ## Other Related Project Repositories
 
@@ -93,8 +92,11 @@ Contributors are welcome to join Nacos project.
 * [Gitter](https://gitter.im/alibaba/nacos): Nacos's IM tool for community messaging, collaboration and discovery.
 * [Twitter](https://twitter.com/nacos2): Follow along for latest nacos news on Twitter.
 * [Weibo](https://weibo.com/u/6574374908): Follow along for latest nacos news on Weibo (Twitter of China version).
-* [User Mail Group](users-nacos@googlegroups.com): Nacos usage general discussion.
-* [Dev Mail Group](dev-nacos@googlegroups.com): Nacos developer discussion (APIs, feature design, etc).
-* [Commit Mail Group](commits-nacos@googlegroups.com): Commits notice, very high frequency.
 * [Nacos Segmentfault](https://segmentfault.com/t/nacos): Get latest notice and prompt help from Segmentfault.
+* Email Group:
+     * users-nacos@googlegroups.com: Nacos usage general discussion.
+     * dev-nacos@googlegroups.com: Nacos developer discussion (APIs, feature design, etc).
+     * commits-nacos@googlegroups.com: Commits notice, very high frequency.
+* Join us from wechat. Welcome words: Nacos.
 
+![cwex](http://acm-public.oss-cn-hangzhou.aliyuncs.com/xuc.png)
