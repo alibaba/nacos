@@ -34,44 +34,47 @@ module.exports = {
     extensions: ['.js', '.jsx', '.json'],
     alias: {
       '@': resolve('src'),
-      'utils': resolve('src/utils'),
-      'components': resolve('src/components'),
+      utils: resolve('src/utils'),
+      components: resolve('src/components'),
     },
   },
   module: {
-    rules: [{
-      test: /\.(css|scss)$/,
-      use: [
-        isDev ? 'style-loader' : MiniCssExtractPlugin.loader,
-        'css-loader',
-        'sass-loader',
-      ],
-    }, {
-      test: /\.(js|jsx)$/,
-      loader: 'eslint-loader',
-      enforce: 'pre',
-      include: [resolve('src')],
-    }, {
-      test: /\.(js|jsx)$/,
-      include: [resolve('src')],
-      use: ['babel-loader'],
-    }, {
-      test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
-      loader: 'url-loader',
-      options: {
-        limit: 10000,
-        name: '/img/[name].[hash:8].[ext]',
+    rules: [
+      {
+        test: /\.(css|scss)$/,
+        use: [isDev ? 'style-loader' : MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
       },
-    }, {
-      test: /\.(ttf|woff|svg)$/,
-      use: [{
+      {
+        test: /\.(js|jsx)$/,
+        loader: 'eslint-loader',
+        enforce: 'pre',
+        include: [resolve('src')],
+      },
+      {
+        test: /\.(js|jsx)$/,
+        include: [resolve('src')],
+        use: ['babel-loader'],
+      },
+      {
+        test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
         loader: 'url-loader',
         options: {
-          name: '/fonts/[name].[hash:8].[ext]',
+          limit: 10000,
+          name: '/img/[name].[hash:8].[ext]',
         },
-      }],
-
-    }],
+      },
+      {
+        test: /\.(ttf|woff|svg)$/,
+        use: [
+          {
+            loader: 'url-loader',
+            options: {
+              name: '/fonts/[name].[hash:8].[ext]',
+            },
+          },
+        ],
+      },
+    ],
   },
   plugins: [
     new HtmlWebpackPlugin({
@@ -79,10 +82,12 @@ module.exports = {
       template: './public/index.html',
       minify: !isDev,
     }),
-    new CopyWebpackPlugin([{
-      from: resolve('public'),
-      to: './',
-      ignore: ['index.html'],
-    }]),
+    new CopyWebpackPlugin([
+      {
+        from: resolve('public'),
+        to: './',
+        ignore: ['index.html'],
+      },
+    ]),
   ],
 };

@@ -47,6 +47,8 @@ import { changeLanguage } from './reducers/locale';
 
 import './index.scss';
 
+module.hot && module.hot.accept();
+
 if (!CookieHelp.getValue(LANGUAGE_KEY)) {
   CookieHelp.setValue(LANGUAGE_KEY, navigator.language === 'zh-CN' ? 'zh-CN' : 'en-US');
 }
