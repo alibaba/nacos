@@ -123,7 +123,7 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `/nacos/v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
+      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
         this.group
       }&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(data) {
