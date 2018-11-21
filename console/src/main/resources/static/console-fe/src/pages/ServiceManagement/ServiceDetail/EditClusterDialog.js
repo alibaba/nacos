@@ -54,7 +54,7 @@ class EditClusterDialog extends React.Component {
     } = this.state.editCluster;
     request({
       method: 'POST',
-      url: '/nacos/v1/ns/cluster/update',
+      url: 'v1/ns/cluster/update',
       data: {
         serviceName,
         clusterName: name,

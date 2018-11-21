@@ -344,9 +344,9 @@ class ConfigurationManagement extends React.Component {
     this.serverId = getParams('serverId') || '';
     let urlPrefix = '';
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
-      urlPrefix = '/nacos/v1/cs/configs?search=blur';
+      urlPrefix = 'v1/cs/configs?search=blur';
     } else {
-      urlPrefix = '/nacos/v1/cs/configs?search=accurate';
+      urlPrefix = 'v1/cs/configs?search=accurate';
     }
 
     request({
@@ -432,7 +432,7 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `/nacos/v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
+        const url = `v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
         request({
           url,
           type: 'delete',
