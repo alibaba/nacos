@@ -59,7 +59,7 @@ class HistoryDetail extends React.Component {
     const self = this;
 
     request({
-      url: `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+      url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
           const data = result;
