@@ -27,6 +27,7 @@ module.exports = Object.assign({}, base, {
       changeOrigin: true,
       secure: false,
       target: 'http://11.163.128.36:8848',
+      pathRewrite: {'^/v1' : '/nacos/v1'}
     }],
     disableHostCheck: true,
     open: true,
