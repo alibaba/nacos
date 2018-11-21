@@ -157,7 +157,7 @@ class ConfigEditor extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -343,7 +343,7 @@ class ConfigEditor extends React.Component {
         content,
         tenant: this.tenant,
       };
-      const url = '/nacos/v1/cs/configs';
+      const url = 'v1/cs/configs';
       request({
         type: 'post',
         contentType: 'application/x-www-form-urlencoded',

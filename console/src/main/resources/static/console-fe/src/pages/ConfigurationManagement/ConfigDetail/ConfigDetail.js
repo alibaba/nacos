@@ -96,7 +96,7 @@ class ConfigDetail extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppName;
-    const url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
