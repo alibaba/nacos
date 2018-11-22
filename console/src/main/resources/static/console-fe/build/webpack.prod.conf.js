@@ -35,7 +35,7 @@ module.exports = Object.assign({}, base, {
     }),
     ...base.plugins,
     new MiniCssExtractPlugin({
-      filename: './css/[name].[hash:8].css',
+      filename: './css/[name].css',
       chunkFilename: '[id].css',
     }),
   ],
