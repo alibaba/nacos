@@ -458,6 +458,7 @@
         <module>common</module>
         <module>distribution</module>
         <module>console</module>
+        <module>cmdb</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
