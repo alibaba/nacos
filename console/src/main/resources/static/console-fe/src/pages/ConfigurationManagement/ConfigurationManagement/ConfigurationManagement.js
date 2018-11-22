@@ -13,15 +13,14 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import BatchHandle from '../../../components/BatchHandle';
-import RegionGroup from '../../../components/RegionGroup';
-import ShowCodeing from '../../../components/ShowCodeing';
-import DeleteDialog from '../../../components/DeleteDialog';
-import CloneDialog from '../../../components/CloneDialog';
-import ImportDialog from '../../../components/ImportDialog';
-import ExportDialog from '../../../components/ExportDialog';
+import BatchHandle from 'components/BatchHandle';
+import RegionGroup from 'components/RegionGroup';
+import ShowCodeing from 'components/ShowCodeing';
+import DeleteDialog from 'components/DeleteDialog';
+import CloneDialog from 'components/CloneDialog';
+import ImportDialog from 'components/ImportDialog';
+import ExportDialog from 'components/ExportDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import {
   Balloon,
   Button,
@@ -40,6 +39,8 @@ import {
   Slider,
   Table,
 } from '@alifd/next';
+
+import './index.scss';
 
 const { Panel } = Collapse;
 
@@ -343,9 +344,9 @@ class ConfigurationManagement extends React.Component {
     this.serverId = getParams('serverId') || '';
     let urlPrefix = '';
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
-      urlPrefix = '/nacos/v1/cs/configs?search=blur';
+      urlPrefix = 'v1/cs/configs?search=blur';
     } else {
-      urlPrefix = '/nacos/v1/cs/configs?search=accurate';
+      urlPrefix = 'v1/cs/configs?search=accurate';
     }
 
     request({
@@ -431,7 +432,7 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `/nacos/v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
+        const url = `v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
         request({
           url,
           type: 'delete',

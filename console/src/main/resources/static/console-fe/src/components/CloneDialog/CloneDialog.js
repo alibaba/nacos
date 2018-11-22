@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import './index.less';
+import './index.scss';
 import { getParams, request, aliwareIntl } from '../../globalLib';
 import { Button, Dialog, Field, Form, Select } from '@alifd/next';
 

@@ -47,18 +47,14 @@ npm run build
 ## 
 
 # 代理配置
-根目录下的 .webpackrc
+`build/webpack.dev.conf.js`
 修改proxy属性
 
 ```
-"proxy": {
-    "/": {
-      "target": "http://ip:port/", //这边写你自己的服务Ip
-      "changeOrigin": true,
-      "pathRewrite": { "^/" : "" }
-    }
-  },
+proxy: [{
+  context: ['/'],
+  changeOrigin: true,
+  secure: false,
+  target: 'http://ip:port',
+}],
 ```
-
-# dva api
-[https://github.com/dvajs/dva/blob/master/docs/api/README.md](https://github.com/dvajs/dva/blob/master/docs/api/README.md)

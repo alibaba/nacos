@@ -12,9 +12,10 @@
  */
 
 import React from 'react';
-import './index.less';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
 import { Button, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
+import { getParams, request, aliwareIntl } from '../../../globalLib';
+
+import './index.scss';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
@@ -95,7 +96,7 @@ class ConfigDetail extends React.Component {
     this.tenant = getParams('namespace') || '';
     this.edasAppName = getParams('edasAppName') || '';
     this.inApp = this.edasAppName;
-    const url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
