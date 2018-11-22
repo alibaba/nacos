@@ -15,7 +15,7 @@ import React from 'react';
 import { Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
+import './index.scss';
 
 class HistoryRollback extends React.Component {
   constructor(props) {
@@ -123,7 +123,7 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `/nacos/v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
+      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
         this.group
       }&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(data) {
@@ -362,6 +362,7 @@ class HistoryRollback extends React.Component {
                 margin: 0,
                 paddingLeft: 10,
                 borderLeft: '3px solid #09c',
+                fontSize: 16,
               }}
             >
               {aliwareIntl.get('com.alibaba.nacos.page.historyRollback.queryresult')}

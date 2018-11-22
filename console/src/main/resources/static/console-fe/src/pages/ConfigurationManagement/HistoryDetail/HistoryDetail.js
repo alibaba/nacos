@@ -13,9 +13,10 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import { Button, Field, Form, Input } from '@alifd/next';
+import { getParams, request, aliwareIntl } from '../../../globalLib';
+
+import './index.scss';
 
 class HistoryDetail extends React.Component {
   static propTypes = {
@@ -58,7 +59,7 @@ class HistoryDetail extends React.Component {
     const self = this;
 
     request({
-      url: `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+      url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
           const data = result;

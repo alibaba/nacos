@@ -13,7 +13,7 @@
 
 import React from 'react';
 import { aliwareIntl } from '../../globalLib';
-import './index.less';
+import './index.scss';
 import { Button, Dialog, Form } from '@alifd/next';
 
 const FormItem = Form.Item;

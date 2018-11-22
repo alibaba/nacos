@@ -14,8 +14,9 @@
 import React from 'react';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import { Field, Form, Grid, Input, Loading, Pagination, Select, Table } from '@alifd/next';
+
+import './index.scss';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
@@ -67,7 +68,7 @@ class ListeningToQuery extends React.Component {
     const type = this.getValue('type');
     if (type === 1) {
       const ip = this.getValue('ip');
-      queryUrl = `/nacos/v1/cs/listener?ip=${ip}`;
+      queryUrl = `v1/cs/listener?ip=${ip}`;
       const tenant = window.nownamespace || getParams('namespace') || '';
       if (tenant) {
         queryUrl += `&tenant=${tenant}`;
@@ -76,7 +77,7 @@ class ListeningToQuery extends React.Component {
       const dataId = this.getValue('dataId');
       const group = this.getValue('group');
       if (!dataId || !group) return false;
-      queryUrl = `/nacos/v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
+      queryUrl = `v1/cs/configs/listener?dataId=${dataId}&group=${group}`;
     }
     request({
       url: queryUrl,
@@ -280,6 +281,7 @@ class ListeningToQuery extends React.Component {
                 borderLeft: '3px solid #09c',
                 margin: 0,
                 marginBottom: 10,
+                fontSize: 16,
               }}
             >
               {aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_results:_query')}
