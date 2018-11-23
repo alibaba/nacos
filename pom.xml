@@ -242,6 +242,7 @@
                         <exclude>src/main/resources/**/*.svg</exclude>
                         <exclude>src/main/resources/static/css/console1412.css</exclude>
                         <exclude>src/main/resources/static/js/vs/**/*</exclude>
+                        <exclude>src/main/resources/static/console-fe/public/css/console1412.css</exclude>
                         <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>src/main/resources/static/console-fe/dist/js/vs/editor/editor.main.css</exclude>
                         <exclude>src/main/resources/static/console-fe/dist/*/*</exclude>
