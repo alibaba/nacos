@@ -35,8 +35,14 @@ public class NetUtils {
             if (StringUtils.isNotBlank(serverAddress)) {
                 return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
             }
+            String address = System.getProperty("nacos.server.ip");
+            InetAddress inetAddress = null;
+            if (StringUtils.isNotEmpty(address)) {
+                inetAddress = InetAddress.getByName(address);
+            } else {
+                inetAddress = InetAddress.getLocalHost();
+            }
 
-            InetAddress inetAddress = InetAddress.getLocalHost();
             serverAddress = inetAddress.getHostAddress();
             if (PREFER_HOSTNAME_OVER_IP) {
                 if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
