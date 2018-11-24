@@ -147,9 +147,9 @@ public class LocalConfigInfoProcessor {
     	tmp = new File(tmp, "snapshot");
     	try {
 			IOUtils.cleanDirectory(tmp);
-			log.info("success dlelet " + envName + "-snapshot");
+			log.info("success delete " + envName + "-snapshot");
 		} catch (IOException e) {
-			log.info("fail dlelet " + envName + "-snapshot, " + e.toString());
+			log.info("fail delete " + envName + "-snapshot, " + e.toString());
 			e.printStackTrace();
 		}
     }
