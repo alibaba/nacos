@@ -21,7 +21,7 @@ module.exports = Object.assign({}, base, {
     path: path.resolve(__dirname, '../dist'),
   },
   devServer: {
-    port: 8000,
+    port: process.env.PORT || 8000,
     proxy: [{
       context: ['/'],
       changeOrigin: true,
