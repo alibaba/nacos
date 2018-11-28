@@ -28,8 +28,9 @@ import {
   Select,
   Radio,
 } from '@alifd/next';
-import './index.scss';
 import validateContent from 'utils/validateContent';
+
+import './index.scss';
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
