@@ -27,7 +27,7 @@ module.exports = {
     main: './src/index.js',
   },
   output: {
-    filename: './js/[name].[chunkhash:8].js',
+    filename: './js/[name].js',
     path: path.resolve(__dirname, '../dist'),
   },
   resolve: {

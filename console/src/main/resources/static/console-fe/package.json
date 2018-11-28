@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "cross-env NODE_ENV=development webpack-dev-server --config build/webpack.dev.conf.js",
-    "build": "cross-env NODE_ENV=production webpack --config build/webpack.prod.conf.js && node build/copy-dist.js",
+    "build": "cross-env NODE_ENV=production webpack --config build/webpack.prod.conf.js && node build/copyFile.js",
     "eslint": "eslint --ext .js src/",
     "eslint-fix": "eslint  --ext .js --fix src/"
   },
