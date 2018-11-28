@@ -16,7 +16,6 @@ import $ from 'jquery';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
-import './index.scss';
 import validateContent from 'utils/validateContent';
 import {
   Balloon,
@@ -32,6 +31,8 @@ import {
   Tab,
   Message,
 } from '@alifd/next';
+
+import './index.scss';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
