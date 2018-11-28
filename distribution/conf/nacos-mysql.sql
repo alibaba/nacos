@@ -20,7 +20,7 @@ CREATE TABLE `config_info` (
   `type` varchar(64) DEFAULT NULL,
   `c_schema` text,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_data_id_group_id_tenant_id` (`data_id`,`group_id`,`tenant_id`)
+  UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info';
 
 /******************************************/
@@ -37,7 +37,7 @@ CREATE TABLE `config_info_aggr` (
   `app_name` varchar(128) DEFAULT NULL,
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_data_id_group_id_tenant_id_datum_id` (`data_id`,`group_id`,`tenant_id`,`datum_id`)
+  UNIQUE KEY `uk_configinfoaggr_datagrouptenantdatum` (`data_id`,`group_id`,`tenant_id`,`datum_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='增加租户字段';
 
 
@@ -59,7 +59,7 @@ CREATE TABLE `config_info_beta` (
   `src_ip` varchar(20) DEFAULT NULL COMMENT 'source ip',
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_data_id_group_id_tenant_id` (`data_id`,`group_id`,`tenant_id`)
+  UNIQUE KEY `uk_configinfobeta_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_beta';
 
 /******************************************/
@@ -80,7 +80,7 @@ CREATE TABLE `config_info_tag` (
   `src_user` text COMMENT 'source user',
   `src_ip` varchar(20) DEFAULT NULL COMMENT 'source ip',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_data_id_group_id_tenant_id_tag_id` (`data_id`,`group_id`,`tenant_id`,`tag_id`)
+  UNIQUE KEY `uk_configinfotag_datagrouptenanttag` (`data_id`,`group_id`,`tenant_id`,`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_tag';
 
 /******************************************/
@@ -96,7 +96,7 @@ CREATE TABLE `config_tags_relation` (
   `tenant_id` varchar(128) DEFAULT '' COMMENT 'tenant_id',
   `nid` bigint(20) NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`nid`),
-  UNIQUE KEY `uk_id_tag_name_tag_type` (`id`,`tag_name`,`tag_type`),
+  UNIQUE KEY `uk_configtagrelation_configidtag` (`id`,`tag_name`,`tag_type`),
   KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_tag_relation';
 
@@ -140,7 +140,7 @@ CREATE TABLE `his_config_info` (
   PRIMARY KEY (`nid`),
   KEY `idx_gmt_create` (`gmt_create`),
   KEY `idx_gmt_modified` (`gmt_modified`),
-  KEY `idx_data_id` (`data_id`)
+  KEY `idx_did` (`data_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='多租户改造';
 
 
