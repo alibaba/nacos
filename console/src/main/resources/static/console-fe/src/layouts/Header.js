@@ -12,10 +12,13 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { ConfigProvider } from '@alifd/next';
 import classnames from 'classnames';
 import siteConfig from '../config';
 import { getLink } from '../utils/nacosutil';
+import { changeLanguage } from '../reducers/locale';
+
 import './index.scss';
 
 const languageSwitch = [
@@ -30,26 +33,18 @@ const languageSwitch = [
 ];
 const noop = () => {};
 
-const defaultProps = {
-  type: 'primary',
-  language: 'en-us',
-  onLanguageChange: noop,
-};
-
+@connect(
+  state => ({ ...state.locale }),
+  { changeLanguage }
+)
+@ConfigProvider.config
 class Header extends React.Component {
-  static propTypes = {
-    language: PropTypes.string,
-    type: PropTypes.string,
-    logo: PropTypes.string,
-    currentKey: PropTypes.string,
-    onLanguageChange: PropTypes.func,
-  };
+  static displayName = 'Header';
 
   constructor(props) {
     super(props);
     this.state = {
       menuBodyVisible: false,
-      language: props.language,
     };
 
     this.switchLang = this.switchLang.bind(this);
@@ -62,9 +57,8 @@ class Header extends React.Component {
   }
 
   switchLang() {
-    const language = this.state.language === 'zh-cn' ? 'en-us' : 'zh-cn';
-    this.setState({ language });
-    this.props.onLanguageChange(language);
+    const { language = 'en-US', changeLanguage } = this.props;
+    changeLanguage(language === 'en-US' ? 'zh-CN' : 'en-US');
   }
 
   UNSAFE_componentWillReceiveProps(nextProps) {
@@ -74,8 +68,10 @@ class Header extends React.Component {
   }
 
   render() {
+    const { locale = {}, language = 'en-US' } = this.props;
+    const { home, docs, blog, community, languageSwitchButton } = locale;
     const { type, logo, onLanguageChange, currentKey } = this.props;
-    const { menuBodyVisible, language } = this.state;
+    const { menuBodyVisible } = this.state;
     return (
       <header
         className={classnames({
@@ -84,10 +80,10 @@ class Header extends React.Component {
         })}
       >
         <div className="header-body">
-          <a href={'https://nacos.io/zh-cn/'} target="_blank" rel="noopener noreferrer">
+          <a href="https://nacos.io/zh-cn/" target="_blank" rel="noopener noreferrer">
             <img className="logo" alt={siteConfig.name} title={siteConfig.name} src={logo} />
           </a>
-          {onLanguageChange !== noop ? (
+          {onLanguageChange !== noop && (
             <span
               className={classnames({
                 'language-switch': true,
@@ -97,7 +93,7 @@ class Header extends React.Component {
             >
               {languageSwitch.find(lang => lang.value === language).text}
             </span>
-          ) : null}
+          )}
           <div
             className={classnames({
               'header-menu': true,
@@ -105,17 +101,22 @@ class Header extends React.Component {
             })}
           >
             <ul>
-              {siteConfig[language].pageMenu.map(item => (
+              {[
+                [home, 'https://nacos.io/en-us/index.html'],
+                [docs, 'https://nacos.io/en-us/docs/quick-start.html'],
+                [blog, 'https://nacos.io/en-us/blog'],
+                [community, 'https://nacos.io/en-us/community'],
+              ].map(([text, link]) => (
                 <li
-                  key={item.link}
+                  key={text}
                   className={classnames({
                     'menu-item': true,
                     [`menu-item-${type}`]: true,
-                    [`menu-item-${type}-active`]: currentKey === item.key,
+                    [`menu-item-${type}-active`]: false,
                   })}
                 >
-                  <a href={getLink(item.link)} target="_blank" rel="noopener noreferrer">
-                    {item.text}
+                  <a href={link} target="_blank" rel="noopener noreferrer">
+                    {text}
                   </a>
                 </li>
               ))}
@@ -127,5 +128,4 @@ class Header extends React.Component {
   }
 }
 
-Header.defaultProps = defaultProps;
 export default Header;
