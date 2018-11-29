@@ -85,7 +85,7 @@ class App extends React.Component {
     this.props.changeLanguage(language);
   }
 
-  generateRouter() {
+  static generateRouter() {
     return (
       <HashRouter>
         <Layout navList={_menu.data}>
@@ -120,7 +120,7 @@ class App extends React.Component {
         fullScreen
         {...this.state.nacosLoading}
       >
-        <ConfigProvider locale={locale}>{this.generateRouter()}</ConfigProvider>
+        <ConfigProvider locale={locale}>{App.generateRouter()}</ConfigProvider>
       </Loading>
     );
   }
