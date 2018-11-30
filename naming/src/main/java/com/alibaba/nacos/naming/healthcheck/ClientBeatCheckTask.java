@@ -29,7 +29,7 @@ import java.net.HttpURLConnection;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ClientBeatCheckTask implements Runnable {
     private VirtualClusterDomain domain;

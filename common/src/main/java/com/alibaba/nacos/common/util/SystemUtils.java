@@ -50,12 +50,12 @@ public class SystemUtils {
     /**
      * The System property name of prefer hostname over ip
      */
-    public static final String PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME ="nacos.preferHostnameOverIp";
+    public static final String PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME = "nacos.preferHostnameOverIp";
     /**
      * Flag to say that, when guessing a hostname, the hostname of the server should be
      * used in preference to the IP address reported by the OS.
      */
-    public static final boolean PREFER_HOSTNAME_OVER_IP=Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME);
+    public static final boolean PREFER_HOSTNAME_OVER_IP = Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME);
 
     /**
      * Standalone mode or not
@@ -155,7 +155,7 @@ public class SystemUtils {
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
         List<String> lines = IoUtils.readLines(
-            new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
+                new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
         String comment = "#";
         for (String line : lines) {
             String instance = line.trim();

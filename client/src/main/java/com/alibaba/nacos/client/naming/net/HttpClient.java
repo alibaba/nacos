@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class HttpClient {
 
