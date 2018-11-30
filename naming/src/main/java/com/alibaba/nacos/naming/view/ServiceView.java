@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.view;
 import com.alibaba.fastjson.JSON;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ServiceView {
 

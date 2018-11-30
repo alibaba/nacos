@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.Locale;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class StringUtils {
     public static boolean isEmpty(String str) {
