@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 package com.alibaba.nacos.client.logger.util;
+
 /**
  * Error msg format
- * @author Nacos
  *
+ * @author Nacos
  */
 public class MessageUtil {
 

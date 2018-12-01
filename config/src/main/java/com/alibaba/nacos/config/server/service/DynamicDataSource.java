@@ -23,8 +23,8 @@ import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
 /**
  * datasource adapter
- * @author Nacos
  *
+ * @author Nacos
  */
 @Component
 public class DynamicDataSource implements ApplicationContextAware {

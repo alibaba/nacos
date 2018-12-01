@@ -27,7 +27,7 @@ public class NetUtils {
     public static String localIP() {
         try {
             if (!StringUtils.isEmpty(LOCAL_IP)) {
-               return LOCAL_IP;
+                return LOCAL_IP;
             }
 
             String ip = System.getProperty("com.taobao.vipserver.localIP", InetAddress.getLocalHost().getHostAddress());

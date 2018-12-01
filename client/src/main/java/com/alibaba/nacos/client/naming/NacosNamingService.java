@@ -120,14 +120,15 @@ public class NacosNamingService implements NamingService {
 
         if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.ENDPOINT))) {
             endpoint = properties.getProperty(PropertyKeyConst.ENDPOINT) + ":" +
-                    properties.getProperty("address.server.port", "8080");
+                properties.getProperty("address.server.port", "8080");
         }
 
         cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
 
         boolean loadCacheAtStart = false;
         if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
-            loadCacheAtStart = BooleanUtils.toBoolean(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
+            loadCacheAtStart = BooleanUtils.toBoolean(
+                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
 
         eventDispatcher = new EventDispatcher();
@@ -188,7 +189,8 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
+        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
+            StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -202,9 +204,11 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
+        throws NacosException {
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
+        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
+            StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -228,17 +232,20 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) {
-        return Balancer.RandomByWeight.selectHost(hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
+        return Balancer.RandomByWeight.selectHost(
+            hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
     }
 
     @Override
     public void subscribe(String service, EventListener listener) {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.EMPTY), StringUtils.EMPTY, listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.EMPTY), StringUtils.EMPTY,
+            listener);
     }
 
     @Override
     public void subscribe(String service, List<String> clusters, EventListener listener) {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.join(clusters, ",")),
+            StringUtils.join(clusters, ","), listener);
     }
 
     @Override

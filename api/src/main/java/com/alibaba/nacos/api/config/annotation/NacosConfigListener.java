@@ -56,8 +56,7 @@ public @interface NacosConfigListener {
     Class<? extends NacosConfigConverter> converter() default NacosConfigConverter.class;
 
     /**
-     * The {@link NacosProperties} attribute, If not specified, it will use
-     * global Nacos Properties.
+     * The {@link NacosProperties} attribute, If not specified, it will use global Nacos Properties.
      *
      * @return the default value is {@link NacosProperties}
      */

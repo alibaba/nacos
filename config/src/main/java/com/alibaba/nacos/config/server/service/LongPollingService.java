@@ -36,21 +36,22 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
 
 /**
  * 长轮询服务。负责处理
+ *
  * @author Nacos
  */
 @Service
 public class LongPollingService extends AbstractEventListener {
 
-	private static final int FIXED_POLLING_INTERVAL_MS = 10000;
-    
+    private static final int FIXED_POLLING_INTERVAL_MS = 10000;
+
     private static final int SAMPLE_PERIOD = 100;
-    
+
     private static final int SAMPLE_TIMES = 3;
-    
+
     private static final String TRUE_STR = "true";
 
-	private Map<String, Long> retainIps = new ConcurrentHashMap<String, Long>();
-    
+    private Map<String, Long> retainIps = new ConcurrentHashMap<String, Long>();
+
     private static boolean isFixedPolling() {
         return SwitchService.getSwitchBoolean(SwitchService.FIXED_POLLING, false);
     }
@@ -58,7 +59,6 @@ public class LongPollingService extends AbstractEventListener {
     private static int getFixedPollingInterval() {
         return SwitchService.getSwitchInteger(SwitchService.FIXED_POLLING_INTERVAL, FIXED_POLLING_INTERVAL_MS);
     }
-
 
     public boolean isClientLongPolling(String clientIp) {
         return getClientPollingRecord(clientIp) != null;
@@ -68,131 +68,132 @@ public class LongPollingService extends AbstractEventListener {
         ClientLongPulling record = getClientPollingRecord(clientIp);
 
         if (record == null) {
-        	return Collections.<String, String>emptyMap();
+            return Collections.<String, String>emptyMap();
         }
 
         return record.clientMd5Map;
     }
 
-	public SampleResult getSubscribleInfo(String dataId, String group, String tenant) {
-		String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
-		SampleResult sampleResult = new SampleResult();
-		Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+    public SampleResult getSubscribleInfo(String dataId, String group, String tenant) {
+        String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
+        SampleResult sampleResult = new SampleResult();
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
 
-		for (ClientLongPulling clientLongPulling : allSubs) {
-			if (clientLongPulling.clientMd5Map.containsKey(groupKey)) {
-				lisentersGroupkeyStatus.put(clientLongPulling.ip, clientLongPulling.clientMd5Map.get(groupKey));
-			}
-		}
-		sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
-		return sampleResult;
-	}
-	
-	public SampleResult getSubscribleInfoByIp(String clientIp) {
-		SampleResult sampleResult = new SampleResult();
-		Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
-		
-		for (ClientLongPulling clientLongPulling : allSubs) {
-			if (clientLongPulling.ip.equals(clientIp)) {
-				// 一个ip可能有多个监听
-				if (!lisentersGroupkeyStatus.equals(clientLongPulling.clientMd5Map)) {
-					lisentersGroupkeyStatus.putAll(clientLongPulling.clientMd5Map);
-				}
-			}
-		}
-		sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
-		return sampleResult;
-	}
-	
-	/**
-	 * 聚合采样结果中的采样ip和监听配置的信息；合并策略用后面的覆盖前面的是没有问题的
-	 * @param sampleResults sample Results
-	 * @return Results
-	 */
-	public SampleResult mergeSampleResult(List<SampleResult> sampleResults) {
-		SampleResult mergeResult = new SampleResult();
-		Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
-		for (SampleResult sampleResult : sampleResults) {
-			Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
-			for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
-				lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
-			}
-		}
-		mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
-		return mergeResult;
-	}
-	
-    public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
-    	if (allSubs == null || allSubs.isEmpty()) {
-			return null;
-		}
-    	HashMap<String, Set<String>> app2Groupkeys = new HashMap<String, Set<String>>(50);
-    	for (ClientLongPulling clientLongPulling : allSubs) {
-    		if(StringUtils.isEmpty(clientLongPulling.appName) || "unknown".equalsIgnoreCase(clientLongPulling.appName)) {
-    			continue;
-    		}
-    		Set<String> appSubscribeConfigs = app2Groupkeys.get(clientLongPulling.appName);
-    		Set<String> clientSubscribeConfigs = clientLongPulling.clientMd5Map.keySet();
-    		if(appSubscribeConfigs==null) {
-    			appSubscribeConfigs = new HashSet<String>(clientSubscribeConfigs.size());
-    		} 
-    	    appSubscribeConfigs.addAll(clientSubscribeConfigs);
-    		app2Groupkeys.put(clientLongPulling.appName, appSubscribeConfigs);
-    	}
-    	
-    	return app2Groupkeys;
+        for (ClientLongPulling clientLongPulling : allSubs) {
+            if (clientLongPulling.clientMd5Map.containsKey(groupKey)) {
+                lisentersGroupkeyStatus.put(clientLongPulling.ip, clientLongPulling.clientMd5Map.get(groupKey));
+            }
+        }
+        sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        return sampleResult;
     }
 
-	
-	public SampleResult getCollectSubscribleInfo(String dataId, String group, String tenant) {
-		List<SampleResult> sampleResultLst = new ArrayList<SampleResult>(50);
-		for (int i = 0; i < SAMPLE_TIMES; i++) {
-			SampleResult sampleTmp = getSubscribleInfo(dataId, group, tenant);
-			if (sampleTmp != null) {
-				sampleResultLst.add(sampleTmp);
-			}
-			if (i < SAMPLE_TIMES - 1) {
-				try {
-					Thread.sleep(SAMPLE_PERIOD);
-				} catch (InterruptedException e) {
-					LogUtil.clientLog.error("sleep wrong", e);
-				}
-			}
-		}
-		
-		SampleResult sampleResult = mergeSampleResult(sampleResultLst);
-		return sampleResult;
-	}
-	
-	public SampleResult getCollectSubscribleInfoByIp(String ip) {
-		SampleResult sampleResult = new SampleResult();
-		sampleResult.setLisentersGroupkeyStatus(new HashMap<String, String>(50));
-		for (int i = 0; i < SAMPLE_TIMES; i++) {
-			SampleResult sampleTmp = getSubscribleInfoByIp(ip);
-			if (sampleTmp != null) {
-				if (sampleTmp.getLisentersGroupkeyStatus() != null
-						&& !sampleResult.getLisentersGroupkeyStatus().equals(sampleTmp.getLisentersGroupkeyStatus())) {
-					sampleResult.getLisentersGroupkeyStatus().putAll(sampleTmp.getLisentersGroupkeyStatus());
-				}
-			}
-			if (i < SAMPLE_TIMES - 1) {
-				try {
-					Thread.sleep(SAMPLE_PERIOD);
-				} catch (InterruptedException e) {
-					LogUtil.clientLog.error("sleep wrong", e);
-				}
-			}
-		}
-		return sampleResult;
-	}
-    
+    public SampleResult getSubscribleInfoByIp(String clientIp) {
+        SampleResult sampleResult = new SampleResult();
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+
+        for (ClientLongPulling clientLongPulling : allSubs) {
+            if (clientLongPulling.ip.equals(clientIp)) {
+                // 一个ip可能有多个监听
+                if (!lisentersGroupkeyStatus.equals(clientLongPulling.clientMd5Map)) {
+                    lisentersGroupkeyStatus.putAll(clientLongPulling.clientMd5Map);
+                }
+            }
+        }
+        sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        return sampleResult;
+    }
+
+    /**
+     * 聚合采样结果中的采样ip和监听配置的信息；合并策略用后面的覆盖前面的是没有问题的
+     *
+     * @param sampleResults sample Results
+     * @return Results
+     */
+    public SampleResult mergeSampleResult(List<SampleResult> sampleResults) {
+        SampleResult mergeResult = new SampleResult();
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        for (SampleResult sampleResult : sampleResults) {
+            Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
+            for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
+                lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
+            }
+        }
+        mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        return mergeResult;
+    }
+
+    public Map<String, Set<String>> collectApplicationSubscribeConfigInfos() {
+        if (allSubs == null || allSubs.isEmpty()) {
+            return null;
+        }
+        HashMap<String, Set<String>> app2Groupkeys = new HashMap<String, Set<String>>(50);
+        for (ClientLongPulling clientLongPulling : allSubs) {
+            if (StringUtils.isEmpty(clientLongPulling.appName) || "unknown".equalsIgnoreCase(
+                clientLongPulling.appName)) {
+                continue;
+            }
+            Set<String> appSubscribeConfigs = app2Groupkeys.get(clientLongPulling.appName);
+            Set<String> clientSubscribeConfigs = clientLongPulling.clientMd5Map.keySet();
+            if (appSubscribeConfigs == null) {
+                appSubscribeConfigs = new HashSet<String>(clientSubscribeConfigs.size());
+            }
+            appSubscribeConfigs.addAll(clientSubscribeConfigs);
+            app2Groupkeys.put(clientLongPulling.appName, appSubscribeConfigs);
+        }
+
+        return app2Groupkeys;
+    }
+
+    public SampleResult getCollectSubscribleInfo(String dataId, String group, String tenant) {
+        List<SampleResult> sampleResultLst = new ArrayList<SampleResult>(50);
+        for (int i = 0; i < SAMPLE_TIMES; i++) {
+            SampleResult sampleTmp = getSubscribleInfo(dataId, group, tenant);
+            if (sampleTmp != null) {
+                sampleResultLst.add(sampleTmp);
+            }
+            if (i < SAMPLE_TIMES - 1) {
+                try {
+                    Thread.sleep(SAMPLE_PERIOD);
+                } catch (InterruptedException e) {
+                    LogUtil.clientLog.error("sleep wrong", e);
+                }
+            }
+        }
+
+        SampleResult sampleResult = mergeSampleResult(sampleResultLst);
+        return sampleResult;
+    }
+
+    public SampleResult getCollectSubscribleInfoByIp(String ip) {
+        SampleResult sampleResult = new SampleResult();
+        sampleResult.setLisentersGroupkeyStatus(new HashMap<String, String>(50));
+        for (int i = 0; i < SAMPLE_TIMES; i++) {
+            SampleResult sampleTmp = getSubscribleInfoByIp(ip);
+            if (sampleTmp != null) {
+                if (sampleTmp.getLisentersGroupkeyStatus() != null
+                    && !sampleResult.getLisentersGroupkeyStatus().equals(sampleTmp.getLisentersGroupkeyStatus())) {
+                    sampleResult.getLisentersGroupkeyStatus().putAll(sampleTmp.getLisentersGroupkeyStatus());
+                }
+            }
+            if (i < SAMPLE_TIMES - 1) {
+                try {
+                    Thread.sleep(SAMPLE_PERIOD);
+                } catch (InterruptedException e) {
+                    LogUtil.clientLog.error("sleep wrong", e);
+                }
+            }
+        }
+        return sampleResult;
+    }
+
     private ClientLongPulling getClientPollingRecord(String clientIp) {
         if (allSubs == null) {
-        	return null;
+            return null;
         }
 
         for (ClientLongPulling clientLongPulling : allSubs) {
-            HttpServletRequest request = (HttpServletRequest) clientLongPulling.asyncContext.getRequest();
+            HttpServletRequest request = (HttpServletRequest)clientLongPulling.asyncContext.getRequest();
 
             if (clientIp.equals(RequestUtil.getRemoteIp(request))) {
                 return clientLongPulling;
@@ -202,17 +203,18 @@ public class LongPollingService extends AbstractEventListener {
         return null;
     }
 
-    public void addLongPullingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map, int probeRequestSize) {
+    public void addLongPullingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
+                                     int probeRequestSize) {
 
         String str = req.getHeader(LongPollingService.LONG_PULLING_HEADER);
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_PULLING_NO_HANG_UP_HEADER);
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
-		String tag = req.getHeader("Vipserver-Tag");
-        int delayTime=SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
+        String tag = req.getHeader("Vipserver-Tag");
+        int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
         /**
          * 提前500ms返回响应，为避免客户端超时 @qiaoyi.dingqy 2013.10.22改动  add delay time for LoadBalance
          */
-        long timeout = Math.max(10000, Long.parseLong(str) - delayTime); 
+        long timeout = Math.max(10000, Long.parseLong(str) - delayTime);
         if (isFixedPolling()) {
             timeout = Math.max(10000, getFixedPollingInterval());
             // do nothing but set fix polling timeout
@@ -222,14 +224,14 @@ public class LongPollingService extends AbstractEventListener {
             if (changedGroups.size() > 0) {
                 generateResponse(req, rsp, changedGroups);
                 LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-	                System.currentTimeMillis() - start, "instant", RequestUtil.getRemoteIp(req), "polling",
-	                clientMd5Map.size(), probeRequestSize, changedGroups.size());
+                    System.currentTimeMillis() - start, "instant", RequestUtil.getRemoteIp(req), "polling",
+                    clientMd5Map.size(), probeRequestSize, changedGroups.size());
                 return;
-            } else if(noHangUpFlag!=null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
-	            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
-		            RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
-		            changedGroups.size());
-            	return;
+            } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
+                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
+                    RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
+                    changedGroups.size());
+                return;
             }
         }
         String ip = RequestUtil.getRemoteIp(req);
@@ -237,10 +239,9 @@ public class LongPollingService extends AbstractEventListener {
         final AsyncContext asyncContext = req.startAsync();
         // AsyncContext.setTimeout()的超时时间不准，所以只能自己控制
         asyncContext.setTimeout(0L);
-        
 
-		scheduler.execute(
-				new ClientLongPulling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+        scheduler.execute(
+            new ClientLongPulling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
 
     @Override
@@ -255,10 +256,10 @@ public class LongPollingService extends AbstractEventListener {
         if (isFixedPolling()) {
             // ignore
         } else {
-			if (event instanceof LocalDataChangeEvent) {
-				LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-				scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
-			}
+            if (event instanceof LocalDataChangeEvent) {
+                LocalDataChangeEvent evt = (LocalDataChangeEvent)event;
+                scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
+            }
         }
     }
 
@@ -289,61 +290,62 @@ public class LongPollingService extends AbstractEventListener {
 
     final ScheduledExecutorService scheduler;
 
-	/**
-	 * 长轮询订阅关系
-	 */
-	final Queue<ClientLongPulling> allSubs;
+    /**
+     * 长轮询订阅关系
+     */
+    final Queue<ClientLongPulling> allSubs;
 
     // =================
 
     class DataChangeTask implements Runnable {
         @Override
         public void run() {
-        	try {
-        		ConfigService.getContentBetaMd5(groupKey);
-        		for (Iterator<ClientLongPulling> iter = allSubs.iterator(); iter.hasNext(); ) {
+            try {
+                ConfigService.getContentBetaMd5(groupKey);
+                for (Iterator<ClientLongPulling> iter = allSubs.iterator(); iter.hasNext(); ) {
                     ClientLongPulling clientSub = iter.next();
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
-                    	// 如果beta发布且不在beta列表直接跳过
-                    	if (isBeta && !betaIps.contains(clientSub.ip)) {
-							continue;
-						}
-                    	
-						// 如果tag发布且不在tag列表直接跳过
-						if (StringUtils.isNotBlank(tag) && !tag.equals(clientSub.tag)) {
-							continue;
-						}
-						
-                    	getRetainIps().put(clientSub.ip, System.currentTimeMillis());
-                    	iter.remove(); // 删除订阅关系
+                        // 如果beta发布且不在beta列表直接跳过
+                        if (isBeta && !betaIps.contains(clientSub.ip)) {
+                            continue;
+                        }
+
+                        // 如果tag发布且不在tag列表直接跳过
+                        if (StringUtils.isNotBlank(tag) && !tag.equals(clientSub.tag)) {
+                            continue;
+                        }
+
+                        getRetainIps().put(clientSub.ip, System.currentTimeMillis());
+                        iter.remove(); // 删除订阅关系
                         LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-	                        (System.currentTimeMillis() - changeTime),
-	                        "in-advance", RequestUtil.getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
-	                        "polling",
-	                        clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
+                            (System.currentTimeMillis() - changeTime),
+                            "in-advance",
+                            RequestUtil.getRemoteIp((HttpServletRequest)clientSub.asyncContext.getRequest()),
+                            "polling",
+                            clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
                         clientSub.sendResponse(Arrays.asList(groupKey));
                     }
                 }
-			} catch (Throwable t) {
-				LogUtil.defaultLog.error("data change error:" + t.getMessage(), t.getCause());
-			}
+            } catch (Throwable t) {
+                LogUtil.defaultLog.error("data change error:" + t.getMessage(), t.getCause());
+            }
         }
 
-		DataChangeTask(String groupKey) {
-			this(groupKey, false, null);
-		}
+        DataChangeTask(String groupKey) {
+            this(groupKey, false, null);
+        }
 
-		DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
-			this(groupKey, isBeta, betaIps, null);
-		}
+        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps) {
+            this(groupKey, isBeta, betaIps, null);
+        }
 
-		DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps, String tag) {
-			this.groupKey = groupKey;
-			this.isBeta = isBeta;
-			this.betaIps = betaIps;
-			this.tag = tag;
-		}
-        
+        DataChangeTask(String groupKey, boolean isBeta, List<String> betaIps, String tag) {
+            this.groupKey = groupKey;
+            this.isBeta = isBeta;
+            this.betaIps = betaIps;
+            this.tag = tag;
+        }
+
         final String groupKey;
         final long changeTime = System.currentTimeMillis();
         final boolean isBeta;
@@ -368,37 +370,39 @@ public class LongPollingService extends AbstractEventListener {
         public void run() {
             asyncTimeoutFuture = scheduler.schedule(new Runnable() {
                 public void run() {
-                	try {
-                		getRetainIps().put(ClientLongPulling.this.ip, System.currentTimeMillis());
-						/**
-						 * 删除订阅关系
-						 */
-                		allSubs.remove(ClientLongPulling.this);
+                    try {
+                        getRetainIps().put(ClientLongPulling.this.ip, System.currentTimeMillis());
+                        /**
+                         * 删除订阅关系
+                         */
+                        allSubs.remove(ClientLongPulling.this);
 
-                        if(isFixedPolling()) {
-                        	LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-		                        (System.currentTimeMillis() - createTime),
-		                        "fix", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-		                        "polling",
-		                        clientMd5Map.size(), probeRequestSize);
-                            List<String> changedGroups = MD5Util.compareMd5((HttpServletRequest) asyncContext.getRequest(), (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
+                        if (isFixedPolling()) {
+                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
+                                (System.currentTimeMillis() - createTime),
+                                "fix", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
+                                "polling",
+                                clientMd5Map.size(), probeRequestSize);
+                            List<String> changedGroups = MD5Util.compareMd5(
+                                (HttpServletRequest)asyncContext.getRequest(),
+                                (HttpServletResponse)asyncContext.getResponse(), clientMd5Map);
                             if (changedGroups.size() > 0) {
                                 sendResponse(changedGroups);
                             } else {
                                 sendResponse(null);
                             }
                         } else {
-                        	LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-		                        (System.currentTimeMillis() - createTime),
-		                        "timeout", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
-		                        "polling",
-		                        clientMd5Map.size(), probeRequestSize);
+                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
+                                (System.currentTimeMillis() - createTime),
+                                "timeout", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
+                                "polling",
+                                clientMd5Map.size(), probeRequestSize);
                             sendResponse(null);
                         }
-        			} catch (Throwable t) {
-        				LogUtil.defaultLog.error("long pulling error:" + t.getMessage(), t.getCause());
-        			}
-                    
+                    } catch (Throwable t) {
+                        LogUtil.defaultLog.error("long pulling error:" + t.getMessage(), t.getCause());
+                    }
+
                 }
             }, timeoutTime, TimeUnit.MILLISECONDS);
 
@@ -406,10 +410,10 @@ public class LongPollingService extends AbstractEventListener {
         }
 
         void sendResponse(List<String> changedGroups) {
-        	/**
-        	 *  取消超时任务
-        	 */
-        	if (null != asyncTimeoutFuture) { 
+            /**
+             *  取消超时任务
+             */
+            if (null != asyncTimeoutFuture) {
                 asyncTimeoutFuture.cancel(false);
             }
             generateResponse(changedGroups);
@@ -417,14 +421,14 @@ public class LongPollingService extends AbstractEventListener {
 
         void generateResponse(List<String> changedGroups) {
             if (null == changedGroups) {
-				/**
-				 * 告诉容器发送HTTP响应
-				 */
-            	asyncContext.complete();
+                /**
+                 * 告诉容器发送HTTP响应
+                 */
+                asyncContext.complete();
                 return;
             }
 
-            HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
+            HttpServletResponse response = (HttpServletResponse)asyncContext.getResponse();
 
             try {
                 String respString = MD5Util.compareMd5ResultString(changedGroups);
@@ -435,24 +439,24 @@ public class LongPollingService extends AbstractEventListener {
                 response.setHeader("Cache-Control", "no-cache,no-store");
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println(respString);
-                asyncContext.complete(); 
+                asyncContext.complete();
             } catch (Exception se) {
                 pullLog.error(se.toString(), se);
-                asyncContext.complete(); 
+                asyncContext.complete();
             }
         }
-        
-		ClientLongPulling(AsyncContext ac, Map<String, String> clientMd5Map, String ip, int probeRequestSize,
-				long timeoutTime, String appName, String tag) {
-			this.asyncContext = ac;
-			this.clientMd5Map = clientMd5Map;
-			this.probeRequestSize = probeRequestSize;
-			this.createTime = System.currentTimeMillis();
-			this.ip = ip;
-			this.timeoutTime = timeoutTime;
-			this.appName = appName;
-			this.tag = tag;
-		}
+
+        ClientLongPulling(AsyncContext ac, Map<String, String> clientMd5Map, String ip, int probeRequestSize,
+                          long timeoutTime, String appName, String tag) {
+            this.asyncContext = ac;
+            this.clientMd5Map = clientMd5Map;
+            this.probeRequestSize = probeRequestSize;
+            this.createTime = System.currentTimeMillis();
+            this.ip = ip;
+            this.timeoutTime = timeoutTime;
+            this.appName = appName;
+            this.tag = tag;
+        }
 
         // =================
 
@@ -486,13 +490,12 @@ public class LongPollingService extends AbstractEventListener {
         }
     }
 
-	public Map<String, Long> getRetainIps() {
-		return retainIps;
-	}
+    public Map<String, Long> getRetainIps() {
+        return retainIps;
+    }
 
-	public void setRetainIps(Map<String, Long> retainIps) {
-		this.retainIps = retainIps;
-	}
-
+    public void setRetainIps(Map<String, Long> retainIps) {
+        this.retainIps = retainIps;
+    }
 
 }

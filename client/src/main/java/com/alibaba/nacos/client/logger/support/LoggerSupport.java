@@ -21,15 +21,16 @@ import java.util.Map;
 import com.alibaba.nacos.client.logger.Level;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.option.ActivateOption;
+
 /**
  * Logger Support
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class LoggerSupport implements Logger {
 
-    protected Object         delegateLogger;
+    protected Object delegateLogger;
     protected ActivateOption activateOption;
 
     public LoggerSupport(Object delegate) {
@@ -137,7 +138,8 @@ public abstract class LoggerSupport implements Logger {
     }
 
     @Override
-    public void activateAsyncAppender(String productName, String file, String encoding, int queueSize, int discardingThreshold) {
+    public void activateAsyncAppender(String productName, String file, String encoding, int queueSize,
+                                      int discardingThreshold) {
         if (activateOption != null) {
             activateOption.activateAsyncAppender(productName, file, encoding, queueSize, discardingThreshold);
         }
@@ -170,7 +172,7 @@ public abstract class LoggerSupport implements Logger {
                                                        String datePattern, int maxBackupIndex) {
         if (activateOption != null) {
             activateOption.activateAppenderWithTimeAndSizeRolling(productName, file, encoding, size, datePattern,
-                                                                  maxBackupIndex);
+                maxBackupIndex);
         }
     }
 
