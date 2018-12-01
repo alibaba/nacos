@@ -127,5 +127,21 @@ const I18N_CONF = {
     updateInstance: '编辑实例',
     whetherOnline: '是否上线',
   },
+  ListeningToQuery: {
+    success: '成功',
+    failure: '失败',
+    configuration: '配置',
+    pubNoData: '没有数据',
+    listenerQuery: '监听查询',
+    queryDimension: '查询维度',
+    pleaseEnterTheDataId: '请输入Data ID',
+    dataIdCanNotBeEmpty: 'Data ID不能为空',
+    pleaseInputGroup: '请输入Group',
+    groupCanNotBeEmpty: 'Group不能为空',
+    pleaseInputIp: '请输入IP',
+    query: '查询',
+    queryResultsQuery: '查询结果：共查询到',
+    articleMeetRequirementsConfiguration: '条满足要求的配置。',
+  },
 };
 export default I18N_CONF;

@@ -127,5 +127,21 @@ const I18N_CONF = {
     updateInstance: 'Update Instance',
     whetherOnline: 'Whether Online',
   },
+  ListeningToQuery: {
+    success: 'Success',
+    failure: 'Failure',
+    configuration: 'Configuration',
+    pubNoData: 'No results found.',
+    listenerQuery: 'Listening Query',
+    queryDimension: 'Dimension',
+    pleaseEnterTheDataId: 'Enter Data ID',
+    dataIdCanNotBeEmpty: 'Data ID cannot be empty',
+    pleaseInputGroup: 'Enter Group',
+    groupCanNotBeEmpty: 'Group cannot be empty',
+    pleaseInputIp: 'Enter IP',
+    query: 'Search',
+    queryResultsQuery: 'Search Results: Found',
+    articleMeetRequirementsConfiguration: 'configuration items.',
+  },
 };
 export default I18N_CONF;
