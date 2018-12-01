@@ -120,17 +120,22 @@ public class PeerSet {
         peers.put(candidate.ip, candidate);
 
         SortedBag ips = new TreeBag();
+        int maxApproveCount = 0;
+        String maxApprovePeer = null;
         for (RaftPeer peer : peers.values()) {
             if (StringUtils.isEmpty(peer.voteFor)) {
                 continue;
             }
 
             ips.add(peer.voteFor);
+            if (ips.getCount(peer.voteFor) > maxApproveCount) {
+                maxApproveCount = ips.getCount(peer.voteFor);
+                maxApprovePeer = peer.voteFor;
+            }
         }
 
-        String first = (String) ips.last();
-        if (ips.getCount(first) >= majorityCount()) {
-            RaftPeer peer = peers.get(first);
+        if (maxApproveCount >= majorityCount()) {
+            RaftPeer peer = peers.get(maxApprovePeer);
             peer.state = RaftPeer.State.LEADER;
 
             if (!Objects.equals(leader, peer)) {
