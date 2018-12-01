@@ -143,5 +143,20 @@ const I18N_CONF = {
     queryResultsQuery: '查询结果：共查询到',
     articleMeetRequirementsConfiguration: '条满足要求的配置。',
   },
+  HistoryRollback: {
+    details: '详情',
+    rollback: '回滚',
+    pubNoData: '没有数据',
+    toConfigure: '历史版本(保留30天)',
+    dataId: '请输入Data ID',
+    dataIdCanNotBeEmpty: 'Data ID不能为空',
+    group: '请输入Group',
+    groupCanNotBeEmpty: 'Group不能为空',
+    query: '查询',
+    queryResult: '查询结果：共查询到',
+    articleMeet: '条满足要求的配置。',
+    lastUpdateTime: '最后更新时间',
+    operation: '操作',
+  },
 };
 export default I18N_CONF;
