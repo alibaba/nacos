@@ -13,15 +13,28 @@
 
 import React from 'react';
 import RegionGroup from '../../../components/RegionGroup';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
-import { Field, Form, Grid, Input, Loading, Pagination, Select, Table } from '@alifd/next';
+import { getParams, request } from '../../../globalLib';
+import {
+  ConfigProvider,
+  Field,
+  Form,
+  Grid,
+  Input,
+  Loading,
+  Pagination,
+  Select,
+  Table,
+} from '@alifd/next';
 
 import './index.scss';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
 
+@ConfigProvider.config
 class ListeningToQuery extends React.Component {
+  static displayName = 'ListeningToQuery';
+
   constructor(props) {
     super(props);
     this.state = {
@@ -129,16 +142,13 @@ class ListeningToQuery extends React.Component {
   }
 
   renderStatus(values, index, record) {
+    const { locale = {} } = this.props;
     return (
       <div>
         {record.pushStatus === true ? (
-          <span style={{ color: 'green' }}>
-            {aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.success')}
-          </span>
+          <span style={{ color: 'green' }}>{locale.success}</span>
         ) : (
-          <span style={{ color: 'red' }}>
-            {aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.failure')}
-          </span>
+          <span style={{ color: 'red' }}>{locale.failure}</span>
         )}
       </div>
     );
@@ -152,17 +162,14 @@ class ListeningToQuery extends React.Component {
   };
 
   render() {
+    const { locale = {} } = this.props;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
-    const pubnodedata = aliwareIntl.get('pubnodata');
 
-    const locale = {
-      empty: pubnodedata,
-    };
     const selectDataSource = [
       {
-        label: aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.configuration'),
+        label: locale.configuration,
         value: 0,
       },
       {
@@ -179,21 +186,15 @@ class ListeningToQuery extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup
-            left={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.listener_query')}
-            namespaceCallBack={this.getQueryLater}
-          />
+          <RegionGroup left={locale.listenerQuery} namespaceCallBack={this.getQueryLater} />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
-                <FormItem
-                  label={aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_dimension')}
-                >
+                <FormItem label={`${locale.queryDimension}:`}>
                   <Select
                     dataSource={selectDataSource}
                     style={{ width: 200 }}
                     {...this.init('type')}
-                    language={aliwareIntl.currentLanguageCode}
                   />
                 </FormItem>
                 <FormItem
@@ -204,17 +205,13 @@ class ListeningToQuery extends React.Component {
                   required
                 >
                   <Input
-                    placeholder={aliwareIntl.get(
-                      'com.alibaba.nacos.page.listeningToQuery.please_enter_the_dataid'
-                    )}
+                    placeholder={locale.pleaseEnterTheDataId}
                     style={{ width: 200 }}
                     {...this.init('dataId', {
                       rules: [
                         {
                           required: true,
-                          message: aliwareIntl.get(
-                            'com.alibaba.nacos.page.form.Data_Id_can_not_be_empty'
-                          ),
+                          message: locale.dataIdCanNotBeEmpty,
                         },
                       ],
                     })}
@@ -228,17 +225,13 @@ class ListeningToQuery extends React.Component {
                   required
                 >
                   <Input
-                    placeholder={aliwareIntl.get(
-                      'com.alibaba.nacos.page.listeningToQuery.please_input_group'
-                    )}
+                    placeholder={locale.pleaseInputGroup}
                     style={{ width: 200 }}
                     {...this.init('group', {
                       rules: [
                         {
                           required: true,
-                          message: aliwareIntl.get(
-                            'com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty'
-                          ),
+                          message: locale.groupCanNotBeEmpty,
                         },
                       ],
                     })}
@@ -251,9 +244,7 @@ class ListeningToQuery extends React.Component {
                   }}
                 >
                   <Input
-                    placeholder={aliwareIntl.get(
-                      'com.alibaba.nacos.page.listeningToQuery.please_input_ip'
-                    )}
+                    placeholder={locale.pleaseInputIp}
                     style={{ width: 200, boxSize: 'border-box' }}
                     {...this.init('ip')}
                   />
@@ -265,9 +256,8 @@ class ListeningToQuery extends React.Component {
                     onClick={this.queryTrackQuery}
                     style={{ marginRight: 10 }}
                   >
-                    {aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query')}
+                    {locale.query}
                   </Form.Submit>
-                  {}
                 </FormItem>
               </Form>
             </Col>
@@ -284,11 +274,9 @@ class ListeningToQuery extends React.Component {
                 fontSize: 16,
               }}
             >
-              {aliwareIntl.get('com.alibaba.nacos.page.listeningToQuery.query_results:_query')}
+              {locale.queryResultsQuery}
               <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-              {aliwareIntl.get(
-                'com.alibaba.nacos.page.listeningToQuery.article_meet_the_requirements_of_the_configuration.'
-              )}
+              {locale.articleMeetRequirementsConfiguration}
             </h3>
           </div>
           <Row style={{ padding: 0 }}>
@@ -298,8 +286,7 @@ class ListeningToQuery extends React.Component {
                   dataSource={this.state.dataSource}
                   fixedHeader
                   maxBodyHeight={500}
-                  locale={locale}
-                  language={aliwareIntl.currentLanguageCode}
+                  locale={{ empty: locale.pubNoData }}
                 >
                   <Table.Column title="Data ID" dataIndex="dataId" />
                   <Table.Column title="Group" dataIndex="group" />
@@ -310,8 +297,7 @@ class ListeningToQuery extends React.Component {
                   dataSource={this.state.dataSource}
                   fixedHeader
                   maxBodyHeight={400}
-                  locale={locale}
-                  language={aliwareIntl.currentLanguageCode}
+                  locale={{ empty: locale.pubNoData }}
                 >
                   <Table.Column title="IP" dataIndex="ip" />
                   <Table.Column title="MD5" dataIndex="md5" />
@@ -325,7 +311,6 @@ class ListeningToQuery extends React.Component {
               total={this.state.total}
               pageSize={this.state.pageSize}
               onChange={this.changePage}
-              language={aliwareIntl.currentLanguageCode}
             />
             ,
           </div>
