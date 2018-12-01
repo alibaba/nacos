@@ -42,7 +42,7 @@ import ConfigurationManagement from './pages/ConfigurationManagement/Configurati
 import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 
-import * as reducers from './reducers';
+import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
 
 import './index.scss';
