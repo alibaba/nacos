@@ -12,15 +12,21 @@
  */
 
 import React from 'react';
-import { Button, Dialog, Loading, Table } from '@alifd/next';
+import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
 import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
 import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
+import { connect } from 'react-redux';
+
 import './index.scss';
 
+@connect(state => ({ ...state.locale }))
+@ConfigProvider.config
 class NameSpace extends React.Component {
+  static displayName = 'NameSpace';
+
   constructor(props) {
     super(props);
     this.state = {
@@ -35,6 +41,8 @@ class NameSpace extends React.Component {
   }
 
   getNameSpaces(delayTime = 2000) {
+    const { locale = {} } = this.props;
+    const { prompt } = locale;
     const self = this;
     // let serverId = getParams('serverId') || 'center';
     self.openLoading();
@@ -61,8 +69,7 @@ class NameSpace extends React.Component {
             });
           } else {
             Dialog.alert({
-              language: aliwareIntl.currentLanguageCode || 'zh-cn',
-              title: aliwareIntl.get('com.alibaba.nacos.page.namespace.prompt'),
+              title: prompt,
               content: res.message,
             });
           }
@@ -96,6 +103,8 @@ class NameSpace extends React.Component {
   }
 
   detailNamespace(record) {
+    const { locale = {} } = this.props;
+    const { namespaceDetails } = locale;
     const { namespace } = record; // 获取ak,sk
     request({
       url: `v1/console/namespaces?show=all&namespaceId=${namespace}`,
@@ -107,8 +116,7 @@ class NameSpace extends React.Component {
           Dialog.alert({
             style: { width: '500px' },
             needWrapper: false,
-            language: aliwareIntl.currentLanguageCode || 'zh-cn',
-            title: aliwareIntl.get('nacos.page.namespace.Namespace_details'),
+            title: namespaceDetails,
             content: (
               <div>
                 <div style={{ marginTop: '10px' }}>

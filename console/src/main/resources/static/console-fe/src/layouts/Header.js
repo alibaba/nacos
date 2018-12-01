@@ -14,24 +14,10 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { ConfigProvider } from '@alifd/next';
-import classnames from 'classnames';
 import siteConfig from '../config';
-import { getLink } from '../utils/nacosutil';
 import { changeLanguage } from '../reducers/locale';
 
 import './index.scss';
-
-const languageSwitch = [
-  {
-    text: '中',
-    value: 'en-us',
-  },
-  {
-    text: 'En',
-    value: 'zh-cn',
-  },
-];
-const noop = () => {};
 
 @connect(
   state => ({ ...state.locale }),
@@ -41,82 +27,57 @@ const noop = () => {};
 class Header extends React.Component {
   static displayName = 'Header';
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      menuBodyVisible: false,
-    };
-
-    this.switchLang = this.switchLang.bind(this);
-  }
-
-  toggleMenu() {
-    this.setState({
-      menuBodyVisible: !this.state.menuBodyVisible,
-    });
-  }
-
-  switchLang() {
+  switchLang = () => {
     const { language = 'en-US', changeLanguage } = this.props;
     changeLanguage(language === 'en-US' ? 'zh-CN' : 'en-US');
-  }
-
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    this.setState({
-      language: nextProps.language,
-    });
-  }
+  };
 
   render() {
     const { locale = {}, language = 'en-US' } = this.props;
     const { home, docs, blog, community, languageSwitchButton } = locale;
-    const { type, logo, onLanguageChange, currentKey } = this.props;
-    const { menuBodyVisible } = this.state;
+    const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
+    const NAV_MENU = [
+      {
+        id: 1,
+        title: home,
+        link: BASE_URL,
+      },
+      {
+        id: 2,
+        title: docs,
+        link: `${BASE_URL}docs/what-is-nacos.html`,
+      },
+      {
+        id: 3,
+        title: blog,
+        link: `${BASE_URL}blog/index.html`,
+      },
+      {
+        id: 4,
+        title: community,
+        link: `${BASE_URL}community/index.html`,
+      },
+    ];
     return (
-      <header
-        className={classnames({
-          'header-container': true,
-          [`header-container-${type}`]: true,
-        })}
-      >
+      <header className="header-container header-container-primary">
         <div className="header-body">
           <a href="https://nacos.io/zh-cn/" target="_blank" rel="noopener noreferrer">
-            <img className="logo" alt={siteConfig.name} title={siteConfig.name} src={logo} />
+            <img
+              src="img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg"
+              className="logo"
+              alt={siteConfig.name}
+              title={siteConfig.name}
+            />
           </a>
-          {onLanguageChange !== noop && (
-            <span
-              className={classnames({
-                'language-switch': true,
-                [`language-switch-${type}`]: true,
-              })}
-              onClick={this.switchLang}
-            >
-              {languageSwitch.find(lang => lang.value === language).text}
-            </span>
-          )}
-          <div
-            className={classnames({
-              'header-menu': true,
-              'header-menu-open': menuBodyVisible,
-            })}
-          >
+          <span className="language-switch language-switch-primary" onClick={this.switchLang}>
+            {languageSwitchButton}
+          </span>
+          <div className="header-menu header-menu-open">
             <ul>
-              {[
-                [home, 'https://nacos.io/en-us/index.html'],
-                [docs, 'https://nacos.io/en-us/docs/quick-start.html'],
-                [blog, 'https://nacos.io/en-us/blog'],
-                [community, 'https://nacos.io/en-us/community'],
-              ].map(([text, link]) => (
-                <li
-                  key={text}
-                  className={classnames({
-                    'menu-item': true,
-                    [`menu-item-${type}`]: true,
-                    [`menu-item-${type}-active`]: false,
-                  })}
-                >
-                  <a href={link} target="_blank" rel="noopener noreferrer">
-                    {text}
+              {NAV_MENU.map(item => (
+                <li key={item.id} className="menu-item menu-item-primary">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    {item.title}
                   </a>
                 </li>
               ))}

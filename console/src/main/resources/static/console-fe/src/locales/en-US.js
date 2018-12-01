@@ -19,5 +19,28 @@ const I18N_CONF = {
     community: 'COMMUNITY',
     languageSwitchButton: '中',
   },
+  MainLayout: {
+    nacosName: 'NACOS',
+    nacosVersion: '0.5.0',
+    doesNotExist: 'The page you visit does not exist',
+    configurationManagementVirtual: 'ConfigManagement',
+    configurationManagement: 'Configurations',
+    configdetail: 'Configuration Details',
+    configsync: 'Synchronize Configuration',
+    configeditor: 'Edit Configuration',
+    newconfig: 'Create Configuration',
+    historyRollback: 'Historical Versions',
+    configRollback: 'Configuration Rollback',
+    historyDetail: 'History Details',
+    listeningToQuery: 'Listening Query',
+    serviceManagementVirtual: 'ServiceManagement',
+    serviceManagement: 'Service List',
+    serviceDetail: 'Service Details',
+    namespace: 'Namespace',
+  },
+  NameSpace: {
+    prompt: 'Notice',
+    namespaceDetails: 'Namespace details',
+  },
 };
 export default I18N_CONF;
