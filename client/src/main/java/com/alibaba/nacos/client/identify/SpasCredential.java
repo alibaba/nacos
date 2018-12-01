@@ -17,22 +17,21 @@ package com.alibaba.nacos.client.identify;
 
 /**
  * Spas Credential Interface
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface SpasCredential {
-	/**
-	 * get AccessKey
-	 * 
-	 * @return AccessKey
-	 */
-	public String getAccessKey();
+    /**
+     * get AccessKey
+     *
+     * @return AccessKey
+     */
+    public String getAccessKey();
 
-	/**
-	 * get SecretKey
-	 * 
-	 * @return SecretKey
-	 */
-	public String getSecretKey();
+    /**
+     * get SecretKey
+     *
+     * @return SecretKey
+     */
+    public String getSecretKey();
 }

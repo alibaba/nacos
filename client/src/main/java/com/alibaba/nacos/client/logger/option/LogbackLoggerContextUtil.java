@@ -20,10 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.LogbackException;
+
 /**
  * Logback Context Util
- * @author Nacos
  *
+ * @author Nacos
  */
 public class LogbackLoggerContextUtil {
 
@@ -35,11 +36,11 @@ public class LogbackLoggerContextUtil {
 
             if (!(lcObject instanceof LoggerContext)) {
                 throw new LogbackException(
-                                           "Expected LOGBACK binding with SLF4J, but another log system has taken the place: "
-                                                   + lcObject.getClass().getSimpleName());
+                    "Expected LOGBACK binding with SLF4J, but another log system has taken the place: "
+                        + lcObject.getClass().getSimpleName());
             }
 
-            loggerContext = (LoggerContext) lcObject;
+            loggerContext = (LoggerContext)lcObject;
         }
 
         return loggerContext;

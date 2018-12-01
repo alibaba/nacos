@@ -17,13 +17,15 @@ package com.alibaba.nacos.config.server.model;
 
 /**
  * auth type
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public enum AuthType {
-	/**
-	 * auth type
-	 */
-	GROUP, GROUP_DATAID, TENANT_GROUP, TENANT
+    /**
+     * auth type
+     */
+    GROUP,
+    GROUP_DATAID,
+    TENANT_GROUP,
+    TENANT
 }

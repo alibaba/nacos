@@ -18,8 +18,7 @@ package com.alibaba.nacos.api.config.annotation;
 import java.lang.annotation.*;
 
 /**
- * An annotation for ignore field from annotated
- * {@link NacosConfigurationProperties} Properties Object.
+ * An annotation for ignore field from annotated {@link NacosConfigurationProperties} Properties Object.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see NacosConfigurationProperties
