@@ -143,5 +143,20 @@ const I18N_CONF = {
     queryResultsQuery: 'Search Results: Found',
     articleMeetRequirementsConfiguration: 'configuration items.',
   },
+  HistoryRollback: {
+    details: 'Details',
+    rollback: 'Roll Back',
+    pubNoData: 'No results found.',
+    toConfigure: 'Historical Versions (Configuration record is retained for 30 days.)',
+    dataId: 'Enter Data ID',
+    dataIdCanNotBeEmpty: 'Data ID cannot be empty',
+    group: 'Enter Group',
+    groupCanNotBeEmpty: 'Group cannot be empty',
+    query: 'Search',
+    queryResult: 'Search Results: Found',
+    articleMeet: 'configuration items.',
+    lastUpdateTime: 'Last Modified At',
+    operation: 'Operation',
+  },
 };
 export default I18N_CONF;
