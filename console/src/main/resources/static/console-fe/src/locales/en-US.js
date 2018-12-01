@@ -158,5 +158,17 @@ const I18N_CONF = {
     lastUpdateTime: 'Last Modified At',
     operation: 'Operation',
   },
+  HistoryDetail: {
+    historyDetails: 'History Details',
+    update: 'Update',
+    insert: 'Insert',
+    deleteAction: 'Delete',
+    recipientFrom: 'Collapse',
+    moreAdvancedOptions: 'Advanced Options',
+    home: 'Application:',
+    actionType: 'Action Type:',
+    configureContent: 'Configuration Content:',
+    back: 'Back',
+  },
 };
 export default I18N_CONF;

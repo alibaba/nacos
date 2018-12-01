@@ -158,5 +158,17 @@ const I18N_CONF = {
     lastUpdateTime: '最后更新时间',
     operation: '操作',
   },
+  HistoryDetail: {
+    historyDetails: '历史详情',
+    update: '更新',
+    insert: '插入',
+    deleteAction: '删除',
+    recipientFrom: '收起',
+    moreAdvancedOptions: '更多高级选项',
+    home: '归属应用:',
+    actionType: '操作类型:',
+    configureContent: '配置内容:',
+    back: '返回',
+  },
 };
 export default I18N_CONF;
