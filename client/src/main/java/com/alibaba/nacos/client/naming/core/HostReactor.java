@@ -74,7 +74,7 @@ public class HostReactor {
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "com.vipserver.client.updater");
+            Thread thread = new Thread(r, "com.alibaba.nacos.client.naming.updater");
             thread.setDaemon(true);
 
             return thread;
