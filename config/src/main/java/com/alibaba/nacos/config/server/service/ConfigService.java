@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.MD5;
@@ -42,6 +43,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.*;
  */
 public class ConfigService {
 
+	public static final String ID = "_ID";
 	@Autowired
 	private static PersistService persistService;
     
@@ -565,17 +567,42 @@ public class ConfigService {
     
     
     static CacheItem makeSure(final String groupKey) {
-        CacheItem item = CACHE.get(groupKey);
-        if (null != item) {
-            return item;
-        }
-        CacheItem tmp = new CacheItem(groupKey);
-        item = CACHE.putIfAbsent(groupKey, tmp);
-        return (null == item) ? tmp : item;
-    }    
-    
+		CacheItem item = CACHE.get(groupKey);
+		if (null != item) {
+			return item;
+		}
+		CacheItem tmp = new CacheItem(groupKey);
+		item = CACHE.putIfAbsent(groupKey, tmp);
+		return (null == item) ? tmp : item;
+	}
 
-    private final static String NO_SPACE_CN  = "设备上没有空间";
+	static public String makeSureTenantCache(final String tenantName, final String tenantId) {
+		TNCACHE.putIfAbsent(tenantId+ ID,tenantName);
+		return TNCACHE.putIfAbsent(tenantName,tenantId);
+	}
+
+	static public String updateTenantCache(final String tenantName, final String tenantId) {
+		TNCACHE.replace(tenantId+ ID,tenantName);
+		return TNCACHE.putIfAbsent(tenantName,tenantId);
+	}
+
+	/**
+	 * 返回tnCache。
+	 */
+	static public String getTenantIdCache(String tenantName) {
+		return TNCACHE.get(tenantName);
+	}
+
+	/**
+	 * 删除缓存。
+	 */
+	static public boolean removeTenantCache(String tenantId) {
+		return TNCACHE.remove(TNCACHE.get(tenantId+ ID))==null?false:null==TNCACHE.remove(tenantId+ID);
+	}
+
+
+
+	private final static String NO_SPACE_CN  = "设备上没有空间";
     private final static String NO_SPACE_EN  = "No space left on device";
     private final static String DISK_QUATA_CN  = "超出磁盘限额";
     private final static String DISK_QUATA_EN  = "Disk quota exceeded";
@@ -585,5 +612,11 @@ public class ConfigService {
     */
     static private final ConcurrentHashMap<String, CacheItem> CACHE =
             new ConcurrentHashMap<String, CacheItem>();
+
+	/**
+	 * tenantName -> groupKey
+	 */
+	static private final ConcurrentHashMap<String, String> TNCACHE =
+			new ConcurrentHashMap<String, String>();
 }
 

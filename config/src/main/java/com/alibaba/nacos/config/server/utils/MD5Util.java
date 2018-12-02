@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigService;
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -133,6 +134,10 @@ public class MD5Util {
 					groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
 					md5Map.put(groupKey, endValue);
 				} else {
+                    String tenantCache = ConfigService.getTenantIdCache(endValue);
+                    if (!Strings.isNullOrEmpty(tenantCache)){
+                        endValue=tenantCache;
+                    }
 					String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1), endValue);
 					groupKey = SingletonRepository.DataIdGroupIdCache.getSingleton(groupKey);
 					md5Map.put(groupKey, tmpList.get(2));

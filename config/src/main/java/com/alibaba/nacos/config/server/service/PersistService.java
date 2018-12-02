@@ -215,6 +215,7 @@ public class PersistService {
 
 	static final class ConfigInfoRowMapper implements
 			RowMapper<ConfigInfo> {
+		@Override
 		public ConfigInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigInfo info = new ConfigInfo();
 
@@ -366,6 +367,7 @@ public class PersistService {
 	
 	static final class ConfigInfoBaseRowMapper implements
 	RowMapper<ConfigInfoBase> {
+		@Override
 		public ConfigInfoBase mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigInfoBase info = new ConfigInfoBase();
 			
@@ -447,6 +449,7 @@ public class PersistService {
 	};
 	
 	static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
+		@Override
 		public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			TenantInfo info = new TenantInfo();
 			info.setTenantId(rs.getString("tenant_id"));
@@ -3059,6 +3062,17 @@ public class PersistService {
 		} catch (Exception e) {
 			fatalLog.error("[db-other-error]" + e.getMessage(), e);
 			throw new RuntimeException(e);
+		}
+	}
+
+	public Page<TenantInfo> findAllTenant(final int pageSize) {
+		String select = "SELECT tenant_id,tenant_name,tenant_desc from tenant_info limit ?,?";
+		PaginationHelper<TenantInfo> helper = new PaginationHelper<>();
+		try {
+			return helper.fetchPageLimit(jt, select, new Object[] {0, pageSize }, 1, pageSize, TENANT_INFO_ROW_MAPPER);
+		} catch (CannotGetJdbcConnectionException e) {
+			fatalLog.error("[db-error] " + e.toString(), e);
+			throw e;
 		}
 	}
 

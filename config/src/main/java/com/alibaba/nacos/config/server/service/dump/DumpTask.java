@@ -17,10 +17,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoTagWrapper;
@@ -263,7 +260,6 @@ class DumpAllProcessor implements TaskProcessor {
 					if (cf.getDataId().equals(SwitchService.SWITCH_META_DATAID)) {
 						SwitchService.load(cf.getContent());
 					}
-
 					boolean result = ConfigService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
 							cf.getLastModified());
 
@@ -275,6 +271,12 @@ class DumpAllProcessor implements TaskProcessor {
 				defaultLog.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
 			} else {
 				lastMaxId += PAGE_SIZE;
+			}
+			Page<TenantInfo> allTenantPage = persistService.findAllTenant(PAGE_SIZE);
+			if (allTenantPage != null && allTenantPage.getPageItems() != null) {
+				for (TenantInfo tenantInfo : allTenantPage.getPageItems()) {
+					ConfigService.makeSureTenantCache(tenantInfo.getTenantName(),tenantInfo.getTenantId());
+				}
 			}
 		}
 		return true;
