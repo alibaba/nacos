@@ -26,9 +26,8 @@ import org.springframework.stereotype.Component;
 import javax.servlet.ServletContext;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
-
 @Component
 public class RunningConfig implements ApplicationListener<WebServerInitializedEvent> {
 

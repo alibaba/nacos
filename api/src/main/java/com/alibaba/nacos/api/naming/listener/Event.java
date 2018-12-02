@@ -17,7 +17,7 @@ package com.alibaba.nacos.api.naming.listener;
 
 /**
  * event interface
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public interface Event {
 }
