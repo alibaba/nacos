@@ -111,6 +111,7 @@ public class PersistService {
 	
 	static final class ConfigInfoWrapperRowMapper implements
 			RowMapper<ConfigInfoWrapper> {
+		@Override
 		public ConfigInfoWrapper mapRow(ResultSet rs, int rowNum)
 				throws SQLException {
 			ConfigInfoWrapper info = new ConfigInfoWrapper();
@@ -145,6 +146,7 @@ public class PersistService {
 
 	static final class ConfigInfoBetaWrapperRowMapper implements
 	RowMapper<ConfigInfoBetaWrapper> {
+		@Override
 		public ConfigInfoBetaWrapper mapRow(ResultSet rs, int rowNum)
 				throws SQLException {
 			ConfigInfoBetaWrapper info = new ConfigInfoBetaWrapper();
@@ -180,6 +182,7 @@ public class PersistService {
 	
 	static final class ConfigInfoTagWrapperRowMapper implements
 	RowMapper<ConfigInfoTagWrapper> {
+		@Override
 		public ConfigInfoTagWrapper mapRow(ResultSet rs, int rowNum)
 				throws SQLException {
 			ConfigInfoTagWrapper info = new ConfigInfoTagWrapper();
@@ -215,6 +218,7 @@ public class PersistService {
 
 	static final class ConfigInfoRowMapper implements
 			RowMapper<ConfigInfo> {
+		@Override
 		public ConfigInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigInfo info = new ConfigInfo();
 
@@ -244,6 +248,7 @@ public class PersistService {
 
 	static final class ConfigKeyRowMapper implements
 			RowMapper<ConfigKey> {
+		@Override
 		public ConfigKey mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigKey info = new ConfigKey();
 
@@ -256,6 +261,7 @@ public class PersistService {
 	}
 	
 	static final class ConfigAdvanceInfoRowMapper implements RowMapper<ConfigAdvanceInfo> {
+		@Override
 		public ConfigAdvanceInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigAdvanceInfo info = new ConfigAdvanceInfo();
 			info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
@@ -272,7 +278,8 @@ public class PersistService {
 	}
 	
 	static final class ConfigAllInfoRowMapper implements RowMapper<ConfigAllInfo> {
-		public ConfigAllInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public ConfigAllInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigAllInfo info = new ConfigAllInfo();
 			info.setDataId(rs.getString("data_id"));
 			info.setGroup(rs.getString("group_id"));
@@ -308,7 +315,8 @@ public class PersistService {
 	
 	static final class ConfigInfo4BetaRowMapper implements
 	RowMapper<ConfigInfo4Beta> {
-		public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigInfo4Beta info = new ConfigInfo4Beta();
 			
 			info.setDataId(rs.getString("data_id"));
@@ -366,7 +374,8 @@ public class PersistService {
 	
 	static final class ConfigInfoBaseRowMapper implements
 	RowMapper<ConfigInfoBase> {
-		public ConfigInfoBase mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public ConfigInfoBase mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigInfoBase info = new ConfigInfoBase();
 			
 			info.setDataId(rs.getString("data_id"));
@@ -388,6 +397,7 @@ public class PersistService {
 
 	static final class ConfigInfoAggrRowMapper implements
 			RowMapper<ConfigInfoAggr> {
+		@Override
 		public ConfigInfoAggr mapRow(ResultSet rs, int rowNum)
 				throws SQLException {
 			ConfigInfoAggr info = new ConfigInfoAggr();
@@ -402,7 +412,8 @@ public class PersistService {
 	}
 
 	static final class ConfigInfoChangedRowMapper implements RowMapper<ConfigInfoChanged> {
-		public ConfigInfoChanged mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public ConfigInfoChanged mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigInfoChanged info = new ConfigInfoChanged();
 			info.setDataId(rs.getString("data_id"));
 			info.setGroup(rs.getString("group_id"));
@@ -412,7 +423,8 @@ public class PersistService {
 	}
 
 	static final class ConfigHistoryRowMapper implements RowMapper<ConfigHistoryInfo> {
-		public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
 			configHistoryInfo.setId(rs.getLong("nid"));
 			configHistoryInfo.setDataId(rs.getString("data_id"));
@@ -428,7 +440,8 @@ public class PersistService {
 	}
 
 	static final class ConfigHistoryDetailRowMapper implements RowMapper<ConfigHistoryInfo> {
-		public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
 			configHistoryInfo.setId(rs.getLong("nid"));
 			configHistoryInfo.setDataId(rs.getString("data_id"));
@@ -447,7 +460,8 @@ public class PersistService {
 	};
 	
 	static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
-		public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+		@Override
+        public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
 			TenantInfo info = new TenantInfo();
 			info.setTenantId(rs.getString("tenant_id"));
 			info.setTenantName(rs.getString("tenant_name"));
@@ -1432,8 +1446,10 @@ public class PersistService {
 	 * @param pageSize
 	 *            每页大小(必须大于0)
 	 * 
-	 * @param group
-	 * 
+	 * @param tenant
+	 *
+	 * @param appName
+	 *
 	 * @return ConfigInfo对象的集合
 	 */
 	public Page<ConfigInfo> findConfigInfoByApp(final int pageNo,
@@ -3221,6 +3237,22 @@ public class PersistService {
 		}
 		return true;
 	}
+
+    /**
+     * get tenant info list
+     * @param pageSize
+     * @return
+     */
+    public Page<TenantInfo> findAllTenant(final int pageSize) {
+        String select = "SELECT tenant_id,tenant_name,tenant_desc from tenant_info limit ?,?";
+        PaginationHelper<TenantInfo> helper = new PaginationHelper<TenantInfo>();
+        try {
+            return helper.fetchPageLimit(jt, select, new Object[] {0, pageSize }, 1, pageSize, TENANT_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
     
 	static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
 

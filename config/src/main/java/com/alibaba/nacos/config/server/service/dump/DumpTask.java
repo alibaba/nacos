@@ -17,10 +17,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoTagWrapper;
@@ -276,6 +273,13 @@ class DumpAllProcessor implements TaskProcessor {
 			} else {
 				lastMaxId += PAGE_SIZE;
 			}
+			Page<TenantInfo> allTenantPage = persistService.findAllTenant(PAGE_SIZE);
+			if (allTenantPage != null && allTenantPage.getPageItems() != null) {
+				for (TenantInfo tenantInfo : allTenantPage.getPageItems()) {
+					ConfigService.makeSureTenantCache(tenantInfo.getTenantName(),tenantInfo.getTenantId());
+				}
+			}
+
 		}
 		return true;
 	}

@@ -24,6 +24,7 @@ import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -108,6 +109,10 @@ public class ConfigServletInner {
      */
 	public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
 							  String tenant, String tag, String clientIp) throws IOException, ServletException {
+		String tenantCache = ConfigService.getTenantIdCache(tenant);
+		if (!Strings.isNullOrEmpty(tenantCache)){
+			tenant=tenantCache;
+		}
 		final String groupKey = GroupKey2.getKey(dataId, group, tenant);
 		String autoTag = request.getHeader("Vipserver-Tag");
 		String requestIpApp = RequestUtil.getAppName(request);

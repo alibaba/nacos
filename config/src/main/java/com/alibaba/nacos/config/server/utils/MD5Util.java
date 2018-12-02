@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigService;
+import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
@@ -124,6 +125,10 @@ public class MD5Util {
 				String endValue = "";
 				if (start + 1 <= i) {
 					endValue = configKeysString.substring(start, i);
+                    String tenantCache = ConfigService.getTenantIdCache(endValue);
+                    if (!Strings.isNullOrEmpty(tenantCache)){
+                        endValue=tenantCache;
+                    }
 				}
 				start = i + 1;
 

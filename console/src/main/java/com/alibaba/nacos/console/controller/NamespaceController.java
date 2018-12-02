@@ -21,6 +21,8 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.alibaba.nacos.config.server.service.ConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -130,6 +132,7 @@ public class NamespaceController {
 		String namespaceId = UUID.randomUUID().toString();
 		persistService.insertTenantInfoAtomic("1", namespaceId, namespaceName, namespaceDesc, "nacos",
 				System.currentTimeMillis());
+		ConfigService.makeSureTenantCache(namespaceName,namespaceId);
 		return true;
 	}
 
@@ -157,6 +160,7 @@ public class NamespaceController {
 			@RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) throws NacosException {
 		// TODO 获取用kp
 		persistService.updateTenantNameAtomic("1", namespace, namespaceShowName, namespaceDesc);
+		ConfigService.updateTenantCache(namespace,namespaceShowName);
 		return true;
 	}
 
@@ -178,6 +182,7 @@ public class NamespaceController {
 	public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
 			@RequestParam("namespaceId") String namespaceId) throws NacosException {
 		persistService.removeTenantInfoAtomic("1", namespaceId);
+		ConfigService.removeTenantCache(namespaceId);
 		return true;
 	}
 

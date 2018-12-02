@@ -572,8 +572,30 @@ public class ConfigService {
         CacheItem tmp = new CacheItem(groupKey);
         item = CACHE.putIfAbsent(groupKey, tmp);
         return (null == item) ? tmp : item;
-    }    
-    
+    }
+
+    public static final String ID = "_ID";
+
+    static public String makeSureTenantCache(final String tenantName, final String tenantId) {
+        TNCACHE.putIfAbsent(tenantId+ ID,tenantName);
+        return TNCACHE.putIfAbsent(tenantName,tenantId);
+    }
+    static public String updateTenantCache(final String tenantName, final String tenantId) {
+        TNCACHE.replace(tenantId+ ID,tenantName);
+        return TNCACHE.putIfAbsent(tenantName,tenantId);
+    }
+    /**
+     * 返回tnCache。
+     */
+    static public String getTenantIdCache(String tenantName) {
+        return TNCACHE.get(tenantName);
+    }
+    /**
+     * 删除缓存。
+     */
+    static public boolean removeTenantCache(String tenantId) {
+        return TNCACHE.remove(TNCACHE.get(tenantId+ ID))==null?false:null==TNCACHE.remove(tenantId+ID);
+    }
 
     private final static String NO_SPACE_CN  = "设备上没有空间";
     private final static String NO_SPACE_EN  = "No space left on device";
@@ -585,5 +607,11 @@ public class ConfigService {
     */
     static private final ConcurrentHashMap<String, CacheItem> CACHE =
             new ConcurrentHashMap<String, CacheItem>();
+
+    /**
+     * tenantName -> groupKey
+     */
+    static private final ConcurrentHashMap<String, String> TNCACHE =
+            new ConcurrentHashMap<String, String>();
 }
 
