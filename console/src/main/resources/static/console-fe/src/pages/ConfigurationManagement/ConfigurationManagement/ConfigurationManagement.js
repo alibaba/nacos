@@ -13,17 +13,15 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import BatchHandle from '../../../components/BatchHandle';
-import RegionGroup from '../../../components/RegionGroup';
-import ShowCodeing from '../../../components/ShowCodeing';
-import DeleteDialog from '../../../components/DeleteDialog';
-import CloneDialog from '../../../components/CloneDialog';
-import ImportDialog from '../../../components/ImportDialog';
-import ExportDialog from '../../../components/ExportDialog';
+import BatchHandle from 'components/BatchHandle';
+import RegionGroup from 'components/RegionGroup';
+import ShowCodeing from 'components/ShowCodeing';
+import DeleteDialog from 'components/DeleteDialog';
+import CloneDialog from 'components/CloneDialog';
+import ImportDialog from 'components/ImportDialog';
+import ExportDialog from 'components/ExportDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import {
-  Balloon,
   Button,
   Checkbox,
   Collapse,
@@ -40,6 +38,8 @@ import {
   Slider,
   Table,
 } from '@alifd/next';
+
+import './index.scss';
 
 const { Panel } = Collapse;
 
@@ -343,9 +343,9 @@ class ConfigurationManagement extends React.Component {
     this.serverId = getParams('serverId') || '';
     let urlPrefix = '';
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
-      urlPrefix = '/nacos/v1/cs/configs?search=blur';
+      urlPrefix = 'v1/cs/configs?search=blur';
     } else {
-      urlPrefix = '/nacos/v1/cs/configs?search=accurate';
+      urlPrefix = 'v1/cs/configs?search=accurate';
     }
 
     request({
@@ -431,7 +431,7 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
       onOk: () => {
-        const url = `/nacos/v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
+        const url = `v1/cs/configs?dataId=${record.dataId}&group=${record.group}`;
         request({
           url,
           type: 'delete',
@@ -798,48 +798,6 @@ class ConfigurationManagement extends React.Component {
     const locale = {
       empty: pubnodedata,
     };
-    const helpDataId = (
-      <Balloon
-        trigger={
-          <span>
-            Data ID{' '}
-            <Icon
-              type={'help'}
-              size={'small'}
-              style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }}
-            />
-          </span>
-        }
-        align={'t'}
-        style={{ marginRight: 5 }}
-        triggerType={'hover'}
-      >
-        <a href={window._getLink && window._getLink('knowDataid')} target={'_blank'}>
-          {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_DataId')}
-        </a>
-      </Balloon>
-    );
-    const helpGroup = (
-      <Balloon
-        trigger={
-          <span>
-            Group{' '}
-            <Icon
-              type={'help'}
-              size={'small'}
-              style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }}
-            />
-          </span>
-        }
-        align={'t'}
-        style={{ marginRight: 5 }}
-        triggerType={'hover'}
-      >
-        <a href={window._getLink && window._getLink('knowGoup')} target={'_blank'}>
-          {aliwareIntl.get('com.alibaba.nacos.page.configurationManagement.click_to_learn_Group')}
-        </a>
-      </Balloon>
-    );
     return (
       <div>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
@@ -1039,8 +997,8 @@ class ConfigurationManagement extends React.Component {
                   language={aliwareIntl.currentLanguageCode}
                   ref={'dataTable'}
                 >
-                  <Table.Column title={helpDataId} dataIndex={'dataId'} />
-                  <Table.Column title={helpGroup} dataIndex={'group'} />
+                  <Table.Column title={'Data Id'} dataIndex={'dataId'} />
+                  <Table.Column title={'Group'} dataIndex={'group'} />
                   {!this.inApp ? (
                     <Table.Column
                       title={aliwareIntl.get('nacos.page.configurationManagement.HOME_Application')}

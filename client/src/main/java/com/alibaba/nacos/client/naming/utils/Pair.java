@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.naming.utils;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Pair<T> {
 

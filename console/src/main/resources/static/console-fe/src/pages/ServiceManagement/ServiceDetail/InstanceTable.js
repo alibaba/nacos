@@ -51,7 +51,7 @@ class InstanceTable extends React.Component {
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
-      url: '/nacos/v1/ns/catalog/instanceList',
+      url: 'v1/ns/catalog/instanceList',
       data: {
         serviceName,
         clusterName,
@@ -76,7 +76,7 @@ class InstanceTable extends React.Component {
     newVal.list[index].enabled = !enabled;
     request({
       method: 'POST',
-      url: '/nacos/v1/ns/instance/update',
+      url: 'v1/ns/instance/update',
       data: { serviceName, clusterName, ip, port, weight, enable: !enabled },
       dataType: 'text',
       beforeSend: () => this.openLoading(),
@@ -119,7 +119,7 @@ class InstanceTable extends React.Component {
           />
           <Table.Column
             title={I18N.OPERATION}
-            width={150}
+            width={160}
             cell={(value, index, record) => (
               <div>
                 <Button

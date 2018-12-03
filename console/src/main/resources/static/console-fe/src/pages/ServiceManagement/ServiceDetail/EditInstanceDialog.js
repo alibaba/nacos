@@ -46,7 +46,7 @@ class EditInstanceDialog extends React.Component {
     const { ip, port, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'POST',
-      url: '/nacos/v1/ns/instance/update',
+      url: 'v1/ns/instance/update',
       data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
       dataType: 'text',
       beforeSend: () => openLoading(),
