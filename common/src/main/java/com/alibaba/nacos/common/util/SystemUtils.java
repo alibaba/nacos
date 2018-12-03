@@ -155,7 +155,7 @@ public class SystemUtils {
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
         List<String> lines = IoUtils.readLines(
-            new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
+                new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
         String comment = "#";
         for (String line : lines) {
             String instance = line.trim();
