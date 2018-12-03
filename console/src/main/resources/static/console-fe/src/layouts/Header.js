@@ -15,7 +15,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { ConfigProvider } from '@alifd/next';
 import siteConfig from '../config';
-import { changeLanguage } from '../reducers/locale';
+import { changeLanguage } from '@/reducers/locale';
+import { aliwareIntl } from '@/globalLib';
 
 import './index.scss';
 
@@ -28,14 +29,19 @@ class Header extends React.Component {
   static displayName = 'Header';
 
   switchLang = () => {
-    const { language = 'en-US', changeLanguage } = this.props;
-    changeLanguage(language === 'en-US' ? 'zh-CN' : 'en-US');
+    const { language = 'en-us', changeLanguage } = this.props;
+    const currentLanguage = language === 'en-us' ? 'zh-cn' : 'en-us';
+    changeLanguage(currentLanguage);
+    aliwareIntl.changeLanguage(currentLanguage);
+    document.cookie = `docsite_language=${currentLanguage}`;
+    console.log(currentLanguage);
+    // window.location.reload();
   };
 
   render() {
-    const { locale = {}, language = 'en-US' } = this.props;
+    const { locale = {}, language = 'en-us' } = this.props;
     const { home, docs, blog, community, languageSwitchButton } = locale;
-    const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
+    const BASE_URL = `https://nacos.io/${language}/`;
     const NAV_MENU = [
       {
         id: 1,
