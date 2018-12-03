@@ -14,7 +14,7 @@
 import React from 'react';
 import $ from 'jquery';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
+import { getParams, setParams, request } from '../../../globalLib';
 import {
   Balloon,
   Button,
@@ -27,6 +27,7 @@ import {
   Message,
   Select,
   Radio,
+  ConfigProvider,
 } from '@alifd/next';
 
 import './index.scss';
@@ -35,7 +36,10 @@ const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
 const { AutoComplete: Combobox } = Select;
 
+@ConfigProvider.config
 class NewConfig extends React.Component {
+  static displayName = 'NewConfig';
+
   constructor(props) {
     super(props);
     this.field = new Field(this);
@@ -213,6 +217,7 @@ class NewConfig extends React.Component {
   }
 
   publishConfig() {
+    const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
       if (errors) {
         return;
@@ -250,8 +255,8 @@ class NewConfig extends React.Component {
         },
         success(res) {
           const _payload = {};
-          _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
-          _payload.title = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
+          _payload.maintitle = locale.newListingMain;
+          _payload.title = locale.newListing;
           _payload.content = '';
           _payload.dataId = payload.dataId;
           _payload.group = payload.group;
@@ -271,8 +276,7 @@ class NewConfig extends React.Component {
         },
         error(res) {
           Dialog.alert({
-            language: aliwareIntl.currentLanguageCode || 'zh-cn',
-            content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed'),
+            content: locale.publishFailed,
           });
           self.closeLoading();
         },
@@ -300,16 +304,18 @@ class NewConfig extends React.Component {
   }
 
   validateChart(rule, value, callback) {
+    const { locale = {} } = this.props;
     const chartReg = /[@#\$%\^&\*]+/g;
 
     if (chartReg.test(value)) {
-      callback(aliwareIntl.get('com.alibaba.nacos.page.newconfig.do_not_ente'));
+      callback(locale.doNotEnte);
     } else {
       callback();
     }
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -366,7 +372,7 @@ class NewConfig extends React.Component {
           visible={this.state.loading}
           color={'#333'}
         >
-          <h1>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing')}</h1>
+          <h1>{locale.newListing}</h1>
           <Form field={this.field}>
             <FormItem label={'Data ID:'} required {...formItemLayout}>
               <Input
@@ -374,13 +380,11 @@ class NewConfig extends React.Component {
                   rules: [
                     {
                       required: true,
-                      message: aliwareIntl.get('com.alibaba.nacos.page.newconfig'),
+                      message: locale.newConfig,
                     },
                     {
                       max: 255,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.newconfig.dataId_is_not_empty'
-                      ),
+                      message: locale.dataIdIsNotEmpty,
                     },
                     { validator: this.validateChart.bind(this) },
                   ],
@@ -398,28 +402,23 @@ class NewConfig extends React.Component {
                 size={'large'}
                 hasArrow
                 dataSource={this.state.groups}
-                placeholder={aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_placeholder')}
+                placeholder={locale.groupPlaceholder}
                 defaultValue={this.group}
                 {...init('group', {
                   rules: [
                     {
                       required: true,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.newconfig.the_more_advanced'
-                      ),
+                      message: locale.moreAdvanced,
                     },
                     {
                       max: 127,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.newconfig.group_is_not_empty'
-                      ),
+                      message: locale.groupNotEmpty,
                     },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
                 onChange={this.setGroup.bind(this)}
                 hasClear
-                language={aliwareIntl.currentLanguageCode}
               />
             </FormItem>
             <FormItem
@@ -428,23 +427,19 @@ class NewConfig extends React.Component {
               style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}
             >
               <Message type={'warning'} size={'medium'} animation={false}>
-                {aliwareIntl.get(
-                  'nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0'
-                )}
+                {locale.annotation}
               </Message>
             </FormItem>
             <FormItem label={''} {...formItemLayout}>
               <div>
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore
-                    ? aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length')
-                    : aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}
+                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
                 </a>
               </div>
             </FormItem>
 
             <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-              <FormItem label={aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
+              <FormItem label={locale.tags} {...formItemLayout}>
                 <Select
                   size={'medium'}
                   hasArrow
@@ -453,38 +448,24 @@ class NewConfig extends React.Component {
                   multiple
                   mode="tag"
                   filterLocal
-                  placeholder={aliwareIntl.get(
-                    'nacos.page.configurationManagement.Please_enter_tag'
-                  )}
+                  placeholder={locale.pleaseEnterTag}
                   dataSource={this.state.tagLst}
                   value={this.state.config_tags}
                   onChange={this.setConfigTags.bind(this)}
                   hasClear
-                  language={aliwareIntl.currentLanguageCode}
                 />
               </FormItem>
 
-              <FormItem
-                label={aliwareIntl.get(
-                  'com.alibaba.nacos.page.newconfig.Group_ID_cannot_be_longer'
-                )}
-                {...formItemLayout}
-              >
+              <FormItem label={locale.groupIdCannotBeLonger} {...formItemLayout}>
                 <Input {...init('appName')} readOnly={this.inApp} />
               </FormItem>
             </div>
 
-            <FormItem
-              label={aliwareIntl.get('nacos.page.newconfig.Description')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.description} {...formItemLayout}>
               <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
             </FormItem>
 
-            <FormItem
-              label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.targetEnvironment} {...formItemLayout}>
               <RadioGroup
                 dataSource={list}
                 value={this.state.configType}
@@ -494,7 +475,7 @@ class NewConfig extends React.Component {
             <FormItem
               label={
                 <span>
-                  {aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_format')}
+                  {locale.configurationFormat}
                   <Balloon
                     trigger={
                       <Icon
@@ -512,10 +493,8 @@ class NewConfig extends React.Component {
                     style={{ marginRight: 5 }}
                     triggerType={'hover'}
                   >
-                    <p>
-                      {aliwareIntl.get('com.alibaba.nacos.page.newconfig.configure_contents_of')}
-                    </p>
-                    <p>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.full_screen')}</p>
+                    <p>{locale.configureContentsOf}</p>
+                    <p>{locale.fullScreen}</p>
                   </Balloon>
                   :
                 </span>
@@ -533,11 +512,11 @@ class NewConfig extends React.Component {
                   style={{ marginRight: 10 }}
                   onClick={this.publishConfig.bind(this)}
                 >
-                  {aliwareIntl.get('com.alibaba.nacos.page.newconfig.esc_exit')}
+                  {locale.escExit}
                 </Button>
 
                 <Button type={'light'} onClick={this.goList.bind(this)}>
-                  {aliwareIntl.get('com.alibaba.nacos.page.newconfig.release')}
+                  {locale.release}
                 </Button>
               </div>
             </FormItem>
