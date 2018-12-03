@@ -361,10 +361,12 @@ class MainLayout extends React.Component {
     });
   }
 
-  componentDidMount() {
-    const nav = this.props.navList || [];
-    const navRow = this.nacosGetNav(nav);
-    this.setState({ navRow }, () => this.renderNav());
+  componentWillReceiveProps() {
+    setTimeout(() => {
+      const nav = this.props.navList || [];
+      const navRow = this.nacosGetNav(nav);
+      this.setState({ navRow }, () => this.renderNav());
+    });
   }
 
   render() {
