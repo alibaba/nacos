@@ -17,9 +17,9 @@ import { Button, Card, Form, Loading } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
-import queryString from 'query-string';
+import { getParameter } from 'utils/nacosutil';
 import { I18N } from './constant';
-import './ServiceDetail.less';
+import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
 const pageFormLayout = {
@@ -31,7 +31,7 @@ class ServiceDetail extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      serviceName: queryString.parse(props.location.search).name,
+      serviceName: getParameter(props.location.search, 'name'),
       loading: false,
       currentPage: 1,
       clusters: [],
@@ -53,7 +53,7 @@ class ServiceDetail extends React.Component {
   getServiceDetail() {
     const { serviceName } = this.state;
     request({
-      url: `/nacos/v1/ns/catalog/serviceDetail?serviceName=${serviceName}`,
+      url: `v1/ns/catalog/serviceDetail?serviceName=${serviceName}`,
       beforeSend: () => this.openLoading(),
       success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
       complete: () => this.closeLoading(),

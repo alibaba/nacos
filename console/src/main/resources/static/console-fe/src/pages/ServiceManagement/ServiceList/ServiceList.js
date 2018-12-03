@@ -29,7 +29,7 @@ import {
 } from '@alifd/next';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import { I18N, STATUS_COLOR_MAPPING } from './constant';
-import './ServiceList.less';
+import './ServiceList.scss';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
@@ -69,7 +69,7 @@ class ServiceList extends React.Component {
     const { currentPage, pageSize, keyword } = this.state;
     const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`];
     request({
-      url: `/nacos/v1/ns/catalog/serviceList?${parameter.join('&')}`,
+      url: `v1/ns/catalog/serviceList?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
@@ -98,7 +98,7 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `/nacos/v1/ns/service/remove?serviceName=${serviceName}`,
+          url: `v1/ns/service/remove?serviceName=${serviceName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {

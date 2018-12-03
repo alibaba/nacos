@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingProxy {
 
@@ -71,7 +71,7 @@ public class NamingProxy {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.taobao.vipserver.serverlist.updater");
+                t.setName("com.alibaba.nacos.client.naming.serverlist.updater");
                 t.setDaemon(true);
                 return t;
             }
@@ -90,7 +90,7 @@ public class NamingProxy {
     public List<String> getServerListFromEndpoint() {
 
         try {
-            String urlString = "http://" + endpoint + "/vipserver/serverlist";
+            String urlString = "http://" + endpoint + "/nacos/serverlist";
 
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
                     "Accept-Encoding", "gzip,deflate,sdch",
@@ -135,7 +135,7 @@ public class NamingProxy {
             List<String> list = getServerListFromEndpoint();
 
             if (CollectionUtils.isEmpty(list)) {
-                throw new Exception("Can not acquire vipserver list");
+                throw new Exception("Can not acquire Nacos list");
             }
 
             if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {

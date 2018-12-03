@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
-import { aliwareIntl } from '../../globalLib';
-import './index.less';
+import { aliwareIntl } from '@/globalLib';
+import { isParentEdas } from '@/lib';
+import './index.scss';
 import { Balloon, Button, Dialog, Form, Icon, Select, Upload } from '@alifd/next';
 
 const FormItem = Form.Item;
@@ -49,8 +50,6 @@ class ImportDialog extends React.Component {
       policyLabel: aliwareIntl.get('nacos.component.ImportDialog.To_terminate_the_import0'),
     };
   }
-
-  componentDidMount() {}
 
   openDialog(payload, callback) {
     this.callback = callback;
@@ -96,7 +95,7 @@ class ImportDialog extends React.Component {
       this.state.tenant.id
     }?policy=${this.state.policy}`;
 
-    if (window.globalConfig.isParentEdas()) {
+    if (isParentEdas()) {
       uploadLink = `/authgw/${window.edasprefix}${uploadLink}`;
     }
     const helpTip = (

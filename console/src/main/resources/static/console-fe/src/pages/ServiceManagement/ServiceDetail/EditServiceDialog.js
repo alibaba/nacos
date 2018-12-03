@@ -48,7 +48,7 @@ class EditServiceDialog extends React.Component {
     const { name, protectThreshold, healthCheckMode, metadataText } = editService;
     request({
       method: isCreate ? 'PUT' : 'POST',
-      url: `/nacos/v1/ns/service/${isCreate ? 'create' : 'update'}`,
+      url: `v1/ns/service/${isCreate ? 'create' : 'update'}`,
       data: { serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText },
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),

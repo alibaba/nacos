@@ -16,7 +16,7 @@ import $ from 'jquery';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
-import './index.less';
+import './index.scss';
 import {
   Balloon,
   Button,
@@ -98,7 +98,7 @@ class ConfigEditor extends React.Component {
           lineNumbersMinChars: true,
           theme: 'vs-dark',
           wordWrapColumn: 120,
-          folding: true,
+          folding: false,
           showFoldingControls: 'always',
           wordWrap: 'wordWrapColumn',
           cursorStyle: 'line',
@@ -116,7 +116,7 @@ class ConfigEditor extends React.Component {
         lineNumbersMinChars: true,
         theme: 'vs-dark',
         wordWrapColumn: 120,
-        folding: true,
+        folding: false,
         showFoldingControls: 'always',
         wordWrap: 'wordWrapColumn',
         cursorStyle: 'line',
@@ -157,7 +157,7 @@ class ConfigEditor extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -343,7 +343,7 @@ class ConfigEditor extends React.Component {
         content,
         tenant: this.tenant,
       };
-      const url = '/nacos/v1/cs/configs';
+      const url = 'v1/cs/configs';
       request({
         type: 'post',
         contentType: 'application/x-www-form-urlencoded',

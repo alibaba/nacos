@@ -17,7 +17,7 @@ import { Button } from '@alifd/next';
 import $ from 'jquery';
 import NameSpaceList from '../NameSpaceList';
 import { setParams, request } from '../../globalLib';
-import './index.less';
+import './index.scss';
 
 class RegionGroup extends React.Component {
   static propTypes = {

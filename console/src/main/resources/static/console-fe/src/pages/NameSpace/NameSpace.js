@@ -18,7 +18,7 @@ import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
 import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
-import './index.less';
+import './index.scss';
 
 class NameSpace extends React.Component {
   constructor(props) {
@@ -42,7 +42,7 @@ class NameSpace extends React.Component {
       request({
         type: 'get',
         beforeSend() {},
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         success: res => {
           if (res.code === 200) {
             const data = res.data || [];
@@ -98,7 +98,7 @@ class NameSpace extends React.Component {
   detailNamespace(record) {
     const { namespace } = record; // 获取ak,sk
     request({
-      url: `/nacos/v1/console/namespaces?show=all&namespaceId=${namespace}`,
+      url: `v1/console/namespaces?show=all&namespaceId=${namespace}`,
       beforeSend: () => {
         this.openLoading();
       },
@@ -177,7 +177,7 @@ class NameSpace extends React.Component {
       ),
       language: aliwareIntl.currentLanguageCode || 'zh-cn',
       onOk: () => {
-        const url = `/nacos/v1/console/namespaces?namespaceId=${record.namespace}`;
+        const url = `v1/console/namespaces?namespaceId=${record.namespace}`;
         request({
           url,
           type: 'delete',
@@ -214,7 +214,7 @@ class NameSpace extends React.Component {
   refreshNameSpace() {
     request({
       type: 'get',
-      url: '/nacos/v1/console/namespaces',
+      url: 'v1/console/namespaces',
       success: res => {
         if (res.code === 200) {
           window.namespaceList = res.data;

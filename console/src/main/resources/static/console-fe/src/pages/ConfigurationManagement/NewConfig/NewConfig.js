@@ -15,7 +15,6 @@ import React from 'react';
 import $ from 'jquery';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import {
   Balloon,
   Button,
@@ -29,6 +28,8 @@ import {
   Select,
   Radio,
 } from '@alifd/next';
+
+import './index.scss';
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
@@ -238,7 +239,7 @@ class NewConfig extends React.Component {
         tenant: this.tenant,
       };
       this.serverId = getParams('serverId') || 'center';
-      const url = '/nacos/v1/cs/configs';
+      const url = 'v1/cs/configs';
       request({
         type: 'post',
         contentType: 'application/x-www-form-urlencoded',
