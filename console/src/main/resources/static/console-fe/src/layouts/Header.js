@@ -34,8 +34,7 @@ class Header extends React.Component {
     changeLanguage(currentLanguage);
     aliwareIntl.changeLanguage(currentLanguage);
     document.cookie = `docsite_language=${currentLanguage}`;
-    console.log(currentLanguage);
-    // window.location.reload();
+    window.location.reload();
   };
 
   render() {
