@@ -1,19 +1,17 @@
-package com.alibaba.nacos.cmdb.plugin.spi;
+package com.alibaba.nacos.api.cmdb;
 
-import com.alibaba.nacos.cmdb.pojo.Entity;
-import com.alibaba.nacos.cmdb.pojo.Label;
-import com.alibaba.nacos.cmdb.pojo.LabelEvent;
+import com.alibaba.nacos.api.cmdb.pojo.Entity;
+import com.alibaba.nacos.api.cmdb.pojo.EntityEvent;
+import com.alibaba.nacos.api.cmdb.pojo.Label;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Main service to interact with third-party CMDB.
- *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public interface ExternalCmdbService {
+public interface CmdbService {
 
     /**
      * Get all label names stored in CMDB
@@ -61,12 +59,22 @@ public interface ExternalCmdbService {
      *
      * @return all entities
      */
-    Map<String, Set<Entity>> dumpAllEntities();
+    Map<String, Map<String, Entity>> dumpAllEntities();
 
     /**
      * get label change events
      *
+     * @param timestamp start time of generated events
      * @return label events
      */
-    List<LabelEvent> getLabelEvents();
+    List<EntityEvent> getLabelEvents(long timestamp);
+
+    /**
+     * Get single entity
+     *
+     * @param entityName name of entity
+     * @param entityType type of entity
+     * @return
+     */
+    Entity getEntity(String entityName, String entityType);
 }

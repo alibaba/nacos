@@ -53,6 +53,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Boolean enableHealthCheck = true;
     private Boolean enabled = true;
     private Boolean enableClientBeat = false;
+    private String selectorName;
 
     public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
     /**
@@ -138,6 +139,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
+    }
+
+    public String getSelectorName() {
+        return selectorName;
+    }
+
+    public void setSelectorName(String selectorName) {
+        this.selectorName = selectorName;
     }
 
     public VirtualClusterDomain() {
@@ -372,9 +381,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
         domain.put("protectThreshold", vDom.getProtectThreshold());
 
-        int totalCkRTMillis = 0;
-        int validCkRTCount = 0;
-
         List<Object> clustersList = new ArrayList<Object>();
 
         for (Map.Entry<String, Cluster> entry : vDom.getClusterMap().entrySet()) {
@@ -501,6 +507,11 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         if (enabled != vDom.getEnabled().booleanValue()) {
             Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enabled: " + enabled + " -> " + vDom.getEnabled());
             enabled = vDom.getEnabled();
+        }
+
+        if (!StringUtils.equals(selectorName, vDom.getSelectorName())) {
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", selectorName: " + selectorName + " -> " + vDom.getSelectorName());
+            selectorName = vDom.getSelectorName();
         }
 
         metadata = vDom.getMetadata();

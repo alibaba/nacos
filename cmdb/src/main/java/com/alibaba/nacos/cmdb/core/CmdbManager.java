@@ -1,7 +1,7 @@
-package com.alibaba.nacos.cmdb.service;
+package com.alibaba.nacos.cmdb.core;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public interface CmdbWriter {
+public class CmdbManager {
 }

@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.common.util.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.IpAddress;
@@ -32,7 +33,6 @@ import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
-import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
@@ -63,9 +63,9 @@ public class CatalogController {
 
         JSONObject result = new JSONObject();
 
-        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
-        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
-        String keyword = BaseServlet.optional(request, "keyword", StringUtils.EMPTY);
+        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
+        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
         List<Domain> doms = new ArrayList<>();
         int total = domainsManager.getPagedDom(page - 1, pageSize, keyword, doms);
@@ -106,7 +106,7 @@ public class CatalogController {
     @RequestMapping(value = "/serviceDetail")
     public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, "serviceName");
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
@@ -149,10 +149,10 @@ public class CatalogController {
     @RequestMapping(value = "/instanceList")
     public JSONObject instanceList(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
-        String clusterName = BaseServlet.required(request, "clusterName");
-        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
-        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
+        String serviceName = WebUtils.required(request, "serviceName");
+        String clusterName = WebUtils.required(request, "clusterName");
+        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
 
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {

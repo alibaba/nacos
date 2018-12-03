@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.util.UuidUtil;
+import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -230,7 +230,7 @@ public class HttpSimpleClient {
 		newHeaders.add("exConfigInfo");
 		newHeaders.add("true");
 		newHeaders.add("RequestId");
-		newHeaders.add(UuidUtil.generateUuid());
+		newHeaders.add(UuidUtils.generateUuid());
 		if (headers!=null) {
 			newHeaders.addAll(headers);
 		}
