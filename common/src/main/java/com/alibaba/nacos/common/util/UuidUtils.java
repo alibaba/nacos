@@ -20,7 +20,7 @@ import java.util.UUID;
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public class UuidUtil {
+public class UuidUtils {
 
     public static String generateUuid() {
         return UUID.randomUUID().toString();

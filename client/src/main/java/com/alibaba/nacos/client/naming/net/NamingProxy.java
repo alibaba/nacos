@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.client.naming.utils.*;
-import com.alibaba.nacos.common.util.UuidUtil;
+import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -95,7 +95,7 @@ public class NamingProxy {
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
                     "Accept-Encoding", "gzip,deflate,sdch",
                     "Connection", "Keep-Alive",
-                    "RequestId", UuidUtil.generateUuid());
+                    "RequestId", UuidUtils.generateUuid());
 
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
             if (HttpURLConnection.HTTP_OK != result.code) {
@@ -193,11 +193,6 @@ public class NamingProxy {
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, "GET");
     }
 
-    private String doRegDom(Map<String, String> params) throws Exception {
-        String api = UtilAndComs.NACOS_URL_BASE + "/api/regService";
-        return reqAPI(api, params);
-    }
-
     public boolean serverHealthy() {
 
         try {
@@ -277,7 +272,7 @@ public class NamingProxy {
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch",
                 "Connection", "Keep-Alive",
-                "RequestId", UuidUtil.generateUuid());
+                "RequestId", UuidUtils.generateUuid());
 
         String url;
 

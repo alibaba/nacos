@@ -17,12 +17,12 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.common.util.WebUtils;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,15 +47,15 @@ public class ServiceController {
 
     @RequestMapping(value = "/create", method = RequestMethod.PUT)
     public String create(HttpServletRequest request) throws Exception {
-        String serviceName = BaseServlet.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, "serviceName");
 
         if (domainsManager.getDomain(serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
         }
 
-        float protectThreshold = NumberUtils.toFloat(BaseServlet.optional(request, "protectThreshold", "0"));
-        String healthCheckMode = BaseServlet.optional(request, "healthCheckMode", "client");
-        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
+        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", "client");
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
         if (StringUtils.isNotBlank(metadata)) {
             metadataMap = UtilsAndCommons.parseMetadata(metadata);
@@ -82,7 +82,7 @@ public class ServiceController {
     @RequestMapping(value = "/remove", method = RequestMethod.DELETE)
     public String remove(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, "serviceName");
 
         VirtualClusterDomain service = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (service == null) {
@@ -101,7 +101,7 @@ public class ServiceController {
     @RequestMapping(value = "/detail")
     public Service detail(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, "serviceName");
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
@@ -125,8 +125,8 @@ public class ServiceController {
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public JSONObject list(HttpServletRequest request) throws Exception {
 
-        int pageNo = NumberUtils.toInt(BaseServlet.required(request, "pageNo"));
-        int pageSize = NumberUtils.toInt(BaseServlet.required(request, "pageSize"));
+        int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
+        int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
 
         int start = (pageNo - 1) * pageSize;
         int end = start + pageSize;
@@ -154,10 +154,11 @@ public class ServiceController {
     @RequestMapping(value = "/update", method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
-        float protectThreshold = NumberUtils.toFloat(BaseServlet.required(request, "protectThreshold"));
-        String healthCheckMode = BaseServlet.required(request, "healthCheckMode");
-        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        String serviceName = WebUtils.required(request, "serviceName");
+        float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
+        String healthCheckMode = WebUtils.required(request, "healthCheckMode");
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        String selectorName = WebUtils.optional(request, "selectorName", StringUtils.EMPTY);
 
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {
@@ -183,6 +184,8 @@ public class ServiceController {
 
         Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
         domain.setMetadata(metadataMap);
+
+        domain.setSelectorName(selectorName);
 
         domain.setLastModifiedMillis(System.currentTimeMillis());
         domain.recalculateChecksum();

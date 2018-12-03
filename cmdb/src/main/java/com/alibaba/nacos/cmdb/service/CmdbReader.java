@@ -1,6 +1,7 @@
 package com.alibaba.nacos.cmdb.service;
 
-import com.alibaba.nacos.cmdb.pojo.Entity;
+
+import com.alibaba.nacos.api.cmdb.pojo.Entity;
 
 import java.util.List;
 
