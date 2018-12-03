@@ -110,7 +110,7 @@ public abstract class AbstractHealthCheckProcessor {
                     }
                     Map<String, String> params = new HashMap<>(10);
                     params.put("result", JSON.toJSONString(list));
-                    Loggers.DEBUG_LOG.debug("HEALTH-SYNC", server, JSON.toJSONString(list));
+                    Loggers.DEBUG_LOG.debug("[HEALTH-SYNC]" + server + ", " + JSON.toJSONString(list));
                     if (!server.contains(":")) {
                         server = server + ":" + RunningConfig.getServerPort();
                     }

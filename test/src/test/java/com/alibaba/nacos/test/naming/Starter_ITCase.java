@@ -16,7 +16,7 @@
 package com.alibaba.nacos.test.naming;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Starter_ITCase {
 }
