@@ -140,8 +140,7 @@ public interface ActivateOption {
                                          int maxBackupIndex);
 
     /**
-     * 将当前logger对象的appender设置为异步Appender
-     * 注意：此logger需要提前进行Appender的初始化
+     * 将当前logger对象的appender设置为异步Appender 注意：此logger需要提前进行Appender的初始化
      *
      * @param queueSize           等待队列大小
      * @param discardingThreshold discardingThreshold，该参数仅对logback实现有效，log4j和log4j2无效
@@ -150,11 +149,10 @@ public interface ActivateOption {
     void activateAsync(int queueSize, int discardingThreshold);
 
     /**
-     * 将当前logger对象的appender设置为异步Appender
-     * 注意：此logger需要提前进行Appender的初始化
+     * 将当前logger对象的appender设置为异步Appender 注意：此logger需要提前进行Appender的初始化
      *
-     * @param args AsyncAppender配置参数，请自行保证参数的正确性，要求每个Object[]有3个元素，第一个为set方法名，第二个为方法类型数组，第三个为对应的参数值，如
-     *             args.add(new Object[] { "setBufferSize", new Class<?>[] { int.class }, queueSize });
+     * @param args AsyncAppender配置参数，请自行保证参数的正确性，要求每个Object[]有3个元素，第一个为set方法名，第二个为方法类型数组，第三个为对应的参数值，如 args.add(new
+     *             Object[] { "setBufferSize", new Class<?>[] { int.class }, queueSize });
      * @since 0.2.3
      */
     void activateAsync(List<Object[]> args);
@@ -176,6 +174,7 @@ public interface ActivateOption {
 
     /**
      * 获取日志级别
+     *
      * @return level
      */
     Level getLevel();
@@ -189,6 +188,7 @@ public interface ActivateOption {
 
     /**
      * 获取所属的产品名
+     *
      * @return 所属的产品名
      */
     String getProductName();

@@ -22,38 +22,38 @@ import com.alibaba.nacos.client.logger.LoggerFactory;
 
 /**
  * Log Util
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class LogUtils {
 
-	static int JM_LOG_RETAIN_COUNT = 7;
-	static String JM_LOG_FILE_SIZE = "10MB";
+    static int JM_LOG_RETAIN_COUNT = 7;
+    static String JM_LOG_FILE_SIZE = "10MB";
 
     static {
-    	String tmp = "7";
+        String tmp = "7";
         try {
-			/**
-			 * change timeout from 100 to 200
-			 */
-            tmp = System.getProperty("JM.LOG.RETAIN.COUNT","7");
+            /**
+             * change timeout from 100 to 200
+             */
+            tmp = System.getProperty("JM.LOG.RETAIN.COUNT", "7");
             JM_LOG_RETAIN_COUNT = Integer.parseInt(tmp);
         } catch (NumberFormatException e) {
-			e.printStackTrace();
-			throw e;
+            e.printStackTrace();
+            throw e;
         }
-        
-        JM_LOG_FILE_SIZE = System.getProperty("JM.LOG.FILE.SIZE","10MB"); 
-    	
+
+        JM_LOG_FILE_SIZE = System.getProperty("JM.LOG.FILE.SIZE", "10MB");
+
         // logger init
         Logger logger = LoggerFactory.getLogger("com.alibaba.nacos.client.config");
         logger.setLevel(Level.INFO);
         logger.setAdditivity(false);
-        logger.activateAppenderWithSizeRolling("nacos", "config.log", Constants.ENCODE, JM_LOG_FILE_SIZE, JM_LOG_RETAIN_COUNT);
+        logger.activateAppenderWithSizeRolling("nacos", "config.log", Constants.ENCODE, JM_LOG_FILE_SIZE,
+            JM_LOG_RETAIN_COUNT);
     }
 
-   public static Logger logger(Class<?> clazz) {
-       return LoggerFactory.getLogger(clazz);
-   }
+    public static Logger logger(Class<?> clazz) {
+        return LoggerFactory.getLogger(clazz);
+    }
 }

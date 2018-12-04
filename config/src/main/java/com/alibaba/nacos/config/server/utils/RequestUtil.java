@@ -19,8 +19,8 @@ import javax.servlet.http.HttpServletRequest;
 
 /**
  * Request util
- * @author Nacos
  *
+ * @author Nacos
  */
 public class RequestUtil {
 
@@ -30,9 +30,9 @@ public class RequestUtil {
         String nginxHeader = request.getHeader("X-Real-IP");
         return (nginxHeader == null) ? request.getRemoteAddr() : nginxHeader;
     }
-    
-	public static String getAppName(HttpServletRequest request) {
-		return request.getHeader("Client-AppName");
-	}
-    
+
+    public static String getAppName(HttpServletRequest request) {
+        return request.getHeader("Client-AppName");
+    }
+
 }

@@ -87,7 +87,8 @@ public class DiskCache {
                     continue;
                 }
 
-                if (!(file.getName().endsWith(ServiceInfo.SPLITER + "meta") || file.getName().endsWith(ServiceInfo.SPLITER + "special-url"))) {
+                if (!(file.getName().endsWith(ServiceInfo.SPLITER + "meta") || file.getName().endsWith(
+                    ServiceInfo.SPLITER + "special-url"))) {
                     ServiceInfo dom = new ServiceInfo(file.getName());
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);
@@ -95,7 +96,8 @@ public class DiskCache {
                     ServiceInfo newFormat = null;
 
                     try {
-                        String dataString = ConcurrentDiskUtil.getFileContent(file, Charset.defaultCharset().toString());
+                        String dataString = ConcurrentDiskUtil.getFileContent(file,
+                            Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
 
                         String json;
@@ -125,7 +127,8 @@ public class DiskCache {
                             //ignore
                         }
                     }
-                    if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils.isEmpty(newFormat.getHosts())) {
+                    if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils.isEmpty(
+                        newFormat.getHosts())) {
                         domMap.put(dom.getKey(), newFormat);
                     } else if (!CollectionUtils.isEmpty(dom.getHosts())) {
                         domMap.put(dom.getKey(), dom);

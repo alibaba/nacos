@@ -27,7 +27,7 @@ public class GenericPoller<T> implements Poller<T> {
     private AtomicInteger index = new AtomicInteger(0);
     private List<T> items = new ArrayList<T>();
 
-    public GenericPoller(List<T> items){
+    public GenericPoller(List<T> items) {
         this.items = items;
     }
 
