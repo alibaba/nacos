@@ -47,11 +47,12 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     public Log4j2ActivateOption(org.apache.logging.log4j.Logger logger) {
         if (logger != null) {
             if (logger instanceof org.apache.logging.log4j.core.Logger) {
-                this.logger = (org.apache.logging.log4j.core.Logger) logger;
+                this.logger = (org.apache.logging.log4j.core.Logger)logger;
 
                 configuration = this.logger.getContext().getConfiguration();
             } else {
-                throw new RuntimeException("logger must instanceof org.apache.logging.log4j.core.Logger, " + logger.getClass().getName());
+                throw new RuntimeException(
+                    "logger must instanceof org.apache.logging.log4j.core.Logger, " + logger.getClass().getName());
             }
         }
     }
@@ -59,12 +60,13 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     @Override
     public void activateConsoleAppender(String target, String encoding) {
         org.apache.logging.log4j.core.Layout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder().
-                withConfiguration(configuration)
-                .withPattern(LoggerHelper.getPattern())
-                .withCharset(Charset.forName(encoding))
-                .build();
+            withConfiguration(configuration)
+            .withPattern(LoggerHelper.getPattern())
+            .withCharset(Charset.forName(encoding))
+            .build();
         org.apache.logging.log4j.core.appender.ConsoleAppender appender = ConsoleAppender.createAppender(layout, null,
-                ConsoleAppender.Target.valueOf(target.toUpperCase().replace(".", "_")), "LoggerApiConsoleAppender", false, false, true);
+            ConsoleAppender.Target.valueOf(target.toUpperCase().replace(".", "_")), "LoggerApiConsoleAppender", false,
+            false, true);
         appender.start();
         removeAllAppenders(logger);
         logger.addAppender(appender);
@@ -75,17 +77,17 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     @Override
     public void activateAppender(String productName, String file, String encoding) {
         org.apache.logging.log4j.core.appender.RollingFileAppender appender = RollingFileAppender.newBuilder()
-                .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
-                .withFileName(LoggerHelper.getLogFileP(productName, file))
-                .withAppend(true)
-                .withBufferedIo(true)
-                .setConfiguration(configuration)
-                .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%d{yyyy-MM-dd}")
-                .withLayout(buildLayout(encoding))
-                .withCreateOnDemand(false)
-                .withPolicy(TimeBasedTriggeringPolicy.createPolicy("1", "true"))
-                .withStrategy(DefaultRolloverStrategy.createStrategy(null, null, "nomax", null, null, false, configuration))
-                .build();
+            .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
+            .withFileName(LoggerHelper.getLogFileP(productName, file))
+            .withAppend(true)
+            .withBufferedIo(true)
+            .setConfiguration(configuration)
+            .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%d{yyyy-MM-dd}")
+            .withLayout(buildLayout(encoding))
+            .withCreateOnDemand(false)
+            .withPolicy(TimeBasedTriggeringPolicy.createPolicy("1", "true"))
+            .withStrategy(DefaultRolloverStrategy.createStrategy(null, null, "nomax", null, null, false, configuration))
+            .build();
 
         appender.start();
         removeAllAppenders(logger);
@@ -100,7 +102,8 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     }
 
     @Override
-    public void activateAsyncAppender(String productName, String file, String encoding, int queueSize, int discardingThreshold) {
+    public void activateAsyncAppender(String productName, String file, String encoding, int queueSize,
+                                      int discardingThreshold) {
         activateAppender(productName, file, encoding);
         activateAsync(queueSize, discardingThreshold);
     }
@@ -111,19 +114,21 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     }
 
     @Override
-    public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size, String datePattern) {
+    public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size,
+                                                       String datePattern) {
         org.apache.logging.log4j.core.appender.RollingFileAppender appender = RollingFileAppender.newBuilder()
-                .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
-                .withFileName(LoggerHelper.getLogFileP(productName, file))
-                .withAppend(true)
-                .withBufferedIo(true)
-                .setConfiguration(configuration)
-                .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%d{" + datePattern + "}")
-                .withLayout(buildLayout(encoding))
-                .withCreateOnDemand(false)
-                .withPolicy(CompositeTriggeringPolicy.createPolicy(TimeBasedTriggeringPolicy.createPolicy("1", "true"), SizeBasedTriggeringPolicy.createPolicy(size)))
-                .withStrategy(DefaultRolloverStrategy.createStrategy(null, null, "nomax", null, null, false, configuration))
-                .build();
+            .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
+            .withFileName(LoggerHelper.getLogFileP(productName, file))
+            .withAppend(true)
+            .withBufferedIo(true)
+            .setConfiguration(configuration)
+            .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%d{" + datePattern + "}")
+            .withLayout(buildLayout(encoding))
+            .withCreateOnDemand(false)
+            .withPolicy(CompositeTriggeringPolicy.createPolicy(TimeBasedTriggeringPolicy.createPolicy("1", "true"),
+                SizeBasedTriggeringPolicy.createPolicy(size)))
+            .withStrategy(DefaultRolloverStrategy.createStrategy(null, null, "nomax", null, null, false, configuration))
+            .build();
 
         appender.start();
         removeAllAppenders(logger);
@@ -133,19 +138,22 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     }
 
     @Override
-    public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size, String datePattern, int maxBackupIndex) {
+    public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size,
+                                                       String datePattern, int maxBackupIndex) {
         org.apache.logging.log4j.core.appender.RollingFileAppender appender = RollingFileAppender.newBuilder()
-                .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
-                .withFileName(LoggerHelper.getLogFileP(productName, file))
-                .withAppend(true)
-                .withBufferedIo(true)
-                .setConfiguration(configuration)
-                .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%d{" + datePattern + "}.%i")
-                .withLayout(buildLayout(encoding))
-                .withCreateOnDemand(false)
-                .withPolicy(CompositeTriggeringPolicy.createPolicy(TimeBasedTriggeringPolicy.createPolicy("1", "true"), SizeBasedTriggeringPolicy.createPolicy(size)))
-                .withStrategy(DefaultRolloverStrategy.createStrategy(String.valueOf(maxBackupIndex), "1", "max", null, null, false, configuration))
-                .build();
+            .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
+            .withFileName(LoggerHelper.getLogFileP(productName, file))
+            .withAppend(true)
+            .withBufferedIo(true)
+            .setConfiguration(configuration)
+            .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%d{" + datePattern + "}.%i")
+            .withLayout(buildLayout(encoding))
+            .withCreateOnDemand(false)
+            .withPolicy(CompositeTriggeringPolicy.createPolicy(TimeBasedTriggeringPolicy.createPolicy("1", "true"),
+                SizeBasedTriggeringPolicy.createPolicy(size)))
+            .withStrategy(DefaultRolloverStrategy
+                .createStrategy(String.valueOf(maxBackupIndex), "1", "max", null, null, false, configuration))
+            .build();
 
         appender.start();
         removeAllAppenders(logger);
@@ -155,19 +163,21 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     }
 
     @Override
-    public void activateAppenderWithSizeRolling(String productName, String file, String encoding, String size, int maxBackupIndex) {
+    public void activateAppenderWithSizeRolling(String productName, String file, String encoding, String size,
+                                                int maxBackupIndex) {
         org.apache.logging.log4j.core.appender.RollingFileAppender appender = RollingFileAppender.newBuilder()
-                .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
-                .withFileName(LoggerHelper.getLogFileP(productName, file))
-                .withAppend(true)
-                .withBufferedIo(true)
-                .setConfiguration(configuration)
-                .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%i")
-                .withLayout(buildLayout(encoding))
-                .withCreateOnDemand(false)
-                .withPolicy(SizeBasedTriggeringPolicy.createPolicy(size))
-                .withStrategy(DefaultRolloverStrategy.createStrategy(String.valueOf(maxBackupIndex), "1", "max", null, null, false, configuration))
-                .build();
+            .withName(productName + "." + file.replace(File.separatorChar, '.') + ".Appender")
+            .withFileName(LoggerHelper.getLogFileP(productName, file))
+            .withAppend(true)
+            .withBufferedIo(true)
+            .setConfiguration(configuration)
+            .withFilePattern(LoggerHelper.getLogFile(productName, file) + ".%i")
+            .withLayout(buildLayout(encoding))
+            .withCreateOnDemand(false)
+            .withPolicy(SizeBasedTriggeringPolicy.createPolicy(size))
+            .withStrategy(DefaultRolloverStrategy
+                .createStrategy(String.valueOf(maxBackupIndex), "1", "max", null, null, false, configuration))
+            .build();
 
         appender.start();
         removeAllAppenders(logger);
@@ -181,7 +191,7 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
         List<Object[]> args = new ArrayList<Object[]>();
 
         if (queueSize != Integer.MIN_VALUE) {
-            args.add(new Object[] { "setBufferSize", new Class<?>[] { int.class }, queueSize });
+            args.add(new Object[] {"setBufferSize", new Class<?>[] {int.class}, queueSize});
         }
         activateAsync(args);
     }
@@ -201,10 +211,10 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
         }
 
         AsyncAppender.Builder builder = AsyncAppender.newBuilder()
-                                                     .setName(productName + "." + logger.getName() + ".AsyncAppender")
-                                                     .setConfiguration(configuration)
-                                                     .setAppenderRefs(refs)
-                                                     .setBlockingQueueFactory(ArrayBlockingQueueFactory.<LogEvent>createFactory());
+            .setName(productName + "." + logger.getName() + ".AsyncAppender")
+            .setConfiguration(configuration)
+            .setAppenderRefs(refs)
+            .setBlockingQueueFactory(ArrayBlockingQueueFactory.<LogEvent>createFactory());
 
         invokeMethod(builder, args);
 
@@ -221,10 +231,10 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     public void activateAppender(Logger logger) {
         if (!(logger.getDelegate() instanceof org.apache.logging.log4j.core.Logger)) {
             throw new IllegalArgumentException("logger must be org.apache.logging.log4j.core.Logger, but it's "
-                    + logger.getDelegate().getClass());
+                + logger.getDelegate().getClass());
         }
 
-        activateAppender(((org.apache.logging.log4j.core.Logger) logger.getDelegate()));
+        activateAppender(((org.apache.logging.log4j.core.Logger)logger.getDelegate()));
 
         setProductName(logger.getProductName());
     }
@@ -244,7 +254,8 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
     public void setLevel(Level level) {
         this.level = level;
 
-        org.apache.logging.log4j.Level l = org.apache.logging.log4j.Level.toLevel(level.getName(), org.apache.logging.log4j.Level.ERROR);
+        org.apache.logging.log4j.Level l = org.apache.logging.log4j.Level.toLevel(level.getName(),
+            org.apache.logging.log4j.Level.ERROR);
         logger.setLevel(l);
         logger.getContext().getConfiguration().getLoggerConfig(this.logger.getName()).setLevel(l);
     }
@@ -256,10 +267,10 @@ public class Log4j2ActivateOption extends AbstractActiveOption {
 
     protected org.apache.logging.log4j.core.Layout buildLayout(String encoding) {
         org.apache.logging.log4j.core.Layout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder().
-                withConfiguration(configuration)
-                .withPattern(LoggerHelper.getPattern())
-                .withCharset(Charset.forName(encoding))
-                .build();
+            withConfiguration(configuration)
+            .withPattern(LoggerHelper.getPattern())
+            .withCharset(Charset.forName(encoding))
+            .build();
         return layout;
     }
 

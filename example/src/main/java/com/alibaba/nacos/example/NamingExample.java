@@ -50,8 +50,8 @@ public class NamingExample {
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent) event).getServiceName());
-                System.out.println(((NamingEvent) event).getInstances());
+                System.out.println(((NamingEvent)event).getServiceName());
+                System.out.println(((NamingEvent)event).getInstances());
             }
         });
     }

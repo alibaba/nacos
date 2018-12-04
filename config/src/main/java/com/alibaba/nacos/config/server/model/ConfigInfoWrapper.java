@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 package com.alibaba.nacos.config.server.model;
+
 /**
  * ConfigInfo Wrapper
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ConfigInfoWrapper extends ConfigInfo {
-	private static final long serialVersionUID = 4511997359365712505L;
+    private static final long serialVersionUID = 4511997359365712505L;
 
-	private long lastModified;
+    private long lastModified;
 
-	public ConfigInfoWrapper() {
-	}
+    public ConfigInfoWrapper() {
+    }
 
-	public long getLastModified() {
-		return lastModified;
-	}
+    public long getLastModified() {
+        return lastModified;
+    }
 
-	public void setLastModified(long lastModified) {
-		this.lastModified = lastModified;
-	}
-	
-	@Override
-	public int hashCode() {
-		return super.hashCode();
-	}
-	
-	@Override
-	public boolean equals(Object obj) {
-		return super.equals(obj);
-	}
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
 }

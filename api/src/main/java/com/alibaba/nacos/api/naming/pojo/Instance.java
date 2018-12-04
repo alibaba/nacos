@@ -160,7 +160,7 @@ public class Instance {
             return false;
         }
 
-        Instance host = (Instance) obj;
+        Instance host = (Instance)obj;
 
         return strEquals(toString(), host.toString());
     }

@@ -205,7 +205,7 @@ public class ServiceInfo {
 
         if (!isEmpty(clusters) && !isEmpty(unit)) {
             return isAllIPs ? name + SPLITER + clusters + SPLITER + unit + SPLITER + ALL_IPS
-                    : name + SPLITER + clusters + SPLITER + unit;
+                : name + SPLITER + clusters + SPLITER + unit;
         }
 
         if (!isEmpty(clusters)) {
@@ -214,7 +214,7 @@ public class ServiceInfo {
 
         if (!isEmpty(unit)) {
             return isAllIPs ? name + SPLITER + EMPTY + SPLITER + unit + SPLITER + ALL_IPS :
-                    name + SPLITER + EMPTY + SPLITER + unit;
+                name + SPLITER + EMPTY + SPLITER + unit;
         }
 
         return isAllIPs ? name + SPLITER + ALL_IPS : name;
