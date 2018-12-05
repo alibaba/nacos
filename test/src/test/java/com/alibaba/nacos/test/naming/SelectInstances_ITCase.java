@@ -190,6 +190,29 @@ public class SelectInstances_ITCase {
         Assert.assertTrue(verifyInstanceList(instances, instancesGet));
     }
 
+    @Test
+    public void selectInstancesCheckClusterName() throws Exception {
+
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "1.1.1.2", TEST_PORT, "c2");
+
+        TimeUnit.SECONDS.sleep(8);
+
+        List<Instance> instancesGet = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(2, instancesGet.size());
+
+        for (Instance instance : instancesGet) {
+            if (instance.getIp().equals("1.1.1.1")) {
+                Assert.assertEquals(instance.getClusterName(), "c1");
+            }
+            if (instance.getIp().equals("2.2.2.2")) {
+                Assert.assertEquals(instance.getClusterName(), "c2");
+            }
+        }
+    }
+
 
     /**
      * 获取权重不为0的Instance
