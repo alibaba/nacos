@@ -38,6 +38,7 @@ import com.alibaba.nacos.naming.raft.Datum;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftPeer;
 import com.alibaba.nacos.naming.raft.RaftProxy;
+import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -319,6 +320,7 @@ public class ApiCommands {
         ipAddress.setWeight(clientBeat.getWeight());
         ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
+        ipAddress.setInstanceId(ipAddress.generateInstanceId());
 
         if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
             doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));

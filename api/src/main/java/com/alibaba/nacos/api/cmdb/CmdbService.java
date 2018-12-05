@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.alibaba.nacos.api.cmdb;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
@@ -59,7 +74,7 @@ public interface CmdbService {
      *
      * @return all entities
      */
-    Map<String, Map<String, Entity>> dumpAllEntities();
+    Map<String, Map<String, Entity>> getAllEntities();
 
     /**
      * get label change events
@@ -67,7 +82,7 @@ public interface CmdbService {
      * @param timestamp start time of generated events
      * @return label events
      */
-    List<EntityEvent> getLabelEvents(long timestamp);
+    List<EntityEvent> getEntityEvents(long timestamp);
 
     /**
      * Get single entity

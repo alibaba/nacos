@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="10 seconds">
 
+    <appender name="cmdb-main"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${nacos.home}/logs/cmdb-main.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${nacos.home}/logs/cmdb-main.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
@@ -450,6 +467,11 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <logger name="com.alibaba.nacos.cmdb.main" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="cmdb-main"/>
+    </logger>
 
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
         <level value="INFO"/>

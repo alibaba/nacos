@@ -25,6 +25,12 @@
 
 		<fileSet>
 			<includes>
+				<include>plugins/**</include>
+			</includes>
+		</fileSet>
+
+		<fileSet>
+			<includes>
 				<include>conf/**</include>
 			</includes>
 		</fileSet>

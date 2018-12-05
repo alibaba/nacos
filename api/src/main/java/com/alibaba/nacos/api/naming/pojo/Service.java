@@ -39,14 +39,19 @@ public class Service {
     private String app;
 
     /**
-     * Service group is meant to classify services into different sets.
+     * Service group is meant to classify services into different sets
      */
     private String group;
 
     /**
-     * Health check mode.
+     * Health check mode
      */
     private String healthCheckMode;
+
+    /**
+     * Selector name of this service
+     */
+    private String selectorName;
 
     private Map<String, String> metadata = new HashMap<String, String>();
 
@@ -104,5 +109,13 @@ public class Service {
 
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
+    }
+
+    public String getSelectorName() {
+        return selectorName;
+    }
+
+    public void setSelectorName(String selectorName) {
+        this.selectorName = selectorName;
     }
 }

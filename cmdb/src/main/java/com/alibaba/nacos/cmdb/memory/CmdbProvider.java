@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.alibaba.nacos.cmdb.memory;
 
 import com.alibaba.nacos.api.cmdb.CmdbService;
@@ -42,8 +57,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
     private long eventTimestamp = System.currentTimeMillis();
 
     public CmdbProvider() throws NacosException {
-        initCmdbService();
-        load();
     }
 
     private void initCmdbService() throws NacosException {
@@ -80,11 +93,15 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         entityTypeSet = cmdbService.getEntityTypes();
 
         // init entity map:
-        entityMap = cmdbService.dumpAllEntities();
+        entityMap = cmdbService.getAllEntities();
     }
 
     @PostConstruct
-    public void init() {
+    public void init() throws NacosException {
+
+        initCmdbService();
+        load();
+
         UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbDumpTask(), switches.getDumpTaskInterval(), TimeUnit.SECONDS);
         UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbEventTask(), switches.getEventTaskInterval(), TimeUnit.SECONDS);
     }
@@ -131,7 +148,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         public void run() {
             try {
                 // refresh entity map:
-                entityMap = cmdbService.dumpAllEntities();
+                entityMap = cmdbService.getAllEntities();
             } catch (Exception e) {
                 Loggers.MAIN.error("CMDB-DUMP {}", "dump failed!", e);
             } finally {
@@ -146,7 +163,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         public void run() {
             try {
                 long current = System.currentTimeMillis();
-                List<EntityEvent> events = cmdbService.getLabelEvents(eventTimestamp);
+                List<EntityEvent> events = cmdbService.getEntityEvents(eventTimestamp);
                 eventTimestamp = current;
 
                 if (events != null && !events.isEmpty()) {

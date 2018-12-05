@@ -1,6 +1,7 @@
 package com.alibaba.nacos.cmdb.controllers;
 
 import com.alibaba.nacos.cmdb.core.SwitchAndOptions;
+import com.alibaba.nacos.cmdb.memory.CmdbProvider;
 import com.alibaba.nacos.cmdb.utils.UtilsAndCommons;
 import com.alibaba.nacos.common.util.WebUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,9 @@ public class OperationController {
 
     @Autowired
     private SwitchAndOptions switches;
+
+    @Autowired
+    private CmdbProvider cmdbProvider;
 
     @RequestMapping(value = "/updateSwitch", method = RequestMethod.POST)
     public String updateSwitch(HttpServletRequest request) throws Exception {
@@ -40,5 +44,12 @@ public class OperationController {
                 break;
         }
         return "ok";
+    }
+
+    @RequestMapping(value = "/queryLabel", method = RequestMethod.GET)
+    public String queryLabel(HttpServletRequest request) throws Exception {
+        String entry = WebUtils.required(request, "entry");
+        String label = WebUtils.required(request, "label");
+        return cmdbProvider.queryLabel(entry, "ip", label);
     }
 }
