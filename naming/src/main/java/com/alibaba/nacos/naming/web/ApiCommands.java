@@ -314,6 +314,8 @@ public class ApiCommands {
         ipAddress.setWeight(clientBeat.getWeight());
         ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
+        ipAddress.setServiceName(dom);
+        ipAddress.setInstanceId(ipAddress.generateInstanceId());
 
         if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
             doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));
@@ -1215,6 +1217,8 @@ public class ApiCommands {
                 ipObj.put("metadata", ip.getMetadata());
                 ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());
+                ipObj.put("clusterName", ip.getClusterName());
+                ipObj.put("serviceName", ip.getServiceName());
                 hosts.add(ipObj);
 
             }
