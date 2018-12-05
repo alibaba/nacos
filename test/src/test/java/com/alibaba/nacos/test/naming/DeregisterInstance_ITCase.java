@@ -53,7 +53,7 @@ public class DeregisterInstance_ITCase {
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
@@ -65,7 +65,6 @@ public class DeregisterInstance_ITCase {
      */
     @Test
     public void dregDomTest() throws Exception {
-
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
