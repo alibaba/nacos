@@ -16,9 +16,10 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.common.util.WebUtils;
-import com.alibaba.nacos.naming.core.Selector;
-import com.alibaba.nacos.naming.core.SelectorManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorManager;
+import com.alibaba.nacos.naming.selector.SelectorType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -42,11 +43,22 @@ public class SelectorController {
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String add(HttpServletRequest request) throws Exception {
         String selectorName = WebUtils.required(request, "selectorName");
-        String labels = WebUtils.required(request, "labels");
 
-        Set<String> labelSet = new HashSet<>();
-        Collections.addAll(labelSet, labels.split(","));
-        selectorManager.addSelector(selectorName, labelSet);
+        String type = WebUtils.required(request, "type");
+
+        SelectorType selectorType = SelectorType.valueOf(type);
+
+        switch (selectorType) {
+            case label:
+                String labels = WebUtils.required(request, "labels");
+                Set<String> labelSet = new HashSet<>();
+                Collections.addAll(labelSet, labels.split(","));
+                selectorManager.addLabelSelector(selectorName, labelSet);
+                break;
+            default:
+                break;
+        }
+
         return "ok";
     }
 

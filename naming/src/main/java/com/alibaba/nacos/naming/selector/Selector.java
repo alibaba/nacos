@@ -13,18 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.cmdb.pojo;
+package com.alibaba.nacos.naming.selector;
 
-import java.util.Set;
+import com.alibaba.nacos.naming.core.IpAddress;
+
+import java.util.List;
 
 /**
+ * Selector defines a rule for load-balance for service discovery.
+ * <p>
+ * Every service in Nacos can apply an existing selector and uses it to give the consumer
+ * a subset of selected providers.
+ * <p>
+ * This selector itself does not implement any specific behavior of load-balance, every
+ * real life selector should extend this class and implement the select method.
+ * <p>
+ * Every extended selector should also register its type to class SelectorType so Nacos
+ * recognizes it and can correctly create this type of selector.
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @see SelectorType
  */
-public class Label {
+public abstract class Selector {
 
+    /**
+     * The name of selector
+     */
     private String name;
-    private Set<String> values;
-    private String description;
 
     public String getName() {
         return name;
@@ -34,19 +49,5 @@ public class Label {
         this.name = name;
     }
 
-    public Set<String> getValues() {
-        return values;
-    }
-
-    public void setValues(Set<String> values) {
-        this.values = values;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public abstract List<IpAddress> select(String consumer, List<IpAddress> providers);
 }

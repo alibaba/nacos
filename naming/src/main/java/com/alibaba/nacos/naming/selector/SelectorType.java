@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.cmdb.pojo;
+package com.alibaba.nacos.naming.selector;
 
 /**
+ * Registered selector types of Nacos.
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public enum PreservedEntityTypes {
+public enum SelectorType {
     /**
-     *
+     * @see com.alibaba.nacos.naming.selector.SelectorManager.LabelSelector
      */
-    ip,
-    /**
-     *
-     */
-    service
+    label
 }
