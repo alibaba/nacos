@@ -70,10 +70,10 @@ public class DeregisterInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(3);
-
         List<Instance> instances = naming.getAllInstances(serviceName);
+        verifyInstanceList(instances, 2, serviceName);
 
+        instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 2);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
@@ -87,10 +87,9 @@ public class DeregisterInstance_ITCase {
 
         naming.deregisterInstance(serviceName, "127.0.0.2", TEST_PORT);
 
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.SECONDS.sleep(3);
 
         instances = naming.getAllInstances(serviceName);
-
         Assert.assertEquals(0, instances.size());
     }
 
@@ -109,11 +108,11 @@ public class DeregisterInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
-        TimeUnit.SECONDS.sleep(5);
-
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
+        verifyInstanceList(instances, 2, serviceName);
 
+        instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 2);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
@@ -146,11 +145,11 @@ public class DeregisterInstance_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
 
-        TimeUnit.SECONDS.sleep(5);
-
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
+        verifyInstanceList(instances, 2, serviceName);
 
+        instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 2);
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
@@ -168,6 +167,19 @@ public class DeregisterInstance_ITCase {
         TimeUnit.SECONDS.sleep(5);
         instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(instances.size(), 0);
+    }
+
+    public void verifyInstanceList(List<Instance> instances, int size, String serviceName) throws Exception {
+        int i = 0;
+        while ( i < 20 ) {
+            instances = naming.getAllInstances(serviceName);
+            if (instances.size() == size) {
+                break;
+            } else {
+                TimeUnit.SECONDS.sleep(3);
+                i++;
+            }
+        }
     }
 
 
