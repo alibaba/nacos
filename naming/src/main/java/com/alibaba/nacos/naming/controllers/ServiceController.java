@@ -45,7 +45,7 @@ public class ServiceController {
     @Autowired
     protected DomainsManager domainsManager;
 
-    @RequestMapping(value = "/create", method = RequestMethod.PUT)
+    @RequestMapping(value = "", method = RequestMethod.PUT)
     public String create(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, "serviceName");
 
@@ -79,7 +79,7 @@ public class ServiceController {
         return "ok";
     }
 
-    @RequestMapping(value = "/remove", method = RequestMethod.DELETE)
+    @RequestMapping(value = "", method = RequestMethod.DELETE)
     public String remove(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, "serviceName");
@@ -98,7 +98,7 @@ public class ServiceController {
         return "ok";
     }
 
-    @RequestMapping(value = "/detail")
+    @RequestMapping(value = "", method = RequestMethod.GET)
     public Service detail(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, "serviceName");
@@ -150,8 +150,7 @@ public class ServiceController {
 
     }
 
-
-    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    @RequestMapping(value = "", method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, "serviceName");
