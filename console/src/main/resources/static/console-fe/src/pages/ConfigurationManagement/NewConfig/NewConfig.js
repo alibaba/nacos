@@ -29,6 +29,7 @@ import {
   Radio,
   ConfigProvider,
 } from '@alifd/next';
+import validateContent from 'utils/validateContent';
 
 import './index.scss';
 
@@ -222,6 +223,7 @@ class NewConfig extends React.Component {
       if (errors) {
         return;
       }
+      let { configType } = this.state;
       let content = '';
       const self = this;
       if (this.monacoEditor) {
@@ -230,59 +232,82 @@ class NewConfig extends React.Component {
         content = this.codeValue;
       }
       if (!content) {
+        Message.error({
+          content: aliwareIntl.get('nacos.page.ConfigEditor.submit_failed'),
+          align: 'cc cc',
+        });
         return;
       }
-      this.tenant = getParams('namespace') || '';
-      const payload = {
-        dataId: self.state.addonBefore + this.field.getValue('dataId'),
-        group: this.field.getValue('group'),
-        content,
-        desc: this.field.getValue('desc'),
-        config_tags: this.state.config_tags.join(),
-        type: this.state.configType,
-        appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-        tenant: this.tenant,
-      };
-      this.serverId = getParams('serverId') || 'center';
-      const url = 'v1/cs/configs';
-      request({
-        type: 'post',
-        contentType: 'application/x-www-form-urlencoded',
-        url,
-        data: payload,
-        beforeSend: () => {
-          this.openLoading();
-        },
-        success(res) {
-          const _payload = {};
-          _payload.maintitle = locale.newListingMain;
-          _payload.title = locale.newListing;
-          _payload.content = '';
-          _payload.dataId = payload.dataId;
-          _payload.group = payload.group;
-          if (res === true) {
-            self.group = payload.group;
-            self.dataId = payload.dataId;
-            setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
-            _payload.isok = true;
-          } else {
-            _payload.isok = false;
-            _payload.message = res.message;
-          }
-          self.refs.success.openDialog(_payload);
-        },
-        complete() {
-          self.closeLoading();
-        },
-        error(res) {
-          Dialog.alert({
-            content: locale.publishFailed,
-          });
-          self.closeLoading();
-        },
-      });
+      
+      if (validateContent.validate({ content, type: configType })) {
+        this._publishConfig(content);
+      } else {
+        Dialog.confirm({
+          content: '配置信息可能有语法错误, 确定提交吗?',
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          onOk: () => {
+            this._publishConfig(content);
+          },
+        });
+      }
+
     });
   }
+
+  _publishConfig = content => {
+    const self = this;
+    let { addonBefore, config_tags, configType } = this.state;
+    this.tenant = getParams('namespace') || '';
+    const payload = {
+      dataId: addonBefore + this.field.getValue('dataId'),
+      group: this.field.getValue('group'),
+      content,
+      desc: this.field.getValue('desc'),
+      config_tags: config_tags.join(),
+      type: configType,
+      appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
+      tenant: this.tenant,
+    };
+    this.serverId = getParams('serverId') || 'center';
+    const url = 'v1/cs/configs';
+    request({
+      type: 'post',
+      contentType: 'application/x-www-form-urlencoded',
+      url,
+      data: payload,
+      beforeSend: () => {
+        this.openLoading();
+      },
+      success(res) {
+        const _payload = {};
+        _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
+        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
+        _payload.content = '';
+        _payload.dataId = payload.dataId;
+        _payload.group = payload.group;
+        if (res === true) {
+          self.group = payload.group;
+          self.dataId = payload.dataId;
+          setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
+          _payload.isok = true;
+        } else {
+          _payload.isok = false;
+          _payload.message = res.message;
+        }
+        self.refs.success.openDialog(_payload);
+      },
+      complete() {
+        self.closeLoading();
+      },
+      error(res) {
+        Dialog.alert({
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed'),
+        });
+        self.closeLoading();
+      },
+    });
+  };
 
   changeEnv(values) {
     this.targetEnvs = values;
