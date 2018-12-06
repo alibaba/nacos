@@ -34,7 +34,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingProxy {
 
@@ -71,7 +71,7 @@ public class NamingProxy {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.taobao.vipserver.serverlist.updater");
+                t.setName("com.alibaba.nacos.client.naming.serverlist.updater");
                 t.setDaemon(true);
                 return t;
             }
@@ -90,17 +90,17 @@ public class NamingProxy {
     public List<String> getServerListFromEndpoint() {
 
         try {
-            String urlString = "http://" + endpoint + "/vipserver/serverlist";
+            String urlString = "http://" + endpoint + "/nacos/serverlist";
 
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-                    "Accept-Encoding", "gzip,deflate,sdch",
-                    "Connection", "Keep-Alive",
-                    "RequestId", UuidUtil.generateUuid());
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "RequestId", UuidUtil.generateUuid());
 
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
             if (HttpURLConnection.HTTP_OK != result.code) {
                 throw new IOException("Error while requesting: " + urlString + "'. Server returned: "
-                        + result.code);
+                    + result.code);
             }
 
             String content = result.content;
@@ -135,7 +135,7 @@ public class NamingProxy {
             List<String> list = getServerListFromEndpoint();
 
             if (CollectionUtils.isEmpty(list)) {
-                throw new Exception("Can not acquire vipserver list");
+                throw new Exception("Can not acquire Nacos list");
             }
 
             if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
@@ -170,7 +170,7 @@ public class NamingProxy {
     public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
 
         LogUtils.LOG.info("DEREGISTER-SERVICE", "deregistering service " + serviceName
-                + " with instance:" + ip + ":" + port + "@" + cluster);
+            + " with instance:" + ip + ":" + port + "@" + cluster);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put("tenant", namespace);
@@ -249,7 +249,6 @@ public class NamingProxy {
 
     public String reqAPI(String api, Map<String, String> params) throws NacosException {
 
-
         List<String> snapshot = serversFromEndpoint;
         if (!CollectionUtils.isEmpty(serverList)) {
             snapshot = serverList;
@@ -272,12 +271,13 @@ public class NamingProxy {
         return callServer(api, params, curServer, "GET");
     }
 
-    public String callServer(String api, Map<String, String> params, String curServer, String method) throws NacosException {
+    public String callServer(String api, Map<String, String> params, String curServer, String method)
+        throws NacosException {
 
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-                "Accept-Encoding", "gzip,deflate,sdch",
-                "Connection", "Keep-Alive",
-                "RequestId", UuidUtil.generateUuid());
+            "Accept-Encoding", "gzip,deflate,sdch",
+            "Connection", "Keep-Alive",
+            "RequestId", UuidUtil.generateUuid());
 
         String url;
 
@@ -298,12 +298,12 @@ public class NamingProxy {
         }
 
         LogUtils.LOG.error("CALL-SERVER", "failed to req API:" + HttpClient.getPrefix() + curServer
-                + api + ". code:"
-                + result.code + " msg: " + result.content);
+            + api + ". code:"
+            + result.code + " msg: " + result.content);
 
         throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer
-                + api + ". code:"
-                + result.code + " msg: " + result.content);
+            + api + ". code:"
+            + result.code + " msg: " + result.content);
     }
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers) {
@@ -334,7 +334,6 @@ public class NamingProxy {
 
             throw new IllegalStateException("failed to req API:" + api + " after all servers(" + servers + ") tried");
         }
-
 
         for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
             try {

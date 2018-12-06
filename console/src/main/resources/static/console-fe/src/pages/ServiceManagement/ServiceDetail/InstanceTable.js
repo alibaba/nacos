@@ -14,11 +14,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
-import { Button, Pagination, Table } from '@alifd/next';
-import { I18N, HEALTHY_COLOR_MAPPING } from './constant';
+import { Button, ConfigProvider, Pagination, Table } from '@alifd/next';
+import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
 
+@ConfigProvider.config
 class InstanceTable extends React.Component {
+  static displayName = 'InstanceTable';
+
   static propTypes = {
     clusterName: PropTypes.string,
     serviceName: PropTypes.string,
@@ -26,6 +29,7 @@ class InstanceTable extends React.Component {
 
   constructor(props) {
     super(props);
+    this.editInstanceDialog = React.createRef();
     this.state = {
       loading: false,
       instance: { count: 0, list: [] },
@@ -65,7 +69,7 @@ class InstanceTable extends React.Component {
   }
 
   openInstanceDialog(instance) {
-    this.refs.editInstanceDialog.show(instance);
+    this.editInstanceDialog.current.getInstance().show(instance);
   }
 
   switchState(index, record) {
@@ -92,22 +96,23 @@ class InstanceTable extends React.Component {
   rowColor = ({ healthy }) => ({ className: `row-bg-${HEALTHY_COLOR_MAPPING[`${healthy}`]}` });
 
   render() {
+    const { locale = {} } = this.props;
     const { clusterName, serviceName } = this.props;
     const { instance, pageSize, loading } = this.state;
     return instance.count ? (
       <div>
         <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
           <Table.Column width={138} title="IP" dataIndex="ip" />
-          <Table.Column width={100} title={I18N.PORT} dataIndex="port" />
-          <Table.Column width={100} title={I18N.WEIGHT} dataIndex="weight" />
+          <Table.Column width={100} title={locale.port} dataIndex="port" />
+          <Table.Column width={100} title={locale.weight} dataIndex="weight" />
           <Table.Column
             width={100}
-            title={I18N.HEALTHY}
+            title={locale.healthy}
             dataIndex="healthy"
             cell={val => `${val}`}
           />
           <Table.Column
-            title={I18N.METADATA}
+            title={locale.metadata}
             dataIndex="metadata"
             cell={metadata =>
               Object.keys(metadata).map(k => (
@@ -118,7 +123,7 @@ class InstanceTable extends React.Component {
             }
           />
           <Table.Column
-            title={I18N.OPERATION}
+            title={locale.operation}
             width={160}
             cell={(value, index, record) => (
               <div>
@@ -127,13 +132,13 @@ class InstanceTable extends React.Component {
                   className="edit-btn"
                   onClick={() => this.openInstanceDialog(record)}
                 >
-                  {I18N.EDITOR}
+                  {locale.editor}
                 </Button>
                 <Button
                   type={record.enabled ? 'normal' : 'secondary'}
                   onClick={() => this.switchState(index, record)}
                 >
-                  {I18N[record.enabled ? 'OFFLINE' : 'ONLINE']}
+                  {locale[record.enabled ? 'offline' : 'online']}
                 </Button>
               </div>
             )}
@@ -148,7 +153,7 @@ class InstanceTable extends React.Component {
           />
         ) : null}
         <EditInstanceDialog
-          ref="editInstanceDialog"
+          ref={this.editInstanceDialog}
           serviceName={serviceName}
           clusterName={clusterName}
           openLoading={() => this.openLoading()}

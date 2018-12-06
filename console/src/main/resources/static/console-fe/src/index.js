@@ -42,7 +42,7 @@ import ConfigurationManagement from './pages/ConfigurationManagement/Configurati
 import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 
-import * as reducers from './reducers';
+import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
 
 import './index.scss';
@@ -50,7 +50,7 @@ import './index.scss';
 module.hot && module.hot.accept();
 
 if (!CookieHelp.getValue(LANGUAGE_KEY)) {
-  CookieHelp.setValue(LANGUAGE_KEY, navigator.language === 'zh-CN' ? 'zh-CN' : 'en-US');
+  CookieHelp.setValue(LANGUAGE_KEY, navigator.language === 'zh-CN' ? 'zh-cn' : 'en-us');
 }
 
 const reducer = combineReducers({
@@ -85,7 +85,7 @@ class App extends React.Component {
     this.props.changeLanguage(language);
   }
 
-  generateRouter() {
+  static generateRouter() {
     return (
       <HashRouter>
         <Layout navList={_menu.data}>
@@ -120,7 +120,7 @@ class App extends React.Component {
         fullScreen
         {...this.state.nacosLoading}
       >
-        <ConfigProvider locale={locale}>{this.generateRouter()}</ConfigProvider>
+        <ConfigProvider locale={locale}>{App.generateRouter()}</ConfigProvider>
       </Loading>
     );
   }

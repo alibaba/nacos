@@ -21,29 +21,29 @@ import java.util.Properties;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingFactory {
 
-	public static NamingService createNamingService(String serverList) throws NacosException {
-		try {
-			Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
-			Constructor constructor = driverImplClass.getConstructor(String.class);
-			NamingService vendorImpl = (NamingService) constructor.newInstance(serverList);
-			return vendorImpl;
-		} catch (Throwable e) {
-			throw new NacosException(-400, e.getMessage());
-		}
-	}
+    public static NamingService createNamingService(String serverList) throws NacosException {
+        try {
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
+            Constructor constructor = driverImplClass.getConstructor(String.class);
+            NamingService vendorImpl = (NamingService)constructor.newInstance(serverList);
+            return vendorImpl;
+        } catch (Throwable e) {
+            throw new NacosException(-400, e.getMessage());
+        }
+    }
 
-	public static NamingService createNamingService(Properties properties) throws NacosException {
-		try {
-			Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
-			Constructor constructor = driverImplClass.getConstructor(Properties.class);
-			NamingService vendorImpl = (NamingService) constructor.newInstance(properties);
-			return vendorImpl;
-		} catch (Throwable e) {
-			throw new NacosException(-400, e.getMessage());
-		}
-	}
+    public static NamingService createNamingService(Properties properties) throws NacosException {
+        try {
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
+            Constructor constructor = driverImplClass.getConstructor(Properties.class);
+            NamingService vendorImpl = (NamingService)constructor.newInstance(properties);
+            return vendorImpl;
+        } catch (Throwable e) {
+            throw new NacosException(-400, e.getMessage());
+        }
+    }
 }

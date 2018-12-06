@@ -102,6 +102,10 @@ public class UtilsAndCommons {
 
     public static final String API_DOM = "/api/dom";
 
+    public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
+
+    public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
+
     public static final ScheduledExecutorService SERVER_STATUS_EXECUTOR;
 
     public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
