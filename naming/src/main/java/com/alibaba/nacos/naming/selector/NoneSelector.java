@@ -15,18 +15,21 @@
  */
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.naming.core.IpAddress;
+
+import java.util.List;
+
 /**
- * Registered selector types of Nacos.
- *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public enum SelectorType {
-    /**
-     * @see com.alibaba.nacos.naming.selector.LabelSelector
-     */
-    label,
-    /**
-     * No select strategy
-     */
-    none
+public class NoneSelector extends AbstractSelector {
+
+    public NoneSelector() {
+        this.setType(SelectorType.none.name());
+    }
+
+    @Override
+    public List<IpAddress> select(String consumer, List<IpAddress> providers) {
+        return providers;
+    }
 }

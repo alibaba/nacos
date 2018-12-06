@@ -38,7 +38,6 @@ import com.alibaba.nacos.naming.raft.Datum;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftPeer;
 import com.alibaba.nacos.naming.raft.RaftProxy;
-import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -85,9 +84,6 @@ public class ApiCommands {
 
     @Autowired
     protected DomainsManager domainsManager;
-
-    @Autowired
-    protected SelectorManager selectorManager;
 
     private DataSource pushDataSource = new DataSource() {
 
@@ -478,22 +474,6 @@ public class ApiCommands {
         domObj.valid();
 
         domainsManager.easyAddOrReplaceDom(domObj);
-
-        return "ok";
-    }
-
-    @NeedAuth
-    @RequestMapping("/replaceDom")
-    public String replaceDom(HttpServletRequest request) throws Exception {
-        String dom = WebUtils.required(request, "dom");
-        if (domainsManager.getDomain(dom) == null) {
-            throw new IllegalArgumentException("specified dom doesn't exist, dom : " + dom);
-        }
-
-        addOrReplaceDom(request);
-
-        Loggers.SRV_LOG.info("dom: " + dom + " is updated, operator: "
-                + WebUtils.optional(request, "clientIP", "unknown"));
 
         return "ok";
     }
@@ -1165,8 +1145,8 @@ public class ApiCommands {
         srvedIPs = domObj.srvIPs(clientIP, Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
-        if (StringUtils.isNotBlank(domObj.getSelectorName())) {
-            srvedIPs = selectorManager.filter(domObj.getSelectorName(), clientIP, srvedIPs);
+        if (domObj.getSelector() != null) {
+            srvedIPs = domObj.getSelector().select(clientIP, srvedIPs);
         }
 
         if (CollectionUtils.isEmpty(srvedIPs)) {

@@ -28,6 +28,8 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftListener;
+import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.AbstractSelector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -46,6 +48,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
     private static final String DOMAIN_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
+    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
+
+    @JSONField(serialize = false)
+    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
+
+    @JSONField(serialize = false)
+    private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
+
     private String name;
     private String token;
     private List<String> owners = new ArrayList<>();
@@ -53,19 +63,12 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Boolean enableHealthCheck = true;
     private Boolean enabled = true;
     private Boolean enableClientBeat = false;
-    private String selectorName;
+    private AbstractSelector selector = new NoneSelector();
 
-    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
     /**
      * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
      */
     private long ipDeleteTimeout = 30 * 1000;
-
-    @JSONField(serialize = false)
-    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
-
-    @JSONField(serialize = false)
-    private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     private volatile long lastModifiedMillis = 0L;
 
@@ -141,12 +144,12 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         this.metadata = metadata;
     }
 
-    public String getSelectorName() {
-        return selectorName;
+    public AbstractSelector getSelector() {
+        return selector;
     }
 
-    public void setSelectorName(String selectorName) {
-        this.selectorName = selectorName;
+    public void setSelector(AbstractSelector selector) {
+        this.selector = selector;
     }
 
     public VirtualClusterDomain() {
@@ -509,10 +512,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             enabled = vDom.getEnabled();
         }
 
-        if (!StringUtils.equals(selectorName, vDom.getSelectorName())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", selectorName: " + selectorName + " -> " + vDom.getSelectorName());
-            selectorName = vDom.getSelectorName();
-        }
+        selector = vDom.getSelector();
 
         metadata = vDom.getMetadata();
 
