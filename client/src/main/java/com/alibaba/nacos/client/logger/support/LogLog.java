@@ -33,10 +33,11 @@ package com.alibaba.nacos.client.logger.support;
 
 import java.io.PrintStream;
 import java.util.Calendar;
+
 /**
- *  logger log
- * @author Nacos
+ * logger log
  *
+ * @author Nacos
  */
 public class LogLog {
 

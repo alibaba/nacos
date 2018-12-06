@@ -31,13 +31,13 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer.parseInt(System.getProperty("com.taobao.vipserver.ctimeout", "50000"));
-    public static final int CON_TIME_OUT_MILLIS = Integer.parseInt(System.getProperty("com.taobao.vipserver.ctimeout", "3000"));
-    private static final boolean ENABLE_HTTPS = Boolean.parseBoolean(System.getProperty("tls.enable", "false"));
+    public static final int TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
+    public static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    private static final boolean ENABLE_HTTPS = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
 
     static {
         // limit max redirection

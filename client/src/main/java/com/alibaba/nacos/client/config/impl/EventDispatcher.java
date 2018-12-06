@@ -24,16 +24,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.logger.Logger;
 
-
 /**
  * Event subscription and publishing tools.
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class EventDispatcher {
-	
-	final static public Logger log = LogUtils.logger(EventDispatcher.class);
+
+    final static public Logger log = LogUtils.logger(EventDispatcher.class);
 
     /**
      * 添加事件监听器
@@ -55,7 +53,7 @@ public class EventDispatcher {
         // 发布该事件暗示的其他事件
         for (AbstractEvent implyEvent : abstractEvent.implyEvents()) {
             try {
-            	// 避免死循环
+                // 避免死循环
                 if (abstractEvent != implyEvent) {
                     fireEvent(implyEvent);
                 }
@@ -74,7 +72,7 @@ public class EventDispatcher {
     }
 
     static synchronized CopyOnWriteArrayList<AbstractEventListener> getListenerList(
-            Class<? extends AbstractEvent> eventType) {
+        Class<? extends AbstractEvent> eventType) {
         CopyOnWriteArrayList<AbstractEventListener> listeners = LISTENER_MAP.get(eventType);
         if (null == listeners) {
             listeners = new CopyOnWriteArrayList<AbstractEventListener>();
@@ -84,8 +82,9 @@ public class EventDispatcher {
     }
 
     // ========================
-    
-	static final Map<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>> LISTENER_MAP = new HashMap<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>>();
+
+    static final Map<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>> LISTENER_MAP
+        = new HashMap<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>>();
 
     // ========================
 
@@ -105,29 +104,30 @@ public class EventDispatcher {
      */
     static public abstract class AbstractEventListener {
         public AbstractEventListener() {
-			/**
-			 * 自动注册给EventDispatcher
-			 */
-            EventDispatcher.addEventListener(this); 
+            /**
+             * 自动注册给EventDispatcher
+             */
+            EventDispatcher.addEventListener(this);
         }
-        
-		/**
-		 * 感兴趣的事件列表
-		 * 
-		 * @return event list
-		 */
+
+        /**
+         * 感兴趣的事件列表
+         *
+         * @return event list
+         */
         abstract public List<Class<? extends AbstractEvent>> interest();
 
         /**
          * 处理事件
+         *
          * @param abstractEvent event to do
          */
         abstract public void onEvent(AbstractEvent abstractEvent);
     }
 
-	/**
-	 * serverList has changed
-	 */
-	static public class ServerlistChangeEvent extends AbstractEvent {
-	}
+    /**
+     * serverList has changed
+     */
+    static public class ServerlistChangeEvent extends AbstractEvent {
+    }
 }

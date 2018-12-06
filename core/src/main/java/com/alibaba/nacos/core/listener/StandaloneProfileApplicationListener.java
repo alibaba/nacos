@@ -37,7 +37,7 @@ import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE_PROPERTY
  * @since 0.2.2
  */
 public class StandaloneProfileApplicationListener implements ApplicationListener<ApplicationEnvironmentPreparedEvent>,
-        PriorityOrdered {
+    PriorityOrdered {
 
     private static final Logger logger = LoggerFactory.getLogger(StandaloneProfileApplicationListener.class);
 
@@ -52,8 +52,8 @@ public class StandaloneProfileApplicationListener implements ApplicationListener
 
         if (logger.isInfoEnabled()) {
             logger.info("Spring Environment's active profiles : {} in standalone mode : {}",
-                    Arrays.asList(environment.getActiveProfiles()),
-                    STANDALONE_MODE
+                Arrays.asList(environment.getActiveProfiles()),
+                STANDALONE_MODE
             );
         }
 

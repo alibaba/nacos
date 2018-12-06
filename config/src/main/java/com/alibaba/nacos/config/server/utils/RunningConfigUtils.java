@@ -24,7 +24,7 @@ import javax.servlet.ServletContext;
 
 /**
  * Running config
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @Component
 public class RunningConfigUtils implements ApplicationListener<WebServerInitializedEvent> {

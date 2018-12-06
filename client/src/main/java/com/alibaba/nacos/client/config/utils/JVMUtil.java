@@ -19,31 +19,30 @@ import com.alibaba.nacos.client.logger.Logger;
 
 /**
  * Get jvm config
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JVMUtil {
 
-	/**
-	 * whether is multi instance
-	 * 
-	 * @return whether multi
-	 */
-	public static Boolean isMultiInstance() {
-		return isMultiInstance;
-	}
+    /**
+     * whether is multi instance
+     *
+     * @return whether multi
+     */
+    public static Boolean isMultiInstance() {
+        return isMultiInstance;
+    }
 
-	private static Boolean isMultiInstance = false;
-	private static String TRUE = "true";
-	static final public Logger log = LogUtils.logger(JVMUtil.class);
+    private static Boolean isMultiInstance = false;
+    private static String TRUE = "true";
+    static final public Logger log = LogUtils.logger(JVMUtil.class);
 
-	static {
-		String multiDeploy = System.getProperty("isMultiInstance", "false");
-		if (TRUE.equals(multiDeploy)) {
-			isMultiInstance = true;
-		}
-		log.info("isMultiInstance:{}", isMultiInstance);
-	}
+    static {
+        String multiDeploy = System.getProperty("isMultiInstance", "false");
+        if (TRUE.equals(multiDeploy)) {
+            isMultiInstance = true;
+        }
+        log.info("isMultiInstance:{}", isMultiInstance);
+    }
 }

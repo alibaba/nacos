@@ -22,19 +22,18 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
  * write response
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ResponseUtil {
 
-	public static void writeErrMsg(HttpServletResponse response, int httpCode,
-			String msg) {
-		response.setStatus(httpCode);
-		try {
-			response.getWriter().println(msg);
-		} catch (IOException e) {
-			defaultLog.error("ResponseUtil:writeErrMsg wrong", e);
-		}
-	}
+    public static void writeErrMsg(HttpServletResponse response, int httpCode,
+                                   String msg) {
+        response.setStatus(httpCode);
+        try {
+            response.getWriter().println(msg);
+        } catch (IOException e) {
+            defaultLog.error("ResponseUtil:writeErrMsg wrong", e);
+        }
+    }
 }

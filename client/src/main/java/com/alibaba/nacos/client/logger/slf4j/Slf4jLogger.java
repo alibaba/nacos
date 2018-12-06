@@ -66,7 +66,7 @@ public class Slf4jLogger extends LoggerSupport implements Logger {
         }
 
         try {
-            Class<ActivateOption> clazz = (Class<ActivateOption>) Class.forName(activateOptionClass);
+            Class<ActivateOption> clazz = (Class<ActivateOption>)Class.forName(activateOptionClass);
             Constructor<ActivateOption> c = clazz.getConstructor(Object.class);
             this.activateOption = c.newInstance(delegate);
         } catch (Exception e) {
