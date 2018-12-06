@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.cmdb.memory;
 
-import com.alibaba.nacos.api.cmdb.CmdbService;
+import com.alibaba.nacos.api.cmdb.spi.CmdbService;
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.cmdb.pojo.EntityEvent;
 import com.alibaba.nacos.api.cmdb.pojo.Label;

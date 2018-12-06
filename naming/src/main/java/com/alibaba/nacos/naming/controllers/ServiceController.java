@@ -15,14 +15,18 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.common.util.WebUtils;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.selector.LabelSelector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.AbstractSelector;
+import com.alibaba.nacos.naming.selector.SelectorType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -56,6 +61,7 @@ public class ServiceController {
         float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
         String healthCheckMode = WebUtils.optional(request, "healthCheckMode", "client");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
         if (StringUtils.isNotBlank(metadata)) {
             metadataMap = UtilsAndCommons.parseMetadata(metadata);
@@ -68,6 +74,7 @@ public class ServiceController {
         domObj.setEnabled(true);
         domObj.setEnableClientBeat(HealthCheckMode.client.name().equals(healthCheckMode.toLowerCase()));
         domObj.setMetadata(metadataMap);
+        domObj.setSelector(parseSelector(selector));
 
         // now valid the dom. if failed, exception will be thrown
         domObj.setLastModifiedMillis(System.currentTimeMillis());
@@ -99,7 +106,7 @@ public class ServiceController {
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
-    public Service detail(HttpServletRequest request) throws Exception {
+    public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, "serviceName");
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
@@ -107,19 +114,25 @@ public class ServiceController {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
-        Service service = new Service(serviceName);
-        service.setName(serviceName);
-        service.setProtectThreshold(domain.getProtectThreshold());
-        service.setHealthCheckMode(HealthCheckMode.none.name());
-        if (domain.getEnableHealthCheck()) {
-            service.setHealthCheckMode(HealthCheckMode.server.name());
-        }
-        if (domain.getEnableClientBeat()) {
-            service.setHealthCheckMode(HealthCheckMode.client.name());
-        }
-        service.setMetadata(domain.getMetadata());
+        JSONObject res = new JSONObject();
+        res.put("name", serviceName);
+        res.put("protectThreshold", domain.getProtectThreshold());
 
-        return service;
+        res.put("healthCheckMode", HealthCheckMode.none.name());
+
+        if (domain.getEnableHealthCheck()) {
+            res.put("healthCheckMode", HealthCheckMode.server.name());
+        }
+
+        if (domain.getEnableClientBeat()) {
+            res.put("healthCheckMode", HealthCheckMode.client.name());
+        }
+
+        res.put("metadata", domain.getMetadata());
+
+        res.put("selector", domain.getSelector());
+
+        return res;
     }
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
@@ -157,7 +170,7 @@ public class ServiceController {
         float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
         String healthCheckMode = WebUtils.required(request, "healthCheckMode");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        String selectorName = WebUtils.optional(request, "selectorName", StringUtils.EMPTY);
+        String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {
@@ -184,7 +197,7 @@ public class ServiceController {
         Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
         domain.setMetadata(metadataMap);
 
-        domain.setSelectorName(selectorName);
+        domain.setSelector(parseSelector(selector));
 
         domain.setLastModifiedMillis(System.currentTimeMillis());
         domain.recalculateChecksum();
@@ -193,5 +206,29 @@ public class ServiceController {
         domainsManager.easyAddOrReplaceDom(domain);
 
         return "ok";
+    }
+
+    private AbstractSelector parseSelector(String selectorJsonString) throws NacosException {
+
+        JSONObject selectorJson = JSON.parseObject(selectorJsonString);
+        switch (SelectorType.valueOf(selectorJson.getString("type"))) {
+            case none:
+                return new NoneSelector();
+            case label:
+                String expression = selectorJson.getString("expression");
+                Set<String> labels = LabelSelector.parseExpression(expression);
+
+                if (labels.isEmpty()) {
+                    throw new NacosException(NacosException.INVALID_PARAM, "expression parse failed:" + expression);
+                }
+
+                LabelSelector labelSelector = new LabelSelector();
+                labelSelector.setType(SelectorType.label.name());
+                labelSelector.setExpression(expression);
+                labelSelector.setLabels(labels);
+                return labelSelector;
+            default:
+                throw new NacosException(NacosException.INVALID_PARAM, "not match any type of selector!");
+        }
     }
 }

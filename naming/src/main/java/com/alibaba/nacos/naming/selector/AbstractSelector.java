@@ -34,20 +34,27 @@ import java.util.List;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @see SelectorType
  */
-public abstract class Selector {
+public abstract class AbstractSelector {
 
     /**
-     * The name of selector
+     * @see SelectorType
      */
-    private String name;
+    protected String type = "unknown";
 
-    public String getName() {
-        return name;
+    public String getType() {
+        return type;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setType(String type) {
+        this.type = type;
     }
 
+    /**
+     * Select qualified instances from providers
+     *
+     * @param consumer  consumer address
+     * @param providers candidate provider addresses
+     * @return selected provider addresses
+     */
     public abstract List<IpAddress> select(String consumer, List<IpAddress> providers);
 }
