@@ -19,7 +19,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.common.util.Pair;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
 import com.alibaba.nacos.naming.push.PushService;
@@ -35,6 +34,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -58,7 +58,13 @@ public class DomainsManager {
 
     private final Lock lock = new ReentrantLock();
 
+    private Map<String, Condition> dom2ConditionMap = new ConcurrentHashMap<>();
+
     private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
+
+    public Map<String, Lock> getDom2LockMap() {
+        return dom2LockMap;
+    }
 
     /**
      * thread pool that processes getting domain detail from other server asynchronously
@@ -92,7 +98,7 @@ public class DomainsManager {
             try {
                 leader = RaftCore.getPeerSet().getLeader();
                 if (leader != null) {
-                    Loggers.SRV_LOG.info("AUTO-INIT", "no leader now, sleep 3 seconds and try again.");
+                    Loggers.SRV_LOG.info("[AUTO-INIT] leader is: " + leader.ip);
                     break;
                 }
 
@@ -176,12 +182,12 @@ public class DomainsManager {
         JSONObject dom = JSON.parseObject(msg.getData());
 
         JSONArray ipList = dom.getJSONArray("ips");
-        Map<String, Pair> ipsMap = new HashMap<>(ipList.size());
-        for (int i=0; i<ipList.size(); i++) {
+        Map<String, String> ipsMap = new HashMap<>(ipList.size());
+        for (int i = 0; i < ipList.size(); i++) {
 
             String ip = ipList.getString(i);
             String[] strings = ip.split("_");
-            ipsMap.put(strings[0], new Pair(strings[1], strings[2]));
+            ipsMap.put(strings[0], strings[1]);
         }
 
         VirtualClusterDomain raftVirtualClusterDomain = (VirtualClusterDomain) raftDomMap.get(domName);
@@ -192,14 +198,10 @@ public class DomainsManager {
 
         List<IpAddress> ipAddresses = raftVirtualClusterDomain.allIPs();
         for (IpAddress ipAddress : ipAddresses) {
-            Pair pair = ipsMap.get(ipAddress.toIPAddr());
-            if (pair == null) {
-                continue;
-            }
-            Boolean valid = Boolean.parseBoolean(pair.getValue0());
+
+            Boolean valid = Boolean.parseBoolean(ipsMap.get(ipAddress.toIPAddr()));
             if (valid != ipAddress.isValid()) {
-                ipAddress.setValid(Boolean.parseBoolean(pair.getValue0()));
-                ipAddress.setInvalidType(pair.getValue1());
+                ipAddress.setValid(valid);
                 Loggers.EVT_LOG.info("{" + domName + "} {SYNC} " +
                         "{IP-" + (ipAddress.isValid() ? "ENABLED" : "DISABLED") + "} " + ipAddress.getIp()
                         + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName());
@@ -213,12 +215,16 @@ public class DomainsManager {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("IP-UPDATED", "dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
 
     }
 
     public Set<String> getAllDomNames() {
         return new HashSet<String>(chooseDomMap().keySet());
+    }
+
+    public List<String> getAllDomNamesList() {
+        return new ArrayList<>(chooseDomMap().keySet());
     }
 
     public void setAllDomNames(List<String> allDomNames) {
@@ -279,117 +285,81 @@ public class DomainsManager {
             virtualClusterDomain = (VirtualClusterDomain) newDom;
             newDom = virtualClusterDomain;
         }
-        RaftCore.signalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
-    }
-
-    public void easyReplaceIP4Dom(String domName, String clusterName, List<IpAddress> ips) throws Exception {
-        Domain dom = chooseDomMap().get(domName);
-        if (dom == null) {
-            throw new IllegalArgumentException("dom doesn't exist: " + domName);
-        }
-
-        Cluster cluster = ((VirtualClusterDomain) dom).getClusterMap().get(clusterName);
-        if (cluster == null) {
-            throw new IllegalArgumentException("cluster doesn't exist: " + clusterName);
-        }
-
-        List<IpAddress> deadIPs = cluster.allIPs();
-        deadIPs.removeAll(ips);
-
-        easyAddIP4Dom(dom.getName(), ips);
-        easyRemvIP4Dom(dom.getName(), deadIPs);
-    }
-
-    public void easyAddIP4Dom(String domName, List<IpAddress> ips) throws Exception {
-        easyAddIP4Dom(domName, ips, -1);
-    }
-
-    public void easyAddIP4Dom(String domName, List<IpAddress> ips, long timestamp) throws Exception {
-        easyAddIP4Dom(domName, ips, timestamp, -1);
+        RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
     }
 
     public void easyAddIP4Dom(String domName, List<IpAddress> ips, long timestamp, long term) throws Exception {
 
-        try {
-            VirtualClusterDomain dom = (VirtualClusterDomain) chooseDomMap().get(domName);
-            if (dom == null) {
-                throw new IllegalArgumentException("dom doesn't exist: " + domName);
-            }
 
-            // set default port and site info if missing
-            for (IpAddress ip : ips) {
-                if (ip.getPort() == 0) {
-                    ip.setPort(dom.getClusterMap().get(ip.getClusterName()).getDefIPPort());
-                }
-            }
-
-
-            Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
-            String oldJson = StringUtils.EMPTY;
-
-            if (datum1 != null) {
-                oldJson = datum1.value;
-            }
-
-            List<IpAddress> ipAddresses;
-            List<IpAddress> currentIPs = dom.allIPs();
-            Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
-
-            for (IpAddress ipAddress : currentIPs) {
-                map.put(ipAddress.toIPAddr(), ipAddress);
-            }
-
-            ipAddresses = setValid(oldJson, map);
-
-            Map<String, IpAddress> ipAddressMap = new HashMap<String, IpAddress>(ipAddresses.size());
-
-            for (IpAddress ipAddress : ipAddresses) {
-                ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
-            }
-
-            for (IpAddress ipAddress : ips) {
-                if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                    Loggers.SRV_LOG.info("cluster: " + ipAddress.getClusterName() + "  not found, ip: " + ipAddress.toJSON());
-                    continue;
-                }
-
-                ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
-            }
-
-            if (ipAddressMap.size() <= 0) {
-                throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
-                        + JSON.toJSONString(ipAddressMap.values()));
-            }
-
-            if (timestamp == -1) {
-                RaftCore.signalPublish(UtilsAndCommons.getIPListStoreKey(dom),
-                        JSON.toJSONString(ipAddressMap.values()));
-            } else {
-                String key = UtilsAndCommons.getIPListStoreKey(dom);
-                String value = JSON.toJSONString(ipAddressMap.values());
-
-                Datum datum = new Datum();
-                datum.key = key;
-                datum.value = value;
-                datum.timestamp = timestamp;
-
-                RaftPeer peer = new RaftPeer();
-                peer.ip = RaftCore.getLeader().ip;
-                peer.term.set(term);
-                peer.voteFor = RaftCore.getLeader().voteFor;
-                peer.heartbeatDueMs = RaftCore.getLeader().heartbeatDueMs;
-                peer.leaderDueMs = RaftCore.getLeader().leaderDueMs;
-                peer.state = RaftCore.getLeader().state;
-
-                JSONObject json = new JSONObject();
-                json.put("datum", datum);
-                json.put("source", peer);
-
-                RaftCore.onPublish(json);
-            }
-        } finally {
-//            lock.unlock();
+        VirtualClusterDomain dom = (VirtualClusterDomain) chooseDomMap().get(domName);
+        if (dom == null) {
+            throw new IllegalArgumentException("dom doesn't exist: " + domName);
         }
+
+        // set default port and site info if missing
+        for (IpAddress ip : ips) {
+            if (ip.getPort() == 0) {
+                ip.setPort(dom.getClusterMap().get(ip.getClusterName()).getDefIPPort());
+            }
+        }
+
+        Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
+        String oldJson = StringUtils.EMPTY;
+
+        if (datum1 != null) {
+            oldJson = datum1.value;
+        }
+
+        List<IpAddress> ipAddresses;
+        List<IpAddress> currentIPs = dom.allIPs();
+        Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
+
+        for (IpAddress ipAddress : currentIPs) {
+            map.put(ipAddress.toIPAddr(), ipAddress);
+        }
+
+        ipAddresses = setValid(oldJson, map);
+
+        Map<String, IpAddress> ipAddressMap = new HashMap<String, IpAddress>(ipAddresses.size());
+
+        for (IpAddress ipAddress : ipAddresses) {
+            ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
+        }
+
+        for (IpAddress ipAddress : ips) {
+            if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
+                Cluster cluster = new Cluster(ipAddress.getClusterName());
+                cluster.setDom(dom);
+                dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
+                Loggers.SRV_LOG.warn("cluster: " + ipAddress.getClusterName() + "  not found, ip: " + ipAddress.toJSON()
+                        + ", will create new cluster with default configuration.");
+            }
+
+            ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
+        }
+
+        if (ipAddressMap.size() <= 0) {
+            throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
+                    + JSON.toJSONString(ipAddressMap.values()));
+        }
+
+        String key = UtilsAndCommons.getIPListStoreKey(dom);
+        String value = JSON.toJSONString(ipAddressMap.values());
+
+        Datum datum = new Datum();
+        datum.key = key;
+        datum.value = value;
+        datum.timestamp.set(timestamp);
+
+        RaftPeer peer = new RaftPeer();
+        peer.ip = RaftCore.getLeader().ip;
+        peer.term.set(term);
+        peer.voteFor = RaftCore.getLeader().voteFor;
+        peer.heartbeatDueMs = RaftCore.getLeader().heartbeatDueMs;
+        peer.leaderDueMs = RaftCore.getLeader().leaderDueMs;
+        peer.state = RaftCore.getLeader().state;
+
+        RaftCore.onPublish(datum, peer);
     }
 
     private List<IpAddress> setValid(String oldJson, Map<String, IpAddress> map) {
@@ -402,6 +372,7 @@ public class DomainsManager {
                     IpAddress ipAddress1 = map.get(ipAddress.toIPAddr());
                     if (ipAddress1 != null) {
                         ipAddress.setValid(ipAddress1.isValid());
+                        ipAddress.setLastBeat(ipAddress1.getLastBeat());
                     }
                 }
             } catch (Throwable throwable) {
@@ -437,7 +408,7 @@ public class DomainsManager {
                 return;
             }
 
-            Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
+            Map<String, IpAddress> map = new ConcurrentHashMap<String, IpAddress>(currentIPs.size());
 
             for (IpAddress ipAddress : currentIPs) {
                 map.put(ipAddress.toIPAddr(), ipAddress);
@@ -451,12 +422,7 @@ public class DomainsManager {
 
             ipAddrs.removeAll(ips);
 
-            if (ipAddrs.size() <= 0 && dom.allIPs().size() > 1) {
-                throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
-                        + JSON.toJSONString(ipAddrs));
-            }
-
-            RaftCore.signalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
+            RaftCore.doSignalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
         } finally {
             lock.unlock();
         }
@@ -499,26 +465,34 @@ public class DomainsManager {
         return raftDomMap;
     }
 
-    public List<Domain> getPagedDom(int startPage, int pageSize) {
-        ArrayList<Domain> domainList = new ArrayList<Domain>(chooseDomMap().values());
-        if (pageSize >= chooseDomMap().size()) {
-            return Collections.unmodifiableList(domainList);
+    public int getPagedDom(int startPage, int pageSize, String keyword, List<Domain> domainList) {
+
+
+        List<Domain> matchList;
+        if (StringUtils.isNotBlank(keyword)) {
+            matchList = searchDomains(".*" + keyword + ".*");
+        } else {
+            matchList = new ArrayList<Domain>(chooseDomMap().values());
         }
 
-        List<Domain> resultList = new ArrayList<Domain>();
-        for (int i = 0; i < domainList.size(); i++) {
+        if (pageSize >= matchList.size()) {
+            domainList.addAll(matchList);
+            return matchList.size();
+        }
+
+        for (int i = 0; i < matchList.size(); i++) {
             if (i < startPage * pageSize) {
                 continue;
             }
 
-            resultList.add(domainList.get(i));
+            domainList.add(matchList.get(i));
 
-            if (resultList.size() >= pageSize) {
+            if (domainList.size() >= pageSize) {
                 break;
             }
         }
 
-        return resultList;
+        return matchList.size();
     }
 
     public static class DomainChecksum {
@@ -571,12 +545,12 @@ public class DomainsManager {
 
                 List<String> sameSiteServers = NamingProxy.getSameSiteServers().get("sameSite");
 
-                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localIP())) {
+                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localServer())) {
                     return;
                 }
 
                 for (String server : sameSiteServers) {
-                    if (server.equals(NetUtils.localIP())) {
+                    if (server.equals(NetUtils.localServer())) {
                         continue;
                     }
                     synchronizer.send(server, msg);
@@ -637,7 +611,7 @@ public class DomainsManager {
                         throw new IllegalStateException("dom parsing failed, json: " + value);
                     }
 
-                    Loggers.RAFT.info("RAFT-NOTIFIER", "datum is changed, key:" + key + ", value:" + value);
+                    Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key:" + key + ", value:" + value);
 
                     Domain oldDom = raftDomMap.get(dom.getName());
                     if (oldDom != null) {
@@ -648,16 +622,21 @@ public class DomainsManager {
                             dom2LockMap.put(dom.getName(), new ReentrantLock());
                         }
 
-                        Lock lock = dom2LockMap.get(dom.getName());
-
-
-                        synchronized (lock) {
-                            raftDomMap.put(dom.getName(), dom);
-                            dom.init();
-                            lock.notifyAll();
-                        }
+                        raftDomMap.put(dom.getName(), dom);
+                        dom.init();
 
                         Loggers.SRV_LOG.info("[NEW-DOM-raft] " + dom.toJSON());
+                    }
+
+                    Lock lock = dom2LockMap.get(dom.getName());
+                    Condition condition = dom2ConditionMap.get(dom.getName());
+
+                    try {
+                        lock.lock();
+                        condition.signalAll();
+                    } catch (Exception ignore) {
+                    } finally {
+                        lock.unlock();
                     }
 
                 } catch (Throwable e) {
@@ -669,7 +648,7 @@ public class DomainsManager {
             public void onDelete(String key, String value) throws Exception {
                 String name = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
                 Domain dom = raftDomMap.remove(name);
-                Loggers.RAFT.info("RAFT-NOTIFIER", "datum is deleted, key:" + key + ", value:" + value);
+                Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key:" + key + ", value:" + value);
 
                 if (dom != null) {
                     dom.destroy();
@@ -685,6 +664,12 @@ public class DomainsManager {
         Lock lock = new ReentrantLock();
         dom2LockMap.put(domName, lock);
         return lock;
+    }
+
+    public Condition addCondtion(String domName) {
+        Condition condition = dom2LockMap.get(domName).newCondition();
+        dom2ConditionMap.put(domName, condition);
+        return condition;
     }
 
     public Map<String, Domain> getDomMap() {

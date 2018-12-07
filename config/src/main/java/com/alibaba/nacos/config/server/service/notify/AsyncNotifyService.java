@@ -15,19 +15,13 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.ServerListService;
+import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -41,17 +35,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.ServerListService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.config.server.utils.StringUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.*;
+
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * Async notify service
@@ -141,7 +134,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 							&& ServerListService.getServerListUnhealth().contains(targetIp)) {
 						// target ip 不健康，则放入通知列表中
 						ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null, task.getLastModified(),
-								SystemConfig.LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
+								LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
 						// get delay time and set fail count to the task
 						int delay = getDelayTime(task);
 						Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
@@ -152,7 +145,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 						HttpGet request = new HttpGet(task.url);
 						request.setHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
 								String.valueOf(task.getLastModified()));
-						request.setHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, SystemConfig.LOCAL_IP);
+						request.setHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP, LOCAL_IP);
 						if (task.isBeta) {
 							request.setHeader("isBeta", "true");
 						}
@@ -184,7 +177,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 			if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 				ConfigTraceService.logNotifyEvent(task.getDataId(),
 						task.getGroup(), task.getTenant(), null, task.getLastModified(),
-						SystemConfig.LOCAL_IP,
+						LOCAL_IP,
 						ConfigTraceService.NOTIFY_EVENT_OK, delayed,
 						task.target);
 			} else {
@@ -194,7 +187,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 								response.getStatusLine().getStatusCode() });
 				ConfigTraceService.logNotifyEvent(task.getDataId(),
 						task.getGroup(), task.getTenant(), null, task.getLastModified(),
-						SystemConfig.LOCAL_IP,
+						LOCAL_IP,
 						ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
 						task.target);
 
@@ -227,7 +220,7 @@ public class AsyncNotifyService extends AbstractEventListener {
 					+ ex.toString(), ex);
 			ConfigTraceService.logNotifyEvent(task.getDataId(),
 					task.getGroup(), task.getTenant(), null, task.getLastModified(),
-					SystemConfig.LOCAL_IP,
+					LOCAL_IP,
 					ConfigTraceService.NOTIFY_EVENT_EXCEPTION, delayed,
 					task.target);
 

@@ -15,13 +15,12 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.service.LongPollingService;
+import com.alibaba.nacos.config.server.service.dump.DumpService;
+import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
@@ -30,11 +29,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.SampleResult;
-import com.alibaba.nacos.config.server.service.LongPullingService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 
 /**
@@ -47,15 +43,19 @@ import com.alibaba.nacos.config.server.service.notify.NotifyService;
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
 
-    @Autowired
-    private DumpService dumpService;
+    private final DumpService dumpService;
 
-    @Autowired
-    protected LongPullingService longPullingService;
+    private final LongPollingService longPollingService;
     
     private String trueStr = "true";
-    
-    /**
+
+	@Autowired
+	public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
+		this.dumpService = dumpService;
+		this.longPollingService = longPollingService;
+	}
+
+	/**
      * 通知配置信息改变
      *
      */
@@ -89,11 +89,9 @@ public class CommunicationController {
 			@RequestParam("dataId") String dataId,
 			@RequestParam("group") String group,
 			@RequestParam(value = "tenant", required = false) String tenant,
-			 ModelMap modelMap)
-			throws IOException, ServletException, Exception {
+			 ModelMap modelMap) {
 		group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-		SampleResult sampleResult = longPullingService.getCollectSubscribleInfo(dataId, group, tenant);
-		return sampleResult;
+		return longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
 	}
 	
 	/**
@@ -102,11 +100,7 @@ public class CommunicationController {
 	@RequestMapping(value= "/watcherConfigs", method = RequestMethod.GET)
 	@ResponseBody
 	public SampleResult getSubClientConfigByIp(HttpServletRequest request,
-			HttpServletResponse response,
-			@RequestParam("ip") String ip,
-			ModelMap modelMap)
-					throws IOException, ServletException, Exception {
-		SampleResult sampleResult = longPullingService.getCollectSubscribleInfoByIp(ip);
-		return sampleResult;
+			HttpServletResponse response, @RequestParam("ip") String ip,ModelMap modelMap) {
+		return longPollingService.getCollectSubscribleInfoByIp(ip);
 	}
 }

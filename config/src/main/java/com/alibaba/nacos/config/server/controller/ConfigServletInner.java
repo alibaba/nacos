@@ -15,8 +15,22 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.DiskUtil;
+import com.alibaba.nacos.config.server.service.LongPollingService;
+import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.*;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -27,29 +41,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.LongPullingService;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5Util;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.Protocol;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
 
 /**
  * ConfigServlet inner for aop
@@ -60,7 +53,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 public class ConfigServletInner {
 
 	@Autowired
-    private LongPullingService longPullingService;
+    private LongPollingService longPollingService;
 
 	@Autowired
 	private PersistService persistService;
@@ -74,8 +67,8 @@ public class ConfigServletInner {
     public String doPollingConfig(HttpServletRequest request, HttpServletResponse response, Map<String, String> clientMd5Map, int probeRequestSize) throws IOException, ServletException {
 
         // 长轮询
-        if (LongPullingService.isSupportLongPulling(request)) {
-            longPullingService.addLongPullingClient(request, response, clientMd5Map, probeRequestSize);
+        if (LongPollingService.isSupportLongPulling(request)) {
+            longPollingService.addLongPullingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
 
@@ -141,7 +134,7 @@ public class ConfigServletInner {
 				if (isBeta) {
 					md5 = cacheItem.getMd54Beta();
 					lastModified = cacheItem.getLastModifiedTs4Beta();
-					if (PropertyUtil.isStandaloneMode()) {
+					if (STANDALONE_MODE) {
 						configInfoBase = persistService.findConfigInfo4Beta(dataId, group,tenant);
 					} else {
 						file = DiskUtil.targetBetaFile(dataId, group, tenant);
@@ -158,7 +151,7 @@ public class ConfigServletInner {
 									lastModified = cacheItem.tagLastModifiedTs.get(autoTag);
 								}
 							}
-							if (PropertyUtil.isStandaloneMode()) {
+							if (STANDALONE_MODE) {
 								configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
 							} else {
 								file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
@@ -169,7 +162,7 @@ public class ConfigServletInner {
 						} else {
 							md5 = cacheItem.getMd5();
 							lastModified = cacheItem.getLastModifiedTs();
-							if (PropertyUtil.isStandaloneMode()) {
+							if (STANDALONE_MODE) {
 								configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
 							} else {
 								file = DiskUtil.targetFile(dataId, group, tenant);
@@ -201,7 +194,7 @@ public class ConfigServletInner {
 								}
 							}
 						}
-						if (PropertyUtil.isStandaloneMode()) {
+						if (STANDALONE_MODE) {
 							configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
 						} else {
 							file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
@@ -230,7 +223,7 @@ public class ConfigServletInner {
 				response.setHeader("Pragma", "no-cache"); 
 				response.setDateHeader("Expires", 0);
 				response.setHeader("Cache-Control", "no-cache,no-store");
-				if (PropertyUtil.isStandaloneMode()) {
+				if (STANDALONE_MODE) {
 					response.setDateHeader("Last-Modified", lastModified);
 				} else {
 					fis = new FileInputStream(file);
@@ -238,7 +231,7 @@ public class ConfigServletInner {
 				}
 
 
-				if (PropertyUtil.isStandaloneMode()) {
+				if (STANDALONE_MODE) {
 					out = response.getWriter();
 					out.print(configInfoBase.getContent());
 					out.flush();
@@ -248,7 +241,7 @@ public class ConfigServletInner {
 							Channels.newChannel(response.getOutputStream()));
 				}
 
-                LogUtil.pullCheckLog.warn("{}|{}|{}|{}", new Object[]{groupKey,requestIp,md5, TimeUtils.getCurrentTimeStr()});
+                LogUtil.pullCheckLog.warn("{}|{}|{}|{}", groupKey,requestIp,md5, TimeUtils.getCurrentTimeStr());
 
 
 				final long delayed = System.currentTimeMillis() - lastModified;
@@ -275,7 +268,7 @@ public class ConfigServletInner {
 
 		} else {
 
-			pullLog.info("[client-get] clientIp={}, {}, get data during dump", new Object[]{clientIp, groupKey});
+			pullLog.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
 
 			response.setStatus(HttpServletResponse.SC_CONFLICT);
 			response.getWriter().println("requested file is being modified, please try later.");
@@ -329,9 +322,7 @@ public class ConfigServletInner {
 
 	private static boolean isUseTag(CacheItem cacheItem, String tag) {
 		if (cacheItem != null && cacheItem.tagMd5 != null && cacheItem.tagMd5.size() > 0) {
-			if (StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag)) {
-				return true;
-			}
+			return StringUtils.isNotBlank(tag) && cacheItem.tagMd5.containsKey(tag);
 		}
 		return false;
 	}

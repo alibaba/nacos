@@ -15,24 +15,28 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.util.IoUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentStringsMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
+import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -53,6 +57,10 @@ public class HttpClient {
 
     private static AsyncHttpClient asyncHttpClient;
 
+    private static CloseableHttpClient postClient;
+
+    private static PoolingHttpClientConnectionManager connectionManager;
+
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
         builder.setMaximumConnectionsTotal(-1);
@@ -67,6 +75,16 @@ public class HttpClient {
         builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
 
         asyncHttpClient = new AsyncHttpClient(builder.build());
+
+        HttpClientBuilder builder2 = HttpClients.custom();
+        builder2.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+        builder2.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
+        builder2.setMaxConnPerRoute(-1);
+        builder2.setMaxConnTotal(-1);
+        builder2.disableAutomaticRetries();
+//        builder2.disableConnectionState()
+
+        postClient = builder2.build();
     }
 
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues) {
@@ -229,11 +247,7 @@ public class HttpClient {
 
     public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
         try {
-            HttpClientBuilder builder = HttpClients.custom();
-            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-            builder.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
 
-            CloseableHttpClient httpClient = builder.build();
             HttpPost httpost = new HttpPost(url);
 
             RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(5000).setConnectTimeout(5000).setSocketTimeout(5000).setRedirectsEnabled(true).setMaxRedirects(5).build();
@@ -247,7 +261,7 @@ public class HttpClient {
 
 
             httpost.setEntity(new UrlEncodedFormEntity(nvps, encoding));
-            HttpResponse response = httpClient.execute(httpost);
+            HttpResponse response = postClient.execute(httpost);
             HttpEntity entity = response.getEntity();
 
             String charset = encoding;
@@ -261,7 +275,7 @@ public class HttpClient {
                 }
             }
 
-            return new HttpResult(response.getStatusLine().getStatusCode(), IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+            return new HttpResult(response.getStatusLine().getStatusCode(), IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Throwable e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -288,7 +302,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -315,7 +329,7 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        HttpResult result = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult result = new HttpResult(respCode, IOUtils.toString(inputStream, getCharset(conn)), respHeaders);
         inputStream.close();
 
         return result;
@@ -324,15 +338,15 @@ public class HttpClient {
     private static String getCharset(HttpURLConnection conn) {
         String contentType = conn.getContentType();
         if (StringUtils.isEmpty(contentType)) {
-            return "utf-8";
+            return "UTF-8";
         }
 
         String[] values = contentType.split(";");
         if (values.length == 0) {
-            return "utf-8";
+            return "UTF-8";
         }
 
-        String charset = "utf-8";
+        String charset = "UTF-8";
         for (String value : values) {
             value = value.trim();
 

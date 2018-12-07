@@ -23,17 +23,24 @@ import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.raft.*;
+import com.alibaba.nacos.naming.raft.Datum;
+import com.alibaba.nacos.naming.raft.RaftCore;
+import com.alibaba.nacos.naming.raft.RaftListener;
+import com.alibaba.nacos.naming.raft.RaftPeer;
+import com.alibaba.nacos.naming.raft.RaftStore;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author nacos
@@ -78,14 +85,14 @@ public class RaftCommands {
         RaftPeer peer = null;
 
         for (RaftPeer peer1 : peers) {
-            if (StringUtils.equals(peer1.ip, NetUtils.localIP())) {
+            if (StringUtils.equals(peer1.ip, NetUtils.localServer())) {
                 peer = peer1;
             }
         }
 
         if (peer == null) {
             peer = new RaftPeer();
-            peer.ip = NetUtils.localIP();
+            peer.ip = NetUtils.localServer();
         }
 
         return JSON.parseObject(JSON.toJSONString(peer));
@@ -107,12 +114,12 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject json = JSON.parseObject(value);
 
-        RaftCore.signalPublish(json.getString("key"), json.getString("value"));
+        RaftCore.doSignalPublish(json.getString("key"), json.getString("value"));
 
         return "ok";
     }
@@ -125,7 +132,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject json = JSON.parseObject(value);
@@ -186,10 +193,11 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject jsonObject = JSON.parseObject(value);
+
         RaftCore.onPublish(jsonObject);
         return "ok";
     }
@@ -202,7 +210,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         RaftCore.onDelete(JSON.parseObject(value));

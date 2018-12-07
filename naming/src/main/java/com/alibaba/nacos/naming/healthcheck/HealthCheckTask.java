@@ -60,7 +60,7 @@ public class HealthCheckTask implements Runnable {
         try {
             if (DistroMapper.responsible(cluster.getDom().getName())) {
                 processor.process(this);
-                Loggers.EVT_LOG.debug("HEALTH-CHECK", "schedule health check task: " + cluster.getDom().getName());
+                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: " + cluster.getDom().getName());
             }
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("VIPSRV-HEALTH-CHECK", "error while process health check for " + cluster.getDom().getName() + ":" + cluster.getName(), e);

@@ -15,25 +15,15 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import javax.annotation.PostConstruct;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
-
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
@@ -42,19 +32,26 @@ import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
-import com.alibaba.nacos.config.server.service.notify.NotifyService;
-import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import javax.annotation.PostConstruct;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.*;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Serverlist service
@@ -70,13 +67,11 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	@Autowired
     private ServletContext servletContext;
 	
-	@Value("${server.port}")
     private int port;
-	
-	
+
 	@PostConstruct
 	public void init() {
-		serverPort = System.getProperty("nacos.server.port", "8080");
+		serverPort = System.getProperty("nacos.server.port", "8848");
 		String envDomainName = System.getenv("address_server_domain");
 		if (StringUtils.isBlank(envDomainName)) {
 			domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
@@ -157,7 +152,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	}
 
 	public static Boolean isFirstIp() {
-		return serverList.get(0).contains(SystemConfig.LOCAL_IP);
+		return serverList.get(0).contains(LOCAL_IP);
 	}
 
 	public boolean isHealthCheck() {
@@ -173,7 +168,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
 		boolean isContainSelfIp = false;
 		for (String ipPortTmp : newList) {
-			if (ipPortTmp.contains(SystemConfig.LOCAL_IP)) {
+			if (ipPortTmp.contains(LOCAL_IP)) {
 				isContainSelfIp = true;
 				break;
 			}
@@ -183,7 +178,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 			isInIpList = true;
 		} else {
 			isInIpList = false;
-			String selfAddr = getFormatServerAddr(SystemConfig.LOCAL_IP);
+			String selfAddr = getFormatServerAddr(LOCAL_IP);
 			newList.add(selfAddr);
 			fatalLog.error("########## [serverlist] self ip {} not in serverlist {}", selfAddr, newList);
 		}
@@ -228,14 +223,18 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 	 * @return serverlist
 	 */
 	private List<String> getApacheServerList() {
+		if (STANDALONE_MODE) {
+			List<String> serverIps = new ArrayList<String>();
+			serverIps.add(getFormatServerAddr(LOCAL_IP));
+			return serverIps;
+		}
+
 		// 优先从文件读取服务列表
 		try {
 			List<String> serverIps = new ArrayList<String>();
-			String serverIpsStr = DiskUtil.getServerList();
-			if (!StringUtils.isBlank(serverIpsStr)) {
-				String split = System.getProperty("line.separator");
-				String[] serverAddrArr = serverIpsStr.split(split);
-				for (String serverAddr : serverAddrArr) {
+			List<String> serverAddrLines = readClusterConf();
+			if (!CollectionUtils.isEmpty(serverAddrLines)) {
+				for (String serverAddr : serverAddrLines) {
 					if (StringUtils.isNotBlank(serverAddr.trim())) {
 						serverIps.add(getFormatServerAddr(serverAddr));
 					}
@@ -248,7 +247,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 			defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
 		}
 
-		if (isUseAddressServer() && !PropertyUtil.isStandaloneMode()) {
+		if (isUseAddressServer()) {
 			try {
 				HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
 
@@ -284,7 +283,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
 		} else {
 			List<String> serverIps = new ArrayList<String>();
-			serverIps.add(getFormatServerAddr(SystemConfig.LOCAL_IP));
+			serverIps.add(getFormatServerAddr(LOCAL_IP));
 			return serverIps;
 		}
 	}
@@ -335,7 +334,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 		long startCheckTime = System.currentTimeMillis();
 		for (String serverIp : serverList) {
 			// Compatible with old codes,use status.taobao
-			String url = "http://" + serverIp + servletContext.getContextPath() + "/health";
+			String url = "http://" + serverIp + servletContext.getContextPath() + Constants.HEALTH_CONTROLLER_PATH;
 			// "/nacos/health";
 			HttpGet request = new HttpGet(url);
 			httpclient.execute(request, new AyscCheckServerHealthCallBack(serverIp));

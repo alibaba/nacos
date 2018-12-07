@@ -15,22 +15,13 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-
-import java.sql.Timestamp;
-import java.util.List;
-
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
-import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.SwitchService;
+import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
@@ -39,6 +30,11 @@ import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.StringUtils;
+
+import java.sql.Timestamp;
+import java.util.List;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 
 /**
  * Dump data task
@@ -274,8 +270,7 @@ class DumpAllProcessor implements TaskProcessor {
 					final String content = cf.getContent();
 					final String md5 = MD5.getInstance().getMD5String(content);
 					LogUtil.dumpLog.info("[dump-all-ok] {}, {}, length={}, md5={}",
-							new Object[] { GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
-									content.length(), md5 });
+						GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(), md5);
 				}
 				defaultLog.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
 			} else {
@@ -311,9 +306,9 @@ class DumpAllBetaProcessor implements TaskProcessor {
 				for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
 					boolean result = ConfigService.dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(),
 							cf.getContent(), cf.getLastModified(), cf.getBetaIps());
-					LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}",
-							new Object[] { result, GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
-									cf.getLastModified(), cf.getContent().length(), cf.getMd5() });
+					LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
+						GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), cf.getContent()
+							.length(), cf.getMd5());
 				}
 
 				actualRowCount += page.getPageItems().size();
@@ -349,9 +344,9 @@ class DumpAllTagProcessor implements TaskProcessor {
 				for (ConfigInfoTagWrapper cf : page.getPageItems()) {
 					boolean result = ConfigService.dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(),
 							cf.getContent(), cf.getLastModified());
-					LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}",
-							new Object[] { result, GroupKey2.getKey(cf.getDataId(), cf.getGroup()),
-									cf.getLastModified(), cf.getContent().length(), cf.getMd5() });
+					LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
+						GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), cf.getContent()
+							.length(), cf.getMd5());
 				}
 				
 				actualRowCount += page.getPageItems().size();

@@ -294,7 +294,7 @@ public class ServerListManager {
         String split = "";
         for (String serverIp : serverIps) {
             sb.append(split);
-            sb.append(serverIp);
+            sb.append(serverIp.replaceAll(":", "_"));
             split = "-";
         }
         return sb.toString();

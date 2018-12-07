@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -80,9 +81,9 @@ public class InstanceControllerTest extends BaseTest {
         IpAddress ipAddress = new IpAddress();
         ipAddress.setIp("1.1.1.1");
         ipAddress.setPort(9999);
-        List<IpAddress> ipList = new ArrayList<>();
+        List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
-        domain.updateIPs(ipList, false);
+        domain.updateIPs(ipList);
 
         Mockito.when(domainsManager.getDomain("nacos.test.1")).thenReturn(domain);
 
@@ -127,16 +128,18 @@ public class InstanceControllerTest extends BaseTest {
         ipAddress.setIp("10.10.10.10");
         ipAddress.setPort(8888);
         ipAddress.setWeight(2.0);
-        List<IpAddress> ipList = new ArrayList<>();
+        List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
-        domain.updateIPs(ipList, false);
+        domain.updateIPs(ipList);
 
         Mockito.when(domainsManager.getDomain("nacos.test.1")).thenReturn(domain);
 
         MockHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.get("/naming/instances")
+                MockMvcRequestBuilders.get("/v1/ns/instances")
                         .param("serviceName", "nacos.test.1");
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
         JSONObject result = JSON.parseObject(actualValue);
 
         Assert.assertEquals("nacos.test.1", result.getString("dom"));

@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.client.logger.option;
 
-import org.apache.log4j.AsyncAppender;
-
 import com.alibaba.nacos.client.logger.Level;
 import com.alibaba.nacos.client.logger.support.LogLog;
 

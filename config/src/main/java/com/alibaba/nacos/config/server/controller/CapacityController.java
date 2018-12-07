@@ -15,9 +15,11 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.config.server.model.capacity.Capacity;
+import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,13 +29,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.RestResult;
-import com.alibaba.nacos.config.server.model.capacity.Capacity;
-import com.alibaba.nacos.config.server.service.capacity.CapacityService;
+import javax.servlet.http.HttpServletResponse;
 
 /**
- * capcity manage
+ * Capacity Management
  * 
  * @author hexu.hxy
  */
@@ -43,8 +42,10 @@ public class CapacityController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CapacityController.class);
 
+	private final CapacityService capacityService;
+
 	@Autowired
-	private CapacityService capacityService;
+	public CapacityController(CapacityService capacityService) {this.capacityService = capacityService;}
 
 	@ResponseBody
 	@RequestMapping(method = RequestMethod.GET)

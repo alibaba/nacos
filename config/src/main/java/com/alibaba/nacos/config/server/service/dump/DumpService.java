@@ -21,41 +21,34 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DiskUtil;
-import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.config.server.service.ServerListService;
-import com.alibaba.nacos.config.server.service.TimerTaskService;
+import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.utils.*;
-
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.annotation.PostConstruct;
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Dump data service
@@ -161,7 +154,7 @@ public class DumpService {
 			throw new RuntimeException(
 					"Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
 		}
-		if (!PropertyUtil.isStandaloneMode()) {
+		if (!STANDALONE_MODE) {
 			Runnable heartbeat = new Runnable() {
 				@Override
 				public void run() {
@@ -341,7 +334,8 @@ public class DumpService {
     					Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
     					if (page != null) {
     						datumList.addAll(page.getPageItems());
-    						log.info("[merge-query] {}, {}, size/total={}/{}", new Object[] { dataId, group, datumList.size(), rowCount });
+						    log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
+							    rowCount);
     					}
     				}
 
@@ -354,13 +348,14 @@ public class DumpService {
     					String aggrConetentMD5 =  MD5.getInstance().getMD5String(aggrContent);
     					if(!StringUtils.equals(localContentMD5, aggrConetentMD5)){
 	    					persistService.insertOrUpdate(null, null, cf, time, null, false);
-	    					log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", new Object[] { dataId, group, datumList.size(),
-	    							cf.getContent().length(), cf.getMd5(), ContentUtils.truncateContent(cf.getContent()) });
+						    log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
+							    datumList.size(), cf.getContent().length(), cf.getMd5(),
+							    ContentUtils.truncateContent(cf.getContent()));
     					}
     				}
     				// 删除
     				else {
-    					persistService.removeConfigInfo(dataId, group, tenant, SystemConfig.LOCAL_IP, null);
+    					persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
     					log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId=" + group);
     				}
     				

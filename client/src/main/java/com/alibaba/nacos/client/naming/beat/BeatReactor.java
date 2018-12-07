@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.naming.beat;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -30,7 +31,7 @@ import java.util.concurrent.*;
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r);
@@ -40,7 +41,7 @@ public class BeatReactor {
         }
     });
 
-    private long clientBeatInterval = 10 * 1000;
+    private long clientBeatInterval = 5 * 1000;
 
     private NamingProxy serverProxy;
 
@@ -48,33 +49,35 @@ public class BeatReactor {
 
     public BeatReactor(NamingProxy serverProxy) {
         this.serverProxy = serverProxy;
-        executorService.execute(new BeatProcessor());
+        executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
-        dom2Beat.put(dom, beatInfo);
+        LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
+        dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
     }
 
-    public void removeBeatInfo(String dom) {
-        dom2Beat.remove(dom);
+    public void removeBeatInfo(String dom, String ip, int port) {
+        LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
+        dom2Beat.remove(buildKey(dom, ip, port));
+    }
+
+    public String buildKey(String dom, String ip, int port) {
+        return dom + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
 
     class BeatProcessor implements Runnable {
 
         @Override
         public void run() {
-            while (true) {
-                try {
-                    for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
-                        BeatInfo beatInfo = entry.getValue();
-                        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                        LogUtils.LOG.info("BEAT", "send beat to server: ", beatInfo.toString());
-                    }
-
-                    TimeUnit.MILLISECONDS.sleep(clientBeatInterval);
-                } catch (Exception e) {
-                    LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
+            try {
+                for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
+                    BeatInfo beatInfo = entry.getValue();
+                    executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
+                    LogUtils.LOG.info("BEAT", "send beat to server: " + beatInfo.toString());
                 }
+            } catch (Exception e) {
+                LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
             }
         }
     }

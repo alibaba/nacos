@@ -15,19 +15,6 @@
  */
 package com.alibaba.nacos.config.server.aspect;
 
-import java.nio.charset.Charset;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.apache.commons.lang.StringUtils;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -35,6 +22,17 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.Charset;
 
 /**
  * 容量管理切面：批量写入、更新暂不处理
@@ -427,9 +425,7 @@ public class CapacityManagementAspect {
 		OVER_CLUSTER_QUOTA("超过集群配置个数上限", 429),
 		OVER_GROUP_QUOTA("超过该Group配置个数上限", 429),
 		OVER_TENANT_QUOTA("超过该租户配置个数上限", 429),
-		OVER_MAX_SIZE("超过配置的内容大小上限", 429),
-		OVER_MAX_AGGR_COUNT("超过聚合子配置个数上限", 429),
-		OVER_MAX_AGGR_SIZE("超过聚合数据子配置的内容大小上限", 429);
+		OVER_MAX_SIZE("超过配置的内容大小上限", 429);
 		public final String description;
 		public final int status;
 
