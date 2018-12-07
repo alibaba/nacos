@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class DistroMapper {
 
@@ -56,11 +56,7 @@ public class DistroMapper {
     private static Synchronizer synchronizer = new ServerStatusSynchronizer();
 
     static {
-        try {
-            localhostIP = InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort();
-        } catch (UnknownHostException e) {
-            throw new IllegalStateException("Unable to resolve current host IP");
-        }
+        localhostIP = NetUtils.localServer();
 
         init();
 
@@ -471,7 +467,7 @@ public class DistroMapper {
                     weight = 1;
                 }
 
-                localhostIP = InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort();
+                localhostIP = NetUtils.localServer();
 
                 long curTime = System.currentTimeMillis();
                 String status = LOCALHOST_SITE + "#" + localhostIP + "#" + curTime + "#" + weight + "\r\n";

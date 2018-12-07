@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
@@ -49,323 +48,338 @@ import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * 软负载客户端发布数据专用控制器
- * 
+ *
  * @author leiwen
- * 
  */
 @Controller
 @RequestMapping(Constants.CONFIG_CONTROLLER_PATH)
 public class ConfigController {
-    
-	private static final Logger log = LoggerFactory.getLogger(ConfigController.class);
-	
+
+    private static final Logger log = LoggerFactory.getLogger(ConfigController.class);
+
     private final transient ConfigServletInner inner;
-    
-	private final transient PersistService persistService;
 
-	private final transient ConfigSubService configSubService;
+    private final transient PersistService persistService;
 
-	@Autowired
-	public ConfigController(ConfigServletInner configServletInner, PersistService persistService, ConfigSubService configSubService) {
-		this.inner = configServletInner;
-		this.persistService = persistService;
-		this.configSubService = configSubService;
-	}
+    private final transient ConfigSubService configSubService;
 
-	/**
-	 * 增加或更新非聚合数据。
-	 * 
-	 * @throws NacosException
-	 */
-	@RequestMapping(method = RequestMethod.POST)
-	@ResponseBody
-	public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			@RequestParam("content") String content,
-			@RequestParam(value = "tag", required = false) String tag,
-			@RequestParam(value = "appName", required = false) String appName,
-			@RequestParam(value = "src_user", required = false) String srcUser,
-			@RequestParam(value = "config_tags", required = false) String configTags,
-			@RequestParam(value = "desc", required = false) String desc,
-			@RequestParam(value = "use", required = false) String use,
-			@RequestParam(value = "effect", required = false) String effect,
-			@RequestParam(value = "type", required = false) String type,
-			@RequestParam(value = "schema", required = false) String schema) throws NacosException {
-		final String srcIp = RequestUtil.getRemoteIp(request);
-		String requestIpApp = RequestUtil.getAppName(request);
-		ParamUtils.checkParam(dataId, group, "datumId", content);
-		ParamUtils.checkParam(tag);
+    @Autowired
+    public ConfigController(ConfigServletInner configServletInner, PersistService persistService,
+                            ConfigSubService configSubService) {
+        this.inner = configServletInner;
+        this.persistService = persistService;
+        this.configSubService = configSubService;
+    }
 
-		Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
-		if (configTags != null) {
-			configAdvanceInfo.put("config_tags", configTags);
-		}
-		if (desc != null) {
-			configAdvanceInfo.put("desc", desc);
-		}
-		if (use != null) {
-			configAdvanceInfo.put("use", use);
-		}
-		if (effect != null) {
-			configAdvanceInfo.put("effect", effect);
-		}
-		if (type != null) {
-			configAdvanceInfo.put("type", type);
-		}
-		if (schema != null) {
-			configAdvanceInfo.put("schema", schema);
-		}
-		ParamUtils.checkParam(configAdvanceInfo);
+    /**
+     * 增加或更新非聚合数据。
+     *
+     * @throws NacosException
+     */
+    @RequestMapping(method = RequestMethod.POST)
+    @ResponseBody
+    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
+                                 @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                 @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
+                                     String tenant,
+                                 @RequestParam("content") String content,
+                                 @RequestParam(value = "tag", required = false) String tag,
+                                 @RequestParam(value = "appName", required = false) String appName,
+                                 @RequestParam(value = "src_user", required = false) String srcUser,
+                                 @RequestParam(value = "config_tags", required = false) String configTags,
+                                 @RequestParam(value = "desc", required = false) String desc,
+                                 @RequestParam(value = "use", required = false) String use,
+                                 @RequestParam(value = "effect", required = false) String effect,
+                                 @RequestParam(value = "type", required = false) String type,
+                                 @RequestParam(value = "schema", required = false) String schema)
+        throws NacosException {
+        final String srcIp = RequestUtil.getRemoteIp(request);
+        String requestIpApp = RequestUtil.getAppName(request);
+        ParamUtils.checkParam(dataId, group, "datumId", content);
+        ParamUtils.checkParam(tag);
 
-		if (AggrWhitelist.isAggrDataId(dataId)) {
-			log.warn("[aggr-conflict] {} attemp to publish single data, {}, {}",
-				RequestUtil.getRemoteIp(request), dataId, group);
-			throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
-		}
+        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
+        if (configTags != null) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        if (desc != null) {
+            configAdvanceInfo.put("desc", desc);
+        }
+        if (use != null) {
+            configAdvanceInfo.put("use", use);
+        }
+        if (effect != null) {
+            configAdvanceInfo.put("effect", effect);
+        }
+        if (type != null) {
+            configAdvanceInfo.put("type", type);
+        }
+        if (schema != null) {
+            configAdvanceInfo.put("schema", schema);
+        }
+        ParamUtils.checkParam(configAdvanceInfo);
 
-		final Timestamp time = TimeUtils.getCurrentTime();
-		String betaIps = request.getHeader("betaIps");
-		ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
-		if (StringUtils.isBlank(betaIps)) {
-			if (StringUtils.isBlank(tag)) {
-				persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
-				EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
-			} else {
-				persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
-				EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
-			}
-		} else { // beta publish
-			persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
-			EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
-		}
-		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
-				LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
+        if (AggrWhitelist.isAggrDataId(dataId)) {
+            log.warn("[aggr-conflict] {} attemp to publish single data, {}, {}",
+                RequestUtil.getRemoteIp(request), dataId, group);
+            throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
+        }
 
-		return true;
-	}
+        final Timestamp time = TimeUtils.getCurrentTime();
+        String betaIps = request.getHeader("betaIps");
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+        if (StringUtils.isBlank(betaIps)) {
+            if (StringUtils.isBlank(tag)) {
+                persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
+            } else {
+                persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
+                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+            }
+        } else { // beta publish
+            persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
+            EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
+        }
+        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp, time.getTime(),
+            LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, content);
 
-	/**
-	 * 取数据
-	 * 
-	 * @throws ServletException
-	 * @throws IOException
-	 * @throws NacosException
-	 */
-	@RequestMapping(method = RequestMethod.GET)
-	public void getConfig(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			@RequestParam(value = "tag", required = false) String tag)
-			throws IOException, ServletException, NacosException {
-		// check params
-		ParamUtils.checkParam(dataId, group, "datumId", "content");
-		ParamUtils.checkParam(tag);
+        return true;
+    }
 
-		final String clientIp = RequestUtil.getRemoteIp(request);
-		inner.doGetConfig(request, response, dataId, group, tenant, tag, clientIp);
-	}
-	
-	/**
-	 * 取数据
-	 *
-	 * @throws NacosException
-	 */
-	@RequestMapping(params = "show=all", method = RequestMethod.GET)
-	@ResponseBody
-	public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant)
-			throws NacosException {
-		// check params
-		ParamUtils.checkParam(dataId, group, "datumId", "content");
-		return persistService.findConfigAllInfo(dataId, group, tenant);
-	}
+    /**
+     * 取数据
+     *
+     * @throws ServletException
+     * @throws IOException
+     * @throws NacosException
+     */
+    @RequestMapping(method = RequestMethod.GET)
+    public void getConfig(HttpServletRequest request, HttpServletResponse response,
+                          @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                          @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
+                              String tenant,
+                          @RequestParam(value = "tag", required = false) String tag)
+        throws IOException, ServletException, NacosException {
+        // check params
+        ParamUtils.checkParam(dataId, group, "datumId", "content");
+        ParamUtils.checkParam(tag);
 
-	/**
-	 * 同步删除某个dataId下面所有的聚合前数据
-	 * 
-	 * @throws NacosException
-	 */
-	@RequestMapping(method = RequestMethod.DELETE)
-	@ResponseBody
-	public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, //
-			@RequestParam("group") String group, //
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			@RequestParam(value = "tag", required = false) String tag) throws NacosException {
-		ParamUtils.checkParam(dataId, group, "datumId", "rm");
-		ParamUtils.checkParam(tag);
-		String clientIp = RequestUtil.getRemoteIp(request);
-		if (StringUtils.isBlank(tag)) {
-			persistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
-		} else {
-			persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
-		}
-		final Timestamp time = TimeUtils.getCurrentTime();
-		ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
-		return true;
-	}
-	
-	
-	@RequestMapping(value = "/catalog", method = RequestMethod.GET)
-	@ResponseBody
-	public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-		RestResult<ConfigAdvanceInfo> rr = new RestResult<ConfigAdvanceInfo>();
-		ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
-		rr.setCode(200);
-		rr.setData(configInfo);
-		return rr;
-	}
-	
-	/**
-	 * 比较MD5
-	 */
-	@RequestMapping(value = "/listener", method = RequestMethod.POST)
-	public void listener(HttpServletRequest request, HttpServletResponse response)
-			throws ServletException, IOException {
-		request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true); 
-		String probeModify = request.getParameter("Listening-Configs");
-		if (StringUtils.isBlank(probeModify)) {
-			throw new IllegalArgumentException("invalid probeModify");
-		}
-		
-		probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
-		
-		Map<String, String> clientMd5Map;
-		try {
-			clientMd5Map = MD5Util.getClientMd5Map(probeModify);
-		} catch (Throwable e) {
-			throw new IllegalArgumentException("invalid probeModify");
-		}
+        final String clientIp = RequestUtil.getRemoteIp(request);
+        inner.doGetConfig(request, response, dataId, group, tenant, tag, clientIp);
+    }
 
-		// do long-polling
-		inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
-	}
-	
-	/*
-	 * 订阅改配置的客户端信息
-	 */
-	@RequestMapping(value = "/listener", method = RequestMethod.GET)
-	@ResponseBody
-	public GroupkeyListenserStatus getListeners(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId, @RequestParam("group") String group,
-			@RequestParam(value = "tenant", required = false) String tenant,
-			@RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime)
-			throws Exception {
-		group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
-		SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
-		GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
-		gls.setCollectStatus(200);
-		if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-			gls.setLisentersGroupkeyStatus(collectSampleResult.getLisentersGroupkeyStatus());
-		}
-		return gls;
-	}
+    /**
+     * 取数据
+     *
+     * @throws NacosException
+     */
+    @RequestMapping(params = "show=all", method = RequestMethod.GET)
+    @ResponseBody
+    public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
+                                          @RequestParam("dataId") String dataId, @RequestParam("group") String group,
+                                          @RequestParam(value = "tenant", required = false,
+                                              defaultValue = StringUtils.EMPTY) String tenant)
+        throws NacosException {
+        // check params
+        ParamUtils.checkParam(dataId, group, "datumId", "content");
+        return persistService.findConfigAllInfo(dataId, group, tenant);
+    }
 
-	/**
-	 * 查询配置信息，返回JSON格式。
-	 */
-	@RequestMapping(params = "search=accurate", method = RequestMethod.GET)
-	@ResponseBody
+    /**
+     * 同步删除某个dataId下面所有的聚合前数据
+     *
+     * @throws NacosException
+     */
+    @RequestMapping(method = RequestMethod.DELETE)
+    @ResponseBody
+    public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
+                                @RequestParam("dataId") String dataId, //
+                                @RequestParam("group") String group, //
+                                @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
+                                    String tenant,
+                                @RequestParam(value = "tag", required = false) String tag) throws NacosException {
+        ParamUtils.checkParam(dataId, group, "datumId", "rm");
+        ParamUtils.checkParam(tag);
+        String clientIp = RequestUtil.getRemoteIp(request);
+        if (StringUtils.isBlank(tag)) {
+            persistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
+        } else {
+            persistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
+        }
+        final Timestamp time = TimeUtils.getCurrentTime();
+        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
+            ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+        EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+        return true;
+    }
+
+    @RequestMapping(value = "/catalog", method = RequestMethod.GET)
+    @ResponseBody
+    public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(HttpServletRequest request, HttpServletResponse response,
+                                                              @RequestParam("dataId") String dataId,
+                                                              @RequestParam("group") String group,
+                                                              @RequestParam(value = "tenant", required = false,
+                                                                  defaultValue = StringUtils.EMPTY) String tenant) {
+        RestResult<ConfigAdvanceInfo> rr = new RestResult<ConfigAdvanceInfo>();
+        ConfigAdvanceInfo configInfo = persistService.findConfigAdvanceInfo(dataId, group, tenant);
+        rr.setCode(200);
+        rr.setData(configInfo);
+        return rr;
+    }
+
+    /**
+     * 比较MD5
+     */
+    @RequestMapping(value = "/listener", method = RequestMethod.POST)
+    public void listener(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
+        request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
+        String probeModify = request.getParameter("Listening-Configs");
+        if (StringUtils.isBlank(probeModify)) {
+            throw new IllegalArgumentException("invalid probeModify");
+        }
+
+        probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
+
+        Map<String, String> clientMd5Map;
+        try {
+            clientMd5Map = MD5Util.getClientMd5Map(probeModify);
+        } catch (Throwable e) {
+            throw new IllegalArgumentException("invalid probeModify");
+        }
+
+        // do long-polling
+        inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
+    }
+
+    /*
+     * 订阅改配置的客户端信息
+     */
+    @RequestMapping(value = "/listener", method = RequestMethod.GET)
+    @ResponseBody
+    public GroupkeyListenserStatus getListeners(HttpServletRequest request, HttpServletResponse response,
+                                                @RequestParam("dataId") String dataId,
+                                                @RequestParam("group") String group,
+                                                @RequestParam(value = "tenant", required = false) String tenant,
+                                                @RequestParam(value = "sampleTime", required = false,
+                                                    defaultValue = "1") int sampleTime)
+        throws Exception {
+        group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
+        SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
+        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
+        gls.setCollectStatus(200);
+        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
+            gls.setLisentersGroupkeyStatus(collectSampleResult.getLisentersGroupkeyStatus());
+        }
+        return gls;
+    }
+
+    /**
+     * 查询配置信息，返回JSON格式。
+     */
+    @RequestMapping(params = "search=accurate", method = RequestMethod.GET)
+    @ResponseBody
     public Page<ConfigInfo> searchConfig(HttpServletRequest request,
-			HttpServletResponse response,
-			@RequestParam("dataId") String dataId,
-			@RequestParam("group") String group,
-			@RequestParam(value = "appName", required = false) String appName,
-			@RequestParam(value = "tenant", required = false, defaultValue=StringUtils.EMPTY) String tenant, 
-			@RequestParam(value = "config_tags", required = false) String configTags,
-			@RequestParam("pageNo") int pageNo,
-			@RequestParam("pageSize") int pageSize) {
-		Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
-		if (StringUtils.isNotBlank(appName)) {
-			configAdvanceInfo.put("appName", appName);
-		}
-		if (StringUtils.isNotBlank(configTags)) {
-			configAdvanceInfo.put("config_tags", configTags);
-		}
-		try {
-			return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
-					configAdvanceInfo);
-		} catch (Exception e) {
-			String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
-			log.error(errorMsg, e);
-			throw new RuntimeException(errorMsg, e);
-		}
-	}
-    
-	/**
-	 * 模糊查询配置信息。不允许只根据内容模糊查询，即dataId和group都为NULL，但content不是NULL。这种情况下，返回所有配置。
-	 */
-	@RequestMapping(params = "search=blur", method = RequestMethod.GET)
-	@ResponseBody
-	public Page<ConfigInfo> fuzzySearchConfig(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("dataId") String dataId,
-			@RequestParam("group") String group,
-			@RequestParam(value = "appName", required = false) String appName,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
-			@RequestParam(value = "config_tags", required = false) String configTags,
-			@RequestParam("pageNo") int pageNo,
-			@RequestParam("pageSize") int pageSize) {
-		Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
-		if (StringUtils.isNotBlank(appName)) {
-			configAdvanceInfo.put("appName", appName);
-		}
-		if (StringUtils.isNotBlank(configTags)) {
-			configAdvanceInfo.put("config_tags", configTags);
-		}
-		try {
-			return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
-					configAdvanceInfo);
-		} catch (Exception e) {
-			String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
-			log.error(errorMsg, e);
-			throw new RuntimeException(errorMsg, e);
-		}
-	}
-	
-	@RequestMapping(params = "beta=true", method = RequestMethod.DELETE)
-	@ResponseBody
-	public RestResult<Boolean> stopBeta(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-		RestResult<Boolean> rr = new RestResult<Boolean>();
-		try {
-			persistService.removeConfigInfo4Beta(dataId, group, tenant);
-		} catch (Throwable e) {
-			log.error("remove beta data error", e);
-			rr.setCode(500);
-			rr.setData(false);
-			rr.setMessage("remove beta data error");
-			return rr;
-		}
-		EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
-		rr.setCode(200);
-		rr.setData(true);
-		rr.setMessage("stop beta ok");
-		return rr;
-	}
+                                         HttpServletResponse response,
+                                         @RequestParam("dataId") String dataId,
+                                         @RequestParam("group") String group,
+                                         @RequestParam(value = "appName", required = false) String appName,
+                                         @RequestParam(value = "tenant", required = false,
+                                             defaultValue = StringUtils.EMPTY) String tenant,
+                                         @RequestParam(value = "config_tags", required = false) String configTags,
+                                         @RequestParam("pageNo") int pageNo,
+                                         @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        try {
+            return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
+                configAdvanceInfo);
+        } catch (Exception e) {
+            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
+            log.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
 
-	@RequestMapping(params = "beta=true", method = RequestMethod.GET)
-	@ResponseBody
-	public RestResult<ConfigInfo4Beta> queryBeta(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
-			@RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant) {
-		RestResult<ConfigInfo4Beta> rr = new RestResult<ConfigInfo4Beta>();
-		try {
-			ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
-			rr.setCode(200);
-			rr.setData(ci);
-			rr.setMessage("stop beta ok");
-			return rr;
-		} catch (Throwable e) {
-			log.error("remove beta data error", e);
-			rr.setCode(500);
-			rr.setMessage("remove beta data error");
-			return rr;
-		}
-	}
+    /**
+     * 模糊查询配置信息。不允许只根据内容模糊查询，即dataId和group都为NULL，但content不是NULL。这种情况下，返回所有配置。
+     */
+    @RequestMapping(params = "search=blur", method = RequestMethod.GET)
+    @ResponseBody
+    public Page<ConfigInfo> fuzzySearchConfig(HttpServletRequest request, HttpServletResponse response,
+                                              @RequestParam("dataId") String dataId,
+                                              @RequestParam("group") String group,
+                                              @RequestParam(value = "appName", required = false) String appName,
+                                              @RequestParam(value = "tenant", required = false,
+                                                  defaultValue = StringUtils.EMPTY) String tenant,
+                                              @RequestParam(value = "config_tags", required = false) String configTags,
+                                              @RequestParam("pageNo") int pageNo,
+                                              @RequestParam("pageSize") int pageSize) {
+        Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(50);
+        if (StringUtils.isNotBlank(appName)) {
+            configAdvanceInfo.put("appName", appName);
+        }
+        if (StringUtils.isNotBlank(configTags)) {
+            configAdvanceInfo.put("config_tags", configTags);
+        }
+        try {
+            return persistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group, tenant,
+                configAdvanceInfo);
+        } catch (Exception e) {
+            String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
+            log.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
+
+    @RequestMapping(params = "beta=true", method = RequestMethod.DELETE)
+    @ResponseBody
+    public RestResult<Boolean> stopBeta(HttpServletRequest request, HttpServletResponse response,
+                                        @RequestParam(value = "dataId") String dataId,
+                                        @RequestParam(value = "group") String group,
+                                        @RequestParam(value = "tenant", required = false,
+                                            defaultValue = StringUtils.EMPTY) String tenant) {
+        RestResult<Boolean> rr = new RestResult<Boolean>();
+        try {
+            persistService.removeConfigInfo4Beta(dataId, group, tenant);
+        } catch (Throwable e) {
+            log.error("remove beta data error", e);
+            rr.setCode(500);
+            rr.setData(false);
+            rr.setMessage("remove beta data error");
+            return rr;
+        }
+        EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, System.currentTimeMillis()));
+        rr.setCode(200);
+        rr.setData(true);
+        rr.setMessage("stop beta ok");
+        return rr;
+    }
+
+    @RequestMapping(params = "beta=true", method = RequestMethod.GET)
+    @ResponseBody
+    public RestResult<ConfigInfo4Beta> queryBeta(HttpServletRequest request, HttpServletResponse response,
+                                                 @RequestParam(value = "dataId") String dataId,
+                                                 @RequestParam(value = "group") String group,
+                                                 @RequestParam(value = "tenant", required = false,
+                                                     defaultValue = StringUtils.EMPTY) String tenant) {
+        RestResult<ConfigInfo4Beta> rr = new RestResult<ConfigInfo4Beta>();
+        try {
+            ConfigInfo4Beta ci = persistService.findConfigInfo4Beta(dataId, group, tenant);
+            rr.setCode(200);
+            rr.setData(ci);
+            rr.setMessage("stop beta ok");
+            return rr;
+        } catch (Throwable e) {
+            log.error("remove beta data error", e);
+            rr.setCode(500);
+            rr.setMessage("remove beta data error");
+            return rr;
+        }
+    }
 }

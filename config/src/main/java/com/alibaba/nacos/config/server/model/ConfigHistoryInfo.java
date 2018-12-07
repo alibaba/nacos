@@ -19,31 +19,27 @@ import java.sql.Timestamp;
 
 /**
  * history Info
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ConfigHistoryInfo {
 
     /**
-     * id, nid,
-     * data_id, group_id,
-     * content, md5,
-     * gmt_create, gmt_modified, （配置创建时间，配置变更时间）
-     * src_user, src_ip, (变更操作者)
+     * id, nid, data_id, group_id, content, md5, gmt_create, gmt_modified, （配置创建时间，配置变更时间） src_user, src_ip, (变更操作者)
      * op_type（变更操作类型）
      */
 
     private long id;
     /**
-     *  上次改动历史的id
+     * 上次改动历史的id
      */
-    private long lastId = -1; 
+    private long lastId = -1;
 
-	private String dataId;
-	private String group;
-	private String tenant;
-	private String appName;
-	private String md5;
+    private String dataId;
+    private String group;
+    private String tenant;
+    private String appName;
+    private String md5;
 
     public long getId() {
         return id;
@@ -77,14 +73,14 @@ public class ConfigHistoryInfo {
         this.group = group;
     }
 
-	public String getTenant() {
-		return tenant;
-	}
+    public String getTenant() {
+        return tenant;
+    }
 
-	public void setTenant(String tenant) {
-		this.tenant = tenant;
-	}
-	
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
+
     public String getContent() {
         return content;
     }
@@ -117,9 +113,9 @@ public class ConfigHistoryInfo {
         this.opType = opType;
     }
 
-	public Timestamp getCreatedTime() {
-		return new Timestamp(createdTime.getTime());
-	}
+    public Timestamp getCreatedTime() {
+        return new Timestamp(createdTime.getTime());
+    }
 
     public void setCreatedTime(Timestamp createdTime) {
         this.createdTime = new Timestamp(createdTime.getTime());
@@ -134,29 +130,29 @@ public class ConfigHistoryInfo {
     }
 
     public String getAppName() {
-		return appName;
-	}
+        return appName;
+    }
 
-	public void setAppName(String appName) {
-		this.appName = appName;
-	}
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
 
-	public String getMd5() {
-		return md5;
-	}
+    public String getMd5() {
+        return md5;
+    }
 
-	public void setMd5(String md5) {
-		this.md5 = md5;
-	}
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
 
-	private String content;
+    private String content;
 
     private String srcIp;
     private String srcUser;
     /**
-     *  操作类型, 包括插入、更新、删除
+     * 操作类型, 包括插入、更新、删除
      */
-    private String opType;       
+    private String opType;
 
     private Timestamp createdTime;
     private Timestamp lastModifiedTime;

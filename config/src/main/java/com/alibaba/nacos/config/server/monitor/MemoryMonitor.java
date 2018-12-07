@@ -29,9 +29,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
 /**
  * Memory monitor
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @Service
 public class MemoryMonitor {
@@ -39,24 +38,23 @@ public class MemoryMonitor {
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
 
         TimerTaskService.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
-        
+            DELAY_SECONDS, TimeUnit.SECONDS);
+
         TimerTaskService.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
+            DELAY_SECONDS, TimeUnit.SECONDS);
 
         TimerTaskService.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
+            DELAY_SECONDS, TimeUnit.SECONDS);
     }
-    
 
     static final long DELAY_SECONDS = 10;
 }
 
-class PrintGetConfigResponeTask implements Runnable{
-	@Override
-	public void run() {
-		memoryLog.info(ResponseMonitor.getStringForPrint());
-	}
+class PrintGetConfigResponeTask implements Runnable {
+    @Override
+    public void run() {
+        memoryLog.info(ResponseMonitor.getStringForPrint());
+    }
 }
 
 class PrintMemoryTask implements Runnable {
@@ -65,10 +63,10 @@ class PrintMemoryTask implements Runnable {
         int groupCount = ConfigService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
-        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount, subCount);
+        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount,
+            subCount);
     }
 }
-
 
 class NotifyTaskQueueMonitorTask implements Runnable {
     final private AsyncNotifyService notifySingleService;
@@ -79,15 +77,16 @@ class NotifyTaskQueueMonitorTask implements Runnable {
 
     @Override
     public void run() {
-    	
-    	 memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-                 new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(), ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size() });
-    	 
-//      for(Map.Entry<String, Executor> entry: notifySingleService.getExecutors().entrySet()) {
-//          ThreadPoolExecutor pool = (ThreadPoolExecutor) entry.getValue();
-//          String target = entry.getKey();
-//          memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-//                  new Object[] { target, pool.getQueue().size() });
-//      }
+
+        memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
+            new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(),
+                ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size()});
+
+        //      for(Map.Entry<String, Executor> entry: notifySingleService.getExecutors().entrySet()) {
+        //          ThreadPoolExecutor pool = (ThreadPoolExecutor) entry.getValue();
+        //          String target = entry.getKey();
+        //          memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
+        //                  new Object[] { target, pool.getQueue().size() });
+        //      }
     }
 }

@@ -97,6 +97,8 @@
                 <version>2.9</version>
                 <configuration>
                     <argLine>-Dnacos.standalone=true</argLine>
+                    <parallel>methods</parallel>
+                    <useUnlimitedThreads>true</useUnlimitedThreads>
                 </configuration>
             </plugin>
         </plugins>

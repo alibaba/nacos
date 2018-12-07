@@ -17,15 +17,14 @@ package com.alibaba.nacos.client.identify;
 
 /**
  * Spas Credential Loader
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface SpasCredentialLoader {
-	/**
-	 * get Credential
-	 * 
-	 * @return Credential
-	 */
+    /**
+     * get Credential
+     *
+     * @return Credential
+     */
     SpasCredential getCredential();
 }

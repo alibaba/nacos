@@ -11,18 +11,33 @@
  * limitations under the License.
  */
 
+const path = require('path');
+const webpack = require('webpack');
 const base = require('./webpack.base.conf');
 
 module.exports = Object.assign({}, base, {
+  output: {
+    filename: './js/[name].js',
+    path: path.resolve(__dirname, '../dist'),
+  },
   devServer: {
-    port: 8000,
+    port: process.env.PORT || 8000,
     proxy: [{
       context: ['/'],
       changeOrigin: true,
       secure: false,
       target: 'http://11.163.128.36:8848',
+      pathRewrite: {'^/v1' : '/nacos/v1'}
     }],
     disableHostCheck: true,
+    open: true,
+    hot: true,
+    overlay: true
   },
   mode: 'development',
+  devtool: 'eval-source-map',
+  plugins: [
+    ...base.plugins,
+    new webpack.HotModuleReplacementPlugin()
+  ]
 });

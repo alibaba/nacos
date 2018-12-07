@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.utils;
 
 import org.apache.commons.lang3.CharUtils;
 
-
 /**
  * 用于ConfigCenter可支持的通配字符通配判定以及标准正则转换的通用类
  *
@@ -29,9 +28,7 @@ public class RegexParser {
     private final static char QUESTION_MARK = '?';
 
     /**
-     * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br>
-     * '*'替换为 ‘.*’ '?'替换为'{n}'，n为连续?的个数; <br>
-     * 其他非字母或数字的特殊字符前均添加'\'.
+     * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br> '*'替换为 ‘.*’ '?'替换为'{n}'，n为连续?的个数; <br> 其他非字母或数字的特殊字符前均添加'\'.
      *
      * @param regex
      * @return
