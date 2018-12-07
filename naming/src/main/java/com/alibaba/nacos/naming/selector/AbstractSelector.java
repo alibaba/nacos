@@ -33,6 +33,7 @@ import java.util.List;
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @see SelectorType
+ * @see SelectorJsonAdapter
  */
 public abstract class AbstractSelector {
 
