@@ -114,13 +114,14 @@ class InstanceTable extends React.Component {
           <Table.Column
             title={locale.metadata}
             dataIndex="metadata"
-            cell={metadata =>
-              Object.keys(metadata).map(k => (
+            cell={(metadata = {}) => {
+              if (!metadata) return null;
+              return Object.keys(metadata).map(k => (
                 <p>
                   {k}={metadata[k]}
                 </p>
-              ))
-            }
+              ));
+            }}
           />
           <Table.Column
             title={locale.operation}
