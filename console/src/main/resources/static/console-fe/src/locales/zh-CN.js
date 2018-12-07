@@ -21,7 +21,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
-    nacosVersion: '0.5.0',
+    nacosVersion: '0.6.0',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
