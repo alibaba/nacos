@@ -12,117 +12,77 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
-import classnames from 'classnames';
+import { connect } from 'react-redux';
+import { ConfigProvider } from '@alifd/next';
 import siteConfig from '../config';
-import { getLink } from '../utils/nacosutil';
-import './index.css';
+import { changeLanguage } from '@/reducers/locale';
+import { aliwareIntl } from '@/globalLib';
 
-const languageSwitch = [
-  {
-    text: '中',
-    value: 'en-us',
-  },
-  {
-    text: 'En',
-    value: 'zh-cn',
-  },
-];
-const noop = () => {};
+import './index.scss';
 
-const defaultProps = {
-  type: 'primary',
-  language: 'en-us',
-  onLanguageChange: noop,
-};
-
+@connect(
+  state => ({ ...state.locale }),
+  { changeLanguage }
+)
+@ConfigProvider.config
 class Header extends React.Component {
-  static propTypes = {
-    language: PropTypes.string,
-    type: PropTypes.string,
-    logo: PropTypes.string,
-    currentKey: PropTypes.string,
-    onLanguageChange: PropTypes.func,
+  static displayName = 'Header';
+
+  switchLang = () => {
+    const { language = 'en-us', changeLanguage } = this.props;
+    const currentLanguage = language === 'en-us' ? 'zh-cn' : 'en-us';
+    changeLanguage(currentLanguage);
+    aliwareIntl.changeLanguage(currentLanguage);
+    document.cookie = `docsite_language=${currentLanguage}`;
+    window.location.reload();
   };
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      menuBodyVisible: false,
-      language: props.language,
-    };
-
-    this.switchLang = this.switchLang.bind(this);
-  }
-
-  toggleMenu() {
-    this.setState({
-      menuBodyVisible: !this.state.menuBodyVisible,
-    });
-  }
-
-  switchLang() {
-    let language;
-    if (this.state.language === 'zh-cn') {
-      language = 'en-us';
-    } else {
-      language = 'zh-cn';
-    }
-    this.setState({
-      language,
-    });
-    this.props.onLanguageChange(language);
-  }
-
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    this.setState({
-      language: nextProps.language,
-    });
-  }
-
   render() {
-    const { type, logo, onLanguageChange, currentKey } = this.props;
-    const { menuBodyVisible, language } = this.state;
+    const { locale = {}, language = 'en-us' } = this.props;
+    const { home, docs, blog, community, languageSwitchButton } = locale;
+    const BASE_URL = `https://nacos.io/${language}/`;
+    const NAV_MENU = [
+      {
+        id: 1,
+        title: home,
+        link: BASE_URL,
+      },
+      {
+        id: 2,
+        title: docs,
+        link: `${BASE_URL}docs/what-is-nacos.html`,
+      },
+      {
+        id: 3,
+        title: blog,
+        link: `${BASE_URL}blog/index.html`,
+      },
+      {
+        id: 4,
+        title: community,
+        link: `${BASE_URL}community/index.html`,
+      },
+    ];
     return (
-      <header
-        className={classnames({
-          'header-container': true,
-          [`header-container-${type}`]: true,
-        })}
-      >
+      <header className="header-container header-container-primary">
         <div className="header-body">
-          <a href={'https://nacos.io/zh-cn/'} target="_blank" rel="noopener noreferrer">
-            <img className="logo" alt={siteConfig.name} title={siteConfig.name} src={logo} />
+          <a href="https://nacos.io/zh-cn/" target="_blank" rel="noopener noreferrer">
+            <img
+              src="img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg"
+              className="logo"
+              alt={siteConfig.name}
+              title={siteConfig.name}
+            />
           </a>
-          {onLanguageChange !== noop ? (
-            <span
-              className={classnames({
-                'language-switch': true,
-                [`language-switch-${type}`]: true,
-              })}
-              onClick={this.switchLang}
-            >
-              {languageSwitch.find(lang => lang.value === language).text}
-            </span>
-          ) : null}
-          <div
-            className={classnames({
-              'header-menu': true,
-              'header-menu-open': menuBodyVisible,
-            })}
-          >
+          <span className="language-switch language-switch-primary" onClick={this.switchLang}>
+            {languageSwitchButton}
+          </span>
+          <div className="header-menu header-menu-open">
             <ul>
-              {siteConfig[language].pageMenu.map(item => (
-                <li
-                  key={item.link}
-                  className={classnames({
-                    'menu-item': true,
-                    [`menu-item-${type}`]: true,
-                    [`menu-item-${type}-active`]: currentKey === item.key,
-                  })}
-                >
-                  <a href={getLink(item.link)} target="_blank" rel="noopener noreferrer">
-                    {item.text}
+              {NAV_MENU.map(item => (
+                <li key={item.id} className="menu-item menu-item-primary">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    {item.title}
                   </a>
                 </li>
               ))}
@@ -134,5 +94,4 @@ class Header extends React.Component {
   }
 }
 
-Header.defaultProps = defaultProps;
 export default Header;

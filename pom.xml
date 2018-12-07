@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.5.0</version>
+    <version>0.6.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -240,11 +240,12 @@
                         <exclude>src/test/resources/*</exclude>
                         <exclude>src/main/resources/static/**/*.js</exclude>
                         <exclude>src/main/resources/**/*.svg</exclude>
-                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/css/console1412.css</exclude>
                         <exclude>src/main/resources/static/js/vs/**/*</exclude>
-                        <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>src/main/resources/static/console-fe/public/css/console1412.css</exclude>
-                        <exclude>src/main/resources/static/console-fe/.vscode/settings.json</exclude>
+                        <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/dist/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/dist/*/*</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
@@ -441,7 +442,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.0.4</version>
             </plugin>
         </plugins>
     </reporting>

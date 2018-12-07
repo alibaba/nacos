@@ -13,10 +13,13 @@
 
 import React from 'react';
 import { request } from '../../../globalLib';
-import { Dialog, Form, Input, Switch, Select, Message } from '@alifd/next';
-import { I18N, DIALOG_FORM_LAYOUT } from './constant';
+import { Dialog, Form, Input, Switch, Select, Message, ConfigProvider } from '@alifd/next';
+import { DIALOG_FORM_LAYOUT } from './constant';
 
+@ConfigProvider.config
 class EditClusterDialog extends React.Component {
+  static displayName = 'EditClusterDialog';
+
   constructor(props) {
     super(props);
     this.state = {
@@ -54,7 +57,7 @@ class EditClusterDialog extends React.Component {
     } = this.state.editCluster;
     request({
       method: 'POST',
-      url: '/nacos/v1/ns/cluster/update',
+      url: 'v1/ns/cluster/update',
       data: {
         serviceName,
         clusterName: name,
@@ -85,6 +88,8 @@ class EditClusterDialog extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
+    const { updateCluster, checkType, checkPort, useIpPortCheck, checkPath, checkHeaders } = locale;
     const { editCluster = {}, editClusterDialogVisible } = this.state;
     const {
       healthChecker = {},
@@ -100,14 +105,14 @@ class EditClusterDialog extends React.Component {
     return (
       <Dialog
         className="cluster-edit-dialog"
-        title={I18N.UPDATE_CLUSTER}
+        title={updateCluster}
         visible={editClusterDialogVisible}
         onOk={() => this.onConfirm()}
         onCancel={() => this.hide()}
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${I18N.CHECK_TYPE}:`}>
+          <Form.Item label={`${checkType}:`}>
             <Select
               className="in-select"
               defaultValue={type}
@@ -117,14 +122,14 @@ class EditClusterDialog extends React.Component {
               <Select.Option value="HTTP">HTTP</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label={`${I18N.CHECK_PORT}:`}>
+          <Form.Item label={`${checkPort}:`}>
             <Input
               className="in-text"
               value={defaultCheckPort}
               onChange={defaultCheckPort => this.onChangeCluster({ defaultCheckPort })}
             />
           </Form.Item>
-          <Form.Item label={`${I18N.USE_IP_PORT_CHECK}:`}>
+          <Form.Item label={`${useIpPortCheck}:`}>
             <Switch
               checked={useIPPort4Check}
               onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
@@ -134,7 +139,7 @@ class EditClusterDialog extends React.Component {
             <div>
               <div className="next-row next-form-item next-left next-medium">
                 <div className="next-col next-col-fixed-12 next-form-item-label">
-                  <label>{`${I18N.CHECK_PATH}:`}</label>
+                  <label>{`${checkPath}:`}</label>
                 </div>
                 <div className="next-col next-col-12 next-form-item-control">
                   <Input
@@ -146,7 +151,7 @@ class EditClusterDialog extends React.Component {
               </div>
               <div className="next-row next-form-item next-left next-medium">
                 <div className="next-col next-col-fixed-12 next-form-item-label">
-                  <label>{`${I18N.CHECK_HEADERS}:`}</label>
+                  <label>{`${checkHeaders}:`}</label>
                 </div>
                 <div className="next-col next-col-12 next-form-item-control">
                   <Input
@@ -158,7 +163,7 @@ class EditClusterDialog extends React.Component {
               </div>
             </div>
           ) : null}
-          <Form.Item label={`${I18N.METADATA}:`}>
+          <Form.Item label={`${locale.metadata}:`}>
             <Input
               className="in-text"
               value={metadataText}

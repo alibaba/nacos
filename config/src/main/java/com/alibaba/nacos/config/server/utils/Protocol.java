@@ -17,15 +17,14 @@ package com.alibaba.nacos.config.server.utils;
 
 /**
  * 用来处理协议相关的操作
- * 
+ *
  * @author zhidao
  * @version 1.0 2011/05/03
- * 
  */
 public class Protocol {
     /**
      * 解析类于2.0.4(major.minor.bug-fix这样的版本为数字)
-     * 
+     *
      * @param version
      * @return
      */
@@ -38,8 +37,7 @@ public class Protocol {
         for (int i = 0; i < vs.length; i++) {
             try {
                 sum = sum * 10 + Integer.parseInt(vs[i]);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 // ignore
             }
         }

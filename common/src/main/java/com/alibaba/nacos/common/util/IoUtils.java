@@ -34,9 +34,9 @@ public class IoUtils {
 
         try {
             GZIPInputStream gis
-                    = new GZIPInputStream(raw);
+                = new GZIPInputStream(raw);
             ByteArrayOutputStream out
-                    = new ByteArrayOutputStream();
+                = new ByteArrayOutputStream();
 
             IOUtils.copy(gis, out);
 
@@ -49,12 +49,12 @@ public class IoUtils {
     }
 
     static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
-                reader);
+        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
+            reader);
     }
 
     public static void writeStringToFile(File file, String data, String encoding)
-            throws IOException {
+        throws IOException {
         OutputStream os = null;
         try {
             os = new FileOutputStream(file);

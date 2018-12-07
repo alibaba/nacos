@@ -19,24 +19,23 @@ import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 
 /**
  * Snapshot switch
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class SnapShotSwitch {
 
-	/**
-	 * whether use local cache
-	 */
-	private static Boolean isSnapShot = true;
+    /**
+     * whether use local cache
+     */
+    private static Boolean isSnapShot = true;
 
-	public static Boolean getIsSnapShot() {
-		return isSnapShot;
-	}
+    public static Boolean getIsSnapShot() {
+        return isSnapShot;
+    }
 
-	public static void setIsSnapShot(Boolean isSnapShot) {
-		SnapShotSwitch.isSnapShot = isSnapShot;
-		LocalConfigInfoProcessor.cleanAllSnapshot();
-	}
-	
+    public static void setIsSnapShot(Boolean isSnapShot) {
+        SnapShotSwitch.isSnapShot = isSnapShot;
+        LocalConfigInfoProcessor.cleanAllSnapshot();
+    }
+
 }

@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import './index.less';
+import './index.scss';
 import { request, aliwareIntl } from '../../globalLib';
 import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 
@@ -103,7 +103,7 @@ class NewNameSpace extends React.Component {
       });
       request({
         type: 'post',
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         contentType: 'application/x-www-form-urlencoded',
         beforeSend: () => {
           this.openLoading();
@@ -140,7 +140,7 @@ class NewNameSpace extends React.Component {
     setTimeout(() => {
       request({
         type: 'get',
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         success: res => {
           if (res.code === 200) {
             window.namespaceList = res.data;

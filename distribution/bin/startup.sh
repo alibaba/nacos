@@ -32,7 +32,7 @@ do
         MODE=$OPTARG
         ;;
         ?)
-        echo "未知参数"
+        echo "Unknown parameter"
         exit 1;;
     esac
 done

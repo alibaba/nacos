@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import './index.less';
+import './index.scss';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
 import { Button, Dialog, Field, Form, Input } from '@alifd/next';
 
@@ -60,7 +60,7 @@ class ConfigRollback extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
+    const url = `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`;
     request({
       url,
       success(result) {
@@ -131,9 +131,9 @@ class ConfigRollback extends React.Component {
           tenant: self.tenant,
         };
 
-        let url = '/nacos/v1/cs/configs';
+        let url = 'v1/cs/configs';
         if (self.opType.trim() === 'I') {
-          url = `/nacos/v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
+          url = `v1/cs/configs?dataId=${self.dataId}&group=${self.group}`;
           postData = {};
         }
 

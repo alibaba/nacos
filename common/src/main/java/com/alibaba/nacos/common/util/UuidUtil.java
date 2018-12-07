@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.util;
 import java.util.UUID;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class UuidUtil {
 

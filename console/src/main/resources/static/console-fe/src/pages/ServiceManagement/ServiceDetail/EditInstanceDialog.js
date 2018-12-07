@@ -13,10 +13,13 @@
 
 import React from 'react';
 import { request } from '../../../globalLib';
-import { Dialog, Form, Input, Switch, Message } from '@alifd/next';
-import { I18N, DIALOG_FORM_LAYOUT } from './constant';
+import { Dialog, Form, Input, Switch, Message, ConfigProvider } from '@alifd/next';
+import { DIALOG_FORM_LAYOUT } from './constant';
 
+@ConfigProvider.config
 class EditInstanceDialog extends React.Component {
+  static displayName = 'EditInstanceDialog';
+
   constructor(props) {
     super(props);
     this.state = {
@@ -46,7 +49,7 @@ class EditInstanceDialog extends React.Component {
     const { ip, port, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'POST',
-      url: '/nacos/v1/ns/instance/update',
+      url: 'v1/ns/instance/update',
       data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
       dataType: 'text',
       beforeSend: () => openLoading(),
@@ -70,11 +73,12 @@ class EditInstanceDialog extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { editInstanceDialogVisible, editInstance } = this.state;
     return (
       <Dialog
         className="instance-edit-dialog"
-        title={I18N.UPDATE_INSTANCE}
+        title={locale.updateInstance}
         visible={editInstanceDialogVisible}
         onOk={() => this.onConfirm()}
         onCancel={() => this.hide()}
@@ -84,23 +88,23 @@ class EditInstanceDialog extends React.Component {
           <Form.Item label="IP:">
             <p>{editInstance.ip}</p>
           </Form.Item>
-          <Form.Item label={`${I18N.PORT}:`}>
+          <Form.Item label={`${locale.port}:`}>
             <p>{editInstance.port}</p>
           </Form.Item>
-          <Form.Item label={`${I18N.WEIGHT}:`}>
+          <Form.Item label={`${locale.weight}:`}>
             <Input
               className="in-text"
               value={editInstance.weight}
               onChange={weight => this.onChangeCluster({ weight })}
             />
           </Form.Item>
-          <Form.Item label={`${I18N.WHETHER_ONLINE}:`}>
+          <Form.Item label={`${locale.whetherOnline}:`}>
             <Switch
               checked={editInstance.enabled}
               onChange={enabled => this.onChangeCluster({ enabled })}
             />
           </Form.Item>
-          <Form.Item label={`${I18N.METADATA}:`}>
+          <Form.Item label={`${locale.metadata}:`}>
             <Input
               className="in-text"
               value={editInstance.metadataText}
