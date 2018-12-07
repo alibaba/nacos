@@ -12,7 +12,7 @@
  */
 
 import React from 'react';
-import './index.less';
+import './index.scss';
 import { request, aliwareIntl } from '../../globalLib';
 import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 
@@ -60,7 +60,7 @@ class EditorNameSpace extends React.Component {
     this.field.setValues(record);
     request({
       type: 'get',
-      url: `/nacos/v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
+      url: `v1/console/namespaces?show=all&namespaceId=${record.namespace}`,
       success: res => {
         if (res !== null) {
           this.field.setValue('namespaceDesc', res.namespaceDesc);
@@ -89,7 +89,7 @@ class EditorNameSpace extends React.Component {
         beforeSend: () => {
           this.openLoading();
         },
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         contentType: 'application/x-www-form-urlencoded',
         data: {
           namespace: values.namespace,
@@ -120,7 +120,7 @@ class EditorNameSpace extends React.Component {
     setTimeout(() => {
       request({
         type: 'get',
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         success: res => {
           if (res.code === 200) {
             window.namespaceList = res.data;

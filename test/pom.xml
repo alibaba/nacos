@@ -17,7 +17,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.5.0</version>
+        <version>0.6.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -97,6 +97,8 @@
                 <version>2.9</version>
                 <configuration>
                     <argLine>-Dnacos.standalone=true</argLine>
+                    <parallel>methods</parallel>
+                    <useUnlimitedThreads>true</useUnlimitedThreads>
                 </configuration>
             </plugin>
         </plugins>

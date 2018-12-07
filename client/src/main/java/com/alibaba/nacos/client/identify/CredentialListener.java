@@ -17,13 +17,12 @@ package com.alibaba.nacos.client.identify;
 
 /**
  * Credential Listener
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface CredentialListener {
-	/**
-	 * update Credential
-	 */
+    /**
+     * update Credential
+     */
     public void onUpdateCredential();
 }

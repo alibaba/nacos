@@ -52,7 +52,7 @@ public class SelectInstances_ITCase {
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
@@ -188,6 +188,29 @@ public class SelectInstances_ITCase {
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
         Assert.assertTrue(verifyInstanceList(instances, instancesGet));
+    }
+
+    @Test
+    public void selectInstancesCheckClusterName() throws Exception {
+
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "1.1.1.2", TEST_PORT, "c2");
+
+        TimeUnit.SECONDS.sleep(8);
+
+        List<Instance> instancesGet = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(2, instancesGet.size());
+
+        for (Instance instance : instancesGet) {
+            if (instance.getIp().equals("1.1.1.1")) {
+                Assert.assertEquals(instance.getClusterName(), "c1");
+            }
+            if (instance.getIp().equals("2.2.2.2")) {
+                Assert.assertEquals(instance.getClusterName(), "c2");
+            }
+        }
     }
 
 

@@ -15,15 +15,15 @@
  */
 package com.alibaba.nacos.client.logger.slf4j;
 
-
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.nop.NopLogger;
 import com.alibaba.nacos.client.logger.support.ILoggerFactory;
 import com.alibaba.nacos.client.logger.support.LogLog;
+
 /**
  * Slf4jLogger Factory
- * @author Nacos
  *
+ * @author Nacos
  */
 public class Slf4jLoggerFactory implements ILoggerFactory {
 

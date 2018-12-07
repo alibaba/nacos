@@ -396,9 +396,10 @@ public class RaftCore {
         }
 
         // do apply
-        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) || UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
             RaftStore.write(datum);
         }
+
         RaftCore.datums.put(datum.key, datum);
 
         if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
@@ -797,7 +798,8 @@ public class RaftCore {
                                             continue;
                                         }
 
-                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) ||
+                                                UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
                                             RaftStore.write(datum);
                                         }
 

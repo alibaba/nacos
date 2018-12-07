@@ -38,7 +38,8 @@ public class EventDispatcher {
 
     private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
-    private ConcurrentMap<String, List<EventListener>> observerMap = new ConcurrentHashMap<String, List<EventListener>>();
+    private ConcurrentMap<String, List<EventListener>> observerMap
+        = new ConcurrentHashMap<String, List<EventListener>>();
 
     public EventDispatcher() {
 
@@ -124,7 +125,7 @@ public class EventDispatcher {
 
                 } catch (Exception e) {
                     LogUtils.LOG.error("NA", "notify error for service: "
-                            + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
+                        + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
                 }
             }
         }

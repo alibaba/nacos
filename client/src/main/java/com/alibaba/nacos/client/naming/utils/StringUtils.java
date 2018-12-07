@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.Locale;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class StringUtils {
     public static boolean isEmpty(String str) {
@@ -80,7 +80,6 @@ public class StringUtils {
         return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
     }
 
-
     private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,
                                               boolean escapeForwardSlash) throws IOException {
         if (out == null) {
@@ -103,27 +102,27 @@ public class StringUtils {
                 out.write("\\u00" + hex(ch));
             } else if (ch < 32) {
                 switch (ch) {
-                    case '\b' :
+                    case '\b':
                         out.write('\\');
                         out.write('b');
                         break;
-                    case '\n' :
+                    case '\n':
                         out.write('\\');
                         out.write('n');
                         break;
-                    case '\t' :
+                    case '\t':
                         out.write('\\');
                         out.write('t');
                         break;
-                    case '\f' :
+                    case '\f':
                         out.write('\\');
                         out.write('f');
                         break;
-                    case '\r' :
+                    case '\r':
                         out.write('\\');
                         out.write('r');
                         break;
-                    default :
+                    default:
                         if (ch > 0xf) {
                             out.write("\\u00" + hex(ch));
                         } else {
@@ -133,27 +132,27 @@ public class StringUtils {
                 }
             } else {
                 switch (ch) {
-                    case '\'' :
+                    case '\'':
                         if (escapeSingleQuote) {
                             out.write('\\');
                         }
                         out.write('\'');
                         break;
-                    case '"' :
+                    case '"':
                         out.write('\\');
                         out.write('"');
                         break;
-                    case '\\' :
+                    case '\\':
                         out.write('\\');
                         out.write('\\');
                         break;
-                    case '/' :
+                    case '/':
                         if (escapeForwardSlash) {
                             out.write('\\');
                         }
                         out.write('/');
                         break;
-                    default :
+                    default:
                         out.write(ch);
                         break;
                 }

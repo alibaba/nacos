@@ -26,62 +26,60 @@ import com.google.common.collect.Lists;
 
 /**
  * Config Filter Chain Management
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ConfigFilterChainManager implements IConfigFilterChain {
 
-	private List<IConfigFilter> filters = Lists.newArrayList();
+    private List<IConfigFilter> filters = Lists.newArrayList();
 
-	public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
-		// 根据order大小顺序插入
-		int i = 0;
-		while (i < this.filters.size()) {
-			IConfigFilter currentValue = this.filters.get(i);
-			if (currentValue.getFilterName().equals(filter.getFilterName())) {
-				break;
-			}
-			if (filter.getOrder() >= currentValue.getOrder() && i < this.filters.size()) {
-				i++;
-			} else {
-				this.filters.add(i, filter);
-				break;
-			}
-		}
+    public synchronized ConfigFilterChainManager addFilter(IConfigFilter filter) {
+        // 根据order大小顺序插入
+        int i = 0;
+        while (i < this.filters.size()) {
+            IConfigFilter currentValue = this.filters.get(i);
+            if (currentValue.getFilterName().equals(filter.getFilterName())) {
+                break;
+            }
+            if (filter.getOrder() >= currentValue.getOrder() && i < this.filters.size()) {
+                i++;
+            } else {
+                this.filters.add(i, filter);
+                break;
+            }
+        }
 
-		if (i == this.filters.size()) {
-			this.filters.add(i, filter);
-		}
-		return this;
-	}
-	
+        if (i == this.filters.size()) {
+            this.filters.add(i, filter);
+        }
+        return this;
+    }
 
-	@Override
-	public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
-		new VirtualFilterChain(this.filters).doFilter(request, response);
-	}
+    @Override
+    public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
+        new VirtualFilterChain(this.filters).doFilter(request, response);
+    }
 
-	private static class VirtualFilterChain implements IConfigFilterChain {
+    private static class VirtualFilterChain implements IConfigFilterChain {
 
-		private final List<? extends IConfigFilter> additionalFilters;
+        private final List<? extends IConfigFilter> additionalFilters;
 
-		private int currentPosition = 0;
+        private int currentPosition = 0;
 
-		public VirtualFilterChain(List<? extends IConfigFilter> additionalFilters) {
-			this.additionalFilters = additionalFilters;
-		}
+        public VirtualFilterChain(List<? extends IConfigFilter> additionalFilters) {
+            this.additionalFilters = additionalFilters;
+        }
 
-		@Override
-		public void doFilter(final IConfigRequest request, final IConfigResponse response) throws NacosException {
-			if (this.currentPosition == this.additionalFilters.size()) {
-				return;
-			} else {
-				this.currentPosition++;
-				IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);
-				nextFilter.doFilter(request, response, this);
-			}
-		}
-	}
+        @Override
+        public void doFilter(final IConfigRequest request, final IConfigResponse response) throws NacosException {
+            if (this.currentPosition == this.additionalFilters.size()) {
+                return;
+            } else {
+                this.currentPosition++;
+                IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);
+                nextFilter.doFilter(request, response, this);
+            }
+        }
+    }
 
 }

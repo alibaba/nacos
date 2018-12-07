@@ -21,12 +21,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
 /**
  * 根据IP进行流控, 控制单个IP的数量以及IP总量
- * 
+ *
  * @author leiwen.zh
- * 
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class SimpleIPFlowData {
@@ -57,12 +55,10 @@ public class SimpleIPFlowData {
 
     }
 
-
     public SimpleIPFlowData(int slotCount, int interval) {
         if (slotCount <= 0) {
             this.slotCount = 1;
-        }
-        else {
+        } else {
             this.slotCount = slotCount;
         }
         data = new AtomicInteger[slotCount];
@@ -71,7 +67,6 @@ public class SimpleIPFlowData {
         }
         timer.scheduleAtFixedRate(new DefaultIPFlowDataManagerTask(), interval, interval, TimeUnit.MILLISECONDS);
     }
-
 
     public int incrementAndGet(String ip) {
         int index = 0;
@@ -84,7 +79,6 @@ public class SimpleIPFlowData {
         return data[index].incrementAndGet();
     }
 
-
     public void rotateSlot() {
         int totalCount = 0;
         for (int i = 0; i < slotCount; i++) {
@@ -93,7 +87,6 @@ public class SimpleIPFlowData {
         }
         this.averageCount = totalCount / this.slotCount;
     }
-
 
     public int getCurrentCount(String ip) {
         int index = 0;
@@ -105,7 +98,6 @@ public class SimpleIPFlowData {
         }
         return data[index].get();
     }
-
 
     public int getAverageCount() {
         return this.averageCount;
