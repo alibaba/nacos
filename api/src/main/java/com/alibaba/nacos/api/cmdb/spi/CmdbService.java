@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Service to visit CMDB store
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public interface CmdbService {

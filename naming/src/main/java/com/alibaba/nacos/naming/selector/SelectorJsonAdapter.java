@@ -28,6 +28,11 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
+ * Json adapter for class Selector.
+ * <p>
+ * When deserializing object for class Selector, we should consider to convert the selector to
+ * its runtime child class object. And this adapter helps us to finish it.
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class SelectorJsonAdapter implements ObjectDeserializer, ObjectSerializer {

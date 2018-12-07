@@ -57,7 +57,7 @@ public class LabelSelector extends AbstractSelector {
     private CmdbReader cmdbReader;
 
     /**
-     * The labels relevant to this the select strategy.
+     * The labels relevant to this the selector.
      *
      * @see com.alibaba.nacos.api.cmdb.pojo.Label
      */
@@ -108,114 +108,11 @@ public class LabelSelector extends AbstractSelector {
         cmdbReader = context.getBean(CmdbReader.class);
     }
 
-    /**
-     * Parse the label expression.
-     * <p>
-     * Currently we support the very single type of expression:
-     * <pre>
-     *     consumer.labelA = provider.labelA & consumer.labelB = provider.labelB
-     * </pre>
-     * Later we will implement a interpreter to parse this expression in a standard LL parser way.
-     *
-     * @param expression the label expression to parse
-     * @return collection of labels
-     */
+
     public static Set<String> parseExpression(String expression) {
-
-        String[] elements = expression.split(" ");
-        Set<String> gotLabels = new HashSet<>();
-        int index = 0;
-
-        index = checkInnerSyntax(elements, index);
-
-        if (index == -1) {
-            return new HashSet<>();
-        }
-
-        gotLabels.add(elements[index++].split(PROVIDER_PREFIX)[1]);
-
-        while (index < elements.length) {
-
-            index = checkOuterSyntax(elements, index);
-
-            if (index >= elements.length) {
-                return gotLabels;
-            }
-
-            if (index == -1) {
-                return new HashSet<>();
-            }
-
-            gotLabels.add(elements[index++].split(PROVIDER_PREFIX)[1]);
-        }
-
-        return gotLabels;
+        return ExpressionInterpreter.parseExpression(expression);
     }
 
-    private static int skipEmpty(String[] elements, int start) {
-        while (start < elements.length && StringUtils.isBlank(elements[start])) {
-            start++;
-        }
-        return start;
-    }
-
-    private static int checkOuterSyntax(String[] elements, int start) {
-
-        int index = start;
-
-        index = skipEmpty(elements, index);
-        if (index >= elements.length) {
-            return index;
-        }
-
-        if (!SUPPORTED_OUTER_CONNCETORS.contains(elements[index++])) {
-            return -1;
-        }
-
-        return checkInnerSyntax(elements, index);
-    }
-
-    private static int checkInnerSyntax(String[] elements, int start) {
-
-        int index = start;
-
-        index = skipEmpty(elements, index);
-        if (index >= elements.length) {
-            return -1;
-        }
-
-        if (!elements[index].startsWith(CONSUMER_PREFIX)) {
-            return -1;
-        }
-
-        String labelConsumer = elements[index++].split(CONSUMER_PREFIX)[1];
-
-        index = skipEmpty(elements, index);
-        if (index >= elements.length) {
-            return -1;
-        }
-
-        if (!SUPPORTED_INNER_CONNCETORS.contains(elements[index++])) {
-            return -1;
-        }
-
-        index = skipEmpty(elements, index);
-        if (index >= elements.length) {
-            return -1;
-        }
-
-        if (!elements[index].startsWith(PROVIDER_PREFIX)) {
-            return -1;
-        }
-
-        String labelProvider = elements[index].split(PROVIDER_PREFIX)[1];
-
-        if (!labelConsumer.equals(labelProvider)) {
-            return -1;
-        }
-
-        return index;
-    }
 
     @Override
     public List<IpAddress> select(String consumer, List<IpAddress> providers) {
@@ -240,6 +137,123 @@ public class LabelSelector extends AbstractSelector {
         }
 
         return ipAddressList;
+    }
+
+    /**
+     * Expression interpreter for label selector.
+     * <p>
+     * For now it supports very limited set of syntax rules.
+     */
+    public static class ExpressionInterpreter {
+
+        /**
+         * Parse the label expression.
+         * <p>
+         * Currently we support the very single type of expression:
+         * <pre>
+         *     consumer.labelA = provider.labelA & consumer.labelB = provider.labelB
+         * </pre>
+         * Later we will implement a interpreter to parse this expression in a standard LL parser way.
+         *
+         * @param expression the label expression to parse
+         * @return collection of labels
+         */
+        public static Set<String> parseExpression(String expression) {
+
+            String[] elements = expression.split(" ");
+            Set<String> gotLabels = new HashSet<>();
+            int index = 0;
+
+            index = checkInnerSyntax(elements, index);
+
+            if (index == -1) {
+                return new HashSet<>();
+            }
+
+            gotLabels.add(elements[index++].split(PROVIDER_PREFIX)[1]);
+
+            while (index < elements.length) {
+
+                index = checkOuterSyntax(elements, index);
+
+                if (index >= elements.length) {
+                    return gotLabels;
+                }
+
+                if (index == -1) {
+                    return new HashSet<>();
+                }
+
+                gotLabels.add(elements[index++].split(PROVIDER_PREFIX)[1]);
+            }
+
+            return gotLabels;
+        }
+
+        private static int skipEmpty(String[] elements, int start) {
+            while (start < elements.length && StringUtils.isBlank(elements[start])) {
+                start++;
+            }
+            return start;
+        }
+
+        private static int checkOuterSyntax(String[] elements, int start) {
+
+            int index = start;
+
+            index = skipEmpty(elements, index);
+            if (index >= elements.length) {
+                return index;
+            }
+
+            if (!SUPPORTED_OUTER_CONNCETORS.contains(elements[index++])) {
+                return -1;
+            }
+
+            return checkInnerSyntax(elements, index);
+        }
+
+        private static int checkInnerSyntax(String[] elements, int start) {
+
+            int index = start;
+
+            index = skipEmpty(elements, index);
+            if (index >= elements.length) {
+                return -1;
+            }
+
+            if (!elements[index].startsWith(CONSUMER_PREFIX)) {
+                return -1;
+            }
+
+            String labelConsumer = elements[index++].split(CONSUMER_PREFIX)[1];
+
+            index = skipEmpty(elements, index);
+            if (index >= elements.length) {
+                return -1;
+            }
+
+            if (!SUPPORTED_INNER_CONNCETORS.contains(elements[index++])) {
+                return -1;
+            }
+
+            index = skipEmpty(elements, index);
+            if (index >= elements.length) {
+                return -1;
+            }
+
+            if (!elements[index].startsWith(PROVIDER_PREFIX)) {
+                return -1;
+            }
+
+            String labelProvider = elements[index].split(PROVIDER_PREFIX)[1];
+
+            if (!labelConsumer.equals(labelProvider)) {
+                return -1;
+            }
+
+            return index;
+        }
     }
 
     public static void main(String[] args) {
