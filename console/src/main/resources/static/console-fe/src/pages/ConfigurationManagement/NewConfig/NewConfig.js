@@ -14,7 +14,7 @@
 import React from 'react';
 import $ from 'jquery';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, setParams, request } from '../../../globalLib';
+import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import {
   Balloon,
   Button,
@@ -238,7 +238,7 @@ class NewConfig extends React.Component {
         });
         return;
       }
-      
+
       if (validateContent.validate({ content, type: configType })) {
         this._publishConfig(content);
       } else {
@@ -250,7 +250,6 @@ class NewConfig extends React.Component {
           },
         });
       }
-
     });
   }
 
