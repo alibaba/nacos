@@ -39,14 +39,14 @@ import com.alibaba.nacos.client.logger.support.LoggerHelper;
  *
  * @author zhuyong 2014年3月20日 上午11:16:26
  */
-@SuppressWarnings({ "rawtypes", "unchecked" })
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class Logback918ActivateOption extends AbstractActiveOption {
 
     private ch.qos.logback.classic.Logger logger;
 
     public Logback918ActivateOption(Object logger) {
         if (logger instanceof ch.qos.logback.classic.Logger) {
-            this.logger = (ch.qos.logback.classic.Logger) logger;
+            this.logger = (ch.qos.logback.classic.Logger)logger;
         } else {
             throw new IllegalArgumentException("logger must be instanceof ch.qos.logback.classic.Logger");
         }
@@ -102,7 +102,7 @@ public class Logback918ActivateOption extends AbstractActiveOption {
     @Override
     public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size) {
         ch.qos.logback.core.Appender appender = getLogbackDailyAndSizeRollingFileAppender(productName, file, encoding,
-                                                                                          size);
+            size);
         logger.detachAndStopAllAppenders();
         logger.addAppender(appender);
 
@@ -146,11 +146,12 @@ public class Logback918ActivateOption extends AbstractActiveOption {
     public void activateAppender(Logger logger) {
         if (!(logger.getDelegate() instanceof ch.qos.logback.classic.Logger)) {
             throw new IllegalArgumentException(
-                    "logger must be ch.qos.logback.classic.Logger, but it's " + logger.getDelegate().getClass());
+                "logger must be ch.qos.logback.classic.Logger, but it's " + logger.getDelegate().getClass());
         }
         this.logger.detachAndStopAllAppenders();
 
-        Iterator<ch.qos.logback.core.Appender<ILoggingEvent>> iter = ((ch.qos.logback.classic.Logger) logger.getDelegate()).iteratorForAppenders();
+        Iterator<ch.qos.logback.core.Appender<ILoggingEvent>> iter = ((ch.qos.logback.classic.Logger)logger
+            .getDelegate()).iteratorForAppenders();
         while (iter.hasNext()) {
             ch.qos.logback.core.Appender<ILoggingEvent> appender = iter.next();
             this.logger.addAppender(appender);
@@ -161,7 +162,7 @@ public class Logback918ActivateOption extends AbstractActiveOption {
     public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size,
                                                        String datePattern) {
         ch.qos.logback.core.Appender appender = getLogbackDailyAndSizeRollingFileAppender(productName, file, encoding,
-                                                                                          size, datePattern, -1);
+            size, datePattern, -1);
         logger.detachAndStopAllAppenders();
         logger.addAppender(appender);
 
@@ -211,8 +212,8 @@ public class Logback918ActivateOption extends AbstractActiveOption {
     public void activateAppenderWithTimeAndSizeRolling(String productName, String file, String encoding, String size,
                                                        String datePattern, int maxBackupIndex) {
         ch.qos.logback.core.Appender appender = getLogbackDailyAndSizeRollingFileAppender(productName, file, encoding,
-                                                                                          size, datePattern,
-                                                                                          maxBackupIndex);
+            size, datePattern,
+            maxBackupIndex);
         logger.detachAndStopAllAppenders();
         logger.addAppender(appender);
 
@@ -223,7 +224,7 @@ public class Logback918ActivateOption extends AbstractActiveOption {
     public void activateAppenderWithSizeRolling(String productName, String file, String encoding, String size,
                                                 int maxBackupIndex) {
         ch.qos.logback.core.Appender appender = getSizeRollingAppender(productName, file, encoding, size,
-                                                                       maxBackupIndex);
+            maxBackupIndex);
         logger.detachAndStopAllAppenders();
         logger.addAppender(appender);
 
@@ -235,11 +236,11 @@ public class Logback918ActivateOption extends AbstractActiveOption {
         List<Object[]> args = new ArrayList<Object[]>();
 
         if (queueSize != Integer.MIN_VALUE) {
-            args.add(new Object[] { "setQueueSize", new Class<?>[] { int.class }, queueSize });
+            args.add(new Object[] {"setQueueSize", new Class<?>[] {int.class}, queueSize});
         }
 
         if (discardingThreshold != Integer.MIN_VALUE) {
-            args.add(new Object[] { "setDiscardingThreshold", new Class<?>[] { int.class }, discardingThreshold });
+            args.add(new Object[] {"setDiscardingThreshold", new Class<?>[] {int.class}, discardingThreshold});
         }
 
         activateAsync(args);

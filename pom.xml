@@ -240,11 +240,12 @@
                         <exclude>src/test/resources/*</exclude>
                         <exclude>src/main/resources/static/**/*.js</exclude>
                         <exclude>src/main/resources/**/*.svg</exclude>
-                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/css/console1412.css</exclude>
                         <exclude>src/main/resources/static/js/vs/**/*</exclude>
-                        <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>src/main/resources/static/console-fe/public/css/console1412.css</exclude>
-                        <exclude>src/main/resources/static/console-fe/.vscode/settings.json</exclude>
+                        <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/dist/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/dist/*/*</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>

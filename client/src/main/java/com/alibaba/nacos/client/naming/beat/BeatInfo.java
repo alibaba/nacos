@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSON;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class BeatInfo {
 

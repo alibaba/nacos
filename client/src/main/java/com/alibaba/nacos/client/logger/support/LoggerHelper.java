@@ -31,20 +31,20 @@ import com.alibaba.nacos.client.logger.Logger;
 
 /**
  * logger help
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class LoggerHelper {
 
-    private static final String         MORE_URL_POSFIX    = ".ERROR_CODE_MORE_URL";
-    private static final String         DEFAULT_MORE_URL   = "http://console.taobao.net/help/";
+    private static final String MORE_URL_POSFIX = ".ERROR_CODE_MORE_URL";
+    private static final String DEFAULT_MORE_URL = "http://console.taobao.net/help/";
 
-    private static String               LOG_PATH           = null;
-    private static final String         CONVERSION_PATTERN = "01 %d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n";
+    private static String LOG_PATH = null;
+    private static final String CONVERSION_PATTERN = "01 %d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n";
 
     private static Map<String, Boolean> Product_Logger_Info;
-    private static Map<String, String>  Product_Logger_Pattern;
+    private static Map<String, String> Product_Logger_Pattern;
 
     private static Map<String, ResourceBundle> Product_Resource_Bundle;
 
@@ -55,7 +55,7 @@ public abstract class LoggerHelper {
             LOG_PATH = defaultPath + File.separator + "logs" + File.separator;
         } else {
             if (!new File(dpath).isAbsolute()) {
-//                throw new RuntimeException("-DJM.LOG.PATH must be an absolute path.");
+                //                throw new RuntimeException("-DJM.LOG.PATH must be an absolute path.");
                 String defaultPath = System.getProperty("user.home");
                 dpath = defaultPath + File.separator + dpath;
             }
@@ -83,15 +83,15 @@ public abstract class LoggerHelper {
     /**
      * <pre>
      * 获取中间件产品日志路径
-     * 
+     *
      * 优先使用-DJM.LOG.PATH参数，且必须是绝对路径
      * 其次是{user.home}/logs/
-     * 
+     *
      * 比如hsf调用：LoggerHelper.getLogFile("hsf", "hsf.log")，则返回{user.home}/logs/hsf/hsf.log
      * </pre>
-     * 
+     *
      * @param productName 中间件产品名，如hsf, tddl
-     * @param fileName 日志文件名，如hsf.log，如需要二级子目录，可以传 subDir + File.separator + *.log
+     * @param fileName    日志文件名，如hsf.log，如需要二级子目录，可以传 subDir + File.separator + *.log
      */
     public static String getLogFile(String productName, String fileName) {
         String file = LOG_PATH + productName + File.separator + fileName;
@@ -125,9 +125,9 @@ public abstract class LoggerHelper {
 
     /**
      * 设置特定中间件产品的日志格式，注意，这里的格式需要自己保证在 log4j/logback 下都兼容，框架不做校验，同时控制台输出仍会采用中间件的特定格式
-     * 
+     *
      * @param productName 中间件产品名，如hsf, tddl
-     * @param pattern 日志格式
+     * @param pattern     日志格式
      */
     public static void setPattern(String productName, String pattern) {
         Product_Logger_Pattern.put(productName, pattern);
@@ -137,7 +137,7 @@ public abstract class LoggerHelper {
      * 设置产品的日志国际化properties文件
      *
      * @param productName 中间件产品名，如hsf, tddl
-     * @param bundleName bundleName
+     * @param bundleName  bundleName
      */
     public static void setResourceBundle(String productName, String bundleName) {
         try {
@@ -152,7 +152,7 @@ public abstract class LoggerHelper {
      * 获取国际化的message，如果找不到，则返回原始的code
      *
      * @param productName 中间件产品名，如hsf, tddl
-     * @param code code
+     * @param code        code
      */
     public static String getResourceBundleString(String productName, String code) {
         if (Product_Resource_Bundle.isEmpty() || code == null || productName == null) {
@@ -174,7 +174,7 @@ public abstract class LoggerHelper {
 
     /**
      * 获取统一格式的ErrorCode输出
-     * 
+     *
      * @param errorCode
      */
     @Deprecated
@@ -184,11 +184,11 @@ public abstract class LoggerHelper {
 
     /**
      * 根据productName获取统一格式的ErrorCode输出
-     * 
+     *
      * @param productName 如 HSF，会根据 HSF.ErrorCodeMoreUrl 从 System属性中获取 more url 前缀，如http://console.taobao.net/jm/
-     * @param errorCode 错误码，如HSF-001
-     * @param errorType 错误类型
-     * @param message 出错异常信息
+     * @param errorCode   错误码，如HSF-001
+     * @param errorType   错误类型
+     * @param message     出错异常信息
      */
     public static String getErrorCodeStr(String productName, String errorCode, String errorType, String message) {
         String moreUrl = DEFAULT_MORE_URL;
@@ -214,18 +214,17 @@ public abstract class LoggerHelper {
         return sb.toString();
     }
 
-	@SuppressFBWarnings(value = { "RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" })
-	public static String getLogFileP(String productName, String fileName) {
-		String file = getLogFile(productName, fileName);
-		File logfile = new File(file);
-		logfile.getParentFile().mkdirs();
-		return file;
-	}
+    @SuppressFBWarnings(value = {"RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
+    public static String getLogFileP(String productName, String fileName) {
+        String file = getLogFile(productName, fileName);
+        File logfile = new File(file);
+        logfile.getParentFile().mkdirs();
+        return file;
+    }
 
     /**
-     * When prudent is set to true, file appenders from multiple JVMs can safely
-     * write to the same file.
-     *
+     * When prudent is set to true, file appenders from multiple JVMs can safely write to the same file.
+     * <p>
      * Only support by logback
      *
      * @param prudent
@@ -235,14 +234,15 @@ public abstract class LoggerHelper {
         if (logger != null && logger.getDelegate() != null) {
             if (!(logger.getDelegate() instanceof ch.qos.logback.classic.Logger)) {
                 throw new IllegalArgumentException("logger must be ch.qos.logback.classic.Logger, but it's "
-                        + logger.getDelegate().getClass());
+                    + logger.getDelegate().getClass());
             }
 
-            Iterator<Appender<ILoggingEvent>> iter = ((ch.qos.logback.classic.Logger) logger.getDelegate()).iteratorForAppenders();
+            Iterator<Appender<ILoggingEvent>> iter = ((ch.qos.logback.classic.Logger)logger.getDelegate())
+                .iteratorForAppenders();
             while (iter.hasNext()) {
                 ch.qos.logback.core.Appender<ILoggingEvent> appender = iter.next();
                 if (appender instanceof FileAppender) {
-                    ((FileAppender) appender).setPrudent(prudent);
+                    ((FileAppender)appender).setPrudent(prudent);
                 } else {
                     continue;
                 }

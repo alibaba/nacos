@@ -23,15 +23,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Simple Flow data
- * @author Nacos
  *
+ * @author Nacos
  */
 public class SimpleFlowData {
     private int index = 0;
     private AtomicInteger[] data;
     private int average;
     private int slotCount;
-    
+
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
@@ -43,7 +43,6 @@ public class SimpleFlowData {
         }
 
     });
-
 
     public SimpleFlowData(int slotCount, int interval) {
         this.slotCount = slotCount;
@@ -60,16 +59,13 @@ public class SimpleFlowData {
         }, interval, interval, TimeUnit.MILLISECONDS);
     }
 
-
     public int addAndGet(int count) {
         return data[index].addAndGet(count);
     }
 
-
     public int incrementAndGet() {
         return data[index].incrementAndGet();
     }
-
 
     public void rotateSlot() {
         int total = 0;
@@ -84,21 +80,17 @@ public class SimpleFlowData {
         data[index].set(0);
     }
 
-
     public int getCurrentCount() {
         return data[index].get();
     }
-
 
     public int getAverageCount() {
         return this.average;
     }
 
-
     public int getSlotCount() {
         return this.slotCount;
     }
-
 
     public String getSlotInfo() {
         StringBuilder sb = new StringBuilder();
@@ -113,7 +105,6 @@ public class SimpleFlowData {
         }
         return sb.toString();
     }
-
 
     public int getCount(int prevStep) {
         prevStep = prevStep % this.slotCount;

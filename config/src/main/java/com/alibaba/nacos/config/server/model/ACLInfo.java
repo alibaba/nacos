@@ -19,29 +19,28 @@ import java.util.List;
 
 /**
  * acl info
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class ACLInfo {
 
-	private Boolean isOpen;
-	private List<String> ips;
+    private Boolean isOpen;
+    private List<String> ips;
 
-	public List<String> getIps() {
-		return ips;
-	}
+    public List<String> getIps() {
+        return ips;
+    }
 
-	public void setIps(List<String> ips) {
-		this.ips = ips;
-	}
+    public void setIps(List<String> ips) {
+        this.ips = ips;
+    }
 
-	public Boolean getIsOpen() {
-		return isOpen;
-	}
+    public Boolean getIsOpen() {
+        return isOpen;
+    }
 
-	public void setIsOpen(Boolean isOpen) {
-		this.isOpen = isOpen;
-	}
+    public void setIsOpen(Boolean isOpen) {
+        this.isOpen = isOpen;
+    }
 }

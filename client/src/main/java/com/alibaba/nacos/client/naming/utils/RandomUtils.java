@@ -21,13 +21,12 @@ package com.alibaba.nacos.client.naming.utils;
 import java.util.Random;
 
 /**
- * <p><code>RandomUtils</code> is a wrapper that supports all possible
- * {@link java.util.Random} methods via the {@link java.lang.Math#random()}
- * method and its system-wide <code>Random</code> object.
+ * <p><code>RandomUtils</code> is a wrapper that supports all possible {@link java.util.Random} methods via the {@link
+ * java.lang.Math#random()} method and its system-wide <code>Random</code> object.
  *
  * @author Gary D. Gregory
- * @since 2.0
  * @version $Id: RandomUtils.java 906320 2010-02-04 01:41:10Z sebb $
+ * @since 2.0
  */
 public class RandomUtils {
 
@@ -36,15 +35,15 @@ public class RandomUtils {
      */
     public static final Random JVM_RANDOM = new JvmRandom();
 
-// should be possible for JVM_RANDOM?
-//    public static void nextBytes(byte[]) {
-//    public synchronized double nextGaussian();
-//    }
+    // should be possible for JVM_RANDOM?
+    //    public static void nextBytes(byte[]) {
+    //    public synchronized double nextGaussian();
+    //    }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed int value
-     * from the Math.random() sequence.</p>
-     * <b>N.B. All values are >= 0.<b>
+     * <p>Returns the next pseudorandom, uniformly distributed int value from the Math.random() sequence.</p> <b>N.B.
+     * All values are >= 0.<b>
+     *
      * @return the random int
      */
     public static int nextInt() {
@@ -52,8 +51,8 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed int value
-     * from the given <code>random</code> sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed int value from the given <code>random</code>
+     * sequence.</p>
      *
      * @param random the Random sequence generator.
      * @return the random int
@@ -63,11 +62,10 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns a pseudorandom, uniformly distributed int value
-     * between <code>0</code> (inclusive) and the specified value
-     * (exclusive), from the Math.random() sequence.</p>
+     * <p>Returns a pseudorandom, uniformly distributed int value between <code>0</code> (inclusive) and the specified
+     * value (exclusive), from the Math.random() sequence.</p>
      *
-     * @param n  the specified exclusive max-value
+     * @param n the specified exclusive max-value
      * @return the random int
      */
     public static int nextInt(int n) {
@@ -75,12 +73,11 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns a pseudorandom, uniformly distributed int value
-     * between <code>0</code> (inclusive) and the specified value
-     * (exclusive), from the given Random sequence.</p>
+     * <p>Returns a pseudorandom, uniformly distributed int value between <code>0</code> (inclusive) and the specified
+     * value (exclusive), from the given Random sequence.</p>
      *
      * @param random the Random sequence generator.
-     * @param n  the specified exclusive max-value
+     * @param n      the specified exclusive max-value
      * @return the random int
      */
     public static int nextInt(Random random, int n) {
@@ -89,9 +86,9 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed long value
-     * from the Math.random() sequence.</p>
-     * <b>N.B. All values are >= 0.<b>
+     * <p>Returns the next pseudorandom, uniformly distributed long value from the Math.random() sequence.</p> <b>N.B.
+     * All values are >= 0.<b>
+     *
      * @return the random long
      */
     public static long nextLong() {
@@ -99,8 +96,7 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed long value
-     * from the given Random sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed long value from the given Random sequence.</p>
      *
      * @param random the Random sequence generator.
      * @return the random long
@@ -110,8 +106,7 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed boolean value
-     * from the Math.random() sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed boolean value from the Math.random() sequence.</p>
      *
      * @return the random boolean
      */
@@ -120,8 +115,7 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed boolean value
-     * from the given random sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed boolean value from the given random sequence.</p>
      *
      * @param random the Random sequence generator.
      * @return the random boolean
@@ -131,9 +125,8 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed float value
-     * between <code>0.0</code> and <code>1.0</code> from the Math.random()
-     * sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed float value between <code>0.0</code> and <code>1.0</code>
+     * from the Math.random() sequence.</p>
      *
      * @return the random float
      */
@@ -142,9 +135,8 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed float value
-     * between <code>0.0</code> and <code>1.0</code> from the given Random
-     * sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed float value between <code>0.0</code> and <code>1.0</code>
+     * from the given Random sequence.</p>
      *
      * @param random the Random sequence generator.
      * @return the random float
@@ -154,9 +146,8 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed float value
-     * between <code>0.0</code> and <code>1.0</code> from the Math.random()
-     * sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed float value between <code>0.0</code> and <code>1.0</code>
+     * from the Math.random() sequence.</p>
      *
      * @return the random double
      */
@@ -165,9 +156,8 @@ public class RandomUtils {
     }
 
     /**
-     * <p>Returns the next pseudorandom, uniformly distributed float value
-     * between <code>0.0</code> and <code>1.0</code> from the given Random
-     * sequence.</p>
+     * <p>Returns the next pseudorandom, uniformly distributed float value between <code>0.0</code> and <code>1.0</code>
+     * from the given Random sequence.</p>
      *
      * @param random the Random sequence generator.
      * @return the random double

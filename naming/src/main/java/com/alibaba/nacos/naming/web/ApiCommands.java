@@ -288,7 +288,8 @@ public class ApiCommands {
             clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
         }
 
-        Loggers.TENANT.debug("client-beat", "beat: " + beat);
+        Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: " + clientBeat + ", serviceName:" + dom);
+
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
         Map<String, String[]> stringMap = new HashMap<>(16);
         stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
@@ -314,6 +315,8 @@ public class ApiCommands {
         ipAddress.setWeight(clientBeat.getWeight());
         ipAddress.setMetadata(clientBeat.getMetadata());
         ipAddress.setClusterName(clusterName);
+        ipAddress.setServiceName(dom);
+        ipAddress.setInstanceId(ipAddress.generateInstanceId());
 
         if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
             doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));
@@ -898,6 +901,8 @@ public class ApiCommands {
             proxyParams.put(entry.getKey(), entry.getValue()[0]);
         }
 
+        Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments:" + proxyParams);
+
         String ipListString = BaseServlet.required(request, "ipList");
         final List<String> ipList;
         List<IpAddress> newIPs = new ArrayList<>();
@@ -1215,6 +1220,8 @@ public class ApiCommands {
                 ipObj.put("metadata", ip.getMetadata());
                 ipObj.put("enabled", ip.isEnabled());
                 ipObj.put("weight", ip.getWeight());
+                ipObj.put("clusterName", ip.getClusterName());
+                ipObj.put("serviceName", ip.getServiceName());
                 hosts.add(ipObj);
 
             }
@@ -1238,6 +1245,9 @@ public class ApiCommands {
     public String remvIP4Dom(HttpServletRequest request) throws Exception {
         String dom = BaseServlet.required(request, "dom");
         String ipListString = BaseServlet.required(request, "ipList");
+
+        Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName:" + dom + ", iplist:" + ipListString);
+
         List<IpAddress> newIPs = new ArrayList<>();
         List<String> ipList = new ArrayList<>();
         if (Boolean.parseBoolean(BaseServlet.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {

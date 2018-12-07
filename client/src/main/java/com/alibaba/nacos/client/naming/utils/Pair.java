@@ -16,23 +16,23 @@
 package com.alibaba.nacos.client.naming.utils;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Pair<T> {
 
     private T item;
     private double weight;
 
-    public Pair(T item,double weight){
+    public Pair(T item, double weight) {
         this.item = item;
         this.weight = weight;
     }
 
-    public T item(){
+    public T item() {
         return item;
     }
 
-    public double weight(){
+    public double weight() {
         return weight;
     }
 }

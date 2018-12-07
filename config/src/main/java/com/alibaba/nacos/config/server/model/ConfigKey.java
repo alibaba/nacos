@@ -19,52 +19,53 @@ import java.io.Serializable;
 
 /**
  * config key
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ConfigKey implements Serializable {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1748953484511867580L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = -1748953484511867580L;
 
-	private String appName;
-	private String dataId;
-	private String group;
+    private String appName;
+    private String dataId;
+    private String group;
 
-	public ConfigKey() {
-	};
+    public ConfigKey() {
+    }
 
-	public ConfigKey(String appName, String dataId, String group) {
-		this.appName = appName;
-		this.dataId = dataId;
-		this.group = group;
-	}
+    ;
 
-	public String getAppName() {
-		return appName;
-	}
+    public ConfigKey(String appName, String dataId, String group) {
+        this.appName = appName;
+        this.dataId = dataId;
+        this.group = group;
+    }
 
-	public void setAppName(String appName) {
-		this.appName = appName;
-	}
+    public String getAppName() {
+        return appName;
+    }
 
-	public String getDataId() {
-		return dataId;
-	}
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
 
-	public void setDataId(String dataId) {
-		this.dataId = dataId;
-	}
+    public String getDataId() {
+        return dataId;
+    }
 
-	public String getGroup() {
-		return group;
-	}
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
 
-	public void setGroup(String group) {
-		this.group = group;
-	}
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
 
 }

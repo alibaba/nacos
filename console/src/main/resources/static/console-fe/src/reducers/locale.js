@@ -21,14 +21,14 @@ const enUS = Object.assign({}, fusionEnUS, I18N.enUS);
 const zhCN = Object.assign({}, fusionZhCN, I18N.zhCN);
 
 const initialState = {
-  language: 'en-US',
+  language: 'en-us',
   locale: enUS,
 };
 
 const changeLanguage = lang => dispatch => {
-  const language = lang === 'zh-CN' ? 'zh-CN' : 'en-US';
+  const language = lang === 'zh-cn' ? 'zh-cn' : 'en-us';
   CookieHelp.setValue(LANGUAGE_KEY, language);
-  dispatch({ type: LANGUAGE_SWITCH, language, locale: language === 'zh-CN' ? zhCN : enUS });
+  dispatch({ type: LANGUAGE_SWITCH, language, locale: language === 'zh-cn' ? zhCN : enUS });
 };
 
 export default (state = initialState, action) => {
