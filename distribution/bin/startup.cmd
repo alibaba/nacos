@@ -17,11 +17,11 @@ set "JAVA=%JAVA_HOME%\bin\java.exe"
 setlocal
 
 set BASE_DIR=%~dp0
-set BASE_DIR=%BASE_DIR:~0,-1%
+set BASE_DIR="%BASE_DIR:~0,-1%"
 for %%d in (%BASE_DIR%) do set BASE_DIR=%%~dpd
 
-set DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
-set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%conf/
+set DEFAULT_SEARCH_LOCATIONS=classpath:\,classpath:\config\,file:.\,file:.\config\
+set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%conf\
 
 
 
@@ -34,9 +34,9 @@ if not ""%2"" == "cluster" (
     set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
  )
 
-set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
+set "JAVA_OPT=%JAVA_OPT% -jar "%BASE_DIR%\target\nacos-server.jar""
+set "JAVA_OPT=%JAVA_OPT% -Dnacos.home="%BASE_DIR%""
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location="%CUSTOM_SEARCH_LOCATIONS%""
-set "JAVA_OPT=%JAVA_OPT% --logging.config="%BASE_DIR%/conf/nacos-logback.xml""
+set "JAVA_OPT=%JAVA_OPT% --logging.config="%BASE_DIR%\conf\nacos-logback.xml""
 
 call "%JAVA%" %JAVA_OPT% %*
