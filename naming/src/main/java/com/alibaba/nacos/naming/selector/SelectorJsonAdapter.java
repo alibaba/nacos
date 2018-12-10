@@ -22,6 +22,8 @@ import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 import com.alibaba.fastjson.serializer.JSONSerializer;
 import com.alibaba.fastjson.serializer.ObjectSerializer;
 import com.alibaba.fastjson.serializer.SerializeWriter;
+import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -82,7 +84,7 @@ public class SelectorJsonAdapter implements ObjectDeserializer, ObjectSerializer
             return;
         }
 
-        AbstractSelector selector = (AbstractSelector) object;
+        Selector selector = (Selector) object;
 
         writer.writeFieldValue(',', "type", selector.getType());
 

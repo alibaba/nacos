@@ -32,23 +32,17 @@ import java.util.List;
  * recognizes it and can correctly create this type of selector.
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
- * @see SelectorType
+ * @see com.alibaba.nacos.api.selector.SelectorType
  * @see SelectorJsonAdapter
  */
-public abstract class AbstractSelector {
+public interface Selector {
 
     /**
-     * @see SelectorType
+     * Get the type of this selector
+     *
+     * @return type of selector
      */
-    protected String type = "unknown";
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
+    String getType();
 
     /**
      * Select qualified instances from providers
@@ -57,5 +51,5 @@ public abstract class AbstractSelector {
      * @param providers candidate provider addresses
      * @return selected provider addresses
      */
-    public abstract List<IpAddress> select(String consumer, List<IpAddress> providers);
+    List<IpAddress> select(String consumer, List<IpAddress> providers);
 }

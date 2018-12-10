@@ -21,6 +21,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.UuidUtils;
 
@@ -205,10 +206,15 @@ public class NamingProxy {
     }
 
     public ListView<String> getServiceList(int pageNo, int pageSize) throws NacosException {
+        return getServiceList(pageNo, pageSize, null);
+    }
+
+    public ListView<String> getServiceList(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
 
         Map<String, String> params = new HashMap<String, String>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
+        
 
         String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/service/list", params);
 

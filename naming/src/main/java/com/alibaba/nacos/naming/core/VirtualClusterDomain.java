@@ -28,8 +28,8 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftListener;
+import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.AbstractSelector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -63,7 +63,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Boolean enableHealthCheck = true;
     private Boolean enabled = true;
     private Boolean enableClientBeat = false;
-    private AbstractSelector selector = new NoneSelector();
+    private Selector selector = new NoneSelector();
 
     /**
      * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
@@ -144,11 +144,11 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         this.metadata = metadata;
     }
 
-    public AbstractSelector getSelector() {
+    public Selector getSelector() {
         return selector;
     }
 
-    public void setSelector(AbstractSelector selector) {
+    public void setSelector(Selector selector) {
         this.selector = selector;
     }
 

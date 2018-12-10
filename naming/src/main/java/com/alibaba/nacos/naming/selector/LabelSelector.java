@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.selector;
 
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.IpAddress;
@@ -52,7 +53,7 @@ import java.util.Set;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @see CmdbReader
  */
-public class LabelSelector extends AbstractSelector {
+public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSelector implements Selector {
 
     private CmdbReader cmdbReader;
 
@@ -62,17 +63,6 @@ public class LabelSelector extends AbstractSelector {
      * @see com.alibaba.nacos.api.cmdb.pojo.Label
      */
     private Set<String> labels;
-
-    /**
-     * Label expression of this selector.
-     * <p>
-     * Currently we only support this very single type of expression:
-     * <pre>
-     *     consumer.labelA = provider.labelA & consumer.labelB = provider.labelB
-     * </pre>
-     * TODO what this expression means?
-     */
-    private String expression;
 
     private static final Set<String> SUPPORTED_INNER_CONNCETORS = new HashSet<>();
 
@@ -95,15 +85,8 @@ public class LabelSelector extends AbstractSelector {
         this.labels = labels;
     }
 
-    public String getExpression() {
-        return expression;
-    }
-
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
-
     public LabelSelector() {
+        setType(SelectorType.label.name());
         ApplicationContext context = SpringContext.getAppContext();
         cmdbReader = context.getBean(CmdbReader.class);
     }
