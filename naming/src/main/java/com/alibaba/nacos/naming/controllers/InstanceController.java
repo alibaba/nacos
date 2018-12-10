@@ -114,7 +114,7 @@ public class InstanceController extends ApiCommands {
         return deRegService(request);
     }
 
-    @RequestMapping(value = "/instance/update", method = RequestMethod.POST)
+    @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, "serviceName");
         Map<String, String[]> params = new HashMap<>(request.getParameterMap());

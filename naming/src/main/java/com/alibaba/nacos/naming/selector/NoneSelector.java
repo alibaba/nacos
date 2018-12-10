@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.naming.core.IpAddress;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.List;
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public class NoneSelector extends AbstractSelector {
+public class NoneSelector extends com.alibaba.nacos.api.selector.AbstractSelector implements Selector {
 
     public NoneSelector() {
         this.setType(SelectorType.none.name());

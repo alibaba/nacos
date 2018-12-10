@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
-import com.alibaba.nacos.naming.selector.AbstractSelector;
+import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -126,9 +126,9 @@ public class UtilsAndCommons {
                 .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
 
         SerializeConfig.getGlobalInstance()
-                .put(AbstractSelector.class, SelectorJsonAdapter.getInstance());
+                .put(Selector.class, SelectorJsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(AbstractSelector.class, SelectorJsonAdapter.getInstance());
+                .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();

@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.util.WebUtils;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -25,8 +26,7 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.AbstractSelector;
-import com.alibaba.nacos.naming.selector.SelectorType;
+import com.alibaba.nacos.naming.selector.Selector;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -208,7 +208,7 @@ public class ServiceController {
         return "ok";
     }
 
-    private AbstractSelector parseSelector(String selectorJsonString) throws NacosException {
+    private Selector parseSelector(String selectorJsonString) throws NacosException {
 
         JSONObject selectorJson = JSON.parseObject(selectorJsonString);
         switch (SelectorType.valueOf(selectorJson.getString("type"))) {
