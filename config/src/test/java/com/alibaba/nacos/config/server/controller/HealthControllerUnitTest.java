@@ -41,27 +41,27 @@ import com.alibaba.nacos.config.server.service.DataSourceService;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 public class HealthControllerUnitTest {
-	
 
-	@InjectMocks
-	HealthController healthController;
+    @InjectMocks
+    HealthController healthController;
 
-	@Mock
-	DataSourceService dataSourceService;
+    @Mock
+    DataSourceService dataSourceService;
 
-	private MockMvc mockmvc;
+    private MockMvc mockmvc;
+
     @Before
     public void setUp() throws Exception {
-    	mockmvc = MockMvcBuilders.standaloneSetup(healthController).build();
+        mockmvc = MockMvcBuilders.standaloneSetup(healthController).build();
     }
 
     @Test
-    public void testGetHealth()  throws Exception{
+    public void testGetHealth() throws Exception {
 
-		Mockito.when(dataSourceService.getHealth()).thenReturn("UP");
-		MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HEALTH_CONTROLLER_PATH);
-		String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-		Assert.assertEquals("UP", actualValue);
-	
+        Mockito.when(dataSourceService.getHealth()).thenReturn("UP");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HEALTH_CONTROLLER_PATH);
+        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        Assert.assertEquals("UP", actualValue);
+
     }
 }
