@@ -17,6 +17,8 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -189,6 +191,15 @@ public class ServiceInfo {
     @JSONField(serialize = false)
     public String getKey() {
         return getKey(name, clusters, env, isAllIPs());
+    }
+
+    @JSONField(serialize = false)
+    public String getKeyEncoded() {
+        try {
+            return getKey(URLEncoder.encode(name, "UTF-8"), clusters, env, isAllIPs());
+        } catch (UnsupportedEncodingException e) {
+            return getKey();
+        }
     }
 
     @JSONField(serialize = false)
