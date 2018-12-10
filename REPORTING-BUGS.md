@@ -21,7 +21,7 @@ We might ask for further information to locate a bug. A duplicated bug report wi
 
 # 如何提交错误报告
 
-如果Nacos项目的任何部分存在问题或文档问题，请通过[opening an issue][Nacos-issue]告诉我们。我们非常认真地对待错误和错误，在产品面前没有不重要的问题。不过在创建错误报告之前，请检查是否存在报告相同问题的issues。
+如果Nacos项目的任何部分存在问题或文档问题，请通过[opening an issue][Nacos-issue]告诉我们。我们非常认真地对待错误和缺陷，在产品面前没有不重要的问题。不过在创建错误报告之前，请检查是否存在报告相同问题的issues。
 
 为了使错误报告准确且易于理解，请尝试创建以下错误报告：
 

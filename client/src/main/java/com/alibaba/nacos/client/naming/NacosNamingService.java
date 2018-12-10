@@ -34,6 +34,7 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import org.apache.commons.lang3.BooleanUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -41,7 +42,7 @@ import java.util.List;
 import java.util.Properties;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
@@ -100,7 +101,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, false);
     }
 
     public NacosNamingService(Properties properties) {
@@ -119,15 +120,21 @@ public class NacosNamingService implements NamingService {
 
         if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.ENDPOINT))) {
             endpoint = properties.getProperty(PropertyKeyConst.ENDPOINT) + ":" +
-                    properties.getProperty("address.server.port", "8080");
+                properties.getProperty("address.server.port", "8080");
         }
 
         cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
 
+        boolean loadCacheAtStart = false;
+        if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
+            loadCacheAtStart = BooleanUtils.toBoolean(
+                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
+        }
+
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, loadCacheAtStart);
 
     }
 
@@ -142,7 +149,7 @@ public class NacosNamingService implements NamingService {
         instance.setIp(ip);
         instance.setPort(port);
         instance.setWeight(1.0);
-        instance.setCluster(new Cluster(clusterName));
+        instance.setClusterName(clusterName);
 
         registerInstance(serviceName, instance);
     }
@@ -154,7 +161,7 @@ public class NacosNamingService implements NamingService {
         beatInfo.setDom(serviceName);
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
-        beatInfo.setCluster(instance.getCluster().getName());
+        beatInfo.setCluster(instance.getClusterName());
         beatInfo.setWeight(instance.getWeight());
         beatInfo.setMetadata(instance.getMetadata());
 
@@ -170,7 +177,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
-        beatReactor.removeBeatInfo(serviceName);
+        beatReactor.removeBeatInfo(serviceName, ip, port);
         serverProxy.deregisterService(serviceName, ip, port, clusterName);
     }
 
@@ -182,7 +189,8 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
+        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
+            StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -196,9 +204,11 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
+        throws NacosException {
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), StringUtils.EMPTY, false);
+        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
+            StringUtils.EMPTY, false);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -222,17 +232,20 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) {
-        return Balancer.RandomByWeight.selectHost(hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
+        return Balancer.RandomByWeight.selectHost(
+            hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
     }
 
     @Override
     public void subscribe(String service, EventListener listener) {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.EMPTY), StringUtils.EMPTY, listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.EMPTY), StringUtils.EMPTY,
+            listener);
     }
 
     @Override
     public void subscribe(String service, List<String> clusters, EventListener listener) {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(service, StringUtils.join(clusters, ",")),
+            StringUtils.join(clusters, ","), listener);
     }
 
     @Override
@@ -258,5 +271,9 @@ public class NacosNamingService implements NamingService {
     @Override
     public String getServerStatus() {
         return serverProxy.serverHealthy() ? "UP" : "DOWN";
+    }
+
+    public BeatReactor getBeatReactor() {
+        return beatReactor;
     }
 }

@@ -17,8 +17,8 @@ package com.alibaba.nacos.config.server.model;
 
 /**
  * subcriber status
- * @author Nacos
  *
+ * @author Nacos
  */
 public class SubscriberStatus {
     String groupKey;
@@ -27,7 +27,7 @@ public class SubscriberStatus {
     Boolean status;
     String serverIp;
 
-    public SubscriberStatus(){}
+    public SubscriberStatus() {}
 
     public SubscriberStatus(String groupKey, Boolean status, String md5, Long lastTime) {
         this.groupKey = groupKey;

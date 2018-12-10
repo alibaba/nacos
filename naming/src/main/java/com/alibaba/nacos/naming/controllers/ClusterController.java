@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.lang3.BooleanUtils;
@@ -35,7 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")
@@ -44,7 +45,7 @@ public class ClusterController {
     @Autowired
     protected DomainsManager domainsManager;
 
-    @RequestMapping(value = "/update", method = RequestMethod.POST)
+    @RequestMapping(value = {"/update", "/add"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
 
         String clusterName = BaseServlet.required(request, "clusterName");
@@ -61,7 +62,11 @@ public class ClusterController {
 
         Cluster cluster = domain.getClusterMap().get(clusterName);
         if (cluster == null) {
-            throw new NacosException(NacosException.INVALID_PARAM, "cluster not found:"+ clusterName + ", " + serviceName);
+            Loggers.SRV_LOG.warn("UPDATE-CLUSTER", "cluster not exist, will create it: " + clusterName + ", service:" + serviceName);
+            cluster = new Cluster();
+            cluster.setName(clusterName);
+
+//            throw new NacosException(NacosException.INVALID_PARAM, "cluster not found:"+ clusterName + ", " + serviceName);
         }
 
         cluster.setDefCkport(NumberUtils.toInt(checkPort));

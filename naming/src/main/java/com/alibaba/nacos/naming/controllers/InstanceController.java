@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT)
@@ -106,7 +106,6 @@ public class InstanceController extends ApiCommands {
             mockHttpRequest.addParameter("clusterMetadata", cluster.getString("metadata"));
 
         }
-
         return regService(mockHttpRequest);
     }
 

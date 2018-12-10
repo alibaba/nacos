@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Service {
 
@@ -39,7 +39,7 @@ public class Service {
     private String app;
 
     /**
-     * Service group which is meant to classify services into different sets.
+     * Service group is meant to classify services into different sets.
      */
     private String group;
 
@@ -47,6 +47,8 @@ public class Service {
      * Health check mode.
      */
     private String healthCheckMode;
+    private Map<String, String> metadata = new HashMap<String, String>();
+
     private Map<String, String> metadata = new HashMap<String, String>();
 
     public Service(String name) {

@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingBase {
 
@@ -70,28 +70,8 @@ public class NamingBase {
         instanceMeta.put("site", "et2");
         instance.setMetadata(instanceMeta);
 
-        Service service = new Service(serviceName);
-        service.setApp("nacos-naming");
-        service.setHealthCheckMode("server");
-        service.setProtectThreshold(0.8F);
-        service.setGroup("CNCF");
-        Map<String, String> serviceMeta = new HashMap<String, String>();
-        serviceMeta.put("symmetricCall", "true");
-        service.setMetadata(serviceMeta);
-        instance.setService(service);
-
-        Cluster cluster = new Cluster();
-        cluster.setName("c1");
-        AbstractHealthChecker.Http healthChecker = new AbstractHealthChecker.Http();
-        healthChecker.setExpectedResponseCode(400);
-        healthChecker.setHeaders("Client-Version|Nacos");
-        healthChecker.setPath("/xxx.html");
-        cluster.setHealthChecker(healthChecker);
-        Map<String, String> clusterMeta = new HashMap<String, String>();
-        clusterMeta.put("xxx", "yyyy");
-        cluster.setMetadata(clusterMeta);
-
-        instance.setCluster(cluster);
+        instance.setServiceName(serviceName);
+        instance.setClusterName("c1");
 
         return instance;
     }

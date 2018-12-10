@@ -22,7 +22,7 @@ import java.util.List;
 import com.alibaba.fastjson.annotation.JSONField;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ServiceInfo {
 
@@ -226,6 +226,35 @@ public class ServiceInfo {
         return getKey(name, clusters, env, isAllIPs());
     }
 
+    @JSONField(serialize = false)
+    public static String getKey(String name, String clusters, String unit) {
+        return getKey(name, clusters, unit, false);
+    }
+
+    @JSONField(serialize = false)
+    public static String getKey(String name, String clusters, String unit, boolean isAllIPs) {
+
+        if (isEmpty(unit)) {
+            unit = EMPTY;
+        }
+
+        if (!isEmpty(clusters) && !isEmpty(unit)) {
+            return isAllIPs ? name + SPLITER + clusters + SPLITER + unit + SPLITER + ALL_IPS
+                : name + SPLITER + clusters + SPLITER + unit;
+        }
+
+        if (!isEmpty(clusters)) {
+            return isAllIPs ? name + SPLITER + clusters + SPLITER + ALL_IPS : name + SPLITER + clusters;
+        }
+
+        if (!isEmpty(unit)) {
+            return isAllIPs ? name + SPLITER + EMPTY + SPLITER + unit + SPLITER + ALL_IPS :
+                name + SPLITER + EMPTY + SPLITER + unit;
+        }
+
+        return isAllIPs ? name + SPLITER + ALL_IPS : name;
+    }
+  
     @Override
     public String toString() {
         return getKey();

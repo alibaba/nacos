@@ -55,7 +55,7 @@ public class SubscribeCluster_ITCase {
     public void init() throws Exception{
         instances.clear();
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
     }
@@ -212,7 +212,7 @@ public class SubscribeCluster_ITCase {
         int i = 0;
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
-            if (i++ > 20) {
+            if (i++ > 10) {
                 return;
             }
         }

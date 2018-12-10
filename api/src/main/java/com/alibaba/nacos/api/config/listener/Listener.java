@@ -25,7 +25,7 @@ import java.util.concurrent.Executor;
 public interface Listener {
 
     /**
-     * Executor to excute this receive
+     * Executor to execute this receive
      *
      * @return Executor
      */

@@ -21,7 +21,6 @@ import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
-import com.alibaba.nacos.config.server.utils.SystemConfig;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +36,7 @@ import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
@@ -47,424 +47,432 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Serverlist service
- * @author Nacos
  *
+ * @author Nacos
  */
 @Service
 public class ServerListService implements ApplicationListener<WebServerInitializedEvent> {
 
-	@Autowired
+    @Autowired
     private Environment env;
-	
-	@Autowired
+
+    @Autowired
     private ServletContext servletContext;
-	
+
     private int port;
 
-	@PostConstruct
-	public void init() {
-		serverPort = System.getProperty("nacos.server.port", "8848");
-		String envDomainName = System.getenv("address_server_domain");
-		if (StringUtils.isBlank(envDomainName)) {
-			domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
-		} else {
-			domainName = envDomainName;
-		}
-		String envAddressPort = System.getenv("address_server_port");
-		if (StringUtils.isBlank(envAddressPort)) {
-			addressPort = System.getProperty("address.server.port", "8080");
-		} else {
-			addressPort = envAddressPort;
-		}
-		addressUrl = System.getProperty("address.server.url",
-				servletContext.getContextPath() + "/" + RunningConfigUtils.getClusterName());
-		addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
-		envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
+    @PostConstruct
+    public void init() {
+        serverPort = System.getProperty("nacos.server.port", "8848");
+        String envDomainName = System.getenv("address_server_domain");
+        if (StringUtils.isBlank(envDomainName)) {
+            domainName = System.getProperty("address.server.domain", "jmenv.tbsite.net");
+        } else {
+            domainName = envDomainName;
+        }
+        String envAddressPort = System.getenv("address_server_port");
+        if (StringUtils.isBlank(envAddressPort)) {
+            addressPort = System.getProperty("address.server.port", "8080");
+        } else {
+            addressPort = envAddressPort;
+        }
+        addressUrl = System.getProperty("address.server.url",
+            servletContext.getContextPath() + "/" + RunningConfigUtils.getClusterName());
+        addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
+        envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
 
-		defaultLog.info("ServerListService address-server port:" + serverPort);
-		defaultLog.info("ADDRESS_SERVER_URL:" + addressServerUrl);
-		isHealthCheck = PropertyUtil.isHealthCheck();
-		maxFailCount = PropertyUtil.getMaxHealthCheckFailCount();
-		
-		try {
-			String val = null;
-			val = env.getProperty("useAddressServer");
-			if (val != null && FALSE_STR.equals(val)) {
-				isUseAddressServer = false;
-			}
-			fatalLog.warn("useAddressServer:{}", isUseAddressServer);
-		} catch (Exception e) {
-			fatalLog.error("read application.properties wrong", e);
-		}
-		GetServerListTask task = new GetServerListTask();
-		task.run();
-		if (null == serverList || serverList.isEmpty()) {
-			fatalLog.error("########## cannot get serverlist, so exit.");
-			throw new RuntimeException("cannot get serverlist, so exit.");
-		} else {
-			TimerTaskService.scheduleWithFixedDelay(task, 0L, 5L, TimeUnit.SECONDS);
-		}
-		httpclient.start();
-		CheckServerHealthTask checkServerHealthTask = new CheckServerHealthTask();
-		TimerTaskService.scheduleWithFixedDelay(checkServerHealthTask, 0L, 5L, TimeUnit.SECONDS);
-	}
+        defaultLog.info("ServerListService address-server port:" + serverPort);
+        defaultLog.info("ADDRESS_SERVER_URL:" + addressServerUrl);
+        isHealthCheck = PropertyUtil.isHealthCheck();
+        maxFailCount = PropertyUtil.getMaxHealthCheckFailCount();
 
-	public String getEnvId() {
-		String envId = "";
-		int i = 0;
-		do {
-			envId = getEnvIdHttp();
-			if (StringUtils.isBlank(envId)) {
-				i++;
-				try {
-					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					LogUtil.defaultLog.error("sleep interrupt");
-				}
-			}
-		} while (StringUtils.isBlank(envId) && i < 5);
+        try {
+            String val = null;
+            val = env.getProperty("useAddressServer");
+            if (val != null && FALSE_STR.equals(val)) {
+                isUseAddressServer = false;
+            }
+            fatalLog.warn("useAddressServer:{}", isUseAddressServer);
+        } catch (Exception e) {
+            fatalLog.error("read application.properties wrong", e);
+        }
+        GetServerListTask task = new GetServerListTask();
+        task.run();
+        if (null == serverList || serverList.isEmpty()) {
+            fatalLog.error("########## cannot get serverlist, so exit.");
+            throw new RuntimeException("cannot get serverlist, so exit.");
+        } else {
+            TimerTaskService.scheduleWithFixedDelay(task, 0L, 5L, TimeUnit.SECONDS);
+        }
+        httpclient.start();
+        CheckServerHealthTask checkServerHealthTask = new CheckServerHealthTask();
+        TimerTaskService.scheduleWithFixedDelay(checkServerHealthTask, 0L, 5L, TimeUnit.SECONDS);
+    }
 
-		if (!StringUtils.isBlank(envId)) {
-		} else {
-			LogUtil.defaultLog.error("envId is blank");
-		}
-		return envId;
-	}
+    public String getEnvId() {
+        String envId = "";
+        int i = 0;
+        do {
+            envId = getEnvIdHttp();
+            if (StringUtils.isBlank(envId)) {
+                i++;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    LogUtil.defaultLog.error("sleep interrupt");
+                }
+            }
+        } while (StringUtils.isBlank(envId) && i < 5);
 
-	public List<String> getServerList() {
-		return new ArrayList<String>(serverList);
-	}
+        if (!StringUtils.isBlank(envId)) {
+        } else {
+            LogUtil.defaultLog.error("envId is blank");
+        }
+        return envId;
+    }
 
-	public static void setServerList(List<String> serverList) {
-		ServerListService.serverList = serverList;
-	}
+    public List<String> getServerList() {
+        return new ArrayList<String>(serverList);
+    }
 
-	public static List<String> getServerListUnhealth() {
-		return new ArrayList<String>(serverListUnhealth);
-	}
+    public static void setServerList(List<String> serverList) {
+        ServerListService.serverList = serverList;
+    }
 
-	public static Boolean isFirstIp() {
-		return serverList.get(0).contains(SystemConfig.LOCAL_IP);
-	}
+    public static List<String> getServerListUnhealth() {
+        return new ArrayList<String>(serverListUnhealth);
+    }
 
-	public boolean isHealthCheck() {
-		return isHealthCheck;
-	}
+    public static Boolean isFirstIp() {
+        return serverList.get(0).contains(LOCAL_IP);
+    }
 
-	/** serverList has changed */
-	static public class ServerlistChangeEvent implements EventDispatcher.Event {}
-	private void updateIfChanged(List<String> newList) {
-		if (newList.isEmpty()) {
-			return;
-		}
+    public boolean isHealthCheck() {
+        return isHealthCheck;
+    }
 
-		boolean isContainSelfIp = false;
-		for (String ipPortTmp : newList) {
-			if (ipPortTmp.contains(SystemConfig.LOCAL_IP)) {
-				isContainSelfIp = true;
-				break;
-			}
-		}
+    /**
+     * serverList has changed
+     */
+    static public class ServerlistChangeEvent implements EventDispatcher.Event {}
 
-		if (isContainSelfIp) {
-			isInIpList = true;
-		} else {
-			isInIpList = false;
-			String selfAddr = getFormatServerAddr(SystemConfig.LOCAL_IP);
-			newList.add(selfAddr);
-			fatalLog.error("########## [serverlist] self ip {} not in serverlist {}", selfAddr, newList);
-		}
+    private void updateIfChanged(List<String> newList) {
+        if (newList.isEmpty()) {
+            return;
+        }
 
-		if (newList.equals(serverList)) {
-			return;
-		}
+        boolean isContainSelfIp = false;
+        for (String ipPortTmp : newList) {
+            if (ipPortTmp.contains(LOCAL_IP)) {
+                isContainSelfIp = true;
+                break;
+            }
+        }
 
-		serverList = new ArrayList<String>(newList);
+        if (isContainSelfIp) {
+            isInIpList = true;
+        } else {
+            isInIpList = false;
+            String selfAddr = getFormatServerAddr(LOCAL_IP);
+            newList.add(selfAddr);
+            fatalLog.error("########## [serverlist] self ip {} not in serverlist {}", selfAddr, newList);
+        }
 
-		List<String> unhealthRemoved = new ArrayList<String>();
-		for (String unhealthIp : serverListUnhealth) {
-			if (!newList.contains(unhealthIp)) {
-				unhealthRemoved.add(unhealthIp);
-			}
-		}
+        if (newList.equals(serverList)) {
+            return;
+        }
 
-		serverListUnhealth.removeAll(unhealthRemoved);
+        serverList = new ArrayList<String>(newList);
 
-		List<String> unhealthCountRemoved = new ArrayList<String>();
-		for (Map.Entry<String, Integer> ip2UnhealthCountTmp : serverIp2unhealthCount.entrySet()) {
-			if (!newList.contains(ip2UnhealthCountTmp.getKey())) {
-				unhealthCountRemoved.add(ip2UnhealthCountTmp.getKey());
-			}
-		}
+        List<String> unhealthRemoved = new ArrayList<String>();
+        for (String unhealthIp : serverListUnhealth) {
+            if (!newList.contains(unhealthIp)) {
+                unhealthRemoved.add(unhealthIp);
+            }
+        }
 
-		for (String unhealthCountTmp : unhealthCountRemoved) {
-			serverIp2unhealthCount.remove(unhealthCountTmp);
-		}
+        serverListUnhealth.removeAll(unhealthRemoved);
 
-		defaultLog.warn("[serverlist] updated to {}", serverList);
+        List<String> unhealthCountRemoved = new ArrayList<String>();
+        for (Map.Entry<String, Integer> ip2UnhealthCountTmp : serverIp2unhealthCount.entrySet()) {
+            if (!newList.contains(ip2UnhealthCountTmp.getKey())) {
+                unhealthCountRemoved.add(ip2UnhealthCountTmp.getKey());
+            }
+        }
 
-		/**
-		 * 非并发fireEvent
-		 */
-		EventDispatcher.fireEvent(new ServerlistChangeEvent());
-	}
+        for (String unhealthCountTmp : unhealthCountRemoved) {
+            serverIp2unhealthCount.remove(unhealthCountTmp);
+        }
 
-	/**
-	 * 保证不返回NULL
-	 * 
-	 * @return serverlist
-	 */
-	private List<String> getApacheServerList() {
-		// 优先从文件读取服务列表
-		try {
-			List<String> serverIps = new ArrayList<String>();
-			String serverIpsStr = DiskUtil.getServerList();
-			if (!StringUtils.isBlank(serverIpsStr)) {
-				String split = System.getProperty("line.separator");
-				String[] serverAddrArr = serverIpsStr.split(split);
-				for (String serverAddr : serverAddrArr) {
-					if (StringUtils.isNotBlank(serverAddr.trim())) {
-						serverIps.add(getFormatServerAddr(serverAddr));
-					}
-				}
-			}
-			if (serverIps.size() > 0) {
-				return serverIps;
-			}
-		} catch (Exception e) {
-			defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
-		}
+        defaultLog.warn("[serverlist] updated to {}", serverList);
 
-		if (isUseAddressServer() && !STANDALONE_MODE) {
-			try {
-				HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
+        /**
+         * 非并发fireEvent
+         */
+        EventDispatcher.fireEvent(new ServerlistChangeEvent());
+    }
 
-				if (HttpServletResponse.SC_OK == result.code) {
-					isAddressServerHealth = true;
-					addressServerFailCcount = 0;
-					List<String> lines = IOUtils.readLines(new StringReader(result.content));
-					List<String> ips = new ArrayList<String>(lines.size());
-					for (String serverAddr : lines) {
-						if (null == serverAddr || serverAddr.trim().isEmpty()) {
-							continue;
-						} else {
-							ips.add(getFormatServerAddr(serverAddr));
-						}
-					}
-					return ips;
-				} else {
-					addressServerFailCcount++;
-					if (addressServerFailCcount >= maxFailCount) {
-						isAddressServerHealth = false;
-					}
-					defaultLog.error("[serverlist] failed to get serverlist, error code {}", result.code);
-					return Collections.emptyList();
-				}
-			} catch (IOException e) {
-				addressServerFailCcount++;
-				if (addressServerFailCcount >= maxFailCount) {
-					isAddressServerHealth = false;
-				}
-				defaultLog.error("[serverlist] exception, " + e.toString(), e);
-				return Collections.emptyList();
-			}
+    /**
+     * 保证不返回NULL
+     *
+     * @return serverlist
+     */
+    private List<String> getApacheServerList() {
+        if (STANDALONE_MODE) {
+            List<String> serverIps = new ArrayList<String>();
+            serverIps.add(getFormatServerAddr(LOCAL_IP));
+            return serverIps;
+        }
 
-		} else {
-			List<String> serverIps = new ArrayList<String>();
-			serverIps.add(getFormatServerAddr(SystemConfig.LOCAL_IP));
-			return serverIps;
-		}
-	}
+        // 优先从文件读取服务列表
+        try {
+            List<String> serverIps = new ArrayList<String>();
+            List<String> serverAddrLines = readClusterConf();
+            if (!CollectionUtils.isEmpty(serverAddrLines)) {
+                for (String serverAddr : serverAddrLines) {
+                    if (StringUtils.isNotBlank(serverAddr.trim())) {
+                        serverIps.add(getFormatServerAddr(serverAddr));
+                    }
+                }
+            }
+            if (serverIps.size() > 0) {
+                return serverIps;
+            }
+        } catch (Exception e) {
+            defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
+        }
 
-	private String getFormatServerAddr(String serverAddr) {
-		if (StringUtils.isBlank(serverAddr)) {
-			throw new IllegalArgumentException("invalid serverlist");
-		}
-		String[] ipPort = serverAddr.trim().split(":");
-		String ip = ipPort[0].trim();
-		if (ipPort.length == 1 && port != 0) {
-			return (ip + ":" + port);
-		} else {
-			return serverAddr;
-		}
-	}
-	
-	private String getEnvIdHttp() {
-		try {
-			// "http://jmenv.tbsite.net:8080/env";
-			HttpResult result = NotifyService.invokeURL(envIdUrl, null, null);
+        if (isUseAddressServer()) {
+            try {
+                HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
 
-			if (HttpServletResponse.SC_OK == result.code) {
-				return result.content.trim();
-			} else {
-				defaultLog.error("[envId] failed to get envId, error code {}", result.code);
-				return "";
-			}
-		} catch (IOException e) {
-			defaultLog.error("[envId] exception, " + e.toString(), e);
-			return "";
-		}
+                if (HttpServletResponse.SC_OK == result.code) {
+                    isAddressServerHealth = true;
+                    addressServerFailCcount = 0;
+                    List<String> lines = IOUtils.readLines(new StringReader(result.content));
+                    List<String> ips = new ArrayList<String>(lines.size());
+                    for (String serverAddr : lines) {
+                        if (null == serverAddr || serverAddr.trim().isEmpty()) {
+                            continue;
+                        } else {
+                            ips.add(getFormatServerAddr(serverAddr));
+                        }
+                    }
+                    return ips;
+                } else {
+                    addressServerFailCcount++;
+                    if (addressServerFailCcount >= maxFailCount) {
+                        isAddressServerHealth = false;
+                    }
+                    defaultLog.error("[serverlist] failed to get serverlist, error code {}", result.code);
+                    return Collections.emptyList();
+                }
+            } catch (IOException e) {
+                addressServerFailCcount++;
+                if (addressServerFailCcount >= maxFailCount) {
+                    isAddressServerHealth = false;
+                }
+                defaultLog.error("[serverlist] exception, " + e.toString(), e);
+                return Collections.emptyList();
+            }
 
-	}
+        } else {
+            List<String> serverIps = new ArrayList<String>();
+            serverIps.add(getFormatServerAddr(LOCAL_IP));
+            return serverIps;
+        }
+    }
 
-	class GetServerListTask implements Runnable {
-		@Override
-		public void run() {
-			try {
-				updateIfChanged(getApacheServerList());
-			} catch (Exception e) {
-				defaultLog.error("[serverlist] failed to get serverlist, " + e.toString(), e);
-			}
-		}
-	}
+    private String getFormatServerAddr(String serverAddr) {
+        if (StringUtils.isBlank(serverAddr)) {
+            throw new IllegalArgumentException("invalid serverlist");
+        }
+        String[] ipPort = serverAddr.trim().split(":");
+        String ip = ipPort[0].trim();
+        if (ipPort.length == 1 && port != 0) {
+            return (ip + ":" + port);
+        } else {
+            return serverAddr;
+        }
+    }
 
-	private void checkServerHealth() {
-		long startCheckTime = System.currentTimeMillis();
-		for (String serverIp : serverList) {
-			// Compatible with old codes,use status.taobao
-			String url = "http://" + serverIp + servletContext.getContextPath() + Constants.HEALTH_CONTROLLER_PATH;
-			// "/nacos/health";
-			HttpGet request = new HttpGet(url);
-			httpclient.execute(request, new AyscCheckServerHealthCallBack(serverIp));
-		}
-		long endCheckTime = System.currentTimeMillis();
-		long cost = endCheckTime - startCheckTime;
-		defaultLog.debug("checkServerHealth cost: {}", cost);
-	}
+    private String getEnvIdHttp() {
+        try {
+            // "http://jmenv.tbsite.net:8080/env";
+            HttpResult result = NotifyService.invokeURL(envIdUrl, null, null);
 
-	class AyscCheckServerHealthCallBack implements FutureCallback<HttpResponse> {
+            if (HttpServletResponse.SC_OK == result.code) {
+                return result.content.trim();
+            } else {
+                defaultLog.error("[envId] failed to get envId, error code {}", result.code);
+                return "";
+            }
+        } catch (IOException e) {
+            defaultLog.error("[envId] exception, " + e.toString(), e);
+            return "";
+        }
 
-		private String serverIp;
+    }
 
-		public AyscCheckServerHealthCallBack(String serverIp) {
-			this.serverIp = serverIp;
-		}
+    class GetServerListTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                updateIfChanged(getApacheServerList());
+            } catch (Exception e) {
+                defaultLog.error("[serverlist] failed to get serverlist, " + e.toString(), e);
+            }
+        }
+    }
 
-		@Override
-		public void completed(HttpResponse response) {
-			if (response.getStatusLine().getStatusCode() == HttpServletResponse.SC_OK) {
-				serverIp2unhealthCount.put(serverIp, 0);
-				if (serverListUnhealth.contains(serverIp)) {
-					serverListUnhealth.remove(serverIp);
-				}
-				HttpClientUtils.closeQuietly(response);
-			}
-		}
+    private void checkServerHealth() {
+        long startCheckTime = System.currentTimeMillis();
+        for (String serverIp : serverList) {
+            // Compatible with old codes,use status.taobao
+            String url = "http://" + serverIp + servletContext.getContextPath() + Constants.HEALTH_CONTROLLER_PATH;
+            // "/nacos/health";
+            HttpGet request = new HttpGet(url);
+            httpclient.execute(request, new AyscCheckServerHealthCallBack(serverIp));
+        }
+        long endCheckTime = System.currentTimeMillis();
+        long cost = endCheckTime - startCheckTime;
+        defaultLog.debug("checkServerHealth cost: {}", cost);
+    }
 
-		@Override
-		public void failed(Exception ex) {
-			Integer failCount = serverIp2unhealthCount.get(serverIp);
-			failCount = failCount == null ? Integer.valueOf(0) : failCount;
-			failCount++;
-			serverIp2unhealthCount.put(serverIp, failCount);
-			if (failCount > maxFailCount) {
-				if (!serverListUnhealth.contains(serverIp)) {
-					serverListUnhealth.add(serverIp);
-				}
-				defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
-			}
-		}
+    class AyscCheckServerHealthCallBack implements FutureCallback<HttpResponse> {
 
-		@Override
-		public void cancelled() {
-			Integer failCount = serverIp2unhealthCount.get(serverIp);
-			failCount = failCount == null ? Integer.valueOf(0) : failCount;
-			failCount++;
-			serverIp2unhealthCount.put(serverIp, failCount);
-			if (failCount > maxFailCount) {
-				if (!serverListUnhealth.contains(serverIp)) {
-					serverListUnhealth.add(serverIp);
-				}
-				defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
-			}
-		}
-	}
+        private String serverIp;
 
-	class CheckServerHealthTask implements Runnable{
+        public AyscCheckServerHealthCallBack(String serverIp) {
+            this.serverIp = serverIp;
+        }
 
-		@Override
-		public void run() {
-			checkServerHealth();
-		}
+        @Override
+        public void completed(HttpResponse response) {
+            if (response.getStatusLine().getStatusCode() == HttpServletResponse.SC_OK) {
+                serverIp2unhealthCount.put(serverIp, 0);
+                if (serverListUnhealth.contains(serverIp)) {
+                    serverListUnhealth.remove(serverIp);
+                }
+                HttpClientUtils.closeQuietly(response);
+            }
+        }
 
-	}
+        @Override
+        public void failed(Exception ex) {
+            Integer failCount = serverIp2unhealthCount.get(serverIp);
+            failCount = failCount == null ? Integer.valueOf(0) : failCount;
+            failCount++;
+            serverIp2unhealthCount.put(serverIp, failCount);
+            if (failCount > maxFailCount) {
+                if (!serverListUnhealth.contains(serverIp)) {
+                    serverListUnhealth.add(serverIp);
+                }
+                defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
+            }
+        }
 
-	private Boolean isUseAddressServer() {
-		return isUseAddressServer;
-	}
+        @Override
+        public void cancelled() {
+            Integer failCount = serverIp2unhealthCount.get(serverIp);
+            failCount = failCount == null ? Integer.valueOf(0) : failCount;
+            failCount++;
+            serverIp2unhealthCount.put(serverIp, failCount);
+            if (failCount > maxFailCount) {
+                if (!serverListUnhealth.contains(serverIp)) {
+                    serverListUnhealth.add(serverIp);
+                }
+                defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
+            }
+        }
+    }
 
-	static class CheckServerThreadFactory implements ThreadFactory {
+    class CheckServerHealthTask implements Runnable {
 
-		@Override
-		public Thread newThread(Runnable r) {
-			Thread thread = new Thread(r, "com.alibaba.nacos.CheckServerThreadFactory");
-			thread.setDaemon(true);
-			return thread;
-		}
-	}
+        @Override
+        public void run() {
+            checkServerHealth();
+        }
 
-	public static boolean isAddressServerHealth() {
-		return isAddressServerHealth;
-	}
+    }
 
-	public static boolean isInIpList() {
-		return isInIpList;
-	}
+    private Boolean isUseAddressServer() {
+        return isUseAddressServer;
+    }
 
-	// ==========================
+    static class CheckServerThreadFactory implements ThreadFactory {
 
-	/**
-	 *  和其他server的连接超时和socket超时
-	 */
-	static final int TIMEOUT = 5000;
-	private int maxFailCount = 12;
-	private static volatile List<String> serverList = new ArrayList<String>();
-	private static volatile List<String> serverListUnhealth = new ArrayList<String>();
-	private static volatile boolean isAddressServerHealth = true;
-	private static volatile int addressServerFailCcount = 0;
-	private static volatile boolean isInIpList = true;
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread thread = new Thread(r, "com.alibaba.nacos.CheckServerThreadFactory");
+            thread.setDaemon(true);
+            return thread;
+        }
+    }
 
-	/**
-	 *  ip unhealth count
-	 */
-	private static volatile Map<String, Integer> serverIp2unhealthCount = new HashMap<String, Integer>();
-	private RequestConfig requestConfig = RequestConfig.custom()
-			.setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
-			.setSocketTimeout(PropertyUtil.getNotifySocketTimeout()).build();
+    public static boolean isAddressServerHealth() {
+        return isAddressServerHealth;
+    }
 
-	private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
-			.build();
+    public static boolean isInIpList() {
+        return isInIpList;
+    }
 
-	/**
-	 * server之间通信的端口
-	 */
-	public String serverPort;
-	public String domainName;
-	public String addressPort;
-	public String addressUrl;
-	public String envIdUrl;
-	public String addressServerUrl;
-	private Boolean isUseAddressServer = true;
-	private boolean isHealthCheck = true;
-	private final static String  FALSE_STR = "false";
+    // ==========================
 
+    /**
+     * 和其他server的连接超时和socket超时
+     */
+    static final int TIMEOUT = 5000;
+    private int maxFailCount = 12;
+    private static volatile List<String> serverList = new ArrayList<String>();
+    private static volatile List<String> serverListUnhealth = new ArrayList<String>();
+    private static volatile boolean isAddressServerHealth = true;
+    private static volatile int addressServerFailCcount = 0;
+    private static volatile boolean isInIpList = true;
 
-	@Override
-	public void onApplicationEvent(WebServerInitializedEvent event) {
-		if (port == 0) {
-			port = event.getWebServer().getPort();
-			List<String> newList = new ArrayList<String>();
-			for (String serverAddrTmp : serverList) {
-				newList.add(getFormatServerAddr(serverAddrTmp));
-			}
-			setServerList(new ArrayList<String>(newList));
-		}
-	}
+    /**
+     * ip unhealth count
+     */
+    private static volatile Map<String, Integer> serverIp2unhealthCount = new HashMap<String, Integer>();
+    private RequestConfig requestConfig = RequestConfig.custom()
+        .setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
+        .setSocketTimeout(PropertyUtil.getNotifySocketTimeout()).build();
+
+    private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
+        .build();
+
+    /**
+     * server之间通信的端口
+     */
+    public String serverPort;
+    public String domainName;
+    public String addressPort;
+    public String addressUrl;
+    public String envIdUrl;
+    public String addressServerUrl;
+    private Boolean isUseAddressServer = true;
+    private boolean isHealthCheck = true;
+    private final static String FALSE_STR = "false";
+
+    @Override
+    public void onApplicationEvent(WebServerInitializedEvent event) {
+        if (port == 0) {
+            port = event.getWebServer().getPort();
+            List<String> newList = new ArrayList<String>();
+            for (String serverAddrTmp : serverList) {
+                newList.add(getFormatServerAddr(serverAddrTmp));
+            }
+            setServerList(new ArrayList<String>(newList));
+        }
+    }
 
 }

@@ -100,17 +100,17 @@ public abstract class AbstractHealthCheckProcessor {
 
                 List<String> sameSiteServers = NamingProxy.getSameSiteServers().get("sameSite");
 
-                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localIP())) {
+                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localServer())) {
                     return;
                 }
 
                 for (String server : sameSiteServers) {
-                    if (server.equals(NetUtils.localIP())) {
+                    if (server.equals(NetUtils.localServer())) {
                         continue;
                     }
                     Map<String, String> params = new HashMap<>(10);
                     params.put("result", JSON.toJSONString(list));
-                    Loggers.DEBUG_LOG.debug("HEALTH-SYNC", server, JSON.toJSONString(list));
+                    Loggers.DEBUG_LOG.debug("[HEALTH-SYNC]" + server + ", " + JSON.toJSONString(list));
                     if (!server.contains(":")) {
                         server = server + ":" + RunningConfig.getServerPort();
                     }

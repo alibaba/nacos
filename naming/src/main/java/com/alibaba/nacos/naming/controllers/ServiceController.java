@@ -15,11 +15,8 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -33,10 +30,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service")
@@ -44,6 +44,83 @@ public class ServiceController {
 
     @Autowired
     protected DomainsManager domainsManager;
+
+    @RequestMapping(value = "/create", method = RequestMethod.PUT)
+    public String create(HttpServletRequest request) throws Exception {
+        String serviceName = BaseServlet.required(request, "serviceName");
+
+        if (domainsManager.getDomain(serviceName) != null) {
+            throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
+        }
+
+        float protectThreshold = NumberUtils.toFloat(BaseServlet.optional(request, "protectThreshold", "0"));
+        String healthCheckMode = BaseServlet.optional(request, "healthCheckMode", "client");
+        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        Map<String, String> metadataMap = new HashMap<>(16);
+        if (StringUtils.isNotBlank(metadata)) {
+            metadataMap = UtilsAndCommons.parseMetadata(metadata);
+        }
+
+        VirtualClusterDomain domObj = new VirtualClusterDomain();
+        domObj.setName(serviceName);
+        domObj.setProtectThreshold(protectThreshold);
+        domObj.setEnableHealthCheck(HealthCheckMode.server.name().equals(healthCheckMode.toLowerCase()));
+        domObj.setEnabled(true);
+        domObj.setEnableClientBeat(HealthCheckMode.client.name().equals(healthCheckMode.toLowerCase()));
+        domObj.setMetadata(metadataMap);
+
+        // now valid the dom. if failed, exception will be thrown
+        domObj.setLastModifiedMillis(System.currentTimeMillis());
+        domObj.recalculateChecksum();
+        domObj.valid();
+
+        domainsManager.easyAddOrReplaceDom(domObj);
+
+        return "ok";
+    }
+
+    @RequestMapping(value = "/remove", method = RequestMethod.DELETE)
+    public String remove(HttpServletRequest request) throws Exception {
+
+        String serviceName = BaseServlet.required(request, "serviceName");
+
+        VirtualClusterDomain service = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        if (service == null) {
+            throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
+        }
+
+        if (!service.allIPs().isEmpty()) {
+            throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
+        }
+
+        domainsManager.easyRemoveDom(serviceName);
+
+        return "ok";
+    }
+
+    @RequestMapping(value = "/detail")
+    public Service detail(HttpServletRequest request) throws Exception {
+
+        String serviceName = BaseServlet.required(request, "serviceName");
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        if (domain == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
+        }
+
+        Service service = new Service(serviceName);
+        service.setName(serviceName);
+        service.setProtectThreshold(domain.getProtectThreshold());
+        service.setHealthCheckMode(HealthCheckMode.none.name());
+        if (domain.getEnableHealthCheck()) {
+            service.setHealthCheckMode(HealthCheckMode.server.name());
+        }
+        if (domain.getEnableClientBeat()) {
+            service.setHealthCheckMode(HealthCheckMode.client.name());
+        }
+        service.setMetadata(domain.getMetadata());
+
+        return service;
+    }
 
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public JSONObject list(HttpServletRequest request) throws Exception {
@@ -115,16 +192,4 @@ public class ServiceController {
 
         return "ok";
     }
-
-    @RequestMapping(value = "/delete", method = RequestMethod.DELETE)
-    public String removeService(HttpServletRequest request) throws Exception {
-
-        String serviceName = BaseServlet.required(request, "serviceName");
-        if (domainsManager.getDomain(serviceName) == null) {
-            throw new IllegalStateException("service doesn't exists.");
-        }
-        domainsManager.easyRemoveDom(serviceName);
-        return "ok";
-    }
-
 }

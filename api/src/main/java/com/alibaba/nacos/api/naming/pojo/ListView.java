@@ -20,7 +20,7 @@ import java.util.List;
 import com.alibaba.fastjson.JSON;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ListView<T> {
 

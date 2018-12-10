@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -55,9 +56,28 @@ public class RegisterInstance_ITCase {
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
+    }
+
+    @Test
+    @Ignore
+    public void regService() throws NacosException, InterruptedException {
+
+        String serviceName = "dungu.test.99";
+        naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
+        naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
+        Thread.sleep(100000000L);
+    }
+
+    @Test
+    @Ignore
+    public void deregService() throws NacosException, InterruptedException {
+
+        String serviceName = "dungu.test.98";
+        System.out.println(naming.getAllInstances(serviceName));
+//        Thread.sleep(100000000L);
     }
 
     /**
@@ -91,7 +111,10 @@ public class RegisterInstance_ITCase {
      */
     @Test
     public void regDomClusterTest() throws Exception {
+
         String serviceName = randomDomainName();
+
+        System.err.println(serviceName);
 
         naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT, TEST_NEW_CLUSTER_4_DOM_1);
 

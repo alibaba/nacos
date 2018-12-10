@@ -40,7 +40,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class VirtualClusterDomain implements Domain, RaftListener {
 
@@ -58,7 +58,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     /**
      * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
      */
-    private long ipDeleteTimeout = 1800 * 1000;
+    private long ipDeleteTimeout = 30 * 1000;
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -158,7 +158,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     public void onChange(String key, String value) throws Exception {
 
         if (StringUtils.isEmpty(value)) {
-            Loggers.SRV_LOG.warn("VIPSRV-DOM", "received empty iplist config for dom: " + name);
+            Loggers.SRV_LOG.warn("[VIPSRV-DOM] received empty iplist config for dom: " + name);
+            return;
         }
 
         Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
@@ -232,10 +233,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         for (Map.Entry<String, List<IpAddress>> entry : ipMap.entrySet()) {
             //make every ip mine
             List<IpAddress> entryIPs = entry.getValue();
-            for (IpAddress ip : entryIPs) {
-                ip.setCluster(clusterMap.get(ip.getClusterName()));
-            }
-
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
@@ -267,7 +264,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             entry.getValue().destroy();
         }
 
-        if (RaftCore.isLeader(NetUtils.localIP())) {
+        if (RaftCore.isLeader(NetUtils.localServer())) {
             RaftCore.signalDelete(UtilsAndCommons.getIPListStoreKey(this));
         }
 
@@ -306,7 +303,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster);
+                throw new IllegalArgumentException("can not find cluster: " + cluster + ", dom:" + getName());
             }
 
             allIPs.addAll(clusterObj.allIPs());

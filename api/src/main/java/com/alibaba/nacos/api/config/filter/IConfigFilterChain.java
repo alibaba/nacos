@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  */
 public interface IConfigFilterChain {
     /**
-     * Filter aciton
+     * Filter action
      *
      * @param request  request
      * @param response response

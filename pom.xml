@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.4.0</version>
+    <version>0.6.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.4.0</tag>
+        <tag>nacos-all-0.5.0</tag>
     </scm>
 
     <mailingLists>
@@ -228,21 +228,24 @@
                     <excludes>
                         <exclude>.travis.yml</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
+                        <exclude>CODE_OF_CONDUCT.md</exclude>
                         <exclude>CHANGELOG.md</exclude>
                         <exclude>style/codeStyle.md</exclude>
                         <exclude>REPORTING-BUGS.md</exclude>
                         <exclude>README.md</exclude>
-                        <exclude>.github/*</exclude>
-                        <exclude>.github/ISSUE_TEMPLATE/bug_report.md</exclude>
-                        <exclude>.github/ISSUE_TEMPLATE/feature_request.md</exclude>
+                        <exclude>.github/**/*</exclude>
                         <exclude>src/main/resources/*/*/*</exclude>
                         <exclude>src/main/resources/*/*</exclude>
                         <exclude>src/main/resources/*</exclude>
                         <exclude>src/test/resources/*</exclude>
                         <exclude>src/main/resources/static/**/*.js</exclude>
                         <exclude>src/main/resources/**/*.svg</exclude>
-                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
-                        <exclude>src/main/resources/static/public/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/js/vs/**/*</exclude>
+                        <exclude>src/main/resources/static/console-fe/public/css/console1412.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/dist/js/vs/editor/editor.main.css</exclude>
+                        <exclude>src/main/resources/static/console-fe/dist/*/*</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
@@ -303,10 +306,11 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>2.20</version>
                 <configuration>
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
+                    <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
             </plugin>
             <plugin>
@@ -438,7 +442,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.0.4</version>
             </plugin>
         </plugins>
     </reporting>

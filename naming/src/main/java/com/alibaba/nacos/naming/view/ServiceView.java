@@ -18,14 +18,14 @@ package com.alibaba.nacos.naming.view;
 import com.alibaba.fastjson.JSON;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ServiceView {
 
     private String name;
     private int clusterCount;
     private int ipCount;
-    private String status;
+    private int healthyInstanceCount;
 
     public String getName() {
         return name;
@@ -51,12 +51,12 @@ public class ServiceView {
         this.ipCount = ipCount;
     }
 
-    public String getStatus() {
-        return status;
+    public int getHealthyInstanceCount() {
+        return healthyInstanceCount;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setHealthyInstanceCount(int healthyInstanceCount) {
+        this.healthyInstanceCount = healthyInstanceCount;
     }
 
     @Override

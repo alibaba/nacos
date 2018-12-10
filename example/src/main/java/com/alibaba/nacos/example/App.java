@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.example;
 
-
 import java.util.Properties;
 
 import com.alibaba.nacos.api.exception.NacosException;

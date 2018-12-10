@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
@@ -71,6 +71,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     public Cluster() {
+    }
+
+    public Cluster(String clusterName) {
+        this.setName(clusterName);
     }
 
     public int getDefIPPort() {

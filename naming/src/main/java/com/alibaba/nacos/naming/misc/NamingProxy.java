@@ -18,12 +18,10 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.common.util.SystemUtils.*;
 
 /**
  * @author nacos
@@ -98,10 +96,6 @@ public class NamingProxy {
     }
 
     public static void refreshSrvIfNeed() {
-        refreshSrvIfNeed(StringUtils.EMPTY);
-    }
-
-    public static void refreshSrvIfNeed(String env) {
         try {
             if (System.currentTimeMillis() - lastSrvRefTime < VIP_SRV_REF_INTER_MILLIS) {
                 return;
@@ -109,30 +103,18 @@ public class NamingProxy {
 
             if (STANDALONE_MODE) {
                 servers = new ArrayList<>();
-                servers.add(InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort());
+                servers.add(NetUtils.localServer());
                 return;
             }
 
             List<String> serverlist = refreshServerListFromDisk();
 
-            List<String> list = new ArrayList<String>();
             if (!CollectionUtils.isEmpty(serverlist)) {
                 serverlistFromConfig = serverlist;
-                if (list.isEmpty()) {
-                    Loggers.SRV_LOG.warn("Can not acquire server list");
-                }
             }
 
-
-            if (!StringUtils.isEmpty(env)) {
-                serverListMap.put(env, list);
-            } else {
-                if (!CollectionUtils.isEqualCollection(serverlistFromConfig, list) && CollectionUtils.isNotEmpty(serverlistFromConfig)) {
-                    Loggers.SRV_LOG.info("[SERVER-LIST] server list is not the same between AS and config file, use config file.");
-                    servers = serverlistFromConfig;
-                } else {
-                    servers = list;
-                }
+            if (!CollectionUtils.isEqualCollection(serverlistFromConfig, servers) && CollectionUtils.isNotEmpty(serverlistFromConfig)) {
+                servers = serverlistFromConfig;
             }
 
             if (RunningConfig.getServerPort() > 0) {
@@ -157,9 +139,9 @@ public class NamingProxy {
         List<String> result = new ArrayList<>();
         // read nacos config if necessary.
         try {
-            result = FileUtils.readLines(UtilsAndCommons.getConfFile(), "UTF-8");
+            result = readClusterConf();
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to get config: " + UtilsAndCommons.getConfFilePath(), e);
+            Loggers.SRV_LOG.warn("failed to get config: " + CLUSTER_CONF_FILE_PATH, e);
         }
 
         Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST1", result);

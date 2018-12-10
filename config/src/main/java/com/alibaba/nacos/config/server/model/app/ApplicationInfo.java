@@ -15,98 +15,97 @@
  */
 package com.alibaba.nacos.config.server.model.app;
 
-import com.alibaba.nacos.config.server.utils.SystemConfig;
+import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
 /**
  * app info
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ApplicationInfo {
 
-	private static final long LOCK_EXPIRE_DURATION = 30 * 1000;
-	private static final long RECENTLY_DURATION = 24 * 60 * 60 * 1000;
+    private static final long LOCK_EXPIRE_DURATION = 30 * 1000;
+    private static final long RECENTLY_DURATION = 24 * 60 * 60 * 1000;
 
-	private String appName;
+    private String appName;
 
-	private boolean isDynamicCollectDisabled = false;
+    private boolean isDynamicCollectDisabled = false;
 
-	private long lastSubscribeInfoCollectedTime = 0L;
+    private long lastSubscribeInfoCollectedTime = 0L;
 
-	private String subInfoCollectLockOwner = null;
+    private String subInfoCollectLockOwner = null;
 
-	private long subInfoCollectLockExpireTime = 0L;
+    private long subInfoCollectLockExpireTime = 0L;
 
-	public ApplicationInfo(String appName) {
-		this.appName = appName;
-	}
+    public ApplicationInfo(String appName) {
+        this.appName = appName;
+    }
 
-	public String getAppName() {
-		return appName;
-	}
+    public String getAppName() {
+        return appName;
+    }
 
-	public void setAppName(String appName) {
-		this.appName = appName;
-	}
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
 
-	public boolean isDynamicCollectDisabled() {
-		return isDynamicCollectDisabled;
-	}
+    public boolean isDynamicCollectDisabled() {
+        return isDynamicCollectDisabled;
+    }
 
-	public void setDynamicCollectDisabled(boolean isDynamicCollectDisabled) {
-		this.isDynamicCollectDisabled = isDynamicCollectDisabled;
-	}
+    public void setDynamicCollectDisabled(boolean isDynamicCollectDisabled) {
+        this.isDynamicCollectDisabled = isDynamicCollectDisabled;
+    }
 
-	public long getLastSubscribeInfoCollectedTime() {
-		return lastSubscribeInfoCollectedTime;
-	}
+    public long getLastSubscribeInfoCollectedTime() {
+        return lastSubscribeInfoCollectedTime;
+    }
 
-	public void setLastSubscribeInfoCollectedTime(
-			long lastSubscribeInfoCollectedTime) {
-		this.lastSubscribeInfoCollectedTime = lastSubscribeInfoCollectedTime;
-	}
+    public void setLastSubscribeInfoCollectedTime(
+        long lastSubscribeInfoCollectedTime) {
+        this.lastSubscribeInfoCollectedTime = lastSubscribeInfoCollectedTime;
+    }
 
-	public String getSubInfoCollectLockOwner() {
-		return subInfoCollectLockOwner;
-	}
+    public String getSubInfoCollectLockOwner() {
+        return subInfoCollectLockOwner;
+    }
 
-	public void setSubInfoCollectLockOwner(String subInfoCollectLockOwner) {
-		this.subInfoCollectLockOwner = subInfoCollectLockOwner;
-	}
+    public void setSubInfoCollectLockOwner(String subInfoCollectLockOwner) {
+        this.subInfoCollectLockOwner = subInfoCollectLockOwner;
+    }
 
-	public long getSubInfoCollectLockExpireTime() {
-		return subInfoCollectLockExpireTime;
-	}
+    public long getSubInfoCollectLockExpireTime() {
+        return subInfoCollectLockExpireTime;
+    }
 
-	public void setSubInfoCollectLockExpireTime(
-			long subInfoCollectLockExpireTime) {
-		this.subInfoCollectLockExpireTime = subInfoCollectLockExpireTime;
-	}
+    public void setSubInfoCollectLockExpireTime(
+        long subInfoCollectLockExpireTime) {
+        this.subInfoCollectLockExpireTime = subInfoCollectLockExpireTime;
+    }
 
-	public boolean isSubInfoRecentlyCollected() {
-		if (System.currentTimeMillis() - this.lastSubscribeInfoCollectedTime < RECENTLY_DURATION) {
-			return true;
-		}
-		return false;
-	}
+    public boolean isSubInfoRecentlyCollected() {
+        if (System.currentTimeMillis() - this.lastSubscribeInfoCollectedTime < RECENTLY_DURATION) {
+            return true;
+        }
+        return false;
+    }
 
-	public boolean canCurrentServerOwnTheLock() {
-		boolean currentOwnerIsMe = subInfoCollectLockOwner==null? true:SystemConfig.LOCAL_IP
-				.equals(subInfoCollectLockOwner);
+    public boolean canCurrentServerOwnTheLock() {
+        boolean currentOwnerIsMe = subInfoCollectLockOwner == null || LOCAL_IP
+            .equals(subInfoCollectLockOwner);
 
-		if (currentOwnerIsMe) {
-			return true;
-		}
-		if (System.currentTimeMillis() - this.subInfoCollectLockExpireTime > LOCK_EXPIRE_DURATION) {
-			return true;
-		}
+        if (currentOwnerIsMe) {
+            return true;
+        }
+        if (System.currentTimeMillis() - this.subInfoCollectLockExpireTime > LOCK_EXPIRE_DURATION) {
+            return true;
+        }
 
-		return false;
-	}
-	
-	public String currentServer(){
-		return SystemConfig.LOCAL_IP;
-	}
+        return false;
+    }
+
+    public String currentServer() {
+        return LOCAL_IP;
+    }
 
 }

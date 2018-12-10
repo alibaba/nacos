@@ -18,13 +18,11 @@ package com.alibaba.nacos.config.server.utils;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-
 /**
  * 一个带TTL的简单Cache，对于过期的entry没有清理
- * 
- * @author fengHan, jiuRen
- * 
+ *
  * @param <E>
+ * @author fengHan, jiuRen
  */
 public class SimpleCache<E> {
 
