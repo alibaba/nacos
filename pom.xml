@@ -226,6 +226,7 @@
                 <configuration>
 
                     <excludes>
+                        <exclude>.editorconfig</exclude>
                         <exclude>.travis.yml</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
                         <exclude>CODE_OF_CONDUCT.md</exclude>
