@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<included>
-    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
+<configuration scan="true" scanPeriod="10 seconds">
+
+    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/diamond/logs"/>
     <property name="LOG_HOME" value="${logPath}"/>
+
     <appender name="dumpFile"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-dump.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/dump.log</file>
+		<append>true</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<maxFileSize>2GB</maxFileSize>
+			<MaxHistory>15</MaxHistory>
+			<totalSizeCap>7GB</totalSizeCap>
+			<cleanHistoryOnStart>true</cleanHistoryOnStart>
+		</rollingPolicy>
+		<encoder>
+			<Pattern>%date %level %msg%n%n</Pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
+
     <appender name="pullFile"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-pull.log</file>
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/pull.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -34,28 +37,29 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-    <appender name="fatalFile"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-fatal.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>20MB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>128MB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
+
+	<appender name="fatalFile"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_HOME}/fatal.log</file>
+		<append>true</append>
+		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_HOME}/fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<maxFileSize>20MB</maxFileSize>
+			<MaxHistory>15</MaxHistory>
+			<totalSizeCap>128MB</totalSizeCap>
+			<cleanHistoryOnStart>true</cleanHistoryOnStart>
+		</rollingPolicy>
+		<encoder>
+			<Pattern>%date %level %msg%n%n</Pattern>
+			<charset>UTF-8</charset>
+		</encoder>
+	</appender>
     <appender name="memoryFile"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-memory.log</file>
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/memory.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -68,10 +72,10 @@
     </appender>
     <appender name="pullCheckFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-pull-check.log</file>
+        <file>${LOG_HOME}/pull-check.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -85,10 +89,10 @@
 
     <appender name="aclLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-acl.log</file>
+        <file>${LOG_HOME}/acl.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
@@ -102,10 +106,10 @@
 
     <appender name="clientLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-client-request.log</file>
+        <file>${LOG_HOME}/client-request.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -119,10 +123,10 @@
 
     <appender name="sdkLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-sdk-request.log</file>
+        <file>${LOG_HOME}/sdk-request.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -136,10 +140,10 @@
 
     <appender name="traceLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-trace.log</file>
+        <file>${LOG_HOME}/trace.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -153,10 +157,10 @@
 
     <appender name="notifyLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-notify.log</file>
+        <file>${LOG_HOME}/notify.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -170,10 +174,10 @@
 
     <appender name="appCollectorLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-app.log</file>
+        <file>${LOG_HOME}/app.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -185,12 +189,12 @@
         </encoder>
     </appender>
 
-    <appender name="startLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/config-server.log</file>
+    <appender name="rootFile"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/diamondServer.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/config-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/diamondServer.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
@@ -198,65 +202,64 @@
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
+			<charset>UTF-8</charset>
         </encoder>
     </appender>
 
-    <logger name="com.alibaba.nacos.config.dumpLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="dumpFile"/>
+    <logger name="com.taobao.diamond.server.dumpLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="dumpFile" />
     </logger>
-    <logger name="com.alibaba.nacos.config.pullLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="pullFile"/>
+    <logger name="com.taobao.diamond.server.pullLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="pullFile" />
     </logger>
-    <logger name="com.alibaba.nacos.config.pullCheckLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="pullCheckFile"/>
+    <logger name="com.taobao.diamond.server.pullCheckLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="pullCheckFile" />
     </logger>
-    <logger name="com.alibaba.nacos.config.fatal" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="fatalFile"/>
+    <logger name="com.taobao.diamond.server.fatal" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="fatalFile" />
     </logger>
-    <logger name="com.alibaba.nacos.config.monitorLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="memoryFile"/>
-    </logger>
-
-    <logger name="com.alibaba.nacos.config.aclLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="aclLog"/>
+    <logger name="com.taobao.diamond.server.monitorLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="memoryFile" />
     </logger>
 
-    <logger name="com.alibaba.nacos.config.clientLog" additivity="false">
-        <level value="info"/>
-        <appender-ref ref="clientLog"/>
+    <logger name="com.taobao.diamond.server.aclLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="aclLog" />
     </logger>
 
-    <logger name="com.alibaba.nacos.config.sdkLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="sdkLog"/>
+    <logger name="com.taobao.diamond.server.clientLog" additivity="false">
+        <level value="info" />
+        <appender-ref ref="clientLog" />
     </logger>
 
-    <logger name="com.alibaba.nacos.config.notifyLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="notifyLog"/>
+    <logger name="com.taobao.diamond.server.sdkLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="sdkLog" />
     </logger>
 
-    <logger name="com.alibaba.nacos.config.traceLog" additivity="false">
-        <level value="info"/>
-        <appender-ref ref="traceLog"/>
+    <logger name="com.taobao.diamond.server.notifyLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="notifyLog" />
     </logger>
 
-    <logger name="com.alibaba.nacos.config.appCollectorLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="appCollectorLog"/>
+    <logger name="com.taobao.diamond.server.traceLog" additivity="false">
+        <level value="info" />
+        <appender-ref ref="traceLog" />
     </logger>
 
-    <logger name="com.alibaba.nacos.config.startLog" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="startLog"/>
+    <logger name="com.taobao.diamond.server.appCollectorLog" additivity="false">
+        <level value="INFO" />
+        <appender-ref ref="appCollectorLog" />
     </logger>
 
-</included>
+	<root>
+		<level value="INFO" />
+		<appender-ref ref="rootFile" />
+	</root>
+</configuration>
 
