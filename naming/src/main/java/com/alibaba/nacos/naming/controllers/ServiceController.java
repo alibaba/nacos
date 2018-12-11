@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.util.WebUtils;
 import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
@@ -35,10 +36,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -140,11 +138,40 @@ public class ServiceController {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
+        String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
+
+        List<String> doms = domainsManager.getAllDomNamesList();
+
+        if (StringUtils.isNotBlank(selectorString)) {
+
+            JSONObject selectorJson = JSON.parseObject(selectorString);
+            switch (SelectorType.valueOf(selectorJson.getString("type"))) {
+                case label:
+                    String expression = selectorJson.getString("expression");
+                    if (StringUtils.isBlank(expression)) {
+                        break;
+                    }
+                    expression = StringUtils.deleteWhitespace(expression);
+                    // Now we only support the following expression:
+                    // INSTANCE.metadata.xxx = 'yyy' or
+                    // SERVICE.metadata.xxx = 'yyy'
+                    String[] terms = expression.split("=");
+                    String[] factors = terms[0].split("\\.");
+                    switch (factors[0]) {
+                        case "INSTANCE":
+                            doms = filterInstanceMetadata(doms, factors[factors.length - 1], terms[1].replace("'", ""));
+                            break;
+                        case "SERVICE":
+                            doms = filterServiceMetadata(doms, factors[factors.length - 1], terms[1].replace("'", ""));
+                            break;
+                        default:
+                            break;
+                    }
+            }
+        }
 
         int start = (pageNo - 1) * pageSize;
         int end = start + pageSize;
-
-        List<String> doms = domainsManager.getAllDomNamesList();
 
         if (start < 0) {
             start = 0;
@@ -208,6 +235,40 @@ public class ServiceController {
         return "ok";
     }
 
+    private List<String> filterInstanceMetadata(List<String> serivces, String key, String value) {
+
+        List<String> filteredServices = new ArrayList<>();
+        for (String service : serivces) {
+            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(service);
+            if (serviceObj == null) {
+                continue;
+            }
+            for (IpAddress address : serviceObj.allIPs()) {
+                if (value.equals(address.getMetadata().get(key))) {
+                    filteredServices.add(service);
+                    break;
+                }
+            }
+        }
+        return filteredServices;
+    }
+
+    private List<String> filterServiceMetadata(List<String> serivces, String key, String value) {
+
+        List<String> filteredServices = new ArrayList<>();
+        for (String service : serivces) {
+            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(service);
+            if (serviceObj == null) {
+                continue;
+            }
+            if (value.equals(serviceObj.getMetadata().get(key))) {
+                filteredServices.add(service);
+            }
+
+        }
+        return filteredServices;
+    }
+
     private Selector parseSelector(String selectorJsonString) throws NacosException {
 
         JSONObject selectorJson = JSON.parseObject(selectorJsonString);
@@ -223,7 +284,6 @@ public class ServiceController {
                 }
 
                 LabelSelector labelSelector = new LabelSelector();
-                labelSelector.setType(SelectorType.label.name());
                 labelSelector.setExpression(expression);
                 labelSelector.setLabels(labels);
                 return labelSelector;
