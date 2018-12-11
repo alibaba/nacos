@@ -18,10 +18,13 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.cmdb.pojo.Label;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.selector.label.LabelSelector;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.UuidUtils;
 
@@ -214,7 +217,19 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<String, String>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
-        
+
+        if (selector != null) {
+            switch (SelectorType.valueOf(selector.getType())) {
+                case none:
+                    break;
+                case label:
+                    LabelSelector labelSelector = (LabelSelector) selector;
+                    params.put("selector", JSON.toJSONString(labelSelector));
+                    break;
+                default:
+                    break;
+            }
+        }
 
         String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/service/list", params);
 

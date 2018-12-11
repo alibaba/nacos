@@ -259,7 +259,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
-        return serverProxy.getServiceList(pageNo, pageSize);
+        return serverProxy.getServiceList(pageNo, pageSize, selector);
     }
 
     @Override

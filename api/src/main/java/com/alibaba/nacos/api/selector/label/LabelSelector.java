@@ -4,6 +4,8 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 
 /**
+ * The selector to filter resource with flexible expression.
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class LabelSelector extends AbstractSelector {
