@@ -285,8 +285,8 @@ public class LongPollingService extends AbstractEventListener {
 
     // =================
 
-    static public final String LONG_POLLING_HEADER = "Long-Polling-Timeout";
-    static public final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Polling-Timeout-No-Hangup";
+    static public final String LONG_POLLING_HEADER = "Long-Pulling-Timeout";
+    static public final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
 
     final ScheduledExecutorService scheduler;
 
