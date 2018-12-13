@@ -3,7 +3,7 @@ function getValue(key) {
   const list = document.cookie.split(';') || [];
   for (const item of list) {
     const [k, v] = item.split('=');
-    if (k === key) return v;
+    if (k.trim() === key) return v;
   }
   return null;
 }
