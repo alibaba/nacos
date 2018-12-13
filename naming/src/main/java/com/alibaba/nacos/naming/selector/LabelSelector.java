@@ -68,9 +68,9 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
 
     private static final Set<String> SUPPORTED_OUTER_CONNCETORS = new HashSet<>();
 
-    private static final String CONSUMER_PREFIX = "CONSUMER\\.label\\.";
+    private static final String CONSUMER_PREFIX = "CONSUMER.label.";
 
-    private static final String PROVIDER_PREFIX = "PROVIDER\\.label\\.";
+    private static final String PROVIDER_PREFIX = "PROVIDER.label.";
 
     static {
         SUPPORTED_INNER_CONNCETORS.add("=");
@@ -104,7 +104,11 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
 
             boolean matched = true;
             for (String labelName : getLabels()) {
-                if (!StringUtils.equals(cmdbReader.queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName),
+
+                String consumerLabelValue = cmdbReader.queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName);
+
+                if (StringUtils.isNotBlank(consumerLabelValue) &&
+                        !StringUtils.equals(consumerLabelValue,
                         cmdbReader.queryLabel(ipAddress.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
                     break;
