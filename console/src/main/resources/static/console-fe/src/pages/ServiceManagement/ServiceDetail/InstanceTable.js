@@ -81,7 +81,15 @@ class InstanceTable extends React.Component {
     request({
       method: 'POST',
       url: 'v1/ns/instance/update',
-      data: { serviceName, clusterName, ip, port, weight, enable: !enabled, metadata },
+      data: {
+        serviceName,
+        clusterName,
+        ip,
+        port,
+        weight,
+        enable: !enabled,
+        metadata: JSON.stringify(metadata),
+      },
       dataType: 'text',
       beforeSend: () => this.openLoading(),
       success: () => this.setState({ instance: newVal }),
