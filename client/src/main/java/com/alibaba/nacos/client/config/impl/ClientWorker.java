@@ -330,12 +330,12 @@ public class ClientWorker {
         long timeout = TimeUnit.SECONDS.toMillis(30L);
 
         List<String> headers = new ArrayList<String>(2);
-        headers.add("Long-Polling-Timeout");
+        headers.add("Long-Pulling-Timeout");
         headers.add("" + timeout);
 
         // told server do not hang me up if new initializing cacheData added in
         if (isInitializingCacheList) {
-            headers.add("Long-Polling-Timeout-No-Hangup");
+            headers.add("Long-Pulling-Timeout-No-Hangup");
             headers.add("true");
         }
 
