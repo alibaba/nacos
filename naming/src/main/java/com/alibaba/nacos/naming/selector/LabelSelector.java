@@ -68,9 +68,9 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
 
     private static final Set<String> SUPPORTED_OUTER_CONNCETORS = new HashSet<>();
 
-    private static final String CONSUMER_PREFIX = "consumer.";
+    private static final String CONSUMER_PREFIX = "CONSUMER\\.label\\.";
 
-    private static final String PROVIDER_PREFIX = "provider.";
+    private static final String PROVIDER_PREFIX = "PROVIDER\\.label\\.";
 
     static {
         SUPPORTED_INNER_CONNCETORS.add("=");
