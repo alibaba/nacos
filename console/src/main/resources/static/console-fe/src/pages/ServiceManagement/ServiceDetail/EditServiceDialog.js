@@ -48,11 +48,17 @@ class EditServiceDialog extends React.Component {
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, healthCheckMode, metadataText } = editService;
+    const { name, protectThreshold, healthCheckMode, metadataText, selector } = editService;
     request({
       method: isCreate ? 'PUT' : 'POST',
       url: `v1/ns/service/${isCreate ? 'create' : 'update'}`,
-      data: { serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText },
+      data: {
+        serviceName: name,
+        protectThreshold,
+        healthCheckMode,
+        metadata: metadataText,
+        selector,
+      },
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),
       success: res => {
@@ -82,7 +88,13 @@ class EditServiceDialog extends React.Component {
   render() {
     const { locale = {} } = this.props;
     const { isCreate, editService, editServiceDialogVisible } = this.state;
-    const { name, protectThreshold, healthCheckMode, metadataText } = editService;
+    const {
+      name,
+      protectThreshold,
+      healthCheckMode,
+      metadataText,
+      selector = { type: 'none' },
+    } = editService;
     return (
       <Dialog
         className="service-detail-edit-dialog"
@@ -129,6 +141,27 @@ class EditServiceDialog extends React.Component {
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
           </Form.Item>
+          <Form.Item label={`${locale.type}:`}>
+            <Select
+              className="in-select"
+              defaultValue={selector.type}
+              onChange={type => this.onChangeCluster({ selector: { ...selector, type } })}
+            >
+              <Select.Option value="label">{locale.typeLabel}</Select.Option>
+              <Select.Option value="none">{locale.typeNone}</Select.Option>
+            </Select>
+          </Form.Item>
+          {selector.type === 'label' && (
+            <Form.Item label={`${locale.selector}:`}>
+              <Input.TextArea
+                className="in-text"
+                value={selector.expression}
+                onChange={expression =>
+                  this.onChangeCluster({ selector: { ...selector, expression } })
+                }
+              />
+            </Form.Item>
+          )}
         </Form>
       </Dialog>
     );
