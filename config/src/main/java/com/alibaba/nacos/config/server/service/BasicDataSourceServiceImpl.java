@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -49,6 +50,9 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
     private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
+
+    @Autowired
+    private PropertyUtil propertyUtil;
 
     /**
      * JDBC执行超时时间, 单位秒
@@ -105,7 +109,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!STANDALONE_MODE) {
+        if (!STANDALONE_MODE || propertyUtil.isStandaloneUseMysql()) {
             try {
                 reload();
             } catch (IOException e) {
