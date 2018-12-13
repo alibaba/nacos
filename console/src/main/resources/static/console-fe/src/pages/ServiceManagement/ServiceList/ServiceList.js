@@ -62,7 +62,9 @@ class ServiceList extends React.Component {
   }
 
   openEditServiceDialog() {
-    this.editServiceDialog.current.show(this.state.service);
+    try {
+      this.editServiceDialog.current.getInstance().show(this.state.service);
+    } catch (error) {}
   }
 
   queryServiceList() {

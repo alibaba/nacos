@@ -545,7 +545,7 @@ module.exports = {
     'com.alibaba.nacos.page.serviceDetail.edit_service': '编辑服务',
     'com.alibaba.nacos.page.serviceDetail.back': '返回',
     'com.alibaba.nacos.page.serviceDetail.service_name': '服务名',
-    'com.alibaba.nacos.page.serviceDetail.protect_threshold': '保护阀值',
+    'com.alibaba.nacos.page.serviceDetail.protect_threshold': '保护阈值',
     'com.alibaba.nacos.page.serviceDetail.health_check_pattern': '健康检查模式',
     'com.alibaba.nacos.page.serviceDetail.health_check_pattern.service': '服务端',
     'com.alibaba.nacos.page.serviceDetail.health_check_pattern.client': '客户端',

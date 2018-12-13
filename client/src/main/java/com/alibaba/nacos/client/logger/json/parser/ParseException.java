@@ -66,8 +66,8 @@ public class ParseException extends Exception {
     }
 
     /**
-     * @return One of the following base on the value of errorType: ERROR_UNEXPECTED_CHAR		java.lang.Character
-     * ERROR_UNEXPECTED_TOKEN		com.alibaba.nacos.client.logger.jsonparser.Yytoken ERROR_UNEXPECTED_EXCEPTION
+     * @return One of the following base on the value of errorType: ERROR_UNEXPECTED_CHAR java.lang.Character
+     * ERROR_UNEXPECTED_TOKEN com.alibaba.nacos.client.logger.jsonparser.Yytoken ERROR_UNEXPECTED_EXCEPTION
      * java.lang.Exception
      * @see com.alibaba.nacos.client.logger.json.parser.Yytoken
      */
