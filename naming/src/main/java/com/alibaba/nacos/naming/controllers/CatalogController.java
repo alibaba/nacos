@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.util.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.DomainsManager;
@@ -31,6 +32,8 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
+import com.alibaba.nacos.naming.selector.LabelSelector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
 import org.apache.commons.collections.CollectionUtils;
@@ -125,6 +128,18 @@ public class CatalogController {
             service.setHealthCheckMode(HealthCheckMode.client.name());
         }
         service.setMetadata(domain.getMetadata());
+
+        switch (SelectorType.valueOf(domain.getSelector().getType())) {
+            case label:
+                service.setSelector((LabelSelector) domain.getSelector());
+                break;
+            case none:
+            case unknown:
+            default:
+                service.setSelector((NoneSelector) domain.getSelector());
+                break;
+        }
+
         detailView.setService(service);
 
         List<Cluster> clusters = new ArrayList<>();

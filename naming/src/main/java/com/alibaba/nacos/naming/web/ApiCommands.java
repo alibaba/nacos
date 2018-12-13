@@ -1145,7 +1145,7 @@ public class ApiCommands {
         srvedIPs = domObj.srvIPs(clientIP, Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
-        if (domObj.getSelector() != null) {
+        if (domObj.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
             srvedIPs = domObj.getSelector().select(clientIP, srvedIPs);
         }
 

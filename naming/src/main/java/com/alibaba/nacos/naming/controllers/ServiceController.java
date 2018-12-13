@@ -271,6 +271,10 @@ public class ServiceController {
 
     private Selector parseSelector(String selectorJsonString) throws NacosException {
 
+        if (StringUtils.isBlank(selectorJsonString)) {
+            return new NoneSelector();
+        }
+
         JSONObject selectorJson = JSON.parseObject(selectorJsonString);
         switch (SelectorType.valueOf(selectorJson.getString("type"))) {
             case none:
