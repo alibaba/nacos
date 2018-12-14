@@ -17,10 +17,12 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.StringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -60,6 +62,9 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     private JdbcTemplate jt;
     private TransactionTemplate tjt;
 
+    @Autowired
+    private PropertyUtil propertyUtil;
+
     @PostConstruct
     public void init() {
         BasicDataSource ds = new BasicDataSource();
@@ -85,7 +90,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         tm.setDataSource(ds);
         tjt.setTimeout(5000);
 
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
             reload();
         }
     }

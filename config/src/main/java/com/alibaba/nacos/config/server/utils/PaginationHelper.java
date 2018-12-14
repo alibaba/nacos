@@ -82,7 +82,7 @@ public class PaginationHelper<E> {
 
         final int startRow = (pageNo - 1) * pageSize;
         String selectSQL = "";
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             selectSQL = sqlFetchRows + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY";
         } else if (lastMaxId != null) {
             selectSQL = sqlFetchRows + " and id > " + lastMaxId + " order by id asc" + " limit " + 0 + "," + pageSize;
@@ -127,7 +127,7 @@ public class PaginationHelper<E> {
         }
 
         String selectSQL = sqlFetchRows;
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
@@ -169,7 +169,7 @@ public class PaginationHelper<E> {
         }
 
         String selectSQL = sqlFetchRows;
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
@@ -190,7 +190,7 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
 
         String selectSQL = sqlFetchRows;
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             selectSQL = selectSQL.replaceAll("(?i)LIMIT \\?,\\?", "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         }
 
@@ -204,7 +204,7 @@ public class PaginationHelper<E> {
     public void updateLimit(final JdbcTemplate jt, final String sql, final Object args[]) {
         String sqlUpdate = sql;
 
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             sqlUpdate = sqlUpdate.replaceAll("limit \\?", "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         }
 
