@@ -293,7 +293,7 @@ public class NamingProxy {
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
-            "RequestId", UuidUtil.generateUuid());
+            "RequestId", UuidUtils.generateUuid());
 
         String url;
 
