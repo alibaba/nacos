@@ -217,7 +217,7 @@ public class HttpSimpleClient {
         newHeaders.add("exConfigInfo");
         newHeaders.add("true");
         newHeaders.add("RequestId");
-        newHeaders.add(UuidUtil.generateUuid());
+        newHeaders.add(UuidUtils.generateUuid());
         if (headers != null) {
             newHeaders.addAll(headers);
         }
