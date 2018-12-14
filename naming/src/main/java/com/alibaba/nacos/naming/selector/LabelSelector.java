@@ -18,16 +18,15 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.exception.NacosException;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * A selector to implement a so called same-label-prior rule for service discovery.
@@ -53,7 +52,7 @@ import java.util.Set;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @see CmdbReader
  */
-public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSelector implements Selector {
+public class LabelSelector extends ExpressionSelector implements Selector {
 
     private CmdbReader cmdbReader;
 
@@ -72,9 +71,13 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
 
     private static final String PROVIDER_PREFIX = "PROVIDER.label.";
 
+    private static final char CEQUAL = '=';
+
+    private static final char CAND = '&';
+
     static {
-        SUPPORTED_INNER_CONNCETORS.add("=");
-        SUPPORTED_OUTER_CONNCETORS.add("&");
+        SUPPORTED_INNER_CONNCETORS.add(String.valueOf(CEQUAL));
+        SUPPORTED_OUTER_CONNCETORS.add(String.valueOf(CAND));
     }
 
     public Set<String> getLabels() {
@@ -92,13 +95,18 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
     }
 
 
-    public static Set<String> parseExpression(String expression) {
+    public static Set<String> parseExpression(String expression) throws NacosException {
         return ExpressionInterpreter.parseExpression(expression);
     }
 
 
     @Override
     public List<IpAddress> select(String consumer, List<IpAddress> providers) {
+
+        if (labels.isEmpty()) {
+            return providers;
+        }
+
         List<IpAddress> ipAddressList = new ArrayList<>();
         for (IpAddress ipAddress : providers) {
 
@@ -109,7 +117,7 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
 
                 if (StringUtils.isNotBlank(consumerLabelValue) &&
                         !StringUtils.equals(consumerLabelValue,
-                        cmdbReader.queryLabel(ipAddress.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
+                                cmdbReader.queryLabel(ipAddress.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
                     break;
                 }
@@ -145,95 +153,127 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
          * @param expression the label expression to parse
          * @return collection of labels
          */
-        public static Set<String> parseExpression(String expression) {
+        public static Set<String> parseExpression(String expression) throws NacosException {
 
-            String[] elements = expression.split(" ");
+            if (StringUtils.isBlank(expression)) {
+                return new HashSet<>();
+            }
+
+            expression = StringUtils.deleteWhitespace(expression);
+
+            List<String> elements = getTerms(expression);
             Set<String> gotLabels = new HashSet<>();
             int index = 0;
 
             index = checkInnerSyntax(elements, index);
 
             if (index == -1) {
-                return new HashSet<>();
+                throw new NacosException(NacosException.INVALID_PARAM, "parse expression failed!");
             }
 
-            gotLabels.add(elements[index++].split(PROVIDER_PREFIX)[1]);
+            gotLabels.add(elements.get(index++).split(PROVIDER_PREFIX)[1]);
 
-            while (index < elements.length) {
+            while (index < elements.size()) {
 
                 index = checkOuterSyntax(elements, index);
 
-                if (index >= elements.length) {
+                if (index >= elements.size()) {
                     return gotLabels;
                 }
 
                 if (index == -1) {
-                    return new HashSet<>();
+                    throw new NacosException(NacosException.INVALID_PARAM, "parse expression failed!");
                 }
 
-                gotLabels.add(elements[index++].split(PROVIDER_PREFIX)[1]);
+                gotLabels.add(elements.get(index++).split(PROVIDER_PREFIX)[1]);
             }
 
             return gotLabels;
         }
 
-        private static int skipEmpty(String[] elements, int start) {
-            while (start < elements.length && StringUtils.isBlank(elements[start])) {
+        public static List<String> getTerms(String expression) {
+
+            List<String> terms = new ArrayList<>();
+
+            Set<Character> characters = new HashSet<>();
+            characters.add(CEQUAL);
+            characters.add(CAND);
+
+            char[] chars = expression.toCharArray();
+
+            int lastIndex = 0;
+            for (int index = 0; index < chars.length; index++) {
+                char ch = chars[index];
+                if (characters.contains(ch)) {
+                    terms.add(expression.substring(lastIndex, index));
+                    terms.add(expression.substring(index, index+1));
+                    index ++;
+                    lastIndex = index;
+                }
+            }
+
+            terms.add(expression.substring(lastIndex, chars.length));
+
+            return terms;
+        }
+
+        private static int skipEmpty(List<String> elements, int start) {
+            while (start < elements.size() && StringUtils.isBlank(elements.get(start))) {
                 start++;
             }
             return start;
         }
 
-        private static int checkOuterSyntax(String[] elements, int start) {
+        private static int checkOuterSyntax(List<String> elements, int start) {
 
             int index = start;
 
             index = skipEmpty(elements, index);
-            if (index >= elements.length) {
+            if (index >= elements.size()) {
                 return index;
             }
 
-            if (!SUPPORTED_OUTER_CONNCETORS.contains(elements[index++])) {
+            if (!SUPPORTED_OUTER_CONNCETORS.contains(elements.get(index++))) {
                 return -1;
             }
 
             return checkInnerSyntax(elements, index);
         }
 
-        private static int checkInnerSyntax(String[] elements, int start) {
+        private static int checkInnerSyntax(List<String> elements, int start) {
 
             int index = start;
 
             index = skipEmpty(elements, index);
-            if (index >= elements.length) {
+            if (index >= elements.size()) {
                 return -1;
             }
 
-            if (!elements[index].startsWith(CONSUMER_PREFIX)) {
+            if (!elements.get(index).startsWith(CONSUMER_PREFIX)) {
                 return -1;
             }
 
-            String labelConsumer = elements[index++].split(CONSUMER_PREFIX)[1];
+            String labelConsumer = elements.get(index++).split(CONSUMER_PREFIX)[1];
 
             index = skipEmpty(elements, index);
-            if (index >= elements.length) {
+            if (index >= elements.size()) {
                 return -1;
             }
 
-            if (!SUPPORTED_INNER_CONNCETORS.contains(elements[index++])) {
+            if (!SUPPORTED_INNER_CONNCETORS.contains(elements.get(index++))) {
                 return -1;
             }
 
             index = skipEmpty(elements, index);
-            if (index >= elements.length) {
+            if (index >= elements.size()) {
                 return -1;
             }
 
-            if (!elements[index].startsWith(PROVIDER_PREFIX)) {
+            if (!elements.get(index).startsWith(PROVIDER_PREFIX)) {
                 return -1;
             }
 
-            String labelProvider = elements[index].split(PROVIDER_PREFIX)[1];
+            String labelProvider = elements.get(index).split(PROVIDER_PREFIX)[1];
 
             if (!labelConsumer.equals(labelProvider)) {
                 return -1;
@@ -243,9 +283,12 @@ public class LabelSelector extends com.alibaba.nacos.api.selector.label.LabelSel
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws NacosException {
 
-        String expression = "consumer.A = provider.A & consumer.B = provider.B & consumer.B = provider.B";
-        System.out.println(parseExpression(expression));
+        String expression = "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B";
+        expression = StringUtils.deleteWhitespace(expression);
+        System.out.println(ExpressionInterpreter.getTerms(expression));
+
+        System.out.println(LabelSelector.parseExpression(expression));
     }
 }

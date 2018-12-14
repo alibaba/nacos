@@ -167,6 +167,9 @@ public class ServiceController {
                         default:
                             break;
                     }
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -282,11 +285,6 @@ public class ServiceController {
             case label:
                 String expression = selectorJson.getString("expression");
                 Set<String> labels = LabelSelector.parseExpression(expression);
-
-                if (labels.isEmpty()) {
-                    throw new NacosException(NacosException.INVALID_PARAM, "expression parse failed:" + expression);
-                }
-
                 LabelSelector labelSelector = new LabelSelector();
                 labelSelector.setExpression(expression);
                 labelSelector.setLabels(labels);
