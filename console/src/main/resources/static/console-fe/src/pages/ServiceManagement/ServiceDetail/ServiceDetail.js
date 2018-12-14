@@ -132,9 +132,6 @@ class ServiceDetail extends React.Component {
             <FormItem label={`${locale.metadata}:`}>
               <p>{metadataText}</p>
             </FormItem>
-            <FormItem label={`${locale.metadata}:`}>
-              <p>{metadataText}</p>
-            </FormItem>
             <FormItem label={`${locale.type}:`}>
               <p>{selector.type}</p>
             </FormItem>
