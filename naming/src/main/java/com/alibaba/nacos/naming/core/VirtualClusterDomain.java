@@ -216,10 +216,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
                     continue;
                 }
 
-                if (ip.getPort() == 0) {
-                    ip.setPort(getLegacyCkPort());
-                }
-
                 if (StringUtils.isEmpty(ip.getClusterName())) {
                     ip.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
@@ -404,15 +400,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         domain.put("clusters", clustersList);
 
         return JSON.toJSONString(domain);
-    }
-
-
-    /**
-     * the legacy check port is the default check port for old domain format
-     */
-    @JSONField(serialize = false)
-    public int getLegacyCkPort() {
-        return clusterMap.get(UtilsAndCommons.DEFAULT_CLUSTER_NAME).getDefCkport();
     }
 
     @Override
