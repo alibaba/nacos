@@ -45,7 +45,7 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-common</artifactId>
+            <artifactId>nacos-core</artifactId>
         </dependency>
 
         <dependency>
