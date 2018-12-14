@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.util.UuidUtil;
+import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -36,6 +36,7 @@ import java.util.Map;
  * Http tool
  *
  * @author Nacos
+ *
  */
 public class HttpSimpleClient {
 

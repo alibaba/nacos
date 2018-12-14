@@ -297,28 +297,7 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void srvIPXT() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/srvIPXT",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(), String.class);
-
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertEquals(NamingBase.TEST_DOM_1, json.getString("dom"));
-        JSONArray hosts = json.getJSONArray("hosts");
-        Assert.assertNotNull(hosts);
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(NamingBase.TEST_IP_4_DOM_1, hosts.getJSONObject(0).getString("ip"));
-        Assert.assertEquals(NamingBase.TEST_PORT_4_DOM_1, hosts.getJSONObject(0).getString("port"));
-    }
-
-    @Test
     public void remvIP4Dom() throws Exception {
-
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/addIP4Dom",
                 Params.newParams()

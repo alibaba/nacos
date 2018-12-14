@@ -154,6 +154,10 @@
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-cmdb</artifactId>
+        </dependency>
 
     </dependencies>
 
