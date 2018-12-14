@@ -16,22 +16,26 @@
 package com.alibaba.nacos.api.selector;
 
 /**
- * Abstract selector that only contains a type
+ * The selector to filter resource with flexible expression.
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public abstract class AbstractSelector {
+public class ExpressionSelector extends AbstractSelector {
 
     /**
-     * The type of this selector, each child class should announce its own unique type.
+     * Label expression of this selector.
      */
-    private String type;
+    private String expression;
 
-    public String getType() {
-        return type;
+    public ExpressionSelector() {
+        this.setType(SelectorType.label.name());
     }
 
-    protected void setType(String type) {
-        this.type = type;
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
     }
 }

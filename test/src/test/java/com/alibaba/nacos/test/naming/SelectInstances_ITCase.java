@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.api.selector.label.LabelSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -353,11 +353,11 @@ public class SelectInstances_ITCase {
         naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
 
-        Thread.sleep(10L);
+        TimeUnit.SECONDS.sleep(10);
 
-        LabelSelector labelSelector = new LabelSelector();
-        labelSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
-        ListView<String> serviceList = naming.getServicesOfServer(1, 10, labelSelector);
+        ExpressionSelector expressionSelector = new ExpressionSelector();
+        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+        ListView<String> serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
 
         Assert.assertTrue(serviceList.getData().contains(serviceName));
 
@@ -369,10 +369,10 @@ public class SelectInstances_ITCase {
 
         naming.registerInstance(serviceName, instance);
 
-        Thread.sleep(10L);
+        TimeUnit.SECONDS.sleep(10);
 
-        labelSelector.setExpression("INSTANCE.metadata.registerSource = 'spring'");
-        serviceList = naming.getServicesOfServer(1, 10, labelSelector);
+        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'spring'");
+        serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
 
         Assert.assertTrue(serviceList.getData().contains(serviceName));
 

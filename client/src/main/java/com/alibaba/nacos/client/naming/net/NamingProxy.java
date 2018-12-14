@@ -18,13 +18,12 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.api.cmdb.pojo.Label;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.api.selector.label.LabelSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.UuidUtils;
 
@@ -223,8 +222,8 @@ public class NamingProxy {
                 case none:
                     break;
                 case label:
-                    LabelSelector labelSelector = (LabelSelector) selector;
-                    params.put("selector", JSON.toJSONString(labelSelector));
+                    ExpressionSelector expressionSelector = (ExpressionSelector) selector;
+                    params.put("selector", JSON.toJSONString(expressionSelector));
                     break;
                 default:
                     break;
