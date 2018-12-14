@@ -43,9 +43,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 public class DomainsManager {
-    private Map<String, Domain> domMap = new ConcurrentHashMap<>();
+
     private Map<String, Domain> raftDomMap = new ConcurrentHashMap<>();
-    private static Map<String, Set<Domain>> appName2Doms = new ConcurrentHashMap<>();
 
     private LinkedBlockingDeque<DomainKey> toBeUpdatedDomsQueue = new LinkedBlockingDeque<>(1024 * 1024);
 
@@ -290,17 +289,9 @@ public class DomainsManager {
 
     public void easyAddIP4Dom(String domName, List<IpAddress> ips, long timestamp, long term) throws Exception {
 
-
         VirtualClusterDomain dom = (VirtualClusterDomain) chooseDomMap().get(domName);
         if (dom == null) {
             throw new IllegalArgumentException("dom doesn't exist: " + domName);
-        }
-
-        // set default port and site info if missing
-        for (IpAddress ip : ips) {
-            if (ip.getPort() == 0) {
-                ip.setPort(dom.getClusterMap().get(ip.getClusterName()).getDefIPPort());
-            }
         }
 
         Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
@@ -670,10 +661,6 @@ public class DomainsManager {
         Condition condition = dom2LockMap.get(domName).newCondition();
         dom2ConditionMap.put(domName, condition);
         return condition;
-    }
-
-    public Map<String, Domain> getDomMap() {
-        return new HashMap<String, Domain>(domMap);
     }
 
     private static class DomainKey {

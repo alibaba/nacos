@@ -13,10 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.controllers;
+package com.alibaba.nacos.cmdb.utils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nacos
  */
-public class CmdbController {
+public class Loggers {
+
+    public static final Logger MAIN = LoggerFactory.getLogger("com.alibaba.nacos.cmdb.main");
 }

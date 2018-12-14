@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.nacos.api.common.Constants;
-
 import java.util.HashMap;
 import java.util.Map;
 
