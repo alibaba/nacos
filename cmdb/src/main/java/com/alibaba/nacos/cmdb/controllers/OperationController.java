@@ -18,7 +18,7 @@ package com.alibaba.nacos.cmdb.controllers;
 import com.alibaba.nacos.cmdb.core.SwitchAndOptions;
 import com.alibaba.nacos.cmdb.memory.CmdbProvider;
 import com.alibaba.nacos.cmdb.utils.UtilsAndCommons;
-import com.alibaba.nacos.common.util.WebUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;

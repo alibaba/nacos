@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.acl;
 
-import com.alibaba.nacos.common.util.WebUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.misc.Switch;
