@@ -102,7 +102,7 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `v1/ns/service/remove?serviceName=${serviceName}`,
+          url: `v1/ns/service?serviceName=${serviceName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {
