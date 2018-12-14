@@ -57,7 +57,7 @@ class EditServiceDialog extends React.Component {
         protectThreshold,
         healthCheckMode,
         metadata: metadataText,
-        selector,
+        selector: JSON.stringify(selector),
       },
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),
