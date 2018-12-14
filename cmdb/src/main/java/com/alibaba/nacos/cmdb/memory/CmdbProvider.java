@@ -146,7 +146,11 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
 
         @Override
         public void run() {
+
             try {
+                if (cmdbService == null) {
+                    return;
+                }
                 // refresh entity map:
                 entityMap = cmdbService.getAllEntities();
             } catch (Exception e) {
@@ -162,6 +166,11 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         @Override
         public void run() {
             try {
+
+                if (cmdbService == null) {
+                    return;
+                }
+
                 long current = System.currentTimeMillis();
                 List<EntityEvent> events = cmdbService.getEntityEvents(eventTimestamp);
                 eventTimestamp = current;
