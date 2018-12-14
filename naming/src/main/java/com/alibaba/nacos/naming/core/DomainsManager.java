@@ -294,13 +294,6 @@ public class DomainsManager {
             throw new IllegalArgumentException("dom doesn't exist: " + domName);
         }
 
-        // set default port and site info if missing
-        for (IpAddress ip : ips) {
-            if (ip.getPort() == 0) {
-                ip.setPort(dom.getClusterMap().get(ip.getClusterName()).getDefIPPort());
-            }
-        }
-
         Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
         String oldJson = StringUtils.EMPTY;
 
