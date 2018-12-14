@@ -1,7 +1,7 @@
                                                         
          ,--.                                           
        ,--.'|                                           
-   ,--,:  : |                                           Nacos ${nacos.version}
+   ,--,:  : |                                           Nacos 0.6.1
 ,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode
 |   :  :  | |                      '   ,'\   .--.--.    Port: 8848
 :   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: ${pid}
