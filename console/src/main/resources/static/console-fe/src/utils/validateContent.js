@@ -49,11 +49,11 @@ export default {
    * 检测属性是否正确
    */
   validateProperties(str = '') {
-    let reg = /^[A-Za-z\d-_]+=.+$/;
+    const reg = /^[^=]+=[^=]+$/;
     return str
       .replace('\n\r', '\n')
       .split('\n')
-      .every(_str => reg.test(_str));
+      .every(_str => reg.test(_str.trim()));
   },
 
   /**
