@@ -238,5 +238,21 @@ const I18N_CONF = {
     escExit: '发布',
     release: '返回',
   },
+  CloneDialog: {
+    terminate: '终止克隆',
+    skip: '跳过',
+    cover: '覆盖',
+    getNamespaceFailed: '获取命名空间失败',
+    selectedEntry: '| 选中的条目',
+    homeApplication: '归属应用:',
+    tags: '标签:',
+    startCloning: '开始克隆',
+    source: '源空间：',
+    configurationNumber: '配置数量：',
+    target: '目标空间：',
+    conflict: '相同配置:',
+    selectNamespace: '请选择命名空间',
+    configurationCloning: '配置克隆（',
+  },
 };
 export default I18N_CONF;
