@@ -239,6 +239,22 @@ const I18N_CONF = {
     escExit: 'Publish',
     release: 'Back',
   },
+  CloneDialog: {
+    terminate: 'Terminate',
+    skip: 'Skip',
+    cover: 'Cover',
+    getNamespaceFailed: 'get the namespace failed',
+    selectedEntry: '| Selected Entry',
+    homeApplication: 'Home Application:',
+    tags: 'tags:',
+    startCloning: 'Start Clone',
+    source: 'Source :',
+    configurationNumber: 'Items:',
+    target: 'Target:',
+    conflict: 'Conflict:',
+    selectNamespace: 'Select Namespace',
+    configurationCloning: 'Clone（',
+  },
 };
 
 export default I18N_CONF;
