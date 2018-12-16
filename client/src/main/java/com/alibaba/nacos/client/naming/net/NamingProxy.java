@@ -301,7 +301,11 @@ public class NamingProxy {
             curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + DEFAULT_SERVER_PORT;
         }
 
-        url = HttpClient.getPrefix() + curServer + api;
+        if (curServer.startsWith(HttpClient.getPrefix())) {
+            url = curServer + api;
+        } else {
+            url = HttpClient.getPrefix() + curServer + api;
+        }
 
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
 
