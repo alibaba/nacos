@@ -18,6 +18,8 @@ package com.alibaba.nacos.client;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -45,6 +47,10 @@ public class NamingTest {
         instance.setMetadata(map);
 
         namingService.registerInstance("dungu.test.1", instance);
+
+        ExpressionSelector expressionSelector = new ExpressionSelector();
+        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);
 
         Thread.sleep(1000000000L);
     }

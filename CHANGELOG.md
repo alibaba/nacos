@@ -1,13 +1,18 @@
+## 0.6.1(Dec, 2018)
+
+[#421] NamingService's serivce name can't use colon(:) in Windows
+[#432] When packing nacos-core, ${user.home} is replaced in the logback configuration file (nacos.xml)
+
 ## 0.6.0(Dec, 2018)
 
-[#388] Cluster name should be provided in the Instance
-[#377] Clean up messy code in Naming module
-[#369] Support instance list persisted on disk
-[#366] findbugs-maven-plugin version
-[#362] The metadata will lost when online or offline instance through web ui
-[#352] Refactoring internationalization Nacos console
-[#278] Nacos docker img
-[#243] optimize the efficiency of integration testing, it’s taking too long now
+* [#388] Cluster name should be provided in the Instance
+* [#377] Clean up messy code in Naming module
+* [#369] Support instance list persisted on disk
+* [#366] findbugs-maven-plugin version
+* [#362] The metadata will lost when online or offline instance through web ui
+* [#352] Refactoring internationalization Nacos console
+* [#278] Nacos docker img
+* [#243] optimize the efficiency of integration testing, it’s taking too long now
 
 ## 0.5.0(Nov, 2018)
 

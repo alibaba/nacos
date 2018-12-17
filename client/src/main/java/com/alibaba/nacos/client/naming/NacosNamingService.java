@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
@@ -261,6 +262,11 @@ public class NacosNamingService implements NamingService {
     @Override
     public ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException {
         return serverProxy.getServiceList(pageNo, pageSize);
+    }
+
+    @Override
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
+        return serverProxy.getServiceList(pageNo, pageSize, selector);
     }
 
     @Override

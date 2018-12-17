@@ -17,13 +17,13 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.ApiCommands;
-import com.alibaba.nacos.naming.web.BaseServlet;
 import com.alibaba.nacos.naming.web.MockHttpRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,8 +49,8 @@ public class InstanceController extends ApiCommands {
         Map<String, String[]> params = new HashMap<>(request.getParameterMap());
         MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(params);
 
-        String serviceJson = BaseServlet.optional(request, "service", StringUtils.EMPTY);
-        String clusterJson = BaseServlet.optional(request, "cluster", StringUtils.EMPTY);
+        String serviceJson = WebUtils.optional(request, "service", StringUtils.EMPTY);
+        String clusterJson = WebUtils.optional(request, "cluster", StringUtils.EMPTY);
 
         // set service info:
         if (StringUtils.isNotEmpty(serviceJson)) {
@@ -77,7 +77,7 @@ public class InstanceController extends ApiCommands {
 
             mockHttpRequest.addParameter("serviceMetadata", service.getString("metadata"));
         } else {
-            mockHttpRequest.addParameter("dom", BaseServlet.required(request, "serviceName"));
+            mockHttpRequest.addParameter("dom", WebUtils.required(request, "serviceName"));
         }
 
         // set cluster info:
@@ -114,9 +114,9 @@ public class InstanceController extends ApiCommands {
         return deRegService(request);
     }
 
-    @RequestMapping(value = "/instance/update", method = RequestMethod.POST)
+    @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
-        String serviceName = BaseServlet.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, "serviceName");
         Map<String, String[]> params = new HashMap<>(request.getParameterMap());
         MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(params);
         mockHttpRequest.addParameter("dom", serviceName);
@@ -136,10 +136,10 @@ public class InstanceController extends ApiCommands {
     @RequestMapping(value = "/instance", method = RequestMethod.GET)
     public JSONObject queryDetail(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
-        String cluster = BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        String ip = BaseServlet.required(request, "ip");
-        int port = Integer.parseInt(BaseServlet.required(request, "port"));
+        String serviceName = WebUtils.required(request, "serviceName");
+        String cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String ip = WebUtils.required(request, "ip");
+        int port = Integer.parseInt(WebUtils.required(request, "port"));
 
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {
