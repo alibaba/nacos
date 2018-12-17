@@ -21,10 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.client.config.utils.ContentUtils;
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.config.utils.MD5;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
+import com.alibaba.nacos.client.config.utils.*;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -206,6 +203,7 @@ public class ClientWorker {
             throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
         }
 
+        ConcurrentDiskUtil.FILELASTMODIFIED.set(result.fileLastModified);
         switch (result.code) {
             case HttpURLConnection.HTTP_OK:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.content);

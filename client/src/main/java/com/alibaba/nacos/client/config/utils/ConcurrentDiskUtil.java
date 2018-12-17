@@ -35,6 +35,13 @@ import java.nio.charset.CharsetDecoder;
  */
 public class ConcurrentDiskUtil {
 
+    public static ThreadLocal<Long> FILELASTMODIFIED = new ThreadLocal<Long>(){
+        @Override
+        protected Long initialValue() {
+            return 0L;
+        }
+    };
+
     /**
      * get file content
      *
@@ -129,6 +136,10 @@ public class ConcurrentDiskUtil {
             if (!isCreateOk) {
                 return false;
             }
+        } else if (file.lastModified() >= FILELASTMODIFIED.get()) {
+            FILELASTMODIFIED.remove();
+            return true;
+
         }
         FileChannel channel = null;
         FileLock lock = null;
@@ -160,6 +171,9 @@ public class ConcurrentDiskUtil {
                 channel.write(sendBuffer);
             }
             channel.truncate(content.length());
+
+            file.setLastModified(FILELASTMODIFIED.get());
+            FILELASTMODIFIED.remove();
         } catch (FileNotFoundException e) {
             throw new IOException("file not exist");
         } finally {

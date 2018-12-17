@@ -69,7 +69,8 @@ public class HttpSimpleClient {
             } else {
                 resp = IOUtils.toString(conn.getErrorStream(), encoding);
             }
-            return new HttpResult(respCode, conn.getHeaderFields(), resp);
+            long fileLastModified = conn.getHeaderFieldDate("last-modified" , Long.MAX_VALUE );
+            return new HttpResult(respCode, conn.getHeaderFields(), resp, fileLastModified);
         } finally {
             if (conn != null) {
                 conn.disconnect();
@@ -244,17 +245,27 @@ public class HttpSimpleClient {
         final public int code;
         final public Map<String, List<String>> headers;
         final public String content;
+        final public long fileLastModified;
 
         public HttpResult(int code, String content) {
             this.code = code;
             this.headers = null;
             this.content = content;
+            this.fileLastModified = 0;
         }
 
         public HttpResult(int code, Map<String, List<String>> headers, String content) {
             this.code = code;
             this.headers = headers;
             this.content = content;
+            this.fileLastModified = 0;
+        }
+
+        public HttpResult(int code, Map<String, List<String>> headers, String content , long fileLastModified) {
+            this.code = code;
+            this.headers = headers;
+            this.content = content;
+            this.fileLastModified = fileLastModified;
         }
     }
 
