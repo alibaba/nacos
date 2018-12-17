@@ -97,6 +97,11 @@ public class LocalConfigInfoProcessor {
         }
         File file = getSnapshotFile(envName, dataId, group, tenant);
         if (null == config) {
+            if (JVMUtil.isMultiInstance() && file.exists() && file.lastModified() >= ConcurrentDiskUtil.FILELASTMODIFIED.get()) {
+                ConcurrentDiskUtil.FILELASTMODIFIED.remove();
+                return ;
+
+            }
             try {
                 IOUtils.delete(file);
             } catch (IOException ioe) {
