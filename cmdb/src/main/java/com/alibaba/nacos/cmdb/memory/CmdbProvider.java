@@ -76,8 +76,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             return;
         }
 
-        // TODO load data on disk:
-
         // init label map:
         Set<String> labelNames = cmdbService.getLabelNames();
         if (labelNames == null || labelNames.isEmpty()) {
@@ -103,6 +101,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         load();
 
         UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbDumpTask(), switches.getDumpTaskInterval(), TimeUnit.SECONDS);
+        UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbLabelTask(), switches.getLabelTaskInterval(), TimeUnit.SECONDS);
         UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbEventTask(), switches.getEventTaskInterval(), TimeUnit.SECONDS);
     }
 
@@ -140,6 +139,38 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             return;
         }
         entityMap.get(entity.getType()).put(entity.getName(), entity);
+    }
+
+    public class CmdbLabelTask implements Runnable {
+
+        @Override
+        public void run() {
+
+            if (cmdbService == null) {
+                return;
+            }
+
+            try {
+
+                Map<String, Label> tmpLabelMap = new HashMap<>();
+
+                Set<String> labelNames = cmdbService.getLabelNames();
+                if (labelNames == null || labelNames.isEmpty()) {
+                    Loggers.MAIN.warn("CMDB-LABEL-TASK {}", "load label names failed!");
+                } else {
+                    for (String labelName : labelNames) {
+                        // If get null label, it's still ok. We will try it later when we meet this label:
+                        tmpLabelMap.put(labelName, cmdbService.getLabel(labelName));
+                    }
+                    labelMap = tmpLabelMap;
+                }
+
+            } catch (Exception e) {
+                Loggers.MAIN.error("CMDB-LABEL-TASK {}", "dump failed!", e);
+            } finally {
+                UtilsAndCommons.GLOBAL_EXECUTOR.schedule(this, switches.getLabelTaskInterval(), TimeUnit.SECONDS);
+            }
+        }
     }
 
     public class CmdbDumpTask implements Runnable {
