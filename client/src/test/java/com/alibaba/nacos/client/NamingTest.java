@@ -42,11 +42,11 @@ public class NamingTest {
         instance.setPort(80);
         instance.setWeight(2);
         Map<String, String> map = new HashMap<String, String>();
-        map.put("env", "prod");
+        map.put("netType", "external");
         map.put("version", "2.0");
         instance.setMetadata(map);
 
-        namingService.registerInstance("dungu.test.1", instance);
+        namingService.registerInstance("nacos.test.1", instance);
 
         ExpressionSelector expressionSelector = new ExpressionSelector();
         expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
