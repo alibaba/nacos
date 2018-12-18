@@ -1,7 +1,21 @@
+## 0.7.0(Dec, 2018)
+
+* [ #461 ] Registration failed when instance port is set to 0
+* [ #455 ] The console can't change the change code
+* [ #447 ] 集群模式server挂掉一台后，提供方注册失败
+* [ #445 ] 0.6.1控制台创建配置发布提交时，提示信息有问题
+* [ #442 ] Typos in class names and variables.
+* [ #413 ] The console has some uncaught exceptions
+* [ #395 ] nacos surport mysql in the case of stand-alone mode
+* [ #393 ] Support operation of selector on console
+* [ #365 ] NodeJs SDK support
+* [ #362 ] The metadata will lost when online or offline instance through web ui
+* [ #187 ] Provide Label ability for Naming Service into NACOS for complex multi-DC scenario.
+
 ## 0.6.1(Dec, 2018)
 
-[#421] NamingService's serivce name can't use colon(:) in Windows
-[#432] When packing nacos-core, ${user.home} is replaced in the logback configuration file (nacos.xml)
+* [#421] NamingService's serivce name can't use colon(:) in Windows
+* [#432] When packing nacos-core, ${user.home} is replaced in the logback configuration file (nacos.xml)
 
 ## 0.6.0(Dec, 2018)
 
@@ -16,61 +30,61 @@
 
 ## 0.5.0(Nov, 2018)
 
-[#148] Naming write performace.
-[#175] Support deregistering instance automatically.
-[#176] Naming client query instance method should bypass local cache at client start.
-[#177] Console supports registering new empty service and delete empty service.
-[#181] NPE when adding a instance if no leader in the raft cluster.
-[#193] Configure host domain name cause nacos server cluster is unavailable.
-[#209] Disable service and cluster level customization in client registerInstance method.
-[#214] Please support Java 11.
-[#222] print more nacos server start status info in start.log.
-[#231] Refactoring: Parsing the Nacos home directory and the cluster.conf file.
-[#246] "mvn -B clean apache-rat:check findbugs:findbugs" did not work as expected.
-[#251] Console Editor Optimization.
-[#254] DataId and group are required in historical version and listener query.
-[#256] Whether the service discovery data needs to add a newline link symbol.
-[#257] Listening query switching query dimension data is not refreshed.
-[#258] Remove the Balloon of DataId/Group.
-[#259] Listening query paging size problem.
-[#272] "#it is ip" is also parsed into an instance IP.
-[#275] nacos coredns plugin to support DNS.
-[#281] We should lint the console code.
-[#302] Maven build project supports java 11.
-[#316] In stand alone mode, Nacos still checks the cluster.conf.
+* [#148] Naming write performace.
+* [#175] Support deregistering instance automatically.
+* [#176] Naming client query instance method should bypass local cache at client start.
+* [#177] Console supports registering new empty service and delete empty service.
+* [#181] NPE when adding a instance if no leader in the raft cluster.
+* [#193] Configure host domain name cause nacos server cluster is unavailable.
+* [#209] Disable service and cluster level customization in client registerInstance method.
+* [#214] Please support Java 11.
+* [#222] print more nacos server start status info in start.log.
+* [#231] Refactoring: Parsing the Nacos home directory and the cluster.conf file.
+* [#246] "mvn -B clean apache-rat:check findbugs:findbugs" did not work as expected.
+* [#251] Console Editor Optimization.
+* [#254] DataId and group are required in historical version and listener query.
+* [#256] Whether the service discovery data needs to add a newline link symbol.
+* [#257] Listening query switching query dimension data is not refreshed.
+* [#258] Remove the Balloon of DataId/Group.
+* [#259] Listening query paging size problem.
+* [#272] "#it is ip" is also parsed into an instance IP.
+* [#275] nacos coredns plugin to support DNS.
+* [#281] We should lint the console code.
+* [#302] Maven build project supports java 11.
+* [#316] In stand alone mode, Nacos still checks the cluster.conf.
 
 ## 0.4.0(Nov 7, 2018)
 
-[#216] Fix tenant dir problem
-[#197] Service update ignored some properties
-[#190] Client beat lose weight info and metadata info
-[#188] Console delete data cannot be updated in time
-[#179] Listening query fail when namespace is not blank
-[#157] Lack information in readme.md to describe the related project repositories for Nacos echosystem
-[#144] There have a error and something are not clear
-[#106] Snapshot file create error
-[#92] Eliminate warnings, refactor code, show start.log detail
+* [#216] Fix tenant dir problem
+* [#197] Service update ignored some properties
+* [#190] Client beat lose weight info and metadata info
+* [#188] Console delete data cannot be updated in time
+* [#179] Listening query fail when namespace is not blank
+* [#157] Lack information in readme.md to describe the related project repositories for Nacos echosystem
+* [#144] There have a error and something are not clear
+* [#106] Snapshot file create error
+* [#92] Eliminate warnings, refactor code, show start.log detail
 
 
 ## 0.3.0(Oct 26, 2018)
 
-[#171] UI debug errors
-[#156] Web UI 404 problem
-[#155] use local resource
-[#145] nacos-example not found :org.apache.logging.log4j.core.Logger
-[#142] UI console show Group
-[#149] Fix naming client beat process failed bug.
-[#150] Fix naming service registration hangs bug.
+* [#171] UI debug errors
+* [#156] Web UI 404 problem
+* [#155] use local resource
+* [#145] nacos-example not found :org.apache.logging.log4j.core.Logger
+* [#142] UI console show Group
+* [#149] Fix naming client beat process failed bug.
+* [#150] Fix naming service registration hangs bug.
 
 ## 0.3.0-RC1(Oct 19, 2018)
 
-[#33] Support console for config management.
-[#51] Support console for naming service.
-[#121] Fix get instance method hanging bug.
-[#138] Add a flag to indicate if instance is offline.
-[#130] Fix health check disabled if machine has one CPU core bug.
-[#139] Fix still get instance with zero weight bug.
-[#128] Fix console layout bug.
+* [#33] Support console for config management.
+* [#51] Support console for naming service.
+* [#121] Fix get instance method hanging bug.
+* [#138] Add a flag to indicate if instance is offline.
+* [#130] Fix health check disabled if machine has one CPU core bug.
+* [#139] Fix still get instance with zero weight bug.
+* [#128] Fix console layout bug.
 
 
 
