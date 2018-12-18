@@ -55,21 +55,21 @@ public interface CmdbService {
     /**
      * Get label value of label name of ip
      *
+     * @param entityName entity name
      * @param entityType  entity type
-     * @param entityValue entity value
      * @param labelName   target label name
      * @return label value
      */
-    String getLabelValue(String entityValue, String entityType, String labelName);
+    String getLabelValue(String entityName, String entityType, String labelName);
 
     /**
      * Get all label value of ip
      *
+     * @param entityName entity name
      * @param entityType  entity type
-     * @param entityValue entity value
      * @return all label values
      */
-    Map<String, String> getLabelValues(String entityValue, String entityType);
+    Map<String, String> getLabelValues(String entityName, String entityType);
 
     /**
      * Dump all entities in CMDB
