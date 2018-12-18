@@ -55,6 +55,8 @@ public class OperationController {
             case "loadDataAtStart":
                 switches.setLoadDataAtStart(Boolean.parseBoolean(value));
                 break;
+            case "labelTaskInterval":
+                switches.setLabelTaskInterval(Integer.parseInt(value));
             default:
                 break;
         }
