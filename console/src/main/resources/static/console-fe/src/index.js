@@ -92,6 +92,7 @@ class App extends React.Component {
         <Switch>
           <Route path="/login" component={Login} />
           <Layout navList={_menu.data}>
+            <Route path="/" exact render={() => <Redirect to="/configurationManagement" />} />
             <Route path="/namespace" component={Namespace} />
             <Route path="/newconfig" component={Newconfig} />
             <Route path="/configsync" component={Configsync} />
@@ -105,7 +106,6 @@ class App extends React.Component {
             <Route path="/serviceManagement" component={ServiceList} />
             <Route path="/serviceDetail" component={ServiceDetail} />
           </Layout>
-          {/* <Route path="/" exact render={() => <Redirect to="/configurationManagement" />} /> */}
         </Switch>
       </HashRouter>
     );
