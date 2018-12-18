@@ -19,7 +19,34 @@ $contentWidth: 1280px;
 .home-page {
   .top-section {
     position: relative;
-    height: 720px;
+    height: 100vh;
+    .login-panel {
+      position: absolute;
+      right: 40px;
+      width: 480px;
+      height: 540px;
+      top: 90px;
+      .login-header {
+        width: 100%;
+        line-height: 45px;
+        font-size: 32px;
+        margin-top: 58px;
+        text-align: center;
+      }
+      .login-form {
+        width: 360px;
+        margin: 80px auto auto auto;
+        input {
+          height: 60px;
+        }
+        button {
+          width: 100%;
+          height: 60px;
+          background: #4190ff 100%;
+          color: white;
+        }
+      }
+    }
     .animation {
       position: absolute;
       width: 6px;
@@ -57,13 +84,16 @@ $contentWidth: 1280px;
       left: 0;
       top: 50%;
       transform: translateY(-50%);
-      width: 100%;
+    }
+    .product-area {
+      width: 431px;
+      margin-left: 40px;
     }
     .product-logo {
       display: block;
       width: 257px;
       height: 50px;
-      margin: 0 auto;
+      margin: 0;
     }
     .product-desc {
       opacity: 0.8;
@@ -72,171 +102,6 @@ $contentWidth: 1280px;
       color: #fff;
       max-width: 780px;
       margin: 12px auto 30px;
-      text-align: center;
-    }
-    .button-area {
-      text-align: center;
-      .button:first-child {
-        margin-right: 20px;
-      }
-    }
-    .version-note {
-      text-align: center;
-      margin: 22px 0 10px;
-      a {
-        text-decoration: none;
-        display: inline-block;
-        font-family: Avenir-Heavy;
-        font-size: 14px;
-        color: #fff;
-        text-align: center;
-        background: #46484b;
-        border-radius: 2px;
-        line-height: 24px;
-        padding: 0 6px;
-        margin-right: 10px;
-      }
-    }
-    .release-date {
-      font-family: Avenir-Medium;
-      font-size: 12px;
-      color: #999;
-      text-align: center;
-    }
-  }
-  .function-section {
-    max-width: 832px;
-    margin: 0 auto;
-    box-sizing: border-box;
-    padding: 82px 0;
-    h3 {
-      font-family: Avenir-Heavy;
-      font-size: 36px;
-      text-align: center;
-      font-weight: 400;
-    }
-    .bone {
-      margin: 0 auto 45px;
-    }
-    .func-item {
-      margin-bottom: 30px;
-      position: relative;
-      .col {
-        display: inline-flex;
-        align-items: center;
-        vertical-align: middle;
-        margin: 0 auto;
-        width: 50%;
-        max-width: 750px;
-        min-height: 325px;
-        img {
-          width: 325px;
-        }
-        h4 {
-          font-weight: 400;
-          font-family: Avenir-Heavy;
-          font-size: 24px;
-          color: #333;
-          margin-bottom: 20px;
-        }
-        p {
-          opacity: 0.8;
-          font-family: Avenir-Medium;
-          font-size: 18px;
-          color: #999;
-          margin: 0;
-        }
-      }
-      .img {
-        display: inline-block;
-        text-align: center;
-      }
-      @media screen and (max-width: 830px) {
-        & {
-          text-align: center;
-        }
-        .col {
-          width: 100%;
-        }
-        .img {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          opacity: 0.1;
-        }
-      }
-    }
-  }
-  .feature-section {
-    background: $brandColor;
-    .feature-section-body {
-      max-width: $contentWidth;
-      margin: 0 auto;
-      position: relative;
-      padding: 80px 40px;
-      color: #fff;
-      h3 {
-        font-family: Avenir-Heavy;
-        font-size: 36px;
-        text-align: center;
-        margin: 0;
-        font-weight: 400;
-      }
-      .bone {
-        margin: 0 auto 45px;
-      }
-      .feature-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        .feature-list-item {
-          vertical-align: top;
-          display: inline-block;
-          margin-bottom: 48px;
-          width: 50%;
-          ul {
-            list-style: disc;
-            padding-left: 14px;
-            li {
-              font-family: Avenir-Medium;
-              font-size: 14px;
-              color: #999;
-            }
-          }
-          img {
-            vertical-align: top;
-            width: 34px;
-            margin-right: 20px;
-          }
-          div {
-            display: inline-block;
-            width: 80%;
-            h4 {
-              font-family: Avenir-Heavy;
-              font-size: 20px;
-              margin: 5px 0 20px 0;
-            }
-            p {
-              font-family: Avenir-Medium;
-              font-size: 14px;
-              line-height: 20px;
-              color: #999;
-            }
-          }
-        }
-        @media screen and (max-width: 768px) {
-          .feature-list-item {
-            width: 100%;
-          }
-        }
-      }
-    }
-  }
-  @media screen and (max-width: $mobileWidth) {
-    .feature-section-body {
-      padding-left: 20px;
-      padding-right: 20px;
     }
   }
 }
