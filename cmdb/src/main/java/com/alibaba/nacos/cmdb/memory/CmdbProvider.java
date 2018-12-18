@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.cmdb.memory;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.cmdb.spi.CmdbService;
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.cmdb.pojo.EntityEvent;
@@ -76,8 +77,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
             return;
         }
 
-        // TODO load data on disk:
-
         // init label map:
         Set<String> labelNames = cmdbService.getLabelNames();
         if (labelNames == null || labelNames.isEmpty()) {
@@ -103,6 +102,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         load();
 
         UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbDumpTask(), switches.getDumpTaskInterval(), TimeUnit.SECONDS);
+        UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbLabelTask(), switches.getLabelTaskInterval(), TimeUnit.SECONDS);
         UtilsAndCommons.GLOBAL_EXECUTOR.schedule(new CmdbEventTask(), switches.getEventTaskInterval(), TimeUnit.SECONDS);
     }
 
@@ -142,19 +142,61 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         entityMap.get(entity.getType()).put(entity.getName(), entity);
     }
 
+    public class CmdbLabelTask implements Runnable {
+
+        @Override
+        public void run() {
+
+            Loggers.MAIN.debug("LABEL-TASK {}", "start dump.");
+
+            if (cmdbService == null) {
+                return;
+            }
+
+            try {
+
+                Map<String, Label> tmpLabelMap = new HashMap<>(16);
+
+                Set<String> labelNames = cmdbService.getLabelNames();
+                if (labelNames == null || labelNames.isEmpty()) {
+                    Loggers.MAIN.warn("CMDB-LABEL-TASK {}", "load label names failed!");
+                } else {
+                    for (String labelName : labelNames) {
+                        // If get null label, it's still ok. We will try it later when we meet this label:
+                        tmpLabelMap.put(labelName, cmdbService.getLabel(labelName));
+                    }
+
+                    if (Loggers.MAIN.isDebugEnabled()) {
+                        Loggers.MAIN.debug("LABEL-TASK {}", "got label map:" + JSON.toJSONString(tmpLabelMap));
+                    }
+
+                    labelMap = tmpLabelMap;
+                }
+
+            } catch (Exception e) {
+                Loggers.MAIN.error("CMDB-LABEL-TASK {}", "dump failed!", e);
+            } finally {
+                UtilsAndCommons.GLOBAL_EXECUTOR.schedule(this, switches.getLabelTaskInterval(), TimeUnit.SECONDS);
+            }
+        }
+    }
+
     public class CmdbDumpTask implements Runnable {
 
         @Override
         public void run() {
 
             try {
+
+                Loggers.MAIN.debug("DUMP-TASK {}", "start dump.");
+
                 if (cmdbService == null) {
                     return;
                 }
                 // refresh entity map:
                 entityMap = cmdbService.getAllEntities();
             } catch (Exception e) {
-                Loggers.MAIN.error("CMDB-DUMP {}", "dump failed!", e);
+                Loggers.MAIN.error("DUMP-TASK {}", "dump failed!", e);
             } finally {
                 UtilsAndCommons.GLOBAL_EXECUTOR.schedule(this, switches.getDumpTaskInterval(), TimeUnit.SECONDS);
             }
@@ -167,6 +209,8 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
         public void run() {
             try {
 
+                Loggers.MAIN.debug("EVENT-TASK {}", "start dump.");
+
                 if (cmdbService == null) {
                     return;
                 }
@@ -174,6 +218,10 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
                 long current = System.currentTimeMillis();
                 List<EntityEvent> events = cmdbService.getEntityEvents(eventTimestamp);
                 eventTimestamp = current;
+
+                if (Loggers.MAIN.isDebugEnabled()) {
+                    Loggers.MAIN.debug("EVENT-TASK {}", "got events size:" + ", events:" + JSON.toJSONString(events));
+                }
 
                 if (events != null && !events.isEmpty()) {
 
