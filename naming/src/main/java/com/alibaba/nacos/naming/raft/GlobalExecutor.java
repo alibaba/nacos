@@ -25,7 +25,7 @@ public class GlobalExecutor {
 
     public static final long LEADER_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(15L);
 
-    public static final long RAMDOM_MS = TimeUnit.SECONDS.toMillis(5L);
+    public static final long RANDOM_MS = TimeUnit.SECONDS.toMillis(5L);
 
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
 
