@@ -39,7 +39,7 @@ public class RaftPeer {
     public State state = State.FOLLOWER;
 
     public void resetLeaderDue() {
-        leaderDueMs = GlobalExecutor.LEADER_TIMEOUT_MS + RandomUtils.nextLong(0, GlobalExecutor.RAMDOM_MS);
+        leaderDueMs = GlobalExecutor.LEADER_TIMEOUT_MS + RandomUtils.nextLong(0, GlobalExecutor.RANDOM_MS);
     }
 
     public void resetHeartbeatDue() {
