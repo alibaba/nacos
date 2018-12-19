@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.naming.utils.StringUtils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +42,9 @@ public class DiskCache {
         try {
             makeSureCacheDirExists(dir);
 
-            File file = new File(dir, dom.getKey());
+
+
+            File file = new File(dir, dom.getKeyEncoded());
             if (!file.exists()) {
                 // add another !file.exists() to avoid conflicted creating-new-file from multi-instances
                 if (!file.createNewFile() && !file.exists()) {
@@ -87,9 +90,11 @@ public class DiskCache {
                     continue;
                 }
 
-                if (!(file.getName().endsWith(ServiceInfo.SPLITER + "meta") || file.getName().endsWith(
+                String fileName = URLDecoder.decode(file.getName(), "UTF-8");
+
+                if (!(fileName.endsWith(ServiceInfo.SPLITER + "meta") || fileName.endsWith(
                     ServiceInfo.SPLITER + "special-url"))) {
-                    ServiceInfo dom = new ServiceInfo(file.getName());
+                    ServiceInfo dom = new ServiceInfo(fileName);
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);
 

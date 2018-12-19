@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.web;
-
+package com.alibaba.nacos.core.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,9 +21,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
 
 /**
- * @author nacos
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public class BaseServlet {
+public class WebUtils {
 
     public static String required(HttpServletRequest req, String key) {
         String value = req.getParameter(key);
@@ -67,5 +66,4 @@ public class BaseServlet {
         encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
         return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;
     }
-
 }

@@ -22,6 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -118,9 +119,9 @@ public class ApiCommands {
     @RequestMapping("/dom")
     public JSONObject dom(HttpServletRequest request) throws NacosException {
         // SDK before version 2.0,0 use 'name' instead of 'dom' here
-        String name = BaseServlet.optional(request, "name", StringUtils.EMPTY);
+        String name = WebUtils.optional(request, "name", StringUtils.EMPTY);
         if (StringUtils.isEmpty(name)) {
-            name = BaseServlet.required(request, "dom");
+            name = WebUtils.required(request, "dom");
         }
 
         Loggers.SRV_LOG.info("[DOM] request dom:" + name);
@@ -144,7 +145,7 @@ public class ApiCommands {
 
     @RequestMapping("/rt4Dom")
     public JSONObject rt4Dom(HttpServletRequest request) {
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
 
         VirtualClusterDomain domObj
                 = (VirtualClusterDomain) domainsManager.getDomain(dom);
@@ -173,7 +174,7 @@ public class ApiCommands {
 
     @RequestMapping("/ip4Dom2")
     public JSONObject ip4Dom2(HttpServletRequest request) throws NacosException {
-        String domName = BaseServlet.required(request, "dom");
+        String domName = WebUtils.required(request, "dom");
 
         VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(domName);
 
@@ -199,9 +200,9 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
         try {
-            String domName = BaseServlet.required(request, "dom");
-            String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
-            String agent = BaseServlet.optional(request, "header:Client-Version", StringUtils.EMPTY);
+            String domName = WebUtils.required(request, "dom");
+            String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
+            String agent = WebUtils.optional(request, "header:Client-Version", StringUtils.EMPTY);
 
             VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(domName);
 
@@ -261,7 +262,7 @@ public class ApiCommands {
     @RequestMapping("/regDom")
     public String regDom(HttpServletRequest request) throws Exception {
 
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         if (domainsManager.getDomain(dom) != null) {
             throw new IllegalArgumentException("specified dom already exists, dom : " + dom);
         }
@@ -274,14 +275,14 @@ public class ApiCommands {
     @RequestMapping("/clientBeat")
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
 
-        String beat = BaseServlet.required(request, "beat");
+        String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         String app;
-        app = BaseServlet.optional(request, "app", StringUtils.EMPTY);
+        app = WebUtils.optional(request, "app", StringUtils.EMPTY);
         String clusterName = clientBeat.getCluster();
 
         if (StringUtils.isBlank(clusterName)) {
@@ -366,23 +367,23 @@ public class ApiCommands {
 
     private String addOrReplaceDom(HttpServletRequest request) throws Exception {
 
-        String dom = BaseServlet.required(request, "dom");
-        String owners = BaseServlet.optional(request, "owners", StringUtils.EMPTY);
-        String token = BaseServlet.optional(request, "token", Md5Utils.getMD5(dom, "utf-8"));
+        String dom = WebUtils.required(request, "dom");
+        String owners = WebUtils.optional(request, "owners", StringUtils.EMPTY);
+        String token = WebUtils.optional(request, "token", Md5Utils.getMD5(dom, "utf-8"));
 
-        float protectThreshold = NumberUtils.toFloat(BaseServlet.optional(request, "protectThreshold", "0.0"));
-        boolean isUseSpecifiedURL = Boolean.parseBoolean(BaseServlet.optional(request, "isUseSpecifiedURL", "false"));
-        String envAndSite = BaseServlet.optional(request, "envAndSites", StringUtils.EMPTY);
-        boolean resetWeight = Boolean.parseBoolean(BaseServlet.optional(request, "resetWeight", "false"));
-        boolean enableHealthCheck = Boolean.parseBoolean(BaseServlet.optional(request, "enableHealthCheck", "true"));
-        boolean enable = Boolean.parseBoolean(BaseServlet.optional(request, "serviceEnabled", "true"));
+        float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0.0"));
+        boolean isUseSpecifiedURL = Boolean.parseBoolean(WebUtils.optional(request, "isUseSpecifiedURL", "false"));
+        String envAndSite = WebUtils.optional(request, "envAndSites", StringUtils.EMPTY);
+        boolean resetWeight = Boolean.parseBoolean(WebUtils.optional(request, "resetWeight", "false"));
+        boolean enableHealthCheck = Boolean.parseBoolean(WebUtils.optional(request, "enableHealthCheck", "true"));
+        boolean enable = Boolean.parseBoolean(WebUtils.optional(request, "serviceEnabled", "true"));
 
-        String disabledSites = BaseServlet.optional(request, "disabledSites", StringUtils.EMPTY);
-        boolean eanbleClientBeat = Boolean.parseBoolean(BaseServlet.optional(request, "enableClientBeat", "true"));
-        String clusterName = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String disabledSites = WebUtils.optional(request, "disabledSites", StringUtils.EMPTY);
+        boolean eanbleClientBeat = Boolean.parseBoolean(WebUtils.optional(request, "enableClientBeat", "true"));
+        String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
-        String serviceMetadataJson = BaseServlet.optional(request, "serviceMetadata", StringUtils.EMPTY);
-        String clusterMetadataJson = BaseServlet.optional(request, "clusterMetadata", StringUtils.EMPTY);
+        String serviceMetadataJson = WebUtils.optional(request, "serviceMetadata", StringUtils.EMPTY);
+        String clusterMetadataJson = WebUtils.optional(request, "clusterMetadata", StringUtils.EMPTY);
 
         Loggers.SRV_LOG.info("[RESET-WEIGHT] " + String.valueOf(resetWeight));
 
@@ -406,7 +407,7 @@ public class ApiCommands {
             throw new IllegalArgumentException("envAndSite and disabledSites are not allowed both not empty.");
         }
 
-        String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
+        String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(clusters)) {
             // new format
             List<Cluster> clusterObjs = JSON.parseArray(clusters, Cluster.class);
@@ -416,12 +417,12 @@ public class ApiCommands {
             }
         } else {
             // old format, default cluster will be constructed automatically
-            String cktype = BaseServlet.optional(request, "cktype", "TCP");
-            String ipPort4Check = BaseServlet.optional(request, "ipPort4Check", "true");
-            String nodegroup = BaseServlet.optional(request, "nodegroup", StringUtils.EMPTY);
+            String cktype = WebUtils.optional(request, "cktype", "TCP");
+            String ipPort4Check = WebUtils.optional(request, "ipPort4Check", "true");
+            String nodegroup = WebUtils.optional(request, "nodegroup", StringUtils.EMPTY);
 
-            int defIPPort = NumberUtils.toInt(BaseServlet.optional(request, "defIPPort", "-1"));
-            int defCkport = NumberUtils.toInt(BaseServlet.optional(request, "defCkport", "80"));
+            int defIPPort = NumberUtils.toInt(WebUtils.optional(request, "defIPPort", "-1"));
+            int defCkport = NumberUtils.toInt(WebUtils.optional(request, "defCkport", "80"));
 
             Cluster cluster = new Cluster();
             cluster.setName(clusterName);
@@ -442,9 +443,9 @@ public class ApiCommands {
                 cluster.setHealthChecker(config);
             } else if (AbstractHealthChecker.Http.TYPE.equals(cktype)) {
 
-                String path = BaseServlet.optional(request, "path", StringUtils.EMPTY);
-                String headers = BaseServlet.optional(request, "headers", StringUtils.EMPTY);
-                String expectedResponseCode = BaseServlet.optional(request, "expectedResponseCode", "200");
+                String path = WebUtils.optional(request, "path", StringUtils.EMPTY);
+                String headers = WebUtils.optional(request, "headers", StringUtils.EMPTY);
+                String expectedResponseCode = WebUtils.optional(request, "expectedResponseCode", "200");
 
                 AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
@@ -456,9 +457,9 @@ public class ApiCommands {
             } else if (AbstractHealthChecker.Mysql.TYPE.equals(cktype)) {
 
                 AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
-                String user = BaseServlet.optional(request, "user", StringUtils.EMPTY);
-                String pwd = BaseServlet.optional(request, "pwd", StringUtils.EMPTY);
-                String cmd = BaseServlet.optional(request, "cmd", StringUtils.EMPTY);
+                String user = WebUtils.optional(request, "user", StringUtils.EMPTY);
+                String pwd = WebUtils.optional(request, "pwd", StringUtils.EMPTY);
+                String cmd = WebUtils.optional(request, "cmd", StringUtils.EMPTY);
                 config.setUser(user);
                 config.setPwd(pwd);
                 config.setCmd(cmd);
@@ -478,32 +479,16 @@ public class ApiCommands {
         return "ok";
     }
 
-    @NeedAuth
-    @RequestMapping("/replaceDom")
-    public String replaceDom(HttpServletRequest request) throws Exception {
-        String dom = BaseServlet.required(request, "dom");
-        if (domainsManager.getDomain(dom) == null) {
-            throw new IllegalArgumentException("specified dom doesn't exist, dom : " + dom);
-        }
-
-        addOrReplaceDom(request);
-
-        Loggers.SRV_LOG.info("dom: " + dom + " is updated, operator: "
-                + BaseServlet.optional(request, "clientIP", "unknown"));
-
-        return "ok";
-    }
-
     private IpAddress getIPAddress(HttpServletRequest request) {
 
-        String ip = BaseServlet.required(request, "ip");
-        String port = BaseServlet.required(request, "port");
-        String weight = BaseServlet.optional(request, "weight", "1");
-        String cluster = BaseServlet.optional(request, "cluster", StringUtils.EMPTY);
+        String ip = WebUtils.required(request, "ip");
+        String port = WebUtils.required(request, "port");
+        String weight = WebUtils.optional(request, "weight", "1");
+        String cluster = WebUtils.optional(request, "cluster", StringUtils.EMPTY);
         if (StringUtils.isEmpty(cluster)) {
-            cluster = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+            cluster = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        boolean enabled = BooleanUtils.toBoolean(BaseServlet.optional(request, "enable", "true"));
+        boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
 
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(Integer.parseInt(port));
@@ -518,9 +503,9 @@ public class ApiCommands {
     @RequestMapping("/deRegService")
     public String deRegService(HttpServletRequest request) throws Exception {
         IpAddress ipAddress = getIPAddress(request);
-        String dom = BaseServlet.optional(request, "serviceName", StringUtils.EMPTY);
+        String dom = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
         if (StringUtils.isEmpty(dom)) {
-            dom = BaseServlet.required(request, "dom");
+            dom = WebUtils.required(request, "dom");
         }
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
@@ -543,11 +528,11 @@ public class ApiCommands {
     @RequestMapping("/regService")
     public String regService(HttpServletRequest request) throws Exception {
 
-        String dom = BaseServlet.required(request, "dom");
-        String tenant = BaseServlet.optional(request, "tid", StringUtils.EMPTY);
-        String app = BaseServlet.optional(request, "app", "DEFAULT");
-        String env = BaseServlet.optional(request, "env", StringUtils.EMPTY);
-        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
+        String dom = WebUtils.required(request, "dom");
+        String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
+        String app = WebUtils.optional(request, "app", "DEFAULT");
+        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
@@ -612,7 +597,7 @@ public class ApiCommands {
     @RequestMapping("/updateDom")
     public String updateDom(HttpServletRequest request) throws Exception {
         // dom
-        String name = BaseServlet.required(request, "dom");
+        String name = WebUtils.required(request, "dom");
         VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(name);
         if (dom == null) {
             throw new IllegalStateException("dom not found");
@@ -623,31 +608,31 @@ public class ApiCommands {
             throw new IllegalStateException("not leader at present, cannot update");
         }
 
-        String owners = BaseServlet.optional(request, "owners", StringUtils.EMPTY);
+        String owners = WebUtils.optional(request, "owners", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(owners)) {
             dom.setOwners(Arrays.asList(owners.split(",")));
         }
 
-        String token = BaseServlet.optional(request, "newToken", StringUtils.EMPTY);
+        String token = WebUtils.optional(request, "newToken", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(token)) {
             dom.setToken(token);
         }
 
-        String enableClientBeat = BaseServlet.optional(request, "enableClientBeat", StringUtils.EMPTY);
+        String enableClientBeat = WebUtils.optional(request, "enableClientBeat", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(enableClientBeat)) {
             dom.setEnableClientBeat(Boolean.parseBoolean(enableClientBeat));
         }
 
-        String protectThreshold = BaseServlet.optional(request, "protectThreshold", StringUtils.EMPTY);
+        String protectThreshold = WebUtils.optional(request, "protectThreshold", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(protectThreshold)) {
             dom.setProtectThreshold(Float.parseFloat(protectThreshold));
         }
 
-        String sitegroup = BaseServlet.optional(request, "sitegroup", StringUtils.EMPTY);
-        String setSiteGroupForce = BaseServlet.optional(request, "setSiteGroupForce", StringUtils.EMPTY);
+        String sitegroup = WebUtils.optional(request, "sitegroup", StringUtils.EMPTY);
+        String setSiteGroupForce = WebUtils.optional(request, "setSiteGroupForce", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(sitegroup) || !StringUtils.isEmpty(setSiteGroupForce)) {
             Cluster cluster
-                    = dom.getClusterMap().get(BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -655,10 +640,10 @@ public class ApiCommands {
             cluster.setSitegroup(sitegroup);
         }
 
-        String cktype = BaseServlet.optional(request, "cktype", StringUtils.EMPTY);
+        String cktype = WebUtils.optional(request, "cktype", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(cktype)) {
             Cluster cluster
-                    = dom.getClusterMap().get(BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -666,7 +651,7 @@ public class ApiCommands {
             if (cktype.equals(AbstractHealthCheckProcessor.HTTP_PROCESSOR.getType())) {
                 AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
-                config.setPath(BaseServlet.required(request, "path"));
+                config.setPath(WebUtils.required(request, "path"));
                 cluster.setHealthChecker(config);
             } else if (cktype.equals(AbstractHealthCheckProcessor.TCP_PROCESSOR.getType())) {
                 AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
@@ -674,9 +659,9 @@ public class ApiCommands {
                 cluster.setHealthChecker(config);
             } else if (cktype.equals(AbstractHealthCheckProcessor.MYSQL_PROCESSOR.getType())) {
                 AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
-                config.setCmd(BaseServlet.required(request, "cmd"));
-                config.setPwd(BaseServlet.required(request, "pwd"));
-                config.setUser(BaseServlet.required(request, "user"));
+                config.setCmd(WebUtils.required(request, "cmd"));
+                config.setPwd(WebUtils.required(request, "pwd"));
+                config.setUser(WebUtils.required(request, "user"));
                 cluster.setHealthChecker(config);
             } else {
                 throw new IllegalArgumentException("unsupported health check type: " + cktype);
@@ -684,10 +669,10 @@ public class ApiCommands {
 
         }
 
-        String defIPPort = BaseServlet.optional(request, "defIPPort", StringUtils.EMPTY);
+        String defIPPort = WebUtils.optional(request, "defIPPort", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(defIPPort)) {
             Cluster cluster
-                    = dom.getClusterMap().get(BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -695,10 +680,10 @@ public class ApiCommands {
             cluster.setDefIPPort(Integer.parseInt(defIPPort));
         }
 
-        String submask = BaseServlet.optional(request, "submask", StringUtils.EMPTY);
+        String submask = WebUtils.optional(request, "submask", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(submask)) {
             Cluster cluster
-                    = dom.getClusterMap().get(BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -706,10 +691,10 @@ public class ApiCommands {
             cluster.setSubmask(submask);
         }
 
-        String ipPort4Check = BaseServlet.optional(request, "ipPort4Check", StringUtils.EMPTY);
+        String ipPort4Check = WebUtils.optional(request, "ipPort4Check", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(ipPort4Check)) {
             Cluster cluster
-                    = dom.getClusterMap().get(BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -717,10 +702,10 @@ public class ApiCommands {
             cluster.setUseIPPort4Check(Boolean.parseBoolean(ipPort4Check));
         }
 
-        String defCkPort = BaseServlet.optional(request, "defCkPort", StringUtils.EMPTY);
+        String defCkPort = WebUtils.optional(request, "defCkPort", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(defCkPort)) {
             Cluster cluster
-                    = dom.getClusterMap().get(BaseServlet.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -728,27 +713,27 @@ public class ApiCommands {
             cluster.setDefCkport(Integer.parseInt(defCkPort));
         }
 
-        String useSpecifiedUrl = BaseServlet.optional(request, "useSpecifiedURL", StringUtils.EMPTY);
+        String useSpecifiedUrl = WebUtils.optional(request, "useSpecifiedURL", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(useSpecifiedUrl)) {
             dom.setUseSpecifiedURL(Boolean.parseBoolean(useSpecifiedUrl));
         }
 
-        String resetWeight = BaseServlet.optional(request, "resetWeight", StringUtils.EMPTY);
+        String resetWeight = WebUtils.optional(request, "resetWeight", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(resetWeight)) {
             dom.setResetWeight(Boolean.parseBoolean(resetWeight));
         }
 
-        String enableHealthCheck = BaseServlet.optional(request, "enableHealthCheck", StringUtils.EMPTY);
+        String enableHealthCheck = WebUtils.optional(request, "enableHealthCheck", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(enableHealthCheck)) {
             dom.setEnableHealthCheck(Boolean.parseBoolean(enableHealthCheck));
         }
 
-        String enabled = BaseServlet.optional(request, "serviceEnabled", "true");
+        String enabled = WebUtils.optional(request, "serviceEnabled", "true");
         if (!StringUtils.isEmpty(enabled)) {
             dom.setEnabled(Boolean.parseBoolean(enabled));
         }
 
-        String ipDeletedTimeout = BaseServlet.optional(request, "ipDeletedTimeout", "-1");
+        String ipDeletedTimeout = WebUtils.optional(request, "ipDeletedTimeout", "-1");
 
         if (!StringUtils.isNotEmpty(ipDeletedTimeout)) {
             long timeout = Long.parseLong(ipDeletedTimeout);
@@ -772,8 +757,7 @@ public class ApiCommands {
     @RequestMapping("/hello")
     public JSONObject hello(HttpServletRequest request) {
         JSONObject result = new JSONObject();
-        result.put("msg", "Hello! I am Nacos-Naming and healthy! total dom: diamond "
-                + domainsManager.getDomMap().size() + ",raft " + domainsManager.getRaftDomMap().size()
+        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + domainsManager.getRaftDomMap().size()
                 + ", local port:" + RunningConfig.getServerPort());
         return result;
     }
@@ -782,7 +766,7 @@ public class ApiCommands {
     @NeedAuth
     @RequestMapping("/remvDom")
     public String remvDom(HttpServletRequest request) throws Exception {
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         if (domainsManager.getDomain(dom) == null) {
             throw new IllegalStateException("specified domain doesn't exists.");
         }
@@ -794,7 +778,7 @@ public class ApiCommands {
 
     @RequestMapping("/getDomsByIP")
     public JSONObject getDomsByIP(HttpServletRequest request) {
-        String ip = BaseServlet.required(request, "ip");
+        String ip = WebUtils.required(request, "ip");
 
         Set<String> doms = new HashSet<String>();
         for (String dom : domainsManager.getAllDomNames()) {
@@ -827,9 +811,9 @@ public class ApiCommands {
             throw new AccessControlException("Adding IP for dom is forbidden now.");
         }
 
-        String clientIP = BaseServlet.required(request, "clientIP");
+        String clientIP = WebUtils.required(request, "clientIP");
 
-        long term = Long.parseLong(BaseServlet.required(request, "term"));
+        long term = Long.parseLong(WebUtils.required(request, "term"));
 
         if (!RaftCore.isLeader(clientIP)) {
             Loggers.RAFT.warn("peer(" + JSON.toJSONString(clientIP) + ") tried to publish " +
@@ -847,18 +831,18 @@ public class ApiCommands {
 
         RaftCore.getPeerSet().local().resetLeaderDue();
 
-        final String dom = BaseServlet.required(request, "dom");
+        final String dom = WebUtils.required(request, "dom");
         if (domainsManager.getDomain(dom) == null) {
             throw new IllegalStateException("dom doesn't exist: " + dom);
         }
 
-        boolean updateOnly = Boolean.parseBoolean(BaseServlet.optional(request, "updateOnly", Boolean.FALSE.toString()));
+        boolean updateOnly = Boolean.parseBoolean(WebUtils.optional(request, "updateOnly", Boolean.FALSE.toString()));
 
-        String ipListString = BaseServlet.required(request, "ipList");
+        String ipListString = WebUtils.required(request, "ipList");
         List<IpAddress> newIPs = new ArrayList<>();
 
         List<String> ipList;
-        if (Boolean.parseBoolean(BaseServlet.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
+        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
             newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
             });
         } else {
@@ -869,7 +853,7 @@ public class ApiCommands {
             }
         }
 
-        long timestamp = Long.parseLong(BaseServlet.required(request, "timestamp"));
+        long timestamp = Long.parseLong(WebUtils.required(request, "timestamp"));
 
         if (CollectionUtils.isEmpty(newIPs)) {
             throw new IllegalArgumentException("Empty ip list");
@@ -903,11 +887,11 @@ public class ApiCommands {
 
         Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments:" + proxyParams);
 
-        String ipListString = BaseServlet.required(request, "ipList");
+        String ipListString = WebUtils.required(request, "ipList");
         final List<String> ipList;
         List<IpAddress> newIPs = new ArrayList<>();
 
-        if (Boolean.parseBoolean(BaseServlet.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
+        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
             ipList = Arrays.asList(ipListString);
             newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
             });
@@ -944,12 +928,12 @@ public class ApiCommands {
             return "ok";
         }
 
-        final String dom = BaseServlet.required(request, "dom");
+        final String dom = WebUtils.required(request, "dom");
         if (domainsManager.getDomain(dom) == null) {
             throw new IllegalStateException("dom doesn't exist: " + dom);
         }
 
-        boolean updateOnly = Boolean.parseBoolean(BaseServlet.optional(request, "updateOnly", "false"));
+        boolean updateOnly = Boolean.parseBoolean(WebUtils.optional(request, "updateOnly", "false"));
 
         if (CollectionUtils.isEmpty(newIPs)) {
             throw new IllegalArgumentException("Empty ip list");
@@ -1030,7 +1014,7 @@ public class ApiCommands {
 
                 Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-ADD}" + " new: "
                         + Arrays.toString(ipList.toArray()) + " operatorIP: "
-                        + BaseServlet.optional(request, "clientIP", "unknown"));
+                        + WebUtils.optional(request, "clientIP", "unknown"));
             } finally {
                 domainsManager.getDom2LockMap().get(dom).unlock();
             }
@@ -1054,9 +1038,9 @@ public class ApiCommands {
             throw new Exception("invalid localhost ip: " + DistroMapper.getLocalhostIP());
         }
 
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
-        String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
+        String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
 
         if (domObj == null) {
             throw new NacosException(NacosException.NOT_FOUND, "dom not found: " + dom);
@@ -1111,22 +1095,22 @@ public class ApiCommands {
             throw new Exception("invalid localhost ip: " + DistroMapper.getLocalhostIP());
         }
 
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
 
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
         String agent = request.getHeader("Client-Version");
-        String clusters = BaseServlet.optional(request, "clusters", StringUtils.EMPTY);
-        String clientIP = BaseServlet.optional(request, "clientIP", StringUtils.EMPTY);
-        Integer udpPort = Integer.parseInt(BaseServlet.optional(request, "udpPort", "0"));
-        String env = BaseServlet.optional(request, "env", StringUtils.EMPTY);
-        String error = BaseServlet.optional(request, "unconsistentDom", StringUtils.EMPTY);
-        boolean isCheck = Boolean.parseBoolean(BaseServlet.optional(request, "isCheck", "false"));
+        String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
+        String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
+        Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
+        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
+        String error = WebUtils.optional(request, "unconsistentDom", StringUtils.EMPTY);
+        boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
 
-        String app = BaseServlet.optional(request, "app", StringUtils.EMPTY);
+        String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
 
-        String tenant = BaseServlet.optional(request, "tid", StringUtils.EMPTY);
+        String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
 
-        boolean healthyOnly = Boolean.parseBoolean(BaseServlet.optional(request, "healthOnly", "false"));
+        boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthOnly", "false"));
 
         if (!StringUtils.isEmpty(error)) {
             Loggers.ROLE_LOG.info("ENV-NOT-CONSISTENT", error);
@@ -1160,6 +1144,11 @@ public class ApiCommands {
         List<IpAddress> srvedIPs;
 
         srvedIPs = domObj.srvIPs(clientIP, Arrays.asList(StringUtils.split(clusters, ",")));
+
+        // filter ips using selector:
+        if (domObj.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
+            srvedIPs = domObj.getSelector().select(clientIP, srvedIPs);
+        }
 
         if (CollectionUtils.isEmpty(srvedIPs)) {
             String msg = "no ip to serve for dom: " + dom;
@@ -1243,14 +1232,14 @@ public class ApiCommands {
     @NeedAuth
     @RequestMapping("/remvIP4Dom")
     public String remvIP4Dom(HttpServletRequest request) throws Exception {
-        String dom = BaseServlet.required(request, "dom");
-        String ipListString = BaseServlet.required(request, "ipList");
+        String dom = WebUtils.required(request, "dom");
+        String ipListString = WebUtils.required(request, "ipList");
 
         Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName:" + dom + ", iplist:" + ipListString);
 
         List<IpAddress> newIPs = new ArrayList<>();
         List<String> ipList = new ArrayList<>();
-        if (Boolean.parseBoolean(BaseServlet.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
+        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
             newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
             });
         } else {
@@ -1258,7 +1247,7 @@ public class ApiCommands {
         }
 
         List<IpAddress> ipObjList = new ArrayList<>(ipList.size());
-        if (Boolean.parseBoolean(BaseServlet.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
+        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
             ipObjList = newIPs;
         } else {
             for (String ip : ipList) {
@@ -1270,7 +1259,7 @@ public class ApiCommands {
 
         Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-REMV}" + " dead: "
                 + Arrays.toString(ipList.toArray()) + " operator: "
-                + BaseServlet.optional(request, "clientIP", "unknown"));
+                + WebUtils.optional(request, "clientIP", "unknown"));
 
         return "ok";
     }
@@ -1280,8 +1269,8 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
 
-        boolean detail = Boolean.parseBoolean(BaseServlet.optional(request, "detail", "false"));
-        boolean reset = Boolean.parseBoolean(BaseServlet.optional(request, "reset", "false"));
+        boolean detail = Boolean.parseBoolean(WebUtils.optional(request, "detail", "false"));
+        boolean reset = Boolean.parseBoolean(WebUtils.optional(request, "reset", "false"));
 
         List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
         int failedPushCount = PushService.getFailedPushCount();
@@ -1321,7 +1310,7 @@ public class ApiCommands {
     @NeedAuth
     @RequestMapping("/updateSwitch")
     public String updateSwitch(HttpServletRequest request) throws Exception {
-        Boolean debug = Boolean.parseBoolean(BaseServlet.optional(request, "debug", "false"));
+        Boolean debug = Boolean.parseBoolean(WebUtils.optional(request, "debug", "false"));
 
         if (!RaftCore.isLeader() && !debug) {
             Map<String, String> tmpParams = new HashMap<>(16);
@@ -1335,7 +1324,7 @@ public class ApiCommands {
 
         try {
             lock.lock();
-            String entry = BaseServlet.required(request, "entry");
+            String entry = WebUtils.required(request, "entry");
 
             Datum datum = RaftCore.getDatum(UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
             SwitchDomain switchDomain = null;
@@ -1348,7 +1337,7 @@ public class ApiCommands {
 
             if (SwitchEntry.BATCH.equals(entry)) {
                 //batch update
-                SwitchDomain dom = JSON.parseObject(BaseServlet.required(request, "json"), SwitchDomain.class);
+                SwitchDomain dom = JSON.parseObject(WebUtils.required(request, "json"), SwitchDomain.class);
                 dom.setEnableStandalone(Switch.isEnableStandalone());
                 if (dom.httpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
                         || dom.tcpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
@@ -1383,7 +1372,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
-                Float threshold = Float.parseFloat(BaseServlet.required(request, "distroThreshold"));
+                Float threshold = Float.parseFloat(WebUtils.required(request, "distroThreshold"));
 
                 if (threshold <= 0) {
                     throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
@@ -1399,7 +1388,7 @@ public class ApiCommands {
 
 
             if (entry.equals(SwitchEntry.ENABLE_ALL_DOM_NAME_CACHE)) {
-                Boolean enable = Boolean.parseBoolean(BaseServlet.required(request, "enableAllDomNameCache"));
+                Boolean enable = Boolean.parseBoolean(WebUtils.required(request, "enableAllDomNameCache"));
                 Switch.setAllDomNameCache(enable);
 
                 if (!debug) {
@@ -1410,8 +1399,8 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.INCREMENTAL_LIST)) {
-                String action = BaseServlet.required(request, "action");
-                List<String> doms = Arrays.asList(BaseServlet.required(request, "incrementalList").split(","));
+                String action = WebUtils.required(request, "action");
+                List<String> doms = Arrays.asList(WebUtils.required(request, "incrementalList").split(","));
 
                 if (action.equals(SwitchEntry.ACTION_UPDATE)) {
                     Switch.getIncrementalList().addAll(doms);
@@ -1429,8 +1418,8 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.HEALTH_CHECK_WHITLE_LIST)) {
-                String action = BaseServlet.required(request, "action");
-                List<String> whiteList = Arrays.asList(BaseServlet.required(request, "healthCheckWhiteList").split(","));
+                String action = WebUtils.required(request, "action");
+                List<String> whiteList = Arrays.asList(WebUtils.required(request, "healthCheckWhiteList").split(","));
 
                 if (action.equals(SwitchEntry.ACTION_UPDATE)) {
                     Switch.getHealthCheckWhiteList().addAll(whiteList);
@@ -1451,7 +1440,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.CLIENT_BEAT_INTERVAL)) {
-                long clientBeatInterval = Long.parseLong(BaseServlet.required(request, "clientBeatInterval"));
+                long clientBeatInterval = Long.parseLong(WebUtils.required(request, "clientBeatInterval"));
                 Switch.setClientBeatInterval(clientBeatInterval);
 
                 if (!debug) {
@@ -1461,8 +1450,8 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.PUSH_VERSION)) {
-                String type = BaseServlet.required(request, "type");
-                String version = BaseServlet.required(request, "version");
+                String type = WebUtils.required(request, "type");
+                String version = WebUtils.required(request, "version");
 
                 if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
                     throw new IllegalArgumentException("illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
@@ -1487,8 +1476,8 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.TRAFFIC_SCHEDULING_VERSION)) {
-                String type = BaseServlet.required(request, "type");
-                String version = BaseServlet.required(request, "version");
+                String type = WebUtils.required(request, "type");
+                String version = WebUtils.required(request, "version");
 
                 if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
                     throw new IllegalArgumentException("illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
@@ -1513,8 +1502,8 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.PUSH_CACHE_MILLIS)) {
-                String dom = BaseServlet.optional(request, "dom", StringUtils.EMPTY);
-                Long cacheMillis = Long.parseLong(BaseServlet.required(request, "millis"));
+                String dom = WebUtils.optional(request, "dom", StringUtils.EMPTY);
+                Long cacheMillis = Long.parseLong(WebUtils.required(request, "millis"));
 
                 if (cacheMillis < SwitchEntry.MIN_PUSH_CACHE_TIME_MIILIS) {
                     throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
@@ -1529,8 +1518,8 @@ public class ApiCommands {
 
             // extremely careful while modifying this, cause it will affect all clients without pushing enabled
             if (entry.equals(SwitchEntry.DEFAULT_CACHE_MILLIS)) {
-                String dom = BaseServlet.optional(request, "dom", StringUtils.EMPTY);
-                Long cacheMillis = Long.parseLong(BaseServlet.required(request, "millis"));
+                String dom = WebUtils.optional(request, "dom", StringUtils.EMPTY);
+                Long cacheMillis = Long.parseLong(WebUtils.required(request, "millis"));
 
                 if (cacheMillis < SwitchEntry.MIN_CACHE_TIME_MIILIS) {
                     throw new IllegalArgumentException("min default cache time  is too small(<1000)");
@@ -1544,7 +1533,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.MASTERS)) {
-                List<String> masters = Arrays.asList(BaseServlet.required(request, "names").split(","));
+                List<String> masters = Arrays.asList(WebUtils.required(request, "names").split(","));
 
                 Switch.setMasters(masters);
                 if (!debug) {
@@ -1554,7 +1543,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.DISTRO)) {
-                boolean enabled = Boolean.parseBoolean(BaseServlet.required(request, "enabled"));
+                boolean enabled = Boolean.parseBoolean(WebUtils.required(request, "enabled"));
 
                 Switch.setDistroEnabled(enabled);
                 if (!debug) {
@@ -1564,7 +1553,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.CHECK)) {
-                boolean enabled = Boolean.parseBoolean(BaseServlet.required(request, "enabled"));
+                boolean enabled = Boolean.parseBoolean(WebUtils.required(request, "enabled"));
 
                 Switch.setHeathCheckEnabled(enabled);
                 if (!debug) {
@@ -1574,7 +1563,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.DOM_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(BaseServlet.required(request, "millis"));
+                Long millis = Long.parseLong(WebUtils.required(request, "millis"));
 
                 if (millis < SwitchEntry.MIN_DOM_SYNC_TIME_MIILIS) {
                     throw new IllegalArgumentException("domStatusSynchronizationPeriodMillis is too small(<5000)");
@@ -1588,7 +1577,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.SERVER_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(BaseServlet.required(request, "millis"));
+                Long millis = Long.parseLong(WebUtils.required(request, "millis"));
 
                 if (millis < SwitchEntry.MIN_SERVER_SYNC_TIME_MIILIS) {
                     throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
@@ -1602,7 +1591,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.HEALTH_CHECK_TIMES)) {
-                Integer times = Integer.parseInt(BaseServlet.required(request, "times"));
+                Integer times = Integer.parseInt(WebUtils.required(request, "times"));
 
                 Switch.setCheckTimes(times);
                 if (!debug) {
@@ -1612,7 +1601,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.DISABLE_ADD_IP)) {
-                boolean disableAddIP = Boolean.parseBoolean(BaseServlet.required(request, "disableAddIP"));
+                boolean disableAddIP = Boolean.parseBoolean(WebUtils.required(request, "disableAddIP"));
 
                 Switch.setDisableAddIP(disableAddIP);
                 if (!debug) {
@@ -1622,7 +1611,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.ENABLE_CACHE)) {
-                boolean enableCache = Boolean.parseBoolean(BaseServlet.required(request, "enableCache"));
+                boolean enableCache = Boolean.parseBoolean(WebUtils.required(request, "enableCache"));
 
                 Switch.setEnableCache(enableCache);
                 if (!debug) {
@@ -1632,7 +1621,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.SEND_BEAT_ONLY)) {
-                boolean sendBeatOnly = Boolean.parseBoolean(BaseServlet.required(request, "sendBeatOnly"));
+                boolean sendBeatOnly = Boolean.parseBoolean(WebUtils.required(request, "sendBeatOnly"));
 
                 Switch.setSendBeatOnly(sendBeatOnly);
                 if (!debug) {
@@ -1643,7 +1632,7 @@ public class ApiCommands {
 
             if (entry.equals(SwitchEntry.LIMITED_URL_MAP)) {
                 Map<String, Integer> limitedUrlMap = new HashMap<>(16);
-                String limitedUrls = BaseServlet.required(request, "limitedUrls");
+                String limitedUrls = WebUtils.required(request, "limitedUrls");
 
                 if (!StringUtils.isEmpty(limitedUrls)) {
                     String[] entries = limitedUrls.split(",");
@@ -1676,7 +1665,7 @@ public class ApiCommands {
             }
 
             if (entry.equals(SwitchEntry.ENABLE_STANDALONE)) {
-                String enable = BaseServlet.required(request, "enableStandalone");
+                String enable = WebUtils.required(request, "enableStandalone");
 
                 if (!StringUtils.isNotEmpty(enable)) {
                     Switch.setEnableStandalone(Boolean.parseBoolean(enable));
@@ -1770,8 +1759,8 @@ public class ApiCommands {
     @RequestMapping("/allDomNames")
     public JSONObject allDomNames(HttpServletRequest request) throws Exception {
 
-        boolean responsibleOnly = Boolean.parseBoolean(BaseServlet.optional(request, "responsibleOnly", "false"));
-        boolean withOwner = Boolean.parseBoolean((BaseServlet.optional(request, "withOwner", "false")));
+        boolean responsibleOnly = Boolean.parseBoolean(WebUtils.optional(request, "responsibleOnly", "false"));
+        boolean withOwner = Boolean.parseBoolean((WebUtils.optional(request, "withOwner", "false")));
 
         List<String> doms = new ArrayList<String>();
         Set<String> domSet;
@@ -1799,7 +1788,7 @@ public class ApiCommands {
     public JSONObject searchDom(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
-        String expr = BaseServlet.required(request, "expr");
+        String expr = WebUtils.required(request, "expr");
 
         List<Domain> doms
                 = domainsManager.searchDomains(".*" + expr + ".*");
@@ -1821,7 +1810,7 @@ public class ApiCommands {
 
     @RequestMapping("/getWeightsByIP")
     public JSONObject getWeightsByIP(HttpServletRequest request) {
-        String ip = BaseServlet.required(request, "ip");
+        String ip = WebUtils.required(request, "ip");
 
         Map<String, List<IpAddress>> dom2IPList = new HashMap<String, List<IpAddress>>(1024);
         for (String dom : domainsManager.getAllDomNames()) {
@@ -1889,8 +1878,8 @@ public class ApiCommands {
 
     public String doAddCluster4Dom(HttpServletRequest request) throws Exception {
 
-        String dom = BaseServlet.required(request, "dom");
-        String json = BaseServlet.optional(request, "clusterJson", StringUtils.EMPTY);
+        String dom = WebUtils.required(request, "dom");
+        String json = WebUtils.optional(request, "clusterJson", StringUtils.EMPTY);
 
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
@@ -1908,18 +1897,18 @@ public class ApiCommands {
                 Loggers.SRV_LOG.warn("ADD-CLUSTER", "failed to parse json, try old format.");
             }
         } else {
-            String cktype = BaseServlet.optional(request, "cktype", "TCP");
-            String clusterName = BaseServlet.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-            String ipPort4Check = BaseServlet.optional(request, "ipPort4Check", "true");
-            String path = BaseServlet.optional(request, "path", StringUtils.EMPTY);
-            String headers = BaseServlet.optional(request, "headers", StringUtils.EMPTY);
-            String nodegroup = BaseServlet.optional(request, "nodegroup", StringUtils.EMPTY);
-            String expectedResponseCode = BaseServlet.optional(request, "expectedResponseCode", "200");
-            int defIPPort = NumberUtils.toInt(BaseServlet.optional(request, "defIPPort", "-1"));
-            int defCkport = NumberUtils.toInt(BaseServlet.optional(request, "defCkport", "80"));
-            String siteGroup = BaseServlet.optional(request, "siteGroup", StringUtils.EMPTY);
-            String submask = BaseServlet.optional(request, "submask", StringUtils.EMPTY);
-            String clusterMetadataJson = BaseServlet.optional(request, "clusterMetadata", StringUtils.EMPTY);
+            String cktype = WebUtils.optional(request, "cktype", "TCP");
+            String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+            String ipPort4Check = WebUtils.optional(request, "ipPort4Check", "true");
+            String path = WebUtils.optional(request, "path", StringUtils.EMPTY);
+            String headers = WebUtils.optional(request, "headers", StringUtils.EMPTY);
+            String nodegroup = WebUtils.optional(request, "nodegroup", StringUtils.EMPTY);
+            String expectedResponseCode = WebUtils.optional(request, "expectedResponseCode", "200");
+            int defIPPort = NumberUtils.toInt(WebUtils.optional(request, "defIPPort", "-1"));
+            int defCkport = NumberUtils.toInt(WebUtils.optional(request, "defCkport", "80"));
+            String siteGroup = WebUtils.optional(request, "siteGroup", StringUtils.EMPTY);
+            String submask = WebUtils.optional(request, "submask", StringUtils.EMPTY);
+            String clusterMetadataJson = WebUtils.optional(request, "clusterMetadata", StringUtils.EMPTY);
             cluster.setName(clusterName);
 
             cluster.setLegacySyncConfig(nodegroup);
@@ -1946,9 +1935,9 @@ public class ApiCommands {
                 cluster.setHealthChecker(config);
             } else if (StringUtils.equals(cktype, HealthCheckType.MYSQL.name())) {
                 AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
-                String cmd = BaseServlet.required(request, "cmd");
-                String pwd = BaseServlet.required(request, "pwd");
-                String user = BaseServlet.required(request, "user");
+                String cmd = WebUtils.required(request, "cmd");
+                String pwd = WebUtils.required(request, "pwd");
+                String user = WebUtils.required(request, "user");
 
                 config.setType(cktype);
                 config.setCmd(cmd);
@@ -1991,7 +1980,7 @@ public class ApiCommands {
     public JSONObject distroStatus(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
-        String action = BaseServlet.optional(request, "action", "view");
+        String action = WebUtils.optional(request, "action", "view");
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
             result.put("status", DistroMapper.getDistroConfig());
@@ -2035,8 +2024,8 @@ public class ApiCommands {
 
         String ipSpliter = ",";
 
-        String ips = BaseServlet.optional(request, "ips", "");
-        String action = BaseServlet.required(request, "action");
+        String ips = WebUtils.optional(request, "ips", "");
+        String action = WebUtils.required(request, "action");
 
         if (SwitchEntry.ACTION_ADD.equals(action)) {
 
@@ -2108,7 +2097,7 @@ public class ApiCommands {
 
     @RequestMapping("/serverStatus")
     public String serverStatus(HttpServletRequest request) {
-        String serverStatus = BaseServlet.required(request, "serverStatus");
+        String serverStatus = WebUtils.required(request, "serverStatus");
         DistroMapper.onReceiveServerStatus(serverStatus);
 
         return "ok";
@@ -2116,7 +2105,7 @@ public class ApiCommands {
 
     @RequestMapping("/reCalculateCheckSum4Dom")
     public JSONObject reCalculateCheckSum4Dom(HttpServletRequest request) {
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         if (virtualClusterDomain == null) {
@@ -2136,7 +2125,7 @@ public class ApiCommands {
     public JSONObject getDomString4MD5(HttpServletRequest request) throws NacosException {
 
         JSONObject result = new JSONObject();
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         if (virtualClusterDomain == null) {
@@ -2150,7 +2139,7 @@ public class ApiCommands {
 
     @RequestMapping("/getResponsibleServer4Dom")
     public JSONObject getResponsibleServer4Dom(HttpServletRequest request) {
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         if (virtualClusterDomain == null) {
@@ -2175,7 +2164,7 @@ public class ApiCommands {
 
     @RequestMapping("/responsible")
     public JSONObject responsible(HttpServletRequest request) {
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         if (virtualClusterDomain == null) {
@@ -2194,7 +2183,7 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
         //all ips, sites, disabled site, checkserver, appName
-        String dom = BaseServlet.required(request, "dom");
+        String dom = WebUtils.required(request, "dom");
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
 
         Map<String, Object> data = new HashMap<>(2);
@@ -2236,8 +2225,8 @@ public class ApiCommands {
     @RequestMapping("/domStatus")
     public String domStatus(HttpServletRequest request) {
         //format: dom1@@checksum@@@dom2@@checksum
-        String domsStatusString = BaseServlet.required(request, "domsStatus");
-        String serverIP = BaseServlet.optional(request, "clientIP", "");
+        String domsStatusString = WebUtils.required(request, "domsStatus");
+        String serverIP = WebUtils.optional(request, "clientIP", "");
 
         if (!NamingProxy.getServers().contains(serverIP)) {
             throw new IllegalArgumentException("ip: " + serverIP + " is not in serverlist");
@@ -2276,69 +2265,14 @@ public class ApiCommands {
         return "ok";
     }
 
-    @RequestMapping("/checkDataConsistence")
-    public JSONObject checkDataConsistence(HttpServletRequest request) throws Exception {
-
-        JSONObject result = new JSONObject();
-        String domName = BaseServlet.optional(request, "dom", StringUtils.EMPTY);
-        Boolean checkConsistence = Boolean.parseBoolean(BaseServlet.optional(request, "checkConsistence", "true"));
-
-        if (!checkConsistence) {
-            request.getParameterMap().put("isCheck", (String[]) Arrays.asList("true").toArray());
-
-            srvIPXT(request);
-            srvAllIP(request);
-            return result;
-        }
-
-        if (StringUtils.isEmpty(domName)) {
-            List<String> domNames = new ArrayList<String>(domainsManager.getAllDomNames());
-            domName = domNames.get((int) (System.currentTimeMillis() % domNames.size()));
-        }
-
-        Domain domain = domainsManager.getDomain(domName);
-        List<String> diff = new ArrayList<String>();
-        String localDomString = "";
-
-        for (String ip : NamingProxy.getServers()) {
-            Map<String, String> tmpParams = new HashMap<String, String>(16);
-
-            tmpParams.put("dom", domName);
-            tmpParams.put("redirect", "1");
-
-            String domString;
-            try {
-                domString = NamingProxy.reqAPI("dom", tmpParams, ip, false);
-                JSONObject jsonObject = JSON.parseObject(domString);
-
-                if (!jsonObject.getString("checksum").equals(domain.getChecksum())) {
-                    diff.add(ip + "_" + domString);
-                }
-
-                if (ip.equals(NetUtils.localServer())) {
-                    localDomString = domString;
-                }
-
-            } catch (Exception e) {
-                Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "Failed to get domain status from " + ip, e);
-            }
-
-        }
-
-        result.put("local dom", localDomString);
-        result.put("diff list", diff);
-
-        return result;
-    }
-
     @RequestMapping("/containerNotify")
     public String containerNotify(HttpServletRequest request) {
 
-        String type = BaseServlet.required(request, "type");
-        String domain = BaseServlet.required(request, "domain");
-        String ip = BaseServlet.required(request, "ip");
-        String port = BaseServlet.required(request, "port");
-        String state = BaseServlet.optional(request, "state", StringUtils.EMPTY);
+        String type = WebUtils.required(request, "type");
+        String domain = WebUtils.required(request, "domain");
+        String ip = WebUtils.required(request, "ip");
+        String port = WebUtils.required(request, "port");
+        String state = WebUtils.optional(request, "state", StringUtils.EMPTY);
 
         Loggers.SRV_LOG.info("[CONTAINER_NOTFY] received notify event, type:" + type + ", domain:" + domain +
                 ", ip:" + ip + ", port:" + port + ", state:" + state);

@@ -28,6 +28,8 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftListener;
+import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -46,6 +48,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
     private static final String DOMAIN_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
+    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
+
+    @JSONField(serialize = false)
+    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
+
+    @JSONField(serialize = false)
+    private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
+
     private String name;
     private String token;
     private List<String> owners = new ArrayList<>();
@@ -53,18 +63,12 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Boolean enableHealthCheck = true;
     private Boolean enabled = true;
     private Boolean enableClientBeat = false;
+    private Selector selector = new NoneSelector();
 
-    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
     /**
      * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
      */
     private long ipDeleteTimeout = 30 * 1000;
-
-    @JSONField(serialize = false)
-    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
-
-    @JSONField(serialize = false)
-    private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     private volatile long lastModifiedMillis = 0L;
 
@@ -140,6 +144,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         this.metadata = metadata;
     }
 
+    public Selector getSelector() {
+        return selector;
+    }
+
+    public void setSelector(Selector selector) {
+        this.selector = selector;
+    }
+
     public VirtualClusterDomain() {
 
     }
@@ -202,10 +214,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
                 if (ip == null) {
                     Loggers.SRV_LOG.error("VIPSRV-DOM", "received malformed ip");
                     continue;
-                }
-
-                if (ip.getPort() == 0) {
-                    ip.setPort(getLegacyCkPort());
                 }
 
                 if (StringUtils.isEmpty(ip.getClusterName())) {
@@ -372,9 +380,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
         domain.put("protectThreshold", vDom.getProtectThreshold());
 
-        int totalCkRTMillis = 0;
-        int validCkRTCount = 0;
-
         List<Object> clustersList = new ArrayList<Object>();
 
         for (Map.Entry<String, Cluster> entry : vDom.getClusterMap().entrySet()) {
@@ -395,15 +400,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         domain.put("clusters", clustersList);
 
         return JSON.toJSONString(domain);
-    }
-
-
-    /**
-     * the legacy check port is the default check port for old domain format
-     */
-    @JSONField(serialize = false)
-    public int getLegacyCkPort() {
-        return clusterMap.get(UtilsAndCommons.DEFAULT_CLUSTER_NAME).getDefCkport();
     }
 
     @Override
@@ -502,6 +498,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enabled: " + enabled + " -> " + vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
+
+        selector = vDom.getSelector();
 
         metadata = vDom.getMetadata();
 

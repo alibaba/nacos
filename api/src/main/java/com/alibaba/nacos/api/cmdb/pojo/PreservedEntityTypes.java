@@ -13,16 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.util;
-
-import java.util.UUID;
+package com.alibaba.nacos.api.cmdb.pojo;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public class UuidUtil {
-
-    public static String generateUuid() {
-        return UUID.randomUUID().toString();
-    }
+public enum PreservedEntityTypes {
+    /**
+     *
+     */
+    ip,
+    /**
+     *
+     */
+    service
 }

@@ -17,7 +17,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.6.0</version>
+        <version>0.7.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -55,6 +55,11 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>nacos-client</artifactId>
         </dependency>
         <dependency>
@@ -87,6 +92,7 @@
             <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
