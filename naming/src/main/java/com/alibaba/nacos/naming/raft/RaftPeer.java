@@ -34,7 +34,7 @@ public class RaftPeer {
 
     public volatile long leaderDueMs = RandomUtils.nextLong(0, GlobalExecutor.LEADER_TIMEOUT_MS);
 
-    public volatile  long heartbeatDueMs = RandomUtils.nextLong(0, GlobalExecutor.HEARTBEAT_INTVERAL_MS);
+    public volatile  long heartbeatDueMs = RandomUtils.nextLong(0, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
 
     public State state = State.FOLLOWER;
 
@@ -43,7 +43,7 @@ public class RaftPeer {
     }
 
     public void resetHeartbeatDue() {
-        heartbeatDueMs = GlobalExecutor.HEARTBEAT_INTVERAL_MS;
+        heartbeatDueMs = GlobalExecutor.HEARTBEAT_INTERVAL_MS;
     }
 
     public enum State {
