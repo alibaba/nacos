@@ -127,4 +127,7 @@ public class Constants {
     public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
 
     public static final String NAMING_DEFAULT_CLUSTER_NAME = "DEFAULT";
+
+    public static final String REQUEST_PARAM_TENANT_ID = "tid";
+    public static final String REQUEST_PARAM_SERVICE_NAME = "serviceName";
 }

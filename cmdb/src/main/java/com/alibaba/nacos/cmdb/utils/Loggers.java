@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * @author nacos
+ * @since 0.7.0
  */
 public class Loggers {
 

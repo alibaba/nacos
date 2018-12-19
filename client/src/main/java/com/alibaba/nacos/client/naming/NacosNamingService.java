@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -159,7 +158,7 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, Instance instance) throws NacosException {
 
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
         beatInfo.setCluster(instance.getClusterName());
@@ -191,7 +190,7 @@ public class NacosNamingService implements NamingService {
     public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
 
         ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-            StringUtils.EMPTY, false);
+            StringUtils.EMPTY);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -209,7 +208,7 @@ public class NacosNamingService implements NamingService {
         throws NacosException {
 
         ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-            StringUtils.EMPTY, false);
+            StringUtils.EMPTY);
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();

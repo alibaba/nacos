@@ -21,10 +21,9 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.ApiCommands;
-import com.alibaba.nacos.naming.web.MockHttpRequest;
+import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -32,9 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -46,67 +43,18 @@ public class InstanceController extends ApiCommands {
     @RequestMapping(value = "/instance", method = RequestMethod.PUT)
     public String register(HttpServletRequest request) throws Exception {
 
-        Map<String, String[]> params = new HashMap<>(request.getParameterMap());
-        MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(params);
+        OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
 
         String serviceJson = WebUtils.optional(request, "service", StringUtils.EMPTY);
-        String clusterJson = WebUtils.optional(request, "cluster", StringUtils.EMPTY);
 
         // set service info:
         if (StringUtils.isNotEmpty(serviceJson)) {
             JSONObject service = JSON.parseObject(serviceJson);
-            mockHttpRequest.addParameter("dom", service.getString("name"));
-            mockHttpRequest.addParameter("app", service.getString("app"));
-            mockHttpRequest.addParameter("group", service.getString("group"));
-            mockHttpRequest.addParameter("protectThreshold", service.getString("protectThreshold"));
-
-            String healthCheckMode = service.getString("healthCheckMode");
-
-            if (HealthCheckMode.server.name().equals(healthCheckMode)) {
-                mockHttpRequest.addParameter("enableHealthCheck", "true");
-            }
-
-            if (HealthCheckMode.client.name().equals(healthCheckMode)) {
-                mockHttpRequest.addParameter("enableClientBeat", "true");
-            }
-
-            if (HealthCheckMode.none.name().equals(healthCheckMode)) {
-                mockHttpRequest.addParameter("enableHealthCheck", "false");
-                mockHttpRequest.addParameter("enableClientBeat", "false");
-            }
-
-            mockHttpRequest.addParameter("serviceMetadata", service.getString("metadata"));
+            requestWrapper.addParameter("dom", service.getString("name"));
         } else {
-            mockHttpRequest.addParameter("dom", WebUtils.required(request, "serviceName"));
+            requestWrapper.addParameter("dom", WebUtils.required(request, "serviceName"));
         }
-
-        // set cluster info:
-        if (StringUtils.isNotEmpty(clusterJson)) {
-            JSONObject cluster = JSON.parseObject(clusterJson);
-            String clusterName = cluster.getString("name");
-            if (StringUtils.isEmpty(clusterName)) {
-                clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-            }
-            mockHttpRequest.addParameter("clusterName", clusterName);
-
-            JSONObject healthChecker = cluster.getJSONObject("healthChecker");
-            if (healthChecker == null) {
-                mockHttpRequest.addParameter("cktype", "TCP");
-            } else {
-                for (String key : healthChecker.keySet()) {
-                    mockHttpRequest.addParameter(key, healthChecker.getString(key));
-                }
-                mockHttpRequest.addParameter("cktype", healthChecker.getString("type"));
-            }
-
-            mockHttpRequest.addParameter("cluster", StringUtils.EMPTY);
-            mockHttpRequest.addParameter("defIPPort", cluster.getString("defaultPort"));
-            mockHttpRequest.addParameter("defCkport", cluster.getString("defaultCheckPort"));
-            mockHttpRequest.addParameter("ipPort4Check", cluster.getString("useIPPort4Check"));
-            mockHttpRequest.addParameter("clusterMetadata", cluster.getString("metadata"));
-
-        }
-        return regService(mockHttpRequest);
+        return regService(requestWrapper);
     }
 
     @RequestMapping(value = "/instance", method = RequestMethod.DELETE)
@@ -116,21 +64,12 @@ public class InstanceController extends ApiCommands {
 
     @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
-        String serviceName = WebUtils.required(request, "serviceName");
-        Map<String, String[]> params = new HashMap<>(request.getParameterMap());
-        MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(params);
-        mockHttpRequest.addParameter("dom", serviceName);
-        return regService(mockHttpRequest);
+        return regService(OverrideParameterRequestWrapper.buildRequest(request, "dom", WebUtils.required(request, "serviceName")));
     }
 
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
     public JSONObject queryList(HttpServletRequest request) throws Exception {
-
-        Map<String, String[]> params = new HashMap<>(request.getParameterMap());
-        params.put("dom", params.get("serviceName"));
-        MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(params);
-
-        return srvIPXT(mockHttpRequest);
+        return srvIPXT(OverrideParameterRequestWrapper.buildRequest(request, "dom", WebUtils.required(request, "serviceName")));
     }
 
     @RequestMapping(value = "/instance", method = RequestMethod.GET)
@@ -170,6 +109,5 @@ public class InstanceController extends ApiCommands {
         }
 
         throw new IllegalStateException("no matched ip found!");
-
     }
 }

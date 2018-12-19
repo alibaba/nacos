@@ -18,13 +18,15 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.AbstractSelector;
-import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.naming.utils.*;
+import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
@@ -96,9 +98,9 @@ public class NamingProxy {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
 
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-                    "Accept-Encoding", "gzip,deflate,sdch",
-                    "Connection", "Keep-Alive",
-                    "RequestId", UuidUtils.generateUuid());
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "RequestId", UuidUtils.generateUuid());
 
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
             if (HttpURLConnection.HTTP_OK != result.code) {
@@ -167,7 +169,7 @@ public class NamingProxy {
         params.put("serviceName", serviceName);
         params.put("clusterName", instance.getClusterName());
 
-        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, "PUT");
+        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.PUT);
     }
 
     public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
@@ -182,7 +184,7 @@ public class NamingProxy {
         params.put("serviceName", serviceName);
         params.put("cluster", cluster);
 
-        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, "DELETE");
+        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
     }
 
     public String queryList(String serviceName, String clusters, boolean healthyOnly) throws NacosException {
@@ -193,7 +195,7 @@ public class NamingProxy {
         params.put("clusters", clusters);
         params.put("healthyOnly", String.valueOf(healthyOnly));
 
-        return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, "GET");
+        return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 
     public boolean serverHealthy() {
@@ -284,7 +286,7 @@ public class NamingProxy {
     }
 
     public String callServer(String api, Map<String, String> params, String curServer) throws NacosException {
-        return callServer(api, params, curServer, "GET");
+        return callServer(api, params, curServer, HttpMethod.GET);
     }
 
     public String callServer(String api, Map<String, String> params, String curServer, String method)
@@ -323,10 +325,12 @@ public class NamingProxy {
     }
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers) {
-        return reqAPI(api, params, servers, "GET");
+        return reqAPI(api, params, servers, HttpMethod.GET);
     }
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) {
+
+        params.put(Constants.REQUEST_PARAM_TENANT_ID, getTenantId());
 
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
             throw new IllegalArgumentException("no server available");
@@ -361,6 +365,13 @@ public class NamingProxy {
 
         throw new IllegalStateException("failed to req API:/api/" + api + " after all servers(" + servers + ") tried");
 
+    }
+
+    private String getTenantId() {
+        if (UtilAndComs.DEFAULT_NAMESPACE_ID.equals(namespace)) {
+            return StringUtils.EMPTY;
+        }
+        return namespace;
     }
 
 }
