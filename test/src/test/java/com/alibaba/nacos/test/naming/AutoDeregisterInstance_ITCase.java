@@ -163,7 +163,7 @@ public class AutoDeregisterInstance_ITCase {
 
         Assert.assertEquals(instances.size(), 1);
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
 
@@ -207,7 +207,7 @@ public class AutoDeregisterInstance_ITCase {
 
         Assert.assertEquals(instances.size(), 1);
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
         beatInfo.setCluster("c1");

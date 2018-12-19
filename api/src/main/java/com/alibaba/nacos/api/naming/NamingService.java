@@ -195,6 +195,7 @@ public interface NamingService {
      * @param selector selector to filter the resource
      * @return list of service names
      * @throws NacosException
+     * @since 0.7.0
      */
     ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
 

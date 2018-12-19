@@ -103,7 +103,9 @@ public class ApiCommands {
 
             JSONObject result = new JSONObject();
             try {
-                result = ApiCommands.this.srvIPXT(MockHttpRequest.buildRequest(params));
+                result = ApiCommands.this.doSrvIPXT(client.getDom(), client.getAgent(), client.getClusters(),
+                    inetAddress.getHostAddress(), 0, StringUtils.EMPTY, StringUtils.EMPTY, false,
+                    StringUtils.EMPTY, StringUtils.EMPTY, false);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("PUSH-SERVICE: dom is not modified", e);
             }
@@ -301,7 +303,7 @@ public class ApiCommands {
 
         //if domain does not exist, register it.
         if (virtualClusterDomain == null) {
-            regDom(MockHttpRequest.buildRequest(stringMap));
+            regDom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
             Loggers.SRV_LOG.warn("dom not found, register it, dom:" + dom);
         }
 
@@ -320,13 +322,13 @@ public class ApiCommands {
         ipAddress.setInstanceId(ipAddress.generateInstanceId());
 
         if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
-            doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));
+            doAddCluster4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
         }
 
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
-            addIP4Dom(MockHttpRequest.buildRequest(stringMap));
+            addIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
             Loggers.SRV_LOG.warn("ip not found, register it, dom:" + dom + ", ip:" + ipAddress);
         }
 
@@ -518,9 +520,8 @@ public class ApiCommands {
         parameterMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
         parameterMap.put("json", Arrays.asList("true").toArray(new String[1]));
         parameterMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
-        MockHttpRequest mockHttpRequest = MockHttpRequest.buildRequest(parameterMap);
 
-        return remvIP4Dom(mockHttpRequest);
+        return remvIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, parameterMap));
 
     }
 
@@ -584,7 +585,7 @@ public class ApiCommands {
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             stringMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
 
-            doAddIP4Dom(MockHttpRequest.buildRequest(stringMap));
+            doAddIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
         } else {
             throw new IllegalArgumentException("dom not found: " + dom);
         }
@@ -1085,32 +1086,11 @@ public class ApiCommands {
         return result;
     }
 
-    @RequestMapping("/srvIPXT")
-    @ResponseBody
-    public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
+    public JSONObject doSrvIPXT(String dom, String agent, String clusters, String clientIP, int udpPort,
+                                String error, String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         JSONObject result = new JSONObject();
-
-        if (DistroMapper.getLocalhostIP().equals(UtilsAndCommons.LOCAL_HOST_IP)) {
-            throw new Exception("invalid localhost ip: " + DistroMapper.getLocalhostIP());
-        }
-
-        String dom = WebUtils.required(request, "dom");
-
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
-        String agent = request.getHeader("Client-Version");
-        String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
-        String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
-        Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
-        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
-        String error = WebUtils.optional(request, "unconsistentDom", StringUtils.EMPTY);
-        boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
-
-        String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
-
-        String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
-
-        boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthOnly", "false"));
 
         if (!StringUtils.isEmpty(error)) {
             Loggers.ROLE_LOG.info("ENV-NOT-CONSISTENT", error);
@@ -1128,12 +1108,12 @@ public class ApiCommands {
         try {
             if (udpPort > 0 && PushService.canEnablePush(agent)) {
                 PushService.addClient(dom,
-                        clusters,
-                        agent,
-                        new InetSocketAddress(clientIP, udpPort),
-                        pushDataSource,
-                        tenant,
-                        app);
+                    clusters,
+                    agent,
+                    new InetSocketAddress(clientIP, udpPort),
+                    pushDataSource,
+                    tid,
+                    app);
                 cacheMillis = Switch.getPushCacheMillis(dom);
             }
         } catch (Exception e) {
@@ -1173,7 +1153,7 @@ public class ApiCommands {
         if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, " +
-                    "dom: " + dom);
+                "dom: " + dom);
             if (isCheck) {
                 result.put("reachProtectThreshold", true);
             }
@@ -1227,6 +1207,35 @@ public class ApiCommands {
         result.put("env", env);
         result.put("metadata", domObj.getMetadata());
         return result;
+    }
+
+    @RequestMapping("/srvIPXT")
+    @ResponseBody
+    public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
+
+        if (DistroMapper.getLocalhostIP().equals(UtilsAndCommons.LOCAL_HOST_IP)) {
+            throw new Exception("invalid localhost ip: " + DistroMapper.getLocalhostIP());
+        }
+
+        String dom = WebUtils.required(request, "dom");
+
+        VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(dom);
+        String agent = request.getHeader("Client-Version");
+        String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
+        String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
+        Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
+        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
+        String error = WebUtils.optional(request, "unconsistentDom", StringUtils.EMPTY);
+        boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
+
+        String app = WebUtils.optional(request, "app", StringUtils.EMPTY);
+
+        String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
+
+        boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
+
+        return doSrvIPXT(dom, agent, clusters, clientIP, udpPort, error, env, isCheck, app, tenant, healthyOnly);
+
     }
 
     @NeedAuth

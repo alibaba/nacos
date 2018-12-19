@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.util.HttpMethod;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -83,6 +84,7 @@ public class BeatReactor {
     }
 
     class BeatTask implements Runnable {
+
         BeatInfo beatInfo;
 
         public BeatTask(BeatInfo beatInfo) {
@@ -93,10 +95,10 @@ public class BeatReactor {
         public void run() {
             Map<String, String> params = new HashMap<String, String>(2);
             params.put("beat", JSON.toJSONString(beatInfo));
-            params.put("dom", beatInfo.getDom());
+            params.put("serviceName", beatInfo.getServiceName());
 
             try {
-                String result = serverProxy.callAllServers(UtilAndComs.NACOS_URL_BASE + "/api/clientBeat", params);
+                String result = serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/health", params, HttpMethod.POST);
                 JSONObject jsonObject = JSON.parseObject(result);
 
                 if (jsonObject != null) {

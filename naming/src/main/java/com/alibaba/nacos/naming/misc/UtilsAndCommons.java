@@ -49,6 +49,8 @@ public class UtilsAndCommons {
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
+    public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
+
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
@@ -103,6 +105,8 @@ public class UtilsAndCommons {
     public static final String API_IP_FOR_DOM = "/api/ip4Dom";
 
     public static final String API_DOM = "/api/dom";
+
+    public static final String SERVICE_TENANT_CONNECTOR = "::";
 
     public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
 
