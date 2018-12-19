@@ -120,7 +120,7 @@ public class RaftCore {
 
         GlobalExecutor.register(new MasterElection());
         GlobalExecutor.register1(new HeartBeat());
-        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTVERAL_MS);
+        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTERVAL_MS);
 
         if (peers.size() > 0) {
             if (lock.tryLock(INIT_LOCK_TIME_SECONDS, TimeUnit.SECONDS)) {
@@ -132,7 +132,7 @@ public class RaftCore {
         }
 
         Loggers.RAFT.info("timer started: leader timeout ms: " + GlobalExecutor.LEADER_TIMEOUT_MS
-                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTVERAL_MS);
+                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
 
     public static List<RaftListener> getListeners() {
