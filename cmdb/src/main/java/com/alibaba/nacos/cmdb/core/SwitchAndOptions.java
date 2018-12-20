@@ -30,6 +30,9 @@ public class SwitchAndOptions {
     @Value("${nacos.cmdb.eventTaskInterval}")
     private int eventTaskInterval;
 
+    @Value("${nacos.cmdb.labelTaskInterval}")
+    private int labelTaskInterval;
+
     @Value("${nacos.cmdb.loadDataAtStart}")
     private boolean loadDataAtStart;
 
@@ -47,6 +50,14 @@ public class SwitchAndOptions {
 
     public void setEventTaskInterval(int eventTaskInterval) {
         this.eventTaskInterval = eventTaskInterval;
+    }
+
+    public int getLabelTaskInterval() {
+        return labelTaskInterval;
+    }
+
+    public void setLabelTaskInterval(int labelTaskInterval) {
+        this.labelTaskInterval = labelTaskInterval;
     }
 
     public boolean isLoadDataAtStart() {
