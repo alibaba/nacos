@@ -254,5 +254,12 @@ const I18N_CONF = {
     selectNamespace: '请选择命名空间',
     configurationCloning: '配置克隆（',
   },
+  DeleteDialog: {
+    confManagement: '配置管理',
+    determine: '确定',
+    deletetitle: '删除配置',
+    deletedSuccessfully: '删除配置成功',
+    deleteFailed: '删除配置失败',
+  },
 };
 export default I18N_CONF;

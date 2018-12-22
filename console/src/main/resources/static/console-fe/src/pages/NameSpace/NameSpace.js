@@ -14,7 +14,6 @@
 import React from 'react';
 import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
-import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
 import { getParams, setParams, request } from '../../globalLib';
@@ -338,7 +337,6 @@ class NameSpace extends React.Component {
               </div>
             </div>
 
-            <DeleteDialog ref="delete" />
             <NewNameSpace ref="newnamespace" getNameSpaces={this.getNameSpaces.bind(this)} />
             <EditorNameSpace ref="editgroup" getNameSpaces={this.getNameSpaces.bind(this)} />
           </Loading>
