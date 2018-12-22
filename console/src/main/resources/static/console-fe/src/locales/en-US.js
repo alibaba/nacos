@@ -255,6 +255,13 @@ const I18N_CONF = {
     selectNamespace: 'Select Namespace',
     configurationCloning: 'Clone（',
   },
+  DeleteDialog: {
+    confManagement: 'Configuration Management',
+    determine: 'OK',
+    deletetitle: 'Delete Configuration',
+    deletedSuccessfully: 'Configuration deleted',
+    deleteFailed: 'Deleting configuration failed',
+  },
 };
 
 export default I18N_CONF;

@@ -19,6 +19,9 @@ import { Button, ConfigProvider, Dialog, Field, Form, Select } from '@alifd/next
 const FormItem = Form.Item;
 const { AutoComplete: Combobox } = Select;
 
+/**
+ * @deprecated
+ */
 @ConfigProvider.config
 class CloneDialog extends React.Component {
   static displayName = 'CloneDialog';

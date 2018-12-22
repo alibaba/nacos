@@ -34,7 +34,6 @@ import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
-import CloneDialog from 'components/CloneDialog';
 import ImportDialog from 'components/ImportDialog';
 import ExportDialog from 'components/ExportDialog';
 import DashboardCard from './DashboardCard';
@@ -54,6 +53,7 @@ class ConfigurationManagement extends React.Component {
 
   constructor(props) {
     super(props);
+    this.deleteDialog = React.createRef();
     this.field = new Field(this);
     this.appName = getParams('appName') || getParams('edasAppId') || '';
     this.preAppName = this.appName;
@@ -360,7 +360,7 @@ class ConfigurationManagement extends React.Component {
               _payload.isok = false;
               _payload.message = res.message;
             }
-            self.refs.delete.openDialog(_payload);
+            self.deleteDialog.current.getInstance().openDialog(_payload);
             self.getData();
           },
         });
@@ -874,8 +874,7 @@ class ConfigurationManagement extends React.Component {
                 )}
               </div>
               <ShowCodeing ref={'showcode'} />
-              <DeleteDialog ref={'delete'} />
-              <CloneDialog ref={'cloneDialog'} />
+              <DeleteDialog ref={this.deleteDialog} />
               <ImportDialog ref={'importDialog'} />
               <ExportDialog ref={'exportDialog'} />
             </div>
