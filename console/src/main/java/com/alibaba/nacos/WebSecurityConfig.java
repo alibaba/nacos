@@ -1,14 +1,20 @@
 package com.alibaba.nacos;
 
+import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.GenericFilterBean;
 
 /**
  * Spring security config
@@ -17,7 +23,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @Configuration
 @EnableWebSecurity(debug = true)
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
+    public static final String AUTHORIZATION_TOKEN = "access_token";
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth
+            //自定义获取用户信息
+            .userDetailsService(userDetailsService)
+            //设置密码加密
+            .passwordEncoder(passwordEncoder());
+    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -26,25 +49,32 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         if (false) {
             http.authorizeRequests().antMatchers("/").permitAll();
         } else {
-            http.authorizeRequests()
-                .antMatchers("/login.html", "/login", "/v1/cs/**", "/v1/ns/**").permitAll()
-                .anyRequest().authenticated()
-                .and().formLogin().loginPage("/login.html").loginProcessingUrl("/login").permitAll()
-                .and().logout().logoutUrl("/logout").permitAll()   // 指定退出地址
-                .and().csrf().disable().httpBasic();
+            http
+                // since we use jwt, csrf is not necessary
+                .csrf().disable()
+                // since we use jwt, session is not necessary
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                .authorizeRequests()
+                // requests for resource and auth api are always allowed
+                .antMatchers("/", "/*.html", "/favicon.ico", "/**/*.html").permitAll()
+                .antMatchers("/v1/auth/**").permitAll()
+                .anyRequest().authenticated();
+            http.addFilterBefore(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
+
+            // disable cache
+            http.headers().cacheControl();
         }
     }
 
-    @Autowired
-    protected void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth.inMemoryAuthentication()
-            .withUser("user").password("password").roles("USER").and()
-            .withUser("admin").password("password").roles("USER", "ADMIN");
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public static PasswordEncoder passwordEncoder() {
-        return (NoOpPasswordEncoder) NoOpPasswordEncoder.getInstance();
+    public GenericFilterBean genericFilterBean() {
+        return new JwtAuthenticationTokenFilter();
     }
 
 }
