@@ -290,5 +290,15 @@ const I18N_CONF = {
     publish: '发布',
     back: '返回',
   },
+  EditorNameSpace: {
+    notice: '提示',
+    pleaseDo: '请勿输入非法字符',
+    publicSpace: '确认修改',
+    confirmModify: '编辑命名空间',
+    editNamespace: '加载中...',
+    load: '命名空间名：',
+    namespace: '命名空间不能为空',
+    description: '描述：',
+  },
 };
 export default I18N_CONF;
