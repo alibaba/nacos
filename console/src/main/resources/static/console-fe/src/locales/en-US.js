@@ -291,6 +291,16 @@ const I18N_CONF = {
     publish: 'Publish',
     back: 'Back',
   },
+  EditorNameSpace: {
+    notice: 'Notice',
+    pleaseDo: 'Illegal characters not allowed',
+    publicSpace: 'OK',
+    confirmModify: 'Edit Namespace',
+    editNamespace: 'Loading...',
+    load: 'Namespace:',
+    namespace: 'Namespace cannot be empty',
+    description: 'Description:',
+  },
 };
 
 export default I18N_CONF;
