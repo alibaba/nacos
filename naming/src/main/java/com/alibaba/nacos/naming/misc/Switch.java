@@ -62,10 +62,8 @@ public class Switch {
                 if (StringUtils.isEmpty(value)) {
                     return;
                 }
-                SwitchDomain switchDomain = JSON.parseObject(value, new TypeReference<SwitchDomain>() {
+                dom = JSON.parseObject(value, new TypeReference<SwitchDomain>() {
                 });
-
-                dom = switchDomain;
             }
 
             @Override
@@ -77,7 +75,7 @@ public class Switch {
 
     public static long getPushCacheMillis(String dom) {
         if (Switch.dom.pushCacheMillisMap == null
-                || !Switch.dom.pushCacheMillisMap.containsKey(dom)) {
+            || !Switch.dom.pushCacheMillisMap.containsKey(dom)) {
             return Switch.dom.defaultPushCacheMillis;
         }
 
@@ -90,7 +88,7 @@ public class Switch {
 
     public static long getCacheMillis(String dom) {
         if (Switch.dom.cacheMillisMap == null
-                || !Switch.dom.cacheMillisMap.containsKey(dom)) {
+            || !Switch.dom.cacheMillisMap.containsKey(dom)) {
             return Switch.dom.defaultCacheMillis;
         }
 
@@ -165,6 +163,14 @@ public class Switch {
         Switch.dom.healthCheckEnabled = enabled;
     }
 
+    public static String getDefaultHealthCheckMode() {
+        return Switch.dom.defaultHealthCheckMode;
+    }
+
+    public static void setDefaultHealthCheckMode(String healthCheckMode) {
+        Switch.dom.defaultHealthCheckMode = healthCheckMode;
+    }
+
     public static boolean isEnableAuthentication() {
         return dom.isEnableAuthentication();
     }
@@ -191,7 +197,7 @@ public class Switch {
 
     public static Integer getAdWeight(String ip) {
         if (dom.adWeightMap == null
-                || !dom.adWeightMap.containsKey(ip)) {
+            || !dom.adWeightMap.containsKey(ip)) {
             return 0;
         }
 
@@ -205,6 +211,7 @@ public class Switch {
     public static String getPushJavaVersion() {
         return dom.pushJavaVersion;
     }
+
     public static String getPushGoVersion() {
         return dom.pushGoVersion;
     }
@@ -220,6 +227,7 @@ public class Switch {
     public static void setPushJavaVersion(String pushJavaVersion) {
         dom.pushJavaVersion = pushJavaVersion;
     }
+
     public static void setPushGoVersion(String pushGoVersion) {
         dom.pushGoVersion = pushGoVersion;
     }

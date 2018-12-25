@@ -42,9 +42,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @author wangtong.wt
  * @date 2018/6/20
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@RunWith(SpringRunner.class)
+//@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+//        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
 
     private NamingService naming;
@@ -54,23 +54,23 @@ public class RegisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
-        if (naming == null) {
-            //TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-        }
+//        if (naming == null) {
+//            TimeUnit.SECONDS.sleep(10);
+//            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+//        }
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void regService() throws NacosException, InterruptedException {
 
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         properties.put(PropertyKeyConst.NAMESPACE, "t3");
 
-        naming = NacosFactory.createNamingService(properties);
+        naming = NamingFactory.createNamingService(properties);
 
-        String serviceName = "dungu.test.8";
+        String serviceName = "dungu.test.10";
         naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
         Thread.sleep(100000000L);

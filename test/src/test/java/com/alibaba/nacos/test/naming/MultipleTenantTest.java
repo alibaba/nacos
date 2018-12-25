@@ -24,9 +24,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@RunWith(SpringRunner.class)
+//@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+//    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class MultipleTenantTest {
 
     private NamingService naming;
@@ -41,6 +41,8 @@ public class MultipleTenantTest {
     public void init() throws Exception {
 
         TimeUnit.SECONDS.sleep(10);
+
+        port = 8848;
 
         naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
 
@@ -86,6 +88,8 @@ public class MultipleTenantTest {
         instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(2, instances.size());
+
+        TimeUnit.SECONDS.sleep(10000000L);
     }
 
     @Test
