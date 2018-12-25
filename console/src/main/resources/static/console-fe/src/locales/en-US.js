@@ -301,6 +301,15 @@ const I18N_CONF = {
     namespace: 'Namespace cannot be empty',
     description: 'Description:',
   },
+  ExportDialog: {
+    selectedEntry: '| Selected Entry',
+    application: 'Application:',
+    tags: 'Tags:',
+    exportBtn: 'Export',
+    exportConfiguration: 'Export ( ',
+    source: 'Source',
+    items: 'Items:',
+  },
 };
 
 export default I18N_CONF;
