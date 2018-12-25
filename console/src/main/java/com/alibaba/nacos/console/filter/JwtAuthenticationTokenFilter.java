@@ -34,6 +34,7 @@ public class JwtAuthenticationTokenFilter extends GenericFilterBean {
         try {
             HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
             String jwt = resolveToken(httpReq);
+            System.out.println(jwt);
             //验证JWT是否正确
             if (StringUtils.hasText(jwt) && this.tokenProvider.validateToken(jwt)) {
                 //获取用户认证信息

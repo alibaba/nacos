@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Date;
 import java.util.List;
 
 @Component
@@ -20,10 +21,10 @@ public class JWTTokenUtils {
 
     private static final String AUTHORITIES_KEY = "auth";
 
-    //签名密钥
+    // 签名密钥
     private String secretKey;
 
-    //失效日期
+    // 失效日期
     private long tokenValidityInMilliseconds;
 
     @PostConstruct
@@ -34,6 +35,23 @@ public class JWTTokenUtils {
     }
 
     private final static long EXPIRATIONTIME = 432000000;
+
+    // 创建Token
+    public String createToken(Authentication authentication) {
+        // 获取当前时间戳
+        long now = (new Date()).getTime();
+        // 存放过期时间
+        Date validity;
+        validity = new Date(now + this.tokenValidityInMilliseconds);
+
+        // 创建Token令牌
+        return Jwts.builder()
+            .setSubject(authentication.getName())
+            .claim(AUTHORITIES_KEY, "admin")
+            .setExpiration(validity)
+            .signWith(SignatureAlgorithm.HS512, secretKey)
+            .compact();
+    }
 
     // 获取用户权限
     public Authentication getAuthentication(String token) {

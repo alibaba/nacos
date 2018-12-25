@@ -33,6 +33,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth
@@ -57,9 +58,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 // requests for resource and auth api are always allowed
                 .antMatchers("/", "/*.html", "/favicon.ico", "/**/*.html").permitAll()
+                .antMatchers("/v1/cs/health").permitAll()
                 .antMatchers("/v1/auth/**").permitAll()
                 .anyRequest().authenticated();
-            http.addFilterBefore(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
+            http.addFilterAfter(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
 
             // disable cache
             http.headers().cacheControl();
