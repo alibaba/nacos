@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
@@ -48,6 +49,8 @@ public class ClusterController {
     @RequestMapping(value = {"/update", "/add"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
 
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
         String clusterName = WebUtils.required(request, "clusterName");
         String serviceName = WebUtils.required(request, "serviceName");
         String healthChecker = WebUtils.required(request, "healthChecker");
@@ -55,7 +58,7 @@ public class ClusterController {
         String checkPort = WebUtils.required(request, "checkPort");
         String useInstancePort4Check = WebUtils.required(request, "useInstancePort4Check");
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
         }

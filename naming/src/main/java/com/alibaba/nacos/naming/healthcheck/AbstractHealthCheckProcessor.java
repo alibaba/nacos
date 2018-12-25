@@ -212,7 +212,7 @@ public abstract class AbstractHealthCheckProcessor {
                         VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
 
-                        PushService.domChanged(vDom.getName());
+                        PushService.domChanged(vDom.getNamespaceId(), vDom.getName());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
                         Loggers.EVT_LOG.info("{" + cluster.getDom().getName() + "} {POS} {IP-ENABLED} valid: "
@@ -254,7 +254,7 @@ public abstract class AbstractHealthCheckProcessor {
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
-                        PushService.domChanged(vDom.getName());
+                        PushService.domChanged(vDom.getNamespaceId(), vDom.getName());
 
                         Loggers.EVT_LOG.info("{" + cluster.getDom().getName() + "} {POS} {IP-DISABLED} invalid: "
                                 + ip.getIp() + ":" + ip.getPort() + "@" + cluster.getName()
@@ -291,7 +291,7 @@ public abstract class AbstractHealthCheckProcessor {
                     VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());
 
-                    PushService.domChanged(vDom.getName());
+                    PushService.domChanged(vDom.getNamespaceId(), vDom.getName());
                     addResult(new HealthCheckResult(vDom.getName(), ip));
 
                     Loggers.EVT_LOG.info("{" + cluster.getDom().getName() + "} {POS} {IP-DISABLED} invalid-now: "

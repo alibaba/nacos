@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
@@ -188,41 +189,30 @@ public class HostReactor {
         return serviceInfo;
     }
 
-    private ServiceInfo getSerivceInfo0(String serviceName, String clusters, String env) {
+    private ServiceInfo getSerivceInfo0(String serviceName, String clusters) {
 
-        String key = ServiceInfo.getKey(serviceName, clusters, env);
+        String key = ServiceInfo.getKey(serviceName, clusters);
 
-        return serviceInfoMap.get(key);
-    }
-
-    private ServiceInfo getSerivceInfo0(String serviceName, String clusters, String env, boolean allIPs) {
-
-        String key = ServiceInfo.getKey(serviceName, clusters, env);
         return serviceInfoMap.get(key);
     }
 
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
-        return getServiceInfo(serviceName, clusters, StringUtils.EMPTY);
-    }
-
-
-    public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env) {
 
         LogUtils.LOG.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
-        String key = ServiceInfo.getKey(serviceName, clusters, env);
+        String key = ServiceInfo.getKey(serviceName, clusters);
         if (failoverReactor.isFailoverSwitch()) {
             return failoverReactor.getService(key);
         }
 
-        ServiceInfo serviceObj = getSerivceInfo0(serviceName, clusters, env);
+        ServiceInfo serviceObj = getSerivceInfo0(serviceName, clusters);
 
         if (null == serviceObj) {
-            serviceObj = new ServiceInfo(serviceName, clusters, env);
+            serviceObj = new ServiceInfo(serviceName, clusters);
 
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
 
             updatingMap.put(serviceName, new Object());
-            updateServiceNow(serviceName, clusters, env);
+            updateServiceNow(serviceName, clusters);
             updatingMap.remove(serviceName);
 
         } else if (updatingMap.containsKey(serviceName)) {
@@ -240,94 +230,35 @@ public class HostReactor {
             }
         }
 
-        scheduleUpdateIfAbsent(serviceName, clusters, env);
+        scheduleUpdateIfAbsent(serviceName, clusters);
 
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
-    public void scheduleUpdateIfAbsent(String serviceName, String clusters, String env) {
-        if (futureMap.get(ServiceInfo.getKey(serviceName, clusters, env)) != null) {
+    public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
+        if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
         }
 
         synchronized (futureMap) {
-            if (futureMap.get(ServiceInfo.getKey(serviceName, clusters, env)) != null) {
+            if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
                 return;
             }
 
-            ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, clusters, env));
-            futureMap.put(ServiceInfo.getKey(serviceName, clusters, env), future);
-        }
-    }
-
-    public void updateService4AllIPNow(String serviceName, String clusters, String env) {
-        updateService4AllIPNow(serviceName, clusters, env, -1L);
-    }
-
-    @SuppressFBWarnings("NN_NAKED_NOTIFY")
-    public void updateService4AllIPNow(String serviceName, String clusters, String env, long timeout) {
-        try {
-            Map<String, String> params = new HashMap<String, String>(8);
-            params.put("dom", serviceName);
-            params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
-
-            ServiceInfo oldService = getSerivceInfo0(serviceName, clusters, env, true);
-            if (oldService != null) {
-                params.put("checksum", oldService.getChecksum());
-            }
-
-            String result = serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/api/srvAllIP", params);
-            if (StringUtils.isNotEmpty(result)) {
-                ServiceInfo serviceInfo = processServiceJSON(result);
-                serviceInfo.setAllIPs(true);
-            }
-
-            if (oldService != null) {
-                synchronized (oldService) {
-                    oldService.notifyAll();
-                }
-            }
-
-            //else nothing has changed
-        } catch (Exception e) {
-            LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
+            ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, clusters));
+            futureMap.put(ServiceInfo.getKey(serviceName, clusters), future);
         }
     }
 
     @SuppressFBWarnings("NN_NAKED_NOTIFY")
-    public void updateServiceNow(String serviceName, String clusters, String env) {
-        ServiceInfo oldService = getSerivceInfo0(serviceName, clusters, env);
+    public void updateServiceNow(String serviceName, String clusters) {
+        ServiceInfo oldService = getSerivceInfo0(serviceName, clusters);
         try {
-            Map<String, String> params = new HashMap<String, String>(8);
-            params.put("serviceName", serviceName);
-            params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
-            params.put("env", env);
-            params.put("clientIP", NetUtils.localIP());
 
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String string : Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER) {
-                stringBuilder.append(string).append(",");
-            }
-
-            Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER.clear();
-            params.put("unconsistentDom", stringBuilder.toString());
-
-            String envSpliter = ",";
-            if (!StringUtils.isEmpty(env) && !env.contains(envSpliter)) {
-                params.put("useEnvId", "true");
-            }
-
-            if (oldService != null) {
-                params.put("checksum", oldService.getChecksum());
-            }
-
-            String result = serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params);
+            String result = serverProxy.queryList(serviceName, clusters, pushRecver.getUDPPort(), false);
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
             }
-            //else nothing has changed
         } catch (Exception e) {
             LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         } finally {
@@ -339,30 +270,9 @@ public class HostReactor {
         }
     }
 
-    public void refreshOnly(String serviceName, String clusters, String env) {
+    public void refreshOnly(String serviceName, String clusters) {
         try {
-            Map<String, String> params = new HashMap<String, String>(16);
-            params.put("serviceName", serviceName);
-            params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
-            params.put("unit", env);
-            params.put("clientIP", NetUtils.localIP());
-
-            String serviceSpliter = ",";
-            StringBuilder stringBuilder = new StringBuilder();
-            for (String string : Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER) {
-                stringBuilder.append(string).append(serviceSpliter);
-            }
-
-            Balancer.UNCONSISTENT_SERVICE_WITH_ADDRESS_SERVER.clear();
-            params.put("unconsistentDom", stringBuilder.toString());
-
-            String envSpliter = ",";
-            if (!env.contains(envSpliter)) {
-                params.put("useEnvId", "true");
-            }
-
-            serverProxy.reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params);
+            serverProxy.queryList(serviceName, clusters, pushRecver.getUDPPort(), false);
         } catch (Exception e) {
             LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         }
@@ -372,32 +282,30 @@ public class HostReactor {
         long lastRefTime = Long.MAX_VALUE;
         private String clusters;
         private String serviceName;
-        private String env;
 
-        public UpdateTask(String serviceName, String clusters, String env) {
+        public UpdateTask(String serviceName, String clusters) {
             this.serviceName = serviceName;
             this.clusters = clusters;
-            this.env = env;
         }
 
         @Override
         public void run() {
             try {
-                ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters, env));
+                ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
 
                 if (serviceObj == null) {
-                    updateServiceNow(serviceName, clusters, env);
+                    updateServiceNow(serviceName, clusters);
                     executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
                     return;
                 }
 
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
-                    updateServiceNow(serviceName, clusters, env);
-                    serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters, env));
+                    updateServiceNow(serviceName, clusters);
+                    serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 } else {
                     // if serviceName already updated by push, we should not override it
                     // since the push data may be different from pull through force push
-                    refreshOnly(serviceName, clusters, env);
+                    refreshOnly(serviceName, clusters);
                 }
 
                 executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);

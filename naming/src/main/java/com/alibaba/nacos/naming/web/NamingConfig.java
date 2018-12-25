@@ -55,9 +55,9 @@ public class NamingConfig {
     public FilterRegistrationBean tenantFilterRegistration() {
         FilterRegistrationBean registration = new FilterRegistrationBean();
 
-        registration.setFilter(tenantFilter());
+        registration.setFilter(namespaceFilter());
         registration.addUrlPatterns("/v1/ns/instance/*", "/v1/ns/service/*", "/v1/ns/cluster/*", "/v1/ns/health/*");
-        registration.setName("tenantFilter");
+        registration.setName("namespaceFilter");
         registration.setOrder(4);
 
         return registration;
@@ -74,7 +74,7 @@ public class NamingConfig {
     }
 
     @Bean
-    public Filter tenantFilter() {
-        return new TenantFilter();
+    public Filter namespaceFilter() {
+        return new NamespaceFilter();
     }
 }

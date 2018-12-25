@@ -15,14 +15,16 @@
  */
 package com.alibaba.nacos.naming.raft;
 
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Properties;
@@ -53,36 +55,16 @@ public class RaftStore {
         CACHE_DIR = BASE_DIR + File.separator + "data";
     }
 
-    public synchronized static void load() throws Exception{
+    public synchronized static void load() throws Exception {
         long start = System.currentTimeMillis();
-        // load data
         for (File cache : listCaches()) {
-            if (!cache.isFile()) {
-                Loggers.RAFT.warn("warning: encountered directory in cache dir: " + cache.getAbsolutePath());
-            }
-
-            ByteBuffer buffer;
-            FileChannel fc = null;
-            try {
-                fc = new FileInputStream(cache).getChannel();
-                buffer = ByteBuffer.allocate((int) cache.length());
-                fc.read(buffer);
-
-                String json = new String(buffer.array(), "UTF-8");
-                if (StringUtils.isBlank(json)) {
-                    continue;
+            if (cache.isDirectory() && cache.listFiles() != null) {
+                for (File datumFile : cache.listFiles()) {
+                    readDatum(datumFile);
                 }
-
-                Datum datum = JSON.parseObject(json, Datum.class);
-                RaftCore.addDatum(datum);
-            } catch (Exception e) {
-                Loggers.RAFT.warn("waning: failed to deserialize key: "  + cache.getName());
-                throw  e;
-            } finally {
-                if (fc != null) {
-                    fc.close();
-                }
+                continue;
             }
+            readDatum(cache);
         }
 
         // load meta
@@ -99,7 +81,7 @@ public class RaftStore {
         Loggers.RAFT.info("finish loading all datums, size: " + RaftCore.datumSize() + " cost " + (System.currentTimeMillis() - start) + "ms.");
     }
 
-    public synchronized static void load(String key) throws Exception{
+    public synchronized static void load(String key) throws Exception {
         long start = System.currentTimeMillis();
         // load data
         for (File cache : listCaches()) {
@@ -110,36 +92,60 @@ public class RaftStore {
             if (!StringUtils.equals(decodeFileName(cache.getName()), key)) {
                 continue;
             }
-
-            ByteBuffer buffer;
-            FileChannel fc = null;
-            try {
-                fc = new FileInputStream(cache).getChannel();
-                buffer = ByteBuffer.allocate((int) cache.length());
-                fc.read(buffer);
-
-                String json = new String(buffer.array(), "UTF-8");
-                if (StringUtils.isBlank(json)) {
-                    continue;
-                }
-
-                Datum datum = JSON.parseObject(json, Datum.class);
-                RaftCore.addDatum(datum);
-            } catch (Exception e) {
-                Loggers.RAFT.warn("waning: failed to deserialize key: "  + cache.getName());
-                throw  e;
-            } finally {
-                if (fc != null) {
-                    fc.close();
-                }
-            }
+            readDatum(cache);
         }
 
-        Loggers.RAFT.info("finish loading datum, key: " + key +  " cost " + (System.currentTimeMillis() - start) + "ms.");
+        Loggers.RAFT.info("finish loading datum, key: " + key + " cost " + (System.currentTimeMillis() - start) + "ms.");
+    }
+
+    public synchronized static void readDatum(File file) throws IOException {
+
+        ByteBuffer buffer;
+        FileChannel fc = null;
+        try {
+            fc = new FileInputStream(file).getChannel();
+            buffer = ByteBuffer.allocate((int) file.length());
+            fc.read(buffer);
+
+            String json = new String(buffer.array(), "UTF-8");
+            if (StringUtils.isBlank(json)) {
+                return;
+            }
+
+            Datum datum = JSON.parseObject(json, Datum.class);
+            RaftCore.addDatum(datum);
+        } catch (Exception e) {
+            Loggers.RAFT.warn("waning: failed to deserialize key: " + file.getName());
+            throw e;
+        } finally {
+            if (fc != null) {
+                fc.close();
+            }
+        }
     }
 
     public synchronized static void write(final Datum datum) throws Exception {
-        File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
+
+        String namespaceId = null;
+        if (datum.key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
+            String[] segments = datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0].split("\\.");
+            namespaceId = segments[segments.length - 1];
+            String newKey;
+            segments = datum.key.split(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR);
+            newKey = segments[0] + segments[1];
+            datum.key = newKey;
+        }
+
+        File cacheFile;
+        File oldCacheFile = null;
+
+        if (StringUtils.isNotBlank(namespaceId)) {
+            cacheFile = new File(CACHE_DIR + File.separator + namespaceId + File.separator + encodeFileName(datum.key));
+        } else {
+            oldCacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
+            cacheFile = new File(CACHE_DIR + File.separator + UtilsAndCommons.getDefaultNamespaceId() + File.separator + encodeFileName(datum.key));
+        }
+
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
@@ -155,6 +161,10 @@ public class RaftStore {
             if (fc != null) {
                 fc.close();
             }
+        }
+
+        if (oldCacheFile != null) {
+            oldCacheFile.delete();
         }
 
     }

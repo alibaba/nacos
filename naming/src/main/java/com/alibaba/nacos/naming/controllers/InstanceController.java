@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -50,10 +51,9 @@ public class InstanceController extends ApiCommands {
         // set service info:
         if (StringUtils.isNotEmpty(serviceJson)) {
             JSONObject service = JSON.parseObject(serviceJson);
-            requestWrapper.addParameter("dom", service.getString("name"));
-        } else {
-            requestWrapper.addParameter("dom", WebUtils.required(request, "serviceName"));
+            requestWrapper.addParameter("serviceName", service.getString("name"));
         }
+
         return regService(requestWrapper);
     }
 
@@ -64,7 +64,7 @@ public class InstanceController extends ApiCommands {
 
     @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
-        return regService(OverrideParameterRequestWrapper.buildRequest(request, "dom", WebUtils.required(request, "serviceName")));
+        return regService(request);
     }
 
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
@@ -75,12 +75,14 @@ public class InstanceController extends ApiCommands {
     @RequestMapping(value = "/instance", method = RequestMethod.GET)
     public JSONObject queryDetail(HttpServletRequest request) throws Exception {
 
-        String serviceName = WebUtils.required(request, "serviceName");
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
         String cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "no dom " + serviceName + " found!");
         }
