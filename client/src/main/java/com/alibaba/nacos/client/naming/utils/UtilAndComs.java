@@ -34,7 +34,7 @@ public class UtilAndComs {
 
     public static final String NACOS_URL_INSTANCE = NACOS_URL_BASE + "/instance";
 
-    public static final String DEFAULT_NAMESPACE_ID = "default";
+    public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
 

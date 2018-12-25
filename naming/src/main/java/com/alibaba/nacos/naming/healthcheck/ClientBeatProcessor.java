@@ -82,7 +82,7 @@ public class ClientBeatProcessor implements Runnable {
                         Loggers.EVT_LOG.info("{" + cluster.getDom().getName() + "} {POS} {IP-ENABLED} valid: "
                                 + ip+ ":" + port+ "@" + cluster.getName()
                                 + ", region: " + DistroMapper.LOCALHOST_SITE + ", msg: " + "client beat ok");
-                        PushService.domChanged(domain.getName());
+                        PushService.domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
                     }
                 }
             }

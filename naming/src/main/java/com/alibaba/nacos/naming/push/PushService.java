@@ -41,8 +41,8 @@ import java.util.zip.GZIPOutputStream;
 public class PushService {
 
     public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
+
     private static final int MAX_RETRY_TIMES = 1;
-    private static BlockingQueue<String> QUEUE = new LinkedBlockingDeque<String>();
 
     private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap
             = new ConcurrentHashMap<String, Receiver.AckEntry>();
@@ -88,18 +88,9 @@ public class PushService {
         try {
             udpSocket = new DatagramSocket();
 
-            Sender sender;
             Receiver receiver;
 
-            sender = new Sender();
-
-            Thread outThread;
             Thread inThread;
-
-            outThread = new Thread(sender);
-            outThread.setDaemon(true);
-            outThread.setName("com.alibaba.nacos.naming.push.sender");
-            outThread.start();
 
             receiver = new Receiver();
 
@@ -128,7 +119,8 @@ public class PushService {
         return totalPush;
     }
 
-    public static void addClient(String dom,
+    public static void addClient(String namespaceId,
+                                 String dom,
                                  String clusters,
                                  String agent,
                                  InetSocketAddress socketAddr,
@@ -136,7 +128,8 @@ public class PushService {
                                  String tenant,
                                  String app) {
 
-        PushClient client = new PushService.PushClient(dom,
+        PushClient client = new PushService.PushClient(namespaceId,
+                dom,
                 clusters,
                 agent,
                 socketAddr,
@@ -148,10 +141,12 @@ public class PushService {
 
     public static void addClient(PushClient client) {
         // client is stored by key 'dom' because notify event is driven by dom change
-        ConcurrentMap<String, PushClient> clients = clientMap.get(client.getDom());
+        String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getDom());
+        ConcurrentMap<String, PushClient> clients =
+            clientMap.get(serviceKey);
         if (clients == null) {
-            clientMap.putIfAbsent(client.getDom(), new ConcurrentHashMap<String, PushClient>(1024));
-            clients = clientMap.get(client.getDom());
+            clientMap.putIfAbsent(serviceKey, new ConcurrentHashMap<String, PushClient>(1024));
+            clients = clientMap.get(serviceKey);
         }
 
         PushClient oldClient = clients.get(client.toString());
@@ -213,8 +208,8 @@ public class PushService {
         return dom + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
     }
 
-    public static void domChanged(final String dom) {
-        if (futureMap.containsKey(dom)) {
+    public static void domChanged(final String namespaceId, final String dom) {
+        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, dom))) {
             return;
         }
         Future future = udpSender.schedule(new Runnable() {
@@ -222,7 +217,7 @@ public class PushService {
             public void run() {
                 try {
                     Loggers.PUSH.info(dom + " is changed, add it to push queue.");
-                    ConcurrentMap<String, PushClient> clients = clientMap.get(dom);
+                    ConcurrentMap<String, PushClient> clients = clientMap.get(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
                     if (MapUtils.isEmpty(clients)) {
                         return;
                     }
@@ -269,13 +264,13 @@ public class PushService {
                     Loggers.PUSH.error("VIPSRV-PUSH", "failed to push dom: " + dom + " to cleint", e);
 
                 } finally {
-                    futureMap.remove(dom);
+                    futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
                 }
 
             }
         }, 1000, TimeUnit.MILLISECONDS);
 
-        futureMap.put(dom, future);
+        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, dom), future);
     }
 
     public static boolean canEnablePush(String agent) {
@@ -311,6 +306,7 @@ public class PushService {
     }
 
     public static class PushClient {
+        private String namespaceId;
         private String dom;
         private String clusters;
         private String agent;
@@ -330,25 +326,15 @@ public class PushService {
 
         public long lastRefTime = System.currentTimeMillis();
 
-        public PushClient(String dom
-                , String clusters
-                , String agent
-                , InetSocketAddress socketAddr
-                , DataSource dataSource) {
-            this.dom = dom;
-            this.clusters = clusters;
-            this.agent = agent;
-            this.socketAddr = socketAddr;
-            this.dataSource = dataSource;
-        }
-
-        public PushClient(String dom,
+        public PushClient(String namespaceId,
+                          String dom,
                           String clusters,
                           String agent,
                           InetSocketAddress socketAddr,
                           DataSource dataSource,
                           String tenant,
                           String app) {
+            this.namespaceId = namespaceId;
             this.dom = dom;
             this.clusters = clusters;
             this.agent = agent;
@@ -413,6 +399,14 @@ public class PushService {
 
         public void setClusters(String clusters) {
             this.clusters = clusters;
+        }
+
+        public String getNamespaceId() {
+            return namespaceId;
+        }
+
+        public void setNamespaceId(String namespaceId) {
+            this.namespaceId = namespaceId;
         }
 
         public String getDom() {
@@ -541,48 +535,6 @@ public class PushService {
             failedPush += 1;
 
             return null;
-        }
-    }
-
-    private static class Sender implements Runnable {
-        @Override
-        public void run() {
-            while (true) {
-                try {
-                    String dom;
-                    try {
-                        dom = QUEUE.take();
-                    } catch (InterruptedException e) {
-                        continue; //ignore
-                    }
-
-                    if (System.currentTimeMillis() - lastPushMillisMap.get(dom) < 1000) {
-                        QUEUE.add(dom);
-                        continue;
-                    }
-
-                    lastPushMillisMap.put(dom, System.currentTimeMillis());
-
-                    ConcurrentMap<String, PushClient> clients = clientMap.get(dom);
-                    if (MapUtils.isEmpty(clients)) {
-                        continue;
-                    }
-
-                    for (PushClient client : clients.values()) {
-                        if (client.zombie()) {
-                            clients.remove(client.toString());
-                            continue;
-                        }
-                        Loggers.PUSH.debug("push dom: " + dom + " to cleint");
-                        Receiver.AckEntry ackEntry = prepareAckEntry(client, prepareHostsData(client), System.nanoTime());
-                        Loggers.PUSH.info("sender", "dom: " + client.getDom() + " changed, schedule push for: "
-                                + client.getAddrStr() + ", agent: " + client.getAgent() + ", key: " + ackEntry.key);
-                        udpPush(ackEntry);
-                    }
-                } catch (Throwable t) {
-                    Loggers.PUSH.error("VIPSRV-PUSH", "failed, caused by: ", t);
-                }
-            }
         }
     }
 

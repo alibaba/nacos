@@ -60,7 +60,7 @@ public class ClientBeatCheckTask implements Runnable {
                                     + ipAddress.getIp() + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName()
                                     + ", region: " + DistroMapper.LOCALHOST_SITE + ", msg: " + "client timeout after "
                                     + ClientBeatProcessor.CLIENT_BEAT_TIMEOUT + ", last beat: " + ipAddress.getLastBeat());
-                            PushService.domChanged(domain.getName());
+                            PushService.domChanged(domain.getNamespaceId(), domain.getName());
                         }
                     }
                 }

@@ -31,7 +31,7 @@ import java.io.IOException;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @since 0.8.0
  */
-public class TenantFilter implements Filter {
+public class NamespaceFilter implements Filter {
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -40,24 +40,7 @@ public class TenantFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-
-        HttpServletRequest req = (HttpServletRequest) request;
-        HttpServletResponse resp = (HttpServletResponse) response;
-
-        String tenantId = WebUtils.optional(req, Constants.REQUEST_PARAM_TENANT_ID, StringUtils.EMPTY);
-        String serviceName = WebUtils.optional(req, Constants.REQUEST_PARAM_SERVICE_NAME, StringUtils.EMPTY);
-
-        if (StringUtils.isBlank(tenantId) || StringUtils.isBlank(serviceName)) {
-            chain.doFilter(req, resp);
-            return;
-        }
-
-        OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(req);
-        requestWrapper.addParameter(Constants.REQUEST_PARAM_SERVICE_NAME,
-            serviceName + UtilsAndCommons.SERVICE_TENANT_CONNECTOR + tenantId);
-
-
-        chain.doFilter(requestWrapper, resp);
+        chain.doFilter(request, response);
     }
 
     @Override

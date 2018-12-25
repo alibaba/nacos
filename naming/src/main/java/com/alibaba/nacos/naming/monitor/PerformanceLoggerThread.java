@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -74,21 +73,7 @@ public class PerformanceLoggerThread {
         PerformanceLogTask task = new PerformanceLogTask();
         executor.scheduleWithFixedDelay(task, 30, PERIOD, TimeUnit.SECONDS);
         executor.scheduleWithFixedDelay(new HealthCheckSwitchTask(), 30, HEALTH_CHECK_PERIOD, TimeUnit.SECONDS);
-        executor.scheduleWithFixedDelay(new AllDomNamesTask(), 60, 60, TimeUnit.SECONDS);
 
-    }
-
-    class AllDomNamesTask implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                domainsManager.setAllDomNames(new ArrayList<String>(domainsManager.getAllDomNames()));
-                Loggers.PERFORMANCE_LOG.debug("refresh all dom names: " + domainsManager.getAllDomNamesCache().size());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     class PerformanceLogTask implements Runnable {
@@ -97,7 +82,7 @@ public class PerformanceLoggerThread {
         public void run() {
             try {
                 int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getIPCount();
+                int ipCount = domainsManager.getInstanceCount();
                 long maxPushMaxCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
                 Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);

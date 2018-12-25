@@ -46,8 +46,6 @@ public class ServiceInfo {
 
     private String checksum = "";
 
-    private String env = "";
-
     private volatile boolean allIPs = false;
 
     public ServiceInfo() {
@@ -63,48 +61,22 @@ public class ServiceInfo {
 
     public ServiceInfo(String key) {
 
-        int maxKeySectionCount = 4;
-        int allIpFlagIndex = 3;
-        int envIndex = 2;
+        int maxIndex = 2;
         int clusterIndex = 1;
         int serviceNameIndex = 0;
 
         String[] keys = key.split(SPLITER);
-        if (keys.length >= maxKeySectionCount) {
+        if (keys.length >= maxIndex) {
             this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
-            this.env = keys[envIndex];
-            if (strEquals(keys[allIpFlagIndex], ALL_IPS)) {
-                this.setAllIPs(true);
-            }
-        } else if (keys.length >= allIpFlagIndex) {
-            this.name = keys[serviceNameIndex];
-            this.clusters = keys[clusterIndex];
-            if (strEquals(keys[envIndex], ALL_IPS)) {
-                this.setAllIPs(true);
-            } else {
-                this.env = keys[envIndex];
-            }
-        } else if (keys.length >= envIndex) {
-            this.name = keys[serviceNameIndex];
-            if (strEquals(keys[clusterIndex], ALL_IPS)) {
-                this.setAllIPs(true);
-            } else {
-                this.clusters = keys[clusterIndex];
-            }
         }
 
         this.name = keys[0];
     }
 
     public ServiceInfo(String name, String clusters) {
-        this(name, clusters, EMPTY);
-    }
-
-    public ServiceInfo(String name, String clusters, String env) {
         this.name = name;
         this.clusters = clusters;
-        this.env = env;
     }
 
     public int ipCount() {
@@ -156,7 +128,6 @@ public class ServiceInfo {
     }
 
     public List<Instance> getHosts() {
-
         return new ArrayList<Instance>(hosts);
     }
 
@@ -190,35 +161,23 @@ public class ServiceInfo {
 
     @JSONField(serialize = false)
     public String getKey() {
-        return getKey(name, clusters, env);
+        return getKey(name, clusters);
     }
 
     @JSONField(serialize = false)
     public String getKeyEncoded() {
         try {
-            return getKey(URLEncoder.encode(name, "UTF-8"), clusters, env);
+            return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
         } catch (UnsupportedEncodingException e) {
             return getKey();
         }
     }
 
     @JSONField(serialize = false)
-    public static String getKey(String name, String clusters, String unit) {
-
-        if (isEmpty(unit)) {
-            unit = EMPTY;
-        }
-
-        if (!isEmpty(clusters) && !isEmpty(unit)) {
-            return name + SPLITER + clusters + SPLITER + unit;
-        }
+    public static String getKey(String name, String clusters) {
 
         if (!isEmpty(clusters)) {
             return name + SPLITER + clusters;
-        }
-
-        if (!isEmpty(unit)) {
-            return name + SPLITER + EMPTY + SPLITER + unit;
         }
 
         return name;

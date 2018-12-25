@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -64,6 +65,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Boolean enabled = true;
     private Boolean enableClientBeat = false;
     private Selector selector = new NoneSelector();
+    private String namespaceId;
 
     /**
      * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
@@ -158,12 +160,12 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + name);
+        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + name);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + name);
+        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + name);
     }
 
     @Override
@@ -244,7 +246,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
-        PushService.domChanged(name);
+        PushService.domChanged(namespaceId, name);
         StringBuilder stringBuilder = new StringBuilder();
 
         for (IpAddress ipAddress : allIPs()) {
@@ -450,6 +452,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
     public void setClusterMap(Map<String, Cluster> clusterMap) {
         this.clusterMap = clusterMap;
+    }
+
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
     }
 
     @Override
