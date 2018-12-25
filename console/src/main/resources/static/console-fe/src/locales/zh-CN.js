@@ -300,5 +300,14 @@ const I18N_CONF = {
     namespace: '命名空间不能为空',
     description: '描述：',
   },
+  ExportDialog: {
+    selectedEntry: '| 选中的条目',
+    application: '归属应用:',
+    tags: '标签:',
+    exportBtn: '导出',
+    exportConfiguration: '导出配置（',
+    source: '源空间：',
+    items: '配置数量：',
+  },
 };
 export default I18N_CONF;
