@@ -27,10 +27,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckProcessor;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
-import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import com.alibaba.nacos.naming.healthcheck.*;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
@@ -386,11 +383,16 @@ public class ApiCommands {
         boolean isUseSpecifiedURL = Boolean.parseBoolean(WebUtils.optional(request, "isUseSpecifiedURL", "false"));
         String envAndSite = WebUtils.optional(request, "envAndSites", StringUtils.EMPTY);
         boolean resetWeight = Boolean.parseBoolean(WebUtils.optional(request, "resetWeight", "false"));
-        boolean enableHealthCheck = Boolean.parseBoolean(WebUtils.optional(request, "enableHealthCheck", "true"));
+
+        boolean enableHealthCheck = Boolean.parseBoolean(WebUtils.optional(request, "enableHealthCheck",
+            String.valueOf(Switch.getDefaultHealthCheckMode().equals(HealthCheckMode.server.name()))));
+
         boolean enable = Boolean.parseBoolean(WebUtils.optional(request, "serviceEnabled", "true"));
 
         String disabledSites = WebUtils.optional(request, "disabledSites", StringUtils.EMPTY);
-        boolean eanbleClientBeat = Boolean.parseBoolean(WebUtils.optional(request, "enableClientBeat", "true"));
+        boolean eanbleClientBeat = Boolean.parseBoolean(WebUtils.optional(request, "enableClientBeat",
+            String.valueOf(Switch.getDefaultHealthCheckMode().equals(HealthCheckMode.client.name()))));
+
         String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
         String serviceMetadataJson = WebUtils.optional(request, "serviceMetadata", StringUtils.EMPTY);
@@ -1530,6 +1532,16 @@ public class ApiCommands {
                 boolean enabled = Boolean.parseBoolean(WebUtils.required(request, "enabled"));
 
                 Switch.setHeathCheckEnabled(enabled);
+                if (!debug) {
+                    Switch.save();
+                }
+                return "ok";
+            }
+
+            if (entry.equals(SwitchEntry.DEFAULT_HEALTH_CHECK_MODE)) {
+                String defaultHealthCheckMode = WebUtils.required(request, "mode");
+
+                Switch.setDefaultHealthCheckMode(defaultHealthCheckMode);
                 if (!debug) {
                     Switch.save();
                 }

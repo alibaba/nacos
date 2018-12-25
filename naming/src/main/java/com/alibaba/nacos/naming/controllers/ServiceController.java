@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
+import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -62,7 +63,7 @@ public class ServiceController {
         }
 
         float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
-        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", "client");
+        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", Switch.getDefaultHealthCheckMode());
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
