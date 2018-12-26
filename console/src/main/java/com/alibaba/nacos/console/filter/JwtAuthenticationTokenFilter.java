@@ -1,7 +1,5 @@
 package com.alibaba.nacos.console.filter;
 
-import io.jsonwebtoken.ExpiredJwtException;
-
 import com.alibaba.nacos.WebSecurityConfig;
 import com.alibaba.nacos.console.utils.JWTTokenUtils;
 import org.slf4j.Logger;
@@ -28,28 +26,30 @@ public class JwtAuthenticationTokenFilter extends GenericFilterBean {
     @Autowired
     private JWTTokenUtils tokenProvider;
 
+
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         System.out.println("JwtAuthenticationTokenFilter");
+        HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
+        HttpServletResponse httpRes = (HttpServletResponse) servletResponse;
+
+        String jwt = resolveToken(httpReq);
+        System.out.println(jwt);
+        //验证JWT是否正确
         try {
-            HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
-            String jwt = resolveToken(httpReq);
-            System.out.println(jwt);
-            //验证JWT是否正确
             if (StringUtils.hasText(jwt) && this.tokenProvider.validateToken(jwt)) {
                 //获取用户认证信息
                 Authentication authentication = this.tokenProvider.getAuthentication(jwt);
                 //将用户保存到SecurityContext
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-            filterChain.doFilter(servletRequest, servletResponse);
-        } catch (ExpiredJwtException e) {                                     //JWT失效
-            log.info("Security exception for user {} - {}",
-                e.getClaims().getSubject(), e.getMessage());
-
-            log.trace("Security exception trace: {}", e);
-            ((HttpServletResponse) servletResponse).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (Exception e) {
+            httpRes.reset();
+            httpRes.setHeader("Content-Type", "application/json;charset=UTF-8");
+            httpRes.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         }
+
+        filterChain.doFilter(servletRequest, servletResponse);
     }
 
     private String resolveToken(HttpServletRequest request) {

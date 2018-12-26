@@ -16,12 +16,13 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.WebSecurityConfig;
+import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.console.utils.JWTTokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -53,11 +54,13 @@ public class AuthController {
 
     @ResponseBody
     @RequestMapping(value = "login", method = RequestMethod.GET)
-    public String login(HttpServletRequest request, HttpServletResponse response,
-                        @RequestParam("username") String username,
-                        @RequestParam("password") String password) throws Exception {
+    public RestResult<String> login(HttpServletRequest request, HttpServletResponse response,
+                                    @RequestParam("username") String username,
+                                    @RequestParam("password") String password) throws Exception {
         // 通过用户名和密码创建一个 Authentication 认证对象，实现类为 UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
+        RestResult<String> rr = new RestResult<String>();
+
         // TODO: 去数据库查询是否存在该用户
         try {
             //通过 AuthenticationManager（默认实现为ProviderManager）的authenticate方法验证 Authentication 对象
@@ -68,10 +71,13 @@ public class AuthController {
             String token = jwtTokenUtils.createToken(authentication);
             //将Token写入到Http头部
             response.addHeader(WebSecurityConfig.AUTHORIZATION_HEADER, "Bearer " + token);
-            return "Bearer " + token;
+            rr.setCode(200);
+            rr.setData("Bearer " + token);
+            return rr;
         } catch (BadCredentialsException authentication) {
-            throw new Exception("密码错误");
+            rr.setCode(401);
+            rr.setMessage("Login failed");
+            return rr;
         }
     }
-
 }
