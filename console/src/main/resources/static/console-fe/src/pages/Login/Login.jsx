@@ -1,14 +1,33 @@
 import React from 'react';
-import { Card, Form, Input } from '@alifd/next';
+import { Card, Form, Input, Message } from '@alifd/next';
 
 import './index.scss';
 import Header from '../../layouts/Header';
+import { request } from '../../globalLib';
 
 const FormItem = Form.Item;
 
 class Login extends React.Component {
   handleSubmit = values => {
-    console.log('Get form value:', values);
+    request({
+      type: 'get',
+      url: 'v1/auth/login',
+      data: values,
+      success: res => {
+        if (res.code === 200) {
+          const data = res.data;
+          // TODO: 封装一个方法存储、读取token
+          localStorage.setItem('token', data);
+          // TODO: 使用react router
+          window.location = '/#/';
+        }
+      },
+      error: () => {
+        Message.error({
+          content: '登录失败',
+        });
+      },
+    });
   };
 
   render() {

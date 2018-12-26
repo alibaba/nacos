@@ -603,7 +603,19 @@ const request = (function(_global) {
         beforeSend(xhr) {
           config.beforeSend && config.beforeSend(xhr);
         },
+        headers: {
+          Authorization: localStorage.getItem('token'),
+        },
       })
+    ).then(
+      success => {},
+      error => {
+        // 处理403 forbidden
+        if (error && error.status === 403) {
+          // 跳转至login页
+          window.location = '/#/login';
+        }
+      }
     );
   }
   // 暴露方法
