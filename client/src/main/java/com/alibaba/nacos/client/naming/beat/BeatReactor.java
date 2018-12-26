@@ -73,6 +73,10 @@ public class BeatReactor {
             try {
                 for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
                     BeatInfo beatInfo = entry.getValue();
+                    if (beatInfo.isScheduled()) {
+                        continue;
+                    }
+                    beatInfo.setScheduled(true);
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
                     LogUtils.LOG.info("BEAT", "send beat to server: " + beatInfo.toString());
                 }
@@ -83,6 +87,7 @@ public class BeatReactor {
     }
 
     class BeatTask implements Runnable {
+
         BeatInfo beatInfo;
 
         public BeatTask(BeatInfo beatInfo) {
@@ -96,6 +101,7 @@ public class BeatReactor {
             params.put("dom", beatInfo.getDom());
 
             try {
+                beatInfo.setScheduled(false);
                 String result = serverProxy.callAllServers(UtilAndComs.NACOS_URL_BASE + "/api/clientBeat", params);
                 JSONObject jsonObject = JSON.parseObject(result);
 
