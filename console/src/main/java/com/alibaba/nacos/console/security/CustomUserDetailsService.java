@@ -16,7 +16,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         // TODO: get user from database
         User user = new User();
-        user.setPassword("123456");
+        user.setPassword("$2a$04$l55XHWJ80UfbNXHIhFiunuqG07N2fOSmxqQEgNqijTY9tI/P0rnM6");
         user.setUsername("nacos");
         return new CustomUserDetails(user);
     }
