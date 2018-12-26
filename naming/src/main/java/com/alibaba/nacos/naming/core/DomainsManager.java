@@ -284,7 +284,7 @@ public class DomainsManager {
             virtualClusterDomain = (VirtualClusterDomain) newDom;
             newDom = virtualClusterDomain;
         }
-        RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
+        RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom), true);
     }
 
     public void easyAddIP4Dom(String domName, List<IpAddress> ips, long timestamp, long term) throws Exception {
@@ -350,7 +350,9 @@ public class DomainsManager {
         peer.leaderDueMs = RaftCore.getLeader().leaderDueMs;
         peer.state = RaftCore.getLeader().state;
 
-        RaftCore.onPublish(datum, peer);
+        boolean increaseTerm = !((VirtualClusterDomain)getDomain(domName)).getEnableClientBeat();
+
+        RaftCore.onPublish(datum, peer, increaseTerm);
     }
 
     private List<IpAddress> setValid(String oldJson, Map<String, IpAddress> map) {
@@ -413,7 +415,10 @@ public class DomainsManager {
 
             ipAddrs.removeAll(ips);
 
-            RaftCore.doSignalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs));
+            boolean locked = !((VirtualClusterDomain)getDomain(domName)).getEnableClientBeat();
+
+            RaftCore.doSignalPublish(UtilsAndCommons.getIPListStoreKey(dom), JSON.toJSONString(ipAddrs), locked);
+
         } finally {
             lock.unlock();
         }

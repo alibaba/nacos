@@ -135,7 +135,7 @@ public class Switch {
 
     public static void save() {
         try {
-            RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(dom), JSON.toJSONString(dom));
+            RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(dom), JSON.toJSONString(dom), true);
         } catch (Exception e) {
             Loggers.SRV_LOG.error("VIPSRV-SWITCH", "failed to save switch", e);
         }

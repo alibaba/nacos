@@ -139,44 +139,6 @@ public class RaftCore {
         return listeners;
     }
 
-    /**
-     * will return success once local writes success instead of the majority,
-     * therefore is unsafe
-     *
-     * @param key
-     * @param value
-     * @throws Exception
-     */
-    public static void unsafePublish(String key, String value) throws Exception {
-        OPERATE_LOCK.lock();
-
-        try {
-            if (!RaftCore.isLeader()) {
-                JSONObject params = new JSONObject();
-                params.put("key", key);
-                params.put("value", value);
-
-                Map<String, String> parameters = new HashMap<>(1);
-                parameters.put("key", key);
-                RaftProxy.proxyPostLarge(API_UNSF_PUB, params.toJSONString(), parameters);
-
-                if (!RaftCore.isLeader()) {
-                    throw new IllegalStateException("I'm not leader, can not handle update/delete operation");
-                }
-            }
-
-            Datum datum = new Datum();
-            datum.key = key;
-            datum.value = value;
-            datum.timestamp.set(RaftCore.getDatum(key).timestamp.incrementAndGet());
-
-            RaftPeer local = peers.local();
-
-            onPublish(datum, local);
-        } finally {
-            OPERATE_LOCK.unlock();
-        }
-    }
 
     public static void signalPublish(String key, String value) throws Exception {
 
@@ -194,8 +156,9 @@ public class RaftCore {
         JSONObject json = new JSONObject();
         json.put("datum", datum);
         json.put("source", peers.local());
+        json.put("increaseTerm", false);
 
-        onPublish(datum, peers.local());
+        onPublish(datum, peers.local(), false);
 
         final String content = JSON.toJSONString(json);
 
@@ -227,11 +190,12 @@ public class RaftCore {
 
     }
 
-    public static void doSignalPublish(String key, String value) throws Exception {
+    public static void doSignalPublish(String key, String value, boolean locked) throws Exception {
         if (!RaftCore.isLeader()) {
             JSONObject params = new JSONObject();
             params.put("key", key);
             params.put("value", value);
+            params.put("locked", locked);
             Map<String, String> parameters = new HashMap<>(1);
             parameters.put("key", key);
 
@@ -244,7 +208,7 @@ public class RaftCore {
             throw new IllegalStateException("I'm not leader, can not handle update/delete operation");
         }
 
-        if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+        if (locked) {
             signalPublishLocked(key, value);
         } else {
             signalPublish(key, value);
@@ -268,8 +232,9 @@ public class RaftCore {
             JSONObject json = new JSONObject();
             json.put("datum", datum);
             json.put("source", peers.local());
+            json.put("increaseTerm", true);
 
-            onPublish(datum, peers.local());
+            onPublish(datum, peers.local(), true);
 
             final String content = JSON.toJSONString(json);
 
@@ -357,13 +322,13 @@ public class RaftCore {
         }
     }
 
-    public static void onPublish(JSONObject json) throws Exception {
+    public static void onPublish(JSONObject json, boolean increaseTerm) throws Exception {
         Datum datum = JSON.parseObject(json.getString("datum"), Datum.class);
         RaftPeer source = JSON.parseObject(json.getString("source"), RaftPeer.class);
-        onPublish(datum, source);
+        onPublish(datum, source, increaseTerm);
     }
 
-    public static void onPublish(Datum datum, RaftPeer source) throws Exception {
+    public static void onPublish(Datum datum, RaftPeer source, boolean increaseTerm) throws Exception {
         RaftPeer local = peers.local();
         if (StringUtils.isBlank(datum.value)) {
             Loggers.RAFT.warn("received empty datum");
@@ -402,7 +367,7 @@ public class RaftCore {
 
         RaftCore.datums.put(datum.key, datum);
 
-        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+        if (increaseTerm) {
             if (isLeader()) {
                 local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
             } else {
