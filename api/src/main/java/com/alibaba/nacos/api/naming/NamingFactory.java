@@ -21,6 +21,8 @@ import java.util.Properties;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
+ * Naming Factory
+ *
  * @author dungu.zpf
  */
 public class NamingFactory {

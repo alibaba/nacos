@@ -20,24 +20,23 @@ import java.util.concurrent.Executor;
 
 /**
  * Listener for watch config
- * 
+ *
  * @author Nacos
- * 
  */
 public interface Listener {
 
-	/**
-	 * Executor to excute this receive
-	 * 
-	 * @return Executor
-	 */
-    public Executor getExecutor();
+    /**
+     * get executor for execute this receive
+     *
+     * @return Executor
+     */
+    Executor getExecutor();
 
 
     /**
-     * 接收配置信息
-     * 
-     * @param configInfo 配置值
+     * receive config info
+     *
+     * @param configInfo config info
      */
-    public void receiveConfigInfo(final String configInfo);
+    void receiveConfigInfo(final String configInfo);
 }

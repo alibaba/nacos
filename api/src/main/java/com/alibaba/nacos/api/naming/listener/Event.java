@@ -16,7 +16,8 @@
 package com.alibaba.nacos.api.naming.listener;
 
 /**
- * event interface
+ * Event Interface
+ *
  * @author dungu.zpf
  */
 public interface Event {

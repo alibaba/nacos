@@ -19,32 +19,34 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Service
+ *
  * @author dungu.zpf
  */
 public class Service {
 
     /**
-     * Service name
+     * service name
      */
     private String name;
 
     /**
-     * Protect threshold
+     * protect threshold
      */
     private float protectThreshold = 0.0F;
 
     /**
-     * Application name of this service
+     * application name of this service
      */
     private String app;
 
     /**
-     * Service group which is meant to classify services into different sets.
+     * service group which is meant to classify services into different sets.
      */
     private String group;
 
     /**
-     * Health check mode.
+     * health check mode.
      */
     private String healthCheckMode;
 

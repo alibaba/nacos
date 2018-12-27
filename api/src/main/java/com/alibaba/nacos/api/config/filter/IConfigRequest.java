@@ -17,25 +17,23 @@ package com.alibaba.nacos.api.config.filter;
 
 /**
  * Config Request Interface
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface IConfigRequest {
-	/**
-	 * get param
-	 * 
-	 * @param key
-	 *            key
-	 * @return value
-	 */
-	public Object getParameter(String key);
+    /**
+     * get param
+     *
+     * @param key key
+     * @return value
+     */
+    Object getParameter(String key);
 
-	/**
-	 * get config context
-	 * 
-	 * @return
-	 */
-	public IConfigContext getConfigContext();
+    /**
+     * get config context
+     *
+     * @return
+     */
+    IConfigContext getConfigContext();
 
 }

@@ -23,50 +23,52 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Instance
+ *
  * @author dungu.zpf
  */
 public class Instance {
 
     /**
-     * Unique ID of this instance.
+     * unique id of this instance.
      */
     private String instanceId;
 
     /**
-     * Instance ip
+     * instance ip
      */
     private String ip;
 
     /**
-     * Instance port
+     * instance port
      */
     private int port;
 
     /**
-     * Instance weight
+     * instance weight
      */
     private double weight = 1.0D;
 
     /**
-     * Instance health status
+     * instance health status
      */
     @JSONField(name = "valid")
     private boolean healthy = true;
 
     /**
-     * Cluster information of instance
+     * cluster information of instance
      */
     @JSONField(serialize = false)
     private Cluster cluster = new Cluster();
 
     /**
-     * Service information of instance
+     * service information of instance
      */
     @JSONField(serialize = false)
     private Service service;
 
     /**
-     * User extended attributes
+     * user extended attributes
      */
     private Map<String, String> metadata = new HashMap<String, String>();
 
