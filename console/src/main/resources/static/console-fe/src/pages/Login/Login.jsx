@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card, Form, Input, Message } from '@alifd/next';
+import { withRouter } from 'react-router-dom';
 
 import './index.scss';
 import Header from '../../layouts/Header';
@@ -7,6 +8,7 @@ import { request } from '../../globalLib';
 
 const FormItem = Form.Item;
 
+@withRouter
 class Login extends React.Component {
   handleSubmit = values => {
     request({
@@ -19,7 +21,7 @@ class Login extends React.Component {
           // TODO: 封装一个方法存储、读取token
           localStorage.setItem('token', data);
           // TODO: 使用react router
-          window.location = '/#/';
+          this.props.history.push('/');
         }
       },
       error: () => {
@@ -37,12 +39,12 @@ class Login extends React.Component {
         <section
           className="top-section"
           style={{
-            background: 'url(/img/black_dot.png) repeat',
+            background: 'url(img/black_dot.png) repeat',
             backgroundSize: '14px 14px',
           }}
         >
           <div className="vertical-middle product-area">
-            <img className="product-logo" src="/img/nacos.png" />
+            <img className="product-logo" src="img/nacos.png" />
             <p className="product-desc">
               an easy-to-use dynamic service discovery, configuration and service management
               platform for building cloud native applications

@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import { ConfigProvider } from '@alifd/next';
 import siteConfig from '../config';
@@ -20,6 +21,7 @@ import { aliwareIntl } from '@/globalLib';
 
 import './index.scss';
 
+@withRouter
 @connect(
   state => ({ ...state.locale }),
   { changeLanguage }
@@ -37,8 +39,17 @@ class Header extends React.Component {
     window.location.reload();
   };
 
+  logout = () => {
+    window.localStorage.clear();
+    this.props.history.push('/login');
+  };
+
   render() {
-    const { locale = {}, language = 'en-us' } = this.props;
+    const {
+      locale = {},
+      language = 'en-us',
+      location: { pathname },
+    } = this.props;
     const { home, docs, blog, community, languageSwitchButton } = locale;
     const BASE_URL = `https://nacos.io/${language}/`;
     const NAV_MENU = [
@@ -74,6 +85,12 @@ class Header extends React.Component {
               title={siteConfig.name}
             />
           </a>
+          {/* if is login page, we will show logout */}
+          {pathname !== '/login' && (
+            <span className="logout" onClick={this.logout}>
+              退出
+            </span>
+          )}
           <span className="language-switch language-switch-primary" onClick={this.switchLang}>
             {languageSwitchButton}
           </span>
