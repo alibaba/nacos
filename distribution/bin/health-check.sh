@@ -14,13 +14,56 @@
 # limitations under the License.
 
 readonly CURL_BIN=/usr/bin/curl
-readonly HEALTH_CHECK_API="http://127.0.0.1:8848/nacos/v1/console/health/readiness"
+readonly DEFAULT_PORT=8848
+readonly HEALTH_CHECK_API="http://127.0.0.1:$DEFAULT_PORT/nacos/v1/console/health/readiness"
 
 #####################################
+
+get_port() {
+  local sys_name="$(uname -s)"
+
+  case "${sys_name}" in
+    Linux*)  sys_name=Linux;;
+    Darwin*)  sys_name=Mac
+  esac
+
+  local pid=`ps ax | grep -i 'nacos-server' | grep -v grep | tail -n 1 | awk '{print $1}'`
+
+  if [[ ${pid} == "" ]]; then
+    return
+  fi
+
+  if [[ "$sys_name" == "Mac" ]]; then
+
+    local port=`/usr/sbin/lsof -nP -iTCP -sTCP:LISTEN | grep 'java' | grep ${pid} | awk '{print $9}' | awk -F ':' '{print $2}'`
+
+    echo ${port}
+
+  elif [[ "$sys_name" == "Linux" ]]; then
+
+    local port=`/bin/netstat -ltnp | grep ${pid} | awk '{print $4}' | awk -F ':' '{print $2}'`
+
+    echo ${port}
+
+  fi
+}
+
+get_health_check_api() {
+  local health_check_api=${HEALTH_CHECK_API};
+
+  local port=$( get_port )
+
+  if [[ ${port} != "" ]]; then
+    health_check_api=$(echo "${HEALTH_CHECK_API}" | sed "s/:$DEFAULT_PORT/:$port/")
+  fi
+
+  echo ${health_check_api}
+}
+
 check() {
   local up_message=$1
 
-  local curl_result=`${CURL_BIN} -m 150 "${HEALTH_CHECK_API}" "${@}" 2>/dev/null`
+  local curl_result=`${CURL_BIN} -m 150 "$( get_health_check_api )" "${@}" 2>/dev/null`
 
   local is_ok="false"
 
