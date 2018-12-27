@@ -63,8 +63,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 // since we use jwt, session is not necessary
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests()
+                // TODO: we should use a better way to match the resources
                 // requests for resource and auth api are always allowed
-                .antMatchers("/", "/*.html", "/favicon.ico", "/**/*.html").permitAll()
+                .antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png").permitAll()
                 .antMatchers("/v1/cs/health").permitAll()
                 .antMatchers("/v1/auth/**").permitAll()
                 .anyRequest().authenticated();

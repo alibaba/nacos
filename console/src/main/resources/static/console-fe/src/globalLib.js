@@ -613,7 +613,10 @@ const request = (function(_global) {
         // 处理403 forbidden
         if (error && error.status === 403) {
           // 跳转至login页
-          window.location = '/#/login';
+          // TODO: 用 react-router 重写，改造成本比较高，这里先hack
+          const url = window.location.href;
+          const base_url = url.split('#')[0];
+          window.location = `${base_url}#/login`;
         }
       }
     );
