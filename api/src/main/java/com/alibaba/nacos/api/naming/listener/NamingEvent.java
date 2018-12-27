@@ -20,6 +20,8 @@ import java.util.List;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 /**
+ * Naming Event
+ *
  * @author dungu.zpf
  */
 public class NamingEvent implements Event {

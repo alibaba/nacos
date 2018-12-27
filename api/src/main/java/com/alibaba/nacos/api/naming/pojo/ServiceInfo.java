@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
+ * ServiceInfo
+ *
  * @author dungu.zpf
  */
 public class ServiceInfo {

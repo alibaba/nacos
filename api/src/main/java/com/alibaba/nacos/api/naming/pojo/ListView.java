@@ -20,6 +20,8 @@ import com.alibaba.fastjson.JSON;
 import java.util.List;
 
 /**
+ * ListView
+ *
  * @author dungu.zpf
  */
 public class ListView<T> {
