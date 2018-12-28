@@ -309,5 +309,16 @@ const I18N_CONF = {
     source: '源空间：',
     items: '配置数量：',
   },
+  ImportDialog: {
+    terminate: '终止导入',
+    skip: '跳过',
+    overwrite: '覆盖',
+    zipFileFormat: '只能上传.zip格式的文件',
+    uploadFile: '上传文件',
+    importLabel: '导入配置 ( ',
+    target: '目标空间：',
+    conflict: '相同配置：',
+    beSureExerciseCaution: '文件上传后将直接导入配置，请务必谨慎操作',
+  },
 };
 export default I18N_CONF;

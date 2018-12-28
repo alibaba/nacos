@@ -310,6 +310,17 @@ const I18N_CONF = {
     source: 'Source',
     items: 'Items:',
   },
+  ImportDialog: {
+    terminate: 'Terminate',
+    skip: 'Skip',
+    overwrite: 'Overwrite',
+    zipFileFormat: 'Only upload. zip file format',
+    uploadFile: 'Upload File',
+    importLabel: 'Import ( ',
+    target: 'Target:',
+    conflict: 'Conflict:',
+    beSureExerciseCaution: 'Caution: data will be imported directly after uploading.',
+  },
 };
 
 export default I18N_CONF;
