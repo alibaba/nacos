@@ -26,30 +26,28 @@ public class JwtAuthenticationTokenFilter extends GenericFilterBean {
     @Autowired
     private JWTTokenUtils tokenProvider;
 
-
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-        System.out.println("JwtAuthenticationTokenFilter");
         HttpServletRequest httpReq = (HttpServletRequest) servletRequest;
         HttpServletResponse httpRes = (HttpServletResponse) servletResponse;
 
         String jwt = resolveToken(httpReq);
-        System.out.println(jwt);
-        //验证JWT是否正确
-        try {
-            if (StringUtils.hasText(jwt) && this.tokenProvider.validateToken(jwt)) {
-                //获取用户认证信息
-                Authentication authentication = this.tokenProvider.getAuthentication(jwt);
-                //将用户保存到SecurityContext
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
-        } catch (Exception e) {
-            httpRes.reset();
-            httpRes.setHeader("Content-Type", "application/json;charset=UTF-8");
+        // JWT为空，返回401
+        if (!StringUtils.hasText(jwt)) {
             httpRes.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         }
-
+        // 验证JWT是否正确
+        else if (this.tokenProvider.validateToken(jwt)) {
+            //获取用户认证信息
+            Authentication authentication = this.tokenProvider.getAuthentication(jwt);
+            //将用户保存到SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } else {
+            // 验证失败返回403
+            httpRes.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }
         filterChain.doFilter(servletRequest, servletResponse);
+
     }
 
     private String resolveToken(HttpServletRequest request) {
