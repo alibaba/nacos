@@ -52,6 +52,7 @@ class ConfigurationManagement extends React.Component {
   constructor(props) {
     super(props);
     this.deleteDialog = React.createRef();
+    this.showcode = React.createRef();
     this.field = new Field(this);
     this.appName = getParams('appName') || getParams('edasAppId') || '';
     this.preAppName = this.appName;
@@ -371,7 +372,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   showCode(record) {
-    this.refs.showcode.openDialog(record);
+    this.showcode.current.getInstance().openDialog(record);
   }
 
   renderCol(value, index, record) {
@@ -871,7 +872,7 @@ class ConfigurationManagement extends React.Component {
                   </div>
                 )}
               </div>
-              <ShowCodeing ref={'showcode'} />
+              <ShowCodeing ref={this.showcode} />
               <DeleteDialog ref={this.deleteDialog} />
             </div>
             {this.state.hasdash && (

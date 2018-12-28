@@ -321,6 +321,10 @@ const I18N_CONF = {
     conflict: 'Conflict:',
     beSureExerciseCaution: 'Caution: data will be imported directly after uploading.',
   },
+  ShowCodeing: {
+    sampleCode: 'Sample Code',
+    loading: 'Loading...',
+  },
 };
 
 export default I18N_CONF;

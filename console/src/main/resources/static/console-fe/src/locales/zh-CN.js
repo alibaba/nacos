@@ -320,5 +320,9 @@ const I18N_CONF = {
     conflict: '相同配置：',
     beSureExerciseCaution: '文件上传后将直接导入配置，请务必谨慎操作',
   },
+  ShowCodeing: {
+    sampleCode: '示例代码',
+    loading: '加载中...',
+  },
 };
 export default I18N_CONF;
