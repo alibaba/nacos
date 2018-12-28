@@ -34,7 +34,6 @@ import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
-import ImportDialog from 'components/ImportDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
@@ -874,7 +873,6 @@ class ConfigurationManagement extends React.Component {
               </div>
               <ShowCodeing ref={'showcode'} />
               <DeleteDialog ref={this.deleteDialog} />
-              <ImportDialog ref={'importDialog'} />
             </div>
             {this.state.hasdash && (
               <div
