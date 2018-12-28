@@ -14,6 +14,7 @@ import javax.annotation.PostConstruct;
 import java.util.Date;
 import java.util.List;
 
+
 @Component
 public class JWTTokenUtils {
 
@@ -47,7 +48,7 @@ public class JWTTokenUtils {
         // 创建Token令牌
         return Jwts.builder()
             .setSubject(authentication.getName())
-            .claim(AUTHORITIES_KEY, "admin")
+            .claim(AUTHORITIES_KEY, "")
             .setExpiration(validity)
             .signWith(SignatureAlgorithm.HS512, secretKey)
             .compact();

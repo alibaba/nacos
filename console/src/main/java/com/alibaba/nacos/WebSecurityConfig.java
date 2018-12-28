@@ -1,6 +1,7 @@
 package com.alibaba.nacos;
 
 import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
+import com.alibaba.nacos.console.security.JwtAuthenticationEntryPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +36,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    // 自定义token验证异常处理逻辑类
+    @Autowired
+    private JwtAuthenticationEntryPoint unauthorizedHandler;
+
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -60,6 +65,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             http
                 // since we use jwt, csrf is not necessary
                 .csrf().disable()
+                // custom token authorize exception handler
+                .exceptionHandling()
+                .authenticationEntryPoint(unauthorizedHandler)
+                .and()
                 // since we use jwt, session is not necessary
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests()
@@ -69,7 +78,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/v1/cs/health").permitAll()
                 .antMatchers("/v1/auth/**").permitAll()
                 .anyRequest().authenticated();
-            http.addFilterAfter(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
+            http.addFilterBefore(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
 
             // disable cache
             http.headers().cacheControl();
