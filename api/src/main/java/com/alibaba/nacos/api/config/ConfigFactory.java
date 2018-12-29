@@ -49,21 +49,14 @@ public class ConfigFactory {
     /**
      * Create Config
      *
-     * @param ServerAddr serverlist
+     * @param serverAddr serverlist
      * @return Config
      * @throws NacosException Exception
      */
     public static ConfigService createConfigService(String serverAddr) throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, serverAddr);
-        try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
-            Constructor constructor = driverImplClass.getConstructor(Properties.class);
-            ConfigService vendorImpl = (ConfigService)constructor.newInstance(properties);
-            return vendorImpl;
-        } catch (Throwable e) {
-            throw new NacosException(-400, e.getMessage());
-        }
+        return createConfigService(properties);
     }
 
 }
