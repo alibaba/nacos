@@ -30,6 +30,7 @@ public class BeatInfo {
     private String dom;
     private String cluster;
     private Map<String, String> metadata;
+    private boolean scheduled;
 
     @Override
     public String toString() {
@@ -82,5 +83,13 @@ public class BeatInfo {
 
     public void setWeight(double weight) {
         this.weight = weight;
+    }
+
+    public boolean isScheduled() {
+        return scheduled;
+    }
+
+    public void setScheduled(boolean scheduled) {
+        this.scheduled = scheduled;
     }
 }
