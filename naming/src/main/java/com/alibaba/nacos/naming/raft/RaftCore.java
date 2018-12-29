@@ -86,11 +86,11 @@ public class RaftCore {
 
     private static volatile List<RaftListener> listeners = new CopyOnWriteArrayList<>();
 
-    private static ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<String, Datum>();
+    private static volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<String, Datum>();
 
     private static PeerSet peers = new PeerSet();
 
-    private static volatile Notifier notifier = new Notifier();
+    public static volatile Notifier notifier = new Notifier();
 
     public static void init() throws Exception {
 
@@ -186,8 +186,9 @@ public class RaftCore {
         }
 
         long end = System.currentTimeMillis();
-        Loggers.RAFT.info("signalPublish cost " + (end - start) + " ms" + " : " + key);
-
+        if (Loggers.RAFT.isDebugEnabled()) {
+            Loggers.RAFT.debug("signalPublish cost " + (end - start) + " ms" + " : " + key);
+        }
     }
 
     public static void doSignalPublish(String key, String value, boolean locked) throws Exception {
@@ -271,7 +272,9 @@ public class RaftCore {
             }
 
             long end = System.currentTimeMillis();
-            Loggers.RAFT.info("signalPublish cost " + (end - start) + " ms" + " : " + key);
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("signalPublish cost " + (end - start) + " ms" + " : " + key);
+            }
         } finally {
             RaftCore.OPERATE_LOCK.unlock();
         }
@@ -351,15 +354,6 @@ public class RaftCore {
 
         local.resetLeaderDue();
 
-        Datum datumOrigin = RaftCore.getDatum(datum.key);
-
-        if (datumOrigin != null && datumOrigin.timestamp.get() > datum.timestamp.get()) {
-            // refuse operation:
-            Loggers.RAFT.warn("out of date publish, pub-timestamp:"
-                    + datumOrigin.timestamp.get() + ", cur-timestamp: " + datum.timestamp.get());
-            return;
-        }
-
         // do apply
         if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) || UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
             RaftStore.write(datum);
@@ -384,7 +378,7 @@ public class RaftCore {
 
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
-        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);
+        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term + ", increaseTerm:" + increaseTerm);
     }
 
     public static void onDelete(JSONObject params) throws Exception {
@@ -989,6 +983,10 @@ public class RaftCore {
             tasks.add(Pair.with(datum, action));
         }
 
+        public int getTaskSize() {
+            return tasks.size();
+        }
+
         @Override
         public void run() {
             Loggers.RAFT.info("raft notifier started");
@@ -1011,7 +1009,9 @@ public class RaftCore {
                     for (RaftListener listener : listeners) {
 
                         if (listener instanceof VirtualClusterDomain) {
-                            Loggers.RAFT.debug("listener: " + ((VirtualClusterDomain) listener).getName());
+                            if (Loggers.RAFT.isDebugEnabled()) {
+                                Loggers.RAFT.debug("listener: " + ((VirtualClusterDomain) listener).getName());
+                            }
                         }
 
                         if (!listener.interests(datum.key)) {
@@ -1036,8 +1036,10 @@ public class RaftCore {
                         }
                     }
 
-                    Loggers.RAFT.debug("VIPSRV-RAFT", "datum change notified" +
+                    if (Loggers.RAFT.isDebugEnabled()) {
+                        Loggers.RAFT.debug("VIPSRV-RAFT", "datum change notified" +
                             ", key: " + datum.key + "; listener count: " + count);
+                    }
                 } catch (Throwable e) {
                     Loggers.RAFT.error("VIPSRV-RAFT", "Error while handling notifying task", e);
                 }

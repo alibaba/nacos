@@ -178,7 +178,9 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
         List<IpAddress> ips = JSON.parseObject(value, new TypeReference<List<IpAddress>>() {
         });
+
         for (IpAddress ip : ips) {
+
             if (ip.getWeight() > 10000.0D) {
                 ip.setWeight(10000.0D);
             }
