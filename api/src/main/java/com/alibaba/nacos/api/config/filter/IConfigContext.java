@@ -27,7 +27,7 @@ public interface IConfigContext {
      * @param key
      * @return context
      */
-    public Object getParameter(String key);
+    Object getParameter(String key);
 
     /**
      * set context
@@ -35,5 +35,5 @@ public interface IConfigContext {
      * @param key   key
      * @param value value
      */
-    public void setParameter(String key, Object value);
+    void setParameter(String key, Object value);
 }
