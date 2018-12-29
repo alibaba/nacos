@@ -114,13 +114,13 @@ public class PushService {
                     try {
                         removeClientIfZombie();
                     } catch (Throwable e) {
-                        Loggers.PUSH.warn("VIPSRV-PUSH", "failed to remove client zombied");
+                        Loggers.PUSH.warn("VIPSRV-PUSH {}", "failed to remove client zombied");
                     }
                 }
             }, 0, 20, TimeUnit.SECONDS);
 
         } catch (SocketException e) {
-            Loggers.SRV_LOG.error("VIPSRV-PUSH", "failed to init push service");
+            Loggers.SRV_LOG.error("VIPSRV-PUSH {}", "failed to init push service");
         }
     }
 
@@ -181,7 +181,7 @@ public class PushService {
             size += clientConcurrentMap.size();
         }
 
-        Loggers.PUSH.info("VIPSRV-PUSH", "clientMap size: " + size);
+        Loggers.PUSH.info("VIPSRV-PUSH {}", "clientMap size: " + size);
 
     }
 
@@ -221,7 +221,9 @@ public class PushService {
             @Override
             public void run() {
                 try {
-                    Loggers.PUSH.info(dom + " is changed, add it to push queue.");
+                    if (Loggers.PUSH.isDebugEnabled()) {
+                        Loggers.PUSH.debug(dom + " is changed, add it to push queue.");
+                    }
                     ConcurrentMap<String, PushClient> clients = clientMap.get(dom);
                     if (MapUtils.isEmpty(clients)) {
                         return;
@@ -247,7 +249,7 @@ public class PushService {
                             compressData = (byte[]) (pair.getValue0());
                             data = (Map<String, Object>) pair.getValue1();
 
-                            Loggers.PUSH.debug("PUSH-CACHE", "cache hit: " + dom + ":" + client.getAddrStr());
+                            Loggers.PUSH.debug("PUSH-CACHE {}", "cache hit: " + dom + ":" + client.getAddrStr());
                         }
 
                         if (compressData != null) {
