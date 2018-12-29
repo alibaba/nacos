@@ -49,7 +49,7 @@ public class ConfigFactory {
     /**
      * Create Config
      *
-     * @param serverAddr serverlist
+     * @param serverAddr serverList
      * @return Config
      * @throws NacosException Exception
      */
