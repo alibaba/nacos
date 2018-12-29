@@ -40,9 +40,9 @@ It is super easy to get started with your first project.
 
 You can download the package from the  [latest stable release](https://github.com/alibaba/nacos/releases).  
 
-Take release nacos-server-0.6.1.zip for example.
+Take release nacos-server-0.7.0.zip for example.
 ```
-unzip nacos-server-0.6.1.zip
+unzip nacos-server-0.7.0.zip
 cd nacos/bin 
 ``` 
 
