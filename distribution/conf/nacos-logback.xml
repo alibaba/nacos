@@ -1,19 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="10 seconds">
 
+    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${nacos.home}/logs"/>
+    <property name="LOG_HOME" value="${logPath}"/>
+
+    <appender name="cmdb-main"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${nacos.home}/logs/cmdb-main.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${nacos.home}/logs/cmdb-main.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>utf8</charset>
+           <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="naming-server"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-server.log</file>
+        <file>${LOG_HOME}/naming-server.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -34,10 +54,10 @@
 
     <appender name="naming-raft"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-raft.log</file>
+        <file>${LOG_HOME}/naming-raft.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-raft.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-raft.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -58,10 +78,10 @@
 
     <appender name="naming-event"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-event.log</file>
+        <file>${LOG_HOME}/naming-event.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-event.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-event.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -82,10 +102,10 @@
 
     <appender name="naming-push"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-push.log</file>
+        <file>${LOG_HOME}/naming-push.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-push.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-push.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -98,10 +118,10 @@
     </appender>
     <appender name="naming-rt"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-rt.log</file>
+        <file>${LOG_HOME}/naming-rt.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-rt.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-rt.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -115,10 +135,10 @@
 
     <appender name="naming-performance"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-performance.log</file>
+        <file>${LOG_HOME}/naming-performance.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-performance.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-performance.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
@@ -132,10 +152,10 @@
 
     <appender name="naming-router"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-router.log</file>
+        <file>${LOG_HOME}/naming-router.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-router.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-router.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -149,10 +169,10 @@
 
     <appender name="naming-cache"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-cache.log</file>
+        <file>${LOG_HOME}/naming-cache.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-cache.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-cache.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -166,10 +186,10 @@
 
     <appender name="naming-device"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-device.log</file>
+        <file>${LOG_HOME}/naming-device.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-device.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-device.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -183,10 +203,10 @@
 
     <appender name="naming-tag"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-tag.log</file>
+        <file>${LOG_HOME}/naming-tag.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-tag.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-tag.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -200,10 +220,10 @@
 
     <appender name="naming-tenant"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-tenant.log</file>
+        <file>${LOG_HOME}/naming-tenant.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-tenant.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-tenant.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -217,10 +237,10 @@
 
     <appender name="naming-debug"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/naming-debug.log</file>
+        <file>${LOG_HOME}/naming-debug.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/naming-debug.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/naming-debug.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -236,10 +256,10 @@
     <!--config module logback config-->
     <appender name="dumpFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-dump.log</file>
+        <file>${LOG_HOME}/config-dump.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/config-dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
@@ -247,15 +267,15 @@
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
     <appender name="pullFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-pull.log</file>
+        <file>${LOG_HOME}/config-pull.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/config-pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -263,15 +283,15 @@
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
     <appender name="fatalFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-fatal.log</file>
+        <file>${LOG_HOME}/config-fatal.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/config-fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -279,15 +299,15 @@
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
     <appender name="memoryFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-memory.log</file>
+        <file>${LOG_HOME}/config-memory.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/config-memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
@@ -295,15 +315,15 @@
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
     <appender name="pullCheckFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-pull-check.log</file>
+        <file>${LOG_HOME}/config-pull-check.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/config-pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
@@ -311,135 +331,16 @@
         </rollingPolicy>
         <encoder>
             <Pattern>%msg%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="aclLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-acl.log</file>
+        <file>${LOG_HOME}/config-acl.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>50MB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>512MB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="clientLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-client-request.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date|%msg%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="sdkLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-sdk-request.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>1GB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>3GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date|%msg%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="traceLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-trace.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date|%msg%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="notifyLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-notify.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>1GB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>3GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="appCollectorLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-app.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>20MB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>128MB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="startLog"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/config-server.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/config-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>50MB</maxFileSize>
-            <MaxHistory>15</MaxHistory>
-            <totalSizeCap>512MB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
-        </encoder>
-    </appender>
-
-    <appender name="rootFile"
-              class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${nacos.home}/logs/nacos.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${nacos.home}/logs/nacos.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/config-acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
@@ -450,6 +351,130 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <appender name="clientLog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/config-client-request.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/config-client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date|%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="sdkLog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/config-sdk-request.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/config-sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date|%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="traceLog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/config-trace.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/config-trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>7GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date|%msg%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="notifyLog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/config-notify.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/config-notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="appCollectorLog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/config-app.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/config-app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>128MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="startLog"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/config-server.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/config-server.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>512MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="rootFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/nacos.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/nacos.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>512MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <logger name="com.alibaba.nacos.cmdb.main" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="cmdb-main"/>
+    </logger>
 
     <logger name="com.alibaba.nacos.naming.main" additivity="false">
         <level value="INFO"/>

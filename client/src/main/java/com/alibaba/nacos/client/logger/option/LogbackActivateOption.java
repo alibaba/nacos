@@ -29,10 +29,10 @@ import ch.qos.logback.core.rolling.TimeBasedRollingPolicy;
 
 /**
  * ActivateOption的Logback 0.9.19及后续版本的实现
- * 
+ *
  * @author zhuyong 2014年3月20日 上午10:24:58
  */
-@SuppressWarnings({ "rawtypes", "unchecked" })
+@SuppressWarnings({"rawtypes", "unchecked"})
 public class LogbackActivateOption extends Logback918ActivateOption {
 
     public LogbackActivateOption(Object logger) {

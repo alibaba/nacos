@@ -12,7 +12,7 @@
  */
 module.exports = {
   'zh-cn': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.5.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.7.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': '配置管理',
     'com.alibaba.nacos.page.serviceManagementVirtual': '服务管理',
     'nacos.component.ExportDialog.tags2': '标签:',
@@ -545,7 +545,7 @@ module.exports = {
     'com.alibaba.nacos.page.serviceDetail.edit_service': '编辑服务',
     'com.alibaba.nacos.page.serviceDetail.back': '返回',
     'com.alibaba.nacos.page.serviceDetail.service_name': '服务名',
-    'com.alibaba.nacos.page.serviceDetail.protect_threshold': '保护阀值',
+    'com.alibaba.nacos.page.serviceDetail.protect_threshold': '保护阈值',
     'com.alibaba.nacos.page.serviceDetail.health_check_pattern': '健康检查模式',
     'com.alibaba.nacos.page.serviceDetail.health_check_pattern.service': '服务端',
     'com.alibaba.nacos.page.serviceDetail.health_check_pattern.client': '客户端',
@@ -574,7 +574,7 @@ module.exports = {
     'nacos.page.ConfigEditor.submit_failed': '不能为空, 提交失败',
   },
   'en-us': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.5.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.7.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': 'ConfigManagement',
     'com.alibaba.nacos.page.serviceManagementVirtual': 'ServiceManagement',
     'nacos.component.CloneDialog.the_same_configuration': 'Conflict:',

@@ -61,7 +61,7 @@ public class LoggerFactory {
             } catch (Throwable e2) {
                 setLoggerFactory(new NopLoggerFactory());
                 LogLog.warn("Init JM logger with NopLoggerFactory, pay attention. "
-                        + LoggerFactory.class.getClassLoader(), e2);
+                    + LoggerFactory.class.getClassLoader(), e2);
             }
         }
 

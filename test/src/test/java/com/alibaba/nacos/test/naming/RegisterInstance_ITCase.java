@@ -56,7 +56,7 @@ public class RegisterInstance_ITCase {
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
@@ -64,7 +64,6 @@ public class RegisterInstance_ITCase {
     @Test
     @Ignore
     public void regService() throws NacosException, InterruptedException {
-
         String serviceName = "dungu.test.99";
         naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");

@@ -19,9 +19,8 @@ import java.util.concurrent.Executor;
 
 /**
  * shared listener
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractSharedListener implements Listener {
@@ -43,15 +42,12 @@ public abstract class AbstractSharedListener implements Listener {
         return null;
     }
 
-	/**
-	 * receive
-	 * 
-	 * @param dataId
-	 *            data ID
-	 * @param group
-	 *            group
-	 * @param configInfo
-	 *            content
-	 */
+    /**
+     * receive
+     *
+     * @param dataId     data ID
+     * @param group      group
+     * @param configInfo content
+     */
     public abstract void innerReceive(String dataId, String group, String configInfo);
 }

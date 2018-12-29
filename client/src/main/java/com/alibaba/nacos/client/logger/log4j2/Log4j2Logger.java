@@ -21,11 +21,10 @@ import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.logger.support.LoggerSupport;
 import com.alibaba.nacos.client.logger.util.MessageUtil;
 
-
 /**
  * Log4j2Logger
- * @author Nacos
  *
+ * @author Nacos
  */
 public class Log4j2Logger extends LoggerSupport implements Logger {
 

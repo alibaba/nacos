@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingExample {
 
@@ -50,8 +50,8 @@ public class NamingExample {
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent) event).getServiceName());
-                System.out.println(((NamingEvent) event).getInstances());
+                System.out.println(((NamingEvent)event).getServiceName());
+                System.out.println(((NamingEvent)event).getInstances());
             }
         });
     }

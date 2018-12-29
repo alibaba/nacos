@@ -41,7 +41,8 @@ public class Slf4jLog4j2AdapterActivateOption extends Log4j2ActivateOption {
         super(null);
 
         try {
-            org.apache.logging.log4j.core.Logger log4j2Logger = (org.apache.logging.log4j.core.Logger) loggerField.get(logger);
+            org.apache.logging.log4j.core.Logger log4j2Logger = (org.apache.logging.log4j.core.Logger)loggerField.get(
+                logger);
             super.logger = log4j2Logger;
             super.configuration = super.logger.getContext().getConfiguration();
         } catch (Exception e) {
@@ -54,12 +55,13 @@ public class Slf4jLog4j2AdapterActivateOption extends Log4j2ActivateOption {
     public void activateAppender(Logger logger) {
         if (!(logger.getDelegate() instanceof org.apache.logging.slf4j.Log4jLogger)) {
             throw new IllegalArgumentException(
-                    "logger must be org.apache.logging.slf4j.Log4jLogger, but it's "
-                            + logger.getDelegate().getClass());
+                "logger must be org.apache.logging.slf4j.Log4jLogger, but it's "
+                    + logger.getDelegate().getClass());
         }
 
         try {
-            org.apache.logging.log4j.core.Logger log4j2Logger = (org.apache.logging.log4j.core.Logger) loggerField.get(logger.getDelegate());
+            org.apache.logging.log4j.core.Logger log4j2Logger = (org.apache.logging.log4j.core.Logger)loggerField.get(
+                logger.getDelegate());
             super.activateAppender(log4j2Logger);
         } catch (Exception e) {
             throw new RuntimeException("activateAppender error, ", e);

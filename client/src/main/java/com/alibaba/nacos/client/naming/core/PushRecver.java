@@ -81,24 +81,24 @@ public class PushRecver implements Runnable {
 
                     // send ack to server
                     ack = "{\"type\": \"push-ack\""
-                            + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
-                            + "\", \"data\":" + "\"\"}";
+                        + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
+                        + "\", \"data\":" + "\"\"}";
                 } else if ("dump".equals(pushPacket.type)) {
                     // dump data to server
                     ack = "{\"type\": \"dump-ack\""
-                            + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
-                            + "\", \"data\":" + "\""
-                            + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getServiceInfoMap()))
-                            + "\"}";
+                        + ", \"lastRefTime\": \"" + pushPacket.lastRefTime
+                        + "\", \"data\":" + "\""
+                        + StringUtils.escapeJavaScript(JSON.toJSONString(hostReactor.getServiceInfoMap()))
+                        + "\"}";
                 } else {
                     // do nothing send ack only
                     ack = "{\"type\": \"unknown-ack\""
-                            + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
-                            + "\", \"data\":" + "\"\"}";
+                        + ", \"lastRefTime\":\"" + pushPacket.lastRefTime
+                        + "\", \"data\":" + "\"\"}";
                 }
 
                 udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
-                        ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
+                    ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
             } catch (Exception e) {
                 LogUtils.LOG.error("NA", "error while receiving push data", e);
             }

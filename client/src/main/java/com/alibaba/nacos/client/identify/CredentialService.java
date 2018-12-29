@@ -23,34 +23,33 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Credential Service
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public final class CredentialService implements SpasCredentialLoader {
-	static final public Logger log = LogUtils.logger(CredentialService.class);
-    private static ConcurrentHashMap<String, CredentialService> instances = new ConcurrentHashMap<String, CredentialService>();
+    static final public Logger log = LogUtils.logger(CredentialService.class);
+    private static ConcurrentHashMap<String, CredentialService> instances
+        = new ConcurrentHashMap<String, CredentialService>();
 
     private String appName;
-	private Credentials credentials = new Credentials();
+    private Credentials credentials = new Credentials();
     private CredentialWatcher watcher;
     private CredentialListener listener;
-	
-	private CredentialService(String appName) {
+
+    private CredentialService(String appName) {
         if (appName == null) {
-        	String value = System.getProperty("project.name");
-        	if (StringUtils.isNotEmpty(value)) {
-				appName = value;
-			}
+            String value = System.getProperty("project.name");
+            if (StringUtils.isNotEmpty(value)) {
+                appName = value;
+            }
         }
         this.appName = appName;
         watcher = new CredentialWatcher(appName, this);
-	}
-	
-	
-	public static CredentialService getInstance() {
+    }
+
+    public static CredentialService getInstance() {
         return getInstance(null);
-	}
+    }
 
     public static CredentialService getInstance(String appName) {
         String key = appName != null ? appName : Constants.NO_APP_NAME;
@@ -85,13 +84,13 @@ public final class CredentialService implements SpasCredentialLoader {
         log.info(appName, this.getClass().getSimpleName() + " is freed");
     }
 
-	public Credentials getCredential() {
+    public Credentials getCredential() {
         Credentials localCredential = credentials;
         if (localCredential.valid()) {
             return localCredential;
         }
-		return credentials;
-	}
+        return credentials;
+    }
 
     public void setCredential(Credentials credential) {
         boolean changed = !(credentials == credential || (credentials != null && credentials.identical(credential)));
@@ -113,23 +112,23 @@ public final class CredentialService implements SpasCredentialLoader {
     }
 
     @Deprecated
-	public void setAccessKey(String accessKey) {
-		credentials.setAccessKey(accessKey);
-	}
+    public void setAccessKey(String accessKey) {
+        credentials.setAccessKey(accessKey);
+    }
 
     @Deprecated
-	public void setSecretKey(String secretKey) {
-		credentials.setSecretKey(secretKey);
-	}
+    public void setSecretKey(String secretKey) {
+        credentials.setSecretKey(secretKey);
+    }
 
     @Deprecated
-	public String getAccessKey() {
-		return credentials.getAccessKey();
-	}
+    public String getAccessKey() {
+        return credentials.getAccessKey();
+    }
 
     @Deprecated
-	public String getSecretKey() {
-		return credentials.getSecretKey();
-	}
+    public String getSecretKey() {
+        return credentials.getSecretKey();
+    }
 
 }

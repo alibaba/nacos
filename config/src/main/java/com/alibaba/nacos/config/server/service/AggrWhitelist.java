@@ -29,9 +29,9 @@ import java.util.regex.Pattern;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
-
 /**
  * 聚合数据白名单。
+ *
  * @author Nacos
  */
 @Service
@@ -62,7 +62,7 @@ public class AggrWhitelist {
             return;
         }
         defaultLog.warn("[aggr-dataIds] {}", content);
-        
+
         try {
             List<String> lines = IOUtils.readLines(new StringReader(content));
             compile(lines);
@@ -86,11 +86,11 @@ public class AggrWhitelist {
     static public List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }
-    
+
     // =======================
 
     static public final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
 
     static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
-            new ArrayList<Pattern>());
+        new ArrayList<Pattern>());
 }

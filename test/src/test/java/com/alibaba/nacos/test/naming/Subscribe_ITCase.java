@@ -56,7 +56,7 @@ public class Subscribe_ITCase {
     public void init() throws Exception{
         instances.clear();
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
     }

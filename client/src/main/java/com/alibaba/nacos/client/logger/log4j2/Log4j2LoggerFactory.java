@@ -24,8 +24,8 @@ import com.alibaba.nacos.client.logger.support.LogLog;
 
 /**
  * Log4j2Logger Factory
- * @author Nacos
  *
+ * @author Nacos
  */
 public class Log4j2LoggerFactory implements ILoggerFactory {
 
