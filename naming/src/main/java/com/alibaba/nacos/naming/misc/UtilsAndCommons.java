@@ -104,6 +104,10 @@ public class UtilsAndCommons {
 
     public static final String API_DOM = "/api/dom";
 
+    public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
+
+    public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
+
     public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
 
     public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
