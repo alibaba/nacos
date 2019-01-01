@@ -43,6 +43,7 @@ class NewConfig extends React.Component {
 
   constructor(props) {
     super(props);
+    this.successDialog = React.createRef();
     this.field = new Field(this);
     this.edasAppName = getParams('edasAppName') || '';
     this.edasAppId = getParams('edasAppId') || '';
@@ -293,7 +294,7 @@ class NewConfig extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.refs.success.openDialog(_payload);
+        self.successDialog.current.openDialog(_payload);
       },
       complete() {
         self.closeLoading();
@@ -545,7 +546,7 @@ class NewConfig extends React.Component {
               </div>
             </FormItem>
           </Form>
-          <SuccessDialog ref={'success'} />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );

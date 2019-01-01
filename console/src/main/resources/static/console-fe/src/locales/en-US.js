@@ -325,6 +325,11 @@ const I18N_CONF = {
     sampleCode: 'Sample Code',
     loading: 'Loading...',
   },
+  SuccessDialog: {
+    title: 'Configuration Management',
+    determine: 'OK',
+    failure: 'Failed',
+  },
 };
 
 export default I18N_CONF;

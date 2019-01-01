@@ -20,6 +20,7 @@ import './index.scss';
 class ConfigSync extends React.Component {
   constructor(props) {
     super(props);
+    this.successDialog = React.createRef();
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
     this.group = getParams('group') || '';
@@ -175,7 +176,7 @@ class ConfigSync extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.refs.success.openDialog(_payload);
+        self.successDialog.current.openDialog(_payload);
       },
       error() {},
     });
@@ -312,7 +313,7 @@ class ConfigSync extends React.Component {
               </div>
             </Form.Item>
           </Form>
-          <SuccessDialog ref="success" />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );
