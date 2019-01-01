@@ -324,5 +324,10 @@ const I18N_CONF = {
     sampleCode: '示例代码',
     loading: '加载中...',
   },
+  SuccessDialog: {
+    title: '配置管理',
+    determine: '确定',
+    failure: '失败',
+  },
 };
 export default I18N_CONF;

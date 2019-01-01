@@ -46,6 +46,7 @@ class ConfigEditor extends React.Component {
   constructor(props) {
     super(props);
     this.diffEditorDialog = React.createRef();
+    this.successDialog = React.createRef();
     this.edasAppName = getParams('edasAppName') || '';
     this.edasAppId = getParams('edasAppId') || '';
     this.inApp = this.edasAppName;
@@ -408,7 +409,7 @@ class ConfigEditor extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.refs.success.openDialog(_payload);
+        self.refs.successDialog.current.openDialog(_payload);
       },
       error() {},
     });
@@ -737,7 +738,7 @@ class ConfigEditor extends React.Component {
             ref={this.diffEditorDialog}
             publishConfig={this.publishConfig.bind(this)}
           />
-          <SuccessDialog ref="success" />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );

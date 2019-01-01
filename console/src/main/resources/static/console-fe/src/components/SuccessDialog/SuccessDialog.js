@@ -13,14 +13,16 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { aliwareIntl } from '../../globalLib';
-import { Button, Dialog, Grid, Icon } from '@alifd/next';
+import { Button, ConfigProvider, Dialog, Grid, Icon } from '@alifd/next';
 
 import './index.scss';
 
 const { Row, Col } = Grid;
 
+@ConfigProvider.config
 class SuccessDialog extends React.Component {
+  static displayName = 'SuccessDialog';
+
   static propTypes = {
     unpushtrace: PropTypes.bool,
   };
@@ -29,7 +31,7 @@ class SuccessDialog extends React.Component {
     super(props);
     this.state = {
       visible: false,
-      title: aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.Configuration_management'),
+      title: '',
       maintitle: '',
       content: '',
       isok: true,
@@ -38,7 +40,10 @@ class SuccessDialog extends React.Component {
     };
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    const { locale = {} } = this.props;
+    this.setState({ title: locale.title });
+  }
 
   openDialog(_payload) {
     let payload = _payload;
@@ -64,10 +69,11 @@ class SuccessDialog extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const footer = (
       <div style={{ textAlign: 'right' }}>
         <Button type="primary" onClick={this.closeDialog.bind(this)}>
-          {aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.determine')}
+          {locale.determine}
         </Button>
       </div>
     );
@@ -80,7 +86,6 @@ class SuccessDialog extends React.Component {
           onCancel={this.closeDialog.bind(this)}
           onClose={this.closeDialog.bind(this)}
           title={this.state.maintitle || this.state.title}
-          language={aliwareIntl.currentLanguageCode}
         >
           <div>
             <Row>
@@ -97,8 +102,7 @@ class SuccessDialog extends React.Component {
                     <h3>{this.state.title}</h3>
                   ) : (
                     <h3>
-                      {this.state.title}{' '}
-                      {aliwareIntl.get('com.alibaba.nacos.component.SuccessDialog.failure')}
+                      {this.state.title} {locale.failure}
                     </h3>
                   )}
                   <p>
