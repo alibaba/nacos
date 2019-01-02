@@ -60,7 +60,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public void configure(WebSecurity web) throws Exception {
         // TODO: we should use a better way to match the resources
         // requests for resource and auth api are always allowed
-        web.ignoring().antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.map", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png");
+        web.ignoring()
+            .antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.map", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png")
+            .antMatchers("/v1/auth/**")
+            .antMatchers("/v1/cs/health");
     }
 
     @Override
@@ -72,8 +75,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         } else {
             http
                 .authorizeRequests()
-                .antMatchers("/v1/cs/health").permitAll()
-                .antMatchers("/v1/auth/**").permitAll()
                 .anyRequest().authenticated().and()
                 // custom token authorize exception handler
                 .exceptionHandling()
@@ -94,7 +95,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
     public GenericFilterBean genericFilterBean() {
         return new JwtAuthenticationTokenFilter();
     }
