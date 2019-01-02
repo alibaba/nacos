@@ -100,14 +100,10 @@
 }
 .header-container .header-body .logout {
   float: right;
-  display: inline-block;
-  box-sizing: border-box;
-  margin-right: 40px;
-  text-align: center;
-  font-family: PingFangSC-Medium;
-  color: white;
-  font-size: 14px;
+  color: #fff;
   opacity: 0.6;
+  font-family: Avenir-Medium;
+  margin-right: 40px;
 }
 .header-container .header-body .language-switch:hover {
   opacity: 1;

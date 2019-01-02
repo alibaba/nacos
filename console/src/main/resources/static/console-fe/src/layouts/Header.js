@@ -14,7 +14,7 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { ConfigProvider } from '@alifd/next';
+import { ConfigProvider, Dropdown, Menu } from '@alifd/next';
 import siteConfig from '../config';
 import { changeLanguage } from '@/reducers/locale';
 import { aliwareIntl } from '@/globalLib';
@@ -42,6 +42,18 @@ class Header extends React.Component {
   logout = () => {
     window.localStorage.clear();
     this.props.history.push('/login');
+  };
+
+  getUsername = () => {
+    const token = window.localStorage.getItem('token');
+    if (token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace('-', '+').replace('_', '/');
+      const parsedToken = JSON.parse(window.atob(base64));
+      console.log(parsedToken);
+      return parsedToken.sub;
+    }
+    return '';
   };
 
   render() {
@@ -87,9 +99,11 @@ class Header extends React.Component {
           </a>
           {/* if is login page, we will show logout */}
           {pathname !== '/login' && (
-            <span className="logout" onClick={this.logout}>
-              退出
-            </span>
+            <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
+              <Menu>
+                <Menu.Item onClick={this.logout}>登出</Menu.Item>
+              </Menu>
+            </Dropdown>
           )}
           <span className="language-switch language-switch-primary" onClick={this.switchLang}>
             {languageSwitchButton}
