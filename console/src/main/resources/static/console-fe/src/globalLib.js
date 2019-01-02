@@ -611,7 +611,7 @@ const request = (function(_global) {
       success => {},
       error => {
         // 处理403 forbidden
-        if (error && error.status === 403) {
+        if (error && (error.status === 403 || error.status === 401)) {
           // 跳转至login页
           // TODO: 用 react-router 重写，改造成本比较高，这里先hack
           const url = window.location.href;

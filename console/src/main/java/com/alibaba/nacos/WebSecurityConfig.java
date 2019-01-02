@@ -10,6 +10,7 @@ import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -56,6 +57,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
+    public void configure(WebSecurity web) throws Exception {
+        // TODO: we should use a better way to match the resources
+        // requests for resource and auth api are always allowed
+        web.ignoring().antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.map", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png");
+    }
+
+    @Override
     protected void configure(HttpSecurity http) throws Exception {
 
         // TODO 做开关是否开启登录功能
@@ -63,28 +71,23 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             http.authorizeRequests().antMatchers("/").permitAll();
         } else {
             http
-                // since we use jwt, csrf is not necessary
-                .csrf().disable()
-                // custom token authorize exception handler
-                .exceptionHandling()
-                .authenticationEntryPoint(unauthorizedHandler)
-                .and()
-                // since we use jwt, session is not necessary
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .authorizeRequests()
-                // TODO: we should use a better way to match the resources
-                // requests for resource and auth api are always allowed
-                .antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png").permitAll()
                 .antMatchers("/v1/cs/health").permitAll()
                 .antMatchers("/v1/auth/**").permitAll()
-                .anyRequest().authenticated();
+                .anyRequest().authenticated().and()
+                // custom token authorize exception handler
+                .exceptionHandling()
+                .authenticationEntryPoint(unauthorizedHandler).and()
+                // since we use jwt, session is not necessary
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                // since we use jwt, csrf is not necessary
+                .csrf().disable();
             http.addFilterBefore(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
 
             // disable cache
             http.headers().cacheControl();
         }
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
