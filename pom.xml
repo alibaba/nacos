@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -226,6 +226,7 @@
                 <configuration>
 
                     <excludes>
+                        <exclude>.editorconfig</exclude>
                         <exclude>.travis.yml</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
                         <exclude>CODE_OF_CONDUCT.md</exclude>
@@ -240,8 +241,8 @@
                         <exclude>src/test/resources/*</exclude>
                         <exclude>src/main/resources/static/**/*.js</exclude>
                         <exclude>src/main/resources/**/*.svg</exclude>
-                        <exclude>src/main/resources/static/css/console1412.css</exclude>
-                        <exclude>src/main/resources/static/js/vs/**/*</exclude>
+                        <exclude>src/main/resources/static/css/*</exclude>
+                        <exclude>src/main/resources/static/js/*</exclude>
                         <exclude>src/main/resources/static/console-fe/public/css/console1412.css</exclude>
                         <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
                         <exclude>src/main/resources/static/console-fe/dist/js/vs/editor/editor.main.css</exclude>
@@ -459,6 +460,7 @@
         <module>common</module>
         <module>distribution</module>
         <module>console</module>
+        <module>cmdb</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -518,6 +520,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-cmdb</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

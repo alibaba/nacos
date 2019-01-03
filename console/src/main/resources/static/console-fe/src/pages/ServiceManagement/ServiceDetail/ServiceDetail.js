@@ -83,7 +83,7 @@ class ServiceDetail extends React.Component {
   render() {
     const { locale = {} } = this.props;
     const { serviceName, loading, service = {}, clusters } = this.state;
-    const { metadata = {} } = service;
+    const { metadata = {}, selector = {} } = service;
     const metadataText = Object.keys(metadata)
       .map(key => `${key}=${metadata[key]}`)
       .join(',');
@@ -132,6 +132,14 @@ class ServiceDetail extends React.Component {
             <FormItem label={`${locale.metadata}:`}>
               <p>{metadataText}</p>
             </FormItem>
+            <FormItem label={`${locale.type}:`}>
+              <p>{selector.type}</p>
+            </FormItem>
+            {service.type === 'label' && (
+              <FormItem label={`${locale.selector}:`}>
+                <p>{selector.selector}</p>
+              </FormItem>
+            )}
           </Form>
           {clusters.map(cluster => (
             <Card

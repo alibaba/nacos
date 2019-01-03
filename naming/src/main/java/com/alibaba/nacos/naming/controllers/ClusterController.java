@@ -18,13 +18,13 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -48,12 +48,12 @@ public class ClusterController {
     @RequestMapping(value = {"/update", "/add"}, method = RequestMethod.POST)
     public String update(HttpServletRequest request) throws Exception {
 
-        String clusterName = BaseServlet.required(request, "clusterName");
-        String serviceName = BaseServlet.required(request, "serviceName");
-        String healthChecker = BaseServlet.required(request, "healthChecker");
-        String metadata = BaseServlet.optional(request, "metadata", StringUtils.EMPTY);
-        String checkPort = BaseServlet.required(request, "checkPort");
-        String useInstancePort4Check = BaseServlet.required(request, "useInstancePort4Check");
+        String clusterName = WebUtils.required(request, "clusterName");
+        String serviceName = WebUtils.required(request, "serviceName");
+        String healthChecker = WebUtils.required(request, "healthChecker");
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        String checkPort = WebUtils.required(request, "checkPort");
+        String useInstancePort4Check = WebUtils.required(request, "useInstancePort4Check");
 
         VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
         if (domain == null) {

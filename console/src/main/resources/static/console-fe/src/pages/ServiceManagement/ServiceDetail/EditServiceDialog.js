@@ -48,11 +48,17 @@ class EditServiceDialog extends React.Component {
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, healthCheckMode, metadataText } = editService;
+    const { name, protectThreshold, healthCheckMode, metadataText, selector } = editService;
     request({
       method: isCreate ? 'PUT' : 'POST',
-      url: `v1/ns/service/${isCreate ? 'create' : 'update'}`,
-      data: { serviceName: name, protectThreshold, healthCheckMode, metadata: metadataText },
+      url: 'v1/ns/service',
+      data: {
+        serviceName: name,
+        protectThreshold,
+        healthCheckMode,
+        metadata: metadataText,
+        selector: JSON.stringify(selector),
+      },
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),
       success: res => {
@@ -79,10 +85,24 @@ class EditServiceDialog extends React.Component {
     });
   }
 
+  getFormItemLayout = () => {
+    return {
+      labelCol: { span: 6 },
+      wrapperCol: { span: 14 },
+    };
+  };
+
   render() {
     const { locale = {} } = this.props;
     const { isCreate, editService, editServiceDialogVisible } = this.state;
-    const { name, protectThreshold, healthCheckMode, metadataText } = editService;
+    const {
+      name,
+      protectThreshold,
+      healthCheckMode,
+      metadataText,
+      selector = { type: 'none' },
+    } = editService;
+    const formItemLayout = this.getFormItemLayout();
     return (
       <Dialog
         className="service-detail-edit-dialog"
@@ -93,27 +113,22 @@ class EditServiceDialog extends React.Component {
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${locale.serviceName}:`}>
+          <Form.Item label={`${locale.serviceName}:`} {...formItemLayout}>
             {!isCreate ? (
               <p>{name}</p>
             ) : (
-              <Input
-                className="in-text"
-                value={name}
-                onChange={name => this.onChangeCluster({ name })}
-              />
+              <Input value={name} onChange={name => this.onChangeCluster({ name })} />
             )}
           </Form.Item>
-          <Form.Item label={`${locale.protectThreshold}:`}>
+          <Form.Item label={`${locale.protectThreshold}:`} {...formItemLayout}>
             <Input
-              className="in-text"
               value={protectThreshold}
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.healthCheckPattern}:`}>
+          <Form.Item label={`${locale.healthCheckPattern}:`} {...formItemLayout}>
             <Select
-              className="in-select"
+              className="full-width"
               defaultValue={healthCheckMode}
               onChange={healthCheckMode => this.onChangeCluster({ healthCheckMode })}
             >
@@ -122,13 +137,32 @@ class EditServiceDialog extends React.Component {
               <Select.Option value="none">{locale.healthCheckPatternNone}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item label={`${locale.metadata}:`}>
-            <Input
-              className="in-text"
+          <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
+            <Input.TextArea
               value={metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
           </Form.Item>
+          <Form.Item label={`${locale.type}:`} {...formItemLayout}>
+            <Select
+              className="full-width"
+              defaultValue={selector.type}
+              onChange={type => this.onChangeCluster({ selector: { ...selector, type } })}
+            >
+              <Select.Option value="label">{locale.typeLabel}</Select.Option>
+              <Select.Option value="none">{locale.typeNone}</Select.Option>
+            </Select>
+          </Form.Item>
+          {selector.type === 'label' && (
+            <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
+              <Input.TextArea
+                value={selector.expression}
+                onChange={expression =>
+                  this.onChangeCluster({ selector: { ...selector, expression } })
+                }
+              />
+            </Form.Item>
+          )}
         </Form>
       </Dialog>
     );
