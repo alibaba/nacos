@@ -329,5 +329,19 @@ const I18N_CONF = {
     determine: '确定',
     failure: '失败',
   },
+  ConfigSync: {
+    error: '错误',
+    syncConfigurationMain: '同步配置',
+    syncConfiguration: '同步配置成功',
+    advancedOptions: '更多高级选项',
+    collapse: '收起',
+    home: '归属应用：',
+    region: '所属地域：',
+    configuration: '配置内容：',
+    target: '目标地域：',
+    sync: '同步',
+    back: '返回',
+  },
 };
+
 export default I18N_CONF;

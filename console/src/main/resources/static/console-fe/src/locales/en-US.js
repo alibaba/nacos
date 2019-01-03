@@ -330,6 +330,19 @@ const I18N_CONF = {
     determine: 'OK',
     failure: 'Failed',
   },
+  ConfigSync: {
+    error: 'Error',
+    syncConfigurationMain: 'Synchronize Configuration',
+    syncConfiguration: 'Synchronize Configuration Successfully',
+    advancedOptions: 'Advanced Options',
+    collapse: 'Collapse',
+    home: 'Application：',
+    region: 'Region：',
+    configuration: 'Configuration Content：',
+    target: 'Target Region：',
+    sync: 'Synchronize',
+    back: 'Back',
+  },
 };
 
 export default I18N_CONF;
