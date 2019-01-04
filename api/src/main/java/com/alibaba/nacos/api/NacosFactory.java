@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.naming.NamingService;
 public class NacosFactory {
 
     /**
-     * Create config
+     * Create config service
      *
      * @param properties init param
      * @return config
@@ -42,7 +42,7 @@ public class NacosFactory {
     }
 
     /**
-     * Create config
+     * Create config service
      *
      * @param serverAddr server list
      * @return config
@@ -53,7 +53,7 @@ public class NacosFactory {
     }
 
     /**
-     * Create Naming
+     * Create naming service
      *
      * @param serverAddr server list
      * @return Naming
@@ -64,7 +64,7 @@ public class NacosFactory {
     }
 
     /**
-     * Create Naming
+     * Create naming service
      *
      * @param properties init param
      * @return Naming
