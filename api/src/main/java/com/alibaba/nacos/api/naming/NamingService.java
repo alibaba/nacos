@@ -190,10 +190,7 @@ public interface NamingService {
     ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException;
 
     /**
-<<<<<<< HEAD
-     * get all subscribed services of current client
-=======
-     * Get all service names from server
+     * Get all subscribed services of current client
      *
      * @param pageNo   page index
      * @param pageSize page size
@@ -205,7 +202,6 @@ public interface NamingService {
 
     /**
      * Get all subscribed services of current client
->>>>>>> upstream/develop
      *
      * @return subscribed services
      * @throws NacosException

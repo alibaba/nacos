@@ -19,8 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
-<<<<<<< HEAD
- *
+ * Cluster
  *
  * @author dungu.zpf
  */
