@@ -18,7 +18,7 @@ package com.alibaba.nacos.api.config.listener;
 import java.util.concurrent.Executor;
 
 /**
- * shared listener
+ * Shared Listener
  *
  * @author Nacos
  */

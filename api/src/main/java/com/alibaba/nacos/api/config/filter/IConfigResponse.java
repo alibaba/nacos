@@ -30,7 +30,7 @@ public interface IConfigResponse {
     Object getParameter(String key);
 
     /**
-     * get context
+     * Get config context
      *
      * @return configContext
      */
