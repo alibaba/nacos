@@ -25,11 +25,15 @@ error_exit ()
 [ ! -e "$JAVA_HOME/bin/java" ] && error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
 
 export MODE="cluster"
-while getopts ":m:" opt
+export HEALTH_CHECK="1"
+while getopts ":m:c:" opt
 do
     case $opt in
         m)
         MODE=$OPTARG
+        ;;
+        c)
+        HEALTH_CHECK=$OPTARG
         ;;
         ?)
         echo "Unknown parameter"
@@ -78,7 +82,7 @@ fi
 echo "$JAVA ${JAVA_OPT}"
 
 if [[ "${MODE}" == "standalone" ]]; then
-    echo "nacos is starting"
+    echo "Nacos is starting"
     $JAVA ${JAVA_OPT}
 else
     if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
@@ -87,5 +91,9 @@ else
 
     echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
     nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/start.out 2>&1 &
-    echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
+    echo "Nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
+
+    if [[ "${HEALTH_CHECK}" == "1" ]]; then
+        ${BASE_DIR}/bin/health-check.sh
+    fi
 fi
