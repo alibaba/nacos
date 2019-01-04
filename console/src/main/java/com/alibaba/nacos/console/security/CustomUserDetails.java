@@ -1,6 +1,6 @@
 package com.alibaba.nacos.console.security;
 
-import com.alibaba.nacos.console.domain.User;
+import com.alibaba.nacos.config.server.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;

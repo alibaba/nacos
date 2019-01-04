@@ -2,6 +2,7 @@ package com.alibaba.nacos;
 
 import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
 import com.alibaba.nacos.console.security.JwtAuthenticationEntryPoint;
+import com.alibaba.nacos.console.utils.JWTTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +42,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
+    @Autowired
+    private JWTTokenUtils tokenProvider;
+
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -62,7 +66,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // requests for resource and auth api are always allowed
         web.ignoring()
             .antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.map", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png")
-            .antMatchers("/v1/auth/**")
+            .antMatchers("/v1/auth/login")
             .antMatchers("/v1/cs/health");
     }
 
@@ -83,7 +87,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 // since we use jwt, csrf is not necessary
                 .csrf().disable();
-            http.addFilterBefore(genericFilterBean(), UsernamePasswordAuthenticationFilter.class);
+            http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
 
             // disable cache
             http.headers().cacheControl();
@@ -93,10 +97,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    public GenericFilterBean genericFilterBean() {
-        return new JwtAuthenticationTokenFilter();
     }
 
 }

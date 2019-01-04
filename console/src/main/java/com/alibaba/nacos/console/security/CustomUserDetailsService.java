@@ -1,7 +1,9 @@
 package com.alibaba.nacos.console.security;
 
 
-import com.alibaba.nacos.console.domain.User;
+import com.alibaba.nacos.config.server.model.User;
+import com.alibaba.nacos.config.server.service.PersistService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,13 +13,16 @@ import org.springframework.stereotype.Service;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    @Override
-    public UserDetails loadUserByUsername(String s) throws UsernameNotFoundException {
+    @Autowired
+    private transient PersistService persistService;
 
-        // TODO: get user from database
-        User user = new User();
-        user.setPassword("$2a$04$l55XHWJ80UfbNXHIhFiunuqG07N2fOSmxqQEgNqijTY9tI/P0rnM6");
-        user.setUsername("nacos");
+    @Override
+    public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
+    // 持久层写一个获取用户信息的sql
+        User user = persistService.findUserByUsername(userName);
+        if (user == null) {
+            throw new UsernameNotFoundException(userName);
+        }
         return new CustomUserDetails(user);
     }
 }
