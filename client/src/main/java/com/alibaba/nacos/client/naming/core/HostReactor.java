@@ -43,6 +43,8 @@ public class HostReactor {
 
     private Map<String, ServiceInfo> serviceInfoMap;
 
+    private Map<String, Object> updatingMap;
+
     private PushRecver pushRecver;
 
     private EventDispatcher eventDispatcher;
@@ -53,11 +55,18 @@ public class HostReactor {
 
     private String cacheDir;
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
+                       boolean loadCacheAtStart) {
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
-        this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+        if (loadCacheAtStart) {
+            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+        } else {
+            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
+        }
+
+        this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushRecver = new PushRecver(this);
     }
@@ -65,7 +74,7 @@ public class HostReactor {
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "com.vipserver.client.updater");
+            Thread thread = new Thread(r, "com.alibaba.nacos.client.naming.updater");
             thread.setDaemon(true);
 
             return thread;
@@ -91,7 +100,7 @@ public class HostReactor {
         if (oldService != null) {
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 LogUtils.LOG.warn("out of date data received, old-t: " + oldService.getLastRefTime()
-                        + ", new-t: " + serviceInfo.getLastRefTime());
+                    + ", new-t: " + serviceInfo.getLastRefTime());
             }
 
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
@@ -110,11 +119,13 @@ public class HostReactor {
             Set<Instance> newHosts = new HashSet<Instance>();
             Set<Instance> remvHosts = new HashSet<Instance>();
 
-            List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(newHostMap.entrySet());
+            List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
+                newHostMap.entrySet());
             for (Map.Entry<String, Instance> entry : newServiceHosts) {
                 Instance host = entry.getValue();
                 String key = entry.getKey();
-                if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
+                if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(),
+                    oldHostMap.get(key).toString())) {
                     modHosts.add(host);
                     continue;
                 }
@@ -142,19 +153,18 @@ public class HostReactor {
 
             if (newHosts.size() > 0) {
                 LogUtils.LOG.info("new ips(" + newHosts.size() + ") service: "
-                        + serviceInfo.getName() + " -> " + JSON.toJSONString(newHosts));
+                    + serviceInfo.getName() + " -> " + JSON.toJSONString(newHosts));
             }
 
             if (remvHosts.size() > 0) {
                 LogUtils.LOG.info("removed ips(" + remvHosts.size() + ") service: "
-                        + serviceInfo.getName() + " -> " + JSON.toJSONString(remvHosts));
+                    + serviceInfo.getName() + " -> " + JSON.toJSONString(remvHosts));
             }
 
             if (modHosts.size() > 0) {
                 LogUtils.LOG.info("modified ips(" + modHosts.size() + ") service: "
-                        + serviceInfo.getName() + " -> " + JSON.toJSONString(modHosts));
+                    + serviceInfo.getName() + " -> " + JSON.toJSONString(modHosts));
             }
-
 
             serviceInfo.setJsonFromServer(json);
 
@@ -164,7 +174,8 @@ public class HostReactor {
             }
 
         } else {
-            LogUtils.LOG.info("new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() + " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+            LogUtils.LOG.info("new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() + " -> " + JSON
+                .toJSONString(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
             serviceInfo.setJsonFromServer(json);
@@ -172,7 +183,7 @@ public class HostReactor {
         }
 
         LogUtils.LOG.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
-                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+            " -> " + JSON.toJSONString(serviceInfo.getHosts()));
 
         return serviceInfo;
     }
@@ -199,7 +210,8 @@ public class HostReactor {
         return getServiceInfo(serviceName, clusters, env, false);
     }
 
-    public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env, final boolean allIPs) {
+    public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env,
+                                      final boolean allIPs) {
 
         LogUtils.LOG.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
         String key = ServiceInfo.getKey(serviceName, clusters, env, allIPs);
@@ -218,12 +230,16 @@ public class HostReactor {
 
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
 
+            updatingMap.put(serviceName, new Object());
+
             if (allIPs) {
                 updateService4AllIPNow(serviceName, clusters, env);
             } else {
                 updateServiceNow(serviceName, clusters, env);
             }
-        } else if (serviceObj.getHosts().isEmpty()) {
+            updatingMap.remove(serviceName);
+
+        } else if (updatingMap.containsKey(serviceName)) {
 
             if (updateHoldInterval > 0) {
                 // hold a moment waiting for update finish
@@ -231,7 +247,8 @@ public class HostReactor {
                     try {
                         serviceObj.wait(updateHoldInterval);
                     } catch (InterruptedException e) {
-                        LogUtils.LOG.error("[getServiceInfo]", "serviceName:" + serviceName + ", clusters:" + clusters + ", allIPs:" + allIPs, e);
+                        LogUtils.LOG.error("[getServiceInfo]",
+                            "serviceName:" + serviceName + ", clusters:" + clusters + ", allIPs:" + allIPs, e);
                     }
                 }
             }
@@ -368,7 +385,6 @@ public class HostReactor {
             LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         }
     }
-
 
     public class UpdateTask implements Runnable {
         long lastRefTime = Long.MAX_VALUE;

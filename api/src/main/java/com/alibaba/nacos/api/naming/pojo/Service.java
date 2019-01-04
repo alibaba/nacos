@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.nacos.api.selector.AbstractSelector;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,20 +43,25 @@ public class Service {
     private String app;
 
     /**
-     * service group which is meant to classify services into different sets.
+     * Service group which is meant to classify services into different sets.
      */
     private String group;
 
     /**
-     * health check mode.
+     * Health check mode.
      */
     private String healthCheckMode;
+
+    /**
+     * Selector name of this service
+     */
+    private AbstractSelector selector;
+
+    private Map<String, String> metadata = new HashMap<String, String>();
 
     public Service(String name) {
         this.name = name;
     }
-
-    private Map<String, String> metadata = new HashMap<String, String>();
 
     public String getName() {
         return name;
@@ -106,5 +113,13 @@ public class Service {
 
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
+    }
+
+    public AbstractSelector getSelector() {
+        return selector;
+    }
+
+    public void setSelector(AbstractSelector selector) {
+        this.selector = selector;
     }
 }

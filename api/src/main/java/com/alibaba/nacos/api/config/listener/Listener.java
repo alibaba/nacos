@@ -17,7 +17,6 @@ package com.alibaba.nacos.api.config.listener;
 
 import java.util.concurrent.Executor;
 
-
 /**
  * Listener for watch config
  *
@@ -26,15 +25,14 @@ import java.util.concurrent.Executor;
 public interface Listener {
 
     /**
-     * get executor for execute this receive
+     * Get executor for execute this receive
      *
      * @return Executor
      */
     Executor getExecutor();
 
-
     /**
-     * receive config info
+     * Receive config info
      *
      * @param configInfo config info
      */

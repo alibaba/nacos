@@ -29,7 +29,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 public class ConfigFactory {
 
     /**
-     * create config service
+     * Create Config
      *
      * @param properties init param
      * @return ConfigService
@@ -47,11 +47,11 @@ public class ConfigFactory {
     }
 
     /**
-     * create config service
+     * Create Config
      *
-     * @param serverAddr serverlist
-     * @return ConfigService
-     * @throws NacosException Exception
+     * @param serverAddr serverList
+     * @return Config
+     * @throws ConfigService Exception
      */
     public static ConfigService createConfigService(String serverAddr) throws NacosException {
         Properties properties = new Properties();

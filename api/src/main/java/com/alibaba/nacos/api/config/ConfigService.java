@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 public interface ConfigService {
 
     /**
-     * get config
+     * Get config
      *
      * @param dataId    dataId
      * @param group     group
@@ -52,7 +52,7 @@ public interface ConfigService {
     void addListener(String dataId, String group, Listener listener) throws NacosException;
 
     /**
-     * publish config.
+     * Publish config.
      *
      * @param dataId  dataId
      * @param group   group
@@ -63,7 +63,7 @@ public interface ConfigService {
     boolean publishConfig(String dataId, String group, String content) throws NacosException;
 
     /**
-     * remove config
+     * Remove config
      *
      * @param dataId dataId
      * @param group  group
@@ -73,7 +73,7 @@ public interface ConfigService {
     boolean removeConfig(String dataId, String group) throws NacosException;
 
     /**
-     * remove listener
+     * Remove listener
      *
      * @param dataId   dataId
      * @param group    group
@@ -82,7 +82,7 @@ public interface ConfigService {
     void removeListener(String dataId, String group, Listener listener);
 
     /**
-     * get server status
+     * Get server status
      *
      * @return whether health
      */

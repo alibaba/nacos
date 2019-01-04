@@ -15,37 +15,37 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.io.IOException;
-
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.DeserializationConfig.Feature;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.JavaType;
 import org.codehaus.jackson.type.TypeReference;
 
+import java.io.IOException;
+
 /**
  * json util
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JSONUtils {
 
     static ObjectMapper mapper = new ObjectMapper();
-    
+
     static {
-    	mapper.disable(Feature.FAIL_ON_UNKNOWN_PROPERTIES);
+        mapper.disable(Feature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
-	public static String serializeObject(Object o) throws IOException {
-		return mapper.writeValueAsString(o);
-	}
+    public static String serializeObject(Object o) throws IOException {
+        return mapper.writeValueAsString(o);
+    }
 
     public static Object deserializeObject(String s, Class<?> clazz) throws IOException {
         return mapper.readValue(s, clazz);
     }
 
     public static Object deserializeObject(String s, TypeReference<?> typeReference)
-            throws IOException {
+        throws IOException {
         return mapper.readValue(s, typeReference);
     }
 

@@ -75,7 +75,6 @@ public class NacosException extends Exception {
      */
     public static final int CLIENT_OVER_THRESHOLD = -503;
 
-
     /**
      * server error code
      * 400 403 throw exception to user
@@ -106,6 +105,5 @@ public class NacosException extends Exception {
      * over threshold（超过server端的限流阈值）
      */
     public static final int OVER_THRESHOLD = 503;
-
 
 }

@@ -32,7 +32,6 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 public class EventDispatcherTest {
@@ -46,10 +45,10 @@ public class EventDispatcherTest {
     @Test
     public void testAddListener() throws Exception {
         final AbstractEventListener listener = new MockListener();
-        
+
         int vusers = 1000;
         final CountDownLatch latch = new CountDownLatch(vusers);
-        
+
         for (int i = 0; i < vusers; ++i) {
             new Thread(new Runnable() {
                 public void run() {
@@ -58,33 +57,32 @@ public class EventDispatcherTest {
                 }
             }).start();
         }
-        
+
         latch.await();
         assertEquals(1, EventDispatcher.LISTENER_HUB.size());
     }
-    
+
     @Test
     public void testFireEvent() {
         EventDispatcher.fireEvent(new MockEvent());
         assertEquals(0, MockListener.count);
-        
+
         EventDispatcher.addEventListener(new MockListener());
-        
+
         EventDispatcher.fireEvent(new MockEvent());
         assertEquals(1, MockListener.count);
-        
+
         EventDispatcher.fireEvent(new MockEvent());
         assertEquals(2, MockListener.count);
     }
 }
 
-
-class MockEvent implements Event {  
+class MockEvent implements Event {
 }
 
 class MockListener extends AbstractEventListener {
     static int count = 0;
-    
+
     @Override
     public List<Class<? extends Event>> interest() {
         List<Class<? extends Event>> types = new ArrayList<Class<? extends Event>>();

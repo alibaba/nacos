@@ -15,56 +15,45 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.MD5;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
-
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
 
 /**
  * 磁盘操作工具类。
- * 
+ * <p>
  * 只有一个dump线程。
- * 
+ *
  * @author jiuRen
  */
 public class DiskUtil {
 
-	static final Logger logger = LoggerFactory.getLogger(DiskUtil.class);
-	static String APP_HOME = System.getProperty("user.home") + File.separator + "nacos";
-	static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
-	static final String TENANT_BASE_DIR = File.separator + "data" + File.separator + "tenant-config-data";
-	static final String BETA_DIR = File.separator + "data" + File.separator + "beta-data";
-	static final String TENANT_BETA_DIR = File.separator + "data " + File.separator + "tenant-beta-data";
-	static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
-	static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
-	static String SERVERLIST_DIR = File.separator + "conf";
-	static String SERVERLIST_FILENAME = "cluster.conf";
+    static final Logger logger = LoggerFactory.getLogger(DiskUtil.class);
+    static final String BASE_DIR = File.separator + "data" + File.separator + "config-data";
+    static final String TENANT_BASE_DIR = File.separator + "data" + File.separator + "tenant-config-data";
+    static final String BETA_DIR = File.separator + "data" + File.separator + "beta-data";
+    static final String TENANT_BETA_DIR = File.separator + "data" + File.separator + "tenant-beta-data";
+    static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
+    static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
 
-	static {
-		String nacosDir = System.getProperty("nacos.home");
-		if (!StringUtils.isBlank(nacosDir)) {
-			APP_HOME = nacosDir;
-		}
-	}
+    static public void saveHeartBeatToDisk(String heartBeatTime)
+        throws IOException {
+        FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime,
+            Constants.ENCODE);
+    }
 
-	
-	static public void saveHeartBeatToDisk(String heartBeatTime)
-			throws IOException {
-		FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime,
-				Constants.ENCODE);
-	}
-    
     /**
      * 保存配置信息到磁盘
      */
@@ -72,189 +61,172 @@ public class DiskUtil {
         File targetFile = targetFile(dataId, group, tenant);
         FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
     }
-    
+
     /**
      * 保存配置信息到磁盘
      */
     static public void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException {
-    	File targetFile = targetBetaFile(dataId, group, tenant);
-    	FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
+        File targetFile = targetBetaFile(dataId, group, tenant);
+        FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
     }
-    
-	/**
-	 * 保存配置信息到磁盘
-	 */
-	static public void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
-			throws IOException {
-		File targetFile = targetTagFile(dataId, group, tenant, tag);
-		FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
-	}
 
-	/**
-	 * 删除磁盘上的配置文件
-	 */
-	static public void removeConfigInfo(String dataId, String group, String tenant) {
-		FileUtils.deleteQuietly(targetFile(dataId, group, tenant));
-	}
-    
+    /**
+     * 保存配置信息到磁盘
+     */
+    static public void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
+        throws IOException {
+        File targetFile = targetTagFile(dataId, group, tenant, tag);
+        FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
+    }
+
+    /**
+     * 删除磁盘上的配置文件
+     */
+    static public void removeConfigInfo(String dataId, String group, String tenant) {
+        FileUtils.deleteQuietly(targetFile(dataId, group, tenant));
+    }
+
     /**
      * 删除磁盘上的配置文件
      */
     static public void removeConfigInfo4Beta(String dataId, String group, String tenant) {
-    	
-    	FileUtils.deleteQuietly(targetBetaFile(dataId, group, tenant));
+
+        FileUtils.deleteQuietly(targetBetaFile(dataId, group, tenant));
     }
-    
-	/**
-	 * 删除磁盘上的配置文件
-	 */
-	static public void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag) {
 
-		FileUtils.deleteQuietly(targetTagFile(dataId, group, tenant, tag));
-	}
+    /**
+     * 删除磁盘上的配置文件
+     */
+    static public void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag) {
 
-	static public void removeHeartHeat() {
-		FileUtils.deleteQuietly(heartBeatFile());
-	}
+        FileUtils.deleteQuietly(targetTagFile(dataId, group, tenant, tag));
+    }
+
+    static public void removeHeartHeat() {
+        FileUtils.deleteQuietly(heartBeatFile());
+    }
 
     /**
      * 返回服务端缓存文件的路径
      */
-	static public File targetFile(String dataId, String group, String tenant) {
-		File file = null;
-		if (StringUtils.isBlank(tenant)) {
-			file = new File(APP_HOME, BASE_DIR);
-		} else {
-			file = new File(APP_HOME, TENANT_BASE_DIR);
-			file = new File(file, tenant);
-		}
-		file = new File(file, group);
-		file = new File(file, dataId);
-		return file;
-	}
-    
+    static public File targetFile(String dataId, String group, String tenant) {
+        File file = null;
+        if (StringUtils.isBlank(tenant)) {
+            file = new File(NACOS_HOME, BASE_DIR);
+        } else {
+            file = new File(NACOS_HOME, TENANT_BASE_DIR);
+            file = new File(file, tenant);
+        }
+        file = new File(file, group);
+        file = new File(file, dataId);
+        return file;
+    }
+
     /**
      * 返回服务端beta缓存文件的路径
      */
-	static public File targetBetaFile(String dataId, String group, String tenant) {
-		File file = null;
-		if (StringUtils.isBlank(tenant)) {
-			file = new File(APP_HOME, BETA_DIR);
-		} else {
-			file = new File(APP_HOME, TENANT_BETA_DIR);
-			file = new File(file, tenant);
-		}
-		file = new File(file, group);
-		file = new File(file, dataId);
-		return file;
-	}
-	
-	/**
-	 * 返回服务端Tag缓存文件的路径
-	 */
-	static public File targetTagFile(String dataId, String group, String tenant, String tag) {
-		File file = null;
-		if (StringUtils.isBlank(tenant)) {
-			file = new File(APP_HOME, TAG_DIR);
-		} else {
-			file = new File(APP_HOME, TENANT_TAG_DIR);
-			file = new File(file, tenant);
-		}
-		file = new File(file, group);
-		file = new File(file, dataId);
-		file = new File(file, tag);
-		return file;
-	}
-    
-	static public String getConfig(String dataId, String group, String tenant)
-			throws IOException {
-		FileInputStream fis = null;
-		File file = targetFile(dataId, group, tenant);
-		if (file.exists()) {
-			try {
-				fis = new FileInputStream(file);
-			} catch (FileNotFoundException e) {
-				return StringUtils.EMPTY;
-			}
-			String content = IOUtils.toString(fis, Constants.ENCODE);
-			return content;
-		} else {
-			return StringUtils.EMPTY;
-		}
-	}
-	
-	static public String getLocalConfigMd5(String dataId, String group, String tenant)
-			throws IOException {
-		return MD5.getInstance().getMD5String(getConfig(dataId, group, tenant));
-	}
-    
-	static public File heartBeatFile() {
-		return new File(APP_HOME, "status/heartBeat.txt");
-	}
+    static public File targetBetaFile(String dataId, String group, String tenant) {
+        File file = null;
+        if (StringUtils.isBlank(tenant)) {
+            file = new File(NACOS_HOME, BETA_DIR);
+        } else {
+            file = new File(NACOS_HOME, TENANT_BETA_DIR);
+            file = new File(file, tenant);
+        }
+        file = new File(file, group);
+        file = new File(file, dataId);
+        return file;
+    }
+
+    /**
+     * 返回服务端Tag缓存文件的路径
+     */
+    static public File targetTagFile(String dataId, String group, String tenant, String tag) {
+        File file = null;
+        if (StringUtils.isBlank(tenant)) {
+            file = new File(NACOS_HOME, TAG_DIR);
+        } else {
+            file = new File(NACOS_HOME, TENANT_TAG_DIR);
+            file = new File(file, tenant);
+        }
+        file = new File(file, group);
+        file = new File(file, dataId);
+        file = new File(file, tag);
+        return file;
+    }
+
+    static public String getConfig(String dataId, String group, String tenant)
+        throws IOException {
+        FileInputStream fis = null;
+        File file = targetFile(dataId, group, tenant);
+        if (file.exists()) {
+            try {
+                fis = new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                return StringUtils.EMPTY;
+            }
+            String content = IOUtils.toString(fis, Constants.ENCODE);
+            return content;
+        } else {
+            return StringUtils.EMPTY;
+        }
+    }
+
+    static public String getLocalConfigMd5(String dataId, String group, String tenant)
+        throws IOException {
+        return MD5.getInstance().getMD5String(getConfig(dataId, group, tenant));
+    }
+
+    static public File heartBeatFile() {
+        return new File(NACOS_HOME, "status/heartBeat.txt");
+    }
 
     static public String relativePath(String dataId, String group) {
         return BASE_DIR + "/" + dataId + "/" + group;
     }
 
     static public void clearAll() {
-        File file = new File(APP_HOME, BASE_DIR);
+        File file = new File(NACOS_HOME, BASE_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.defaultLog.info("clear all config-info success.");
         } else {
             LogUtil.defaultLog.warn("clear all config-info failed.");
         }
-        File fileTenant = new File(APP_HOME, TENANT_BASE_DIR);
+        File fileTenant = new File(NACOS_HOME, TENANT_BASE_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
-        	LogUtil.defaultLog.info("clear all config-info-tenant success.");
+            LogUtil.defaultLog.info("clear all config-info-tenant success.");
         } else {
-        	LogUtil.defaultLog.warn("clear all config-info-tenant failed.");
+            LogUtil.defaultLog.warn("clear all config-info-tenant failed.");
         }
     }
-    
+
     static public void clearAllBeta() {
-    	File file = new File(APP_HOME, BETA_DIR);
-    	if (FileUtils.deleteQuietly(file)) {
-    		LogUtil.defaultLog.info("clear all config-info-beta success.");
-    	} else {
-    		LogUtil.defaultLog.warn("clear all config-info-beta failed.");
-    	}
-    	File fileTenant = new File(APP_HOME, TENANT_BETA_DIR);
-    	if (FileUtils.deleteQuietly(fileTenant)) {
-    		LogUtil.defaultLog.info("clear all config-info-beta-tenant success.");
-    	} else {
-    		LogUtil.defaultLog.warn("clear all config-info-beta-tenant failed.");
-    	}
+        File file = new File(NACOS_HOME, BETA_DIR);
+        if (FileUtils.deleteQuietly(file)) {
+            LogUtil.defaultLog.info("clear all config-info-beta success.");
+        } else {
+            LogUtil.defaultLog.warn("clear all config-info-beta failed.");
+        }
+        File fileTenant = new File(NACOS_HOME, TENANT_BETA_DIR);
+        if (FileUtils.deleteQuietly(fileTenant)) {
+            LogUtil.defaultLog.info("clear all config-info-beta-tenant success.");
+        } else {
+            LogUtil.defaultLog.warn("clear all config-info-beta-tenant failed.");
+        }
     }
-    
+
     static public void clearAllTag() {
-    	File file = new File(APP_HOME, TAG_DIR);
-    	if (FileUtils.deleteQuietly(file)) {
-    		LogUtil.defaultLog.info("clear all config-info-tag success.");
-    	} else {
-    		LogUtil.defaultLog.warn("clear all config-info-tag failed.");
-    	}
-    	File fileTenant = new File(APP_HOME, TENANT_TAG_DIR);
-    	if (FileUtils.deleteQuietly(fileTenant)) {
-    		LogUtil.defaultLog.info("clear all config-info-tag-tenant success.");
-    	} else {
-    		LogUtil.defaultLog.warn("clear all config-info-tag-tenant failed.");
-    	}
+        File file = new File(NACOS_HOME, TAG_DIR);
+        if (FileUtils.deleteQuietly(file)) {
+            LogUtil.defaultLog.info("clear all config-info-tag success.");
+        } else {
+            LogUtil.defaultLog.warn("clear all config-info-tag failed.");
+        }
+        File fileTenant = new File(NACOS_HOME, TENANT_TAG_DIR);
+        if (FileUtils.deleteQuietly(fileTenant)) {
+            LogUtil.defaultLog.info("clear all config-info-tag-tenant success.");
+        } else {
+            LogUtil.defaultLog.warn("clear all config-info-tag-tenant failed.");
+        }
     }
-    
-	public static String getServerList() throws IOException {
-		FileInputStream fis = null;
-		File file = new File(APP_HOME, SERVERLIST_DIR);
-		file = new File(file, SERVERLIST_FILENAME);
-		if (file.exists()) {
-			try {
-				fis = new FileInputStream(file);
-			} catch (FileNotFoundException e) {
-				return StringUtils.EMPTY;
-			}
-			String content = IOUtils.toString(fis, Constants.ENCODE);
-			return content;
-		} else {
-			return StringUtils.EMPTY;
-		}
-	}
 }

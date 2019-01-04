@@ -16,34 +16,36 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckConfig;
+import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
+import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
 
 /**
  * @author nacos
  */
 public class UtilsAndCommons {
 
-    private static final String NACOS_CONF_DIR_PATH = System.getProperty("user.home") + "/conf";
-
-    private static final String NACOS_CONF_FILE_NAME = "cluster.conf";
-
-    private static String NACOS_CONF_FILE = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
-
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
     public static final String NACOS_SERVER_VERSION = "/v1";
 
-    public static final String NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+    public static final String DEFAULT_NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+
+    public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
+
+    public static final String NACOS_NAMING_CATALOG_CONTEXT = "/catalog";
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
@@ -71,6 +73,8 @@ public class UtilsAndCommons {
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
+    public static final int RAFT_PUBLISH_TIMEOUT = 5000;
+
     static public final String RAFT_DOM_PRE = "meta";
     static public final String RAFT_IPLIST_PRE = "iplist.";
     static public final String RAFT_TAG_DOM_PRE = "tag.meta";
@@ -79,8 +83,6 @@ public class UtilsAndCommons {
     public static final String SERVER_VERSION = NACOS_SERVER_HEADER + ":" + NACOS_VERSION;
 
     public static final String SELF_SERVICE_CLUSTER_ENV = "naming_self_service_cluster_ips";
-
-    public static final boolean STANDALONE_MODE = Boolean.parseBoolean(System.getProperty("nacos.standalone", "false"));
 
     public static final String CACHE_KEY_SPLITER = "@@@@";
 
@@ -102,6 +104,14 @@ public class UtilsAndCommons {
 
     public static final String API_DOM = "/api/dom";
 
+    public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
+
+    public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
+
+    public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
+
+    public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
+
     public static final ScheduledExecutorService SERVER_STATUS_EXECUTOR;
 
     public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
@@ -110,12 +120,19 @@ public class UtilsAndCommons {
 
     public static final ScheduledExecutorService INIT_CONFIG_EXECUTOR;
 
+    public static final Executor RAFT_PUBLISH_EXECUTOR;
+
     static {
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
-                .put(AbstractHealthCheckConfig.class, AbstractHealthCheckConfig.JsonAdapter.getInstance());
+                .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(AbstractHealthCheckConfig.class, AbstractHealthCheckConfig.JsonAdapter.getInstance());
+                .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+
+        SerializeConfig.getGlobalInstance()
+                .put(Selector.class, SelectorJsonAdapter.getInstance());
+        ParserConfig.getGlobalInstance()
+                .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
@@ -123,12 +140,6 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullBooleanAsFalse.getMask();
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteMapNullValue.getMask();
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
-
-        String nacosHome = System.getProperty("nacos.home");
-
-        if (StringUtils.isNotBlank(nacosHome)) {
-            NACOS_CONF_FILE = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
-        }
 
         DOMAIN_SYNCHRONIZATION_EXECUTOR
                 = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -174,6 +185,17 @@ public class UtilsAndCommons {
             }
         });
 
+        RAFT_PUBLISH_EXECUTOR
+                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("nacos.naming.raft.publisher");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
     }
 
     public static String getAllExceptionMsg(Throwable e) {
@@ -188,10 +210,6 @@ public class UtilsAndCommons {
         return strBuilder.toString();
     }
 
-    public static String getConfFile() {
-        return NACOS_CONF_FILE;
-    }
-
 
     public static String getIPListStoreKey(Domain dom) {
         return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getName();
@@ -201,4 +219,29 @@ public class UtilsAndCommons {
         return UtilsAndCommons.DOMAINS_DATA_ID + "." + dom.getName();
     }
 
+    public static Map<String, String> parseMetadata(String metadata) throws NacosException {
+
+        Map<String, String> metadataMap = new HashMap<>(16);
+
+        if (StringUtils.isBlank(metadata)) {
+            return metadataMap;
+        }
+
+        try {
+            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>(){});
+        } catch (Exception e) {
+            String[] datas = metadata.split(",");
+            if (datas.length > 0) {
+                for (String data : datas) {
+                    String[] kv = data.split("=");
+                    if (kv.length != 2) {
+                        throw new NacosException(NacosException.INVALID_PARAM, "metadata format incorrect:" + metadata);
+                    }
+                    metadataMap.put(kv[0], kv[1]);
+                }
+            }
+        }
+
+        return metadataMap;
+    }
 }

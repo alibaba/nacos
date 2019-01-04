@@ -16,18 +16,36 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+
+import static com.alibaba.nacos.common.util.SystemUtils.PREFER_HOSTNAME_OVER_IP;
 
 /**
  * @author nacos
  */
 public class NetUtils {
 
-    public static String localIP() {
+    private static String serverAddress = null;
+
+    public static String localServer() {
         try {
-            return InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort();
+            if (StringUtils.isNotBlank(serverAddress)) {
+                return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            }
+
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            serverAddress = inetAddress.getHostAddress();
+            if (PREFER_HOSTNAME_OVER_IP) {
+                if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
+                    serverAddress = inetAddress.getHostName();
+                } else {
+                    serverAddress = inetAddress.getCanonicalHostName();
+                }
+            }
+            return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
         } catch (UnknownHostException e) {
             return "resolve_failed";
         }
@@ -45,4 +63,6 @@ public class NetUtils {
 
         return x;
     }
+
+
 }

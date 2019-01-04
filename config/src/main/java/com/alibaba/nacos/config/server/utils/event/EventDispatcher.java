@@ -15,18 +15,16 @@
  */
 package com.alibaba.nacos.config.server.utils.event;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Event dispatcher
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class EventDispatcher {
 
@@ -57,17 +55,17 @@ public class EventDispatcher {
     }
 
     /**
-     *  For only test purpose
+     * For only test purpose
      */
     static public void clear() {
         LISTENER_HUB.clear();
     }
-    
+
     /**
      * get event listener for eventType. Add Entry if not exist.
      */
     static Entry getEntry(Class<? extends Event> eventType) {
-        for (;;) {
+        for (; ; ) {
             for (Entry entry : LISTENER_HUB) {
                 if (entry.eventType == eventType) {
                     return entry;
@@ -101,21 +99,19 @@ public class EventDispatcher {
             if (this == obj) {
                 return true;
             }
-            return eventType == ((Entry) obj).eventType;
+            return eventType == ((Entry)obj).eventType;
         }
 
-		@Override
-		public int hashCode() {
-			return super.hashCode();
-		}
-        
-    }
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
 
+    }
 
     static private final Logger log = LoggerFactory.getLogger(EventDispatcher.class);
 
     static final CopyOnWriteArrayList<Entry> LISTENER_HUB = new CopyOnWriteArrayList<Entry>();
-
 
     static public interface Event {
     }
@@ -123,25 +119,24 @@ public class EventDispatcher {
     static public abstract class AbstractEventListener {
 
         public AbstractEventListener() {
-        	/**
-        	 * automatic register
-        	 */
-            EventDispatcher.addEventListener(this); 
+            /**
+             * automatic register
+             */
+            EventDispatcher.addEventListener(this);
         }
 
-		/**
-		 * 感兴趣的事件列表
-		 * 
-		 * @return event list
-		 */
-		abstract public List<Class<? extends Event>> interest();
+        /**
+         * 感兴趣的事件列表
+         *
+         * @return event list
+         */
+        abstract public List<Class<? extends Event>> interest();
 
-		/**
-		 * 处理事件
-		 * 
-		 * @param event
-		 *            event
-		 */
+        /**
+         * 处理事件
+         *
+         * @param event event
+         */
         abstract public void onEvent(Event event);
     }
 

@@ -37,7 +37,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
         Map<String,String> params = new HashMap<String, String>(10);
 
         params.put("domsStatus", msg.getData());
-        params.put("clientIP", NetUtils.localIP());
+        params.put("clientIP", NetUtils.localServer());
 
 
         String url = "http://" + serverIP + ":" + RunningConfig.getServerPort() + RunningConfig.getContextPath() +
@@ -78,11 +78,11 @@ public class DomainStatusSynchronizer implements Synchronizer {
 
         String result;
         try {
-            Loggers.SRV_LOG.info("STATUS-SYNCHRONIZE", "sync dom status from: "
+            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync dom status from: "
                     + serverIP + ", dom: " + key);
             result = NamingProxy.reqAPI("ip4Dom2", params, serverIP, false);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE","Failed to get domain status from " + serverIP, e);
+            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "Failed to get domain status from " + serverIP, e);
             return null;
         }
 

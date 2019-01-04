@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -99,17 +100,17 @@ public abstract class AbstractHealthCheckProcessor {
 
                 List<String> sameSiteServers = NamingProxy.getSameSiteServers().get("sameSite");
 
-                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localIP())) {
+                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localServer())) {
                     return;
                 }
 
                 for (String server : sameSiteServers) {
-                    if (server.equals(NetUtils.localIP())) {
+                    if (server.equals(NetUtils.localServer())) {
                         continue;
                     }
                     Map<String, String> params = new HashMap<>(10);
                     params.put("result", JSON.toJSONString(list));
-                    Loggers.DEBUG_LOG.debug("HEALTH-SYNC", server, JSON.toJSONString(list));
+                    Loggers.DEBUG_LOG.debug("[HEALTH-SYNC]" + server + ", " + JSON.toJSONString(list));
                     if (!server.contains(":")) {
                         server = server + ":" + RunningConfig.getServerPort();
                     }
@@ -146,7 +147,7 @@ public abstract class AbstractHealthCheckProcessor {
     public static final TcpSuperSenseProcessor TCP_PROCESSOR = new TcpSuperSenseProcessor();
     public static final MysqlHealthCheckProcessor MYSQL_PROCESSOR = new MysqlHealthCheckProcessor();
 
-    public static AbstractHealthCheckProcessor getProcessor(AbstractHealthCheckConfig config) {
+    public static AbstractHealthCheckProcessor getProcessor(AbstractHealthChecker config) {
         if (config == null || StringUtils.isEmpty(config.getType())) {
             throw new IllegalArgumentException("empty check type");
         }
@@ -207,7 +208,6 @@ public abstract class AbstractHealthCheckProcessor {
                     if (cluster.responsible(ip)) {
                         ip.setValid(true);
                         ip.setMockValid(true);
-                        ip.setInvalidType(IpAddress.InvalidType.VALID);
 
                         VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
@@ -249,7 +249,6 @@ public abstract class AbstractHealthCheckProcessor {
                     if (cluster.responsible(ip)) {
                         ip.setValid(false);
                         ip.setMockValid(false);
-                        setInvalidType(ip, msg);
 
                         VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
@@ -281,14 +280,6 @@ public abstract class AbstractHealthCheckProcessor {
         ip.setBeingChecked(false);
     }
 
-    private void setInvalidType(IpAddress ipAddress, String msg) {
-        if (msg.equals(HTTP_CHECK_MSG_PREFIX + IpAddress.InvalidType.HTTP_404)) {
-            ipAddress.setInvalidType(IpAddress.InvalidType.HTTP_404);
-        } else {
-            ipAddress.setInvalidType(IpAddress.InvalidType.NORMAL_INVALID);
-        }
-    }
-
     protected void checkFailNow(IpAddress ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
         try {
@@ -296,8 +287,6 @@ public abstract class AbstractHealthCheckProcessor {
                 if (cluster.responsible(ip)) {
                     ip.setValid(false);
                     ip.setMockValid(false);
-
-                    setInvalidType(ip, msg);
 
                     VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());

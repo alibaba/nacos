@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
 
@@ -189,7 +190,22 @@ public interface NamingService {
     ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException;
 
     /**
+<<<<<<< HEAD
      * get all subscribed services of current client
+=======
+     * Get all service names from server
+     *
+     * @param pageNo   page index
+     * @param pageSize page size
+     * @param selector selector to filter the resource
+     * @return list of service names
+     * @throws NacosException
+     */
+    ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
+
+    /**
+     * Get all subscribed services of current client
+>>>>>>> upstream/develop
      *
      * @return subscribed services
      * @throws NacosException

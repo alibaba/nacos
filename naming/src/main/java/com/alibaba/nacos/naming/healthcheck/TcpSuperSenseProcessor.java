@@ -47,7 +47,8 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
     /**
      * this value has been carefully tuned, do not modify unless you're confident
      */
-    public static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() / 2;
+    public static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() <= 1 ?
+            1 : Runtime.getRuntime().availableProcessors() / 2;
 
     /**
      * because some hosts doesn't support keep-alive connections, disabled temporarily

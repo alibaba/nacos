@@ -38,4 +38,6 @@ public class PropertyKeyConst {
 
     public final static String ENCODE = "encode";
 
+    public final static String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
+
 }

@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -47,22 +47,6 @@ public class DomainsManagerTest extends BaseTest {
     @Test
     public void easyRemoveDom() throws Exception {
         domainsManager.easyRemoveDom("nacos.test.1");
-    }
-
-    @Test
-    public void easyRemvIP4Dom() throws Exception {
-
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
-
-        domainsManager.chooseDomMap().put("nacos.test.1", domain);
-
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domainsManager.addLock("nacos.test.1");
-        domainsManager.easyRemvIP4Dom("nacos.test.1", ipList);
     }
 
     @Test

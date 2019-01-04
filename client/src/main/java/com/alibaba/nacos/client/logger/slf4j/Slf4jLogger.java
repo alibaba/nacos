@@ -15,24 +15,25 @@
  */
 package com.alibaba.nacos.client.logger.slf4j;
 
-import java.lang.reflect.Constructor;
-
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.option.ActivateOption;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.logger.support.LoggerSupport;
 import com.alibaba.nacos.client.logger.util.MessageUtil;
+
+import java.lang.reflect.Constructor;
+
 /**
  * slf4j logger
- * @author Nacos
  *
+ * @author Nacos
  */
 public class Slf4jLogger extends LoggerSupport implements Logger {
 
-    private static boolean   CanUseEncoder = false;
+    private static boolean CanUseEncoder = false;
     private static final String LOGBACK_CLASSNAME = "ch.qos.logback.classic.Logger";
-    private static final String SLF4J_CLASSNAME = "org.slf4j.impl.Log4jLoggerAdapter";
     private static final String SLF4JLOG4J_CLASSNAME = "org.apache.logging.slf4j.Log4jLogger";
+
     static {
         try {
             // logback从0.9.19开始采用encoder，@see http://logback.qos.ch/manual/encoders.html
@@ -46,8 +47,7 @@ public class Slf4jLogger extends LoggerSupport implements Logger {
     private org.slf4j.Logger delegate;
 
     @SuppressWarnings("unchecked")
-    public
-    Slf4jLogger(org.slf4j.Logger delegate){
+    public Slf4jLogger(org.slf4j.Logger delegate) {
         super(delegate);
         if (delegate == null) {
             throw new IllegalArgumentException("delegate Logger is null");
@@ -61,14 +61,16 @@ public class Slf4jLogger extends LoggerSupport implements Logger {
             } else {
                 activateOptionClass = "com.alibaba.nacos.client.logger.option.Logback918ActivateOption";
             }
-        } else if (SLF4J_CLASSNAME.equals(delegate.getClass().getName())) {
-            activateOptionClass = "com.alibaba.nacos.client.logger.option.Slf4jLog4jAdapterActivateOption";
         } else if (SLF4JLOG4J_CLASSNAME.equals(delegate.getClass().getName())) {
             activateOptionClass = "com.alibaba.nacos.client.logger.option.Slf4jLog4j2AdapterActivateOption";
         }
 
+        if (activateOptionClass == null) {
+            throw new IllegalArgumentException("delegate must be logback impl or slf4j-log4j impl");
+        }
+
         try {
-            Class<ActivateOption> clazz = (Class<ActivateOption>) Class.forName(activateOptionClass);
+            Class<ActivateOption> clazz = (Class<ActivateOption>)Class.forName(activateOptionClass);
             Constructor<ActivateOption> c = clazz.getConstructor(Object.class);
             this.activateOption = c.newInstance(delegate);
         } catch (Exception e) {
