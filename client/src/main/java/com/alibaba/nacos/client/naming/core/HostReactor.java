@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
@@ -208,6 +209,14 @@ public class HostReactor {
     public ServiceInfo getServiceInfo(String serviceName, String clusters) {
         String env = StringUtils.EMPTY;
         return getServiceInfo(serviceName, clusters, env, false);
+    }
+
+    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
+        String result = serverProxy.queryList(serviceName, clusters, false);
+        if (StringUtils.isNotEmpty(result)) {
+            return JSON.parseObject(result, ServiceInfo.class);
+        }
+        return null;
     }
 
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env,

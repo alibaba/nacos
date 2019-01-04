@@ -90,6 +90,16 @@ public interface NamingService {
     List<Instance> getAllInstances(String serviceName) throws NacosException;
 
     /**
+     * Get all instances of a service
+     *
+     * @param serviceName name of service
+     * @param subscribe   if subscribe the service
+     * @return A list of instance
+     * @throws NacosException
+     */
+    List<Instance> getAllInstances(String serviceName, boolean subscribe) throws NacosException;
+
+    /**
      * Get all instances within specified clusters of a service
      *
      * @param serviceName name of service
@@ -98,6 +108,17 @@ public interface NamingService {
      * @throws NacosException
      */
     List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException;
+
+    /**
+     * Get all instances within specified clusters of a service
+     *
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param subscribe   if subscribe the service
+     * @return A list of qualified instance
+     * @throws NacosException
+     */
+    List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException;
 
     /**
      * Get qualified instances of service
@@ -110,6 +131,17 @@ public interface NamingService {
     List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException;
 
     /**
+     * Get qualified instances of service
+     *
+     * @param serviceName name of service
+     * @param healthy     a flag to indicate returning healthy or unhealthy instances
+     * @param subscribe   if subscribe the service
+     * @return A qualified list of instance
+     * @throws NacosException
+     */
+    List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException;
+
+    /**
      * Get qualified instances within specified clusters of service
      *
      * @param serviceName name of service
@@ -119,6 +151,18 @@ public interface NamingService {
      * @throws NacosException
      */
     List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy) throws NacosException;
+
+    /**
+     * Get qualified instances within specified clusters of service
+     *
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param healthy     a flag to indicate returning healthy or unhealthy instances
+     * @param subscribe   if subscribe the service
+     * @return A qualified list of instance
+     * @throws NacosException
+     */
+    List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy, boolean subscribe) throws NacosException;
 
     /**
      * Select one healthy instance of service using predefined load balance strategy
@@ -133,11 +177,32 @@ public interface NamingService {
      * Select one healthy instance of service using predefined load balance strategy
      *
      * @param serviceName name of service
+     * @param subscribe   if subscribe the service
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, boolean subscribe) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName name of service
      * @param clusters    a list of clusters should the instance belongs to
      * @return qualified instance
      * @throws NacosException
      */
     Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName name of service
+     * @param clusters    a list of clusters should the instance belongs to
+     * @param subscribe   if subscribe the service
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws NacosException;
 
     /**
      * Subscribe service to receive events of instances alteration

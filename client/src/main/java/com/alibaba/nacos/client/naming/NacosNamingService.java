@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -189,10 +188,25 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, boolean subscribe) throws NacosException {
+        return getAllInstances(serviceName, new ArrayList<String>(), subscribe);
+    }
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-            StringUtils.EMPTY, false);
+    @Override
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
+        return getAllInstances(serviceName, clusters, true);
+    }
+
+    @Override
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
+
+        ServiceInfo serviceInfo;
+        if (subscribe) {
+            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
+                StringUtils.EMPTY, false);
+        } else {
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
+        }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -201,41 +215,60 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstances(String serviceName, boolean healthyOnly) throws NacosException {
-        return selectInstances(serviceName, new ArrayList<String>(), healthyOnly);
+    public List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException {
+        return selectInstances(serviceName, new ArrayList<String>(), healthy);
+    }
+
+    @Override
+    public List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException {
+        return selectInstances(serviceName, new ArrayList<String>(), healthy, subscribe);
     }
 
     @Override
     public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
         throws NacosException {
-
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-            StringUtils.EMPTY, false);
-        List<Instance> list;
-        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<Instance>();
-        }
-
-        Iterator<Instance> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            Instance instance = iterator.next();
-            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-                iterator.remove();
-            }
-        }
-
-        return list;
+        return selectInstances(serviceName, clusters, healthy, true);
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName) {
+    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy,
+                                          boolean subscribe) throws NacosException {
+
+        ServiceInfo serviceInfo;
+        if (subscribe) {
+            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
+                StringUtils.EMPTY, false);
+        } else {
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
+        }
+        return selectInstances(serviceInfo, healthy);
+    }
+
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName) throws NacosException {
         return selectOneHealthyInstance(serviceName, new ArrayList<String>());
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) {
-        return Balancer.RandomByWeight.selectHost(
-            hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
+    public Instance selectOneHealthyInstance(String serviceName, boolean subscribe) throws NacosException {
+        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), subscribe);
+    }
+
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException {
+        return selectOneHealthyInstance(serviceName, clusters, true);
+    }
+
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
+
+        if (subscribe) {
+            return Balancer.RandomByWeight.selectHost(
+                hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
+        } else {
+            return Balancer.RandomByWeight.selectHost(
+                hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ",")));
+        }
     }
 
     @Override
@@ -278,6 +311,23 @@ public class NacosNamingService implements NamingService {
     @Override
     public String getServerStatus() {
         return serverProxy.serverHealthy() ? "UP" : "DOWN";
+    }
+
+    private List<Instance> selectInstances(ServiceInfo serviceInfo, boolean healthy) {
+        List<Instance> list;
+        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
+            return new ArrayList<Instance>();
+        }
+
+        Iterator<Instance> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            Instance instance = iterator.next();
+            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
+                iterator.remove();
+            }
+        }
+
+        return list;
     }
 
     public BeatReactor getBeatReactor() {
