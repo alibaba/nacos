@@ -18,7 +18,7 @@ package com.alibaba.nacos.api.config.listener;
 import java.util.concurrent.Executor;
 
 /**
- * Listner Adapter,use default notify thread
+ * Listener Adapter,use default notify thread
  *
  * @author water.lyl
  */
@@ -28,6 +28,7 @@ public abstract class AbstractListener implements Listener {
     /**
      * use default Executor
      */
+    @Override
     public Executor getExecutor() {
         return null;
     }

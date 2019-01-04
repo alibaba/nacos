@@ -24,12 +24,12 @@ import com.alibaba.nacos.api.exception.NacosException;
  */
 public interface IConfigFilterChain {
     /**
-     * Filter aciton
+     * Filter action
      *
      * @param request  request
      * @param response response
      * @throws NacosException NacosException
      */
-    public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
+    void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
 
 }
