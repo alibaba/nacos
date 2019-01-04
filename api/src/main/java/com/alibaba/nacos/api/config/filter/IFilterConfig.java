@@ -27,7 +27,7 @@ public interface IFilterConfig {
      *
      * @return
      */
-    public String getFilterName();
+    String getFilterName();
 
     /**
      * get param
@@ -35,6 +35,6 @@ public interface IFilterConfig {
      * @param name
      * @return param
      */
-    public Object getInitParameter(String name);
+    Object getInitParameter(String name);
 
 }
