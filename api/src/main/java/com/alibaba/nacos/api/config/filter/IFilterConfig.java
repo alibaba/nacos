@@ -30,7 +30,7 @@ public interface IFilterConfig {
     String getFilterName();
 
     /**
-     * get init param
+     * Get init param
      *
      * @param name
      * @return param

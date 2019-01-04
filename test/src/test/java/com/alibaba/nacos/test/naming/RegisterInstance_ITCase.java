@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -29,7 +30,9 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -42,30 +45,52 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
 
     private NamingService naming;
     private NamingService naming2;
     @LocalServerPort
     private int port;
+
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            //TimeUnit.SECONDS.sleep(10);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
+    }
+
+    @Test
+    @Ignore
+    public void regService() throws NacosException, InterruptedException {
+        String serviceName = "dungu.test.99";
+        naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
+        naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
+        Thread.sleep(100000000L);
+    }
+
+    @Test
+    @Ignore
+    public void deregService() throws NacosException, InterruptedException {
+
+        String serviceName = "dungu.test.98";
+        System.out.println(naming.getAllInstances(serviceName));
+//        Thread.sleep(100000000L);
     }
 
     /**
      * 注册一个默认cluster的Instance，并验证
+     *
      * @throws Exception
      */
     @Test
-    public void regDomTest() throws Exception{
+    public void regDomTest() throws Exception {
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
+
+        System.out.println(serviceName);
 
         TimeUnit.SECONDS.sleep(3);
 
@@ -80,11 +105,15 @@ public class RegisterInstance_ITCase {
 
     /**
      * 注册一个自定义cluster的Instance，并验证
+     *
      * @throws Exception
      */
     @Test
-    public void regDomClusterTest() throws Exception{
+    public void regDomClusterTest() throws Exception {
+
         String serviceName = randomDomainName();
+
+        System.err.println(serviceName);
 
         naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT, TEST_NEW_CLUSTER_4_DOM_1);
 
@@ -111,6 +140,7 @@ public class RegisterInstance_ITCase {
 
     /**
      * 注册一个自定义的Instance，并验证
+     *
      * @throws Exception
      */
     @Test
@@ -132,6 +162,7 @@ public class RegisterInstance_ITCase {
 
     /**
      * 注册一个不健康的Instance，并验证
+     *
      * @throws Exception
      */
     @Test
@@ -145,9 +176,34 @@ public class RegisterInstance_ITCase {
 
         TimeUnit.SECONDS.sleep(3);
 
-        List<Instance> instances = naming.selectInstances(serviceName,false);
+        List<Instance> instances = naming.selectInstances(serviceName, false);
 
         Assert.assertEquals(instances.size(), 1);
         Assert.assertEquals(instances.get(0).isHealthy(), false);
+    }
+
+    @Test
+    public void regServiceWithMetadata() throws Exception {
+
+        String serviceName = randomDomainName();
+        System.out.println(serviceName);
+
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.2");
+        instance.setPort(9999);
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put("version", "1.0");
+        metadata.put("env", "prod");
+        instance.setMetadata(metadata);
+
+        naming.registerInstance(serviceName, instance);
+
+        TimeUnit.SECONDS.sleep(3);
+
+        List<Instance> instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("1.0", instances.get(0).getMetadata().get("version"));
+        Assert.assertEquals("prod", instances.get(0).getMetadata().get("env"));
     }
 }

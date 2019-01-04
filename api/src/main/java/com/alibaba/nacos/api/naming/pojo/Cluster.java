@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+<<<<<<< HEAD
  *
  *
  * @author dungu.zpf
@@ -33,7 +34,7 @@ public class Cluster {
     /**
      * Name of cluster
      */
-    private String name = "";
+    private String name;
 
     /**
      * Health check config of this cluster
@@ -54,7 +55,6 @@ public class Cluster {
      * Whether or not use instance port to do health check.
      */
     private boolean useIPPort4Check = true;
-
 
     private Map<String, String> metadata = new HashMap<String, String>();
 

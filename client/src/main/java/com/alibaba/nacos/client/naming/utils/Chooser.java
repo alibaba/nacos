@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Chooser<K, T> {
 
@@ -72,7 +72,6 @@ public class Chooser<K, T> {
         this.ref = ref;
     }
 
-
     public K getUniqueKey() {
         return uniqueKey;
     }
@@ -100,7 +99,7 @@ public class Chooser<K, T> {
         }
 
         public void refresh() {
-            Double originWeightSum = (double) 0;
+            Double originWeightSum = (double)0;
 
             for (Pair<T> item : itemsWithWeight) {
 
@@ -140,7 +139,8 @@ public class Chooser<K, T> {
 
             double doublePrecisionDelta = 0.0001;
             if (index != 0 && !(Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
-                throw new IllegalStateException("Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
+                throw new IllegalStateException(
+                    "Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
             }
         }
 
@@ -164,7 +164,7 @@ public class Chooser<K, T> {
             if (!(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
                 return false;
             }
-            Ref<T> otherRef = (Ref<T>) other;
+            Ref<T> otherRef = (Ref<T>)other;
             if (itemsWithWeight == null) {
                 if (otherRef.itemsWithWeight != null) {
                     return false;
@@ -197,7 +197,7 @@ public class Chooser<K, T> {
             return false;
         }
 
-        Chooser otherChooser = (Chooser) other;
+        Chooser otherChooser = (Chooser)other;
         if (this.uniqueKey == null) {
             if (otherChooser.getUniqueKey() != null) {
                 return false;

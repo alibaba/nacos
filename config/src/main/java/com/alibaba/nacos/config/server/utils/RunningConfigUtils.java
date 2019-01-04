@@ -15,16 +15,16 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import javax.servlet.ServletContext;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.ServletContext;
+
 /**
  * Running config
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @Component
 public class RunningConfigUtils implements ApplicationListener<WebServerInitializedEvent> {

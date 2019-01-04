@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckConfig;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ClusterTest {
 
@@ -50,7 +50,7 @@ public class ClusterTest {
         Cluster newCluster = new Cluster();
         newCluster.setDefCkport(8888);
         newCluster.setDefIPPort(9999);
-        AbstractHealthCheckConfig.Http healthCheckConfig = new AbstractHealthCheckConfig.Http();
+        AbstractHealthChecker.Http healthCheckConfig = new AbstractHealthChecker.Http();
         healthCheckConfig.setPath("/nacos-path-1");
         healthCheckConfig.setExpectedResponseCode(500);
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
@@ -65,8 +65,8 @@ public class ClusterTest {
 
         Assert.assertEquals(8888, cluster.getDefCkport());
         Assert.assertEquals(9999, cluster.getDefIPPort());
-        Assert.assertTrue(cluster.getHealthChecker() instanceof AbstractHealthCheckConfig.Http);
-        AbstractHealthCheckConfig.Http httpHealthCheck = (AbstractHealthCheckConfig.Http)(cluster.getHealthChecker());
+        Assert.assertTrue(cluster.getHealthChecker() instanceof AbstractHealthChecker.Http);
+        AbstractHealthChecker.Http httpHealthCheck = (AbstractHealthChecker.Http)(cluster.getHealthChecker());
         Assert.assertEquals("/nacos-path-1", httpHealthCheck.getPath());
         Assert.assertEquals(500, httpHealthCheck.getExpectedResponseCode());
         Assert.assertEquals("Client-Version:nacos-test-1", httpHealthCheck.getHeaders());
@@ -87,7 +87,7 @@ public class ClusterTest {
         list.add(ipAddress1);
         list.add(ipAddress2);
 
-        cluster.updateIPs(list, false);
+        cluster.updateIPs(list);
 
         List<IpAddress> ips = cluster.allIPs();
         Assert.assertNotNull(ips);

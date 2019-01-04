@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.IpAddress;
@@ -23,13 +24,12 @@ import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.fastjson.JSON;
 
 import java.net.HttpURLConnection;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ClientBeatCheckTask implements Runnable {
     private VirtualClusterDomain domain;
@@ -37,6 +37,11 @@ public class ClientBeatCheckTask implements Runnable {
     public ClientBeatCheckTask(VirtualClusterDomain domain) {
         this.domain = domain;
     }
+
+    public String taskKey() {
+        return domain.getName();
+    }
+
     @Override
     public void run() {
         try {
@@ -46,13 +51,13 @@ public class ClientBeatCheckTask implements Runnable {
 
             List<IpAddress> ipAddresses = domain.allIPs();
 
-            for (IpAddress ipAddress: ipAddresses) {
+            for (IpAddress ipAddress : ipAddresses) {
                 if (System.currentTimeMillis() - ipAddress.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {
                     if (!ipAddress.isMarked()) {
                         if (ipAddress.isValid()) {
                             ipAddress.setValid(false);
-                            Loggers.EVT_LOG.info("{" + ipAddress.getClusterName()+ "} {POS} {IP-DISABLED} valid: "
-                                    + ipAddress.getIp()+ ":" + ipAddress.getPort()+ "@" + ipAddress.getClusterName()
+                            Loggers.EVT_LOG.info("{" + ipAddress.getClusterName() + "} {POS} {IP-DISABLED} valid: "
+                                    + ipAddress.getIp() + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName()
                                     + ", region: " + DistroMapper.LOCALHOST_SITE + ", msg: " + "client timeout after "
                                     + ClientBeatProcessor.CLIENT_BEAT_TIMEOUT + ", last beat: " + ipAddress.getLastBeat());
                             PushService.domChanged(domain.getName());
@@ -62,16 +67,16 @@ public class ClientBeatCheckTask implements Runnable {
 
                 if (System.currentTimeMillis() - ipAddress.getLastBeat() > domain.getIpDeleteTimeout()) {
                     // delete ip
-                    if (domain.allIPs().size() > 1) {
-                        Loggers.SRV_LOG.info("AUTO-DELETE-IP", "dom: " + domain.getName() + ", ip: " + JSON.toJSONString(ipAddress));
-                        deleteIP(ipAddress);
-                    }
+//                    if (domain.allIPs().size() > 1) {
+                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: " + domain.getName() + ", ip: " + JSON.toJSONString(ipAddress));
+                    deleteIP(ipAddress);
+//                    }
                 }
             }
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         } finally {
-            HealthCheckReactor.scheduleCheck(this);
+//            HealthCheckReactor.scheduleCheck(this);
         }
 
     }

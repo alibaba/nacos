@@ -26,17 +26,16 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Properties;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
 
 /**
  * @author nacos
  */
 public class RaftStore {
 
-    private static String BASE_DIR = System.getProperty("user.home") + File.separator + "nacos" + File.separator + "raft";
+    private static String BASE_DIR = NACOS_HOME + File.separator + "raft";
 
     private static String META_FILE_NAME;
 
@@ -46,9 +45,8 @@ public class RaftStore {
 
     static {
 
-        String nacosHome = System.getProperty("nacos.home");
-        if (StringUtils.isNotBlank(nacosHome)) {
-            BASE_DIR = nacosHome + File.separator + "data" + File.separator + "naming";
+        if (StringUtils.isNotBlank(System.getProperty(NACOS_HOME_KEY))) {
+            BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
         }
 
         META_FILE_NAME = BASE_DIR + File.separator + "meta.properties";
@@ -109,7 +107,7 @@ public class RaftStore {
                 Loggers.RAFT.warn("warning: encountered directory in cache dir: " + cache.getAbsolutePath());
             }
 
-            if (!StringUtils.equals(cache.getName(), key)) {
+            if (!StringUtils.equals(decodeFileName(cache.getName()), key)) {
                 continue;
             }
 
@@ -141,7 +139,7 @@ public class RaftStore {
     }
 
     public synchronized static void write(final Datum datum) throws Exception {
-        File cacheFile = new File(CACHE_DIR + File.separator + datum.key);
+        File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
@@ -171,7 +169,7 @@ public class RaftStore {
     }
 
     public static void delete(Datum datum) {
-        File cacheFile = new File(CACHE_DIR + File.separator + datum.key);
+        File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
         if (!cacheFile.delete()) {
             Loggers.RAFT.error("RAFT-DELETE", "failed to delete datum: " + datum.key + ", value: " + datum.value);
             throw new IllegalStateException("failed to delete datum: " + datum.key);
@@ -189,5 +187,13 @@ public class RaftStore {
             meta.setProperty("term", String.valueOf(term));
             meta.store(outStream, null);
         }
+    }
+
+    private static String encodeFileName(String fileName) {
+        return fileName.replace(':', '#');
+    }
+
+    private static String decodeFileName(String fileName) {
+        return fileName.replace("#", ":");
     }
 }

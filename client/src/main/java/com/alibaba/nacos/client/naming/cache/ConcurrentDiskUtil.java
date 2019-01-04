@@ -30,209 +30,189 @@ import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ConcurrentDiskUtil {
 
-	/**
-	 * get file content
-	 * 
-	 * @param path
-	 *            file path
-	 * @param charsetName
-	 *            charsetName
-	 * @return content
-	 * @throws IOException
-	 *             IOException
-	 */
-	public static String getFileContent(String path, String charsetName)
-			throws IOException {
-		File file = new File(path);
-		return getFileContent(file, charsetName);
-	}
+    /**
+     * get file content
+     *
+     * @param path        file path
+     * @param charsetName charsetName
+     * @return content
+     * @throws IOException IOException
+     */
+    public static String getFileContent(String path, String charsetName)
+        throws IOException {
+        File file = new File(path);
+        return getFileContent(file, charsetName);
+    }
 
-	/**
-	 * get file content
-	 * 
-	 * @param file
-	 *            file
-	 * @param charsetName
-	 *            charsetName
-	 * @return content
-	 * @throws IOException
-	 *             IOException
-	 */
-	public static String getFileContent(File file, String charsetName)
-			throws IOException {
-		RandomAccessFile fis = null;
-		FileLock rlock = null;
-		try {
-			fis = new RandomAccessFile(file, "r");
-			FileChannel fcin = fis.getChannel();
-			int i = 0;
-			do {
-				try {
-					rlock = fcin.tryLock(0L, Long.MAX_VALUE, true);
-				} catch (Exception e) {
-					++i;
-					if (i > RETRY_COUNT) {
-						log.error("NA", "read " + file.getName() + " fail;retryed time: " + i, e);
-						throw new IOException("read " + file.getAbsolutePath()
-								+ " conflict");
-					}
-					sleep(SLEEP_BASETIME * i);
-					log.warn("read " + file.getName() + " conflict;retry time: " + i);
-				}
-			} while (null == rlock);
-			int fileSize = (int) fcin.size();
-			ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
-			fcin.read(byteBuffer);
-			byteBuffer.flip();
-			return byteBufferToString(byteBuffer, charsetName);
-		} finally {
-			if (rlock != null) {
-				rlock.release();
-				rlock = null;
-			}
-			if (fis != null) {
-				fis.close();
-				fis = null;
-			}
-		}
-	}
+    /**
+     * get file content
+     *
+     * @param file        file
+     * @param charsetName charsetName
+     * @return content
+     * @throws IOException IOException
+     */
+    public static String getFileContent(File file, String charsetName)
+        throws IOException {
+        RandomAccessFile fis = null;
+        FileLock rlock = null;
+        try {
+            fis = new RandomAccessFile(file, "r");
+            FileChannel fcin = fis.getChannel();
+            int i = 0;
+            do {
+                try {
+                    rlock = fcin.tryLock(0L, Long.MAX_VALUE, true);
+                } catch (Exception e) {
+                    ++i;
+                    if (i > RETRY_COUNT) {
+                        log.error("NA", "read " + file.getName() + " fail;retryed time: " + i, e);
+                        throw new IOException("read " + file.getAbsolutePath()
+                            + " conflict");
+                    }
+                    sleep(SLEEP_BASETIME * i);
+                    log.warn("read " + file.getName() + " conflict;retry time: " + i);
+                }
+            } while (null == rlock);
+            int fileSize = (int)fcin.size();
+            ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
+            fcin.read(byteBuffer);
+            byteBuffer.flip();
+            return byteBufferToString(byteBuffer, charsetName);
+        } finally {
+            if (rlock != null) {
+                rlock.release();
+                rlock = null;
+            }
+            if (fis != null) {
+                fis.close();
+                fis = null;
+            }
+        }
+    }
 
-	/**
-	 * write file content
-	 * 
-	 * @param path
-	 *            file path
-	 * @param content
-	 *            content
-	 * @param charsetName
-	 *            charsetName
-	 * @return whether write ok
-	 * @throws IOException
-	 *             IOException
-	 */
-	public static Boolean writeFileContent(String path, String content,
-										   String charsetName) throws IOException {
-		File file = new File(path);
-		return writeFileContent(file, content, charsetName);
-	}
+    /**
+     * write file content
+     *
+     * @param path        file path
+     * @param content     content
+     * @param charsetName charsetName
+     * @return whether write ok
+     * @throws IOException IOException
+     */
+    public static Boolean writeFileContent(String path, String content,
+                                           String charsetName) throws IOException {
+        File file = new File(path);
+        return writeFileContent(file, content, charsetName);
+    }
 
-	/**
-	 * write file content
-	 * 
-	 * @param file
-	 *            file
-	 * @param content
-	 *            content
-	 * @param charsetName
-	 *            charsetName
-	 * @return whether write ok
-	 * @throws IOException
-	 *             IOException
-	 */
-	public static Boolean writeFileContent(File file, String content,
-										   String charsetName) throws IOException {
+    /**
+     * write file content
+     *
+     * @param file        file
+     * @param content     content
+     * @param charsetName charsetName
+     * @return whether write ok
+     * @throws IOException IOException
+     */
+    public static Boolean writeFileContent(File file, String content,
+                                           String charsetName) throws IOException {
 
-		if (!file.exists() && !file.createNewFile()) {
-			return false;
-		}
-		FileChannel channel = null;
-		FileLock lock = null;
-		RandomAccessFile raf = null;
-		try {
-			raf = new RandomAccessFile(file, "rw");
-			channel = raf.getChannel();
-			int i = 0;
-			do {
-				try {
-					lock = channel.tryLock();
-				} catch (Exception e) {
-					++i;
-					if (i > RETRY_COUNT) {
-						log.error("NA","write " + file.getName() + " fail;retryed time: " + i);
-						throw new IOException("write " + file.getAbsolutePath()
-								+ " conflict", e);
-					}
-					sleep(SLEEP_BASETIME * i);
-					log.warn("write " + file.getName() + " conflict;retry time: " + i);
-				}
-			} while (null == lock);
+        if (!file.exists() && !file.createNewFile()) {
+            return false;
+        }
+        FileChannel channel = null;
+        FileLock lock = null;
+        RandomAccessFile raf = null;
+        try {
+            raf = new RandomAccessFile(file, "rw");
+            channel = raf.getChannel();
+            int i = 0;
+            do {
+                try {
+                    lock = channel.tryLock();
+                } catch (Exception e) {
+                    ++i;
+                    if (i > RETRY_COUNT) {
+                        log.error("NA", "write " + file.getName() + " fail;retryed time: " + i);
+                        throw new IOException("write " + file.getAbsolutePath()
+                            + " conflict", e);
+                    }
+                    sleep(SLEEP_BASETIME * i);
+                    log.warn("write " + file.getName() + " conflict;retry time: " + i);
+                }
+            } while (null == lock);
 
-			ByteBuffer sendBuffer = ByteBuffer.wrap(content
-					.getBytes(charsetName));
-			while (sendBuffer.hasRemaining()) {
-				channel.write(sendBuffer);
-			}
-			channel.truncate(content.length());
-		} catch (FileNotFoundException e) {
-			throw new IOException("file not exist");
-		} finally {
-			if (lock != null) {
-				try {
-					lock.release();
-					lock = null;
-				} catch (IOException e) {
-					log.warn("close wrong", e);
-				}
-			}
-			if (channel != null) {
-				try {
-					channel.close();
-					channel = null;
-				} catch (IOException e) {
-					log.warn("close wrong", e);
-				}
-			}
-			if (raf != null) {
-				try {
-					raf.close();
-					raf = null;
-				} catch (IOException e) {
-					log.warn("close wrong", e);
-				}
-			}
+            ByteBuffer sendBuffer = ByteBuffer.wrap(content
+                .getBytes(charsetName));
+            while (sendBuffer.hasRemaining()) {
+                channel.write(sendBuffer);
+            }
+            channel.truncate(content.length());
+        } catch (FileNotFoundException e) {
+            throw new IOException("file not exist");
+        } finally {
+            if (lock != null) {
+                try {
+                    lock.release();
+                    lock = null;
+                } catch (IOException e) {
+                    log.warn("close wrong", e);
+                }
+            }
+            if (channel != null) {
+                try {
+                    channel.close();
+                    channel = null;
+                } catch (IOException e) {
+                    log.warn("close wrong", e);
+                }
+            }
+            if (raf != null) {
+                try {
+                    raf.close();
+                    raf = null;
+                } catch (IOException e) {
+                    log.warn("close wrong", e);
+                }
+            }
 
-		}
-		return true;
-	}
+        }
+        return true;
+    }
 
-	/**
-	 * transfer ByteBuffer to String
-	 * 
-	 * @param buffer
-	 *            buffer
-	 * @param charsetName
-	 *            charsetName
-	 * @return String
-	 * @throws IOException
-	 *             IOException
-	 */
-	public static String byteBufferToString(ByteBuffer buffer,
-											String charsetName) throws IOException {
-		Charset charset = null;
-		CharsetDecoder decoder = null;
-		CharBuffer charBuffer = null;
-		charset = Charset.forName(charsetName);
-		decoder = charset.newDecoder();
-		charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
-		return charBuffer.toString();
-	}
+    /**
+     * transfer ByteBuffer to String
+     *
+     * @param buffer      buffer
+     * @param charsetName charsetName
+     * @return String
+     * @throws IOException IOException
+     */
+    public static String byteBufferToString(ByteBuffer buffer,
+                                            String charsetName) throws IOException {
+        Charset charset = null;
+        CharsetDecoder decoder = null;
+        CharBuffer charBuffer = null;
+        charset = Charset.forName(charsetName);
+        decoder = charset.newDecoder();
+        charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
+        return charBuffer.toString();
+    }
 
-	private static void sleep(int time) {
-		try {
-			Thread.sleep(time);
-		} catch (InterruptedException e) {
-			log.warn("sleep wrong", e);
-		}
-	}
+    private static void sleep(int time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            log.warn("sleep wrong", e);
+        }
+    }
 
-	public static void main(String[] args) {
-	}
-
-	static final public Logger log = LogUtils.LOG;
-	static final int RETRY_COUNT = 10;
-	static final int SLEEP_BASETIME = 10; 
+    static final public Logger log = LogUtils.LOG;
+    static final int RETRY_COUNT = 10;
+    static final int SLEEP_BASETIME = 10;
 }

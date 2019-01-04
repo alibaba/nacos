@@ -26,7 +26,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class BaseTest {
 
@@ -41,10 +41,10 @@ public class BaseTest {
         MockitoAnnotations.initMocks(this);
 
         RaftPeer peer = new RaftPeer();
-        peer.ip = NetUtils.localIP();
+        peer.ip = NetUtils.localServer();
         RaftCore.setPeerSet(peerSet);
         Mockito.when(peerSet.local()).thenReturn(peer);
         Mockito.when(peerSet.getLeader()).thenReturn(peer);
-        Mockito.when(peerSet.isLeader(NetUtils.localIP())).thenReturn(true);
+        Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
     }
 }

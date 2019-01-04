@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
@@ -45,10 +45,10 @@ public class ServiceListTest {
     private int port;
 
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            //TimeUnit.SECONDS.sleep(10);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
 

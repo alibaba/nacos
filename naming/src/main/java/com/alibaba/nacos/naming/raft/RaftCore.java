@@ -37,6 +37,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+
 /**
  * @author nacos
  */
@@ -84,11 +86,11 @@ public class RaftCore {
 
     private static volatile List<RaftListener> listeners = new CopyOnWriteArrayList<>();
 
-    private static ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<String, Datum>();
+    private static volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<String, Datum>();
 
     private static PeerSet peers = new PeerSet();
 
-    private static volatile Notifier notifier = new Notifier();
+    public static volatile Notifier notifier = new Notifier();
 
     public static void init() throws Exception {
 
@@ -118,7 +120,7 @@ public class RaftCore {
 
         GlobalExecutor.register(new MasterElection());
         GlobalExecutor.register1(new HeartBeat());
-        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTVERAL_MS);
+        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTERVAL_MS);
 
         if (peers.size() > 0) {
             if (lock.tryLock(INIT_LOCK_TIME_SECONDS, TimeUnit.SECONDS)) {
@@ -130,61 +132,71 @@ public class RaftCore {
         }
 
         Loggers.RAFT.info("timer started: leader timeout ms: " + GlobalExecutor.LEADER_TIMEOUT_MS
-                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTVERAL_MS);
+                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
 
     public static List<RaftListener> getListeners() {
         return listeners;
     }
 
-    /**
-     * will return success once local writes success instead of the majority,
-     * therefore is unsafe
-     *
-     * @param key
-     * @param value
-     * @throws Exception
-     */
-    public static void unsafePublish(String key, String value) throws Exception {
-        OPERATE_LOCK.lock();
 
-        try {
-            if (!RaftCore.isLeader()) {
-                JSONObject params = new JSONObject();
-                params.put("key", key);
-                params.put("value", value);
+    public static void signalPublish(String key, String value) throws Exception {
 
-                Map<String, String> parameters = new HashMap<>(1);
-                parameters.put("key", key);
-                RaftProxy.proxyPostLarge(API_UNSF_PUB, params.toJSONString(), parameters);
+        long start = System.currentTimeMillis();
+        final Datum datum = new Datum();
+        datum.key = key;
+        datum.value = value;
 
-                if (!RaftCore.isLeader()) {
-                    throw new IllegalStateException("I'm not leader, can not handle update/delete operation");
-                }
+        if (RaftCore.getDatum(key) == null) {
+            datum.timestamp.set(1L);
+        } else {
+            datum.timestamp.set(RaftCore.getDatum(key).timestamp.incrementAndGet());
+        }
+
+        JSONObject json = new JSONObject();
+        json.put("datum", datum);
+        json.put("source", peers.local());
+        json.put("increaseTerm", false);
+
+        onPublish(datum, peers.local(), false);
+
+        final String content = JSON.toJSONString(json);
+
+        for (final String server : peers.allServersIncludeMyself()) {
+            if (isLeader(server)) {
+                continue;
             }
+            final String url = buildURL(server, API_ON_PUB);
+            HttpClient.asyncHttpPostLarge(url, Arrays.asList("key=" + key), content, new AsyncCompletionHandler<Integer>() {
+                @Override
+                public Integer onCompleted(Response response) throws Exception {
+                    if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                        Loggers.RAFT.warn("RAFT", "failed to publish data to peer, datumId=" + datum.key + ", peer=" + server + ", http code=" + response.getStatusCode());
+                        return 1;
+                    }
+                    return 0;
+                }
 
-            Datum datum = new Datum();
-            datum.key = key;
-            datum.value = value;
-            datum.timestamp = System.currentTimeMillis();
+                @Override
+                public STATE onContentWriteCompleted() {
+                    return STATE.CONTINUE;
+                }
+            });
 
-            RaftPeer local = peers.local();
+        }
 
-            JSONObject packet = new JSONObject();
-            packet.put("datum", datum);
-            packet.put("source", local);
-
-            onPublish(packet);
-        } finally {
-            OPERATE_LOCK.unlock();
+        long end = System.currentTimeMillis();
+        if (Loggers.RAFT.isDebugEnabled()) {
+            Loggers.RAFT.debug("signalPublish cost " + (end - start) + " ms" + " : " + key);
         }
     }
 
-    public static void signalPublish(String key, String value) throws Exception {
+    public static void doSignalPublish(String key, String value, boolean locked) throws Exception {
         if (!RaftCore.isLeader()) {
             JSONObject params = new JSONObject();
             params.put("key", key);
             params.put("value", value);
+            params.put("locked", locked);
             Map<String, String> parameters = new HashMap<>(1);
             parameters.put("key", key);
 
@@ -197,20 +209,33 @@ public class RaftCore {
             throw new IllegalStateException("I'm not leader, can not handle update/delete operation");
         }
 
-        OPERATE_LOCK.lock();
+        if (locked) {
+            signalPublishLocked(key, value);
+        } else {
+            signalPublish(key, value);
+        }
+    }
+
+    public static void signalPublishLocked(String key, String value) throws Exception {
 
         try {
+            RaftCore.OPERATE_LOCK.lock();
             long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;
             datum.value = value;
-            datum.timestamp = System.currentTimeMillis();
+            if (RaftCore.getDatum(key) == null) {
+                datum.timestamp.set(1L);
+            } else {
+                datum.timestamp.set(RaftCore.getDatum(key).timestamp.incrementAndGet());
+            }
 
             JSONObject json = new JSONObject();
             json.put("datum", datum);
             json.put("source", peers.local());
+            json.put("increaseTerm", true);
 
-            onPublish(json);
+            onPublish(datum, peers.local(), true);
 
             final String content = JSON.toJSONString(json);
 
@@ -240,20 +265,23 @@ public class RaftCore {
 
             }
 
-            // only majority servers return success can we consider this update success
-            if (!latch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
+            if (!latch.await(UtilsAndCommons.RAFT_PUBLISH_TIMEOUT, TimeUnit.MILLISECONDS)) {
+                // only majority servers return success can we consider this update success
                 Loggers.RAFT.info("data publish failed, caused failed to notify majority, key=" + key);
                 throw new IllegalStateException("data publish failed, caused failed to notify majority, key=" + key);
             }
 
             long end = System.currentTimeMillis();
-            Loggers.RAFT.info("signalPublish cost " + (end - start) + " ms" + " : " + key);
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("signalPublish cost " + (end - start) + " ms" + " : " + key);
+            }
         } finally {
-            OPERATE_LOCK.unlock();
+            RaftCore.OPERATE_LOCK.unlock();
         }
     }
 
     public static void signalDelete(final String key) throws Exception {
+
         OPERATE_LOCK.lock();
         try {
 
@@ -273,7 +301,6 @@ public class RaftCore {
             json.put("key", key);
             json.put("source", peers.local());
 
-            final CountDownLatch latch = new CountDownLatch(peers.majorityCount());
             for (final String server : peers.allServersIncludeMyself()) {
                 String url = buildURL(server, API_ON_DEL);
                 HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(json)
@@ -285,8 +312,6 @@ public class RaftCore {
                                     return 1;
                                 }
 
-                                latch.countDown();
-
                                 RaftPeer local = peers.local();
 
                                 local.resetLeaderDue();
@@ -295,28 +320,19 @@ public class RaftCore {
                             }
                         });
             }
-
-            // only majority servers return success can we consider this update success
-            if (!latch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-                Loggers.RAFT.info("data delete failed, key=" + key);
-
-                throw new IllegalStateException("data delete failed, caused failed to notify majority, key=" + key);
-            }
         } finally {
             OPERATE_LOCK.unlock();
         }
     }
 
-    public static void onPublish(JSONObject params) throws Exception {
-        RaftPeer source = new RaftPeer();
-        source.ip = params.getJSONObject("source").getString("ip");
-        source.state = RaftPeer.State.valueOf(params.getJSONObject("source").getString("state"));
-        source.term.set(params.getJSONObject("source").getLongValue("term"));
-        source.heartbeatDueMs = params.getJSONObject("source").getLongValue("heartbeatDueMs");
-        source.leaderDueMs = params.getJSONObject("source").getLongValue("leaderDueMs");
-        source.voteFor = params.getJSONObject("source").getString("voteFor");
+    public static void onPublish(JSONObject json, boolean increaseTerm) throws Exception {
+        Datum datum = JSON.parseObject(json.getString("datum"), Datum.class);
+        RaftPeer source = JSON.parseObject(json.getString("source"), RaftPeer.class);
+        onPublish(datum, source, increaseTerm);
+    }
+
+    public static void onPublish(Datum datum, RaftPeer source, boolean increaseTerm) throws Exception {
         RaftPeer local = peers.local();
-        Datum datum = params.getObject("datum", Datum.class);
         if (StringUtils.isBlank(datum.value)) {
             Loggers.RAFT.warn("received empty datum");
             throw new IllegalStateException("received empty datum");
@@ -339,26 +355,30 @@ public class RaftCore {
         local.resetLeaderDue();
 
         // do apply
-        RaftStore.write(datum);
-        RaftCore.datums.put(datum.key, datum);
-
-        if (isLeader()) {
-            local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
-        } else {
-            if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
-                //set leader term:
-                getLeader().term.set(source.term.get());
-                local.term.set(getLeader().term.get());
-            } else {
-                local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
-            }
+        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) || UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
+            RaftStore.write(datum);
         }
 
-        RaftStore.updateTerm(local.term.get());
+        RaftCore.datums.put(datum.key, datum);
+
+        if (increaseTerm) {
+            if (isLeader()) {
+                local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
+            } else {
+                if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
+                    //set leader term:
+                    getLeader().term.set(source.term.get());
+                    local.term.set(getLeader().term.get());
+                } else {
+                    local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
+                }
+            }
+            RaftStore.updateTerm(local.term.get());
+        }
 
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
-        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);
+        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term + ", increaseTerm:" + increaseTerm);
     }
 
     public static void onDelete(JSONObject params) throws Exception {
@@ -392,15 +412,18 @@ public class RaftCore {
         String key = params.getString("key");
         deleteDatum(key);
 
-        if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
-            //set leader term:
-            getLeader().term.set(source.term.get());
-            local.term.set(getLeader().term.get());
-        } else {
-            local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
-        }
+        if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
 
-        RaftStore.updateTerm(local.term.get());
+            if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
+                //set leader term:
+                getLeader().term.set(source.term.get());
+                local.term.set(getLeader().term.get());
+            } else {
+                local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
+            }
+
+            RaftStore.updateTerm(local.term.get());
+        }
 
     }
 
@@ -431,7 +454,7 @@ public class RaftCore {
                 return;
             }
 
-            RaftPeer local = peers.get(NetUtils.localIP());
+            RaftPeer local = peers.get(NetUtils.localServer());
             Loggers.RAFT.info("leader timeout, start voting,leader: " + JSON.toJSONString(getLeader()) + ", term: " + local.term);
 
             peers.reset();
@@ -479,7 +502,7 @@ public class RaftCore {
                 throw new IllegalStateException("not ready yet");
             }
 
-            RaftPeer local = peers.get(NetUtils.localIP());
+            RaftPeer local = peers.get(NetUtils.localServer());
             if (remote.term.get() <= local.term.get()) {
                 String msg = "received illegitimate vote" +
                         ", voter-term:" + remote.term + ", votee-term:" + local.term;
@@ -525,11 +548,11 @@ public class RaftCore {
 
         public static void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
-            if (local.state != RaftPeer.State.LEADER && !UtilsAndCommons.STANDALONE_MODE) {
+            if (local.state != RaftPeer.State.LEADER && !STANDALONE_MODE) {
                 return;
             }
 
-            Loggers.RAFT.info("RAFT", "send beat with " + datums.size() + " keys.");
+            Loggers.RAFT.info("[RAFT] send beat with " + datums.size() + " keys.");
 
             local.resetLeaderDue();
 
@@ -540,7 +563,7 @@ public class RaftCore {
             JSONArray array = new JSONArray();
 
             if (Switch.isSendBeatOnly()) {
-                Loggers.RAFT.info("SEND-BEAT-ONLY", String.valueOf(Switch.isSendBeatOnly()));
+                Loggers.RAFT.info("[SEND-BEAT-ONLY] " + String.valueOf(Switch.isSendBeatOnly()));
             }
 
             if (!Switch.isSendBeatOnly()) {
@@ -567,7 +590,7 @@ public class RaftCore {
                     array.add(element);
                 }
             } else {
-                Loggers.RAFT.info("RAFT", "send beat only.");
+                Loggers.RAFT.info("[RAFT] send beat only.");
             }
 
             packet.put("datums", array);
@@ -586,8 +609,6 @@ public class RaftCore {
             String compressedContent = new String(compressedBytes, "UTF-8");
             Loggers.RAFT.info("raw beat data size: " + content.length() + ", size of compressed data: " + compressedContent.length());
 
-            final CountDownLatch latch = new CountDownLatch(peers.majorityCount() - 1);
-
             for (final String server : peers.allServersWithoutMySelf()) {
                 try {
                     final String url = buildURL(server, API_BEAT);
@@ -599,8 +620,6 @@ public class RaftCore {
                                 Loggers.RAFT.error("VIPSRV-RAFT", "beat failed: " + response.getResponseBody() + ", peer: " + server);
                                 return 1;
                             }
-
-                            latch.countDown();
 
                             peers.update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
                             Loggers.RAFT.info("receive beat response from: " + url);
@@ -630,12 +649,12 @@ public class RaftCore {
             remote.voteFor = beat.getJSONObject("peer").getString("voteFor");
 
             if (remote.state != RaftPeer.State.LEADER) {
-                Loggers.RAFT.info("RAFT", "invalid state from master, state=" + remote.state + ", remote peer: " + JSON.toJSONString(remote));
+                Loggers.RAFT.info("[RAFT] invalid state from master, state=" + remote.state + ", remote peer: " + JSON.toJSONString(remote));
                 throw new IllegalArgumentException("invalid state from master, state=" + remote.state);
             }
 
             if (local.term.get() > remote.term.get()) {
-                Loggers.RAFT.info("RAFT", "out of date beat, beat-from-term: " + remote.term.get()
+                Loggers.RAFT.info("[RAFT] out of date beat, beat-from-term: " + remote.term.get()
                         + ", beat-to-term: " + local.term.get() + ", remote peer: " + JSON.toJSONString(remote) + ", and leaderDueMs: " + local.leaderDueMs);
                 throw new IllegalArgumentException("out of date beat, beat-from-term: " + remote.term.get()
                         + ", beat-to-term: " + local.term.get());
@@ -643,7 +662,7 @@ public class RaftCore {
 
             if (local.state != RaftPeer.State.FOLLOWER) {
 
-                Loggers.RAFT.info("RAFT", "make remote as leader " + ", remote peer: " + JSON.toJSONString(remote));
+                Loggers.RAFT.info("[RAFT] make remote as leader " + ", remote peer: " + JSON.toJSONString(remote));
                 // mk follower
                 local.state = RaftPeer.State.FOLLOWER;
                 local.voteFor = remote.ip;
@@ -665,7 +684,7 @@ public class RaftCore {
             List<String> batch = new ArrayList<String>();
             if (!Switch.isSendBeatOnly()) {
                 int processedCount = 0;
-                Loggers.RAFT.info("RAFT", "received beat with " + beatDatums.size() + " keys, RaftCore.datums' size is "
+                Loggers.RAFT.info("[RAFT] received beat with " + beatDatums.size() + " keys, RaftCore.datums' size is "
                         + RaftCore.datums.size() + ",  remote server: " + remote.ip + ", term: " + remote.term + ",  local term: " + local.term);
                 for (Object object : beatDatums) {
                     processedCount = processedCount + 1;
@@ -692,13 +711,12 @@ public class RaftCore {
 
                     receivedKeysMap.put(datumKey, 1);
 
-
                     try {
-                        if (RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp >= timestamp && processedCount < beatDatums.size()) {
+                        if (RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp.get() >= timestamp && processedCount < beatDatums.size()) {
                             continue;
                         }
 
-                        if (!(RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp >= timestamp)) {
+                        if (!(RaftCore.datums.containsKey(datumKey) && RaftCore.datums.get(datumKey).timestamp.get() >= timestamp)) {
                             batch.add(datumKey);
                         }
 
@@ -733,24 +751,30 @@ public class RaftCore {
 
                                         Datum oldDatum = RaftCore.getDatum(datum.key);
 
-                                        if (oldDatum != null && datum.timestamp <= oldDatum.timestamp) {
-                                            Loggers.RAFT.info("VIPSRV-RAFT", "timestamp is smaller than that of mine, key: " + datum.key
+                                        if (oldDatum != null && datum.timestamp.get() <= oldDatum.timestamp.get()) {
+                                            Loggers.RAFT.info("[VIPSRV-RAFT] timestamp is smaller than that of mine, key: " + datum.key
                                                     + ",remote: " + datum.timestamp + ", local: " + oldDatum.timestamp);
                                             continue;
                                         }
 
-                                        RaftStore.write(datum);
+                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) ||
+                                                UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
+                                            RaftStore.write(datum);
+                                        }
+
                                         RaftCore.datums.put(datum.key, datum);
                                         local.resetLeaderDue();
 
-                                        if (local.term.get() + 100 > remote.term.get()) {
-                                            getLeader().term.set(remote.term.get());
-                                            local.term.set(getLeader().term.get());
-                                        } else {
-                                            local.term.addAndGet(100);
-                                        }
+                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+                                            if (local.term.get() + 100 > remote.term.get()) {
+                                                getLeader().term.set(remote.term.get());
+                                                local.term.set(getLeader().term.get());
+                                            } else {
+                                                local.term.addAndGet(100);
+                                            }
 
-                                        RaftStore.updateTerm(local.term.get());
+                                            RaftStore.updateTerm(local.term.get());
+                                        }
 
                                         Loggers.RAFT.info("data updated" + ", key=" + datum.key
                                                 + ", timestamp=" + datum.timestamp + ",from " + JSON.toJSONString(remote) + ", local term: " + local.term);
@@ -817,16 +841,16 @@ public class RaftCore {
                 List<String> newServers = (List<String>) CollectionUtils.subtract(servers, oldServers);
                 if (!CollectionUtils.isEmpty(newServers)) {
                     peers.add(newServers);
-                    Loggers.RAFT.info("RAFT", "server list is updated, new (" + newServers.size() + ") servers: " + newServers);
+                    Loggers.RAFT.info("[RAFT] server list is updated, new (" + newServers.size() + ") servers: " + newServers);
                 }
 
                 List<String> deadServers = (List<String>) CollectionUtils.subtract(oldServers, servers);
                 if (!CollectionUtils.isEmpty(deadServers)) {
                     peers.remove(deadServers);
-                    Loggers.RAFT.info("RAFT", "server list is updated, dead (" + deadServers.size() + ") servers: " + deadServers);
+                    Loggers.RAFT.info("[RAFT] server list is updated, dead (" + deadServers.size() + ") servers: " + deadServers);
                 }
             } catch (Exception e) {
-                Loggers.RAFT.info("RAFT", "error while updating server list.", e);
+                Loggers.RAFT.info("[RAFT] error while updating server list.", e);
             }
         }
     }
@@ -892,7 +916,7 @@ public class RaftCore {
     }
 
     public static boolean isLeader() {
-        return peers.isLeader(NetUtils.localIP());
+        return peers.isLeader(NetUtils.localServer());
     }
 
     public static String buildURL(String ip, String api) {
@@ -934,19 +958,33 @@ public class RaftCore {
     private static void deleteDatum(String key) {
         Datum deleted = datums.remove(key);
         if (deleted != null) {
-            RaftStore.delete(deleted);
+            if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+                RaftStore.delete(deleted);
+            }
             notifier.addTask(deleted, Notifier.ApplyAction.DELETE);
-
             Loggers.RAFT.info("datum deleted, key=" + key);
         }
     }
 
     public static class Notifier implements Runnable {
 
+        private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
+
         private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<Pair>(1024 * 1024);
 
         public void addTask(Datum datum, ApplyAction action) {
+
+            if (services.containsKey(datum.key) && action == ApplyAction.CHANGE) {
+                return;
+            }
+            if (action == ApplyAction.CHANGE) {
+                services.put(datum.key, StringUtils.EMPTY);
+            }
             tasks.add(Pair.with(datum, action));
+        }
+
+        public int getTaskSize() {
+            return tasks.size();
         }
 
         @Override
@@ -964,11 +1002,16 @@ public class RaftCore {
 
                     Datum datum = (Datum) pair.getValue0();
                     ApplyAction action = (ApplyAction) pair.getValue1();
+
+                    services.remove(datum.key);
+
                     int count = 0;
                     for (RaftListener listener : listeners) {
 
                         if (listener instanceof VirtualClusterDomain) {
-                            Loggers.RAFT.debug("listener: " + ((VirtualClusterDomain) listener).getName());
+                            if (Loggers.RAFT.isDebugEnabled()) {
+                                Loggers.RAFT.debug("listener: " + ((VirtualClusterDomain) listener).getName());
+                            }
                         }
 
                         if (!listener.interests(datum.key)) {
@@ -979,7 +1022,7 @@ public class RaftCore {
 
                         try {
                             if (action == ApplyAction.CHANGE) {
-                                listener.onChange(datum.key, datum.value);
+                                listener.onChange(datum.key, getDatum(datum.key).value);
                                 continue;
                             }
 
@@ -993,8 +1036,10 @@ public class RaftCore {
                         }
                     }
 
-                    Loggers.RAFT.debug("VIPSRV-RAFT", "datum change notified" +
+                    if (Loggers.RAFT.isDebugEnabled()) {
+                        Loggers.RAFT.debug("VIPSRV-RAFT", "datum change notified" +
                             ", key: " + datum.key + "; listener count: " + count);
+                    }
                 } catch (Throwable e) {
                     Loggers.RAFT.error("VIPSRV-RAFT", "Error while handling notifying task", e);
                 }

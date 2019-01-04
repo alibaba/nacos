@@ -15,10 +15,17 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public abstract class AbstractHealthChecker implements Cloneable {
 
@@ -31,6 +38,14 @@ public abstract class AbstractHealthChecker implements Cloneable {
     public void setType(String type) {
         this.type = type;
     }
+
+    /**
+     * Clone all fields of this instance to another one
+     *
+     * @return Another instance with exactly the same fields.
+     * @throws CloneNotSupportedException
+     */
+    public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
 
     public static class Http extends AbstractHealthChecker {
         public static final String TYPE = "HTTP";
@@ -68,6 +83,25 @@ public abstract class AbstractHealthChecker implements Cloneable {
             this.headers = headers;
         }
 
+        @JSONField(serialize = false)
+        public Map<String, String> getCustomHeaders() {
+            if (StringUtils.isBlank(headers)) {
+                return Collections.emptyMap();
+            }
+
+            Map<String, String> headerMap = new HashMap<String, String>(16);
+            for (String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
+                String[] splits = s.split(":");
+                if (splits.length != 2) {
+                    continue;
+                }
+
+                headerMap.put(StringUtils.trim(splits[0]), StringUtils.trim(splits[1]));
+            }
+
+            return headerMap;
+        }
+
         @Override
         public int hashCode() {
             return Objects.hash(path, headers, expectedResponseCode);
@@ -79,7 +113,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Http other = (Http) obj;
+            Http other = (Http)obj;
 
             if (!strEquals(type, other.getType())) {
                 return false;
@@ -92,6 +126,18 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
             return expectedResponseCode == other.getExpectedResponseCode();
+        }
+
+        @Override
+        public Http clone() throws CloneNotSupportedException {
+            Http config = new Http();
+
+            config.setPath(this.getPath());
+            config.setHeaders(this.getHeaders());
+            config.setType(this.getType());
+            config.setExpectedResponseCode(this.getExpectedResponseCode());
+
+            return config;
         }
     }
 
@@ -111,6 +157,12 @@ public abstract class AbstractHealthChecker implements Cloneable {
         public boolean equals(Object obj) {
             return obj instanceof Tcp;
 
+        }
+
+        public Tcp clone() throws CloneNotSupportedException {
+            Tcp config = new Tcp();
+            config.setType(this.type);
+            return config;
         }
     }
 
@@ -160,7 +212,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Mysql other = (Mysql) obj;
+            Mysql other = (Mysql)obj;
 
             if (!strEquals(user, other.getUser())) {
                 return false;
@@ -172,6 +224,17 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
             return strEquals(cmd, other.getCmd());
 
+        }
+
+        @Override
+        public Mysql clone() throws CloneNotSupportedException {
+            Mysql config = new Mysql();
+            config.setUser(this.getUser());
+            config.setPwd(this.getPwd());
+            config.setCmd(this.getCmd());
+            config.setType(this.getType());
+
+            return config;
         }
     }
 

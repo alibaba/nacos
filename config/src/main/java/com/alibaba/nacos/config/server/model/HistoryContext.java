@@ -17,105 +17,104 @@ package com.alibaba.nacos.config.server.model;
 
 /**
  * history context
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class HistoryContext {
-	public String serverId;
+    public String serverId;
     public String dataId;
     public String group;
     public String tenant;
-	private String appName;
+    private String appName;
     public boolean success;
     public int statusCode;
     public String statusMsg;
     public Page<ConfigHistoryInfo> configs;
 
+    public HistoryContext(String serverId, String dataId, String group, int statusCode, String statusMsg,
+                          Page<ConfigHistoryInfo> configs) {
+        this.serverId = serverId;
+        this.dataId = dataId;
+        this.group = group;
+        this.statusCode = statusCode;
+        this.statusMsg = statusMsg;
+        this.configs = configs;
+        this.success = 200 == statusCode;
+    }
 
-	public HistoryContext(String serverId, String dataId, String group, int statusCode, String statusMsg,
-			Page<ConfigHistoryInfo> configs) {
-		this.serverId = serverId;
-		this.dataId = dataId;
-		this.group = group;
-		this.statusCode = statusCode;
-		this.statusMsg = statusMsg;
-		this.configs = configs;
-		this.success = 200 == statusCode;
-	}
-	
-	public HistoryContext() {
-	}
+    public HistoryContext() {
+    }
 
-	public String getServerId() {
-		return serverId;
-	}
+    public String getServerId() {
+        return serverId;
+    }
 
-	public void setServerId(String serverId) {
-		this.serverId = serverId;
-	}
+    public void setServerId(String serverId) {
+        this.serverId = serverId;
+    }
 
-	public String getDataId() {
-		return dataId;
-	}
+    public String getDataId() {
+        return dataId;
+    }
 
-	public void setDataId(String dataId) {
-		this.dataId = dataId;
-	}
+    public void setDataId(String dataId) {
+        this.dataId = dataId;
+    }
 
-	public String getGroup() {
-		return group;
-	}
+    public String getGroup() {
+        return group;
+    }
 
-	public void setGroup(String group) {
-		this.group = group;
-	}
-	
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
     public String getTenant() {
-		return tenant;
-	}
+        return tenant;
+    }
 
-	public void setTenant(String tenant) {
-		this.tenant = tenant;
-	}
-	public boolean isSuccess() {
-		return success;
-	}
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
 
-	public void setSuccess(boolean success) {
-		this.success = success;
-	}
+    public boolean isSuccess() {
+        return success;
+    }
 
-	public int getStatusCode() {
-		return statusCode;
-	}
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
 
-	public void setStatusCode(int statusCode) {
-		this.statusCode = statusCode;
-	}
+    public int getStatusCode() {
+        return statusCode;
+    }
 
-	public String getStatusMsg() {
-		return statusMsg;
-	}
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
+    }
 
-	public void setStatusMsg(String statusMsg) {
-		this.statusMsg = statusMsg;
-	}
+    public String getStatusMsg() {
+        return statusMsg;
+    }
 
-	public Page<ConfigHistoryInfo> getConfigs() {
-		return configs;
-	}
+    public void setStatusMsg(String statusMsg) {
+        this.statusMsg = statusMsg;
+    }
 
-	public void setConfigs(Page<ConfigHistoryInfo> configs) {
-		this.configs = configs;
-	}
+    public Page<ConfigHistoryInfo> getConfigs() {
+        return configs;
+    }
 
-	public String getAppName() {
-		return appName;
-	}
+    public void setConfigs(Page<ConfigHistoryInfo> configs) {
+        this.configs = configs;
+    }
 
-	public void setAppName(String appName) {
-		this.appName = appName;
-	}
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
 
 }

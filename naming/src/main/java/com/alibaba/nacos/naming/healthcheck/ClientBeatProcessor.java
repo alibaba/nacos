@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ClientBeatProcessor implements Runnable {
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
@@ -61,7 +61,7 @@ public class ClientBeatProcessor implements Runnable {
             return;
         }
 
-        Loggers.EVT_LOG.debug("client-beat", "processing beat: " + rsInfo.toString());
+        Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: " + rsInfo.toString());
 
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
@@ -74,6 +74,7 @@ public class ClientBeatProcessor implements Runnable {
         for (IpAddress ipAddress: ipAddresses) {
             if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
                 processed = true;
+                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: " + rsInfo.toString());
                 ipAddress.setLastBeat(System.currentTimeMillis());
                 if (!ipAddress.isMarked()) {
                     if (!ipAddress.isValid()) {

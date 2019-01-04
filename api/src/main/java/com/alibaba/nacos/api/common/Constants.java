@@ -88,11 +88,6 @@ public class Constants {
     /**
      * millisecond
      */
-    public static final int CONN_TIMEOUT = 2000;
-
-    /**
-     * millisecond
-     */
     public static final int SO_TIMEOUT = 60000;
 
     /**
@@ -110,9 +105,9 @@ public class Constants {
 
     public static final int FLOW_CONTROL_INTERVAL = 1000;
 
-    public static final String LINE_SEPARATOR = Character.toString((char) 1);
+    public static final String LINE_SEPARATOR = Character.toString((char)1);
 
-    public static final String WORD_SEPARATOR = Character.toString((char) 2);
+    public static final String WORD_SEPARATOR = Character.toString((char)2);
 
     public static final String LONGPULLING_LINE_SEPARATOR = "\r\n";
 
@@ -124,4 +119,7 @@ public class Constants {
 
     public static final String NAMING_INSTANCE_ID_SPLITTER = "#";
     public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
+    public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
+
+    public static final String NAMING_DEFAULT_CLUSTER_NAME = "DEFAULT";
 }

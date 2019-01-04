@@ -16,15 +16,16 @@
 package com.alibaba.nacos.client.logger.json;
 
 /**
- * Beans that support customized output of JSON text shall implement this interface.  
- * @author FangYidong<fangyidong@yahoo.com.cn>
+ * Beans that support customized output of JSON text shall implement this interface.
+ *
+ * @author FangYidong<fangyidong   @   yahoo.com.cn>
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface JSONAware {
-	/**
-	 * format change
-	 * 
-	 * @return JSON text
-	 */
-	String toJSONString();
+    /**
+     * format change
+     *
+     * @return JSON text
+     */
+    String toJSONString();
 }

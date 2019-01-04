@@ -1,204 +1,208 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE xml>
 <configuration scan="true" scanPeriod="10 seconds">
+
+    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/diamond/logs"/>
+    <property name="LOG_HOME" value="${logPath}"/>
 
     <appender name="dumpFile"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${user.home}/diamond/logs/dump.log</file>
+		<file>${LOG_HOME}/dump.log</file>
 		<append>true</append>
 		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-			<fileNamePattern>${user.home}/diamond/logs/dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-			<maxFileSize>2GB</maxFileSize>  
+			<fileNamePattern>${LOG_HOME}/dump.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<maxFileSize>2GB</maxFileSize>
 			<MaxHistory>15</MaxHistory>
 			<totalSizeCap>7GB</totalSizeCap>
 			<cleanHistoryOnStart>true</cleanHistoryOnStart>
 		</rollingPolicy>
 		<encoder>
 			<Pattern>%date %level %msg%n%n</Pattern>
-			<charset>GBK</charset>
+			<charset>UTF-8</charset>
 		</encoder>
 	</appender>
+
     <appender name="pullFile"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/pull.log</file>
+        <file>${LOG_HOME}/pull.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>20MB</maxFileSize> 
+            <fileNamePattern>${LOG_HOME}/pull.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
+
 	<appender name="fatalFile"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>${user.home}/diamond/logs/fatal.log</file>
+		<file>${LOG_HOME}/fatal.log</file>
 		<append>true</append>
 		<rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-			<fileNamePattern>${user.home}/diamond/logs/fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-			<maxFileSize>20MB</maxFileSize> 
+			<fileNamePattern>${LOG_HOME}/fatal.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+			<maxFileSize>20MB</maxFileSize>
 			<MaxHistory>15</MaxHistory>
 			<totalSizeCap>128MB</totalSizeCap>
 			<cleanHistoryOnStart>true</cleanHistoryOnStart>
 		</rollingPolicy>
 		<encoder>
 			<Pattern>%date %level %msg%n%n</Pattern>
-			<charset>GBK</charset>
+			<charset>UTF-8</charset>
 		</encoder>
 	</appender>
     <appender name="memoryFile"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/memory.log</file>
+        <file>${LOG_HOME}/memory.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>20MB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/memory.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
     <appender name="pullCheckFile"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/pull-check.log</file>
+        <file>${LOG_HOME}/pull-check.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>1GB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/pull-check.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%msg%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="aclLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/acl.log</file>
+        <file>${LOG_HOME}/acl.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>50MB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/acl.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="clientLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/client-request.log</file>
+        <file>${LOG_HOME}/client-request.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/client-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date|%msg%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="sdkLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/sdk-request.log</file>
+        <file>${LOG_HOME}/sdk-request.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>1GB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/sdk-request.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date|%msg%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="traceLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/trace.log</file>
+        <file>${LOG_HOME}/trace.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/trace.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>2GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>7GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date|%msg%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="notifyLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/notify.log</file>
+        <file>${LOG_HOME}/notify.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>1GB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/notify.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>3GB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
     <appender name="appCollectorLog"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/app.log</file>
+        <file>${LOG_HOME}/app.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>20MB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/app.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>128MB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>GBK</charset>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
-    
+
     <appender name="rootFile"
         class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${user.home}/diamond/logs/diamondServer.log</file>
+        <file>${LOG_HOME}/diamondServer.log</file>
         <append>true</append>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${user.home}/diamond/logs/diamondServer.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>50MB</maxFileSize>  
+            <fileNamePattern>${LOG_HOME}/diamondServer.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
             <MaxHistory>15</MaxHistory>
             <totalSizeCap>512MB</totalSizeCap>
             <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
         <encoder>
             <Pattern>%date %level %msg%n%n</Pattern>
-			<charset>GBK</charset>
+			<charset>UTF-8</charset>
         </encoder>
     </appender>
 
@@ -252,7 +256,7 @@
         <level value="INFO" />
         <appender-ref ref="appCollectorLog" />
     </logger>
-    
+
 	<root>
 		<level value="INFO" />
 		<appender-ref ref="rootFile" />

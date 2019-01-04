@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class DistroMapper {
 
@@ -56,11 +56,7 @@ public class DistroMapper {
     private static Synchronizer synchronizer = new ServerStatusSynchronizer();
 
     static {
-        try {
-            localhostIP = InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort();
-        } catch (UnknownHostException e) {
-            throw new IllegalStateException("Unable to resolve current host IP");
-        }
+        localhostIP = NetUtils.localServer();
 
         init();
 
@@ -75,12 +71,12 @@ public class DistroMapper {
         List<String> servers = NamingProxy.getServers();
 
         while (servers == null || servers.size() == 0) {
-            Loggers.SRV_LOG.warn("DISTRO-MAPPER", "Server list is empty, sleep 3 seconds and try again.");
+            Loggers.SRV_LOG.warn("[DISTRO-MAPPER] Server list is empty, sleep 3 seconds and try again.");
             try {
                 TimeUnit.SECONDS.sleep(3);
                 servers = NamingProxy.getServers();
             } catch (InterruptedException e) {
-                Loggers.SRV_LOG.warn("DISTRO-MAPPER", "Sleeping thread is interupted, try again.");
+                Loggers.SRV_LOG.warn("[DISTRO-MAPPER] Sleeping thread is interupted, try again.");
             }
         }
 
@@ -165,7 +161,7 @@ public class DistroMapper {
         if (AUTO_DISABLED_HEALTH_CHECK
                 && curRatio > Switch.getDistroThreshold()
                 && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("VIPSRV-DISTRO", "distro threshold restored and " +
+            Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
                     "stable now, enable health check. current ratio: " + curRatio);
 
             Switch.setHeathCheckEnabled(true);
@@ -177,7 +173,7 @@ public class DistroMapper {
         if (!CollectionUtils.isEqualCollection(healthyList, newHealthyList)) {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("VIPSRV-DISTRO", "healthy server list changed, " +
+                Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
                         "disable health check for " + STABLE_PERIOD + "ms from now on, healthList: " + healthyList + ",newHealthyList " + newHealthyList);
 
                 Switch.setHeathCheckEnabled(false);
@@ -262,12 +258,20 @@ public class DistroMapper {
         //local site servers
         List<String> allLocalSiteSrvs = new ArrayList<String>();
         for (Server server : servers) {
+
+            if (server.ip.endsWith(":0")) {
+                continue;
+            }
+
             server.adWeight = Switch.getAdWeight(server.ip) == null ? 0 : Switch.getAdWeight(server.ip);
 
             for (int i = 0; i < server.weight + server.adWeight; i++) {
-                allLocalSiteSrvs.add(server.ip);
 
-                if (server.alive) {
+                if (!allLocalSiteSrvs.contains(server.ip)) {
+                    allLocalSiteSrvs.add(server.ip);
+                }
+
+                if (server.alive && !newHealthyList.contains(server.ip)) {
                     newHealthyList.add(server.ip);
                 }
             }
@@ -279,7 +283,7 @@ public class DistroMapper {
         if (AUTO_DISABLED_HEALTH_CHECK
                 && curRatio > Switch.getDistroThreshold()
                 && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("VIPSRV-DISTRO", "distro threshold restored and " +
+            Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
                     "stable now, enable health check. current ratio: " + curRatio);
 
             Switch.setHeathCheckEnabled(true);
@@ -291,7 +295,7 @@ public class DistroMapper {
         if (!CollectionUtils.isEqualCollection(healthyList, newHealthyList)) {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("VIPSRV-DISTRO", "healthy server list changed, " +
+                Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
                         "disable health check for " + STABLE_PERIOD + "ms from now on");
 
                 Switch.setHeathCheckEnabled(false);
@@ -421,6 +425,25 @@ public class DistroMapper {
         public long lastRefTime = 0L;
         public String lastRefTimeStr;
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Server server = (Server) o;
+
+            return ip.equals(server.ip);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return ip.hashCode();
+        }
     }
 
     private static class ServerStatusReporter implements Runnable {
@@ -428,6 +451,11 @@ public class DistroMapper {
         @Override
         public void run() {
             try {
+
+                if (RunningConfig.getServerPort() <= 0) {
+                    return;
+                }
+
                 for (String key : distroConfig.keySet()) {
                     for (Server server : distroConfig.get(key)) {
                         server.alive = System.currentTimeMillis() - server.lastRefTime < Switch.getdistroServerExpiredMillis();
@@ -439,7 +467,7 @@ public class DistroMapper {
                     weight = 1;
                 }
 
-                localhostIP = InetAddress.getLocalHost().getHostAddress() + ":" + RunningConfig.getServerPort();
+                localhostIP = NetUtils.localServer();
 
                 long curTime = System.currentTimeMillis();
                 String status = LOCALHOST_SITE + "#" + localhostIP + "#" + curTime + "#" + weight + "\r\n";

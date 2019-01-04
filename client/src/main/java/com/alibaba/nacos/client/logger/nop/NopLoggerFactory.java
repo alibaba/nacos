@@ -17,10 +17,11 @@ package com.alibaba.nacos.client.logger.nop;
 
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.ILoggerFactory;
+
 /**
  * NopLogger Factory
- * @author Nacos
  *
+ * @author Nacos
  */
 public class NopLoggerFactory implements ILoggerFactory {
 

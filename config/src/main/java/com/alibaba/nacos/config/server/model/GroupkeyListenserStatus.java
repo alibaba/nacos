@@ -20,35 +20,34 @@ import java.util.Map;
 
 /**
  * litener status
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
-public class GroupkeyListenserStatus implements Serializable{
+public class GroupkeyListenserStatus implements Serializable {
 
-	/**
-	 * 随机数
-	 */
-	private static final long serialVersionUID = -2094829323598842474L;
+    /**
+     * 随机数
+     */
+    private static final long serialVersionUID = -2094829323598842474L;
 
-	private int collectStatus;
-	
-	private Map<String , String> lisentersGroupkeyStatus;
+    private int collectStatus;
 
-	public int getCollectStatus() {
-		return collectStatus;
-	}
+    private Map<String, String> lisentersGroupkeyStatus;
 
-	public void setCollectStatus(int collectStatus) {
-		this.collectStatus = collectStatus;
-	}
+    public int getCollectStatus() {
+        return collectStatus;
+    }
 
-	public Map<String, String> getLisentersGroupkeyStatus() {
-		return lisentersGroupkeyStatus;
-	}
+    public void setCollectStatus(int collectStatus) {
+        this.collectStatus = collectStatus;
+    }
 
-	public void setLisentersGroupkeyStatus(
-			Map<String, String> lisentersGroupkeyStatus) {
-		this.lisentersGroupkeyStatus = lisentersGroupkeyStatus;
-	}
+    public Map<String, String> getLisentersGroupkeyStatus() {
+        return lisentersGroupkeyStatus;
+    }
+
+    public void setLisentersGroupkeyStatus(
+        Map<String, String> lisentersGroupkeyStatus) {
+        this.lisentersGroupkeyStatus = lisentersGroupkeyStatus;
+    }
 }

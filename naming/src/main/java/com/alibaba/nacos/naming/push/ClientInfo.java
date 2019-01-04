@@ -93,12 +93,26 @@ public class ClientInfo {
             return;
         }
 
+        if (versionStr.startsWith(ClientTypeDescription.GO_CLIENT)) {
+            type = ClientType.GO;
+
+            versionStr = versionStr.substring(versionStr.indexOf(":v") + 2, versionStr.length());
+            version = VersionUtil.parseVersion(versionStr);
+
+            return;
+        }
+
+
         //we're not eager to implement other type yet
         this.type = ClientType.UNKNOWN;
         this.version = Version.unknownVersion();
     }
 
     public enum ClientType {
+        /**
+         * Go client type
+         */
+        GO,
         /**
          * Java client type
          */
@@ -140,6 +154,8 @@ public class ClientInfo {
         public static final String SDK_CLIENT = "Nacos-SDK-Java";
         public static final String NGINX_CLIENT = "unit-nginx";
         public static final String CPP_CLIENT = "vip-client4cpp";
+        public static final String GO_CLIENT = "nacos-go-sdk";
+
     }
 
 }

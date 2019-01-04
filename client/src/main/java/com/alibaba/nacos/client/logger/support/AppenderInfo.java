@@ -27,7 +27,7 @@ public class AppenderInfo extends HashMap {
     private static String file = "file";
 
     public String getName() {
-        return (String) get(AppenderInfo.name);
+        return (String)get(AppenderInfo.name);
     }
 
     public void setName(String name) {

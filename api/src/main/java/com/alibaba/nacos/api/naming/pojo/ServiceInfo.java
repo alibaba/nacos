@@ -17,6 +17,8 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -194,6 +196,15 @@ public class ServiceInfo {
     }
 
     @JSONField(serialize = false)
+    public String getKeyEncoded() {
+        try {
+            return getKey(URLEncoder.encode(name, "UTF-8"), clusters, env, isAllIPs());
+        } catch (UnsupportedEncodingException e) {
+            return getKey();
+        }
+    }
+
+    @JSONField(serialize = false)
     public static String getKey(String name, String clusters, String unit) {
         return getKey(name, clusters, unit, false);
     }
@@ -207,7 +218,7 @@ public class ServiceInfo {
 
         if (!isEmpty(clusters) && !isEmpty(unit)) {
             return isAllIPs ? name + SPLITER + clusters + SPLITER + unit + SPLITER + ALL_IPS
-                    : name + SPLITER + clusters + SPLITER + unit;
+                : name + SPLITER + clusters + SPLITER + unit;
         }
 
         if (!isEmpty(clusters)) {
@@ -216,7 +227,7 @@ public class ServiceInfo {
 
         if (!isEmpty(unit)) {
             return isAllIPs ? name + SPLITER + EMPTY + SPLITER + unit + SPLITER + ALL_IPS :
-                    name + SPLITER + EMPTY + SPLITER + unit;
+                name + SPLITER + EMPTY + SPLITER + unit;
         }
 
         return isAllIPs ? name + SPLITER + ALL_IPS : name;

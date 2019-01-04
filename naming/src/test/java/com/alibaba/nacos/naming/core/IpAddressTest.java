@@ -15,12 +15,17 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class IpAddressTest {
 
@@ -49,5 +54,19 @@ public class IpAddressTest {
         Assert.assertEquals(8888, ipAddress.getPort());
         Assert.assertEquals(2, ipAddress.getWeight(), 0.001);
         Assert.assertEquals("TEST1", ipAddress.getClusterName());
+    }
+
+    @Test
+    public void rsInfo() {
+
+        RsInfo info = new RsInfo();
+        Map<String, String> metadata = new HashMap<>();
+        metadata.put("version", "2222");
+        info.setMetadata(metadata);
+        System.out.println(JSON.toJSONString(info));
+
+        String json = JSON.toJSONString(info);
+        RsInfo info1 = JSON.parseObject(json, RsInfo.class);
+        System.out.println(info1);
     }
 }

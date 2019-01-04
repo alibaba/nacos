@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.client.logger.option;
 
-import org.apache.log4j.AsyncAppender;
-
 import com.alibaba.nacos.client.logger.Level;
 import com.alibaba.nacos.client.logger.support.LogLog;
 
@@ -26,8 +24,8 @@ import java.util.List;
 
 /**
  * AbstractActiveOption
- * @author Nacos
  *
+ * @author Nacos
  */
 public abstract class AbstractActiveOption implements ActivateOption {
 
@@ -55,7 +53,7 @@ public abstract class AbstractActiveOption implements ActivateOption {
             for (Object[] arg : args) {
                 if (arg != null && arg.length == 3) {
                     try {
-                        Method m = object.getClass().getMethod((String) arg[0], (Class<?>[]) arg[1]);
+                        Method m = object.getClass().getMethod((String)arg[0], (Class<?>[])arg[1]);
                         m.invoke(object, arg[2]);
                     } catch (NoSuchMethodException e) {
                         LogLog.info("Can't find method for " + object.getClass() + " " + arg[0] + " " + arg[2]);

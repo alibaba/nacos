@@ -32,7 +32,7 @@ do
         MODE=$OPTARG
         ;;
         ?)
-        echo "未知参数"
+        echo "Unknown parameter"
         exit 1;;
     esac
 done
@@ -46,26 +46,46 @@ export CUSTOM_SEARCH_LOCATIONS=${DEFAULT_SEARCH_LOCATIONS},file:${BASE_DIR}/conf
 #===========================================================================================
 # JVM Configuration
 #===========================================================================================
-JAVA_OPT="${JAVA_OPT} -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
-JAVA_OPT="${JAVA_OPT} -Xdebug -Xrunjdwp:transport=dt_socket,address=9555,server=y,suspend=n"
-JAVA_OPT="${JAVA_OPT} -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8  -XX:-UseParNewGC"
-JAVA_OPT="${JAVA_OPT} -verbose:gc -Xloggc:${BASE_DIR}/logs/nacos_gc.log -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCApplicationStoppedTime -XX:+PrintAdaptiveSizePolicy"
-JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
 if [[ "${MODE}" == "standalone" ]]; then
+    JAVA_OPT="${JAVA_OPT} -Xms512m -Xmx512m -Xmn256m"
     JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
+else
+    JAVA_OPT="${JAVA_OPT} -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
+    JAVA_OPT="${JAVA_OPT} -XX:-OmitStackTraceInFastThrow -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${BASE_DIR}/logs/java_heapdump.hprof"
+    JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
+
 fi
-JAVA_OPT="${JAVA_OPT} -XX:-OmitStackTraceInFastThrow"
-JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
+
+JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
+if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
+  JAVA_OPT="${JAVA_OPT} -Xbootclasspath/a:${BASE_DIR}/plugins/cmdb"
+  JAVA_OPT="${JAVA_OPT} -Xlog:gc*:file=${BASE_DIR}/logs/nacos_gc.log:time,tags:filecount=10,filesize=102400"
+else
+  JAVA_OPT="${JAVA_OPT} -Djava.ext.dirs=${BASE_DIR}/plugins/cmdb"
+  JAVA_OPT="${JAVA_OPT} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
+fi
+
+JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
 JAVA_OPT="${JAVA_OPT} -jar ${BASE_DIR}/target/nacos-server.jar"
 JAVA_OPT="${JAVA_OPT} ${JAVA_OPT_EXT}"
 JAVA_OPT="${JAVA_OPT} --spring.config.location=${CUSTOM_SEARCH_LOCATIONS}"
+JAVA_OPT="${JAVA_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
+
 if [ ! -d "${BASE_DIR}/logs" ]; then
   mkdir ${BASE_DIR}/logs
 fi
-if [ ! -f "${BASE_DIR}/logs/start.log" ]; then
-  touch "${BASE_DIR}/logs/start.log"
+
+echo "$JAVA ${JAVA_OPT}"
+
+if [[ "${MODE}" == "standalone" ]]; then
+    echo "nacos is starting"
+    $JAVA ${JAVA_OPT}
+else
+    if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
+        touch "${BASE_DIR}/logs/start.out"
+    fi
+
+    echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
+    nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/start.out 2>&1 &
+    echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
 fi
-
-
-nohup $JAVA ${JAVA_OPT} > ${BASE_DIR}/logs/start.log 2>&1 &
-echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.log"

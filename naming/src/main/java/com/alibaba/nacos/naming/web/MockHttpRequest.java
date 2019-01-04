@@ -24,7 +24,7 @@ import java.security.Principal;
 import java.util.*;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class MockHttpRequest implements HttpServletRequest {
 
@@ -34,6 +34,19 @@ public class MockHttpRequest implements HttpServletRequest {
 
         MockHttpRequest request = new MockHttpRequest();
         request.params = params;
+        request.params.put("encoding", new String[]{"UTF-8"});
+
+        return request;
+    }
+
+    public static MockHttpRequest buildRequest2(Map<String, String> params) {
+
+        MockHttpRequest request = new MockHttpRequest();
+        Map<String, String[]> arrayMap = new HashMap<>(16);
+        for (String key : params.keySet()) {
+            arrayMap.put(key, new String[]{params.get(key)});
+        }
+        request.params = arrayMap;
         request.params.put("encoding", new String[]{"UTF-8"});
 
         return request;

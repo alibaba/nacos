@@ -15,15 +15,14 @@
  */
 package com.alibaba.nacos.client.logger;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import com.alibaba.nacos.client.logger.log4j.Log4jLoggerFactory;
 import com.alibaba.nacos.client.logger.log4j2.Log4j2LoggerFactory;
 import com.alibaba.nacos.client.logger.nop.NopLoggerFactory;
 import com.alibaba.nacos.client.logger.slf4j.Slf4jLoggerFactory;
 import com.alibaba.nacos.client.logger.support.ILoggerFactory;
 import com.alibaba.nacos.client.logger.support.LogLog;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <pre>
@@ -57,17 +56,12 @@ public class LoggerFactory {
             LogLog.info("Init JM logger with Slf4jLoggerFactory success, " + LoggerFactory.class.getClassLoader());
         } catch (Throwable e1) {
             try {
-                setLoggerFactory(new Log4jLoggerFactory());
-                LogLog.info("Init JM logger with Log4jLoggerFactory, " + LoggerFactory.class.getClassLoader());
+                setLoggerFactory(new Log4j2LoggerFactory());
+                LogLog.info("Init JM logger with Log4j2LoggerFactory, " + LoggerFactory.class.getClassLoader());
             } catch (Throwable e2) {
-                try {
-                    setLoggerFactory(new Log4j2LoggerFactory());
-                    LogLog.info("Init JM logger with Log4j2LoggerFactory, " + LoggerFactory.class.getClassLoader());
-                } catch (Throwable e3) {
-                    setLoggerFactory(new NopLoggerFactory());
-                    LogLog.warn("Init JM logger with NopLoggerFactory, pay attention. "
-                                + LoggerFactory.class.getClassLoader(), e2);
-                }
+                setLoggerFactory(new NopLoggerFactory());
+                LogLog.warn("Init JM logger with NopLoggerFactory, pay attention. "
+                    + LoggerFactory.class.getClassLoader(), e2);
             }
         }
 

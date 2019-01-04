@@ -19,8 +19,8 @@ import com.alibaba.nacos.config.server.manager.AbstractTask;
 
 /**
  * Notify task
- * @author Nacos
  *
+ * @author Nacos
  */
 public class NotifyTask extends AbstractTask {
 
@@ -30,40 +30,33 @@ public class NotifyTask extends AbstractTask {
     private long lastModified;
     private int failCount;
 
-
-	public NotifyTask(String dataId, String group, String tenant, long lastModified) {
-		this.dataId = dataId;
-		this.group = group;
-		this.setTenant(tenant);
-		this.lastModified = lastModified;
-		setTaskInterval(3000L);
-	}
-
+    public NotifyTask(String dataId, String group, String tenant, long lastModified) {
+        this.dataId = dataId;
+        this.group = group;
+        this.setTenant(tenant);
+        this.lastModified = lastModified;
+        setTaskInterval(3000L);
+    }
 
     public String getDataId() {
         return dataId;
     }
 
-
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-
 
     public String getGroup() {
         return group;
     }
 
-
     public void setGroup(String group) {
         this.group = group;
     }
 
-
     public int getFailCount() {
         return failCount;
     }
-
 
     public void setFailCount(int failCount) {
         this.failCount = failCount;
@@ -83,12 +76,12 @@ public class NotifyTask extends AbstractTask {
 
     }
 
-	public String getTenant() {
-		return tenant;
-	}
+    public String getTenant() {
+        return tenant;
+    }
 
-	public void setTenant(String tenant) {
-		this.tenant = tenant;
-	}
+    public void setTenant(String tenant) {
+        this.tenant = tenant;
+    }
 
 }

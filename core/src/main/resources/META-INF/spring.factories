@@ -1,0 +1,12 @@
+# ApplicationListener
+org.springframework.context.ApplicationListener=\
+com.alibaba.nacos.core.listener.StandaloneProfileApplicationListener
+
+# EnvironmentPostProcessor
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.alibaba.nacos.core.env.NacosDefaultPropertySourceEnvironmentPostProcessor
+
+# SpringApplicationRunListener
+org.springframework.boot.SpringApplicationRunListener=\
+com.alibaba.nacos.core.listener.LoggingSpringApplicationRunListener,\
+com.alibaba.nacos.core.listener.StartingSpringApplicationRunListener
