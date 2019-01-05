@@ -27,6 +27,7 @@ class NameSpace extends React.Component {
   constructor(props) {
     super(props);
     this.editgroup = React.createRef();
+    this.newnamespace = React.createRef();
     this.state = {
       loading: false,
       defaultNamespace: '',
@@ -262,7 +263,7 @@ class NameSpace extends React.Component {
   }
 
   addNameSpace() {
-    this.refs.newnamespace.openDialog(this.state.dataSource);
+    this.newnamespace.current.getInstance().openDialog(this.state.dataSource);
   }
 
   renderName(value, index, record) {
@@ -338,7 +339,7 @@ class NameSpace extends React.Component {
               </div>
             </div>
 
-            <NewNameSpace ref="newnamespace" getNameSpaces={this.getNameSpaces.bind(this)} />
+            <NewNameSpace ref={this.newnamespace} getNameSpaces={this.getNameSpaces.bind(this)} />
             <EditorNameSpace ref={this.editgroup} getNameSpaces={this.getNameSpaces.bind(this)} />
           </Loading>
         </div>

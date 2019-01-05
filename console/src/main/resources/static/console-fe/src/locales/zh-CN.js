@@ -342,6 +342,18 @@ const I18N_CONF = {
     sync: '同步',
     back: '返回',
   },
+  NewNameSpace: {
+    norepeat: '命名空间名称不能重复',
+    notice: '提示',
+    input: '请勿输入非法字符',
+    ok: '确定',
+    cancel: '取消',
+    newnamespce: '新建命名空间',
+    loading: '加载中...',
+    name: '命名空间名：',
+    namespacenotnull: '命名空间不能为空',
+    description: '描述：',
+  },
 };
 
 export default I18N_CONF;
