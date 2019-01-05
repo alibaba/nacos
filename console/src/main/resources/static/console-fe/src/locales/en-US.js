@@ -343,6 +343,18 @@ const I18N_CONF = {
     sync: 'Synchronize',
     back: 'Back',
   },
+  NewNameSpace: {
+    norepeat: 'Duplicate namespace. Please enter a different name.',
+    notice: 'Notice',
+    input: 'Illegal characters not allowed',
+    ok: 'OK',
+    cancel: 'Cancel',
+    newnamespce: 'Create Namespace',
+    loading: 'Loading...',
+    name: 'Namespace:',
+    namespacenotnull: 'Namespace cannot be empty',
+    description: 'Description:',
+  },
 };
 
 export default I18N_CONF;
