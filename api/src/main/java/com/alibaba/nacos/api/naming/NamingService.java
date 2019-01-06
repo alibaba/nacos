@@ -184,7 +184,7 @@ public interface NamingService {
     Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer) throws NacosException;
 
     /**
-     * Subscribe service to receive events of instances alteration
+     * subscribe service to receive events of instances alteration
      *
      * @param serviceName name of service
      * @param listener    event listener
