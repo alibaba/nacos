@@ -355,6 +355,9 @@ const I18N_CONF = {
     namespacenotnull: 'Namespace cannot be empty',
     description: 'Description:',
   },
+  NameSpaceList: {
+    notice: 'Notice',
+  },
 };
 
 export default I18N_CONF;

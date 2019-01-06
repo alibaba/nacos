@@ -354,6 +354,9 @@ const I18N_CONF = {
     namespacenotnull: '命名空间不能为空',
     description: '描述：',
   },
+  NameSpaceList: {
+    notice: '提示',
+  },
 };
 
 export default I18N_CONF;
