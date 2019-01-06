@@ -32,6 +32,9 @@ public class GenericPoller<T> implements Poller<T> {
     }
 
     public T next() {
+        if(items.size() == 0){
+            return null;
+        }
         return items.get(Math.abs(index.getAndIncrement() % items.size()));
     }
 

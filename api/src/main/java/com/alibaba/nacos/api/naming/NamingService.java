@@ -17,6 +17,8 @@ package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.loadbalancer.LoadBalancer;
+import com.alibaba.nacos.api.naming.loadbalancer.LoadBalancerEnum;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -138,6 +140,48 @@ public interface NamingService {
      * @throws NacosException
      */
     Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param balancerEnum  Nacos default-implement load-balancer
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, LoadBalancerEnum balancerEnum) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param clusters      a list of clusters should the instance belongs to
+     * @param balancerEnum  Nacos default-implement load-balancer
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param clusters      a list of clusters should the instance belongs to
+     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer) throws NacosException;
 
     /**
      * Subscribe service to receive events of instances alteration

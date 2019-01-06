@@ -61,6 +61,14 @@ public class Chooser<K, T> {
         return ref.items.get(ref.items.size() - 1);
     }
 
+    public T poll() {
+        return ref.poller.next();
+    }
+
+    public T pollWithWeight() {
+        return ref.weightPoller.next();
+    }
+
     public Chooser(K uniqueKey) {
         this(uniqueKey, new ArrayList<Pair<T>>());
     }
@@ -84,6 +92,7 @@ public class Chooser<K, T> {
         Ref<T> newRef = new Ref<T>(itemsWithWeight);
         newRef.refresh();
         newRef.poller = this.ref.poller.refresh(newRef.items);
+        newRef.weightPoller = new WeightPoller<T>(itemsWithWeight);
         this.ref = newRef;
     }
 
@@ -91,6 +100,7 @@ public class Chooser<K, T> {
         private List<Pair<T>> itemsWithWeight = new ArrayList<Pair<T>>();
         private List<T> items = new ArrayList<T>();
         private Poller<T> poller = new GenericPoller<T>(items);
+        private Poller<T> weightPoller = new WeightPoller<T>(itemsWithWeight);
         private double[] weights;
 
         @SuppressWarnings("unchecked")
@@ -161,7 +171,8 @@ public class Chooser<K, T> {
             if (getClass() != other.getClass()) {
                 return false;
             }
-            if (!(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
+            if (other.getClass().getGenericInterfaces().length == 1 &&
+                this.getClass().getGenericInterfaces().length == 1 && !(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
                 return false;
             }
             Ref<T> otherRef = (Ref<T>)other;
