@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.WebSecurityConfig;
+import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.console.utils.JWTTokenUtils;
 import org.slf4j.Logger;
@@ -27,12 +27,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
+ * auth
+ *
+ * @author wfnuser
  */
 @RestController("auth")
 @RequestMapping("/v1/auth")
@@ -61,7 +62,6 @@ public class AuthController {
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
         RestResult<String> rr = new RestResult<String>();
 
-        // TODO: 去数据库查询是否存在该用户
         try {
             //通过 AuthenticationManager（默认实现为ProviderManager）的authenticate方法验证 Authentication 对象
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
