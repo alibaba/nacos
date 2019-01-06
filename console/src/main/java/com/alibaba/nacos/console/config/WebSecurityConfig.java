@@ -1,6 +1,22 @@
-package com.alibaba.nacos;
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
+import com.alibaba.nacos.console.security.CustomUserDetailsService;
 import com.alibaba.nacos.console.security.JwtAuthenticationEntryPoint;
 import com.alibaba.nacos.console.utils.JWTTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,14 +28,11 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.filter.GenericFilterBean;
 
 /**
  * Spring security config
@@ -27,7 +40,6 @@ import org.springframework.web.filter.GenericFilterBean;
  * @author Nacos
  */
 @Configuration
-@EnableWebSecurity(debug = true)
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -36,9 +48,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public static final String AUTHORIZATION_TOKEN = "access_token";
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private CustomUserDetailsService userDetailsService;
 
-    // 自定义token验证异常处理逻辑类
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
@@ -53,15 +64,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-            //自定义获取用户信息
-            .userDetailsService(userDetailsService)
-            //设置密码加密
-            .passwordEncoder(passwordEncoder());
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
     }
 
     @Override
-    public void configure(WebSecurity web) throws Exception {
+    public void configure(WebSecurity web) {
         // TODO: we should use a better way to match the resources
         // requests for resource and auth api are always allowed
         web.ignoring()

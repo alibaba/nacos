@@ -1,3 +1,18 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.alibaba.nacos.console.utils;
 
 import io.jsonwebtoken.*;
@@ -15,6 +30,11 @@ import java.util.Date;
 import java.util.List;
 
 
+/**
+ * Jwt token tool
+ *
+ * @author wfnuser
+ */
 @Component
 public class JWTTokenUtils {
 
@@ -31,11 +51,8 @@ public class JWTTokenUtils {
     @PostConstruct
     public void init() {
         this.secretKey = "SecretKey";
-        int secondIn1day = 1000 * 60 * 60 * 24;
-        this.tokenValidityInMilliseconds = secondIn1day * 2L;
+        this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
     }
-
-    private final static long EXPIRATIONTIME = 432000000;
 
     // 创建Token
     public String createToken(Authentication authentication) {
@@ -56,7 +73,6 @@ public class JWTTokenUtils {
 
     // 获取用户权限
     public Authentication getAuthentication(String token) {
-        System.out.println("token:" + token);
         // 解析Token的payload
         Claims claims = Jwts.parser()
             .setSigningKey(secretKey)
