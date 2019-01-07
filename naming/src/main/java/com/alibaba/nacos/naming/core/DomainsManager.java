@@ -20,7 +20,6 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.misc.*;
-import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.Datum;
 import com.alibaba.nacos.naming.raft.RaftCore;
@@ -562,9 +561,6 @@ public class DomainsManager {
             } catch (InterruptedException ignore) {
             }
         }
-
-        PerformanceLoggerThread performanceLoggerThread = new PerformanceLoggerThread();
-        performanceLoggerThread.init(this);
 
         UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new DomainReporter(), 60000, TimeUnit.MILLISECONDS);
 

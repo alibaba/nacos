@@ -22,6 +22,8 @@ import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -30,8 +32,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
@@ -50,6 +54,8 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
     private static ExecutorService EXECUTOR;
 
+    private static AtomicInteger mysqlHealthCheck = new AtomicInteger();
+
     static {
 
         int processorCount = Runtime.getRuntime().availableProcessors();
@@ -65,6 +71,16 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                     }
                 }
         );
+
+        List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of("module", "naming"));
+        tags.add(Tag.of("name", "healthCheck"));
+        tags.add(Tag.of("type", "mysql"));
+        Metrics.gauge("nacos_monitor", tags, mysqlHealthCheck);
+    }
+
+    public static AtomicInteger getMysqlHealthCheck() {
+        return mysqlHealthCheck;
     }
 
     public MysqlHealthCheckProcessor() {
@@ -111,6 +127,7 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 }
 
                 EXECUTOR.execute(new MysqlCheckTask(ip, task));
+                mysqlHealthCheck.incrementAndGet();
             } catch (Exception e) {
                 ip.setCheckRT(Switch.getMysqlHealthParams().getMax());
                 checkFail(ip, task, "mysql:error:" + e.getMessage());
