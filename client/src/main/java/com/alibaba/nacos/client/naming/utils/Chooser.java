@@ -84,6 +84,8 @@ public class Chooser<K, T> {
         Ref<T> newRef = new Ref<T>(itemsWithWeight);
         newRef.refresh();
         newRef.poller = this.ref.poller.refresh(newRef.items);
+        newRef.weightPoller = new WeightPoller<T>(itemsWithWeight);
+
         this.ref = newRef;
     }
 
@@ -91,6 +93,8 @@ public class Chooser<K, T> {
         private List<Pair<T>> itemsWithWeight = new ArrayList<Pair<T>>();
         private List<T> items = new ArrayList<T>();
         private Poller<T> poller = new GenericPoller<T>(items);
+        private Poller<T> weightPoller = new WeightPoller<T>(itemsWithWeight);
+
         private double[] weights;
 
         @SuppressWarnings("unchecked")
