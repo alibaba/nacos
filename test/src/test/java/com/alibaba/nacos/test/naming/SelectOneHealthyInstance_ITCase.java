@@ -17,6 +17,7 @@ package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.loadbalancer.LoadBalancerEnum;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.After;
@@ -30,8 +31,12 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.net.ServerSocket;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
@@ -164,5 +169,55 @@ public class SelectOneHealthyInstance_ITCase {
         }
 
         Assert.assertTrue(false);
+    }
+
+    /**
+     * 获取一个健康的Instance
+     * @throws Exception
+     */
+    @Test
+    public void selectOneHealthyInstancesByLoadBalance() throws Exception {
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.1", 60000, "c1");
+        naming.registerInstance(serviceName, "127.0.0.1", 60001, "c2");
+        /**
+         * test weight poll
+         */
+        Instance instance4 = new Instance();
+        instance4.setIp("6.6.6.6");
+        instance4.setPort(6666);
+        instance4.setClusterName("c2");
+        instance4.setWeight(6);
+        naming.registerInstance(serviceName, instance4);
+
+        /**
+         * 确保服务已注册上去
+         */
+        TimeUnit.SECONDS.sleep(20);
+
+        /**
+         * serviceName, Random and Random-With-Weight and Poll and Poll-With-Weight and IP-Hash
+         */
+        System.out.println(naming.getAllInstances(serviceName).size());
+        Map<Instance, AtomicInteger> map = new HashMap<Instance, AtomicInteger>();
+        for(int i = 0; i < 100; i++){
+            Instance instance = null;
+            instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1","c2"), LoadBalancerEnum.POLL_BY_WEIGHT);
+
+            AtomicInteger times = map.get(instance);
+            if(times == null){
+                int timesVal = 0;
+                map.put(instance, new AtomicInteger(timesVal));
+            }
+            System.out.println(instance.getIp() + ":" + instance.getPort() + " repeat " + map.get(instance).incrementAndGet() + " times");
+
+        }
+
+        for(AtomicInteger integer : map.values()){
+            System.out.println("repeat " + integer.get() + " times");
+        }
+
     }
 }
