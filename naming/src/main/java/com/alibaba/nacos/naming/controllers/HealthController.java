@@ -28,7 +28,7 @@ import javax.servlet.http.HttpServletRequest;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @since 0.8.0
  */
-@RestController
+@RestController("namingHealthController")
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
 public class HealthController extends ApiCommands {
 
