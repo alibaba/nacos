@@ -26,9 +26,12 @@ import com.alibaba.nacos.client.naming.utils.NetUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author xuanyin
@@ -42,6 +45,8 @@ public class HostReactor {
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
 
     private Map<String, ServiceInfo> serviceInfoMap;
+
+    private AtomicInteger serviceInfoMapSize = new AtomicInteger();
 
     private Map<String, Object> updatingMap;
 
@@ -69,6 +74,11 @@ public class HostReactor {
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushRecver = new PushRecver(this);
+
+        List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of("module", "naming"));
+        tags.add(Tag.of("name", "subServiceCount"));
+        Metrics.gauge("nacos_monitor", tags, serviceInfoMapSize);
     }
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -181,6 +191,8 @@ public class HostReactor {
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
         }
+
+        serviceInfoMapSize.set(serviceInfoMap.size());
 
         LogUtils.LOG.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
             " -> " + JSON.toJSONString(serviceInfo.getHosts()));
