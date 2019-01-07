@@ -21,8 +21,6 @@ import com.alibaba.nacos.naming.misc.*;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.collections.CollectionUtils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +59,7 @@ public class DistroMapper {
         init();
 
         UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(new ServerStatusReporter(),
-                60000, TimeUnit.MILLISECONDS);
+            60000, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -159,10 +157,10 @@ public class DistroMapper {
         float curRatio = (float) newHealthyList.size() / allSiteSrvs.size();
 
         if (AUTO_DISABLED_HEALTH_CHECK
-                && curRatio > Switch.getDistroThreshold()
-                && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
+            && curRatio > Switch.getDistroThreshold()
+            && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
             Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
-                    "stable now, enable health check. current ratio: " + curRatio);
+                "stable now, enable health check. current ratio: " + curRatio);
 
             Switch.setHeathCheckEnabled(true);
 
@@ -174,7 +172,7 @@ public class DistroMapper {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
-                        "disable health check for " + STABLE_PERIOD + "ms from now on, healthList: " + healthyList + ",newHealthyList " + newHealthyList);
+                    "disable health check for " + STABLE_PERIOD + "ms from now on, healthList: " + healthyList + ",newHealthyList " + newHealthyList);
 
                 Switch.setHeathCheckEnabled(false);
                 AUTO_DISABLED_HEALTH_CHECK = true;
@@ -233,7 +231,7 @@ public class DistroMapper {
                 if (serverId.equals(newServerId)) {
                     if (s.alive != server.alive || s.weight != server.weight) {
                         Loggers.SRV_LOG.warn("server beat out of date, current: " + JSON.toJSONString(server)
-                                + ", last: " + JSON.toJSONString(s));
+                            + ", last: " + JSON.toJSONString(s));
                     }
                     tmpServerList.add(server);
                     continue;
@@ -281,10 +279,10 @@ public class DistroMapper {
         float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
 
         if (AUTO_DISABLED_HEALTH_CHECK
-                && curRatio > Switch.getDistroThreshold()
-                && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
+            && curRatio > Switch.getDistroThreshold()
+            && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
             Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
-                    "stable now, enable health check. current ratio: " + curRatio);
+                "stable now, enable health check. current ratio: " + curRatio);
 
             Switch.setHeathCheckEnabled(true);
 
@@ -296,7 +294,7 @@ public class DistroMapper {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
-                        "disable health check for " + STABLE_PERIOD + "ms from now on");
+                    "disable health check for " + STABLE_PERIOD + "ms from now on");
 
                 Switch.setHeathCheckEnabled(false);
                 AUTO_DISABLED_HEALTH_CHECK = true;
