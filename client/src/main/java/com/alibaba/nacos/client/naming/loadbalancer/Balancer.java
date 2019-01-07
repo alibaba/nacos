@@ -48,12 +48,8 @@ public final class Balancer {
      * @param serviceInfo The list of the host.
      * @return The random result of the host
      */
-    protected static Instance getHostByRandom(ServiceInfo serviceInfo) {
+    protected static Instance getHostByRandom(final ServiceInfo serviceInfo) {
         List<Instance> hosts = selectAll(serviceInfo);
-
-        if (CollectionUtils.isEmpty(hosts)) {
-            throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
-        }
 
         LogUtils.LOG.debug("entry random");
         Chooser<String, Instance> vipChooser = new Chooser<String, Instance>("load_balance_random");
@@ -62,7 +58,7 @@ public final class Balancer {
         List<Pair<Instance>> hostsWithoutWeight = new ArrayList<Pair<Instance>>();
         for (Instance host : hosts) {
             if (host.isHealthy()) {
-                hostsWithoutWeight.add(new Pair<Instance>(host, 1));
+                hostsWithoutWeight.add(new Pair<Instance>(host, host.getWeight()));
             }
         }
         LogUtils.LOG.debug("for (Host host : hosts)");
@@ -77,27 +73,23 @@ public final class Balancer {
      * @param serviceInfo The list of the host.
      * @return The random-weight result of the host
      */
-    protected static Instance getHostByRandomWeight(ServiceInfo serviceInfo) {
+    protected static Instance getHostByRandomWeight(final ServiceInfo serviceInfo) {
         List<Instance> hosts = selectAll(serviceInfo);
 
-        if (CollectionUtils.isEmpty(hosts)) {
-            throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
-        }
-
         LogUtils.LOG.debug("entry randomWithWeight");
-
         Chooser<String, Instance> vipChooser = new Chooser<String, Instance>("load_balance_random_with_weight");
         LogUtils.LOG.debug("new Chooser");
 
-        List<Pair<Instance>> hostsWithoutWeight = new ArrayList<Pair<Instance>>();
+        List<Pair<Instance>> hostsWithWeight = new ArrayList<Pair<Instance>>();
         for (Instance host : hosts) {
             if (host.isHealthy()) {
-                hostsWithoutWeight.add(new Pair<Instance>(host, host.getWeight()));
+                hostsWithWeight.add(new Pair<Instance>(host, host.getWeight()));
             }
         }
         LogUtils.LOG.debug("for (Host host : hosts)");
-        vipChooser.refresh(hostsWithoutWeight);
+        vipChooser.refresh(hostsWithWeight);
         LogUtils.LOG.debug("vipChooser.refresh");
+
         return vipChooser.randomWithWeight();
     }
 
@@ -107,29 +99,26 @@ public final class Balancer {
      * @param serviceInfo The list of the host.
      * @return The poll result of the host
      */
-    protected static Instance getHostByPoll(ServiceInfo serviceInfo) {
-        List<Instance> hosts = selectAll(serviceInfo);
-
-        if (CollectionUtils.isEmpty(hosts)) {
-            throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
-        }
+    protected static Instance getHostByPoll(final ServiceInfo serviceInfo) {
 
         LogUtils.LOG.debug("entry poll");
 
         Chooser<String, Instance> vipChooser = pollCacheChooser.get(serviceInfo.getName());
-        if (vipChooser == null) {
-            Chooser<String, Instance> tmpChooser = new Chooser<String, Instance>("load_balance_poll");
-            LogUtils.LOG.debug("new Chooser");
 
-            List<Pair<Instance>> hostsWithoutWeight = new ArrayList<Pair<Instance>>();
-            for (Instance host : hosts) {
-                if (host.isHealthy()) {
-                    hostsWithoutWeight.add(new Pair<Instance>(host, host.getWeight()));
-                }
+        List<Instance> hosts = selectAll(serviceInfo);
+        Chooser<String, Instance> tmpChooser = new Chooser<String, Instance>("load_balance_poll");
+        LogUtils.LOG.debug("new Chooser");
+        List<Pair<Instance>> hostsWithoutWeight = new ArrayList<Pair<Instance>>();
+        for (Instance host : hosts) {
+            if (host.isHealthy()) {
+                hostsWithoutWeight.add(new Pair<Instance>(host, host.getWeight()));
             }
-            LogUtils.LOG.debug("for (Host host : hosts)");
-            tmpChooser.refresh(hostsWithoutWeight);
-            LogUtils.LOG.debug("vipChooser.refresh");
+        }
+        LogUtils.LOG.debug("for (Host host : hosts)");
+        tmpChooser.refresh(hostsWithoutWeight);
+        LogUtils.LOG.debug("vipChooser.refresh");
+
+        if (vipChooser == null || !tmpChooser.getRef().equals(vipChooser.getRef())) {
             vipChooser = tmpChooser;
             pollCacheChooser.put(serviceInfo.getName(), vipChooser);
         }
@@ -142,33 +131,30 @@ public final class Balancer {
      * @param serviceInfo The serviceInfo contains serviceName and clusters and hosts
      * @return The poll-weight result of the host
      */
-    protected static Instance getHostByPollWeight(ServiceInfo serviceInfo) {
-        List<Instance> hosts = selectAll(serviceInfo);
-
-        if (CollectionUtils.isEmpty(hosts)) {
-            throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
-        }
+    protected static Instance getHostByPollWeight(final ServiceInfo serviceInfo) {
 
         LogUtils.LOG.debug("entry pollWithWeight");
 
         Chooser<String, Instance> vipChooser = pollCacheChooser.get(serviceInfo.getName());
-        if (vipChooser == null) {
-            Chooser<String, Instance> tmpChooser = new Chooser<String, Instance>("load_balance_poll_with_weight");
-            LogUtils.LOG.debug("new Chooser");
 
-            List<Pair<Instance>> hostsWithWeight = new ArrayList<Pair<Instance>>();
-            for (Instance host : hosts) {
-                if (host.isHealthy()) {
-                    hostsWithWeight.add(new Pair<Instance>(host, host.getWeight()));
-                }
+        List<Instance> hosts = selectAll(serviceInfo);
+        Chooser<String, Instance> tmpChooser = new Chooser<String, Instance>("load_balance_poll_with_weight");
+        LogUtils.LOG.debug("new Chooser");
+        List<Pair<Instance>> hostsWithWeight = new ArrayList<Pair<Instance>>();
+        for (Instance host : hosts) {
+            if (host.isHealthy()) {
+                hostsWithWeight.add(new Pair<Instance>(host, host.getWeight()));
             }
-            LogUtils.LOG.debug("for (Host host : hosts)");
-            tmpChooser.refresh(hostsWithWeight);
-            LogUtils.LOG.debug("vipChooser.refresh");
+        }
+        LogUtils.LOG.debug("for (Host host : hosts)");
+        tmpChooser.refresh(hostsWithWeight);
+        LogUtils.LOG.debug("vipChooser.refresh");
+
+        if (vipChooser == null || !tmpChooser.getRef().equals(vipChooser.getRef())) {
             vipChooser = tmpChooser;
             pollCacheChooser.put(serviceInfo.getName(), vipChooser);
         }
-         return vipChooser.pollWithWeight();
+        return vipChooser.pollWithWeight();
     }
 
 

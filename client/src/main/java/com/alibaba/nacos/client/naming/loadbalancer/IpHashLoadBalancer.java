@@ -1,9 +1,9 @@
 package com.alibaba.nacos.client.naming.loadbalancer;
 
-import com.alibaba.nacos.api.naming.listener.Event;
-import com.alibaba.nacos.api.naming.loadbalancer.LoadBalancer;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.core.EventDispatcher;
+import com.alibaba.nacos.client.naming.core.HostReactor;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -14,14 +14,17 @@ import java.util.List;
  * same ip will choose same index, It will be some problems when instances changed.
  * @author XCXCXCXCX
  */
-public class IpHashLoadBalancer implements LoadBalancer {
+public class IpHashLoadBalancer extends BaseLoadBalancer {
 
-    @Override
-    public Instance choose(ServiceInfo serviceInfo) {
-        return doChoose(serviceInfo.getHosts());
+    public IpHashLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, EventDispatcher eventDispatcher) {
+        super(serviceName, clusters, hostReactor, eventDispatcher, Boolean.TRUE);
     }
 
-    public Instance doChoose(List<Instance> instances) {
+    public Instance doChoose(final ServiceInfo serviceInfo) {
+        return doChoose0(serviceInfo.getHosts());
+    }
+
+    public Instance doChoose0(List<Instance> instances) {
         if(instances == null || instances.size() == 0){
             return null;
         }
@@ -34,13 +37,4 @@ public class IpHashLoadBalancer implements LoadBalancer {
         return instances.get(Math.abs(host.hashCode() % instances.size()));
     }
 
-    /**
-     * callback event
-     *
-     * @param event
-     */
-    @Override
-    public void onEvent(Event event) {
-        //do nothing
-    }
 }

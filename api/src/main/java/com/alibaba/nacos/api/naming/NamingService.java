@@ -176,15 +176,28 @@ public interface NamingService {
      * Select one healthy instance of service using predefined load balance strategy
      *
      * @param serviceName   name of service
-     * @param clusters      a list of clusters should the instance belongs to
      * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @param enableListener Boolean Value that determine if enable the Listener
      * @return qualified instance
      * @throws NacosException
      */
-    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer) throws NacosException;
-    
+    Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, Boolean enableListener) throws NacosException;
+
+
     /**
-     * subscribe service to receive events of instances alteration
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName    name of service
+     * @param clusters       a list of clusters should the instance belongs to
+     * @param loadBalancer   User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @param enableListener Boolean Value that determine if enable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, Boolean enableListener) throws NacosException;
+
+    /**
+     * Subscribe service to receive events of instances alteration
      *
      * @param serviceName name of service
      * @param listener    event listener

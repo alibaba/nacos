@@ -1,8 +1,11 @@
 package com.alibaba.nacos.client.naming.loadbalancer;
 
-import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.core.EventDispatcher;
+import com.alibaba.nacos.client.naming.core.HostReactor;
+
+import java.util.List;
 
 /**
  * Random-With-Weight Load-Balancer Implementation
@@ -10,20 +13,13 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
  */
 public class RandomByWeightLoadBalancer extends BaseLoadBalancer{
 
-    @Override
-    public Instance choose(ServiceInfo serviceInfo) {
-        return Balancer.getHostByRandomWeight(serviceInfo);
+    public RandomByWeightLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, EventDispatcher eventDispatcher) {
+        super(serviceName, clusters, hostReactor, eventDispatcher, Boolean.TRUE);
     }
 
-    /**
-     * callback event
-     * update cache when instances changed
-     *
-     * @param event
-     */
     @Override
-    public void onEvent(Event event) {
-        //do nothing
+    public Instance doChoose(final ServiceInfo serviceInfo) {
+        return Balancer.getHostByRandomWeight(serviceInfo);
     }
 
 }
