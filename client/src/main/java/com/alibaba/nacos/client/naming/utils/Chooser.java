@@ -61,6 +61,14 @@ public class Chooser<K, T> {
         return ref.items.get(ref.items.size() - 1);
     }
 
+    public T poll() {
+        return ref.poller.next();
+    }
+
+    public T pollWithWeight() {
+        return ref.weightPoller.next();
+    }
+
     public Chooser(K uniqueKey) {
         this(uniqueKey, new ArrayList<Pair<T>>());
     }
