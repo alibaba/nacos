@@ -16,21 +16,37 @@
 package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.healthcheck.HttpHealthCheckProcessor;
+import com.alibaba.nacos.naming.healthcheck.MysqlHealthCheckProcessor;
+import com.alibaba.nacos.naming.healthcheck.TcpSuperSenseProcessor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.raft.RaftCore;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.alibaba.nacos.naming.raft.RaftPeer.State.FOLLOWER;
+import static com.alibaba.nacos.naming.raft.RaftPeer.State.LEADER;
 
 /**
  * @author nacos
  */
+@Component
 public class PerformanceLoggerThread {
 
     @Autowired
@@ -46,11 +62,11 @@ public class PerformanceLoggerThread {
         }
     });
 
-    private static final long PERIOD = 1 * 60 * 60;
+    private static final long PERIOD = 5 * 60;
     private static final long HEALTH_CHECK_PERIOD = 5 * 60;
 
-    public void init(DomainsManager domainsManager) {
-        this.domainsManager = domainsManager;
+    @PostConstruct
+    public void init() {
         start();
     }
 
@@ -78,6 +94,15 @@ public class PerformanceLoggerThread {
 
     }
 
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void refresh() {
+        PushService.setFailedPush(0);
+        PushService.setTotalPush(0);
+        HttpHealthCheckProcessor.getHttpHealthCheck().set(0);
+        MysqlHealthCheckProcessor.getMysqlHealthCheck().set(0);
+        TcpSuperSenseProcessor.getTcpHealthCheck().set(0);
+    }
+
     class AllDomNamesTask implements Runnable {
 
         @Override
@@ -92,15 +117,71 @@ public class PerformanceLoggerThread {
     }
 
     class PerformanceLogTask implements Runnable {
+        private AtomicInteger domCount = new AtomicInteger(0);
+        private AtomicInteger ipCount = new AtomicInteger(0);
+        private AtomicLong maxPushCost = new AtomicLong(0);
+        private AtomicLong avgPushCost = new AtomicLong(0);
+        private AtomicLong leaderStatus = new AtomicLong(0);
+        private AtomicInteger totalPush = new AtomicInteger(0);
+        private AtomicInteger failedPush = new AtomicInteger(0);
+
+        public PerformanceLogTask() {
+
+            List<Tag> tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "domCount"));
+            Metrics.gauge("nacos_monitor", tags, domCount);
+
+            tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "ipCount"));
+            Metrics.gauge("nacos_monitor", tags, ipCount);
+
+            tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "maxPushCost"));
+            Metrics.gauge("nacos_monitor", tags, maxPushCost);
+
+            tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "avgPushCost"));
+            Metrics.gauge("nacos_monitor", tags, avgPushCost);
+
+            tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "leaderStatus"));
+            Metrics.gauge("nacos_monitor", tags, leaderStatus);
+
+            tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "totalPush"));
+            Metrics.gauge("nacos_monitor", tags, totalPush);
+
+            tags = new ArrayList<>();
+            tags.add(Tag.of("module", "naming"));
+            tags.add(Tag.of("name", "failedPush"));
+            Metrics.gauge("nacos_monitor", tags, failedPush);
+        }
 
         @Override
         public void run() {
             try {
-                int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getIPCount();
-                long maxPushMaxCost = getMaxPushCost();
-                long avgPushCost = getAvgPushCost();
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);
+                domCount.set(domainsManager.getDomCount());
+                ipCount.set(domainsManager.getIPCount());
+                maxPushCost.set(getMaxPushCost());
+                avgPushCost.set(getAvgPushCost());
+                totalPush.set(PushService.getTotalPush());
+                failedPush.set(PushService.getFailedPushCount());
+
+                if (RaftCore.isLeader()) {
+                    leaderStatus.set(1);
+                } else if (RaftCore.getPeerSet().local().state == FOLLOWER) {
+                    leaderStatus.set(0);
+                } else {
+                    leaderStatus.set(2);
+                }
+
+                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("PERFORMANCE", "Exception while print performance log.", e);
             }

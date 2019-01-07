@@ -20,6 +20,8 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.net.ConnectException;
@@ -30,6 +32,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
@@ -39,6 +42,7 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  * @author nacos
  */
 public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor implements Runnable {
+    private static AtomicInteger tcpHealthCheck = new AtomicInteger();
 
     private Map<String, BeatKey> keyMap = new ConcurrentHashMap<>();
 
@@ -78,6 +82,18 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
                 }
             }
     );
+
+    static {
+        List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of("module", "naming"));
+        tags.add(Tag.of("name", "healthCheck"));
+        tags.add(Tag.of("type", "tcp"));
+        Metrics.gauge("nacos_monitor", tags, tcpHealthCheck);
+    }
+
+    public static AtomicInteger getTcpHealthCheck() {
+        return tcpHealthCheck;
+    }
 
     private Selector selector;
 
@@ -127,6 +143,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
 
             Beat beat = new Beat(ip, task);
             taskQueue.add(beat);
+            tcpHealthCheck.incrementAndGet();
         }
 
 //        selector.wakeup();

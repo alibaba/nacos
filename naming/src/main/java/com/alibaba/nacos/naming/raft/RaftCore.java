@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.*;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
+import io.micrometer.core.instrument.Metrics;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
@@ -659,6 +660,9 @@ public class RaftCore {
                         public Integer onCompleted(Response response) throws Exception {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                                 Loggers.RAFT.error("VIPSRV-RAFT", "beat failed: " + response.getResponseBody() + ", peer: " + server);
+                                Metrics.counter("nacos_exception",
+                                    "module", "naming", "name", "leaderSendBeatFailed")
+                                    .increment();
                                 return 1;
                             }
 
@@ -670,6 +674,9 @@ public class RaftCore {
                         @Override
                         public void onThrowable(Throwable t) {
                             Loggers.RAFT.error("VIPSRV-RAFT", "error while sending heart-beat to peer: " + server, t);
+                            Metrics.counter("nacos_exception",
+                                "module", "naming", "name", "leaderSendBeatFailed")
+                                .increment();
                         }
                     });
                 } catch (Exception e) {
