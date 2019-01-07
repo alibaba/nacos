@@ -35,4 +35,17 @@ public class Pair<T> {
     public double weight() {
         return weight;
     }
+
+    @Override
+    public int hashCode() {
+        return item.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(!(obj instanceof Pair)){
+            return false;
+        }
+        return item.equals(((Pair) obj).item()) && weight == ((Pair)obj).weight();
+    }
 }

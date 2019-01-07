@@ -173,7 +173,8 @@ public class Chooser<K, T> {
             if (getClass() != other.getClass()) {
                 return false;
             }
-            if (!(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
+            if (other.getClass().getGenericInterfaces().length == 1 &&
+                this.getClass().getGenericInterfaces().length == 1 && !(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
                 return false;
             }
             Ref<T> otherRef = (Ref<T>)other;
