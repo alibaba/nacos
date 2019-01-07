@@ -22,6 +22,8 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -192,6 +194,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                     ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                     task.target);
 
+
                 //get delay time and set fail count to the task
                 int delay = getDelayTime(task);
 
@@ -207,6 +210,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                     new Object[] {task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified()});
 
+                Metrics.counter("nacos_exception",
+                    "module", "config", "name", "configNotify")
+                    .increment();
             }
             HttpClientUtils.closeQuietly(response);
         }
@@ -238,6 +244,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                 new Object[] {task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified()});
 
+            Metrics.counter("nacos_exception",
+                "module", "config", "name", "configNotify")
+                .increment();
         }
 
         @Override
@@ -262,6 +271,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                 new Object[] {task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified()});
 
+            Metrics.counter("nacos_exception",
+                "module", "config", "name", "configNotify")
+                .increment();
         }
 
         private NotifySingleTask task;

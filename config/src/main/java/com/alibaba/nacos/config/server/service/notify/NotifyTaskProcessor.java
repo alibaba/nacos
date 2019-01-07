@@ -22,6 +22,7 @@ import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
+import io.micrometer.core.instrument.Metrics;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
@@ -76,8 +78,17 @@ public class NotifyTaskProcessor implements TaskProcessor {
             if (result.code == HttpStatus.SC_OK) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
                     ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
+
+                Metrics.timer("nacos_timer",
+                    "module", "config",
+                    "name", "notifyRt")
+                    .record(delayed, TimeUnit.MILLISECONDS);
+
                 return true;
             } else {
+                Metrics.counter("nacos_exception",
+                    "module", "config", "name", "configNotify")
+                    .increment();
                 log.error("[notify-error] {}, {}, to {}, result {}", new Object[] {dataId, group,
                     serverIp, result.code});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
@@ -85,6 +96,9 @@ public class NotifyTaskProcessor implements TaskProcessor {
                 return false;
             }
         } catch (Exception e) {
+            Metrics.counter("nacos_exception",
+                "module", "config", "name", "configNotify")
+                .increment();
             log.error(
                 "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
                     + e.toString());

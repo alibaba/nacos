@@ -15,15 +15,22 @@
  */
 package com.alibaba.nacos.config.server.monitor;
 
+import com.alibaba.nacos.config.server.aspect.RequestLogAspect;
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
@@ -35,6 +42,9 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 @Service
 public class MemoryMonitor {
     @Autowired
+    private RequestLogAspect requestLogAspect;
+
+    @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
 
         TimerTaskService.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
@@ -45,9 +55,16 @@ public class MemoryMonitor {
 
         TimerTaskService.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
             DELAY_SECONDS, TimeUnit.SECONDS);
+
     }
 
     static final long DELAY_SECONDS = 10;
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void clear() {
+        requestLogAspect.getGetConfig().set(0);
+        requestLogAspect.getPublish().set(0);
+    }
 }
 
 class PrintGetConfigResponeTask implements Runnable {
@@ -58,6 +75,15 @@ class PrintGetConfigResponeTask implements Runnable {
 }
 
 class PrintMemoryTask implements Runnable {
+    private AtomicInteger configCount = new AtomicInteger();
+
+    public PrintMemoryTask() {
+        List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of("module", "config"));
+        tags.add(Tag.of("name", "configCount"));
+        Metrics.gauge("nacos_monitor", tags, configCount);
+    }
+
     @Override
     public void run() {
         int groupCount = ConfigService.groupCount();
@@ -65,28 +91,30 @@ class PrintMemoryTask implements Runnable {
         long subCount = ClientTrackService.subscriberCount();
         memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount,
             subCount);
+        configCount.set(groupCount);
     }
 }
 
 class NotifyTaskQueueMonitorTask implements Runnable {
     final private AsyncNotifyService notifySingleService;
+    private AtomicInteger notifyTask = new AtomicInteger();
+
 
     NotifyTaskQueueMonitorTask(AsyncNotifyService notifySingleService) {
         this.notifySingleService = notifySingleService;
+
+        List<Tag> tags = new ArrayList<>();
+        tags.add(Tag.of("module", "config"));
+        tags.add(Tag.of("name", "notifyTask"));
+        Metrics.gauge("nacos_monitor", tags, notifyTask);
     }
 
     @Override
     public void run() {
-
+        int size = ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size();
         memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
             new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(),
-                ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size()});
-
-        //      for(Map.Entry<String, Executor> entry: notifySingleService.getExecutors().entrySet()) {
-        //          ThreadPoolExecutor pool = (ThreadPoolExecutor) entry.getValue();
-        //          String target = entry.getKey();
-        //          memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-        //                  new Object[] { target, pool.getQueue().size() });
-        //      }
+                size});
+        notifyTask.set(size);
     }
 }

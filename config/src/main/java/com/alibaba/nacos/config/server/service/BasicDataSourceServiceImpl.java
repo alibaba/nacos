@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import io.micrometer.core.instrument.Metrics;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -303,6 +304,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
             if (!isFound) {
                 fatalLog.error("[master-db] master db not found.");
+                Metrics.counter("nacos_exception",
+                    "module", "config", "name", "db")
+                    .increment();
             }
         }
     }
@@ -325,6 +329,10 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                         fatalLog.error("[db-error] slave db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
+
+                    Metrics.counter("nacos_exception",
+                        "module", "config", "name", "db")
+                        .increment();
                 }
             }
         }
