@@ -62,8 +62,12 @@ public abstract class BaseLoadBalancer implements LoadBalancer, EventListener{
     }
 
     /**
-     * User can use ServiceInfo to control, ServiceInfo changed when instances changed
-     * @return Instance
+     * User implementation method is required
+     * to complete the load balancing selection algorithm
+     *
+     * @param serviceInfo   It provides the user with the service information,
+     *                       including the service name, current service list, etc.
+     * @return One instance
      */
     public abstract Instance doChoose(final ServiceInfo serviceInfo);
 

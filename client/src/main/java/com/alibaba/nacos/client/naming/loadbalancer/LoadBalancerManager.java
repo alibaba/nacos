@@ -21,13 +21,13 @@ public class LoadBalancerManager {
 
     private static final String CUSTOM_LOAD_BALANCER_NAME = "custom";
 
-    private static final Map<String, BaseLoadBalancer> loadBalancerCache =
+    private static final Map<String, BaseLoadBalancer> LOAD_BALANCER_CACHE =
         new ConcurrentHashMap<String, BaseLoadBalancer>();
 
     public static BaseLoadBalancer toLoadBalancer(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum,
                                                   final HostReactor hostReactor, final EventDispatcher eventDispatcher) throws NacosException {
         String key = serviceName + ServiceInfo.SPLITER + clusters.toString() + ServiceInfo.SPLITER + balancerEnum;
-        BaseLoadBalancer loadBalancer = loadBalancerCache.get(key);
+        BaseLoadBalancer loadBalancer = LOAD_BALANCER_CACHE.get(key);
         if(loadBalancer == null){
             if(balancerEnum == RANDOM){
                 loadBalancer = new RandomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher);
@@ -47,7 +47,7 @@ public class LoadBalancerManager {
                 throw new NacosException(NacosException.INVALID_PARAM,
                     "This strategy {" + balancerEnum.getDescription() + "} is not currently supported");
             }
-            loadBalancerCache.put(loadBalancer.getKey() + balancerEnum, loadBalancer);
+            LOAD_BALANCER_CACHE.put(loadBalancer.getKey() + balancerEnum, loadBalancer);
         }
         return loadBalancer;
 
@@ -57,10 +57,10 @@ public class LoadBalancerManager {
                                                     final HostReactor hostReactor, final EventDispatcher eventDispatcher,
                                                     LoadBalancer loadBalancer, Boolean enableListener){
         String key = serviceName + ServiceInfo.SPLITER + clusters.toString() + ServiceInfo.SPLITER + CUSTOM_LOAD_BALANCER_NAME;
-        BaseLoadBalancer baseLoadBalancer = loadBalancerCache.get(key);
+        BaseLoadBalancer baseLoadBalancer = LOAD_BALANCER_CACHE.get(key);
         if(baseLoadBalancer == null){
             baseLoadBalancer = new CustomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, enableListener);
-            loadBalancerCache.put(baseLoadBalancer.getKey() + CUSTOM_LOAD_BALANCER_NAME ,baseLoadBalancer);
+            LOAD_BALANCER_CACHE.put(baseLoadBalancer.getKey() + CUSTOM_LOAD_BALANCER_NAME ,baseLoadBalancer);
         }
 
         return baseLoadBalancer;

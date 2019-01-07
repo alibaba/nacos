@@ -39,7 +39,7 @@ public final class Balancer {
     /**
      * cache chooser
      */
-    static final Map<String, Chooser<String, Instance>> pollCacheChooser =
+    static final Map<String, Chooser<String, Instance>> POLL_CHOOSER_CACHE =
         new ConcurrentHashMap<String, Chooser<String, Instance>>();
 
     /**
@@ -103,7 +103,7 @@ public final class Balancer {
 
         LogUtils.LOG.debug("entry poll");
 
-        Chooser<String, Instance> vipChooser = pollCacheChooser.get(serviceInfo.getName());
+        Chooser<String, Instance> vipChooser = POLL_CHOOSER_CACHE.get(serviceInfo.getName());
 
         List<Instance> hosts = selectAll(serviceInfo);
         Chooser<String, Instance> tmpChooser = new Chooser<String, Instance>("load_balance_poll");
@@ -120,7 +120,7 @@ public final class Balancer {
 
         if (vipChooser == null || !tmpChooser.getRef().equals(vipChooser.getRef())) {
             vipChooser = tmpChooser;
-            pollCacheChooser.put(serviceInfo.getName(), vipChooser);
+            POLL_CHOOSER_CACHE.put(serviceInfo.getName(), vipChooser);
         }
         return vipChooser.poll();
     }
@@ -135,7 +135,7 @@ public final class Balancer {
 
         LogUtils.LOG.debug("entry pollWithWeight");
 
-        Chooser<String, Instance> vipChooser = pollCacheChooser.get(serviceInfo.getName());
+        Chooser<String, Instance> vipChooser = POLL_CHOOSER_CACHE.get(serviceInfo.getName());
 
         List<Instance> hosts = selectAll(serviceInfo);
         Chooser<String, Instance> tmpChooser = new Chooser<String, Instance>("load_balance_poll_with_weight");
@@ -152,7 +152,7 @@ public final class Balancer {
 
         if (vipChooser == null || !tmpChooser.getRef().equals(vipChooser.getRef())) {
             vipChooser = tmpChooser;
-            pollCacheChooser.put(serviceInfo.getName(), vipChooser);
+            POLL_CHOOSER_CACHE.put(serviceInfo.getName(), vipChooser);
         }
         return vipChooser.pollWithWeight();
     }
