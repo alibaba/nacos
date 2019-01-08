@@ -357,6 +357,19 @@ const I18N_CONF = {
   NameSpaceList: {
     notice: '提示',
   },
+  ConfigDetail: {
+    official: '正式',
+    error: '错误',
+    configurationDetails: '配置详情',
+    collapse: '收起',
+    more: '更多高级选项',
+    home: '归属应用：',
+    tags: '标签:',
+    description: '描述：',
+    betaRelease: 'Beta发布：',
+    configuration: '配置内容：',
+    back: '返回',
+  },
 };
 
 export default I18N_CONF;
