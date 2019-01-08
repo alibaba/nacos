@@ -358,6 +358,19 @@ const I18N_CONF = {
   NameSpaceList: {
     notice: 'Notice',
   },
+  ConfigDetail: {
+    official: 'Official',
+    error: 'Error',
+    configurationDetails: 'Configuration Details',
+    collapse: 'Collapse',
+    more: 'Advanced Options',
+    home: 'Application:',
+    tags: 'Tags:',
+    description: 'Description:',
+    betaRelease: 'Beta Publish:',
+    configuration: 'Configuration Content:',
+    back: 'Back',
+  },
 };
 
 export default I18N_CONF;
