@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.naming;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
@@ -41,6 +42,7 @@ public class NamingBase {
     public static final String TEST_IP_4_DOM_2 = "127.0.0.2";
     public static final String TEST_PORT_4_DOM_2 = "7070";
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
+    public static final String TEST_SERVER_STATUS = "UP";
 
     public static final int TEST_PORT = 8080;
 
