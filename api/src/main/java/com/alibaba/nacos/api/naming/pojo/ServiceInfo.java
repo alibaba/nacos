@@ -174,6 +174,19 @@ public class ServiceInfo {
     }
 
     @JSONField(serialize = false)
+    public static ServiceInfo fromKey(String key) {
+        ServiceInfo serviceInfo = new ServiceInfo();
+
+        if (key.contains(SPLITER)) {
+            serviceInfo.setName(key.split(SPLITER)[0]);
+            serviceInfo.setClusters(key.split(SPLITER)[1]);
+            return serviceInfo;
+        }
+        serviceInfo.setName(key);
+        return serviceInfo;
+    }
+
+    @JSONField(serialize = false)
     public static String getKey(String name, String clusters) {
 
         if (!isEmpty(clusters)) {
