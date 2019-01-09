@@ -32,7 +32,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class MultipleTenant_ITCase {
+public class MultiTenant_ITCase {
 
     private NamingService naming;
     private NamingService naming1;
@@ -45,19 +45,16 @@ public class MultipleTenant_ITCase {
     @Before
     public void init() throws Exception {
         naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-        //naming = NamingFactory.createNamingService(serverList);
 
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-1");
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
-        //properties.put(PropertyKeyConst.SERVER_ADDR, serverList);
         naming1 = NamingFactory.createNamingService(properties);
 
 
         properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-2");
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
-        //properties.put(PropertyKeyConst.SERVER_ADDR, serverList);
         naming2 = NamingFactory.createNamingService(properties);
     }
 
@@ -297,14 +294,12 @@ public class MultipleTenant_ITCase {
         Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
 
         Instance instance = naming1.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
-        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
-        instance = naming2.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
-        Assert.assertNull(instance);
+        Assert.assertEquals("11.11.11.11", instance.getIp());
 
         naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT);
         TimeUnit.SECONDS.sleep(2);
         instance = naming1.selectOneHealthyInstance(serviceName);
-        Assert.assertEquals("22.22.22.22", instances.get(0).getIp());
+        Assert.assertEquals("22.22.22.22", instance.getIp());
     }
 
     private void verifyInstanceListForNaming(NamingService naming, int size, String serviceName) throws Exception {
