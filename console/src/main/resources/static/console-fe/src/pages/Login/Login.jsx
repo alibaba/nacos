@@ -14,7 +14,7 @@ class Login extends React.Component {
   handleSubmit = values => {
     const { locale = {} } = this.props;
     request({
-      type: 'get',
+      type: 'post',
       url: 'v1/auth/login',
       data: values,
       success: res => {
