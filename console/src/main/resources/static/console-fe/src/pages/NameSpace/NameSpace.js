@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
 import NewNameSpace from '../../components/NewNameSpace';
@@ -23,6 +24,10 @@ import './index.scss';
 @ConfigProvider.config
 class NameSpace extends React.Component {
   static displayName = 'NameSpace';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);

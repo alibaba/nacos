@@ -1,9 +1,20 @@
 {
   "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "useBuiltIns": "entry"
+      }
+    ],
     "react-app"
   ],
   "plugins": [
-    "transform-decorators-legacy",
+    [
+      "@babel/plugin-proposal-decorators",
+      {
+        "legacy": true
+      }
+    ],
     [
       "babel-plugin-import",
       {

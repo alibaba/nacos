@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Button, ConfigProvider, Dialog, Grid, Icon } from '@alifd/next';
 
 import './index.scss';
@@ -21,6 +22,10 @@ const { Row, Col } = Grid;
 @ConfigProvider.config
 class DeleteDialog extends React.Component {
   static displayName = 'DeleteDialog';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -35,6 +40,10 @@ class DeleteDialog extends React.Component {
   }
 
   componentDidMount() {
+    this.initData();
+  }
+
+  initData() {
     const { locale = {} } = this.props;
     this.setState({ title: locale.confManagement });
   }
