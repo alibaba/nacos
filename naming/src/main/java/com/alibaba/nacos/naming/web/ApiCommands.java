@@ -334,6 +334,7 @@ public class ApiCommands {
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
+            stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
             addIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
             Loggers.SRV_LOG.warn("ip not found, register it, dom:" + dom + ", ip:" + ipAddress);
         }
