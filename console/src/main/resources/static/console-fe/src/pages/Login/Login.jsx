@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Form, Input, Message } from '@alifd/next';
+import { Card, Form, Input, Message, ConfigProvider } from '@alifd/next';
 import { withRouter } from 'react-router-dom';
 
 import './index.scss';
@@ -9,8 +9,10 @@ import { request } from '../../globalLib';
 const FormItem = Form.Item;
 
 @withRouter
+@ConfigProvider.config
 class Login extends React.Component {
   handleSubmit = values => {
+    const { locale = {} } = this.props;
     request({
       type: 'get',
       url: 'v1/auth/login',
@@ -23,16 +25,23 @@ class Login extends React.Component {
           // TODO: 使用react router
           this.props.history.push('/');
         }
+        if (res.code === 401) {
+          Message.error({
+            content: locale.invalidUsernameOrPassword,
+          });
+        }
       },
       error: () => {
         Message.error({
-          content: '登录失败',
+          content: locale.invalidUsernameOrPassword,
         });
       },
     });
   };
 
   render() {
+    const { locale = {} } = this.props;
+
     return (
       <div className="home-page">
         <Header />
@@ -56,16 +65,20 @@ class Login extends React.Component {
           <div className="animation animation4" />
           <div className="animation animation5" />
           <Card className="login-panel" contentHeight="auto">
-            <div className="login-header">请登录</div>
+            <div className="login-header">{locale.pleaseLogin}</div>
             <Form className="login-form">
               <FormItem>
-                <Input htmlType="text" name="username" placeholder="请输入账号名" />
+                <Input htmlType="text" name="username" placeholder={locale.pleaseInputUsername} />
               </FormItem>
               <FormItem>
-                <Input htmlType="password" name="password" placeholder="请输入密码" />
+                <Input
+                  htmlType="password"
+                  name="password"
+                  placeholder={locale.pleaseInputPassword}
+                />
               </FormItem>
               <FormItem label=" ">
-                <Form.Submit onClick={this.handleSubmit}>提交</Form.Submit>
+                <Form.Submit onClick={this.handleSubmit}>{locale.submit}</Form.Submit>
               </FormItem>
             </Form>
           </Card>

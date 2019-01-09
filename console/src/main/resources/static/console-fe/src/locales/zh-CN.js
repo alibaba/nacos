@@ -19,6 +19,13 @@ const I18N_CONF = {
     community: '社区',
     languageSwitchButton: 'En',
   },
+  Login: {
+    pleaseLogin: '请登录',
+    submit: '提交',
+    pleaseInputUsername: '请输入用户名',
+    pleaseInputPassword: '请输入密码',
+    invalidUsernameOrPassword: '用户名或密码错误',
+  },
   MainLayout: {
     nacosName: 'NACOS',
     nacosVersion: '0.7.0',
