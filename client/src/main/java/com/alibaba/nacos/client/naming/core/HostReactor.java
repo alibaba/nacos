@@ -16,14 +16,12 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
-import com.alibaba.nacos.client.naming.utils.NetUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -56,8 +54,25 @@ public class HostReactor {
 
     private String cacheDir;
 
+    private ScheduledExecutorService executor;
+
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
+        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+    }
+
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
-                       boolean loadCacheAtStart) {
+                       boolean loadCacheAtStart, int pollingThreadCount) {
+
+        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.client.naming.updater");
+                return thread;
+            }
+        });
+
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
@@ -71,16 +86,6 @@ public class HostReactor {
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushRecver = new PushRecver(this);
     }
-
-    private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r, "com.alibaba.nacos.client.naming.updater");
-            thread.setDaemon(true);
-
-            return thread;
-        }
-    });
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
         return serviceInfoMap;
