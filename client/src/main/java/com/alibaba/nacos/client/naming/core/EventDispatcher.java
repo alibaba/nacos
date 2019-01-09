@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,7 +82,18 @@ public class EventDispatcher {
                     iter.remove();
                 }
             }
+            if (observers.isEmpty()) {
+                observerMap.remove(ServiceInfo.getKey(serviceName, clusters));
+            }
         }
+    }
+
+    public List<ServiceInfo> getSubscribeServices() {
+        List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
+        for (String key : observerMap.keySet()) {
+            serviceInfos.add(ServiceInfo.fromKey(key));
+        }
+        return serviceInfos;
     }
 
     public void serviceChanged(ServiceInfo serviceInfo) {

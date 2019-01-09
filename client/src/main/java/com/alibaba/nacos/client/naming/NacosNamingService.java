@@ -275,7 +275,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public List<ServiceInfo> getSubscribeServices() {
-        return new ArrayList<ServiceInfo>(hostReactor.getServiceInfoMap().values());
+        return eventDispatcher.getSubscribeServices();
     }
 
     @Override
