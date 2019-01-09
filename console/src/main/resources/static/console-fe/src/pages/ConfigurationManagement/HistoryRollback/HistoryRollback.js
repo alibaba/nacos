@@ -300,10 +300,6 @@ class HistoryRollback extends React.Component {
             left={locale.toConfigure}
             namespaceCallBack={this.cleanAndGetData.bind(this)}
           />
-          {/** <div className={'namespacewrapper'}>
-                              <NameSpaceList namespaceCallBack={this.cleanAndGetData.bind(this)} />
-                           </div>* */}
-
           <div>
             <Form inline field={this.field}>
               <Form.Item label="Data ID:" required>

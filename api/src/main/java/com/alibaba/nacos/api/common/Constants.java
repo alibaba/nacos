@@ -88,11 +88,6 @@ public class Constants {
     /**
      * millisecond
      */
-    public static final int CONN_TIMEOUT = 2000;
-
-    /**
-     * millisecond
-     */
     public static final int SO_TIMEOUT = 60000;
 
     /**

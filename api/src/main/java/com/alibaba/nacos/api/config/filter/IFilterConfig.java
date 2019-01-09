@@ -27,14 +27,14 @@ public interface IFilterConfig {
      *
      * @return
      */
-    public String getFilterName();
+    String getFilterName();
 
     /**
-     * get param
+     * Get init param
      *
      * @param name
      * @return param
      */
-    public Object getInitParameter(String name);
+    Object getInitParameter(String name);
 
 }

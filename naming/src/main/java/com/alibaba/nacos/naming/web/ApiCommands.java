@@ -65,6 +65,7 @@ import java.security.AccessControlException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -148,7 +149,7 @@ public class ApiCommands {
         String dom = WebUtils.required(request, "dom");
 
         VirtualClusterDomain domObj
-                = (VirtualClusterDomain) domainsManager.getDomain(dom);
+            = (VirtualClusterDomain) domainsManager.getDomain(dom);
         if (domObj == null) {
             throw new IllegalArgumentException("request dom doesn't exist");
         }
@@ -289,7 +290,7 @@ public class ApiCommands {
             clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
         }
 
-        Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: " + clientBeat + ", serviceName:" + dom);
+        Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: " + clientBeat + ", serviceName:" + dom + ", client:" + request.getRemoteAddr());
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
         Map<String, String[]> stringMap = new HashMap<>(16);
@@ -323,7 +324,15 @@ public class ApiCommands {
             doAddCluster4Dom(MockHttpRequest.buildRequest(stringMap));
         }
 
+        JSONObject result = new JSONObject();
+
+        result.put("clientBeatInterval", Switch.getClientBeatInterval());
+
         if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
+
+            if (!virtualClusterDomain.getEnableClientBeat()) {
+                return result;
+            }
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             addIP4Dom(MockHttpRequest.buildRequest(stringMap));
@@ -345,7 +354,7 @@ public class ApiCommands {
             }
 
             String url = "http://" + server + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/clientBeat";
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/clientBeat";
             HttpClient.HttpResult httpResult = HttpClient.httpGet(url, null, proxyParams);
 
             if (httpResult.code != HttpURLConnection.HTTP_OK) {
@@ -356,10 +365,6 @@ public class ApiCommands {
                 virtualClusterDomain.processClientBeat(clientBeat);
             }
         }
-
-        JSONObject result = new JSONObject();
-
-        result.put("clientBeatInterval", Switch.getClientBeatInterval());
 
         return result;
     }
@@ -632,7 +637,7 @@ public class ApiCommands {
         String setSiteGroupForce = WebUtils.optional(request, "setSiteGroupForce", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(sitegroup) || !StringUtils.isEmpty(setSiteGroupForce)) {
             Cluster cluster
-                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -643,7 +648,7 @@ public class ApiCommands {
         String cktype = WebUtils.optional(request, "cktype", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(cktype)) {
             Cluster cluster
-                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -672,7 +677,7 @@ public class ApiCommands {
         String defIPPort = WebUtils.optional(request, "defIPPort", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(defIPPort)) {
             Cluster cluster
-                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -683,7 +688,7 @@ public class ApiCommands {
         String submask = WebUtils.optional(request, "submask", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(submask)) {
             Cluster cluster
-                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -694,7 +699,7 @@ public class ApiCommands {
         String ipPort4Check = WebUtils.optional(request, "ipPort4Check", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(ipPort4Check)) {
             Cluster cluster
-                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -705,7 +710,7 @@ public class ApiCommands {
         String defCkPort = WebUtils.optional(request, "defCkPort", StringUtils.EMPTY);
         if (!StringUtils.isEmpty(defCkPort)) {
             Cluster cluster
-                    = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
+                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
             if (cluster == null) {
                 throw new IllegalStateException("cluster not found");
             }
@@ -758,7 +763,7 @@ public class ApiCommands {
     public JSONObject hello(HttpServletRequest request) {
         JSONObject result = new JSONObject();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + domainsManager.getRaftDomMap().size()
-                + ", local port:" + RunningConfig.getServerPort());
+            + ", local port:" + RunningConfig.getServerPort());
         return result;
     }
 
@@ -817,16 +822,16 @@ public class ApiCommands {
 
         if (!RaftCore.isLeader(clientIP)) {
             Loggers.RAFT.warn("peer(" + JSON.toJSONString(clientIP) + ") tried to publish " +
-                    "data but wasn't leader, leader: " + JSON.toJSONString(RaftCore.getLeader()));
+                "data but wasn't leader, leader: " + JSON.toJSONString(RaftCore.getLeader()));
             throw new IllegalStateException("peer(" + clientIP + ") tried to publish " +
-                    "data but wasn't leader");
+                "data but wasn't leader");
         }
 
         if (term < RaftCore.getPeerSet().local().term.get()) {
             Loggers.RAFT.warn("out of date publish, pub-term: "
-                    + JSON.toJSONString(clientIP) + ", cur-term: " + JSON.toJSONString(RaftCore.getPeerSet().local()));
+                + JSON.toJSONString(clientIP) + ", cur-term: " + JSON.toJSONString(RaftCore.getPeerSet().local()));
             throw new IllegalStateException("out of date publish, pub-term:"
-                    + term + ", cur-term: " + RaftCore.getPeerSet().local().term.get());
+                + term + ", cur-term: " + RaftCore.getPeerSet().local().term.get());
         }
 
         RaftCore.getPeerSet().local().resetLeaderDue();
@@ -853,8 +858,6 @@ public class ApiCommands {
             }
         }
 
-        long timestamp = Long.parseLong(WebUtils.required(request, "timestamp"));
-
         if (CollectionUtils.isEmpty(newIPs)) {
             throw new IllegalArgumentException("Empty ip list");
         }
@@ -865,10 +868,10 @@ public class ApiCommands {
             Collection diff = CollectionUtils.subtract(newIPs, oldIPs);
             if (diff.size() != 0) {
                 throw new IllegalArgumentException("these IPs are not present: " + Arrays.toString(diff.toArray())
-                        + ", if you want to add them, remove updateOnly flag");
+                    + ", if you want to add them, remove updateOnly flag");
             }
         }
-        domainsManager.easyAddIP4Dom(dom, newIPs, timestamp, term);
+        domainsManager.easyAddIP4Dom(dom, newIPs, term);
 
         return "ok";
     }
@@ -885,7 +888,9 @@ public class ApiCommands {
             proxyParams.put(entry.getKey(), entry.getValue()[0]);
         }
 
-        Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments:" + proxyParams);
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments:" + proxyParams + ", client:" + request.getRemoteAddr());
+        }
 
         String ipListString = WebUtils.required(request, "ipList");
         final List<String> ipList;
@@ -917,7 +922,7 @@ public class ApiCommands {
             }
 
             String url = "http://" + server
-                    + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/addIP4Dom";
+                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/addIP4Dom";
             HttpClient.HttpResult result1 = HttpClient.httpPost(url, null, proxyParams);
 
             if (result1.code != HttpURLConnection.HTTP_OK) {
@@ -929,7 +934,10 @@ public class ApiCommands {
         }
 
         final String dom = WebUtils.required(request, "dom");
-        if (domainsManager.getDomain(dom) == null) {
+
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(dom);
+
+        if (domain == null) {
             throw new IllegalStateException("dom doesn't exist: " + dom);
         }
 
@@ -941,17 +949,18 @@ public class ApiCommands {
 
         if (updateOnly) {
             //make sure every IP is in the dom, otherwise refuse update
-            List<IpAddress> oldIPs = domainsManager.getDomain(dom).allIPs();
+            List<IpAddress> oldIPs = domain.allIPs();
             Collection diff = CollectionUtils.subtract(newIPs, oldIPs);
             if (diff.size() != 0) {
                 throw new IllegalArgumentException("these IPs are not present: " + Arrays.toString(diff.toArray())
-                        + ", if you want to add them, remove updateOnly flag");
+                    + ", if you want to add them, remove updateOnly flag");
             }
         }
 
-        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
+        String key = UtilsAndCommons.getIPListStoreKey(domain);
 
         Datum datum = RaftCore.getDatum(key);
+
         if (datum == null) {
             try {
                 domainsManager.getDom2LockMap().get(dom).lock();
@@ -966,61 +975,103 @@ public class ApiCommands {
             }
         }
 
-        long timestamp = RaftCore.getDatum(key).timestamp.incrementAndGet();
+        long timestamp = RaftCore.getDatum(key).timestamp.get();
 
         if (RaftCore.isLeader()) {
             try {
-                domainsManager.getDom2LockMap().get(dom).lock();
+
+                RaftCore.OPERATE_LOCK.lock();
+
                 proxyParams.put("clientIP", NetUtils.localServer());
                 proxyParams.put("notify", "true");
-
                 proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
                 proxyParams.put("timestamp", String.valueOf(timestamp));
 
-                for (final RaftPeer peer : RaftCore.getPeers()) {
+                onAddIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
 
-                    UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-                        @Override
-                        public void run() {
-
-                            String server = peer.ip;
-
-                            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-                            }
-
-                            String url = "http://" + server
-                                    + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/onAddIP4Dom";
-
-                            try {
-                                HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
-                                    @Override
-                                    public Integer onCompleted(Response response) throws Exception {
-                                        if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                            Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
-                                                    + ",ipList = " + ipList + ",code: " + response.getStatusCode()
-                                                    + ", caused " + response.getResponseBody() + ", server: " + peer.ip);
-                                            return 1;
-                                        }
-                                        return 0;
-                                    }
-                                });
-                            } catch (Exception e) {
-                                Loggers.SRV_LOG.error("ADD-IP", "failed when publish to peer." + url, e);
-                            }
-                        }
-                    });
+                if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
+                    syncOnAddIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                } else {
+                    asyncOnAddIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
                 }
-
-                Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-ADD}" + " new: "
-                        + Arrays.toString(ipList.toArray()) + " operatorIP: "
-                        + WebUtils.optional(request, "clientIP", "unknown"));
             } finally {
-                domainsManager.getDom2LockMap().get(dom).unlock();
+                RaftCore.OPERATE_LOCK.unlock();
             }
+
         }
 
         return "ok";
+    }
+
+    private void syncOnUpdateIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP, String action) throws InterruptedException {
+
+        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
+
+        final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
+        updateIpPublish(dom, ipList, proxyParams, clientIP, countDownLatch, action);
+        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
+            Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
+            throw new IllegalArgumentException("data publish failed, key=" + key);
+        }
+    }
+
+    private void syncOnAddIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) throws InterruptedException {
+        syncOnUpdateIP4Dom(dom, ipList, proxyParams, clientIP, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
+    }
+
+    private void asyncOnAddIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) {
+        updateIpPublish(dom, ipList, proxyParams, clientIP, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
+    }
+
+    private void syncOnRemvIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) throws InterruptedException {
+        syncOnUpdateIP4Dom(dom, ipList, proxyParams, clientIP, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
+    }
+
+    private void asyncOnRemvIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) {
+        updateIpPublish(dom, ipList, proxyParams, clientIP, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
+    }
+
+    private void updateIpPublish(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP, CountDownLatch countDownLatch, String action) {
+
+        for (final String peer : RaftCore.getPeerSet().allServersWithoutMySelf()) {
+
+            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+
+                    String server = peer;
+
+                    if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+                        server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+                    }
+
+                    String api = action.equals("remove") ? "onRemvIP4Dom" : "onAddIP4Dom";
+
+                    String url = "http://" + server
+                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api;
+
+                    try {
+                        HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
+                            @Override
+                            public Integer onCompleted(Response response) throws Exception {
+                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                    Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
+                                        + ",ipList = " + ipList + ",code: " + response.getStatusCode()
+                                        + ", caused " + response.getResponseBody() + ", server: " + peer);
+                                    return 1;
+                                }
+                                if (countDownLatch != null) {
+                                    countDownLatch.countDown();
+                                }
+                                return 0;
+                            }
+                        });
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error(action + "-IP", "failed when publish to peer." + url, e);
+                    }
+                }
+            });
+        }
     }
 
     @NeedAuth
@@ -1128,12 +1179,12 @@ public class ApiCommands {
         try {
             if (udpPort > 0 && PushService.canEnablePush(agent)) {
                 PushService.addClient(dom,
-                        clusters,
-                        agent,
-                        new InetSocketAddress(clientIP, udpPort),
-                        pushDataSource,
-                        tenant,
-                        app);
+                    clusters,
+                    agent,
+                    new InetSocketAddress(clientIP, udpPort),
+                    pushDataSource,
+                    tenant,
+                    app);
                 cacheMillis = Switch.getPushCacheMillis(dom);
             }
         } catch (Exception e) {
@@ -1173,7 +1224,7 @@ public class ApiCommands {
         if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, " +
-                    "dom: " + dom);
+                "dom: " + dom);
             if (isCheck) {
                 result.put("reachProtectThreshold", true);
             }
@@ -1229,37 +1280,142 @@ public class ApiCommands {
         return result;
     }
 
+    @RequestMapping("/onRemvIP4Dom")
+    public void onRemvIP4Dom(HttpServletRequest request) throws Exception {
+        if (Switch.getDisableAddIP()) {
+            throw new AccessControlException("Deleting IP for dom is forbidden now.");
+        }
+
+        String clientIP = WebUtils.required(request, "clientIP");
+        long term = Long.parseLong(WebUtils.required(request, "term"));
+
+        if (!RaftCore.isLeader(clientIP)) {
+            Loggers.RAFT.warn("peer(" + JSON.toJSONString(clientIP) + ") tried to publish " +
+                "data but wasn't leader, leader: " + JSON.toJSONString(RaftCore.getLeader()));
+            throw new IllegalStateException("peer(" + clientIP + ") tried to publish " +
+                "data but wasn't leader");
+        }
+
+        if (term < RaftCore.getPeerSet().local().term.get()) {
+            Loggers.RAFT.warn("out of date publish, pub-term: "
+                + JSON.toJSONString(clientIP) + ", cur-term: " + JSON.toJSONString(RaftCore.getPeerSet().local()));
+            throw new IllegalStateException("out of date publish, pub-term:"
+                + term + ", cur-term: " + RaftCore.getPeerSet().local().term);
+        }
+
+        RaftCore.getPeerSet().local().resetLeaderDue();
+
+        final String dom = WebUtils.required(request, "dom");
+        if (domainsManager.getDomain(dom) == null) {
+            throw new IllegalStateException("dom doesn't exist: " + dom);
+        }
+
+        List<IpAddress> removedIPs = getIpAddresses(request);
+
+        if (CollectionUtils.isEmpty(removedIPs)) {
+            throw new IllegalArgumentException("Empty ip list");
+        }
+
+        domainsManager.easyRemvIP4Dom(dom, removedIPs, term);
+    }
+
     @NeedAuth
     @RequestMapping("/remvIP4Dom")
     public String remvIP4Dom(HttpServletRequest request) throws Exception {
         String dom = WebUtils.required(request, "dom");
         String ipListString = WebUtils.required(request, "ipList");
 
-        Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName:" + dom + ", iplist:" + ipListString);
-
-        List<IpAddress> newIPs = new ArrayList<>();
-        List<String> ipList = new ArrayList<>();
-        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
-            newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
-            });
-        } else {
-            ipList = Arrays.asList(ipListString.split(","));
+        Map<String, String> proxyParams = new HashMap<>(16);
+        for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
+            proxyParams.put(entry.getKey(), entry.getValue()[0]);
         }
+
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: params:" + proxyParams);
+        }
+
+        List<String> ipList = new ArrayList<>();
 
         List<IpAddress> ipObjList = new ArrayList<>(ipList.size());
         if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
-            ipObjList = newIPs;
+            ipList = Arrays.asList(ipListString);
+            ipObjList = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
+            });
         } else {
+            ipList = Arrays.asList(ipListString.split(","));
             for (String ip : ipList) {
                 ipObjList.add(IpAddress.fromJSON(ip));
             }
         }
 
-        domainsManager.easyRemvIP4Dom(dom, ipObjList);
+        if (!RaftCore.isLeader()) {
+            Loggers.RAFT.info("I'm not leader, will proxy to leader.");
+            if (RaftCore.getLeader() == null) {
+                throw new IllegalArgumentException("no leader now.");
+            }
 
-        Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-REMV}" + " dead: "
-                + Arrays.toString(ipList.toArray()) + " operator: "
+            RaftPeer leader = RaftCore.getLeader();
+
+            String server = leader.ip;
+            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            }
+
+            String url = "http://" + server
+                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/remvIP4Dom";
+            HttpClient.HttpResult result1 = HttpClient.httpPost(url, null, proxyParams);
+
+            if (result1.code != HttpURLConnection.HTTP_OK) {
+                Loggers.SRV_LOG.warn("failed to remove ip for dom, caused " + result1.content);
+                throw new IllegalArgumentException("failed to remove ip for dom, caused " + result1.content);
+            }
+
+            return "ok";
+        }
+
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(dom);
+
+        if (domain == null) {
+            throw new IllegalStateException("dom doesn't exist: " + dom);
+        }
+
+        if (CollectionUtils.isEmpty(ipObjList)) {
+            throw new IllegalArgumentException("Empty ip list");
+        }
+
+        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
+
+        long timestamp = 1;
+        if (RaftCore.getDatum(key) != null) {
+            timestamp = RaftCore.getDatum(key).timestamp.get();
+        }
+
+        if (RaftCore.isLeader()) {
+
+            try {
+
+                RaftCore.OPERATE_LOCK.lock();
+
+                proxyParams.put("clientIP", NetUtils.localServer());
+                proxyParams.put("notify", "true");
+                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                proxyParams.put("timestamp", String.valueOf(timestamp));
+
+                onRemvIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
+
+                if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
+                    syncOnRemvIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                } else {
+                    asyncOnRemvIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                }
+            } finally {
+                RaftCore.OPERATE_LOCK.unlock();
+            }
+
+            Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-REMV}" + " new: "
+                + ipListString + " operatorIP: "
                 + WebUtils.optional(request, "clientIP", "unknown"));
+        }
 
         return "ok";
     }
@@ -1340,21 +1496,21 @@ public class ApiCommands {
                 SwitchDomain dom = JSON.parseObject(WebUtils.required(request, "json"), SwitchDomain.class);
                 dom.setEnableStandalone(Switch.isEnableStandalone());
                 if (dom.httpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
-                        || dom.tcpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
+                    || dom.tcpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
 
                     throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
                 }
 
                 if (dom.httpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
-                        || dom.tcpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
+                    || dom.tcpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
 
                     throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
                 }
 
                 if (dom.httpHealthParams.getFactor() < 0
-                        || dom.httpHealthParams.getFactor() > 1
-                        || dom.tcpHealthParams.getFactor() < 0
-                        || dom.tcpHealthParams.getFactor() > 1) {
+                    || dom.httpHealthParams.getFactor() > 1
+                    || dom.tcpHealthParams.getFactor() < 0
+                    || dom.tcpHealthParams.getFactor() > 1) {
 
                     throw new IllegalArgumentException("malformed factor");
                 }
@@ -1727,7 +1883,7 @@ public class ApiCommands {
         properties.load(is);
 
         try (InputStreamReader releaseNode =
-                     new InputStreamReader(ApiCommands.class.getClassLoader().getResourceAsStream("changelog.properties"), "UTF-8")) {
+                 new InputStreamReader(ApiCommands.class.getClassLoader().getResourceAsStream("changelog.properties"), "UTF-8")) {
 
             Properties properties1 = new Properties();
             properties1.load(releaseNode);
@@ -1743,7 +1899,7 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
         try (InputStreamReader releaseNode =
-                     new InputStreamReader(ApiCommands.class.getClassLoader().getResourceAsStream("changelog.properties"), "UTF-8")) {
+                 new InputStreamReader(ApiCommands.class.getClassLoader().getResourceAsStream("changelog.properties"), "UTF-8")) {
 
             Properties properties1 = new Properties();
             properties1.load(releaseNode);
@@ -1791,7 +1947,7 @@ public class ApiCommands {
         String expr = WebUtils.required(request, "expr");
 
         List<Domain> doms
-                = domainsManager.searchDomains(".*" + expr + ".*");
+            = domainsManager.searchDomains(".*" + expr + ".*");
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("doms", Collections.emptyList());
@@ -2013,6 +2169,7 @@ public class ApiCommands {
         result.put("cpu", SystemUtils.getCPU());
         result.put("load", SystemUtils.getLoad());
         result.put("mem", SystemUtils.getMem());
+        result.put("notifyTask", RaftCore.notifier.getTaskSize());
 
         return result;
     }
@@ -2275,7 +2432,7 @@ public class ApiCommands {
         String state = WebUtils.optional(request, "state", StringUtils.EMPTY);
 
         Loggers.SRV_LOG.info("[CONTAINER_NOTFY] received notify event, type:" + type + ", domain:" + domain +
-                ", ip:" + ip + ", port:" + port + ", state:" + state);
+            ", ip:" + ip + ", port:" + port + ", state:" + state);
 
         return "ok";
     }
@@ -2357,6 +2514,29 @@ public class ApiCommands {
         }
 
         return pac;
+    }
+
+    private List<IpAddress> getIpAddresses(HttpServletRequest request) {
+        String ipListString = WebUtils.required(request, "ipList");
+        final List<String> ipList;
+        List<IpAddress> newIPs = new ArrayList<>();
+
+        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
+            newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
+            });
+        } else {
+            ipList = Arrays.asList(ipListString.split(","));
+            for (String ip : ipList) {
+                IpAddress ipAddr = IpAddress.fromJSON(ip);
+                if (ipAddr == null) {
+                    throw new IllegalArgumentException("malformed ip ->" + ip);
+                }
+
+                newIPs.add(ipAddr);
+            }
+        }
+
+        return newIPs;
     }
 
     public void setDomainsManager(DomainsManager domainsManager) {
