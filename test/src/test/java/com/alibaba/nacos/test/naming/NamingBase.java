@@ -41,6 +41,7 @@ public class NamingBase {
     public static final String TEST_IP_4_DOM_2 = "127.0.0.2";
     public static final String TEST_PORT_4_DOM_2 = "7070";
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
+    public static final String TEST_SERVER_STATUS = "UP";
 
     public static final int TEST_PORT = 8080;
 
