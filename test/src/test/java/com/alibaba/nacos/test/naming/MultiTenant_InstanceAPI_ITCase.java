@@ -156,7 +156,7 @@ public class MultiTenant_InstanceAPI_ITCase {
             String.class);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertEquals("33.33.33.33", json.getString("ip"));
+        Assert.assertEquals(2, json.getJSONArray("hosts").size());
     }
 
     /**
