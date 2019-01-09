@@ -278,7 +278,7 @@ public class MultipleTenant_ITCase {
     }
 
     /**
-     * @TCDescription : 多租户删除实例
+     * @TCDescription : 多租户下，选择一个健康的实例
      * @TestStep :
      * @ExpectResult :
      */
@@ -300,6 +300,11 @@ public class MultipleTenant_ITCase {
         Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
         instance = naming2.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
         Assert.assertNull(instance);
+
+        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT);
+        TimeUnit.SECONDS.sleep(2);
+        instance = naming1.selectOneHealthyInstance(serviceName);
+        Assert.assertEquals("22.22.22.22", instances.get(0).getIp());
     }
 
     private void verifyInstanceListForNaming(NamingService naming, int size, String serviceName) throws Exception {
