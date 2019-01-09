@@ -14,7 +14,6 @@
 import React from 'react';
 import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
-import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
 import { getParams, setParams, request } from '../../globalLib';
@@ -27,6 +26,8 @@ class NameSpace extends React.Component {
 
   constructor(props) {
     super(props);
+    this.editgroup = React.createRef();
+    this.newnamespace = React.createRef();
     this.state = {
       loading: false,
       defaultNamespace: '',
@@ -220,7 +221,7 @@ class NameSpace extends React.Component {
   }
 
   openToEdit(record) {
-    this.refs.editgroup.openDialog(record);
+    this.editgroup.current.getInstance().openDialog(record);
   }
 
   renderOption(value, index, record) {
@@ -262,7 +263,7 @@ class NameSpace extends React.Component {
   }
 
   addNameSpace() {
-    this.refs.newnamespace.openDialog(this.state.dataSource);
+    this.newnamespace.current.getInstance().openDialog(this.state.dataSource);
   }
 
   renderName(value, index, record) {
@@ -338,9 +339,8 @@ class NameSpace extends React.Component {
               </div>
             </div>
 
-            <DeleteDialog ref="delete" />
-            <NewNameSpace ref="newnamespace" getNameSpaces={this.getNameSpaces.bind(this)} />
-            <EditorNameSpace ref="editgroup" getNameSpaces={this.getNameSpaces.bind(this)} />
+            <NewNameSpace ref={this.newnamespace} getNameSpaces={this.getNameSpaces.bind(this)} />
+            <EditorNameSpace ref={this.editgroup} getNameSpaces={this.getNameSpaces.bind(this)} />
           </Loading>
         </div>
       </div>
