@@ -34,7 +34,6 @@ import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.utils.StringUtils;
-import io.micrometer.core.instrument.Metrics;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Config Impl
@@ -163,8 +161,6 @@ public class NacosConfigService implements ConfigService {
     }
 
     private boolean removeConfigInner(String tenant, String dataId, String group, String tag) throws NacosException {
-        long start = 0;
-        long end = 0;
         group = null2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         String url = Constants.CONFIG_CONTROLLER_PATH;
@@ -183,23 +179,8 @@ public class NacosConfigService implements ConfigService {
         }
         HttpResult result = null;
         try {
-            start = System.currentTimeMillis();
             result = agent.httpDelete(url, null, params, encode, POST_TIMEOUT);
-            end = System.currentTimeMillis();
-            Metrics.timer("nacos_client_request",
-                "module", "config",
-                "method", "DELETE",
-                "url", Constants.CONFIG_CONTROLLER_PATH,
-                "code", String.valueOf(result.code))
-                .record(end - start, TimeUnit.MILLISECONDS);
         } catch (IOException ioe) {
-            end = System.currentTimeMillis();
-            Metrics.timer("nacos_client_request",
-                "module", "config",
-                "method", "DELETE",
-                "url", Constants.CONFIG_CONTROLLER_PATH,
-                "code", "0")
-                .record(end - start, TimeUnit.MILLISECONDS);
             log.warn("[remove] error, " + dataId + ", " + group + ", " + tenant + ", msg: " + ioe.toString());
             return false;
         }
@@ -220,9 +201,6 @@ public class NacosConfigService implements ConfigService {
 
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
                                        String betaIps, String content) throws NacosException {
-        long start = 0;
-        long end = 0;
-
         group = null2defaultGroup(group);
         ParamUtils.checkParam(dataId, group, content);
 
@@ -263,25 +241,8 @@ public class NacosConfigService implements ConfigService {
 
         HttpResult result = null;
         try {
-            start = System.currentTimeMillis();
             result = agent.httpPost(url, headers, params, encode, POST_TIMEOUT);
-            end = System.currentTimeMillis();
-
-            Metrics.timer("nacos_client_request",
-                "module", "config",
-                "method", "POST",
-                "url", Constants.CONFIG_CONTROLLER_PATH,
-                "code", String.valueOf(result.code))
-                .record(end - start, TimeUnit.MILLISECONDS);
         } catch (IOException ioe) {
-            end = System.currentTimeMillis();
-
-            Metrics.timer("nacos_client_request",
-                "module", "config",
-                "method", "POST",
-                "url", Constants.CONFIG_CONTROLLER_PATH,
-                "code", "0")
-                .record(end - start, TimeUnit.MILLISECONDS);
             log.warn("NACOS-0006",
                 LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0006", "环境问题", "[publish-single] exception"));
             log.warn(agent.getName(), "[publish-single] exception, dataId={}, group={}, msg={}", dataId, group,

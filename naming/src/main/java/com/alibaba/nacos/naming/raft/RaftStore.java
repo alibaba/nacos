@@ -17,7 +17,7 @@ package com.alibaba.nacos.naming.raft;
 
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.fastjson.JSON;
-import io.micrometer.core.instrument.Metrics;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -142,9 +142,7 @@ public class RaftStore {
     public synchronized static void write(final Datum datum) throws Exception {
         File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
-            Metrics.counter("nacos_exception",
-                "module", "naming", "name", "disk")
-                .increment();
+            MetricsMonitor.getDiskException().increment();
 
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
@@ -157,9 +155,7 @@ public class RaftStore {
             fc.write(data, data.position());
             fc.force(true);
         } catch (Exception e) {
-            Metrics.counter("nacos_exception",
-                "module", "naming", "name", "disk")
-                .increment();
+            MetricsMonitor.getDiskException().increment();
             throw e;
         } finally {
             if (fc != null) {

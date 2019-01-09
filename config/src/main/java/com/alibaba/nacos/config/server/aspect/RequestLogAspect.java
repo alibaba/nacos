@@ -16,12 +16,11 @@
 package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -29,9 +28,6 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * * Created with IntelliJ IDEA. User: dingjoey Date: 13-12-12 Time: 21:12 client api && sdk api 请求日志打点逻辑
@@ -62,29 +58,6 @@ public class RequestLogAspect {
         = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,"
         + "response,dataId,group,tenant,..)";
 
-    public RequestLogAspect() {
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "getConfig"));
-        Metrics.gauge("nacos_monitor", tags, getConfig);
-
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "publish"));
-        Metrics.gauge("nacos_monitor", tags, publish);
-    }
-
-    private AtomicInteger getConfig = new AtomicInteger();
-    private AtomicInteger publish = new AtomicInteger();
-
-
-    public AtomicInteger getGetConfig() {
-        return getConfig;
-    }
-
-    public AtomicInteger getPublish() {
-        return publish;
-    }
 
     /**
      * publishSingle
@@ -94,7 +67,7 @@ public class RequestLogAspect {
                                          HttpServletResponse response, String dataId, String group, String tenant,
                                          String content) throws Throwable {
         final String md5 = content == null ? null : MD5.getInstance().getMD5String(content);
-        publish.incrementAndGet();
+        MetricsMonitor.getPublishMonitor().incrementAndGet();
         return logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5);
     }
 
@@ -115,7 +88,7 @@ public class RequestLogAspect {
                                      String dataId, String group, String tenant) throws Throwable {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final String md5 = ConfigService.getContentMd5(groupKey);
-        getConfig.incrementAndGet();
+        MetricsMonitor.getConfigMonitor().incrementAndGet();
         return logClientRequest("get", pjp, request, response, dataId, group, tenant, md5);
     }
 

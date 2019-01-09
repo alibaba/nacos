@@ -24,9 +24,9 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.UuidUtils;
-import io.micrometer.core.instrument.Metrics;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -290,7 +290,7 @@ public class NamingProxy {
 
     public String callServer(String api, Map<String, String> params, String curServer, String method)
         throws NacosException {
-        long start = 0;
+        long start = System.currentTimeMillis();
         long end = 0;
 
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
@@ -305,15 +305,13 @@ public class NamingProxy {
         }
 
         url = HttpClient.getPrefix() + curServer + api;
-        start = System.currentTimeMillis();
+
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
-        Metrics.timer("nacos_client_request",
-            "module", "naming",
-            "method", method,
-            "url", api,
-            "code", String.valueOf(result.code))
+
+        MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(result.code))
             .record(end - start, TimeUnit.MILLISECONDS);
+
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content;
         }

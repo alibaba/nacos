@@ -16,14 +16,13 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -32,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
@@ -273,11 +271,6 @@ public class LongPollingService extends AbstractEventListener {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<ClientLongPulling>();
-
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "longPolling"));
-        Metrics.gauge("nacos_monitor", tags, count);
         scheduler = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -301,8 +294,6 @@ public class LongPollingService extends AbstractEventListener {
      * 长轮询订阅关系
      */
     final Queue<ClientLongPulling> allSubs;
-
-    private AtomicInteger count = new AtomicInteger(0);
 
     // =================
 
@@ -368,7 +359,7 @@ public class LongPollingService extends AbstractEventListener {
         @Override
         public void run() {
             memoryLog.info("[long-pulling] client count " + allSubs.size());
-            count.set(allSubs.size());
+            MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
         }
     }
 

@@ -18,18 +18,14 @@ package com.alibaba.nacos.client.naming.beat;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author harold
@@ -51,28 +47,22 @@ public class BeatReactor {
     private NamingProxy serverProxy;
 
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
-    private AtomicInteger dom2BeatSize = new AtomicInteger();
 
     public BeatReactor(NamingProxy serverProxy) {
         this.serverProxy = serverProxy;
         executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
-
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "pubServiceCount"));
-        Metrics.gauge("nacos_monitor", tags, dom2BeatSize);
     }
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
         LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
         dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
-        dom2BeatSize.set(dom2Beat.size());
+        MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
     public void removeBeatInfo(String dom, String ip, int port) {
         LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
         dom2Beat.remove(buildKey(dom, ip, port));
-        dom2BeatSize.set(dom2Beat.size());
+        MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
     public String buildKey(String dom, String ip, int port) {

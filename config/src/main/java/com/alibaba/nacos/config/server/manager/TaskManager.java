@@ -16,21 +16,17 @@
 package com.alibaba.nacos.config.server.manager;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.slf4j.Logger;
 
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -44,8 +40,6 @@ public final class TaskManager implements TaskManagerMBean {
     private static final Logger log = LogUtil.defaultLog;
 
     private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
-
-    private AtomicInteger taskCount = new AtomicInteger();
 
     private final ConcurrentHashMap<String, TaskProcessor> taskProcessors =
         new ConcurrentHashMap<String, TaskProcessor>();
@@ -80,11 +74,6 @@ public final class TaskManager implements TaskManagerMBean {
 
     public TaskManager() {
         this(null);
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "dumpTask"));
-
-        Metrics.gauge("nacos_monitor", tags, taskCount);
     }
 
     public AbstractTask getTask(String type) {
@@ -153,7 +142,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         try {
             this.tasks.remove(type);
-            taskCount.set(tasks.size());
+            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
         } finally {
             this.lock.unlock();
         }
@@ -169,7 +158,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         try {
             AbstractTask oldTask = tasks.put(type, task);
-            taskCount.set(tasks.size());
+            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {
                 task.merge(oldTask);
             }
@@ -195,7 +184,7 @@ public final class TaskManager implements TaskManagerMBean {
                     }
                     // 先将任务从任务Map中删除
                     this.tasks.remove(entry.getKey());
-                    taskCount.set(tasks.size());
+                    MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
                 }
             } finally {
                 this.lock.unlock();
