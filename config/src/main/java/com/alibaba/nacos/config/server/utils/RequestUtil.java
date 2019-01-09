@@ -49,8 +49,15 @@ public class RequestUtil {
         return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
     }
 
+    /**
+     * 获取 header 中的客服端应用名称
+     * <p>
+     *
+     * @param request {@link HttpServletRequest}
+     * @return 可能为 null
+     */
     public static String getAppName(HttpServletRequest request) {
-        return request.getHeader("Client-AppName");
+        return request.getHeader(CLIENT_APPNAME_HEADER);
     }
 
 }

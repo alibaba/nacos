@@ -35,4 +35,12 @@ public class RequestUtilTest {
         Mockito.when(request.getHeader(eq(X_REAL_IP))).thenReturn("");
         Assert.assertEquals(RequestUtil.getRemoteIp(request), "127.0.0.1");
     }
+
+
+    @Test
+    public void getAppName() {
+        HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
+        Mockito.when(request.getHeader(eq(RequestUtil.CLIENT_APPNAME_HEADER))).thenReturn("test");
+        Assert.assertEquals(RequestUtil.getAppName(request), "test");
+    }
 }
