@@ -371,6 +371,22 @@ const I18N_CONF = {
     configuration: 'Configuration Content:',
     back: 'Back',
   },
+  ConfigRollback: {
+    rollBack: 'Roll Back',
+    determine: 'Are you sure you want to roll back',
+    followingConfiguration: 'the following configuration?',
+    configurationRollback: 'Configuration Rollback',
+    collapse: 'Collapse',
+    more: 'Advanced Options',
+    home: 'Application:',
+    actionType: 'Action Type:',
+    configuration: 'Configuration Content:',
+    back: 'Back',
+    rollbackSuccessful: 'Rollback Successful',
+    rollbackDelete: 'Delete',
+    update: 'Update',
+    insert: 'Insert',
+  },
 };
 
 export default I18N_CONF;
