@@ -19,6 +19,13 @@ const I18N_CONF = {
     community: 'COMMUNITY',
     languageSwitchButton: '中',
   },
+  Login: {
+    pleaseLogin: 'Plase login',
+    submit: 'Submit',
+    pleaseInputUsername: 'Please input username',
+    pleaseInputPassword: 'Please input password',
+    invalidUsernameOrPassword: 'invalid username or password',
+  },
   MainLayout: {
     nacosName: 'NACOS',
     nacosVersion: '0.7.0',
