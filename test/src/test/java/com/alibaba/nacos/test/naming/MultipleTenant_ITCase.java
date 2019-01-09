@@ -44,7 +44,6 @@ public class MultipleTenant_ITCase {
 
     @Before
     public void init() throws Exception {
-        //String serverList = "11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848";
         naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         //naming = NamingFactory.createNamingService(serverList);
 
@@ -279,7 +278,7 @@ public class MultipleTenant_ITCase {
     }
 
     /**
-     * @TCDescription : 多租户删除实例
+     * @TCDescription : 多租户下，选择一个健康的实例
      * @TestStep :
      * @ExpectResult :
      */
@@ -296,11 +295,16 @@ public class MultipleTenant_ITCase {
         verifyInstanceListForNaming(naming1, 2, serviceName);
 
         Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
-        
+
         Instance instance = naming1.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
         Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
         instance = naming2.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
         Assert.assertNull(instance);
+
+        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT);
+        TimeUnit.SECONDS.sleep(2);
+        instance = naming1.selectOneHealthyInstance(serviceName);
+        Assert.assertEquals("22.22.22.22", instances.get(0).getIp());
     }
 
     private void verifyInstanceListForNaming(NamingService naming, int size, String serviceName) throws Exception {
