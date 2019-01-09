@@ -11,8 +11,9 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
+import React from 'react';
+import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import {
@@ -40,6 +41,11 @@ const { AutoComplete: Combobox } = Select;
 @ConfigProvider.config
 class NewConfig extends React.Component {
   static displayName = 'NewConfig';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
