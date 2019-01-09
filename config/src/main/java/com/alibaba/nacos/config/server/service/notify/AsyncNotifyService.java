@@ -17,13 +17,12 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
@@ -210,9 +209,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                     new Object[] {task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified()});
 
-                Metrics.counter("nacos_exception",
-                    "module", "config", "name", "configNotify")
-                    .increment();
+                MetricsMonitor.getConfigNotifyException().increment();
             }
             HttpClientUtils.closeQuietly(response);
         }
@@ -244,9 +241,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                 new Object[] {task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified()});
 
-            Metrics.counter("nacos_exception",
-                "module", "config", "name", "configNotify")
-                .increment();
+            MetricsMonitor.getConfigNotifyException().increment();
         }
 
         @Override
@@ -271,9 +266,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                 new Object[] {task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified()});
 
-            Metrics.counter("nacos_exception",
-                "module", "config", "name", "configNotify")
-                .increment();
+            MetricsMonitor.getConfigNotifyException().increment();
         }
 
         private NotifySingleTask task;

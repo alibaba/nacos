@@ -20,12 +20,11 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -33,11 +32,9 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 
@@ -49,23 +46,8 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
     private static AsyncHttpClient asyncHttpClient;
 
-    private static AtomicInteger httpHealthCheck = new AtomicInteger();
-
-    public HttpHealthCheckProcessor() {
-    }
-
-    public static AtomicInteger getHttpHealthCheck() {
-        return httpHealthCheck;
-    }
-
     static {
         try {
-            List<Tag> tags = new ArrayList<>();
-            tags.add(Tag.of("module", "naming"));
-            tags.add(Tag.of("name", "healthCheck"));
-            tags.add(Tag.of("type", "http"));
-            Metrics.gauge("nacos_monitor", tags, httpHealthCheck);
-
             AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
 
             builder.setMaximumConnectionsTotal(-1);
@@ -143,7 +125,7 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 }
 
                 builder.execute(new HttpHealthCheckCallback(ip, task));
-                httpHealthCheck.incrementAndGet();
+                MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();
             } catch (Throwable e) {
                 ip.setCheckRT(Switch.getHttpHealthParams().getMax());
                 checkFail(ip, task, "http:error:" + e.getMessage());

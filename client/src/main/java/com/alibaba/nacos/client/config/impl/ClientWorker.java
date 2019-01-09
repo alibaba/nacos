@@ -27,12 +27,10 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,9 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.ToDoubleFunction;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
@@ -106,7 +102,7 @@ public class ClientWorker {
         }
         log.info(agent.getName(), "[unsubscribe] {}", groupKey);
 
-        cacheSize.set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -119,7 +115,7 @@ public class ClientWorker {
         }
         log.info(agent.getName(), "[unsubscribe] {}", groupKey);
 
-        cacheSize.set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -152,7 +148,7 @@ public class ClientWorker {
 
         log.info(agent.getName(), "[subscribe] {}", key);
 
-        cacheSize.set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
         return cache;
     }
@@ -182,7 +178,7 @@ public class ClientWorker {
         }
         log.info(agent.getName(), "[subscribe] {}", key);
 
-        cacheSize.set(cacheMap.get().size());
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
         return cache;
     }
@@ -200,9 +196,6 @@ public class ClientWorker {
 
     public String getServerConfig(String dataId, String group, String tenant, long readTimeout)
         throws NacosException {
-        long start = 0;
-        long end = 0;
-
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
@@ -215,27 +208,8 @@ public class ClientWorker {
             } else {
                 params = Arrays.asList("dataId", dataId, "group", group, "tenant", tenant);
             }
-
-            start = System.currentTimeMillis();
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
-            end = System.currentTimeMillis();
-
-            Metrics.timer("nacos_client_request",
-                "module", "config",
-                "method", "GET",
-                "url", Constants.CONFIG_CONTROLLER_PATH,
-                "code", String.valueOf(result.code))
-                .record(end - start, TimeUnit.MILLISECONDS);
         } catch (IOException e) {
-            end = System.currentTimeMillis();
-
-            Metrics.timer("nacos_client_request",
-                "module", "config",
-                "method", "GET",
-                "url", Constants.CONFIG_CONTROLLER_PATH,
-                "code", "0")
-                .record(end - start, TimeUnit.MILLISECONDS);
-
             log.error(agent.getName(), "NACOS-XXXX",
                 "[sub-server] get server config exception, dataId={}, group={}, tenant={}, msg={}", dataId, group,
                 tenant, e.toString());
@@ -445,10 +419,7 @@ public class ClientWorker {
     public ClientWorker(final ServerHttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "configListenSize"));
-        Metrics.gauge("nacos_monitor", tags, cacheSize);
+
         executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -562,7 +533,6 @@ public class ClientWorker {
      */
     AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
         new HashMap<String, CacheData>());
-    AtomicInteger cacheSize = new AtomicInteger(0);
 
     ServerHttpAgent agent;
     ConfigFilterChainManager configFilterChainManager;

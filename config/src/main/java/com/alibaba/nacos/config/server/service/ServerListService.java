@@ -16,13 +16,13 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import io.micrometer.core.instrument.Metrics;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -378,9 +378,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     serverListUnhealth.add(serverIp);
                 }
                 defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
-                Metrics.counter("nacos_exception",
-                    "module", "config", "name", "unhealth")
-                    .increment();
+                MetricsMonitor.getUnhealthException().increment();
             }
         }
 
@@ -395,9 +393,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     serverListUnhealth.add(serverIp);
                 }
                 defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
-                Metrics.counter("nacos_exception",
-                    "module", "config", "name", "unhealth")
-                    .increment();
+                MetricsMonitor.getUnhealthException().increment();
             }
         }
     }

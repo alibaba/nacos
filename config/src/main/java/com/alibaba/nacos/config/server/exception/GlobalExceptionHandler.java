@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.exception;
 
-import io.micrometer.core.instrument.Metrics;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -40,9 +40,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public void handleIllegalArgumentException(HttpServletResponse response, Exception ex) throws IOException {
-        Metrics.counter("nacos_exception",
-            "module", "config", "name", "illegalArgument")
-            .increment();
+        MetricsMonitor.getIllegalArgumentException().increment();
         response.setStatus(400);
         if (ex.getMessage() != null) {
             response.getWriter().println(ex.getMessage());
@@ -57,11 +55,8 @@ public class GlobalExceptionHandler {
      * @throws NacosException
      */
     @ExceptionHandler(NacosException.class)
-
     public void handleNacosException(HttpServletResponse response, NacosException ex) throws IOException {
-        Metrics.counter("nacos_exception",
-            "module", "config", "name", "nacos")
-            .increment();
+        MetricsMonitor.getNacosException().increment();
         response.setStatus(ex.getErrCode());
         if (ex.getErrMsg() != null) {
             response.getWriter().println(ex.getErrMsg());
@@ -77,9 +72,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataAccessException.class)
     public void handleDataAccessException(HttpServletResponse response, DataAccessException ex) throws DataAccessException {
-        Metrics.counter("nacos_exception",
-            "module", "config", "name", "db")
-            .increment();
+        MetricsMonitor.getDbException().increment();
         throw new CannotGetJdbcConnectionException(ex.getMessage());
     }
 
