@@ -15,10 +15,7 @@
  */
 package com.alibaba.nacos.config.server.monitor;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,34 +35,34 @@ public class MetricsMonitor {
     private static AtomicInteger dumpTask = new AtomicInteger();
 
     static {
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "getConfig"));
+        List<Tag> tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "getConfig"));
         Metrics.gauge("nacos_monitor", tags, getConfig);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "publish"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "publish"));
         Metrics.gauge("nacos_monitor", tags, publish);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "longPolling"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "longPolling"));
         Metrics.gauge("nacos_monitor", tags, longPolling);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "configCount"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "configCount"));
         Metrics.gauge("nacos_monitor", tags, configCount);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "notifyTask"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "notifyTask"));
         Metrics.gauge("nacos_monitor", tags, notifyTask);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "dumpTask"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "dumpTask"));
 
         Metrics.gauge("nacos_monitor", tags, dumpTask);
     }

@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.monitor;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 
@@ -42,54 +43,54 @@ public class MetricsMonitor {
     private static AtomicInteger failedPush = new AtomicInteger();
 
     static {
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "mysqlhealthCheck"));
+        List<Tag> tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "mysqlhealthCheck"));
         Metrics.gauge("nacos_monitor", tags, mysqlHealthCheck);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "httpHealthCheck"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "httpHealthCheck"));
         Metrics.gauge("nacos_monitor", tags, httpHealthCheck);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "tcpHealthCheck"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "tcpHealthCheck"));
         Metrics.gauge("nacos_monitor", tags, tcpHealthCheck);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "domCount"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "domCount"));
         Metrics.gauge("nacos_monitor", tags, domCount);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "ipCount"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "ipCount"));
         Metrics.gauge("nacos_monitor", tags, ipCount);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "maxPushCost"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "maxPushCost"));
         Metrics.gauge("nacos_monitor", tags, maxPushCost);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "avgPushCost"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "avgPushCost"));
         Metrics.gauge("nacos_monitor", tags, avgPushCost);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "leaderStatus"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "leaderStatus"));
         Metrics.gauge("nacos_monitor", tags, leaderStatus);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "totalPush"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "totalPush"));
         Metrics.gauge("nacos_monitor", tags, totalPush);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "failedPush"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "failedPush"));
         Metrics.gauge("nacos_monitor", tags, failedPush);
     }
 

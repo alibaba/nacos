@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.monitor;
 
+import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
@@ -34,19 +35,19 @@ public class MetricsMonitor {
     private static AtomicInteger listenConfigCount = new AtomicInteger();
 
     static {
-        List<Tag> tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "subServiceCount"));
+        List<Tag> tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "subServiceCount"));
         Metrics.gauge("nacos_monitor", tags, serviceInfoMapSize);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "naming"));
-        tags.add(Tag.of("name", "pubServiceCount"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "naming"));
+        tags.add(new ImmutableTag("name", "pubServiceCount"));
         Metrics.gauge("nacos_monitor", tags, dom2BeatSize);
 
-        tags = new ArrayList<>();
-        tags.add(Tag.of("module", "config"));
-        tags.add(Tag.of("name", "listenConfigCount"));
+        tags = new ArrayList<Tag>();
+        tags.add(new ImmutableTag("module", "config"));
+        tags.add(new ImmutableTag("name", "listenConfigCount"));
         Metrics.gauge("nacos_monitor", tags, listenConfigCount);
     }
 
