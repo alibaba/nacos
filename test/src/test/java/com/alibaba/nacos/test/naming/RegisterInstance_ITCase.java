@@ -42,9 +42,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @author wangtong.wt
  * @date 2018/6/20
  */
-//@RunWith(SpringRunner.class)
-//@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-//        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@RunWith(SpringRunner.class)
+@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
 
     private NamingService naming;
@@ -54,14 +54,14 @@ public class RegisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
-//        if (naming == null) {
-//            TimeUnit.SECONDS.sleep(10);
-//            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-//        }
+        if (naming == null) {
+            TimeUnit.SECONDS.sleep(10);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
     }
 
     @Test
-//    @Ignore
+    @Ignore
     public void regService() throws NacosException, InterruptedException {
 
         Properties properties = new Properties();
