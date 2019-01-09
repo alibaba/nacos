@@ -72,7 +72,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // TODO: we should use a better way to match the resources
         // requests for resource and auth api are always allowed
         web.ignoring()
-            .antMatchers("/", "/*.html", "/**/*.js", "/**/*.css", "/favicon.ico", "/**/*.html", "/**/*.map", "/**/*.svg", "/console-fe/public/*", "/**/*.png", "/*.png")
+            .antMatchers("/")
+            .antMatchers("/**/*.css", "/**/*.js", "/**/*.html", "/**/*.map", "/**/*.svg", "/**/*.png", "/**/*.ico")
+            .antMatchers("/**.css", "/**.js", "/**.html", "/**.map", "/**.svg", "/**.png", "/**.ico")
+            .antMatchers("/console-fe/public/*")
             .antMatchers("/v1/auth/login")
             .antMatchers("/v1/cs/health");
     }
