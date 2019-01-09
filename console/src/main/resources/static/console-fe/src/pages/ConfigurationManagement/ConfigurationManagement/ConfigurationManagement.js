@@ -38,6 +38,7 @@ import DashboardCard from './DashboardCard';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
 import './index.scss';
+import { LANGUAGE_KEY } from '../../../constants';
 
 const { Panel } = Collapse;
 
@@ -46,6 +47,7 @@ class ConfigurationManagement extends React.Component {
   static displayName = 'ConfigurationManagement';
 
   static propTypes = {
+    locale: PropTypes.object,
     history: PropTypes.object,
   };
 
@@ -107,16 +109,7 @@ class ConfigurationManagement extends React.Component {
   componentDidMount() {
     const { locale = {} } = this.props;
     // this.getGroup();
-    if (aliwareIntl.currentLanguageCode === 'zh-cn') {
-      // this.getContentList(); //在中文站获取概览页
-      this.setState({
-        isCn: true,
-      });
-    } else {
-      this.setState({
-        isCn: false,
-      });
-    }
+    this.setIsCn();
     if (window._getLink && window._getLink('isCn') === 'true') {
       if (!this.checkQuestionnaire()) {
         if (window.location.host === 'acm.console.aliyun.com') {
@@ -143,6 +136,10 @@ class ConfigurationManagement extends React.Component {
         }
       }
     }
+  }
+
+  setIsCn() {
+    this.setState({ isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN' });
   }
 
   /**
@@ -726,7 +723,7 @@ class ConfigurationManagement extends React.Component {
                     {this.state.nownamespace_id}
                   </span>
                   {locale.queryResults}
-                  <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
+                  <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
                   {locale.articleMeetRequirements}
                 </h3>
                 <div

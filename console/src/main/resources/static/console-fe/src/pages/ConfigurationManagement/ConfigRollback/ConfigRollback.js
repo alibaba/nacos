@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { getParams, request } from '../../../globalLib';
 import { Button, ConfigProvider, Dialog, Field, Form, Input } from '@alifd/next';
 
@@ -37,6 +38,11 @@ class ConfigRollback extends React.Component {
     };
     // this.params = window.location.hash.split('?')[1]||'';
   }
+
+  static propTypes = {
+    history: PropTypes.object,
+    locale: PropTypes.object,
+  };
 
   componentDidMount() {
     const { locale = {} } = this.props;

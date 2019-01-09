@@ -16,6 +16,7 @@ import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading, Tab } from
 import { getParams, request } from '../../../globalLib';
 
 import './index.scss';
+import PropTypes from 'prop-types';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
@@ -23,6 +24,11 @@ const FormItem = Form.Item;
 @ConfigProvider.config
 class ConfigDetail extends React.Component {
   static displayName = 'ConfigDetail';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -48,13 +54,17 @@ class ConfigDetail extends React.Component {
   }
 
   componentDidMount() {
+    this.initData();
+    this.getDataDetail();
+  }
+
+  initData() {
     const { locale = {} } = this.props;
     if (this.dataId.startsWith('cipher-')) {
       this.setState({
         switchEncrypt: true,
       });
     }
-    this.getDataDetail();
     this.setState({ tag: [{ title: locale.official, key: 'normal' }] });
   }
 

@@ -24,6 +24,7 @@ class SuccessDialog extends React.Component {
   static displayName = 'SuccessDialog';
 
   static propTypes = {
+    locale: PropTypes.object,
     unpushtrace: PropTypes.bool,
   };
 
@@ -41,6 +42,10 @@ class SuccessDialog extends React.Component {
   }
 
   componentDidMount() {
+    this.initData();
+  }
+
+  initData() {
     const { locale = {} } = this.props;
     this.setState({ title: locale.title });
   }

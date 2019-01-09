@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '@/globalLib';
 import { Button, Card, ConfigProvider, Form, Loading } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
@@ -29,6 +30,12 @@ const pageFormLayout = {
 @ConfigProvider.config
 class ServiceDetail extends React.Component {
   static displayName = 'ServiceDetail';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+    location: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
