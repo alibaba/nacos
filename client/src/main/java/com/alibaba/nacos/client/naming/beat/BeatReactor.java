@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.beat;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
+import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -27,15 +28,7 @@ import java.util.concurrent.*;
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.beat.sender");
-            return thread;
-        }
-    });
+    private ScheduledExecutorService executorService;
 
     private long clientBeatInterval = 5 * 1000;
 
@@ -44,7 +37,22 @@ public class BeatReactor {
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
 
     public BeatReactor(NamingProxy serverProxy) {
+        this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+    }
+
+    public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
+
+        executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.beat.sender");
+                return thread;
+            }
+        });
+
         executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
     }
 

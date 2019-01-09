@@ -35,6 +35,7 @@ import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -101,7 +102,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, false);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
     }
 
     public NacosNamingService(Properties properties) {
@@ -131,10 +132,16 @@ public class NacosNamingService implements NamingService {
                 properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
 
+        int clientBeatThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
+            UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+
+        int pollingThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
+            UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, loadCacheAtStart);
+        beatReactor = new BeatReactor(serverProxy, clientBeatThreadCount);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, loadCacheAtStart, pollingThreadCount);
 
     }
 

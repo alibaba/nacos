@@ -31,5 +31,7 @@ public class PropertyKeyConst {
     public final static String CLUSTER_NAME = "clusterName";
     public final static String ENCODE = "encode";
     public final static String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
+    public final static String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
+    public final static String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
 
 }
