@@ -370,6 +370,22 @@ const I18N_CONF = {
     configuration: '配置内容：',
     back: '返回',
   },
+  ConfigRollback: {
+    rollBack: '回滚配置',
+    determine: '确定要',
+    followingConfiguration: '以下配置吗？',
+    configurationRollback: '配置回滚',
+    collapse: '收起',
+    more: '更多高级选项',
+    home: '归属应用：',
+    actionType: '操作类型：',
+    configuration: '配置内容：',
+    back: '返回',
+    rollbackSuccessful: '回滚成功',
+    rollbackDelete: '删除',
+    update: '更新',
+    insert: '插入',
+  },
 };
 
 export default I18N_CONF;
