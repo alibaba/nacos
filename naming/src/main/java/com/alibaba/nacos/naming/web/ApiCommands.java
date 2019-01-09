@@ -301,7 +301,7 @@ public class ApiCommands {
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
         Map<String, String[]> stringMap = new HashMap<>(16);
-        stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
+        stringMap.put(Constants.REQUEST_PARAM_SERVICE_NAME, Arrays.asList(dom).toArray(new String[1]));
         stringMap.put("enableClientBeat", Arrays.asList("true").toArray(new String[1]));
         stringMap.put("cktype", Arrays.asList("TCP").toArray(new String[1]));
         stringMap.put("appName", Arrays.asList(app).toArray(new String[1]));
@@ -558,8 +558,6 @@ public class ApiCommands {
             ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        Loggers.TENANT.debug("reg-service: " + dom + "|" + ipAddress.toJSON() + "|" + env + "|" + tenant + "|" + app);
-
         if (virtualClusterDomain == null) {
 
             Lock lock = domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
@@ -590,7 +588,10 @@ public class ApiCommands {
                 doAddCluster4Dom(request);
             }
 
-            Loggers.TENANT.debug("reg-service", "add ip: " + dom + "|" + ipAddress.toJSON());
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("reg-service {}", "add ip: " + dom + "|" + ipAddress.toJSON());
+            }
+
             Map<String, String[]> stringMap = new HashMap<>(16);
             stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
@@ -1800,7 +1801,7 @@ public class ApiCommands {
 
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String dom = WebUtils.required(request, "dom");
+        String dom = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
         String json = WebUtils.optional(request, "clusterJson", StringUtils.EMPTY);
 
         VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
