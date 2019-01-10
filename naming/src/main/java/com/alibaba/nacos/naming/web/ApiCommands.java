@@ -1213,8 +1213,9 @@ public class ApiCommands {
         String dom = WebUtils.required(request, "dom");
         String ipListString = WebUtils.required(request, "ipList");
 
-        Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName:" + dom + ", iplist:" + ipListString);
-
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName:" + dom + ", iplist:" + ipListString);
+        }
         List<IpAddress> newIPs = new ArrayList<>();
         List<String> ipList = new ArrayList<>();
         if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
@@ -1231,6 +1232,11 @@ public class ApiCommands {
             for (String ip : ipList) {
                 ipObjList.add(IpAddress.fromJSON(ip));
             }
+        }
+
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        if (domain == null) {
+            throw new IllegalStateException("[" + namespaceId + "] service " + dom + " not found!");
         }
 
         domainsManager.easyRemvIP4Dom(namespaceId, dom, ipObjList);
