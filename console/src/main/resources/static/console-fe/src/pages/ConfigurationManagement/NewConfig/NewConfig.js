@@ -329,7 +329,7 @@ class NewConfig extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.successDialog.current._instance.openDialog(_payload);
+        self.successDialog.current.getInstance().openDialog(_payload);
       },
       complete() {
         self.closeLoading();
