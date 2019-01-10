@@ -237,6 +237,9 @@ const I18N_CONF = {
     fullScreen: '按Esc退出全屏',
     escExit: '发布',
     release: '返回',
+    confirmSyanx: '配置信息可能有语法错误, 确定提交吗?',
+    dataIdExists: 'Data ID 已存在',
+    dataRequired: '数据不能为空, 提交失败',
   },
   CloneDialog: {
     terminate: '终止克隆',
