@@ -54,7 +54,7 @@ public class PerformanceLoggerThread {
     }
 
     private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is " + Switch.isHealthCheckEnabled());
+        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", Switch.isHealthCheckEnabled());
     }
 
     class HealthCheckSwitchTask implements Runnable {
@@ -85,9 +85,9 @@ public class PerformanceLoggerThread {
                 int ipCount = domainsManager.getInstanceCount();
                 long maxPushMaxCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);
+                Loggers.PERFORMANCE_LOG.info("[PERFORMANCE] " + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("PERFORMANCE", "Exception while print performance log.", e);
+                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }
 
         }

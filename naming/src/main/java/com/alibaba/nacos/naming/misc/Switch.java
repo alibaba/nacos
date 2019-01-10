@@ -58,7 +58,7 @@ public class Switch {
 
             @Override
             public void onChange(String key, String value) throws Exception {
-                Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
+                Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
                 if (StringUtils.isEmpty(value)) {
                     return;
                 }
@@ -135,7 +135,7 @@ public class Switch {
         try {
             RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(dom), JSON.toJSONString(dom));
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("VIPSRV-SWITCH", "failed to save switch", e);
+            Loggers.SRV_LOG.error("[SWITCH] failed to save switch", e);
         }
     }
 

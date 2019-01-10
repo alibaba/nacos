@@ -65,11 +65,9 @@ public class ClusterController {
 
         Cluster cluster = domain.getClusterMap().get(clusterName);
         if (cluster == null) {
-            Loggers.SRV_LOG.warn("UPDATE-CLUSTER", "cluster not exist, will create it: " + clusterName + ", service:" + serviceName);
+            Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName, serviceName);
             cluster = new Cluster();
             cluster.setName(clusterName);
-
-//            throw new NacosException(NacosException.INVALID_PARAM, "cluster not found:"+ clusterName + ", " + serviceName);
         }
 
         cluster.setDefCkport(NumberUtils.toInt(checkPort));

@@ -105,13 +105,13 @@ public class PushService {
                     try {
                         removeClientIfZombie();
                     } catch (Throwable e) {
-                        Loggers.PUSH.warn("VIPSRV-PUSH", "failed to remove client zombied");
+                        Loggers.PUSH.warn("[NACOS-PUSH] failed to remove client zombie");
                     }
                 }
             }, 0, 20, TimeUnit.SECONDS);
 
         } catch (SocketException e) {
-            Loggers.SRV_LOG.error("VIPSRV-PUSH", "failed to init push service");
+            Loggers.SRV_LOG.error("[NACOS-PUSH] failed to init push service");
         }
     }
 
@@ -155,9 +155,9 @@ public class PushService {
         } else {
             PushClient res = clients.putIfAbsent(client.toString(), client);
             if (res != null) {
-                Loggers.PUSH.warn("client:" + res.getAddrStr() + " already associated with key " + res.toString());
+                Loggers.PUSH.warn("client: {} already associated with key {}", res.getAddrStr(), res.toString());
             }
-            Loggers.PUSH.debug("client: " + client.getAddrStr() + " added for dom: " + client.getDom());
+            Loggers.PUSH.debug("client: {} added for dom: {}", client.getAddrStr(), client.getDom());
         }
     }
 
@@ -176,7 +176,7 @@ public class PushService {
             size += clientConcurrentMap.size();
         }
 
-        Loggers.PUSH.info("VIPSRV-PUSH", "clientMap size: " + size);
+        Loggers.PUSH.info("[NACOS-PUSH] clientMap size: {}", size);
 
     }
 
@@ -197,8 +197,8 @@ public class PushService {
 
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("VIPSRV-PUSH", "failed to prepare data: [" + data + "] to client: [" +
-                    client.getSocketAddr() + "]", e);
+            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}",
+                data, client.getSocketAddr(), e);
         }
 
         return null;
@@ -233,7 +233,7 @@ public class PushService {
                         }
 
                         Receiver.AckEntry ackEntry;
-                        Loggers.PUSH.debug("push dom: " + dom + " to cleint: " + client.toString());
+                        Loggers.PUSH.debug("push dom: {} to client: {}", dom, client.toString());
                         String key = getPushCacheKey(dom, client.getIp(), client.getAgent());
                         byte[] compressData = null;
                         Map<String, Object> data = null;
@@ -242,7 +242,7 @@ public class PushService {
                             compressData = (byte[]) (pair.getValue0());
                             data = (Map<String, Object>) pair.getValue1();
 
-                            Loggers.PUSH.debug("PUSH-CACHE", "cache hit: " + dom + ":" + client.getAddrStr());
+                            Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", dom, client.getAddrStr());
                         }
 
                         if (compressData != null) {
@@ -254,14 +254,13 @@ public class PushService {
                             }
                         }
 
-                        Loggers.PUSH.info("dom: " + client.getDom() + " changed, schedule push for: "
-                                + client.getAddrStr() + ", agent: " + client.getAgent() + ", key: "
-                                + (ackEntry == null ? null : ackEntry.key));
+                        Loggers.PUSH.info("dom: {} changed, schedule push for: {}, agent: {}, key: {}",
+                            client.getDom(), client.getAddrStr(), client.getAgent(),  (ackEntry == null ? null : ackEntry.key));
 
                         udpPush(ackEntry);
                     }
                 } catch (Exception e) {
-                    Loggers.PUSH.error("VIPSRV-PUSH", "failed to push dom: " + dom + " to cleint", e);
+                    Loggers.PUSH.error("[NACOS-PUSH] failed to push dom: {} to client, error: {}", dom, e);
 
                 } finally {
                     futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
@@ -467,7 +466,7 @@ public class PushService {
 
     private static Receiver.AckEntry prepareAckEntry(PushClient client, Map<String, Object> data, long lastRefTime) {
         if (MapUtils.isEmpty(data)) {
-            Loggers.PUSH.error("VIPSRV-PUSH", "pushing empty data for client is not allowed: " + client);
+            Loggers.PUSH.error("[NACOS-PUSH] pushing empty data for client is not allowed: {}", client);
             return null;
         }
 
@@ -493,20 +492,20 @@ public class PushService {
 
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("VIPSRV-PUSH", "failed to prepare data: [" + data + "] to client: [" +
-                    client.getSocketAddr() + "]", e);
+            Loggers.PUSH.error("[NACOS-PUSH] failed to prepare data: {} to client: {}, error: {}",
+                data, client.getSocketAddr(), e);
             return null;
         }
     }
 
     private static Receiver.AckEntry udpPush(Receiver.AckEntry ackEntry) {
         if (ackEntry == null) {
-            Loggers.PUSH.error("VIPSRV-PUSH", "ackEntry is null ");
+            Loggers.PUSH.error("[NACOS-PUSH] ackEntry is null.");
             return null;
         }
 
         if (ackEntry.getRetryTimes() > MAX_RETRY_TIMES) {
-            Loggers.PUSH.warn("max re-push times reached, retry times " + ackEntry.retryTimes + ", key: " + ackEntry.key);
+            Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.retryTimes, ackEntry.key);
             ackMap.remove(ackEntry.key);
             failedPush += 1;
             return ackEntry;
@@ -529,8 +528,8 @@ public class PushService {
 
             return ackEntry;
         } catch (Exception e) {
-            Loggers.PUSH.error("VIPSRV-PUSH", "failed to push data: [" + ackEntry.data + "] to client: [" +
-                    ackEntry.origin.getAddress().getHostAddress() + "]", e);
+            Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}",
+                ackEntry.data, ackEntry.origin.getAddress().getHostAddress(), e);
             ackMap.remove(ackEntry.key);
             failedPush += 1;
 
@@ -576,8 +575,7 @@ public class PushService {
                     int port = socketAddress.getPort();
 
                     if (System.nanoTime() - ackPacket.lastRefTime > ACK_TIMEOUT_NANOS) {
-                        Loggers.PUSH.warn("ack takes too long from" + packet.getSocketAddress()
-                                + " ack json: " + json);
+                        Loggers.PUSH.warn("ack takes too long from {} ack json: {}",packet.getSocketAddress(), json);
                     }
 
                     String ackKey = getACKKey(ip, port, ackPacket.lastRefTime);
@@ -589,16 +587,15 @@ public class PushService {
 
                     long pushCost = System.currentTimeMillis() - udpSendTimeMap.get(ackKey);
 
-                    Loggers.PUSH.info("received ack: " + json + " from: " + ip
-                            + ":" + port + ", cost: " + pushCost + "ms" + ", unacked: " + ackMap.size() +
-                            ",total push: " + totalPush);
+                    Loggers.PUSH.info("received ack: {} from: {}:, cost: {} ms, unacked: {}, total push: {}",
+                        json, ip, port, pushCost, ackMap.size(), totalPush);
 
                     pushCostMap.put(ackKey, pushCost);
 
                     udpSendTimeMap.remove(ackKey);
 
                 } catch (Throwable e) {
-                    Loggers.PUSH.error("VIPSRV-PUSH", "error while receiving ack data", e);
+                    Loggers.PUSH.error("[NACOS-PUSH] error while receiving ack data", e);
                 }
             }
         }
