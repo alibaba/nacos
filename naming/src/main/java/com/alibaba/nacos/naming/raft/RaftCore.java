@@ -320,7 +320,7 @@ public class RaftCore {
 
             if (!isLeader()) {
                 Map<String, String> params = new HashMap<>(1);
-                params.put("key", key);
+                params.put("key", URLEncoder.encode(key, "UTF-8"));
 
                 RaftProxy.proxyGET(API_DEL, params);
                 return;
@@ -777,7 +777,7 @@ public class RaftCore {
                             + ", datums' size is " + beatDatums.size() + ", RaftCore.datums' size is " + RaftCore.datums.size());
 
                         // update datum entry
-                        String url = buildURL(remote.ip, API_GET) + "?keys=" + keys;
+                        String url = buildURL(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
                         HttpClient.asyncHttpGet(url, null, null, new AsyncCompletionHandler<Integer>() {
                             @Override
                             public Integer onCompleted(Response response) throws Exception {
