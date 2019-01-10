@@ -31,6 +31,7 @@ import org.javatuples.Pair;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
@@ -104,9 +105,8 @@ public class RaftCore {
 
         RaftStore.load();
 
-        Loggers.RAFT.info("cache loaded, peer count: " + peers.size()
-                + ", datum count: " + datums.size()
-                + ", current term:" + peers.getTerm());
+        Loggers.RAFT.info("cache loaded, peer count: {}, datum count: {}, current term: {}",
+            peers.size(), datums.size(), peers.getTerm());
 
         while (true) {
             if (notifier.tasks.size() <= 0) {
@@ -116,7 +116,7 @@ public class RaftCore {
             System.out.println(notifier.tasks.size());
         }
 
-        Loggers.RAFT.info("finish to load data from disk,cost: " + (System.currentTimeMillis() - start) + " ms.");
+        Loggers.RAFT.info("finish to load data from disk,cost: {} ms.", (System.currentTimeMillis() - start));
 
         GlobalExecutor.register(new MasterElection());
         GlobalExecutor.register1(new HeartBeat());
@@ -131,8 +131,8 @@ public class RaftCore {
             throw new Exception("peers is empty.");
         }
 
-        Loggers.RAFT.info("timer started: leader timeout ms: " + GlobalExecutor.LEADER_TIMEOUT_MS
-                + "; heart-beat timeout ms: " + GlobalExecutor.HEARTBEAT_INTVERAL_MS);
+        Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
+            GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTVERAL_MS);
     }
 
     public static List<RaftListener> getListeners() {
@@ -208,7 +208,7 @@ public class RaftCore {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                        Loggers.RAFT.warn("RAFT", "failed to publish data to peer, datumId=" + datum.key + ", peer=" + server + ", http code=" + response.getStatusCode());
+                        Loggers.RAFT.warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}", datum.key, server, response.getStatusCode());
                         return 1;
                     }
                     return 0;
@@ -223,7 +223,7 @@ public class RaftCore {
         }
 
         long end = System.currentTimeMillis();
-        Loggers.RAFT.info("signalPublish cost " + (end - start) + " ms" + " : " + key);
+        Loggers.RAFT.info("signalPublish cost {} ms, key: {}", (end - start), key);
 
     }
 
@@ -284,7 +284,8 @@ public class RaftCore {
                     @Override
                     public Integer onCompleted(Response response) throws Exception {
                         if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                            Loggers.RAFT.warn("RAFT", "failed to publish data to peer, datumId=" + datum.key + ", peer=" + server + ", http code=" + response.getStatusCode());
+                            Loggers.RAFT.warn("[RAFT] failed to publish data to peer, datumId={}, peer={}, http code={}",
+                                datum.key, server, response.getStatusCode());
                             return 1;
                         }
                         latch.countDown();
@@ -301,12 +302,12 @@ public class RaftCore {
 
             if (!latch.await(UtilsAndCommons.RAFT_PUBLISH_TIMEOUT, TimeUnit.MILLISECONDS)) {
                 // only majority servers return success can we consider this update success
-                Loggers.RAFT.info("data publish failed, caused failed to notify majority, key=" + key);
+                Loggers.RAFT.info("data publish failed, caused failed to notify majority, key={}", key);
                 throw new IllegalStateException("data publish failed, caused failed to notify majority, key=" + key);
             }
 
             long end = System.currentTimeMillis();
-            Loggers.RAFT.info("signalPublish cost " + (end - start) + " ms" + " : " + key);
+            Loggers.RAFT.info("signalPublish cost {} ms, key: {}", (end - start), key);
         } finally {
             RaftCore.OPERATE_LOCK.unlock();
         }
@@ -336,21 +337,21 @@ public class RaftCore {
             for (final String server : peers.allServersIncludeMyself()) {
                 String url = buildURL(server, API_ON_DEL);
                 HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(json)
-                        , new AsyncCompletionHandler<Integer>() {
-                            @Override
-                            public Integer onCompleted(Response response) throws Exception {
-                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                    Loggers.RAFT.warn("RAFT", "failed to delete data from peer, datumId=" + key + ", peer=" + server + ", http code=" + response.getStatusCode());
-                                    return 1;
-                                }
-
-                                RaftPeer local = peers.local();
-
-                                local.resetLeaderDue();
-
-                                return 0;
+                    , new AsyncCompletionHandler<Integer>() {
+                        @Override
+                        public Integer onCompleted(Response response) throws Exception {
+                            if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                Loggers.RAFT.warn("[RAFT] failed to delete data from peer, datumId={}, peer={}, http code={}", key, server, response.getStatusCode());
+                                return 1;
                             }
-                        });
+
+                            RaftPeer local = peers.local();
+
+                            local.resetLeaderDue();
+
+                            return 0;
+                        }
+                    });
             }
         } finally {
             OPERATE_LOCK.unlock();
@@ -371,17 +372,17 @@ public class RaftCore {
         }
 
         if (!peers.isLeader(source.ip)) {
-            Loggers.RAFT.warn("peer(" + JSON.toJSONString(source) + ") tried to publish " +
-                    "data but wasn't leader, leader: " + JSON.toJSONString(getLeader()));
+            Loggers.RAFT.warn("peer {} tried to publish data but wasn't leader, leader: {}",
+                JSON.toJSONString(source), JSON.toJSONString(getLeader()));
             throw new IllegalStateException("peer(" + source.ip + ") tried to publish " +
-                    "data but wasn't leader");
+                "data but wasn't leader");
         }
 
         if (source.term.get() < local.term.get()) {
-            Loggers.RAFT.warn("out of date publish, pub-term: "
-                    + JSON.toJSONString(source) + ", cur-term: " + JSON.toJSONString(local));
+            Loggers.RAFT.warn("out of date publish, pub-term: {}, cur-term: {}",
+                JSON.toJSONString(source), JSON.toJSONString(local));
             throw new IllegalStateException("out of date publish, pub-term:"
-                    + source.term.get() + ", cur-term: " + local.term.get());
+                + source.term.get() + ", cur-term: " + local.term.get());
         }
 
         local.resetLeaderDue();
@@ -390,8 +391,8 @@ public class RaftCore {
 
         if (datumOrigin != null && datumOrigin.timestamp.get() > datum.timestamp.get()) {
             // refuse operation:
-            Loggers.RAFT.warn("out of date publish, pub-timestamp:"
-                    + datumOrigin.timestamp.get() + ", cur-timestamp: " + datum.timestamp.get());
+            Loggers.RAFT.warn("out of date publish, pub-timestamp: {}, cur-timestamp: {}",
+                datumOrigin.timestamp.get(), datum.timestamp.get());
             return;
         }
 
@@ -419,7 +420,7 @@ public class RaftCore {
 
         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
 
-        Loggers.RAFT.info("data added/updated, key=" + datum.key + ", term: " + local.term);
+        Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
     }
 
     public static void onDelete(JSONObject params) throws Exception {
@@ -435,16 +436,16 @@ public class RaftCore {
         RaftPeer local = peers.local();
 
         if (!peers.isLeader(source.ip)) {
-            Loggers.RAFT.warn("peer(" + JSON.toJSONString(source) + ") tried to publish " +
-                    "data but wasn't leader, leader: " + JSON.toJSONString(getLeader()));
+            Loggers.RAFT.warn("peer {} tried to publish data but wasn't leader, leader: {}",
+                JSON.toJSONString(source), JSON.toJSONString(getLeader()));
             throw new IllegalStateException("peer(" + source.ip + ") tried to publish data but wasn't leader");
         }
 
         if (source.term.get() < local.term.get()) {
-            Loggers.RAFT.warn("out of date publish, pub-term: "
-                    + JSON.toJSONString(source) + ", cur-term: " + JSON.toJSONString(local));
+            Loggers.RAFT.warn("out of date publish, pub-term: {}, cur-term: {}",
+                JSON.toJSONString(source), JSON.toJSONString(local));
             throw new IllegalStateException("out of date publish, pub-term:"
-                    + source.term + ", cur-term: " + local.term);
+                + source.term + ", cur-term: " + local.term);
         }
 
         local.resetLeaderDue();
@@ -484,7 +485,7 @@ public class RaftCore {
 
                 sendVote();
             } catch (Exception e) {
-                Loggers.RAFT.warn("RAFT", "error while master election", e);
+                Loggers.RAFT.warn("[RAFT] error while master election {}", e);
             }
 
         }
@@ -496,7 +497,8 @@ public class RaftCore {
             }
 
             RaftPeer local = peers.get(NetUtils.localServer());
-            Loggers.RAFT.info("leader timeout, start voting,leader: " + JSON.toJSONString(getLeader()) + ", term: " + local.term);
+            Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}",
+                JSON.toJSONString(getLeader()), local.term);
 
             peers.reset();
 
@@ -513,8 +515,8 @@ public class RaftCore {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("VIPSRV-RAFT", "vote failed: "
-                                        , response.getResponseBody() + " url:" + url);
+                                Loggers.RAFT.error("NACOS-RAFT {}", "vote failed: "
+                                    , response.getResponseBody() + " url:" + url);
 
                                 return 1;
                             }
@@ -546,7 +548,7 @@ public class RaftCore {
             RaftPeer local = peers.get(NetUtils.localServer());
             if (remote.term.get() <= local.term.get()) {
                 String msg = "received illegitimate vote" +
-                        ", voter-term:" + remote.term + ", votee-term:" + local.term;
+                    ", voter-term:" + remote.term + ", votee-term:" + local.term;
 
                 Loggers.RAFT.info(msg);
                 if (StringUtils.isEmpty(local.voteFor)) {
@@ -658,7 +660,7 @@ public class RaftCore {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("VIPSRV-RAFT", "beat failed: " + response.getResponseBody() + ", peer: " + server);
+                                Loggers.RAFT.error("NACOS-RAFT {}", "beat failed: " + response.getResponseBody() + ", peer: " + server);
                                 return 1;
                             }
 
@@ -669,11 +671,11 @@ public class RaftCore {
 
                         @Override
                         public void onThrowable(Throwable t) {
-                            Loggers.RAFT.error("VIPSRV-RAFT", "error while sending heart-beat to peer: " + server, t);
+                            Loggers.RAFT.error("NACOS-RAFT {} {}", "error while sending heart-beat to peer: " + server, t);
                         }
                     });
                 } catch (Exception e) {
-                    Loggers.RAFT.error("VIPSRV-RAFT", "error while sending heart-beat to peer: " + server, e);
+                    Loggers.RAFT.error("VIPSRV {} {}", "error while sending heart-beat to peer: " + server, e);
                 }
             }
 
@@ -696,9 +698,9 @@ public class RaftCore {
 
             if (local.term.get() > remote.term.get()) {
                 Loggers.RAFT.info("[RAFT] out of date beat, beat-from-term: " + remote.term.get()
-                        + ", beat-to-term: " + local.term.get() + ", remote peer: " + JSON.toJSONString(remote) + ", and leaderDueMs: " + local.leaderDueMs);
+                    + ", beat-to-term: " + local.term.get() + ", remote peer: " + JSON.toJSONString(remote) + ", and leaderDueMs: " + local.leaderDueMs);
                 throw new IllegalArgumentException("out of date beat, beat-from-term: " + remote.term.get()
-                        + ", beat-to-term: " + local.term.get());
+                    + ", beat-to-term: " + local.term.get());
             }
 
             if (local.state != RaftPeer.State.FOLLOWER) {
@@ -726,7 +728,7 @@ public class RaftCore {
             if (!Switch.isSendBeatOnly()) {
                 int processedCount = 0;
                 Loggers.RAFT.info("[RAFT] received beat with " + beatDatums.size() + " keys, RaftCore.datums' size is "
-                        + RaftCore.datums.size() + ",  remote server: " + remote.ip + ", term: " + remote.term + ",  local term: " + local.term);
+                    + RaftCore.datums.size() + ",  remote server: " + remote.ip + ", term: " + remote.term + ",  local term: " + local.term);
                 for (Object object : beatDatums) {
                     processedCount = processedCount + 1;
 
@@ -772,7 +774,7 @@ public class RaftCore {
                         }
 
                         Loggers.RAFT.info("get datums from leader: " + getLeader().ip + " , batch size is " + batch.size() + ", processedCount is " + processedCount
-                                + ", datums' size is " + beatDatums.size() + ", RaftCore.datums' size is " + RaftCore.datums.size());
+                            + ", datums' size is " + beatDatums.size() + ", RaftCore.datums' size is " + RaftCore.datums.size());
 
                         // update datum entry
                         String url = buildURL(remote.ip, API_GET) + "?keys=" + keys;
@@ -793,13 +795,13 @@ public class RaftCore {
                                         Datum oldDatum = RaftCore.getDatum(datum.key);
 
                                         if (oldDatum != null && datum.timestamp.get() <= oldDatum.timestamp.get()) {
-                                            Loggers.RAFT.info("[VIPSRV-RAFT] timestamp is smaller than that of mine, key: " + datum.key
-                                                    + ",remote: " + datum.timestamp + ", local: " + oldDatum.timestamp);
+                                            Loggers.RAFT.info("[NACOS-RAFT] timestamp is smaller than that of mine, key: " + datum.key
+                                                + ",remote: " + datum.timestamp + ", local: " + oldDatum.timestamp);
                                             continue;
                                         }
 
                                         if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) ||
-                                                UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
+                                            UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
                                             RaftStore.write(datum);
                                         }
 
@@ -818,7 +820,7 @@ public class RaftCore {
                                         }
 
                                         Loggers.RAFT.info("data updated" + ", key=" + datum.key
-                                                + ", timestamp=" + datum.timestamp + ",from " + JSON.toJSONString(remote) + ", local term: " + local.term);
+                                            + ", timestamp=" + datum.timestamp + ",from " + JSON.toJSONString(remote) + ", local term: " + local.term);
 
                                         notifier.addTask(datum, Notifier.ApplyAction.CHANGE);
                                     } catch (Throwable e) {
@@ -835,7 +837,7 @@ public class RaftCore {
                         batch.clear();
 
                     } catch (Exception e) {
-                        Loggers.RAFT.error("VIPSRV-RAFT", "failed to handle beat entry, key=" + datumKey);
+                        Loggers.RAFT.error("NACOS-RAFT {}", "failed to handle beat entry, key=" + datumKey);
                     }
 
                 }
@@ -851,7 +853,7 @@ public class RaftCore {
                     try {
                         deleteDatum(deadKey);
                     } catch (Exception e) {
-                        Loggers.RAFT.error("VIPSRV-RAFT", "failed to remove entry, key=" + deadKey, e);
+                        Loggers.RAFT.error("NACOS-RAFT {}", "failed to remove entry, key=" + deadKey, e);
                     }
                 }
 
@@ -882,16 +884,16 @@ public class RaftCore {
                 List<String> newServers = (List<String>) CollectionUtils.subtract(servers, oldServers);
                 if (!CollectionUtils.isEmpty(newServers)) {
                     peers.add(newServers);
-                    Loggers.RAFT.info("[RAFT] server list is updated, new (" + newServers.size() + ") servers: " + newServers);
+                    Loggers.RAFT.info("server list is updated, new (" + newServers.size() + ") servers: " + newServers);
                 }
 
                 List<String> deadServers = (List<String>) CollectionUtils.subtract(oldServers, servers);
                 if (!CollectionUtils.isEmpty(deadServers)) {
                     peers.remove(deadServers);
-                    Loggers.RAFT.info("[RAFT] server list is updated, dead (" + deadServers.size() + ") servers: " + deadServers);
+                    Loggers.RAFT.info("server list is updated, dead (" + deadServers.size() + ") servers: " + deadServers);
                 }
             } catch (Exception e) {
-                Loggers.RAFT.info("[RAFT] error while updating server list.", e);
+                Loggers.RAFT.info("error while updating server list.", e);
             }
         }
     }
@@ -916,7 +918,7 @@ public class RaftCore {
                 Loggers.RAFT.info("add listener for switch or domain meta. ");
             }
         } else {
-            Loggers.RAFT.error("VIPSRV-RAFT", "faild to add listener: " + JSON.toJSONString(listener));
+            Loggers.RAFT.error("NACOS-RAFT {}", "faild to add listener: " + JSON.toJSONString(listener));
         }
         // if data present, notify immediately
         for (Datum datum : datums.values()) {
@@ -927,7 +929,7 @@ public class RaftCore {
             try {
                 listener.onChange(datum.key, datum.value);
             } catch (Exception e) {
-                Loggers.RAFT.error("VIPSRV-RAFT", "failed to notify listener", e);
+                Loggers.RAFT.error("NACOS-RAFT {}", "failed to notify listener", e);
             }
         }
     }
@@ -1066,15 +1068,17 @@ public class RaftCore {
                                 continue;
                             }
                         } catch (Throwable e) {
-                            Loggers.RAFT.error("VIPSRV-RAFT", "error while notifying listener of key: "
-                                    + datum.key, e);
+                            Loggers.RAFT.error("NACOS-RAFT {}", "error while notifying listener of key: "
+                                + datum.key, e);
                         }
                     }
 
-                    Loggers.RAFT.debug("VIPSRV-RAFT", "datum change notified" +
+                    if (Loggers.RAFT.isDebugEnabled()) {
+                        Loggers.RAFT.debug("NACOS-RAFT {}", "datum change notified" +
                             ", key: " + datum.key + "; listener count: " + count);
+                    }
                 } catch (Throwable e) {
-                    Loggers.RAFT.error("VIPSRV-RAFT", "Error while handling notifying task", e);
+                    Loggers.RAFT.error("NACOS-RAFT {} {}", "Error while handling notifying task", e);
                 }
             }
         }
