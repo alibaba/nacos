@@ -127,23 +127,29 @@ public class RaftStore {
     public synchronized static void write(final Datum datum) throws Exception {
 
         String namespaceId = null;
-        if (datum.key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
-            String[] segments = datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0].split("\\.");
+
+        Datum writeDatum = new Datum();
+        writeDatum.key = datum.key;
+        writeDatum.value = datum.value;
+        writeDatum.timestamp.set(datum.timestamp.get());
+
+        if (writeDatum.key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
+            String[] segments = writeDatum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0].split("\\.");
             namespaceId = segments[segments.length - 1];
             String newKey;
-            segments = datum.key.split(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR);
+            segments = writeDatum.key.split(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR);
             newKey = segments[0] + segments[1];
-            datum.key = newKey;
+            writeDatum.key = newKey;
         }
 
         File cacheFile;
         File oldCacheFile = null;
 
         if (StringUtils.isNotBlank(namespaceId)) {
-            cacheFile = new File(CACHE_DIR + File.separator + namespaceId + File.separator + encodeFileName(datum.key));
+            cacheFile = new File(CACHE_DIR + File.separator + namespaceId + File.separator + encodeFileName(writeDatum.key));
         } else {
-            oldCacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
-            cacheFile = new File(CACHE_DIR + File.separator + UtilsAndCommons.getDefaultNamespaceId() + File.separator + encodeFileName(datum.key));
+            oldCacheFile = new File(CACHE_DIR + File.separator + encodeFileName(writeDatum.key));
+            cacheFile = new File(CACHE_DIR + File.separator + UtilsAndCommons.getDefaultNamespaceId() + File.separator + encodeFileName(writeDatum.key));
         }
 
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
@@ -151,7 +157,7 @@ public class RaftStore {
         }
 
         FileChannel fc = null;
-        ByteBuffer data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
+        ByteBuffer data = ByteBuffer.wrap(JSON.toJSONString(writeDatum).getBytes("UTF-8"));
 
         try {
             fc = new FileOutputStream(cacheFile, false).getChannel();
