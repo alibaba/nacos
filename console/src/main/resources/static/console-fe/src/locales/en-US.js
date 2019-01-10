@@ -238,6 +238,9 @@ const I18N_CONF = {
     fullScreen: 'Press Esc to exit',
     escExit: 'Publish',
     release: 'Back',
+    confirmSyanx: 'The configuration information may has a syntax error. Are you sure to submit?',
+    dataIdExists: 'Data ID exists',
+    dataRequired: 'Data cannot be empty, submission failed',
   },
   CloneDialog: {
     terminate: 'Terminate',
