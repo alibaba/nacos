@@ -146,6 +146,17 @@ public interface NamingService {
     /**
      * Select one healthy instance of service using predefined load balance strategy
      *
+     * @param serviceName      name of service
+     * @param clusters         a list of clusters should the instance belongs to
+     * @param disableListener  Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, Boolean disableListener) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
      * @param serviceName   name of service
      * @param balancerEnum  Nacos default-implement load-balancer
      * @return qualified instance
@@ -170,7 +181,7 @@ public interface NamingService {
      * @param serviceName     name of service
      * @param clusters        a list of clusters should the instance belongs to
      * @param balancerEnum    Nacos default-implement load-balancer
-     * @param enableListener  Boolean Value that determine if enable the Listener
+     * @param enableListener  Boolean Value that determine if disable the Listener
      * @return qualified instance
      * @throws NacosException
      */
@@ -191,7 +202,7 @@ public interface NamingService {
      *
      * @param serviceName   name of service
      * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param enableListener Boolean Value that determine if enable the Listener
+     * @param enableListener Boolean Value that determine if disable the Listener
      * @return qualified instance
      * @throws NacosException
      */
@@ -204,7 +215,7 @@ public interface NamingService {
      * @param serviceName    name of service
      * @param clusters       a list of clusters should the instance belongs to
      * @param loadBalancer   User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param enableListener Boolean Value that determine if enable the Listener
+     * @param enableListener Boolean Value that determine if disable the Listener
      * @return qualified instance
      * @throws NacosException
      */

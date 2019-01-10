@@ -210,8 +210,26 @@ public class HostReactor {
         return getServiceInfo(serviceName, clusters, env, false);
     }
 
+    /**
+     * allow to disable the listener and query the ServiceInfo once
+     * @param serviceName
+     * @param clusters
+     * @param disableListener
+     * @return
+     */
+    public ServiceInfo getServiceInfo(String serviceName, String clusters, Boolean disableListener) {
+        String env = StringUtils.EMPTY;
+        return getServiceInfo(serviceName, clusters, env, false, disableListener);
+    }
+
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env,
                                       final boolean allIPs) {
+
+        return getServiceInfo(serviceName, clusters, env, allIPs, Boolean.FALSE);
+    }
+
+    public ServiceInfo getServiceInfo(final String serviceName, final String clusters, final String env,
+                                      final boolean allIPs, Boolean disableListener) {
 
         LogUtils.LOG.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
         String key = ServiceInfo.getKey(serviceName, clusters, env, allIPs);
@@ -254,7 +272,9 @@ public class HostReactor {
             }
         }
 
-        scheduleUpdateIfAbsent(serviceName, clusters, env, allIPs);
+        if(!disableListener){
+            scheduleUpdateIfAbsent(serviceName, clusters, env, allIPs);
+        }
 
         return serviceInfoMap.get(serviceObj.getKey());
     }

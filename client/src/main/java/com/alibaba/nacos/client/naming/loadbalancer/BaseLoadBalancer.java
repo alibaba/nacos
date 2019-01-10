@@ -37,7 +37,7 @@ import java.util.List;
  *
  * @author XCXCXCXCX
  */
-public abstract class BaseLoadBalancer implements LoadBalancer, EventListener {
+public abstract class BaseLoadBalancer implements LoadBalancer {
 
     private ServiceInfo serviceInfo;
 
@@ -47,28 +47,23 @@ public abstract class BaseLoadBalancer implements LoadBalancer, EventListener {
 
     private final EventDispatcher eventDispatcher;
 
-    private final Boolean enableListener;
-
     protected BaseLoadBalancer(String serviceName,
                                List<String> clusters,
                                final HostReactor hostReactor,
                                final EventDispatcher eventDispatcher,
-                               Boolean enableListener) {
-        this.serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
+                               Boolean disableLisener) {
+        if(disableLisener){
+            this.serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), true);
+        }else{
+            this.serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
+        }
         //The key can be used to cache Load-Balancer Bean
         this.key = serviceName + ServiceInfo.SPLITER + clusters.toString();
         this.hostReactor = hostReactor;
         this.eventDispatcher = eventDispatcher;
-        this.enableListener = enableListener;
-        if(enableListener){
-            eventDispatcher.addListener(serviceInfo, StringUtils.join(clusters, ","), this);
-        }
     }
 
     public Instance choose(){
-        if(!enableListener){
-            fetchNewServiceInfo();
-        }
         return doChoose(serviceInfo);
     }
 
@@ -85,18 +80,4 @@ public abstract class BaseLoadBalancer implements LoadBalancer, EventListener {
      * @return One instance
      */
     public abstract Instance doChoose(final ServiceInfo serviceInfo);
-
-    protected void fetchNewServiceInfo(){
-        this.serviceInfo = hostReactor.getServiceInfo(serviceInfo.getName(), serviceInfo.getClusters());
-    }
-
-    /**
-     * callback event
-     * update cache when instances changed
-     * @param event
-     */
-    @Override
-    public void onEvent(Event event) {
-        fetchNewServiceInfo();
-    }
 }

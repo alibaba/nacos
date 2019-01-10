@@ -40,24 +40,24 @@ public class LoadBalancerManager {
         new ConcurrentHashMap<String, BaseLoadBalancer>();
 
     public static BaseLoadBalancer toLoadBalancer(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum,
-                                                  final HostReactor hostReactor, final EventDispatcher eventDispatcher, Boolean enableListener) throws NacosException {
+                                                  final HostReactor hostReactor, final EventDispatcher eventDispatcher, Boolean disableListener) throws NacosException {
         String key = serviceName + ServiceInfo.SPLITER + clusters.toString() + ServiceInfo.SPLITER + balancerEnum;
         BaseLoadBalancer loadBalancer = LOAD_BALANCER_CACHE.get(key);
         if(loadBalancer == null){
             if(balancerEnum == RANDOM){
-                loadBalancer = new RandomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+                loadBalancer = new RandomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
 
             }else if(balancerEnum == RANDOM_BY_WEIGHT){
-                loadBalancer = new RandomByWeightLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+                loadBalancer = new RandomByWeightLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
 
             }else if(balancerEnum == POLL){
-                loadBalancer = new PollLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+                loadBalancer = new PollLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
 
             }else if(balancerEnum == POLL_BY_WEIGHT){
-                loadBalancer = new PollByWeightLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+                loadBalancer = new PollByWeightLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
 
             }else if(balancerEnum == IP_HASH){
-                loadBalancer = new IpHashLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+                loadBalancer = new IpHashLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
             }else{
                 throw new NacosException(NacosException.INVALID_PARAM,
                     "This strategy {" + balancerEnum.getDescription() + "} is not currently supported");
@@ -70,11 +70,11 @@ public class LoadBalancerManager {
 
     public static BaseLoadBalancer wrapLoadBalancer(String serviceName, List<String> clusters,
                                                     final HostReactor hostReactor, final EventDispatcher eventDispatcher,
-                                                    LoadBalancer loadBalancer, Boolean enableListener){
+                                                    LoadBalancer loadBalancer, Boolean disableListener){
         String key = serviceName + ServiceInfo.SPLITER + clusters.toString() + ServiceInfo.SPLITER + CUSTOM_LOAD_BALANCER_NAME;
         BaseLoadBalancer baseLoadBalancer = LOAD_BALANCER_CACHE.get(key);
         if(baseLoadBalancer == null){
-            baseLoadBalancer = new CustomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, enableListener);
+            baseLoadBalancer = new CustomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, disableListener);
             LOAD_BALANCER_CACHE.put(baseLoadBalancer.getKey() + CUSTOM_LOAD_BALANCER_NAME ,baseLoadBalancer);
         }
 

@@ -242,6 +242,20 @@ public class NacosNamingService implements NamingService {
 
     /**
      * Select one healthy instance of service using predefined load balance strategy
+     * default use RANDOM_BY_WEIGHT load-balancer
+     * @param serviceName      name of service
+     * @param clusters         a list of clusters should the instance belongs to
+     * @param disableListener  Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, Boolean disableListener) throws NacosException{
+        return selectOneHealthyInstance(serviceName, clusters, LoadBalancerEnum.RANDOM_BY_WEIGHT, disableListener);
+    }
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
      *
      * @param serviceName  name of service
      * @param balancerEnum Nacos default-implement load-balancer
@@ -264,7 +278,7 @@ public class NacosNamingService implements NamingService {
      */
     @Override
     public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum) throws NacosException {
-        return selectOneHealthyInstance(serviceName, clusters, balancerEnum, Boolean.TRUE);
+        return selectOneHealthyInstance(serviceName, clusters, balancerEnum, Boolean.FALSE);
     }
 
     /**
@@ -277,9 +291,9 @@ public class NacosNamingService implements NamingService {
      * @throws NacosException
      */
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum, Boolean enableListener) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum, Boolean disableListener) throws NacosException {
         return LoadBalancerManager.
-            toLoadBalancer(serviceName, clusters, balancerEnum, hostReactor, eventDispatcher, enableListener)
+            toLoadBalancer(serviceName, clusters, balancerEnum, hostReactor, eventDispatcher, disableListener)
             .choose();
     }
 
@@ -301,13 +315,13 @@ public class NacosNamingService implements NamingService {
      *
      * @param serviceName   name of service
      * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param enableListener Boolean Value that determine if enable the Listener
+     * @param disableListener Boolean Value that determine if enable the Listener
      * @return qualified instance
      * @throws NacosException
      */
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, Boolean enableListener) throws NacosException {
-        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), loadBalancer, enableListener);
+    public Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, Boolean disableListener) throws NacosException {
+        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), loadBalancer, disableListener);
     }
 
     /**
@@ -316,14 +330,14 @@ public class NacosNamingService implements NamingService {
      * @param serviceName    name of service
      * @param clusters       a list of clusters should the instance belongs to
      * @param loadBalancer   User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param enableListener Boolean Value that determine if enable the Listener
+     * @param disableListener Boolean Value that determine if disable the Listener
      * @return qualified instance
      * @throws NacosException
      */
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, Boolean enableListener) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, Boolean disableListener) throws NacosException {
         return LoadBalancerManager
-            .wrapLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, enableListener)
+            .wrapLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, disableListener)
             .choose();
     }
 
