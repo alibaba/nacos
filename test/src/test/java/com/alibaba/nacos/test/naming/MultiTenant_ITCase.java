@@ -234,7 +234,7 @@ public class MultiTenant_ITCase {
 
         TimeUnit.SECONDS.sleep(5L);
         Assert.assertEquals(0, naming1.getSubscribeServices().size());
-        Assert.assertEquals(1, naming2.getSubscribeServices().size());
+        Assert.assertEquals(0, naming2.getSubscribeServices().size());
     }
 
     /**
