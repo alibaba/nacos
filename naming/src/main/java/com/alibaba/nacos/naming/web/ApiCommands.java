@@ -256,7 +256,7 @@ public class ApiCommands {
 
             result.put("ips", ipArray);
         } catch (Throwable e) {
-            Loggers.SRV_LOG.warn("VIPSRV-IP4DOM", "failed to call ip4Dom, caused " + e.getMessage());
+            Loggers.SRV_LOG.warn("[NACOS-IP4DOM] failed to call ip4Dom, caused ", e);
             throw new IllegalArgumentException(e);
         }
 
@@ -297,7 +297,9 @@ public class ApiCommands {
             clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
         }
 
-        Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: " + clientBeat + ", serviceName:" + dom);
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, dom);
+        }
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
         Map<String, String[]> stringMap = new HashMap<>(16);
@@ -310,7 +312,7 @@ public class ApiCommands {
         //if domain does not exist, register it.
         if (virtualClusterDomain == null) {
             regDom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
-            Loggers.SRV_LOG.warn("dom not found, register it, dom:" + dom);
+            Loggers.SRV_LOG.warn("dom not found, register it, dom: {}", dom);
         }
 
         virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
@@ -336,12 +338,12 @@ public class ApiCommands {
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
             addIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
-            Loggers.SRV_LOG.warn("ip not found, register it, dom:" + dom + ", ip:" + ipAddress);
+            Loggers.SRV_LOG.warn("ip not found, register it, dom: {}, ip: {}", dom, ipAddress);
         }
 
         if (!DistroMapper.responsible(dom)) {
             String server = DistroMapper.mapSrv(dom);
-            Loggers.EVT_LOG.info("I'm not responsible for " + dom + ", proxy it to " + server);
+            Loggers.EVT_LOG.info("I'm not responsible for {}, proxy it to {}", dom, server);
             Map<String, String> proxyParams = new HashMap<>(16);
             for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
                 String key = entry.getKey();
@@ -399,7 +401,7 @@ public class ApiCommands {
         String serviceMetadataJson = WebUtils.optional(request, "serviceMetadata", StringUtils.EMPTY);
         String clusterMetadataJson = WebUtils.optional(request, "clusterMetadata", StringUtils.EMPTY);
 
-        Loggers.SRV_LOG.info("[RESET-WEIGHT] " + String.valueOf(resetWeight));
+        Loggers.SRV_LOG.info("[RESET-WEIGHT] {}", String.valueOf(resetWeight));
 
         VirtualClusterDomain domObj = new VirtualClusterDomain();
         domObj.setName(dom);
@@ -569,7 +571,7 @@ public class ApiCommands {
                     try {
                         regDom(request);
                     } catch (Exception e) {
-                        Loggers.SRV_LOG.error("REG-SERIVCE", "register service failed, service:" + dom, e);
+                        Loggers.SRV_LOG.error("[REG-SERIVCE] register service failed, service:" + dom, e);
                     }
                 }
             });
@@ -590,7 +592,7 @@ public class ApiCommands {
             }
 
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("reg-service {}", "add ip: " + dom + "|" + ipAddress.toJSON());
+                Loggers.SRV_LOG.debug("reg-service add ip: {}|{}", dom, ipAddress.toJSON());
             }
 
             Map<String, String[]> stringMap = new HashMap<>(16);
@@ -838,15 +840,15 @@ public class ApiCommands {
         long term = Long.parseLong(WebUtils.required(request, "term"));
 
         if (!RaftCore.isLeader(clientIP)) {
-            Loggers.RAFT.warn("peer(" + JSON.toJSONString(clientIP) + ") tried to publish " +
-                "data but wasn't leader, leader: " + JSON.toJSONString(RaftCore.getLeader()));
+            Loggers.RAFT.warn("peer {} tried to publish data but wasn't leader, leader: {}",
+                JSON.toJSONString(clientIP), JSON.toJSONString(RaftCore.getLeader()));
             throw new IllegalStateException("peer(" + clientIP + ") tried to publish " +
                 "data but wasn't leader");
         }
 
         if (term < RaftCore.getPeerSet().local().term.get()) {
-            Loggers.RAFT.warn("out of date publish, pub-term: "
-                + JSON.toJSONString(clientIP) + ", cur-term: " + JSON.toJSONString(RaftCore.getPeerSet().local()));
+            Loggers.RAFT.warn("out of date publish, pub-term: {}, cur-term: {}",
+                JSON.toJSONString(clientIP), JSON.toJSONString(RaftCore.getPeerSet().local()));
             throw new IllegalStateException("out of date publish, pub-term:"
                 + term + ", cur-term: " + RaftCore.getPeerSet().local().term.get());
         }
@@ -912,7 +914,9 @@ public class ApiCommands {
             proxyParams.put(entry.getKey(), entry.getValue()[0]);
         }
 
-        Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments:" + proxyParams);
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments: {}", proxyParams);
+        }
 
         String ipListString = WebUtils.required(request, "ipList");
         final List<String> ipList;
@@ -948,7 +952,7 @@ public class ApiCommands {
             HttpClient.HttpResult result1 = HttpClient.httpPost(url, null, proxyParams);
 
             if (result1.code != HttpURLConnection.HTTP_OK) {
-                Loggers.SRV_LOG.warn("failed to add ip for dom, caused " + result1.content);
+                Loggers.SRV_LOG.warn("failed to add ip for dom, caused {}", result1.content);
                 throw new IllegalArgumentException("failed to add ip for dom, caused " + result1.content);
             }
 
@@ -1033,15 +1037,15 @@ public class ApiCommands {
                                     }
                                 });
                             } catch (Exception e) {
-                                Loggers.SRV_LOG.error("ADD-IP", "failed when publish to peer." + url, e);
+                                Loggers.SRV_LOG.error("[ADD-IP] failed when publish to peer. " + url, e);
                             }
                         }
                     });
                 }
 
-                Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-ADD}" + " new: "
-                    + Arrays.toString(ipList.toArray()) + " operatorIP: "
-                    + WebUtils.optional(request, "clientIP", "unknown"));
+                Loggers.EVT_LOG.info("dom: {} {POS} {IP-ADD} new: {} operatorIP: {}",
+                    dom, Arrays.toString(ipList.toArray()), WebUtils.optional(request, "clientIP", "unknown"));
+
             } finally {
                 domainsManager.getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, dom)).unlock();
             }
@@ -1083,7 +1087,7 @@ public class ApiCommands {
                 cacheMillis = Switch.getPushCacheMillis(dom);
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("VIPSRV-API", "failed to added push client", e);
+            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client", e);
             cacheMillis = Switch.getCacheMillis(dom);
         }
 
@@ -1118,8 +1122,7 @@ public class ApiCommands {
 
         if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
-            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, " +
-                "dom: " + dom);
+            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, dom: {}", dom);
             if (isCheck) {
                 result.put("reachProtectThreshold", true);
             }
@@ -1241,9 +1244,8 @@ public class ApiCommands {
 
         domainsManager.easyRemvIP4Dom(namespaceId, dom, ipObjList);
 
-        Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-REMV}" + " dead: "
-            + Arrays.toString(ipList.toArray()) + " operator: "
-            + WebUtils.optional(request, "clientIP", "unknown"));
+        Loggers.EVT_LOG.info("dom: {} {POS} {IP-REMV} dead: {}operator: {}",
+            dom, Arrays.toString(ipList.toArray()), WebUtils.optional(request, "clientIP", "unknown"));
 
         return "ok";
     }
@@ -1316,7 +1318,7 @@ public class ApiCommands {
             if (datum != null) {
                 switchDomain = JSON.parseObject(datum.value, SwitchDomain.class);
             } else {
-                Loggers.SRV_LOG.warn("datum: " + UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00 is null");
+                Loggers.SRV_LOG.warn("datum: {}.00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00 is null", UtilsAndCommons.DOMAINS_DATA_ID);
             }
 
             if (SwitchEntry.BATCH.equals(entry)) {
@@ -1824,7 +1826,7 @@ public class ApiCommands {
                 cluster = getClusterFromJson(json);
 
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("ADD-CLUSTER", "failed to parse json, try old format.");
+                Loggers.SRV_LOG.warn("[ADD-CLUSTER] failed to parse json, try old format.");
             }
         } else {
             String cktype = WebUtils.optional(request, "cktype", "TCP");
@@ -1968,7 +1970,7 @@ public class ApiCommands {
                 sb.append(ip).append("\r\n");
             }
 
-            Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
+            Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips: {}", sb.toString());
             writeClusterConf(sb.toString());
             return result;
         }
@@ -1979,7 +1981,7 @@ public class ApiCommands {
             for (String ip : ips.split(ipSpliter)) {
                 sb.append(ip).append("\r\n");
             }
-            Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips:" + sb.toString());
+            Loggers.SRV_LOG.info("[UPDATE-CLUSTER] new ips: {}", sb.toString());
             writeClusterConf(sb.toString());
             return result;
         }
@@ -2112,7 +2114,7 @@ public class ApiCommands {
         try {
             DomainsManager.DomainChecksum checksums = JSON.parseObject(domsStatusString, DomainsManager.DomainChecksum.class);
             if (checksums == null) {
-                Loggers.SRV_LOG.warn("DOMAIN-STATUS", "receive malformed data: " + null);
+                Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
                 return "fail";
             }
 
@@ -2131,12 +2133,15 @@ public class ApiCommands {
                 domain.recalculateChecksum();
 
                 if (!checksum.equals(domain.getChecksum())) {
-                    Loggers.SRV_LOG.debug("checksum of " + dom + " is not consistent, remote: " + serverIP + ",checksum: " + checksum + ", local: " + domain.getChecksum());
+                    if (Loggers.SRV_LOG.isDebugEnabled()) {
+                        Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
+                            dom, serverIP, checksum, domain.getChecksum());
+                    }
                     domainsManager.addUpdatedDom2Queue(checksums.namespaceId, dom, serverIP, checksum);
                 }
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("DOMAIN-STATUS", "receive malformed data: " + domsStatusString, e);
+            Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: " + domsStatusString, e);
         }
 
         return "ok";
@@ -2151,8 +2156,8 @@ public class ApiCommands {
         String port = WebUtils.required(request, "port");
         String state = WebUtils.optional(request, "state", StringUtils.EMPTY);
 
-        Loggers.SRV_LOG.info("[CONTAINER_NOTFY] received notify event, type:" + type + ", domain:" + domain +
-            ", ip:" + ip + ", port:" + port + ", state:" + state);
+        Loggers.SRV_LOG.info("[CONTAINER_NOTFY] received notify event, type: {}, domain: {}, ip: {}, port: {}, state: {}",
+            type, domain, ip, port, state);
 
         return "ok";
     }

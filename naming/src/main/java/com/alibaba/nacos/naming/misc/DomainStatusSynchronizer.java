@@ -53,7 +53,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                        Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "failed to request domStatus, remote server: " + serverIP);
+                        Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request domStatus, remote server: {}", serverIP);
 
                         return 1;
                     }
@@ -61,7 +61,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
                 }
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "failed to request domStatus, remote server: " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request domStatus, remote server: " + serverIP, e);
         }
 
     }
@@ -78,11 +78,10 @@ public class DomainStatusSynchronizer implements Synchronizer {
 
         String result;
         try {
-            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync dom status from: "
-                    + serverIP + ", dom: " + key);
+            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync dom status from: {}, dom: {}", serverIP, key);
             result = NamingProxy.reqAPI("ip4Dom2", params, serverIP, false);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("STATUS-SYNCHRONIZE", "Failed to get domain status from " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get domain status from " + serverIP, e);
             return null;
         }
 

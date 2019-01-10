@@ -66,7 +66,7 @@ public class DistroFilter implements Filter {
                 try {
                     resp.sendRedirect(url);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
                 }
                 return;
             }
@@ -102,7 +102,7 @@ public class DistroFilter implements Filter {
                 try {
                     resp.sendRedirect(url);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
                 }
             }
         }

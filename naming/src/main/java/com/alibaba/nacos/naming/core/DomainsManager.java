@@ -93,18 +93,18 @@ public class DomainsManager {
             try {
                 TimeUnit.SECONDS.sleep(5);
             } catch (InterruptedException e) {
-                Loggers.SRV_LOG.error("AUTO-INIT", "failed to auto init", e);
+                Loggers.SRV_LOG.error("[AUTO-INIT] failed to auto init", e);
             }
 
             try {
                 leader = RaftCore.getPeerSet().getLeader();
                 if (leader != null) {
-                    Loggers.SRV_LOG.info("[AUTO-INIT] leader is: " + leader.ip);
+                    Loggers.SRV_LOG.info("[AUTO-INIT] leader is: {}", leader.ip);
                     break;
                 }
 
             } catch (Throwable throwable) {
-                Loggers.SRV_LOG.error("AUTO-INIT", "failed to auto init", throwable);
+                Loggers.SRV_LOG.error("[AUTO-INIT] failed to auto init", throwable);
             }
 
         }
@@ -118,7 +118,7 @@ public class DomainsManager {
         } catch (Exception e) {
             toBeUpdatedDomsQueue.poll();
             toBeUpdatedDomsQueue.add(new DomainKey(namespaceId, domName, serverIP, checksum));
-            Loggers.SRV_LOG.error("DOMAIN-STATUS", "Failed to add domain to be updatd to queue.", e);
+            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add domain to be updatd to queue.", e);
         } finally {
             lock.unlock();
         }
@@ -139,7 +139,7 @@ public class DomainsManager {
                     try {
                         domainKey = toBeUpdatedDomsQueue.take();
                     } catch (Exception e) {
-                        Loggers.EVT_LOG.error("UPDATE-DOMAIN", "Exception while taking item from LinkedBlockingDeque.");
+                        Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while taking item from LinkedBlockingDeque.");
                     }
 
                     if (domainKey == null) {
@@ -152,7 +152,7 @@ public class DomainsManager {
                     domainUpdateExecutor.execute(new DomUpdater(domainKey.getNamespaceId(), domName, serverIP));
                 }
             } catch (Exception e) {
-                Loggers.EVT_LOG.error("UPDATE-DOMAIN", "Exception while update dom: " + domName + "from " + serverIP, e);
+                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update dom: {} from {}, error: {}", domName, serverIP, e);
             }
         }
     }
@@ -174,7 +174,8 @@ public class DomainsManager {
             try {
                 updatedDom2(namespaceId, domName, serverIP);
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("DOMAIN-UPDATER", "Exception while update dom: " + domName + "from " + serverIP, e);
+                Loggers.SRV_LOG.warn("[DOMAIN-UPDATER] Exception while update dom: {} from {}, error: {}",
+                    domName, serverIP, e);
             }
         }
     }
@@ -204,9 +205,9 @@ public class DomainsManager {
             Boolean valid = Boolean.parseBoolean(ipsMap.get(ipAddress.toIPAddr()));
             if (valid != ipAddress.isValid()) {
                 ipAddress.setValid(valid);
-                Loggers.EVT_LOG.info("{" + domName + "} {SYNC} " +
-                    "{IP-" + (ipAddress.isValid() ? "ENABLED" : "DISABLED") + "} " + ipAddress.getIp()
-                    + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName());
+                Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}",
+                    domName, (ipAddress.isValid() ? "ENABLED" : "DISABLED"),
+                    ipAddress.getIp(), ipAddress.getPort(), ipAddress.getClusterName());
             }
         }
 
@@ -217,7 +218,7 @@ public class DomainsManager {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + raftVirtualClusterDomain.getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", raftVirtualClusterDomain.getName(), stringBuilder.toString());
 
     }
 
@@ -257,7 +258,7 @@ public class DomainsManager {
         for (String namespaceId : serviceMap.keySet()) {
             for (Map.Entry<String, Domain> entry : serviceMap.get(namespaceId).entrySet()) {
                 if (DistroMapper.responsible(entry.getKey())) {
-                    domCount ++;
+                    domCount++;
                 }
             }
         }
@@ -329,8 +330,8 @@ public class DomainsManager {
                 Cluster cluster = new Cluster(ipAddress.getClusterName());
                 cluster.setDom(dom);
                 dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
-                Loggers.SRV_LOG.warn("cluster: " + ipAddress.getClusterName() + "  not found, ip: " + ipAddress.toJSON()
-                    + ", will create new cluster with default configuration.");
+                Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                    ipAddress.getClusterName(), ipAddress.toJSON());
             }
 
             ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
@@ -374,7 +375,7 @@ public class DomainsManager {
                     }
                 }
             } catch (Throwable throwable) {
-                Loggers.RAFT.error("NA", "error while processing json: " + oldJson, throwable);
+                Loggers.RAFT.error("error while processing json: " + oldJson, throwable);
             } finally {
                 if (ipAddresses == null) {
                     ipAddresses = new ArrayList<>();
@@ -517,7 +518,8 @@ public class DomainsManager {
 
         public void addItem(String domName, String checksum) {
             if (StringUtils.isEmpty(domName) || StringUtils.isEmpty(checksum)) {
-                Loggers.SRV_LOG.warn("DOMAIN-CHECKSUM", "domName or checksum is empty,domName: " + domName + " checksum: " + checksum);
+                Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] domName or checksum is empty,domName: {}, checksum: {}",
+                    domName, checksum);
                 return;
             }
 
@@ -530,7 +532,6 @@ public class DomainsManager {
         @Override
         public void run() {
             try {
-
 
                 Map<String, Set<String>> allDomainNames = getAllDomNames();
 
@@ -577,7 +578,7 @@ public class DomainsManager {
                     }
                 }
             } catch (Exception e) {
-                Loggers.SRV_LOG.error("DOMAIN-STATUS", "Exception while sending domain status: ", e);
+                Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending domain status", e);
             } finally {
                 UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, Switch.getDomStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
@@ -623,7 +624,7 @@ public class DomainsManager {
             public void onChange(String key, String value) throws Exception {
                 try {
                     if (StringUtils.isEmpty(value)) {
-                        Loggers.SRV_LOG.warn("received empty push from raft, key=" + key);
+                        Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);
                         return;
                     }
 
@@ -636,7 +637,7 @@ public class DomainsManager {
                         dom.setNamespaceId(UtilsAndCommons.getDefaultNamespaceId());
                     }
 
-                    Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key:" + key + ", value:" + value);
+                    Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, value);
 
                     Domain oldDom = getDomain(dom.getNamespaceId(), dom.getName());
 
@@ -648,13 +649,13 @@ public class DomainsManager {
 
                         putDomain(dom);
                         dom.init();
-                        Loggers.SRV_LOG.info("[NEW-DOM-raft] " + dom.toJSON());
+                        Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", dom.toJSON());
                     }
 
                     wakeUp(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
 
                 } catch (Throwable e) {
-                    Loggers.SRV_LOG.error("VIPSRV-DOM", "error while processing dom update", e);
+                    Loggers.SRV_LOG.error("[NACOS-DOM] error while processing dom update", e);
                 }
             }
 
@@ -664,11 +665,11 @@ public class DomainsManager {
                 String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
                 String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
                 Domain dom = chooseDomMap(namespace).remove(name);
-                Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key:" + key + ", value:" + value);
+                Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}, value: {}", key, value);
 
                 if (dom != null) {
                     dom.destroy();
-                    Loggers.SRV_LOG.info("[DEAD-DOM] " + dom.toJSON());
+                    Loggers.SRV_LOG.info("[DEAD-DOM] {}", dom.toJSON());
                 }
             }
         };

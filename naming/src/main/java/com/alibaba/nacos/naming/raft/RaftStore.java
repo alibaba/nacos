@@ -78,7 +78,7 @@ public class RaftStore {
             RaftCore.setTerm(NumberUtils.toLong(RaftStore.meta.getProperty("term"), 0L));
         }
 
-        Loggers.RAFT.info("finish loading all datums, size: " + RaftCore.datumSize() + " cost " + (System.currentTimeMillis() - start) + "ms.");
+        Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", RaftCore.datumSize(), (System.currentTimeMillis() - start));
     }
 
     public synchronized static void load(String key) throws Exception {
@@ -86,7 +86,7 @@ public class RaftStore {
         // load data
         for (File cache : listCaches()) {
             if (!cache.isFile()) {
-                Loggers.RAFT.warn("warning: encountered directory in cache dir: " + cache.getAbsolutePath());
+                Loggers.RAFT.warn("warning: encountered directory in cache dir: {}", cache.getAbsolutePath());
             }
 
             if (!StringUtils.equals(decodeFileName(cache.getName()), key)) {
@@ -95,7 +95,8 @@ public class RaftStore {
             readDatum(cache);
         }
 
-        Loggers.RAFT.info("finish loading datum, key: " + key + " cost " + (System.currentTimeMillis() - start) + "ms.");
+        Loggers.RAFT.info("finish loading datum, key: {} cost {} ms.",
+            key, (System.currentTimeMillis() - start));
     }
 
     public synchronized static void readDatum(File file) throws IOException {
@@ -115,7 +116,7 @@ public class RaftStore {
             Datum datum = JSON.parseObject(json, Datum.class);
             RaftCore.addDatum(datum);
         } catch (Exception e) {
-            Loggers.RAFT.warn("waning: failed to deserialize key: " + file.getName());
+            Loggers.RAFT.warn("waning: failed to deserialize key: {}", file.getName());
             throw e;
         } finally {
             if (fc != null) {
@@ -187,7 +188,7 @@ public class RaftStore {
     public static void delete(Datum datum) {
         File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
         if (!cacheFile.delete()) {
-            Loggers.RAFT.error("RAFT-DELETE", "failed to delete datum: " + datum.key + ", value: " + datum.value);
+            Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", datum.key, datum.value);
             throw new IllegalStateException("failed to delete datum: " + datum.key);
         }
     }
