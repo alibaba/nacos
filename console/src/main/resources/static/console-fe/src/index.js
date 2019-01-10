@@ -23,6 +23,7 @@ import { Provider, connect } from 'react-redux';
 import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { ConfigProvider, Loading } from '@alifd/next';
 
+import './lib';
 import _menu from './menu';
 
 import Layout from './layouts/MainLayout';

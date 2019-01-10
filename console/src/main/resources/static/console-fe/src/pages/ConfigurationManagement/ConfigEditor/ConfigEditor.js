@@ -417,7 +417,7 @@ class ConfigEditor extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.refs.successDialog.current.openDialog(_payload);
+        self.successDialog.current._instance.openDialog(_payload);
       },
       error() {},
     });
