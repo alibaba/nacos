@@ -11,8 +11,9 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { getParams, request } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
@@ -42,6 +43,11 @@ const { Group: RadioGroup } = Radio;
 @ConfigProvider.config
 class ConfigEditor extends React.Component {
   static displayName = 'ConfigEditor';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -81,6 +87,13 @@ class ConfigEditor extends React.Component {
   }
 
   componentDidMount() {
+    this.initData();
+    this.betaips = document.getElementById('betaips');
+    this.getDataDetail();
+    this.chontenttab = document.getElementById('chontenttab'); // diff标签
+  }
+
+  initData() {
     const { locale = {} } = this.props;
     this.setState({
       tag: [
@@ -91,13 +104,8 @@ class ConfigEditor extends React.Component {
       ],
     });
     if (this.dataId.startsWith('cipher-')) {
-      this.setState({
-        switchEncrypt: true,
-      });
+      this.setState({ switchEncrypt: true });
     }
-    this.betaips = document.getElementById('betaips');
-    this.getDataDetail();
-    this.chontenttab = document.getElementById('chontenttab'); // diff标签
   }
 
   initMoacoEditor(language, value) {

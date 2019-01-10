@@ -16,7 +16,7 @@
 package com.alibaba.nacos.api.naming.listener;
 
 /**
- * event listener
+ * Event Listener
  *
  * @author Nacos
  */

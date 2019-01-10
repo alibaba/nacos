@@ -24,6 +24,10 @@ class DiffEditorDialog extends React.Component {
   static displayName = 'DiffEditorDialog';
 
   static propTypes = {
+    locale: PropTypes.object,
+  };
+
+  static propTypes = {
     publishConfig: PropTypes.func,
   };
 
