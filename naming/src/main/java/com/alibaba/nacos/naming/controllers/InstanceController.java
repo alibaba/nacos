@@ -41,7 +41,7 @@ import java.util.List;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT)
 public class InstanceController extends ApiCommands {
 
-    @RequestMapping(value = "/instance", method = RequestMethod.PUT)
+    @RequestMapping(value = "/instance", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
 
         OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
@@ -62,7 +62,7 @@ public class InstanceController extends ApiCommands {
         return deRegService(request);
     }
 
-    @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.POST)
+    @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
         return regService(request);
     }
@@ -111,5 +111,10 @@ public class InstanceController extends ApiCommands {
         }
 
         throw new IllegalStateException("no matched ip found!");
+    }
+
+    @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
+    public JSONObject sendBeat(HttpServletRequest request) throws Exception {
+        return clientBeat(request);
     }
 }

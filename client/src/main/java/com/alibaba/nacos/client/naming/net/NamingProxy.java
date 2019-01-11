@@ -209,7 +209,7 @@ public class NamingProxy {
         params.put("serviceName", beatInfo.getServiceName());
 
         try {
-            String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/health", params, HttpMethod.POST);
+            String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, HttpMethod.PUT);
             JSONObject jsonObject = JSON.parseObject(result);
 
             if (jsonObject != null) {

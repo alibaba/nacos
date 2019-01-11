@@ -42,4 +42,9 @@ public class ResponseExceptionHandler {
         String name = ex.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
     }
+
+    @ExceptionHandler(Exception.class)
+    private ResponseEntity<String> handleNacosException(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
+    }
 }
