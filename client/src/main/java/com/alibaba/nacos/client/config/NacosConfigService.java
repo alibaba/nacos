@@ -23,10 +23,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.http.HttpAgent;
+import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
+import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerHttpAgent;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
@@ -55,7 +57,7 @@ public class NacosConfigService implements ConfigService {
     /**
      * http agent
      */
-    private ServerHttpAgent agent;
+    private HttpAgent agent;
     /**
      * longpulling
      */
@@ -79,7 +81,7 @@ public class NacosConfigService implements ConfigService {
             namespace = namespaceTmp;
             properties.put(PropertyKeyConst.NAMESPACE, namespace);
         }
-        agent = new ServerHttpAgent(properties);
+        agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
         worker = new ClientWorker(agent, configFilterChainManager);
     }

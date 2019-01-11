@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
@@ -47,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author water.lyl
  */
-public class ServerHttpAgent {
+public class ServerHttpAgent implements HttpAgent {
 
     final static public Logger log = LogUtils.logger(ServerHttpAgent.class);
 
@@ -60,11 +63,10 @@ public class ServerHttpAgent {
      * @return
      * @throws IOException
      */
+    @Override
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
                               long readTimeoutMs) throws IOException {
-        long start = System.currentTimeMillis();
-        long end = 0;
-        final long endTime = start + readTimeoutMs;
+        final long endTime = System.currentTimeMillis() + readTimeoutMs;
 
         boolean isSSL = false;
 
@@ -83,8 +85,6 @@ public class ServerHttpAgent {
                     log.error("NACOS ConnectException", "currentServerAddr:{}. httpCode:",
                         new Object[] {serverListMgr.getCurrentServerAddr(), result.code});
                 } else {
-                    end = System.currentTimeMillis();
-                    MetricsMonitor.getConfigRequestMonitor("GET", path, String.valueOf(result.code)).record(end - start, TimeUnit.MILLISECONDS);
                     return result;
                 }
             } catch (ConnectException ce) {
@@ -98,24 +98,19 @@ public class ServerHttpAgent {
             } catch (IOException ioe) {
                 log.error("NACOS  IOException", "currentServerAddr:{}",
                     new Object[] {serverListMgr.getCurrentServerAddr()});
-                end = System.currentTimeMillis();
-                MetricsMonitor.getConfigRequestMonitor("GET", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
                 throw ioe;
             }
         } while (System.currentTimeMillis() <= endTime);
 
         log.error("NACOS-0002",
             LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
-        end = System.currentTimeMillis();
-        MetricsMonitor.getConfigRequestMonitor("GET", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
         throw new ConnectException("no available server");
     }
 
+    @Override
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
                                long readTimeoutMs) throws IOException {
-        long start = System.currentTimeMillis();
-        long end = 0;
-        final long endTime = start + readTimeoutMs;
+        final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
         do {
             try {
@@ -132,8 +127,6 @@ public class ServerHttpAgent {
                     log.error("NACOS ConnectException", "currentServerAddr:{}. httpCode:",
                         new Object[] {serverListMgr.getCurrentServerAddr(), result.code});
                 } else {
-                    end = System.currentTimeMillis();
-                    MetricsMonitor.getConfigRequestMonitor("POST", path, String.valueOf(result.code)).record(end - start, TimeUnit.MILLISECONDS);
                     return result;
                 }
             } catch (ConnectException ce) {
@@ -147,8 +140,6 @@ public class ServerHttpAgent {
             } catch (IOException ioe) {
                 log.error("NACOS  IOException", "currentServerAddr:{}",
                     new Object[] {serverListMgr.getCurrentServerAddr()});
-                end = System.currentTimeMillis();
-                MetricsMonitor.getConfigRequestMonitor("POST", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
                 throw ioe;
             }
 
@@ -156,16 +147,13 @@ public class ServerHttpAgent {
 
         log.error("NACOS-0002",
             LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
-        end = System.currentTimeMillis();
-        MetricsMonitor.getConfigRequestMonitor("POST", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
         throw new ConnectException("no available server");
     }
 
+    @Override
     public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
                                  long readTimeoutMs) throws IOException {
-        long start = System.currentTimeMillis();
-        long end = 0;
-        final long endTime = start + readTimeoutMs;
+        final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
         do {
             try {
@@ -182,8 +170,6 @@ public class ServerHttpAgent {
                     log.error("NACOS ConnectException", "currentServerAddr:{}. httpCode:",
                         new Object[] {serverListMgr.getCurrentServerAddr(), result.code});
                 } else {
-                    end = System.currentTimeMillis();
-                    MetricsMonitor.getConfigRequestMonitor("DELETE", path, String.valueOf(result.code)).record(end - start, TimeUnit.MILLISECONDS);
                     return result;
                 }
             } catch (ConnectException ce) {
@@ -197,8 +183,6 @@ public class ServerHttpAgent {
             } catch (IOException ioe) {
                 log.error("NACOS  IOException", "currentServerAddr:{}",
                     new Object[] {serverListMgr.getCurrentServerAddr()});
-                end = System.currentTimeMillis();
-                MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
                 throw ioe;
             }
 
@@ -206,8 +190,6 @@ public class ServerHttpAgent {
 
         log.error("NACOS-0002",
             LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
-        end = System.currentTimeMillis();
-        MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
         throw new ConnectException("no available server");
     }
 
@@ -267,6 +249,7 @@ public class ServerHttpAgent {
         }
     }
 
+    @Override
     public synchronized void start() throws NacosException {
         serverListMgr.start();
     }
@@ -350,18 +333,22 @@ public class ServerHttpAgent {
             "can not get security credentials, responseCode: " + respCode + ", response: " + response);
     }
 
+    @Override
     public String getName() {
         return serverListMgr.getName();
     }
 
+    @Override
     public String getNamespace() {
         return serverListMgr.getNamespace();
     }
 
+    @Override
     public String getTenant() {
         return serverListMgr.getTenant();
     }
 
+    @Override
     public String getEncode() {
         return encode;
     }

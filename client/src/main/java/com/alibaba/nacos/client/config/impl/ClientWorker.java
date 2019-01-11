@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
@@ -416,7 +417,7 @@ public class ClientWorker {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ServerHttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
 
@@ -534,7 +535,7 @@ public class ClientWorker {
     AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
         new HashMap<String, CacheData>());
 
-    ServerHttpAgent agent;
+    HttpAgent agent;
     ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
     private double currentLongingTaskCount = 0;
