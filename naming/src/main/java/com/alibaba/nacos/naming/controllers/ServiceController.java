@@ -50,7 +50,7 @@ public class ServiceController {
     @Autowired
     protected DomainsManager domainsManager;
 
-    @RequestMapping(value = "", method = RequestMethod.PUT)
+    @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
@@ -157,6 +157,10 @@ public class ServiceController {
 
         List<String> doms = domainsManager.getAllDomNamesList(namespaceId);
 
+        if (doms == null || doms.isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM, "No service exist in " + namespaceId);
+        }
+
         if (StringUtils.isNotBlank(selectorString)) {
 
             JSONObject selectorJson = JSON.parseObject(selectorString);
@@ -208,7 +212,7 @@ public class ServiceController {
 
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,

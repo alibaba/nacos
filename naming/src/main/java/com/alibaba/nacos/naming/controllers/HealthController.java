@@ -15,14 +15,10 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.ApiCommands;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -31,9 +27,4 @@ import javax.servlet.http.HttpServletRequest;
 @RestController("namingHealthController")
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
 public class HealthController extends ApiCommands {
-
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    public JSONObject update(HttpServletRequest request) throws Exception {
-        return clientBeat(request);
-    }
 }
