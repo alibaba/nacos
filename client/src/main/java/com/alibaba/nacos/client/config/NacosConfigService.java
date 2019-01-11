@@ -57,7 +57,7 @@ public class NacosConfigService implements ConfigService {
      */
     private ServerHttpAgent agent;
     /**
-     * longpulling
+     * longpolling
      */
     private ClientWorker worker;
     private String namespace;
