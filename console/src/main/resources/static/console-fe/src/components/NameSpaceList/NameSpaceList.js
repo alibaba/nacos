@@ -26,6 +26,7 @@ class NameSpaceList extends React.Component {
   static displayName = 'NameSpaceList';
 
   static propTypes = {
+    locale: PropTypes.object,
     setNowNameSpace: PropTypes.func,
     namespaceCallBack: PropTypes.func,
     title: PropTypes.string,

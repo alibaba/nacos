@@ -45,7 +45,7 @@ import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
 /**
- * Longpulling
+ * Longpolling
  *
  * @author Nacos
  */
@@ -300,7 +300,7 @@ public class ClientWorker {
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int)currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
-                executorService.execute(new LongPullingRunnable(i));
+                executorService.execute(new LongPollingRunnable(i));
             }
             currentLongingTaskCount = longingTaskCount;
         }
@@ -435,7 +435,7 @@ public class ClientWorker {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPulling" + agent.getName());
+                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
                 t.setDaemon(true);
                 return t;
             }
@@ -452,10 +452,10 @@ public class ClientWorker {
         }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
 
-    class LongPullingRunnable implements Runnable {
+    class LongPollingRunnable implements Runnable {
         private int taskId;
 
-        public LongPullingRunnable(int taskId) {
+        public LongPollingRunnable(int taskId) {
             this.taskId = taskId;
         }
 
@@ -510,7 +510,7 @@ public class ClientWorker {
                 }
                 inInitializingCacheList.clear();
             } catch (Throwable e) {
-                log.error("500", "longPulling error", e);
+                log.error("500", "longPolling error", e);
             } finally {
                 executorService.execute(this);
             }

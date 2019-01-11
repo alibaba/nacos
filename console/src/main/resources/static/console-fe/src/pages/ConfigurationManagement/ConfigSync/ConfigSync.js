@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Button, Checkbox, ConfigProvider, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, request } from '../../../globalLib';
@@ -21,6 +22,11 @@ import './index.scss';
 @ConfigProvider.config
 class ConfigSync extends React.Component {
   static displayName = 'ConfigSync';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
