@@ -65,7 +65,7 @@ public class MetricsHttpAgent implements HttpAgent {
         long end = 0;
         HttpResult result = null;
         try {
-            result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             end = System.currentTimeMillis();
             MetricsMonitor.getConfigRequestMonitor("POST", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
@@ -84,7 +84,7 @@ public class MetricsHttpAgent implements HttpAgent {
         long end = 0;
         HttpResult result = null;
         try {
-            result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
+            result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
             end = System.currentTimeMillis();
             MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
