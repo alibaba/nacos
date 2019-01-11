@@ -23,6 +23,7 @@ class InstanceTable extends React.Component {
   static displayName = 'InstanceTable';
 
   static propTypes = {
+    locale: PropTypes.object,
     clusterName: PropTypes.string,
     serviceName: PropTypes.string,
   };
