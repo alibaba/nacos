@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -100,6 +102,8 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
         log.info(agent.getName(), "[unsubscribe] {}", groupKey);
+
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -111,6 +115,8 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
         log.info(agent.getName(), "[unsubscribe] {}", groupKey);
+
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -143,6 +149,8 @@ public class ClientWorker {
 
         log.info(agent.getName(), "[subscribe] {}", key);
 
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+
         return cache;
     }
 
@@ -170,6 +178,9 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
         log.info(agent.getName(), "[subscribe] {}", key);
+
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+
         return cache;
     }
 
@@ -406,9 +417,10 @@ public class ClientWorker {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ServerHttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
+
         executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -522,9 +534,9 @@ public class ClientWorker {
      */
     AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
         new HashMap<String, CacheData>());
-    ServerHttpAgent agent;
+
+    HttpAgent agent;
     ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
     private double currentLongingTaskCount = 0;
-
 }

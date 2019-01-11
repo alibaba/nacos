@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.model.SampleResult;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
@@ -358,7 +359,8 @@ public class LongPollingService extends AbstractEventListener {
     class StatTask implements Runnable {
         @Override
         public void run() {
-            memoryLog.info("[long-polling] client count " + allSubs.size());
+            memoryLog.info("[long-pulling] client count " + allSubs.size());
+            MetricsMonitor.getLongPollingMonitor().set(allSubs.size());
         }
     }
 
