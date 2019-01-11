@@ -11,8 +11,9 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
+import React from 'react';
+import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
 import {
@@ -40,6 +41,11 @@ const { AutoComplete: Combobox } = Select;
 @ConfigProvider.config
 class NewConfig extends React.Component {
   static displayName = 'NewConfig';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -234,28 +240,57 @@ class NewConfig extends React.Component {
       }
       if (!content) {
         Message.error({
-          content: aliwareIntl.get('nacos.page.ConfigEditor.submit_failed'),
+          content: locale.dataRequired,
           align: 'cc cc',
         });
         return;
       }
 
       if (validateContent.validate({ content, type: configType })) {
-        this._publishConfig(content);
+        this.publicConfigBeforeCheck(content);
       } else {
         Dialog.confirm({
-          content: '配置信息可能有语法错误, 确定提交吗?',
+          content: locale.confirmSyanx,
           language: aliwareIntl.currentLanguageCode || 'zh-cn',
           onOk: () => {
-            this._publishConfig(content);
+            this.publicConfigBeforeCheck(content);
           },
         });
       }
     });
   }
 
+  /**
+   * 因为后端接口没有做是否存在配置逻辑 会覆盖原先配置 所以提交前先判断是否存在
+   */
+  publicConfigBeforeCheck = content => {
+    const { locale = {} } = this.props;
+    const { addonBefore } = this.state;
+    request({
+      url: 'v1/cs/configs',
+      data: {
+        show: 'all',
+        dataId: addonBefore + this.field.getValue('dataId'),
+        group: this.field.getValue('group'),
+        tenant: getParams('namespace') || '',
+      },
+      success: res => {
+        // 返回成功 说明存在就不提交配置
+        Message.error({
+          content: locale.dataIdExists,
+          align: 'cc cc',
+        });
+      },
+      error: err => {
+        // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        this._publishConfig(content);
+      },
+    });
+  };
+
   _publishConfig = content => {
     const self = this;
+    const { locale = {} } = this.props;
     let { addonBefore, config_tags, configType } = this.state;
     this.tenant = getParams('namespace') || '';
     const payload = {
@@ -280,8 +315,8 @@ class NewConfig extends React.Component {
       },
       success(res) {
         const _payload = {};
-        _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
-        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
+        _payload.maintitle = locale.newListingMain;
+        _payload.title = locale.newListing;
         _payload.content = '';
         _payload.dataId = payload.dataId;
         _payload.group = payload.group;
@@ -294,7 +329,7 @@ class NewConfig extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.successDialog.current.openDialog(_payload);
+        self.successDialog.current.getInstance().openDialog(_payload);
       },
       complete() {
         self.closeLoading();
@@ -302,7 +337,7 @@ class NewConfig extends React.Component {
       error(res) {
         Dialog.alert({
           language: aliwareIntl.currentLanguageCode || 'zh-cn',
-          content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed'),
+          content: locale.publishFailed,
         });
         self.closeLoading();
       },

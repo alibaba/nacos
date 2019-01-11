@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { getParams } from '../../globalLib';
 import { ConfigProvider, Dialog, Loading, Tab } from '@alifd/next';
 
@@ -22,6 +23,10 @@ const TabPane = Tab.Item;
 @ConfigProvider.config
 class ShowCodeing extends React.Component {
   static displayName = 'ShowCodeing';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);

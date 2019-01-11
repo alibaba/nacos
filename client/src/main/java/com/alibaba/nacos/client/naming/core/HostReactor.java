@@ -46,7 +46,7 @@ public class HostReactor {
 
     private Map<String, Object> updatingMap;
 
-    private PushRecver pushRecver;
+    private PushReceiver pushReceiver;
 
     private EventDispatcher eventDispatcher;
 
@@ -69,7 +69,7 @@ public class HostReactor {
 
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
-        this.pushRecver = new PushRecver(this);
+        this.pushReceiver = new PushReceiver(this);
     }
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -287,7 +287,7 @@ public class HostReactor {
             Map<String, String> params = new HashMap<String, String>(8);
             params.put("dom", serviceName);
             params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
+            params.put("udpPort", String.valueOf(pushReceiver.getUDPPort()));
 
             ServiceInfo oldService = getSerivceInfo0(serviceName, clusters, env, true);
             if (oldService != null) {
@@ -319,7 +319,7 @@ public class HostReactor {
             Map<String, String> params = new HashMap<String, String>(8);
             params.put("dom", serviceName);
             params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
+            params.put("udpPort", String.valueOf(pushReceiver.getUDPPort()));
             params.put("env", env);
             params.put("clientIP", NetUtils.localIP());
 
@@ -361,7 +361,7 @@ public class HostReactor {
             Map<String, String> params = new HashMap<String, String>(16);
             params.put("dom", serviceName);
             params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
+            params.put("udpPort", String.valueOf(pushReceiver.getUDPPort()));
             params.put("unit", env);
             params.put("clientIP", NetUtils.localIP());
 
