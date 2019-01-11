@@ -86,12 +86,38 @@ public class PerformanceLoggerThread {
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
-    public void refresh() {
+    public void refreshMetrics() {
         PushService.setFailedPush(0);
         PushService.setTotalPush(0);
         MetricsMonitor.getHttpHealthCheckMonitor().set(0);
         MetricsMonitor.getMysqlHealthCheckMonitor().set(0);
         MetricsMonitor.getTcpHealthCheckMonitor().set(0);
+    }
+
+    @Scheduled(cron = "0/15 * * * * ?")
+    public void collectmetrics() {
+        int domCount = domainsManager.getDomCount();
+        MetricsMonitor.getDomCountMonitor().set(domCount);
+
+        int ipCount = domainsManager.getIPCount();
+        MetricsMonitor.getIpCountMonitor().set(ipCount);
+
+        long maxPushCost = getMaxPushCost();
+        MetricsMonitor.getMaxPushCostMonitor().set(maxPushCost);
+
+        long avgPushCost = getAvgPushCost();
+        MetricsMonitor.getAvgPushCostMonitor().set(avgPushCost);
+
+        MetricsMonitor.getTotalPushMonitor().set(PushService.getTotalPush());
+        MetricsMonitor.getFailedPushMonitor().set(PushService.getFailedPushCount());
+
+        if (RaftCore.isLeader()) {
+            MetricsMonitor.getLeaderStatusMonitor().set(1);
+        } else if (RaftCore.getPeerSet().local().state == FOLLOWER) {
+            MetricsMonitor.getLeaderStatusMonitor().set(0);
+        } else {
+            MetricsMonitor.getLeaderStatusMonitor().set(2);
+        }
     }
 
     class AllDomNamesTask implements Runnable {
@@ -113,27 +139,9 @@ public class PerformanceLoggerThread {
         public void run() {
             try {
                 int domCount = domainsManager.getDomCount();
-                MetricsMonitor.getDomCountMonitor().set(domCount);
-
                 int ipCount = domainsManager.getIPCount();
-                MetricsMonitor.getIpCountMonitor().set(ipCount);
-
                 long maxPushCost = getMaxPushCost();
-                MetricsMonitor.getMaxPushCostMonitor().set(maxPushCost);
-
                 long avgPushCost = getAvgPushCost();
-                MetricsMonitor.getAvgPushCostMonitor().set(avgPushCost);
-
-                MetricsMonitor.getTotalPushMonitor().set(PushService.getTotalPush());
-                MetricsMonitor.getFailedPushMonitor().set(PushService.getFailedPushCount());
-
-                if (RaftCore.isLeader()) {
-                    MetricsMonitor.getLeaderStatusMonitor().set(1);
-                } else if (RaftCore.getPeerSet().local().state == FOLLOWER) {
-                    MetricsMonitor.getLeaderStatusMonitor().set(0);
-                } else {
-                    MetricsMonitor.getLeaderStatusMonitor().set(2);
-                }
 
                 Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
             } catch (Exception e) {
