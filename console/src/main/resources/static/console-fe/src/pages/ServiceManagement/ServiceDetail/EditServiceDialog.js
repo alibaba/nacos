@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Select, Message, ConfigProvider } from '@alifd/next';
 import { DIALOG_FORM_LAYOUT } from './constant';
@@ -19,6 +20,12 @@ import { DIALOG_FORM_LAYOUT } from './constant';
 @ConfigProvider.config
 class EditServiceDialog extends React.Component {
   static displayName = 'EditServiceDialog';
+
+  static propTypes = {
+    queryServiceList: PropTypes.func,
+    getServiceDetail: PropTypes.func,
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -85,12 +92,10 @@ class EditServiceDialog extends React.Component {
     });
   }
 
-  getFormItemLayout = () => {
-    return {
-      labelCol: { span: 6 },
-      wrapperCol: { span: 14 },
-    };
-  };
+  getFormItemLayout = () => ({
+    labelCol: { span: 6 },
+    wrapperCol: { span: 14 },
+  });
 
   render() {
     const { locale = {} } = this.props;

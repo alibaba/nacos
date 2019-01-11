@@ -26,8 +26,9 @@ import java.util.concurrent.Executor;
 public abstract class AbstractListener implements Listener {
 
     /**
-     * use default Executor
+     * Use default executor
      */
+    @Override
     public Executor getExecutor() {
         return null;
     }

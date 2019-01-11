@@ -114,25 +114,8 @@ public class RaftCommands {
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject json = JSON.parseObject(value);
 
-        RaftCore.doSignalPublish(json.getString("key"), json.getString("value"));
+        RaftCore.doSignalPublish(json.getString("key"), json.getString("value"), json.getBooleanValue("locked"));
 
-        return "ok";
-    }
-
-    @NeedAuth
-    @RequestMapping("/unSafePublish")
-    public String unSafePublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
-        response.setHeader("Cache-Control", "no-cache");
-        response.setHeader("Content-Encode", "gzip");
-
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-
-        String value = Arrays.asList(entity).toArray(new String[1])[0];
-        JSONObject json = JSON.parseObject(value);
-
-        RaftCore.unsafePublish(json.getString("key"), json.getString("value"));
         return "ok";
     }
 
@@ -193,7 +176,7 @@ public class RaftCommands {
         String value = Arrays.asList(entity).toArray(new String[1])[0];
         JSONObject jsonObject = JSON.parseObject(value);
 
-        RaftCore.onPublish(jsonObject);
+        RaftCore.onPublish(jsonObject, jsonObject.getBoolean("increaseTerm"));
         return "ok";
     }
 

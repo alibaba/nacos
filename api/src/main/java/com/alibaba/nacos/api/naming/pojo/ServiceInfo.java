@@ -24,7 +24,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * ServiceInfo
+ *
+ * @author dungu.zpf
  */
 public class ServiceInfo {
 

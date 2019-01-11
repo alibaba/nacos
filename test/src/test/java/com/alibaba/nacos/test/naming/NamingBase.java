@@ -43,6 +43,8 @@ public class NamingBase {
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
     public static final String TEST_SERVER_STATUS = "UP";
 
+    static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
+
     public static final int TEST_PORT = 8080;
 
     public static String randomDomainName() {
