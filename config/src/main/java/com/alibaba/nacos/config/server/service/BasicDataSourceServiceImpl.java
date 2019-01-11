@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -309,6 +310,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
             if (!isFound) {
                 fatalLog.error("[master-db] master db not found.");
+                MetricsMonitor.getDbException().increment();
             }
         }
     }
@@ -332,6 +334,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                         fatalLog.error("[db-error] slave db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
+
+                    MetricsMonitor.getDbException().increment();
                 }
             }
         }

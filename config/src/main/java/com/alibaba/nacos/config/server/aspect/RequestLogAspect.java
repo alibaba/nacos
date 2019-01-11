@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
@@ -23,6 +24,7 @@ import com.alibaba.nacos.config.server.utils.RequestUtil;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,8 +35,8 @@ import javax.servlet.http.HttpServletResponse;
  * @author Nacos
  */
 @Aspect
+@Component
 public class RequestLogAspect {
-
     /**
      * publish config
      */
@@ -54,22 +56,24 @@ public class RequestLogAspect {
      */
     private static final String CLIENT_INTERFACE_REMOVE_ALL_CONFIG
         = "execution(* com.alibaba.nacos.config.server.controller.ConfigController.deleteConfig(..)) && args(request,"
-        + "response,dataId,group,..)";
+        + "response,dataId,group,tenant,..)";
+
 
     /**
      * publishSingle
-     */
+     * */
     @Around(CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG)
     public Object interfacePublishSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
                                          HttpServletResponse response, String dataId, String group, String tenant,
                                          String content) throws Throwable {
         final String md5 = content == null ? null : MD5.getInstance().getMD5String(content);
+        MetricsMonitor.getPublishMonitor().incrementAndGet();
         return logClientRequest("publish", pjp, request, response, dataId, group, tenant, md5);
     }
 
     /**
      * removeAll
-     */
+     * */
     @Around(CLIENT_INTERFACE_REMOVE_ALL_CONFIG)
     public Object interfaceRemoveAll(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
                                      String dataId, String group, String tenant) throws Throwable {
@@ -84,6 +88,7 @@ public class RequestLogAspect {
                                      String dataId, String group, String tenant) throws Throwable {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         final String md5 = ConfigService.getContentMd5(groupKey);
+        MetricsMonitor.getConfigMonitor().incrementAndGet();
         return logClientRequest("get", pjp, request, response, dataId, group, tenant, md5);
     }
 
