@@ -110,21 +110,6 @@ public class NamingProxy {
 
             List<String> serverlist = refreshServerListFromDisk();
 
-            if (!CollectionUtils.isEmpty(serverlist)) {
-                serverlistFromConfig = serverlist;
-            }
-
-            if (!CollectionUtils.isEqualCollection(serverlistFromConfig, servers) && CollectionUtils.isNotEmpty(serverlistFromConfig)) {
-                servers = serverlistFromConfig;
-            }
-
-            if (RunningConfig.getServerPort() > 0) {
-                lastSrvRefTime = System.currentTimeMillis();
-            }
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to update server list", e);
-            List<String> serverlist = refreshServerListFromDisk();
-
             if (CollectionUtils.isNotEmpty(serverlist)) {
                 serverlistFromConfig = serverlist;
             }
@@ -132,6 +117,13 @@ public class NamingProxy {
             if (CollectionUtils.isNotEmpty(serverlistFromConfig)) {
                 servers = serverlistFromConfig;
             }
+
+            if (RunningConfig.getServerPort() > 0) {
+                lastSrvRefTime = System.currentTimeMillis();
+            }
+
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("failed to update server list", e);
         }
     }
 
