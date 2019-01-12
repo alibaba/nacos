@@ -157,7 +157,8 @@ public class NamingProxy {
 
     public void registerService(String serviceName, Instance instance) throws NacosException {
 
-        LogUtils.LOG.info("REGISTER-SERVICE", "registering service " + serviceName + " with instance:" + instance);
+        LogUtils.LOG.info("REGISTER-SERVICE", "{} registering service {} with instance: {}",
+            namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
@@ -170,13 +171,14 @@ public class NamingProxy {
         params.put("serviceName", serviceName);
         params.put("clusterName", instance.getClusterName());
 
-        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.PUT);
+        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
+
     }
 
     public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
 
-        LogUtils.LOG.info("DEREGISTER-SERVICE", "deregistering service " + serviceName
-            + " with instance:" + ip + ":" + port + "@" + cluster);
+        LogUtils.LOG.info("DEREGISTER-SERVICE", "{} deregistering service {} with instance: {}:{}@{}",
+            namespaceId, serviceName, ip, port, cluster);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
@@ -202,24 +204,21 @@ public class NamingProxy {
     }
 
     public long sendBeat(BeatInfo beatInfo) {
-
-        Map<String, String> params = new HashMap<String, String>(4);
-        params.put("beat", JSON.toJSONString(beatInfo));
-        params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
-        params.put("serviceName", beatInfo.getServiceName());
-
         try {
+            LogUtils.LOG.info("BEAT", "{} sending beat to server: {}", namespaceId, beatInfo.toString());
+            Map<String, String> params = new HashMap<String, String>(4);
+            params.put("beat", JSON.toJSONString(beatInfo));
+            params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
+            params.put("serviceName", beatInfo.getServiceName());
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, HttpMethod.PUT);
             JSONObject jsonObject = JSON.parseObject(result);
 
             if (jsonObject != null) {
                 return jsonObject.getLong("clientBeatInterval");
-
             }
         } catch (Exception e) {
             LogUtils.LOG.error("CLIENT-BEAT", "failed to send beat: " + JSON.toJSONString(beatInfo), e);
         }
-
         return 0L;
     }
 

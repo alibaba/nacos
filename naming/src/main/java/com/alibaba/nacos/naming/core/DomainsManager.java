@@ -295,16 +295,15 @@ public class DomainsManager {
         RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom), true);
     }
 
-    public void easyAddIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long timestamp, long term) throws Exception {
-    public void easyAddIP4Dom(String domName, List<IpAddress> ips, long term) throws Exception {
-        easyUpdateIP4Dom(domName, ips, term, "add");
+    public void easyAddIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long term) throws Exception {
+        easyUpdateIP4Dom(namespaceId, domName, ips, term, "add");
     }
 
-    public void easyRemvIP4Dom(String domName, List<IpAddress> ips, long term) throws Exception {
-        easyUpdateIP4Dom(domName, ips, term, "remove");
+    public void easyRemvIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long term) throws Exception {
+        easyUpdateIP4Dom(namespaceId, domName, ips, term, "remove");
     }
 
-    public void easyUpdateIP4Dom(String domName, List<IpAddress> ips, long term, String action) throws Exception {
+    public void easyUpdateIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long term, String action) throws Exception {
 
         VirtualClusterDomain dom = (VirtualClusterDomain) chooseDomMap(namespaceId).get(domName);
         if (dom == null) {
@@ -340,14 +339,14 @@ public class DomainsManager {
                 ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
             }
 
-        for (IpAddress ipAddress : ips) {
-            if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                Cluster cluster = new Cluster(ipAddress.getClusterName());
-                cluster.setDom(dom);
-                dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
-                Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                    ipAddress.getClusterName(), ipAddress.toJSON());
-            }
+            for (IpAddress ipAddress : ips) {
+                if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
+                    Cluster cluster = new Cluster(ipAddress.getClusterName());
+                    cluster.setDom(dom);
+                    dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
+                    Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                        ipAddress.getClusterName(), ipAddress.toJSON());
+                }
 
                 if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                     ipAddressMap.remove(ipAddress.getDatumKey());
@@ -362,8 +361,7 @@ public class DomainsManager {
                     + JSON.toJSONString(ipAddressMap.values()));
             }
 
-            Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-UPDATE}" + ips +
-                ", action:" + action);
+            Loggers.EVT_LOG.info("{} {POS} {IP-UPDATE} {}, action: {}", dom, ips, action);
 
             String key = UtilsAndCommons.getIPListStoreKey(dom);
             String value = JSON.toJSONString(ipAddressMap.values());
@@ -384,7 +382,7 @@ public class DomainsManager {
             peer.leaderDueMs = RaftCore.getLeader().leaderDueMs;
             peer.state = RaftCore.getLeader().state;
 
-            boolean increaseTerm = !((VirtualClusterDomain) getDomain(domName)).getEnableClientBeat();
+            boolean increaseTerm = !((VirtualClusterDomain) getDomain(namespaceId, domName)).getEnableClientBeat();
 
             RaftCore.onPublish(datum, peer, increaseTerm);
         } finally {
@@ -420,8 +418,11 @@ public class DomainsManager {
         return ipAddresses;
     }
 
-    public Domain getDomain(String domName) {
-        return chooseDomMap().get(domName);
+    public Domain getDomain(String namespaceId, String domName) {
+        if (serviceMap.get(namespaceId) == null) {
+            return null;
+        }
+        return chooseDomMap(namespaceId).get(domName);
     }
 
     public void putDomain(VirtualClusterDomain domain) {

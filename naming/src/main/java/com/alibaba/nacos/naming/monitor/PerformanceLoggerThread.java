@@ -73,7 +73,6 @@ public class PerformanceLoggerThread {
         PerformanceLogTask task = new PerformanceLogTask();
         executor.scheduleWithFixedDelay(task, 30, PERIOD, TimeUnit.SECONDS);
         executor.scheduleWithFixedDelay(new HealthCheckSwitchTask(), 30, HEALTH_CHECK_PERIOD, TimeUnit.SECONDS);
-
     }
 
     class PerformanceLogTask implements Runnable {
