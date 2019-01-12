@@ -21,6 +21,7 @@ import java.util.concurrent.*;
  * @author nacos
  */
 public class GlobalExecutor {
+
     public static final long HEARTBEAT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
 
     public static final long LEADER_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(15L);

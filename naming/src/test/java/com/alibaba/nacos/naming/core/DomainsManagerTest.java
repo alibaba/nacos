@@ -63,7 +63,7 @@ public class DomainsManagerTest extends BaseTest {
         List<IpAddress> ipList = new ArrayList<IpAddress>();
         ipList.add(ipAddress);
         domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1"));
-        domainsManager.easyRemvIP4Dom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1", ipList);
+        domainsManager.easyRemvIP4Dom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1", ipList, 1L);
     }
 
     @Test

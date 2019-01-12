@@ -343,6 +343,7 @@ public class ApiCommands {
             if (!virtualClusterDomain.getEnableClientBeat()) {
                 return result;
             }
+
             stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
@@ -606,7 +607,7 @@ public class ApiCommands {
             stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
             stringMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
 
-            doAddIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
+            addIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
         } else {
             throw new IllegalArgumentException("dom not found: " + dom);
         }
@@ -897,13 +898,85 @@ public class ApiCommands {
                     + ", if you want to add them, remove updateOnly flag");
             }
         }
-        domainsManager.easyAddIP4Dom(namespaceId, dom, newIPs, timestamp, term);
+        domainsManager.easyAddIP4Dom(namespaceId, dom, newIPs, term);
 
         return "ok";
     }
 
+    private void syncOnUpdateIP4Dom(String namespaceId, String dom, Map<String, String> proxyParams, String action) throws InterruptedException {
 
-    private String doAddIP4Dom(HttpServletRequest request) throws Exception {
+        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(namespaceId, dom));
+
+        final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
+        updateIpPublish(proxyParams, countDownLatch, action);
+        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
+            Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
+            throw new IllegalArgumentException("data publish failed, key=" + key);
+        }
+    }
+
+    private void syncOnAddIP4Dom(String namespaceId, String dom, Map<String, String> proxyParams) throws InterruptedException {
+        syncOnUpdateIP4Dom(namespaceId, dom, proxyParams, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
+    }
+
+    private void asyncOnAddIP4Dom(Map<String, String> proxyParams) {
+        updateIpPublish(proxyParams, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
+    }
+
+    private void syncOnRemvIP4Dom(String namespaceId, String dom, Map<String, String> proxyParams) throws InterruptedException {
+        syncOnUpdateIP4Dom(namespaceId, dom, proxyParams, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
+    }
+
+    private void asyncOnRemvIP4Dom(Map<String, String> proxyParams) {
+        updateIpPublish(proxyParams, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
+    }
+
+    private void updateIpPublish(Map<String, String> proxyParams, CountDownLatch countDownLatch, String action) {
+
+        for (final String peer : RaftCore.getPeerSet().allServersWithoutMySelf()) {
+
+            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+
+                    String server = peer;
+
+                    if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+                        server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+                    }
+
+                    String api = action.equals("remove") ? "onRemvIP4Dom" : "onAddIP4Dom";
+
+                    String url = "http://" + server
+                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api;
+
+                    try {
+                        HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
+                            @Override
+                            public Integer onCompleted(Response response) throws Exception {
+                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                                    Loggers.SRV_LOG.warn("failed to add ip params: " + proxyParams
+                                        + ",code: " + response.getStatusCode() + ", caused " + response.getResponseBody()
+                                        + ", server: " + peer);
+                                    return 1;
+                                }
+                                if (countDownLatch != null) {
+                                    countDownLatch.countDown();
+                                }
+                                return 0;
+                            }
+                        });
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error(action + "-IP", "failed when publish to peer." + url, e);
+                    }
+                }
+            });
+        }
+    }
+
+    @NeedAuth
+    @RequestMapping("/addIP4Dom")
+    public String addIP4Dom(HttpServletRequest request) throws Exception {
 
         if (Switch.getDisableAddIP()) {
             throw new AccessControlException("Adding IP for dom is forbidden now.");
@@ -963,7 +1036,10 @@ public class ApiCommands {
         }
 
         final String dom = WebUtils.required(request, "dom");
-        if (domainsManager.getDomain(namespaceId, dom) == null) {
+
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+
+        if (domain == null) {
             throw new IllegalStateException("dom doesn't exist: " + dom);
         }
 
@@ -975,7 +1051,7 @@ public class ApiCommands {
 
         if (updateOnly) {
             //make sure every IP is in the dom, otherwise refuse update
-            List<IpAddress> oldIPs = domainsManager.getDomain(namespaceId, dom).allIPs();
+            List<IpAddress> oldIPs = domain.allIPs();
             Collection diff = CollectionUtils.subtract(newIPs, oldIPs);
             if (diff.size() != 0) {
                 throw new IllegalArgumentException("these IPs are not present: " + Arrays.toString(diff.toArray())
@@ -983,7 +1059,7 @@ public class ApiCommands {
             }
         }
 
-        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(namespaceId, dom));
+        String key = UtilsAndCommons.getIPListStoreKey(domain);
 
         Datum datum = RaftCore.getDatum(key);
         if (datum == null) {
@@ -1005,17 +1081,19 @@ public class ApiCommands {
         if (RaftCore.isLeader()) {
             try {
                 RaftCore.OPERATE_LOCK.lock();
-                proxyParams.put("clientIP", NetUtils.localServer());
-                proxyParams.put("notify", "true");
-                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
-                proxyParams.put("timestamp", String.valueOf(timestamp));
 
-                onAddIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
+                OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
+                requestWrapper.addParameter("clientIP", NetUtils.localServer());
+                requestWrapper.addParameter("notify", "true");
+                requestWrapper.addParameter("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                requestWrapper.addParameter("timestamp", String.valueOf(timestamp));
+
+                onAddIP4Dom(requestWrapper);
 
                 if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
-                    syncOnAddIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                    syncOnAddIP4Dom(namespaceId, dom, proxyParams);
                 } else {
-                    asyncOnAddIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                    asyncOnAddIP4Dom(proxyParams);
                 }
             } finally {
                 RaftCore.OPERATE_LOCK.unlock();
@@ -1024,83 +1102,6 @@ public class ApiCommands {
         }
 
         return "ok";
-    }
-
-    private void syncOnUpdateIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP, String action) throws InterruptedException {
-
-        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
-
-        final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
-        updateIpPublish(dom, ipList, proxyParams, clientIP, countDownLatch, action);
-        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-            Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
-            throw new IllegalArgumentException("data publish failed, key=" + key);
-        }
-    }
-
-    private void syncOnAddIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) throws InterruptedException {
-        syncOnUpdateIP4Dom(dom, ipList, proxyParams, clientIP, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
-    }
-
-    private void asyncOnAddIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) {
-        updateIpPublish(dom, ipList, proxyParams, clientIP, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
-    }
-
-    private void syncOnRemvIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) throws InterruptedException {
-        syncOnUpdateIP4Dom(dom, ipList, proxyParams, clientIP, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
-    }
-
-    private void asyncOnRemvIP4Dom(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP) {
-        updateIpPublish(dom, ipList, proxyParams, clientIP, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
-    }
-
-    private void updateIpPublish(String dom, List<String> ipList, Map<String, String> proxyParams, String clientIP, CountDownLatch countDownLatch, String action) {
-
-        for (final String peer : RaftCore.getPeerSet().allServersWithoutMySelf()) {
-
-            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-                @Override
-                public void run() {
-
-                    String server = peer;
-
-                    if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                        server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-                    }
-
-                    String api = action.equals("remove") ? "onRemvIP4Dom" : "onAddIP4Dom";
-
-                    String url = "http://" + server
-                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api;
-
-                    try {
-                        HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
-                            @Override
-                            public Integer onCompleted(Response response) throws Exception {
-                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                    Loggers.SRV_LOG.warn("failed to add ip for dom: " + dom
-                                        + ",ipList = " + ipList + ",code: " + response.getStatusCode()
-                                        + ", caused " + response.getResponseBody() + ", server: " + peer);
-                                    return 1;
-                                }
-                                if (countDownLatch != null) {
-                                    countDownLatch.countDown();
-                                }
-                                return 0;
-                            }
-                        });
-                    } catch (Exception e) {
-                        Loggers.SRV_LOG.error(action + "-IP", "failed when publish to peer." + url, e);
-                    }
-                }
-            });
-        }
-    }
-
-    @NeedAuth
-    @RequestMapping("/addIP4Dom")
-    public String addIP4Dom(HttpServletRequest request) throws Exception {
-        return doAddIP4Dom(request);
     }
 
     public JSONObject doSrvIPXT(String namespaceId, String dom, String agent, String clusters, String clientIP, int udpPort,
@@ -1247,7 +1248,10 @@ public class ApiCommands {
         RaftCore.getPeerSet().local().resetLeaderDue();
 
         final String dom = WebUtils.required(request, "dom");
-        if (domainsManager.getDomain(dom) == null) {
+        final String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+
+        if (domainsManager.getDomain(namespaceId, dom) == null) {
             throw new IllegalStateException("dom doesn't exist: " + dom);
         }
 
@@ -1257,7 +1261,7 @@ public class ApiCommands {
             throw new IllegalArgumentException("Empty ip list");
         }
 
-        domainsManager.easyRemvIP4Dom(dom, removedIPs, term);
+        domainsManager.easyRemvIP4Dom(namespaceId, dom, removedIPs, term);
     }
 
     @RequestMapping("/srvIPXT")
@@ -1299,16 +1303,16 @@ public class ApiCommands {
         String ipListString = WebUtils.required(request, "ipList");
 
         if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName:" + dom + ", iplist:" + ipListString);
+            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName: {}, iplist: {}", dom, ipListString);
         }
-        List<IpAddress> newIPs = new ArrayList<>();
+
         Map<String, String> proxyParams = new HashMap<>(16);
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
             proxyParams.put(entry.getKey(), entry.getValue()[0]);
         }
 
         if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: params:" + proxyParams);
+            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments, params: {}", proxyParams);
         }
 
         List<String> ipList = new ArrayList<>();
@@ -1343,14 +1347,14 @@ public class ApiCommands {
             HttpClient.HttpResult result1 = HttpClient.httpPost(url, null, proxyParams);
 
             if (result1.code != HttpURLConnection.HTTP_OK) {
-                Loggers.SRV_LOG.warn("failed to remove ip for dom, caused " + result1.content);
+                Loggers.SRV_LOG.warn("failed to remove ip for dom, caused: {}", result1.content);
                 throw new IllegalArgumentException("failed to remove ip for dom, caused " + result1.content);
             }
 
             return "ok";
         }
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(dom);
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
 
         if (domain == null) {
             throw new IllegalStateException("dom doesn't exist: " + dom);
@@ -1360,7 +1364,7 @@ public class ApiCommands {
             throw new IllegalArgumentException("Empty ip list");
         }
 
-        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(dom));
+        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(namespaceId, dom));
 
         long timestamp = 1;
         if (RaftCore.getDatum(key) != null) {
@@ -1373,25 +1377,25 @@ public class ApiCommands {
 
                 RaftCore.OPERATE_LOCK.lock();
 
-                proxyParams.put("clientIP", NetUtils.localServer());
-                proxyParams.put("notify", "true");
-                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
-                proxyParams.put("timestamp", String.valueOf(timestamp));
+                OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
+                requestWrapper.addParameter("clientIP", NetUtils.localServer());
+                requestWrapper.addParameter("notify", "true");
+                requestWrapper.addParameter("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                requestWrapper.addParameter("timestamp", String.valueOf(timestamp));
 
-                onRemvIP4Dom(MockHttpRequest.buildRequest2(proxyParams));
+                onRemvIP4Dom(requestWrapper);
 
                 if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
-                    syncOnRemvIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                    syncOnRemvIP4Dom(namespaceId, dom, proxyParams);
                 } else {
-                    asyncOnRemvIP4Dom(dom, ipList, proxyParams, WebUtils.optional(request, "clientIP", "unknown"));
+                    asyncOnRemvIP4Dom(proxyParams);
                 }
             } finally {
                 RaftCore.OPERATE_LOCK.unlock();
             }
 
-            Loggers.EVT_LOG.info("{" + dom + "} {POS} {IP-REMV}" + " new: "
-                + ipListString + " operatorIP: "
-                + WebUtils.optional(request, "clientIP", "unknown"));
+            Loggers.EVT_LOG.info("dom: {} {POS} {IP-REMV} new: {} operatorIP: {}",
+                dom, ipListString, WebUtils.optional(request, "clientIP", "unknown"));
         }
 
         return "ok";

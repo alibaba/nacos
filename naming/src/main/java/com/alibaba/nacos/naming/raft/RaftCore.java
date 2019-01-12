@@ -116,7 +116,7 @@ public class RaftCore {
             System.out.println(notifier.tasks.size());
         }
 
-        Loggers.RAFT.info("finish to load data from disk,cost: {} ms.", (System.currentTimeMillis() - start));
+        Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
         GlobalExecutor.register(new MasterElection());
         GlobalExecutor.register1(new HeartBeat());
@@ -132,7 +132,7 @@ public class RaftCore {
         }
 
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
-            GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTVERAL_MS);
+            GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
 
     public static List<RaftListener> getListeners() {
