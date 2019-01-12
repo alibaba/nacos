@@ -267,8 +267,8 @@ public class MultiTenant_ITCase {
 
         Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
 
-        naming1.deregisterInstance(serviceName, "22.22.22.22", TEST_PORT);
-        TimeUnit.SECONDS.sleep(2);
+        naming1.deregisterInstance(serviceName, "22.22.22.22", TEST_PORT, "c1");
+        TimeUnit.SECONDS.sleep(12);
 
         Assert.assertEquals(1, naming1.getAllInstances(serviceName).size());
         Assert.assertEquals(1, naming2.getAllInstances(serviceName).size());
@@ -296,8 +296,8 @@ public class MultiTenant_ITCase {
         Instance instance = naming1.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
         Assert.assertEquals("11.11.11.11", instance.getIp());
 
-        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT);
-        TimeUnit.SECONDS.sleep(2);
+        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        TimeUnit.SECONDS.sleep(12);
         instance = naming1.selectOneHealthyInstance(serviceName);
         Assert.assertEquals("22.22.22.22", instance.getIp());
     }
