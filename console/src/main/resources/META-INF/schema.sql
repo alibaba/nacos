@@ -184,8 +184,6 @@ CREATE TABLE roles (
 	role varchar(50) NOT NULL
 );
 
-INSERT INTO users (username, password, enabled) VALUES ('user', '$2a$16$71d1ewoFISFmOz1omV3o7OS6yZVx1YS9agqXZjdHebyVCS3wsJeVy', TRUE);
-INSERT INTO users (username, password, enabled) VALUES ('admin', '$2a$16$71d1ewoFISFmOz1omV3o7OS6yZVx1YS9agqXZjdHebyVCS3wsJeVy', TRUE);
+INSERT INTO users (username, password, enabled) VALUES ('admin', '$2a$10$HxtJtd59imujvbux.i55zOGewhnJiLVXX8D9AETDMV.XtBLDGOXtW', TRUE);
 
-INSERT INTO roles (username, role) VALUES ('user', 'ROLE_USER');
 INSERT INTO roles (username, role) VALUES ('admin', 'ROLE_ADMIN');
