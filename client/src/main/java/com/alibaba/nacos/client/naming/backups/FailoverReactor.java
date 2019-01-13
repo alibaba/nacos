@@ -33,7 +33,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class FailoverReactor {
 
@@ -114,7 +114,8 @@ public class FailoverReactor {
 
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
-                    String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH, Charset.defaultCharset().toString());
+                    String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
+                        Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeperator()));
 
@@ -171,7 +172,8 @@ public class FailoverReactor {
                     ServiceInfo dom = new ServiceInfo(file.getName());
 
                     try {
-                        String dataString = ConcurrentDiskUtil.getFileContent(file, Charset.defaultCharset().toString());
+                        String dataString = ConcurrentDiskUtil.getFileContent(file,
+                            Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
 
                         String json;
@@ -213,10 +215,11 @@ public class FailoverReactor {
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
-                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
-                        || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
-                        || StringUtils.equals(serviceInfo.getName(), "vipclient.properties")
-                        || StringUtils.equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
+                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(
+                    serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
+                    || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
+                    || StringUtils.equals(serviceInfo.getName(), "vipclient.properties")
+                    || StringUtils.equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
                     continue;
                 }
 

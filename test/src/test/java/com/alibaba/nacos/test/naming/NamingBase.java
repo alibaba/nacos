@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingBase {
 
@@ -41,6 +41,8 @@ public class NamingBase {
     public static final String TEST_IP_4_DOM_2 = "127.0.0.2";
     public static final String TEST_PORT_4_DOM_2 = "7070";
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
+
+    static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
 
     public static final int TEST_PORT = 8080;
 

@@ -80,6 +80,11 @@ public class PropertyUtil {
      * 修正容量信息表使用量（usage）的时间间隔，单位为秒
      */
     private static int correctUsageDelay = 10 * 60;
+    /**
+     * 单机模式使用db
+     */
+    private static boolean standaloneUseMysql = false;
+
 
     @Autowired
     private Environment env;
@@ -109,6 +114,7 @@ public class PropertyUtil {
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
+            setStandaloneUseMysql(getString("spring.datasource.platform", "").equals("mysql"));
 
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
@@ -204,6 +210,10 @@ public class PropertyUtil {
         return STANDALONE_MODE;
     }
 
+    public static boolean isStandaloneUseMysql() {
+        return standaloneUseMysql;
+    }
+
     public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
         PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
     }
@@ -263,5 +273,7 @@ public class PropertyUtil {
     public static void setCorrectUsageDelay(int correctUsageDelay) {
         PropertyUtil.correctUsageDelay = correctUsageDelay;
     }
-
+    public static void setStandaloneUseMysql(boolean standaloneUseMysql) {
+        PropertyUtil.standaloneUseMysql = standaloneUseMysql;
+    }
 }

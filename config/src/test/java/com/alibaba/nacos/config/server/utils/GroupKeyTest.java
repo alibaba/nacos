@@ -50,7 +50,7 @@ public class GroupKeyTest {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
+
         key = "11111%2b+222";
         try {
             GroupKey2.parseKey(key);
@@ -58,7 +58,6 @@ public class GroupKeyTest {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
 
         key = "11111%25+222";
         String[] pair = GroupKey2.parseKey(key);

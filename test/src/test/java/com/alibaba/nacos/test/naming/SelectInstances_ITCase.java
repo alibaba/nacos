@@ -15,9 +15,12 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,7 +32,9 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -52,43 +57,9 @@ public class SelectInstances_ITCase {
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
-    }
-
-
-    @Test
-    public void getAllInstances() throws Exception {
-
-//        final String serviceName = "dungu.test.100";
-//        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
-//
-//
-//
-//        Thread thread = new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    TimeUnit.SECONDS.sleep(10);
-//                    naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
-//                    System.out.println("deregister ok!");
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        });
-//
-//        thread.start();
-//
-//
-//        while (true) {
-//
-//            System.out.println(new Date());
-//            System.out.println(naming.getAllInstances("dungu.test.100"));
-//
-//            TimeUnit.SECONDS.sleep(1);
-//        }
     }
 
     /**
@@ -188,6 +159,29 @@ public class SelectInstances_ITCase {
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
         Assert.assertTrue(verifyInstanceList(instances, instancesGet));
+    }
+
+    @Test
+    public void selectInstancesCheckClusterName() throws Exception {
+
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "1.1.1.2", TEST_PORT, "c2");
+
+        TimeUnit.SECONDS.sleep(8);
+
+        List<Instance> instancesGet = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(2, instancesGet.size());
+
+        for (Instance instance : instancesGet) {
+            if (instance.getIp().equals("1.1.1.1")) {
+                Assert.assertEquals(instance.getClusterName(), "c1");
+            }
+            if (instance.getIp().equals("2.2.2.2")) {
+                Assert.assertEquals(instance.getClusterName(), "c2");
+            }
+        }
     }
 
 
@@ -363,6 +357,48 @@ public class SelectInstances_ITCase {
         instancesGet.remove(instanceNotH);
 
         Assert.assertTrue(verifyInstanceList(instances, instancesGet));
+    }
+
+    @Test
+    public void getServiceListWithSelector() throws NacosException, InterruptedException {
+
+        String serviceName = randomDomainName();
+        Instance instance = new Instance();
+        instance.setIp("128.0.0.1");
+        instance.setPort(999);
+        instance.setServiceName(serviceName);
+
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put("registerSource", "dubbo");
+        instance.setMetadata(metadata);
+
+        naming.registerInstance(serviceName, instance);
+        naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
+        naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
+
+        TimeUnit.SECONDS.sleep(10);
+
+        ExpressionSelector expressionSelector = new ExpressionSelector();
+        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+        ListView<String> serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
+
+        Assert.assertTrue(serviceList.getData().contains(serviceName));
+
+        serviceName = randomDomainName();
+
+        instance.setServiceName(serviceName);
+        metadata.put("registerSource", "spring");
+        instance.setMetadata(metadata);
+
+        naming.registerInstance(serviceName, instance);
+
+        TimeUnit.SECONDS.sleep(10);
+
+        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'spring'");
+        serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
+
+        Assert.assertTrue(serviceList.getData().contains(serviceName));
+
     }
 
 

@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.misc;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class SwitchEntry {
 

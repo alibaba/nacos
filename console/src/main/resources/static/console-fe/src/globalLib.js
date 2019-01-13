@@ -12,7 +12,6 @@
  */
 
 import projectConfig from './config';
-import serviceConfig from './serviceMock';
 import moment from 'moment';
 import $ from 'jquery';
 import i18DocObj from './i18ndoc';
@@ -455,8 +454,8 @@ const request = (function(_global) {
   const middlewareList = [];
   const middlewareBackList = [];
   const serviceMap = {};
-  const serviceList = serviceConfig.serviceList || [];
-  const methodList = serviceConfig.method || [];
+  const serviceList = [];
+  const methodList = [];
   /**
    * 获取真实url信息
    */

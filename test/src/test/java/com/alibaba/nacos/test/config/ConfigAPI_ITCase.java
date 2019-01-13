@@ -55,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigAPI_ITCase {
-    public static final long TIME_OUT = 3000;
+    public static final long TIME_OUT = 2000;
     public ConfigService iconfig = null;
     ServerHttpAgent agent = null;
 
@@ -148,7 +148,7 @@ public class ConfigAPI_ITCase {
         final String content = "test";
 
         boolean result = iconfig.publishConfig(dataId, null, content);
-        Thread.sleep(2*TIME_OUT);
+        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
 
         String value = iconfig.getConfig(dataId, null, TIME_OUT);
@@ -232,7 +232,7 @@ public class ConfigAPI_ITCase {
     public void nacos_publishConfig_5() throws Exception {
         String content = "test";
         boolean result = iconfig.publishConfig(dataId, null, content);
-        Thread.sleep(2*TIME_OUT);
+        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
 
         String value = iconfig.getConfig(dataId, null, TIME_OUT);

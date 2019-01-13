@@ -22,51 +22,49 @@ import java.io.IOException;
 
 /**
  * datasource interface
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface DataSourceService {
-	/**
-	 * reload
-	 * 
-	 * @throws IOException
-	 *             exception
-	 */
-	void reload() throws IOException;
+    /**
+     * reload
+     *
+     * @throws IOException exception
+     */
+    void reload() throws IOException;
 
-	/**
-	 * check master db
-	 * 
-	 * @return is master
-	 */
-	boolean checkMasterWritable();
+    /**
+     * check master db
+     *
+     * @return is master
+     */
+    boolean checkMasterWritable();
 
-	/**
-	 * get jdbc template
-	 * 
-	 * @return JdbcTemplate
-	 */
-	JdbcTemplate getJdbcTemplate();
+    /**
+     * get jdbc template
+     *
+     * @return JdbcTemplate
+     */
+    JdbcTemplate getJdbcTemplate();
 
-	/**
-	 * get transaction template
-	 * 
-	 * @return TransactionTemplate
-	 */
-	TransactionTemplate getTransactionTemplate();
+    /**
+     * get transaction template
+     *
+     * @return TransactionTemplate
+     */
+    TransactionTemplate getTransactionTemplate();
 
-	/**
-	 * get current db url
-	 * 
-	 * @return
-	 */
-	String getCurrentDBUrl();
+    /**
+     * get current db url
+     *
+     * @return
+     */
+    String getCurrentDBUrl();
 
-	/**
-	 * get heath
-	 * 
-	 * @return heath info
-	 */
-	String getHealth();
+    /**
+     * get heath
+     *
+     * @return heath info
+     */
+    String getHealth();
 }

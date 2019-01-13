@@ -16,7 +16,7 @@ import $ from 'jquery';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
-import './index.less';
+import validateContent from 'utils/validateContent';
 import {
   Balloon,
   Button,
@@ -31,6 +31,8 @@ import {
   Tab,
   Message,
 } from '@alifd/next';
+
+import './index.scss';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
@@ -98,7 +100,7 @@ class ConfigEditor extends React.Component {
           lineNumbersMinChars: true,
           theme: 'vs-dark',
           wordWrapColumn: 120,
-          folding: true,
+          folding: false,
           showFoldingControls: 'always',
           wordWrap: 'wordWrapColumn',
           cursorStyle: 'line',
@@ -116,7 +118,7 @@ class ConfigEditor extends React.Component {
         lineNumbersMinChars: true,
         theme: 'vs-dark',
         wordWrapColumn: 120,
-        folding: true,
+        folding: false,
         showFoldingControls: 'always',
         wordWrap: 'wordWrapColumn',
         cursorStyle: 'line',
@@ -157,7 +159,7 @@ class ConfigEditor extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -309,13 +311,7 @@ class ConfigEditor extends React.Component {
         return;
       }
       let content = '';
-      const self = this;
-      // if (this.commoneditor) {
-      //     content = this.commoneditor.doc.getValue();
-      //     //content = content.replace("↵", "\n\r");
-      // } else {
-      //     content = this.codeValue;
-      // }
+      let { configType } = this.state;
 
       if (this.monacoEditor) {
         content = this.monacoEditor.getValue();
@@ -329,75 +325,88 @@ class ConfigEditor extends React.Component {
         });
         return;
       }
-      this.codeValue = content;
-      this.tenant = getParams('namespace') || '';
-      this.serverId = getParams('serverId') || 'center';
-
-      const payload = {
-        dataId: this.field.getValue('dataId'),
-        appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-        group: this.field.getValue('group'),
-        desc: this.field.getValue('desc'),
-        config_tags: this.state.config_tags.join(),
-        type: this.state.configType,
-        content,
-        tenant: this.tenant,
-      };
-      const url = '/nacos/v1/cs/configs';
-      request({
-        type: 'post',
-        contentType: 'application/x-www-form-urlencoded',
-        url,
-        data: payload,
-        success(res) {
-          const _payload = {};
-          _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
-          _payload.title = (
-            <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}</div>
-          );
-          _payload.content = '';
-          _payload.dataId = payload.dataId;
-          _payload.group = payload.group;
-
-          if (res != null) {
-            _payload.isok = true;
-            const activeKey = self.state.activeKey.split('-')[0];
-            if (activeKey === 'normal' && self.hasips === true) {
-              // 如果是在normal面板选择了beta发布
-              const sufex = new Date().getTime();
-              self.setState({
-                tag: [
-                  {
-                    title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'),
-                    key: `normal-${sufex}`,
-                  },
-                  { title: 'BETA', key: `beta-${sufex}` },
-                ],
-                hasbeta: true,
-                activeKey: `beta-${sufex}`,
-              });
-              payload.betaIps = payload.betaIps || payload.ips;
-              self.valueMap.beta = payload; // 赋值beta
-              self.changeTab(`beta-${sufex}`);
-            }
-            if (activeKey === 'normal' && self.hasips === false) {
-              // 如果是在normal面板选择了发布
-              self.valueMap.normal = payload; // 赋值正式
-            }
-            if (activeKey === 'beta' && self.hasips === true) {
-              // 如果是在beta面板继续beta发布
-              self.valueMap.beta = payload; // 赋值beta
-            }
-          } else {
-            _payload.isok = false;
-            _payload.message = res.message;
-          }
-          self.refs.success.openDialog(_payload);
-        },
-        error() {},
-      });
+      if (validateContent.validate({ content, type: configType })) {
+        this._publishConfig(content);
+      } else {
+        Dialog.confirm({
+          content: '配置信息可能有语法错误, 确定提交吗?',
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          onOk: () => {
+            this._publishConfig(content);
+          },
+        });
+      }
     });
   }
+
+  _publishConfig = content => {
+    const self = this;
+    this.codeValue = content;
+    this.tenant = getParams('namespace') || '';
+    this.serverId = getParams('serverId') || 'center';
+
+    const payload = {
+      dataId: this.field.getValue('dataId'),
+      appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
+      group: this.field.getValue('group'),
+      desc: this.field.getValue('desc'),
+      config_tags: this.state.config_tags.join(),
+      type: this.state.configType,
+      content,
+      tenant: this.tenant,
+    };
+    const url = 'v1/cs/configs';
+    request({
+      type: 'post',
+      contentType: 'application/x-www-form-urlencoded',
+      url,
+      data: payload,
+      success(res) {
+        const _payload = {};
+        _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
+        _payload.title = <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}</div>;
+        _payload.content = '';
+        _payload.dataId = payload.dataId;
+        _payload.group = payload.group;
+
+        if (res != null) {
+          _payload.isok = true;
+          const activeKey = self.state.activeKey.split('-')[0];
+          if (activeKey === 'normal' && self.hasips === true) {
+            // 如果是在normal面板选择了beta发布
+            const sufex = new Date().getTime();
+            self.setState({
+              tag: [
+                {
+                  title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'),
+                  key: `normal-${sufex}`,
+                },
+                { title: 'BETA', key: `beta-${sufex}` },
+              ],
+              hasbeta: true,
+              activeKey: `beta-${sufex}`,
+            });
+            payload.betaIps = payload.betaIps || payload.ips;
+            self.valueMap.beta = payload; // 赋值beta
+            self.changeTab(`beta-${sufex}`);
+          }
+          if (activeKey === 'normal' && self.hasips === false) {
+            // 如果是在normal面板选择了发布
+            self.valueMap.normal = payload; // 赋值正式
+          }
+          if (activeKey === 'beta' && self.hasips === true) {
+            // 如果是在beta面板继续beta发布
+            self.valueMap.beta = payload; // 赋值beta
+          }
+        } else {
+          _payload.isok = false;
+          _payload.message = res.message;
+        }
+        self.refs.success.openDialog(_payload);
+      },
+      error() {},
+    });
+  };
 
   validateChart(rule, value, callback) {
     const chartReg = /[@#\$%\^&\*]+/g;

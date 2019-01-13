@@ -30,7 +30,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
@@ -48,8 +48,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private int defCkport = 80;
 
     private int defIPPort = -1;
-
-    private boolean useIPPort4Check = true;
 
     @JSONField(name = "nodegroup")
     private String legacySyncConfig;
@@ -332,14 +330,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.defCkport = defCkport;
     }
 
-    public boolean isUseIPPort4Check() {
-        return useIPPort4Check;
-    }
-
-    public void setUseIPPort4Check(boolean useIPPort4Check) {
-        this.useIPPort4Check = useIPPort4Check;
-    }
-
     public void update(Cluster cluster) {
 
         if (!healthChecker.equals(cluster.getHealthChecker())) {
@@ -367,9 +357,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             sitegroup = cluster.getSitegroup();
         }
 
-        if (useIPPort4Check != cluster.isUseIPPort4Check()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", useIPPort4Check: " + useIPPort4Check + " -> " + cluster.isUseIPPort4Check());
-            useIPPort4Check = cluster.isUseIPPort4Check();
+        if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", useIPPort4Check: " + isUseIPPort4Check() + " -> " + cluster.isUseIPPort4Check());
+            setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
 
         metadata = cluster.getMetadata();

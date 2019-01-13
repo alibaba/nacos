@@ -39,3 +39,10 @@ export const getLink = link => {
   }
   return link;
 };
+
+export const getParameter = (search, name) => {
+  const [, query = ''] = search.split('?');
+  const [hit = ''] = query.split('&').filter(item => name === item.split('=')[0]);
+  const [, value = ''] = hit.split('=');
+  return value;
+};
