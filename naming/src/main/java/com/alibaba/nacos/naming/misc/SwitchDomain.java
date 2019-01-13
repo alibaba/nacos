@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.raft.RaftListener;
 import org.apache.commons.lang3.StringUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -51,6 +52,8 @@ public class SwitchDomain implements Domain, RaftListener {
     public Map<String, Long> pushCacheMillisMap = new HashMap<String, Long>();
 
     public boolean healthCheckEnabled = true;
+
+    public String defaultHealthCheckMode = HealthCheckMode.client.name();
 
     public boolean distroEnabled = true;
 

@@ -27,7 +27,7 @@ public class BeatInfo {
     private int port;
     private String ip;
     private double weight;
-    private String dom;
+    private String serviceName;
     private String cluster;
     private Map<String, String> metadata;
     private boolean scheduled;
@@ -37,12 +37,12 @@ public class BeatInfo {
         return JSON.toJSONString(this);
     }
 
-    public String getDom() {
-        return dom;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setDom(String dom) {
-        this.dom = dom;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public String getCluster() {

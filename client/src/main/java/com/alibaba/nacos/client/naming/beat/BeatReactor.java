@@ -15,14 +15,11 @@
  */
 package com.alibaba.nacos.client.naming.beat;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -31,15 +28,7 @@ import java.util.concurrent.*;
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.beat.sender");
-            return thread;
-        }
-    });
+    private ScheduledExecutorService executorService;
 
     private long clientBeatInterval = 5 * 1000;
 
@@ -48,17 +37,32 @@ public class BeatReactor {
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
 
     public BeatReactor(NamingProxy serverProxy) {
+        this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+    }
+
+    public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
+
+        executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.beat.sender");
+                return thread;
+            }
+        });
+
         executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
     }
 
     public void addBeatInfo(String dom, BeatInfo beatInfo) {
-        LogUtils.LOG.info("BEAT", "adding service:" + dom + " to beat map.");
+        LogUtils.LOG.info("BEAT", "adding beat: {} to beat map.", beatInfo);
         dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
     }
 
     public void removeBeatInfo(String dom, String ip, int port) {
-        LogUtils.LOG.info("BEAT", "removing service:" + dom + " from beat map.");
+        LogUtils.LOG.info("BEAT", "removing beat: {}:{}:{} from beat map.", dom, ip, port);
         dom2Beat.remove(buildKey(dom, ip, port));
     }
 
@@ -78,7 +82,6 @@ public class BeatReactor {
                     }
                     beatInfo.setScheduled(true);
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                    LogUtils.LOG.info("BEAT", "send beat to server: " + beatInfo.toString());
                 }
             } catch (Exception e) {
                 LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
@@ -96,21 +99,10 @@ public class BeatReactor {
 
         @Override
         public void run() {
-            Map<String, String> params = new HashMap<String, String>(2);
-            params.put("beat", JSON.toJSONString(beatInfo));
-            params.put("dom", beatInfo.getDom());
-
-            try {
-                beatInfo.setScheduled(false);
-                String result = serverProxy.callAllServers(UtilAndComs.NACOS_URL_BASE + "/api/clientBeat", params);
-                JSONObject jsonObject = JSON.parseObject(result);
-
-                if (jsonObject != null) {
-                    clientBeatInterval = jsonObject.getLong("clientBeatInterval");
-
-                }
-            } catch (Exception e) {
-                LogUtils.LOG.error("CLIENT-BEAT", "failed to send beat: " + JSON.toJSONString(beatInfo), e);
+            long result = serverProxy.sendBeat(beatInfo);
+            beatInfo.setScheduled(false);
+            if (result > 0) {
+                clientBeatInterval = result;
             }
         }
     }

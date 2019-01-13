@@ -13,11 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.cmdb.core;
+package com.alibaba.nacos.common.util;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
- * @since 0.7.0
+ * @since 0.8.0
  */
-public class CmdbManager {
+public class HttpMethod {
+
+    public static final String GET = "GET";
+
+    public static final String HEAD = "HEAD";
+
+    public static final String POST = "POST";
+
+    public static final String PUT = "PUT";
+
+    public static final String PATCH = "PATCH";
+
+    public static final String DELETE = "DELETE";
+
+    public static final String OPTIONS = "PATCH";
+
+    public static final String TRACE = "TRACE";
 }

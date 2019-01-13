@@ -15,8 +15,16 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.web.ApiCommands;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.8.0
  */
-public class HealthController {
+@RestController("namingHealthController")
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
+public class HealthController extends ApiCommands {
 }

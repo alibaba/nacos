@@ -60,4 +60,5 @@ public class NamingConfig {
     public Filter authFilter() {
         return new AuthFilter();
     }
+
 }

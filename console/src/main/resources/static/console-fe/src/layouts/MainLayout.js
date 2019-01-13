@@ -29,6 +29,7 @@ class MainLayout extends React.Component {
   static propTypes = {
     navList: PropTypes.array,
     history: PropTypes.object,
+    locale: PropTypes.object,
     children: PropTypes.any,
   };
 

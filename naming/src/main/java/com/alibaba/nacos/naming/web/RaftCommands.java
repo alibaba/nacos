@@ -157,7 +157,7 @@ public class RaftCommands {
         response.setHeader("Content-Encode", "gzip");
 
         JSONObject result = new JSONObject();
-        result.put("doms", domainsManager.getRaftDomMap().size());
+        result.put("doms", domainsManager.getDomCount());
         result.put("peers", RaftCore.getPeers());
 
         return result;
