@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -49,6 +50,9 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
     private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
+
+    @Autowired
+    private PropertyUtil propertyUtil;
 
     /**
      * JDBC执行超时时间, 单位秒
@@ -105,7 +109,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!STANDALONE_MODE) {
+        if (!STANDALONE_MODE || propertyUtil.isStandaloneUseMysql()) {
             try {
                 reload();
             } catch (IOException e) {
@@ -114,9 +118,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             }
 
             TimerTaskService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
-                    TimeUnit.SECONDS);
+                TimeUnit.SECONDS);
             TimerTaskService.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
-                    TimeUnit.SECONDS);
+                TimeUnit.SECONDS);
         }
     }
 
@@ -169,7 +173,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
                 // 每10分钟检查一遍连接池
                 ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-                        .toMillis(10L));
+                    .toMillis(10L));
                 ds.setTestWhileIdle(true);
                 ds.setValidationQuery("SELECT 1 FROM dual");
 
@@ -204,7 +208,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  防止login接口因为主库不可用而rt太长
          */
         testMasterWritableJT.setQueryTimeout(1);
-        String sql = " select @@read_only ";
+        String sql = " SELECT @@read_only ";
 
         try {
             Integer result = testMasterWritableJT.queryForObject(sql, Integer.class);
@@ -233,7 +237,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         if (ds == null) {
             return StringUtils.EMPTY;
         }
-        BasicDataSource bds = (BasicDataSource) ds;
+        BasicDataSource bds = (BasicDataSource)ds;
         return bds.getUrl();
     }
 
@@ -283,7 +287,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 testMasterJT.setQueryTimeout(queryTimeout);
                 try {
                     testMasterJT
-                            .update("delete from config_info where data_id='com.alibaba.nacos.testMasterDB'");
+                        .update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         fatalLog.warn("[master-db] {}", ds.getUrl());
                     }

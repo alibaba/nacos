@@ -41,11 +41,11 @@ public class LoggerInfo extends HashMap {
     }
 
     public String getLevel() {
-        return (String) get(level);
+        return (String)get(level);
     }
 
     public List<AppenderInfo> getAppenders() {
-        return (List<AppenderInfo>) get(appenders);
+        return (List<AppenderInfo>)get(appenders);
     }
 
     public void setAppenders(List<AppenderInfo> appenders) {

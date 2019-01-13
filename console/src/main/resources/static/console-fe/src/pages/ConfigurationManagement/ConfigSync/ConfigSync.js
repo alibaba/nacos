@@ -15,7 +15,7 @@ import React from 'react';
 import { Button, Checkbox, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
+import './index.scss';
 
 class ConfigSync extends React.Component {
   constructor(props) {

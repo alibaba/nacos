@@ -13,7 +13,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import './index.less';
+import './index.scss';
 import { Dialog } from '@alifd/next';
 import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
 
@@ -99,7 +99,7 @@ class NameSpaceList extends React.Component {
     } else {
       request({
         type: 'get',
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         success: res => {
           if (res.code === 200) {
             this.handleNameSpaces(res.data);

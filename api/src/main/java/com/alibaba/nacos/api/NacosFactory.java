@@ -25,62 +25,53 @@ import com.alibaba.nacos.api.naming.NamingService;
 
 /**
  * Nacos Factory
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class NacosFactory {
 
-	/**
-	 * Create config
-	 * 
-	 * @param properties
-	 *            init param
-	 * @return config
-	 * @throws NacosException
-	 *             Exception
-	 */
-	public static ConfigService createConfigService(Properties properties) throws NacosException {
-		return ConfigFactory.createConfigService(properties);
-	}
+    /**
+     * Create config
+     *
+     * @param properties init param
+     * @return config
+     * @throws NacosException Exception
+     */
+    public static ConfigService createConfigService(Properties properties) throws NacosException {
+        return ConfigFactory.createConfigService(properties);
+    }
 
-	/**
-	 * Create config
-	 * 
-	 * @param serverAddr
-	 *            server list
-	 * @return config
-	 * @throws NacosException
-	 *             Exception
-	 */
-	public static ConfigService createConfigService(String serverAddr) throws NacosException {
-		return ConfigFactory.createConfigService(serverAddr);
-	}
+    /**
+     * Create config
+     *
+     * @param serverAddr server list
+     * @return config
+     * @throws NacosException Exception
+     */
+    public static ConfigService createConfigService(String serverAddr) throws NacosException {
+        return ConfigFactory.createConfigService(serverAddr);
+    }
 
-	/**
-	 * Create Naming
-	 * 
-	 * @param serverAddr
-	 *            server list
-	 * @return Naming
-	 * @throws NacosException
-	 *             Exception
-	 */
-	public static NamingService createNamingService(String serverAddr) throws NacosException {
-		return NamingFactory.createNamingService(serverAddr);
-	}
+    /**
+     * Create Naming
+     *
+     * @param serverAddr server list
+     * @return Naming
+     * @throws NacosException Exception
+     */
+    public static NamingService createNamingService(String serverAddr) throws NacosException {
+        return NamingFactory.createNamingService(serverAddr);
+    }
 
-	/**
-	 * Create Naming
-	 * 
-	 * @param properties
-	 *            init param
-	 * @return Naming
-	 * @throws NacosException
-	 *             Exception
-	 */
-	public static NamingService createNamingService(Properties properties) throws NacosException {
-		return NamingFactory.createNamingService(properties);
-	}
+    /**
+     * Create Naming
+     *
+     * @param properties init param
+     * @return Naming
+     * @throws NacosException Exception
+     */
+    public static NamingService createNamingService(Properties properties) throws NacosException {
+        return NamingFactory.createNamingService(properties);
+    }
 
 }

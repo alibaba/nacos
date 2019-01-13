@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class IoUtils {
 
     static public String toString(InputStream input, String encoding) throws IOException {
         return (null == encoding) ? toString(new InputStreamReader(input, "UTF-8"))
-                : toString(new InputStreamReader(input, encoding));
+            : toString(new InputStreamReader(input, encoding));
     }
 
     static public String toString(Reader reader) throws IOException {
@@ -62,7 +62,6 @@ public class IoUtils {
         return totalBytes;
     }
 
-
     static public List<String> readLines(Reader input) throws IOException {
         BufferedReader reader = toBufferedReader(input);
         List<String> list = new ArrayList<String>();
@@ -79,10 +78,9 @@ public class IoUtils {
     }
 
     static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
-                reader);
+        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
+            reader);
     }
-
 
     static public void copyFile(String source, String target) throws IOException {
         File sf = new File(source);
@@ -127,7 +125,6 @@ public class IoUtils {
         }
     }
 
-
     public static void cleanDirectory(File directory) throws IOException {
         if (!directory.exists()) {
             String message = directory + " does not exist";
@@ -169,16 +166,15 @@ public class IoUtils {
         return GZIPInputStream.GZIP_MAGIC == ((bytes[1] << 8 | bytes[0]) & 0xFFFF);
     }
 
-
     public static byte[] tryDecompress(byte[] raw) throws Exception {
         if (!isGzipStream(raw)) {
             return raw;
         }
 
         GZIPInputStream gis
-                = new GZIPInputStream(new ByteArrayInputStream(raw));
+            = new GZIPInputStream(new ByteArrayInputStream(raw));
         ByteArrayOutputStream out
-                = new ByteArrayOutputStream();
+            = new ByteArrayOutputStream();
 
         IoUtils.copy(gis, out);
 

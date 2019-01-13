@@ -20,21 +20,24 @@ import java.util.Map;
 
 /**
  * Container factory for creating containers for JSON object and JSON array.
- * 
+ *
+ * @author FangYidong<fangyidong   @   yahoo.com.cn>
  * @see com.alibaba.nacos.client.logger.json.parser.JSONParser#parse(java.io.Reader, ContainerFactory)
- * 
- * @author FangYidong<fangyidong@yahoo.com.cn>
  */
 public interface ContainerFactory {
-	/**
-	 * create json container
-	 * @return A Map instance to store JSON object, or null if you want to use com.alibaba.nacos.client.logger.jsonJSONObject.
-	 */
-	Map createObjectContainer();
-	
-	/**
-	 * create array json container
-	 * @return A List instance to store JSON array, or null if you want to use com.alibaba.nacos.client.logger.jsonJSONArray.
-	 */
-	List creatArrayContainer();
+    /**
+     * create json container
+     *
+     * @return A Map instance to store JSON object, or null if you want to use com.alibaba.nacos.client.logger
+     * .jsonJSONObject.
+     */
+    Map createObjectContainer();
+
+    /**
+     * create array json container
+     *
+     * @return A List instance to store JSON array, or null if you want to use com.alibaba.nacos.client.logger
+     * .jsonJSONArray.
+     */
+    List creatArrayContainer();
 }

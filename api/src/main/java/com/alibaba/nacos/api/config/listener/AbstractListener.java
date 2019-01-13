@@ -19,16 +19,15 @@ import java.util.concurrent.Executor;
 
 /**
  * Listner Adapter,use default notify thread
- * 
- * @author water.lyl
  *
+ * @author water.lyl
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractListener implements Listener {
 
-	/**
-	 * use default Executor
-	 */
+    /**
+     * use default Executor
+     */
     public Executor getExecutor() {
         return null;
     }

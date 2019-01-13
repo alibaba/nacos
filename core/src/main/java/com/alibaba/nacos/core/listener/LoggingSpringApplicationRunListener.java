@@ -43,7 +43,6 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
 
     private final String[] args;
 
-
     public LoggingSpringApplicationRunListener(SpringApplication application, String[] args) {
         this.application = application;
         this.args = args;
@@ -59,8 +58,8 @@ public class LoggingSpringApplicationRunListener implements SpringApplicationRun
             System.setProperty(CONFIG_PROPERTY, DEFAULT_NACOS_LOGBACK_LOCATION);
             if (logger.isInfoEnabled()) {
                 logger.info("There is no property named \"{}\" in Spring Boot Environment, " +
-                                "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
-                        DEFAULT_NACOS_LOGBACK_LOCATION);
+                        "and whose value is {} will be set into System's Properties", CONFIG_PROPERTY,
+                    DEFAULT_NACOS_LOGBACK_LOCATION);
             }
         }
     }

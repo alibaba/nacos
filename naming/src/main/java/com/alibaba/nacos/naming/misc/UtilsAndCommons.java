@@ -24,6 +24,8 @@ import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
+import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -102,6 +104,10 @@ public class UtilsAndCommons {
 
     public static final String API_DOM = "/api/dom";
 
+    public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
+
+    public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
+
     public static final ScheduledExecutorService SERVER_STATUS_EXECUTOR;
 
     public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
@@ -118,6 +124,11 @@ public class UtilsAndCommons {
                 .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
                 .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+
+        SerializeConfig.getGlobalInstance()
+                .put(Selector.class, SelectorJsonAdapter.getInstance());
+        ParserConfig.getGlobalInstance()
+                .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();

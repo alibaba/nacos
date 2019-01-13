@@ -18,6 +18,8 @@ package com.alibaba.nacos.client;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -25,7 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class NamingTest {
 
@@ -40,11 +42,15 @@ public class NamingTest {
         instance.setPort(80);
         instance.setWeight(2);
         Map<String, String> map = new HashMap<String, String>();
-        map.put("env", "prod");
+        map.put("netType", "external");
         map.put("version", "2.0");
         instance.setMetadata(map);
 
-        namingService.registerInstance("dungu.test.1", instance);
+        namingService.registerInstance("nacos.test.1", instance);
+
+        ExpressionSelector expressionSelector = new ExpressionSelector();
+        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);
 
         Thread.sleep(1000000000L);
     }

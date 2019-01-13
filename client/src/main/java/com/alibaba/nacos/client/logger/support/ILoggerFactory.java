@@ -19,26 +19,23 @@ import com.alibaba.nacos.client.logger.Logger;
 
 /**
  * logger factory interface
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface ILoggerFactory {
-	/**
-	 * get logger
-	 * 
-	 * @param clazz
-	 *            class
-	 * @return logger
-	 */
-	Logger getLogger(Class<?> clazz);
+    /**
+     * get logger
+     *
+     * @param clazz class
+     * @return logger
+     */
+    Logger getLogger(Class<?> clazz);
 
-	/**
-	 * get logger
-	 * 
-	 * @param name
-	 *            logger name
-	 * @return logger
-	 */
-	Logger getLogger(String name);
+    /**
+     * get logger
+     *
+     * @param name logger name
+     * @return logger
+     */
+    Logger getLogger(String name);
 }

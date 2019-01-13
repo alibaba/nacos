@@ -17,14 +17,18 @@ package com.alibaba.nacos.client.logger;
 
 /**
  * 阿里中间件日志级别
- * 
+ *
  * @author zhuyong 2014年3月20日 上午9:57:27
  */
 public enum Level {
-	/**
-	 * log level
-	 */
-    DEBUG("DEBUG"), INFO("INFO"), WARN("WARN"), ERROR("ERROR"), OFF("OFF");
+    /**
+     * log level
+     */
+    DEBUG("DEBUG"),
+    INFO("INFO"),
+    WARN("WARN"),
+    ERROR("ERROR"),
+    OFF("OFF");
 
     private String name;
 

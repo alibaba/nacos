@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Instance {
 
@@ -160,7 +160,7 @@ public class Instance {
             return false;
         }
 
-        Instance host = (Instance) obj;
+        Instance host = (Instance)obj;
 
         return strEquals(toString(), host.toString());
     }

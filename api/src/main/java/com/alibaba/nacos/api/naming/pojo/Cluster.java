@@ -15,13 +15,11 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.nacos.api.common.Constants;
-
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class Cluster {
 
@@ -54,7 +52,6 @@ public class Cluster {
      * Whether or not use instance port to do health check.
      */
     private boolean useIPPort4Check = true;
-
 
     private Map<String, String> metadata = new HashMap<String, String>();
 

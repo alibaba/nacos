@@ -17,16 +17,15 @@ package com.alibaba.nacos.client.identify;
 
 /**
  * Identify Constants
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class Constants {
-	public static final String ACCESS_KEY = "accessKey";
-	
-	public static final String SECRET_KEY = "secretKey";
-	
-	public static final String PROPERTIES_FILENAME = "spas.properties";
+    public static final String ACCESS_KEY = "accessKey";
+
+    public static final String SECRET_KEY = "secretKey";
+
+    public static final String PROPERTIES_FILENAME = "spas.properties";
 
     public static final String CREDENTIAL_PATH = "/home/admin/.spas_key/";
 
