@@ -12,15 +12,24 @@
  */
 
 import React from 'react';
-import { Button, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
+import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading, Tab } from '@alifd/next';
+import { getParams, request } from '../../../globalLib';
 
 import './index.scss';
+import PropTypes from 'prop-types';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
 
+@ConfigProvider.config
 class ConfigDetail extends React.Component {
+  static displayName = 'ConfigDetail';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -31,9 +40,7 @@ class ConfigDetail extends React.Component {
       ips: '',
       checkedBeta: false,
       switchEncrypt: false,
-      tag: [
-        { title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.official'), key: 'normal' },
-      ],
+      tag: [],
     };
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
@@ -47,12 +54,18 @@ class ConfigDetail extends React.Component {
   }
 
   componentDidMount() {
+    this.initData();
+    this.getDataDetail();
+  }
+
+  initData() {
+    const { locale = {} } = this.props;
     if (this.dataId.startsWith('cipher-')) {
       this.setState({
         switchEncrypt: true,
       });
     }
-    this.getDataDetail();
+    this.setState({ tag: [{ title: locale.official, key: 'normal' }] });
   }
 
   openLoading() {
@@ -91,6 +104,7 @@ class ConfigDetail extends React.Component {
   }
 
   getDataDetail() {
+    const { locale = {} } = this.props;
     const self = this;
     this.serverId = getParams('serverId') || 'center';
     this.tenant = getParams('namespace') || '';
@@ -115,11 +129,7 @@ class ConfigDetail extends React.Component {
           self.field.setValue('desc', data.desc);
           self.field.setValue('md5', data.md5);
         } else {
-          Dialog.alert({
-            title: aliwareIntl.get('com.alibaba.nacos.page.configdetail.error'),
-            content: result.message,
-            language: aliwareIntl.currentLanguageCode,
-          });
+          Dialog.alert({ title: locale.error, content: result.message });
         }
       },
       complete() {
@@ -137,6 +147,7 @@ class ConfigDetail extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -156,9 +167,7 @@ class ConfigDetail extends React.Component {
           visible={this.state.loading}
           color={'#333'}
         >
-          <h1 style={{ position: 'relative', width: '100%' }}>
-            {aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration_details')}
-          </h1>
+          <h1 style={{ position: 'relative', width: '100%' }}>{locale.configurationDetails}</h1>
           {this.state.hasbeta ? (
             <div style={{ display: 'inline-block', height: 40, width: '80%', overflow: 'hidden' }}>
               <Tab
@@ -184,24 +193,16 @@ class ConfigDetail extends React.Component {
             </FormItem>
             <div style={{ marginTop: 10 }}>
               <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                {this.state.showmore
-                  ? aliwareIntl.get('com.alibaba.nacos.page.configdetail.recipient_from')
-                  : aliwareIntl.get('com.alibaba.nacos.page.configdetail.more_advanced_options')}
+                {this.state.showmore ? locale.collapse : locale.more}
               </a>
             </div>
             {this.state.showmore ? (
               <div>
-                <FormItem
-                  label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.home')}
-                  {...formItemLayout}
-                >
+                <FormItem label={locale.home} {...formItemLayout}>
                   <Input htmlType={'text'} readOnly {...init('appName')} />
                 </FormItem>
 
-                <FormItem
-                  label={aliwareIntl.get('nacos.page.configdetail.Tags')}
-                  {...formItemLayout}
-                >
+                <FormItem label={locale.tags} {...formItemLayout}>
                   <Input htmlType={'text'} readOnly {...init('config_tags')} />
                 </FormItem>
               </div>
@@ -209,19 +210,13 @@ class ConfigDetail extends React.Component {
               ''
             )}
 
-            <FormItem
-              label={aliwareIntl.get('nacos.page.configdetail.Description')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.description} {...formItemLayout}>
               <Input.TextArea htmlType={'text'} multiple rows={3} readOnly {...init('desc')} />
             </FormItem>
             {activeKey === 'normal' ? (
               ''
             ) : (
-              <FormItem
-                label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.beta_release')}
-                {...formItemLayout}
-              >
+              <FormItem label={locale.betaRelease} {...formItemLayout}>
                 <div style={{ width: '100%' }} id={'betaips'}>
                   <Input.TextArea
                     multiple
@@ -236,16 +231,12 @@ class ConfigDetail extends React.Component {
             <FormItem label={'MD5:'} required {...formItemLayout}>
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
-            <FormItem
-              label={aliwareIntl.get('com.alibaba.nacos.page.configdetail.configuration')}
-              required
-              {...formItemLayout}
-            >
+            <FormItem label={locale.configuration} required {...formItemLayout}>
               <Input.TextArea htmlType={'text'} multiple rows={15} readOnly {...init('content')} />
             </FormItem>
             <FormItem label={' '} {...formItemLayout}>
               <Button type={'primary'} onClick={this.goList.bind(this)}>
-                {aliwareIntl.get('com.alibaba.nacos.page.configdetail.return')}
+                {locale.back}
               </Button>
             </FormItem>
           </Form>

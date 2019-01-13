@@ -11,8 +11,9 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { getParams, request } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
@@ -43,9 +44,15 @@ const { Group: RadioGroup } = Radio;
 class ConfigEditor extends React.Component {
   static displayName = 'ConfigEditor';
 
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
     this.diffEditorDialog = React.createRef();
+    this.successDialog = React.createRef();
     this.edasAppName = getParams('edasAppName') || '';
     this.edasAppId = getParams('edasAppId') || '';
     this.inApp = this.edasAppName;
@@ -80,6 +87,13 @@ class ConfigEditor extends React.Component {
   }
 
   componentDidMount() {
+    this.initData();
+    this.betaips = document.getElementById('betaips');
+    this.getDataDetail();
+    this.chontenttab = document.getElementById('chontenttab'); // diff标签
+  }
+
+  initData() {
     const { locale = {} } = this.props;
     this.setState({
       tag: [
@@ -90,13 +104,8 @@ class ConfigEditor extends React.Component {
       ],
     });
     if (this.dataId.startsWith('cipher-')) {
-      this.setState({
-        switchEncrypt: true,
-      });
+      this.setState({ switchEncrypt: true });
     }
-    this.betaips = document.getElementById('betaips');
-    this.getDataDetail();
-    this.chontenttab = document.getElementById('chontenttab'); // diff标签
   }
 
   initMoacoEditor(language, value) {
@@ -408,7 +417,7 @@ class ConfigEditor extends React.Component {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.refs.success.openDialog(_payload);
+        self.successDialog.current.getInstance().openDialog(_payload);
       },
       error() {},
     });
@@ -737,7 +746,7 @@ class ConfigEditor extends React.Component {
             ref={this.diffEditorDialog}
             publishConfig={this.publishConfig.bind(this)}
           />
-          <SuccessDialog ref="success" />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );

@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.selector;
  * The selector to filter resource with flexible expression.
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 public class ExpressionSelector extends AbstractSelector {
 

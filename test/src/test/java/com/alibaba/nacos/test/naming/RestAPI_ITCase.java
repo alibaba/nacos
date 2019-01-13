@@ -18,7 +18,9 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -277,26 +279,6 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void srvAllIP() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/srvAllIP",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(), String.class);
-
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertEquals(NamingBase.TEST_DOM_1, json.getString("dom"));
-        JSONArray hosts = json.getJSONArray("hosts");
-        Assert.assertNotNull(hosts);
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(NamingBase.TEST_IP_4_DOM_1, hosts.getJSONObject(0).getString("ip"));
-        Assert.assertEquals(NamingBase.TEST_PORT_4_DOM_1, hosts.getJSONObject(0).getString("port"));
-    }
-
-    @Test
     public void remvIP4Dom() throws Exception {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/addIP4Dom",
@@ -419,17 +401,6 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void checkStatus() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/checkStatus",
-                Params.newParams().done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-    }
-
-    @Test
     public void allDomNames() throws Exception {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/allDomNames",
@@ -536,18 +507,7 @@ public class RestAPI_ITCase {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/reCalculateCheckSum4Dom",
                 Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-    }
-
-    @Test
-    public void getDomString4MD5() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/getDomString4MD5",
-                Params.newParams()
+                        .appendParam(Constants.REQUEST_PARAM_NAMESPACE_ID, UtilsAndCommons.getDefaultNamespaceId())
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);
@@ -567,22 +527,6 @@ public class RestAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
     }
 
-    @Test
-    public void domServeStatus() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/domServeStatus",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertTrue(json.getBooleanValue("success"));
-        Assert.assertTrue(json.getJSONObject("data").getJSONArray("ips").size() > 0);
-    }
-
     private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
 
         HttpHeaders headers = new HttpHeaders();
@@ -594,6 +538,19 @@ public class RestAPI_ITCase {
 
         return this.restTemplate.exchange(
                 builder.toUriString(), HttpMethod.GET, entity, clazz);
+    }
+
+    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
+            .queryParams(params);
+
+        return this.restTemplate.exchange(
+            builder.toUriString(), httpMethod, entity, clazz);
     }
 
     private void prepareData() {

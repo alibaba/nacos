@@ -18,9 +18,15 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.NamingApp;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,8 +34,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
+import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -41,13 +52,16 @@ public class ServiceListTest {
 
     private NamingService naming;
 
+    private volatile List<Instance> instances = Collections.emptyList();
+
+    private static int listenseCount = 0;
+
     @LocalServerPort
     private int port;
 
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
@@ -57,15 +71,62 @@ public class ServiceListTest {
         naming.getServicesOfServer(1, 10);
     }
 
+    /**
+     * @description 获取当前订阅的所有服务
+     * @throws NacosException
+     */
     @Test
-    public void getSubscribeServices() throws NacosException {
+    public void getSubscribeServices() throws NacosException, InterruptedException {
 
         ListView<String> listView = naming.getServicesOfServer(1, 10);
         if (listView != null && listView.getCount() > 0) {
             naming.getAllInstances(listView.getData().get(0));
         }
         List<ServiceInfo> serviceInfoList = naming.getSubscribeServices();
+        int count = serviceInfoList.size();
 
-        System.out.println(serviceInfoList);
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c2");
+
+        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        serviceInfoList = naming.getSubscribeServices();
+
+        System.out.println("dfdfdfd = " + serviceInfoList);
+        Assert.assertEquals(count+1, serviceInfoList.size());
+    }
+
+    /**
+     * @description 删除注册，获取当前订阅的所有服务
+     * @throws NacosException
+     */
+    @Test
+    public void getSubscribeServices_deregisterInstance() throws NacosException, InterruptedException {
+        listenseCount = 0;
+        EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println(((NamingEvent)event).getServiceName());
+                System.out.println(((NamingEvent)event).getInstances());
+                listenseCount++;
+            }
+        };
+
+        List<ServiceInfo> serviceInfoList = naming.getSubscribeServices();
+        int count = serviceInfoList.size();
+
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c2");
+
+        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        serviceInfoList = naming.getSubscribeServices();
+
+        Assert.assertEquals(count+1, serviceInfoList.size());
+
+        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
+        naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c2");
+
+        Assert.assertEquals(count+1, serviceInfoList.size());
     }
 }

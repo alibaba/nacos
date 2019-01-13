@@ -61,7 +61,7 @@ public class ClientBeatProcessor implements Runnable {
             return;
         }
 
-        Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: " + rsInfo.toString());
+        Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: {}", rsInfo.toString());
 
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
@@ -69,20 +69,16 @@ public class ClientBeatProcessor implements Runnable {
         Cluster cluster = virtualClusterDomain.getClusterMap().get(clusterName);
         List<IpAddress> ipAddresses = cluster.allIPs();
 
-        boolean processed = false;
-
         for (IpAddress ipAddress: ipAddresses) {
             if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
-                processed = true;
-                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: " + rsInfo.toString());
+                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
                 ipAddress.setLastBeat(System.currentTimeMillis());
                 if (!ipAddress.isMarked()) {
                     if (!ipAddress.isValid()) {
                         ipAddress.setValid(true);
-                        Loggers.EVT_LOG.info("{" + cluster.getDom().getName() + "} {POS} {IP-ENABLED} valid: "
-                                + ip+ ":" + port+ "@" + cluster.getName()
-                                + ", region: " + DistroMapper.LOCALHOST_SITE + ", msg: " + "client beat ok");
-                        PushService.domChanged(domain.getName());
+                        Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
+                            cluster.getDom().getName(), ip, port, cluster.getName(), DistroMapper.LOCALHOST_SITE);
+                        PushService.domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
                     }
                 }
             }

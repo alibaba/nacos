@@ -42,7 +42,7 @@ public class ConfigExample {
         configService.addListener(dataId, group, new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                System.out.println("recieve:" + configInfo);
+                System.out.println("receive:" + configInfo);
             }
 
             @Override
