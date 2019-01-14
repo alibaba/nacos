@@ -252,7 +252,7 @@ public class ConfigController {
         inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
     }
 
-    /*
+    /**
      * 订阅改配置的客户端信息
      */
     @RequestMapping(value = "/listener", method = RequestMethod.GET)

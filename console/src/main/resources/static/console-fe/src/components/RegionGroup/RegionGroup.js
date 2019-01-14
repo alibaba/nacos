@@ -13,10 +13,11 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button } from '@alifd/next';
 import $ from 'jquery';
+import { Button } from '@alifd/next';
 import NameSpaceList from '../NameSpaceList';
 import { setParams, request } from '../../globalLib';
+
 import './index.scss';
 
 class RegionGroup extends React.Component {
@@ -53,7 +54,7 @@ class RegionGroup extends React.Component {
         fontSize: '16px',
       },
     };
-    this.nameSpaceList = null;
+    this.nameSpaceList = React.createRef();
     this.mainRef = null;
     this.titleRef = null;
     this.regionRef = null;
@@ -76,7 +77,10 @@ class RegionGroup extends React.Component {
     //     this.setRegionWidth();
     //     this.handleRegionListStatus();
     // });
-    this.nameSpaceList && this.nameSpaceList.getNameSpaces();
+    const nameSpaceList = this.nameSpaceList.current;
+    if (nameSpaceList) {
+      nameSpaceList.getInstance().getNameSpaces();
+    }
   }
 
   componentWillUnmount() {
@@ -151,7 +155,10 @@ class RegionGroup extends React.Component {
       this.handleRegionList(window._regionList);
     } else {
       // TODO
-      this.nameSpaceList && this.nameSpaceList.getNameSpaces();
+      const nameSpaceList = this.nameSpaceList.current;
+      if (nameSpaceList) {
+        nameSpaceList.getInstance().getNameSpaces();
+      }
 
       request({
         url: this.state.url,
@@ -188,7 +195,10 @@ class RegionGroup extends React.Component {
     setTimeout(() => {
       this.changeRegionBarRegionId(this.currRegionId);
     }, 1000);
-    this.nameSpaceList && this.nameSpaceList.getNameSpaces();
+    const nameSpaceList = this.nameSpaceList.current;
+    if (nameSpaceList) {
+      nameSpaceList.getInstance().getNameSpaces();
+    }
     this.setState({
       currRegionId: envcontent,
       instanceData,
@@ -302,15 +312,15 @@ class RegionGroup extends React.Component {
                 : this.state.right}
             </div>
           </div>
-          {this.props.namespaceCallBack ? (
+          {this.props.namespaceCallBack && (
             <div>
               <NameSpaceList
-                ref={ref => (this.nameSpaceList = ref)}
+                ref={this.nameSpaceList}
                 namespaceCallBack={this.props.namespaceCallBack}
                 setNowNameSpace={this.props.setNowNameSpace}
               />
             </div>
-          ) : null}
+          )}
         </div>
       </div>
     );

@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
@@ -46,7 +47,7 @@ public class HostReactor {
 
     private Map<String, Object> updatingMap;
 
-    private PushRecver pushRecver;
+    private PushReceiver pushReceiver;
 
     private EventDispatcher eventDispatcher;
 
@@ -69,7 +70,7 @@ public class HostReactor {
 
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
-        this.pushRecver = new PushRecver(this);
+        this.pushReceiver = new PushReceiver(this);
     }
 
     private ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -183,6 +184,8 @@ public class HostReactor {
             DiskCache.write(serviceInfo, cacheDir);
         }
 
+        MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+
         LogUtils.LOG.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
             " -> " + JSON.toJSONString(serviceInfo.getHosts()));
 
@@ -293,7 +296,7 @@ public class HostReactor {
             Map<String, String> params = new HashMap<String, String>(8);
             params.put("dom", serviceName);
             params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
+            params.put("udpPort", String.valueOf(pushReceiver.getUDPPort()));
 
             ServiceInfo oldService = getSerivceInfo0(serviceName, clusters, env, true);
             if (oldService != null) {
@@ -325,7 +328,7 @@ public class HostReactor {
             Map<String, String> params = new HashMap<String, String>(8);
             params.put("dom", serviceName);
             params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
+            params.put("udpPort", String.valueOf(pushReceiver.getUDPPort()));
             params.put("env", env);
             params.put("clientIP", NetUtils.localIP());
 
@@ -367,7 +370,7 @@ public class HostReactor {
             Map<String, String> params = new HashMap<String, String>(16);
             params.put("dom", serviceName);
             params.put("clusters", clusters);
-            params.put("udpPort", String.valueOf(pushRecver.getUDPPort()));
+            params.put("udpPort", String.valueOf(pushReceiver.getUDPPort()));
             params.put("unit", env);
             params.put("clientIP", NetUtils.localIP());
 

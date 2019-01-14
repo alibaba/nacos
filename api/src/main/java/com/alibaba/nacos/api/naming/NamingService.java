@@ -25,12 +25,14 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Naming Service
+ *
+ * @author dungu.zpf
  */
 public interface NamingService {
 
     /**
-     * Register a instance to service
+     * register a instance to service
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -40,7 +42,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port) throws NacosException;
 
     /**
-     * Register a instance to service with specified cluster name
+     * register a instance to service with specified cluster name
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -51,7 +53,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
 
     /**
-     * Register a instance to service with specified instance properties
+     * register a instance to service with specified instance properties
      *
      * @param serviceName name of service
      * @param instance    instance to register
@@ -60,7 +62,7 @@ public interface NamingService {
     void registerInstance(String serviceName, Instance instance) throws NacosException;
 
     /**
-     * Deregister instance from a service
+     * deregister instance from a service
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -70,7 +72,7 @@ public interface NamingService {
     void deregisterInstance(String serviceName, String ip, int port) throws NacosException;
 
     /**
-     * Deregister instance with specified cluster name from a service
+     * deregister instance with specified cluster name from a service
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -81,7 +83,7 @@ public interface NamingService {
     void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
 
     /**
-     * Get all instances of a service
+     * get all instances of a service
      *
      * @param serviceName name of service
      * @return A list of instance
@@ -174,7 +176,7 @@ public interface NamingService {
     Instance selectOneHealthyInstance(String serviceName) throws NacosException;
 
     /**
-     * Select one healthy instance of service using predefined load balance strategy
+     * select one healthy instance of service using predefined load balance strategy
      *
      * @param serviceName name of service
      * @param subscribe   if subscribe the service
@@ -214,7 +216,7 @@ public interface NamingService {
     void subscribe(String serviceName, EventListener listener) throws NacosException;
 
     /**
-     * Subscribe service to receive events of instances alteration
+     * subscribe service to receive events of instances alteration
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -224,7 +226,7 @@ public interface NamingService {
     void subscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
 
     /**
-     * Unsubscribe event listener of service
+     * unsubscribe event listener of service
      *
      * @param serviceName name of service
      * @param listener    event listener
@@ -233,7 +235,7 @@ public interface NamingService {
     void unsubscribe(String serviceName, EventListener listener) throws NacosException;
 
     /**
-     * Unsubscribe event listener of service
+     * unsubscribe event listener of service
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -243,7 +245,7 @@ public interface NamingService {
     void unsubscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
 
     /**
-     * Get all service names from server
+     * get all service names from server
      *
      * @param pageNo   page index
      * @param pageSize page size
@@ -253,7 +255,7 @@ public interface NamingService {
     ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException;
 
     /**
-     * Get all service names from server
+     * Get all subscribed services of current client
      *
      * @param pageNo   page index
      * @param pageSize page size
@@ -272,7 +274,7 @@ public interface NamingService {
     List<ServiceInfo> getSubscribeServices() throws NacosException;
 
     /**
-     * Get server health status
+     * get server health status
      *
      * @return is server healthy
      */
