@@ -16,8 +16,10 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
@@ -44,7 +46,7 @@ public class HostReactor {
 
     private Map<String, Object> updatingMap;
 
-    private PushRecver pushRecver;
+    private PushReceiver pushReceiver;
 
     private EventDispatcher eventDispatcher;
 
@@ -84,7 +86,7 @@ public class HostReactor {
 
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
-        this.pushRecver = new PushRecver(this);
+        this.pushReceiver = new PushReceiver(this);
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -188,6 +190,8 @@ public class HostReactor {
             DiskCache.write(serviceInfo, cacheDir);
         }
 
+        MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+
         LogUtils.LOG.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
             " -> " + JSON.toJSONString(serviceInfo.getHosts()));
 
@@ -199,6 +203,14 @@ public class HostReactor {
         String key = ServiceInfo.getKey(serviceName, clusters);
 
         return serviceInfoMap.get(key);
+    }
+
+    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
+        String result = serverProxy.queryList(serviceName, clusters, 0, false);
+        if (StringUtils.isNotEmpty(result)) {
+            return JSON.parseObject(result, ServiceInfo.class);
+        }
+        return null;
     }
 
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
@@ -260,7 +272,7 @@ public class HostReactor {
         ServiceInfo oldService = getSerivceInfo0(serviceName, clusters);
         try {
 
-            String result = serverProxy.queryList(serviceName, clusters, pushRecver.getUDPPort(), false);
+            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
             }
@@ -277,7 +289,7 @@ public class HostReactor {
 
     public void refreshOnly(String serviceName, String clusters) {
         try {
-            serverProxy.queryList(serviceName, clusters, pushRecver.getUDPPort(), false);
+            serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
         } catch (Exception e) {
             LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         }

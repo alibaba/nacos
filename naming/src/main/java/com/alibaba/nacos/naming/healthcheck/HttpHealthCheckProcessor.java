@@ -133,6 +133,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
                 }
 
                 builder.execute(new HttpHealthCheckCallback(ip, task));
+                MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();
             } catch (Throwable e) {
                 ip.setCheckRT(switchDomain.getHttpHealthParams().getMax());
                 healthCheckCommon.checkFail(ip, task, "http:error:" + e.getMessage());
