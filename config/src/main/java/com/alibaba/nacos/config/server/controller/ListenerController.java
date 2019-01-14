@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config longpulling
+ * Config longpolling
  *
  * @author Nacos
  */
@@ -48,7 +48,7 @@ public class ListenerController {
     @Autowired
     public ListenerController(ConfigSubService configSubService) {this.configSubService = configSubService;}
 
-    /*
+    /**
      * 获取客户端订阅配置信息
      */
     @RequestMapping(method = RequestMethod.GET)

@@ -20,7 +20,9 @@ import java.util.List;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Naming Event
+ *
+ * @author dungu.zpf
  */
 public class NamingEvent implements Event {
 

@@ -13,25 +13,31 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { aliwareIntl } from '../../globalLib';
+import { Button, ConfigProvider, Dialog, Grid } from '@alifd/next';
+
 import './index.scss';
-import { Button, Dialog, Grid } from '@alifd/next';
 
 const { Row, Col } = Grid;
 
+@ConfigProvider.config
 class DiffEditorDialog extends React.Component {
+  static displayName = 'DiffEditorDialog';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
+
   static propTypes = {
     publishConfig: PropTypes.func,
   };
 
   constructor(props) {
     super(props);
+    this.diffeditor = React.createRef();
     this.state = {
       dialogvisible: false,
     };
   }
-
-  componentDidMount() {}
 
   openDialog(letfcode, rightcode) {
     this.setState({
@@ -49,9 +55,8 @@ class DiffEditorDialog extends React.Component {
   }
 
   createDiffCodeMirror(leftCode, rightCode) {
-    const target = this.refs.diffeditor;
+    const target = this.diffeditor.current;
     target.innerHTML = '';
-
     this.diffeditor = window.CodeMirror.MergeView(target, {
       value: leftCode || '',
       readOnly: true,
@@ -72,19 +77,19 @@ class DiffEditorDialog extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const footer = (
       <div>
         {' '}
         <Button type="primary" onClick={this.confirmPub.bind(this)}>
-          {aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.confirm_that_the')}
+          {locale.publish}
         </Button>
       </div>
     );
     return (
       <div>
         <Dialog
-          title={aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.contents')}
-          language={aliwareIntl.currentLanguageCode || 'zh-cn'}
+          title={locale.contents}
           style={{ width: '80%' }}
           visible={this.state.dialogvisible}
           footer={footer}
@@ -93,17 +98,11 @@ class DiffEditorDialog extends React.Component {
           <div style={{ height: 400 }}>
             <div>
               <Row>
-                <Col style={{ textAlign: 'center' }}>
-                  {aliwareIntl.get(
-                    'com.alibaba.nacos.component.DiffEditorDialog.of_the_current_area'
-                  )}
-                </Col>
-                <Col style={{ textAlign: 'center' }}>
-                  {aliwareIntl.get('com.alibaba.nacos.component.DiffEditorDialog.original_value')}
-                </Col>
+                <Col style={{ textAlign: 'center' }}>{locale.currentArea}</Col>
+                <Col style={{ textAlign: 'center' }}>{locale.originalValue}</Col>
               </Row>
             </div>
-            <div style={{ clear: 'both', height: 480 }} ref="diffeditor" />
+            <div style={{ clear: 'both', height: 480 }} ref={this.diffeditor} />
           </div>
         </Dialog>
       </div>

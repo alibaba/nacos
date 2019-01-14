@@ -21,7 +21,9 @@ import java.util.Properties;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Naming Factory
+ *
+ * @author dungu.zpf
  */
 public class NamingFactory {
 

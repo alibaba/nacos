@@ -28,6 +28,6 @@ public interface TaskManagerMBean {
      *
      * @return info
      */
-    public String getTaskInfos();
+    String getTaskInfos();
 
 }
