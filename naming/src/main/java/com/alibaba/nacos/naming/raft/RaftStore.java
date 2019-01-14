@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.raft;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 

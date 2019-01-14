@@ -272,7 +272,7 @@ public class ServiceController {
                 continue;
             }
             for (IpAddress address : serviceObj.allIPs()) {
-                if (value.equals(address.getMetadata().get(key))) {
+                if (address.getMetadata() != null && value.equals(address.getMetadata().get(key))) {
                     filteredServices.add(service);
                     break;
                 }

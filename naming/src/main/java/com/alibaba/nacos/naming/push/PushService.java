@@ -119,13 +119,12 @@ public class PushService {
         return totalPush;
     }
 
-    public static void addClient(String namespaceId,
-                                 String dom,
     public static void setTotalPush(int totalPush) {
         PushService.totalPush = totalPush;
     }
 
-    public static void addClient(String dom,
+    public static void addClient(String namespaceId,
+                                 String dom,
                                  String clusters,
                                  String agent,
                                  InetSocketAddress socketAddr,
