@@ -101,7 +101,7 @@ class Header extends React.Component {
           {pathname !== '/login' && (
             <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
               <Menu>
-                <Menu.Item onClick={this.logout}>登出</Menu.Item>
+                <Menu.Item onClick={this.logout}>{locale.logout}</Menu.Item>
               </Menu>
             </Dropdown>
           )}

@@ -18,9 +18,10 @@ const I18N_CONF = {
     blog: '博客',
     community: '社区',
     languageSwitchButton: 'En',
+    logout: '登出',
   },
   Login: {
-    pleaseLogin: '请登录',
+    login: '登录',
     submit: '提交',
     pleaseInputUsername: '请输入用户名',
     pleaseInputPassword: '请输入密码',
