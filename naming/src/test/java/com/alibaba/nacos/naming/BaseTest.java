@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.PeerSet;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftPeer;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.raft.PeerSet;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import com.alibaba.nacos.naming.raft.RaftPeer;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -31,7 +31,7 @@ import org.mockito.MockitoAnnotations;
 public class BaseTest {
 
     @Mock
-    public DomainsManager domainsManager;
+    public ServiceManager domainsManager;
 
     @Mock
     public PeerSet peerSet;

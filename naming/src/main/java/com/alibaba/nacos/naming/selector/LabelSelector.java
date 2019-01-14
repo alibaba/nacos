@@ -17,16 +17,18 @@ package com.alibaba.nacos.naming.selector;
 
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
-import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.exception.NacosException;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A selector to implement a so called same-label-prior rule for service discovery.
@@ -51,6 +53,7 @@ import java.util.*;
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @see CmdbReader
+ * @since 0.7.0
  */
 public class LabelSelector extends ExpressionSelector implements Selector {
 
@@ -90,8 +93,7 @@ public class LabelSelector extends ExpressionSelector implements Selector {
 
     public LabelSelector() {
         setType(SelectorType.label.name());
-        ApplicationContext context = SpringContext.getAppContext();
-        cmdbReader = context.getBean(CmdbReader.class);
+        cmdbReader = SpringContext.getAppContext().getBean(CmdbReader.class);
     }
 
 

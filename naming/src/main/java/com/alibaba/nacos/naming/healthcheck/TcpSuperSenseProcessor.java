@@ -19,8 +19,10 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -38,7 +40,16 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  *
  * @author nacos
  */
-public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor implements Runnable {
+@Component
+public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
+
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    public static final int CONNECT_TIMEOUT_MS = 500;
 
     private Map<String, BeatKey> keyMap = new ConcurrentHashMap<>();
 
@@ -48,7 +59,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
      * this value has been carefully tuned, do not modify unless you're confident
      */
     public static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() <= 1 ?
-            1 : Runtime.getRuntime().availableProcessors() / 2;
+        1 : Runtime.getRuntime().availableProcessors() / 2;
 
     /**
      * because some hosts doesn't support keep-alive connections, disabled temporarily
@@ -56,7 +67,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
     public static final long TCP_KEEP_ALIVE_MILLIS = 0;
 
     private static ScheduledExecutorService TCP_CHECK_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
@@ -67,16 +78,16 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
     });
 
     private static ScheduledExecutorService NIO_EXECUTOR
-            = Executors.newScheduledThreadPool(NIO_THREAD_COUNT,
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("nacos.supersense.checker");
-                    return thread;
-                }
+        = Executors.newScheduledThreadPool(NIO_THREAD_COUNT,
+        new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("nacos.supersense.checker");
+                return thread;
             }
+        }
     );
 
     private Selector selector;
@@ -101,7 +112,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
         }
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
 
-        if (!isHealthCheckEnabled(virtualClusterDomain)) {
+        if (!healthCheckCommon.isHealthCheckEnabled(virtualClusterDomain)) {
             return;
         }
 
@@ -116,12 +127,12 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
 
             if (!ip.markChecking()) {
                 SRV_LOG.warn("tcp check started before last one finished, dom: "
-                        + task.getCluster().getDom().getName() + ":"
-                        + task.getCluster().getName() + ":"
-                        + ip.getIp() + ":"
-                        + ip.getPort());
+                    + task.getCluster().getDom().getName() + ":"
+                    + task.getCluster().getName() + ":"
+                    + ip.getIp() + ":"
+                    + ip.getPort());
 
-                reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getTcpHealthParams());
+                healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getTcpHealthParams());
                 continue;
             }
 
@@ -135,7 +146,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
     private void processTask() throws Exception {
         Collection<Callable<Void>> tasks = new LinkedList<Callable<Void>>();
         do {
-            Beat beat = taskQueue.poll(AbstractHealthCheckProcessor.CONNECT_TIMEOUT_MS / 2, TimeUnit.MILLISECONDS);
+            Beat beat = taskQueue.poll(CONNECT_TIMEOUT_MS / 2, TimeUnit.MILLISECONDS);
             if (beat == null) {
                 return;
             }
@@ -172,7 +183,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
         }
     }
 
-    public static class PostProcessor implements Runnable {
+    public class PostProcessor implements Runnable {
         SelectionKey key;
 
         public PostProcessor(SelectionKey key) {
@@ -211,9 +222,9 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
                 }
             } catch (ConnectException e) {
                 // unable to connect, possibly port not opened
-                beat.finishCheck(false, true, Switch.getTcpHealthParams().getMax(), "tcp:unable2connect:" + e.getMessage());
+                beat.finishCheck(false, true, switchDomain.getTcpHealthParams().getMax(), "tcp:unable2connect:" + e.getMessage());
             } catch (Exception e) {
-                beat.finishCheck(false, false, Switch.getTcpHealthParams().getMax(), "tcp:error:" + e.getMessage());
+                beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(), "tcp:error:" + e.getMessage());
 
                 try {
                     key.cancel();
@@ -267,26 +278,26 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
             ip.setCheckRT(System.currentTimeMillis() - startTime);
 
             if (success) {
-                checkOK(ip, task, msg);
+                healthCheckCommon.checkOK(ip, task, msg);
             } else {
                 if (now) {
-                    checkFailNow(ip, task, msg);
+                    healthCheckCommon.checkFailNow(ip, task, msg);
                 } else {
-                    checkFail(ip, task, msg);
+                    healthCheckCommon.checkFail(ip, task, msg);
                 }
 
                 keyMap.remove(task.toString());
             }
 
-            reEvaluateCheckRT(rt, task, Switch.getTcpHealthParams());
+            healthCheckCommon.reEvaluateCheckRT(rt, task, switchDomain.getTcpHealthParams());
         }
 
         @Override
         public String toString() {
             return task.getCluster().getDom().getName() + ":"
-                    + task.getCluster().getName() + ":"
-                    + ip.getIp() + ":"
-                    + ip.getPort();
+                + task.getCluster().getName() + ":"
+                + ip.getIp() + ":"
+                + ip.getPort();
         }
 
         @Override
@@ -391,16 +402,16 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
                 channel.connect(new InetSocketAddress(ipAddress.getIp(), port));
 
                 SelectionKey key
-                        = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
+                    = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
                 key.attach(beat);
                 keyMap.put(beat.toString(), new BeatKey(key));
 
                 beat.setStartTime(System.currentTimeMillis());
 
                 NIO_EXECUTOR.schedule(new TimeOutTask(key),
-                        CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                    CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
-                beat.finishCheck(false, false, Switch.getTcpHealthParams().getMax(), "tcp:error:" + e.getMessage());
+                beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(), "tcp:error:" + e.getMessage());
 
                 if (channel != null) {
                     try {

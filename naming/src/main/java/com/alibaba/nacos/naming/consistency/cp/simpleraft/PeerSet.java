@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.raft;
+package com.alibaba.nacos.naming.consistency.cp.simpleraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -24,6 +24,7 @@ import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 
 import java.net.HttpURLConnection;
 import java.util.*;
@@ -33,13 +34,14 @@ import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 /**
  * @author nacos
  */
+@Component
 public class PeerSet {
 
     private RaftPeer leader = null;
 
-    private static Map<String, RaftPeer> peers = new HashMap<String, RaftPeer>();
+    private Map<String, RaftPeer> peers = new HashMap<String, RaftPeer>();
 
-    private static Set<String> sites = new HashSet<>();
+    private Set<String> sites = new HashSet<>();
 
     public PeerSet() {
     }

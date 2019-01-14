@@ -19,16 +19,15 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.Datum;
 import com.alibaba.nacos.naming.misc.*;
-import com.alibaba.nacos.naming.monitor.PerformanceLoggerThread;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.raft.Datum;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import com.alibaba.nacos.naming.raft.RaftListener;
-import com.alibaba.nacos.naming.raft.RaftPeer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -41,12 +40,12 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @Component
-public class DomainsManager {
+public class ServiceManager implements DataListener {
 
     /**
      * Map<namespace, Map<group::serviceName, Service>>
      */
-    private Map<String, Map<String, Domain>> serviceMap = new ConcurrentHashMap<>();
+    private Map<String, Map<String, VirtualClusterDomain>> serviceMap = new ConcurrentHashMap<>();
 
     private LinkedBlockingDeque<DomainKey> toBeUpdatedDomsQueue = new LinkedBlockingDeque<>(1024 * 1024);
 
@@ -63,9 +62,17 @@ public class DomainsManager {
 
     private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
 
-    public Map<String, Lock> getDom2LockMap() {
-        return dom2LockMap;
-    }
+    @Autowired
+    private ConsistencyService consistencyService;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private DistroMapper distroMapper;
+
+    @Autowired
+    private PushService pushService;
 
     /**
      * thread pool that processes getting domain detail from other server asynchronously
@@ -81,33 +88,25 @@ public class DomainsManager {
         }
     });
 
-    public Map<String, Domain> chooseDomMap(String namespaceId) {
-        return serviceMap.get(namespaceId);
+    public ServiceManager() throws NacosException {
+        // wait until distro-mapper ready because domain distribution check depends on it
+        // TODO may be not necessary:
+        while (distroMapper.getLiveSites().size() == 0) {
+            try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(1L));
+            } catch (InterruptedException ignore) {
+            }
+        }
+
+        UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new DomainReporter(), 60000, TimeUnit.MILLISECONDS);
+
+        UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
+
+        consistencyService.listen(UtilsAndCommons.DOMAINS_DATA_ID, this);
     }
 
-    private void initConfig() {
-
-        RaftPeer leader;
-        while (true) {
-
-            try {
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException e) {
-                Loggers.SRV_LOG.error("[AUTO-INIT] failed to auto init", e);
-            }
-
-            try {
-                leader = RaftCore.getPeerSet().getLeader();
-                if (leader != null) {
-                    Loggers.SRV_LOG.info("[AUTO-INIT] leader is: {}", leader.ip);
-                    break;
-                }
-
-            } catch (Throwable throwable) {
-                Loggers.SRV_LOG.error("[AUTO-INIT] failed to auto init", throwable);
-            }
-
-        }
+    public Map<String, VirtualClusterDomain> chooseDomMap(String namespaceId) {
+        return serviceMap.get(namespaceId);
     }
 
 
@@ -121,6 +120,71 @@ public class DomainsManager {
             Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add domain to be updatd to queue.", e);
         } finally {
             lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean interests(String key) {
+        return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID);
+    }
+
+    @Override
+    public boolean matchUnlistenKey(String key) {
+        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".*");
+    }
+
+    @Override
+    public void onChange(String key, String value) throws Exception {
+        try {
+            if (StringUtils.isEmpty(value)) {
+                Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);
+                return;
+            }
+
+            VirtualClusterDomain dom = VirtualClusterDomain.fromJSON(value);
+            if (dom == null) {
+                throw new IllegalStateException("dom parsing failed, json: " + value);
+            }
+
+            if (StringUtils.isBlank(dom.getNamespaceId())) {
+                dom.setNamespaceId(UtilsAndCommons.getDefaultNamespaceId());
+            }
+
+            Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, value);
+
+            Domain oldDom = getService(dom.getNamespaceId(), dom.getName());
+
+            if (oldDom != null) {
+                oldDom.update(dom);
+            } else {
+
+                addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
+                putDomain(dom);
+                dom.init();
+                consistencyService.listen(UtilsAndCommons.getDomStoreKey(dom), dom);
+                Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", dom.toJSON());
+            }
+
+            wakeUp(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
+
+        } catch (Throwable e) {
+            Loggers.SRV_LOG.error("[NACOS-DOM] error while processing dom update", e);
+        }
+    }
+
+    @Override
+    public void onDelete(String key, String value) throws Exception {
+        String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
+        String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
+        String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+        VirtualClusterDomain dom = chooseDomMap(namespace).remove(name);
+        Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}, value: {}", key, value);
+
+        if (dom != null) {
+            dom.destroy();
+            consistencyService.remove(UtilsAndCommons.getIPListStoreKey(dom));
+            consistencyService.unlisten(UtilsAndCommons.getDomStoreKey(dom), dom);
+            Loggers.SRV_LOG.info("[DEAD-DOM] {}", dom.toJSON());
         }
     }
 
@@ -193,7 +257,7 @@ public class DomainsManager {
             ipsMap.put(strings[0], strings[1]);
         }
 
-        VirtualClusterDomain raftVirtualClusterDomain = (VirtualClusterDomain) getDomain(namespaceId, domName);
+        VirtualClusterDomain raftVirtualClusterDomain = (VirtualClusterDomain) getService(namespaceId, domName);
 
         if (raftVirtualClusterDomain == null) {
             return;
@@ -211,7 +275,7 @@ public class DomainsManager {
             }
         }
 
-        PushService.domChanged(raftVirtualClusterDomain.getNamespaceId(), raftVirtualClusterDomain.getName());
+        pushService.domChanged(raftVirtualClusterDomain.getNamespaceId(), raftVirtualClusterDomain.getName());
         StringBuilder stringBuilder = new StringBuilder();
         List<IpAddress> allIps = raftVirtualClusterDomain.allIPs();
         for (IpAddress ipAddress : allIps) {
@@ -243,9 +307,9 @@ public class DomainsManager {
         Map<String, Set<Domain>> result = new HashMap<>(16);
         for (String namespaceId : serviceMap.keySet()) {
             result.put(namespaceId, new HashSet<>());
-            for (Map.Entry<String, Domain> entry : serviceMap.get(namespaceId).entrySet()) {
+            for (Map.Entry<String, VirtualClusterDomain> entry : serviceMap.get(namespaceId).entrySet()) {
                 Domain domain = entry.getValue();
-                if (DistroMapper.responsible(entry.getKey())) {
+                if (distroMapper.responsible(entry.getKey())) {
                     result.get(namespaceId).add(domain);
                 }
             }
@@ -256,8 +320,8 @@ public class DomainsManager {
     public int getResponsibleDomCount() {
         int domCount = 0;
         for (String namespaceId : serviceMap.keySet()) {
-            for (Map.Entry<String, Domain> entry : serviceMap.get(namespaceId).entrySet()) {
-                if (DistroMapper.responsible(entry.getKey())) {
+            for (Map.Entry<String, VirtualClusterDomain> entry : serviceMap.get(namespaceId).entrySet()) {
+                if (distroMapper.responsible(entry.getKey())) {
                     domCount++;
                 }
             }
@@ -278,119 +342,173 @@ public class DomainsManager {
     }
 
     public void easyRemoveDom(String namespaceId, String serviceName) throws Exception {
+        Domain dom = getService(namespaceId, serviceName);
+        consistencyService.remove(UtilsAndCommons.getDomStoreKey(dom));
+    }
 
-        Domain dom = getDomain(namespaceId, serviceName);
+    public void addOrReplaceService(VirtualClusterDomain newDom) throws Exception {
+        consistencyService.put(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
+    }
 
-        if (dom != null) {
-            RaftCore.signalDelete(UtilsAndCommons.getDomStoreKey(dom));
+    /**
+     * Register an instance to a service.
+     * <p>
+     * This method create service or cluster silently if they don't exist.
+     *
+     * @param namespaceId id of namespace
+     * @param serviceName service name
+     * @param instance    instance to register
+     * @throws Exception any error occurred in the process
+     */
+    public void registerInstance(String namespaceId, String serviceName, IpAddress instance) throws Exception {
+
+        VirtualClusterDomain service = (VirtualClusterDomain) getService(namespaceId, serviceName);
+
+        boolean serviceUpdated = false;
+        if (service == null) {
+            service = new VirtualClusterDomain();
+            service.setName(serviceName);
+            service.setNamespaceId(namespaceId);
+            // now valid the dom. if failed, exception will be thrown
+            service.setLastModifiedMillis(System.currentTimeMillis());
+            service.recalculateChecksum();
+            service.valid();
+            serviceUpdated = true;
         }
-    }
 
-    public void easyAddOrReplaceDom(Domain newDom) throws Exception {
-        VirtualClusterDomain virtualClusterDomain;
-        if (newDom instanceof VirtualClusterDomain) {
-            virtualClusterDomain = (VirtualClusterDomain) newDom;
-            newDom = virtualClusterDomain;
-        }
-        RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom), true);
-    }
+        if (!service.getClusterMap().containsKey(instance.getClusterName())) {
 
-    public void easyAddIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long term) throws Exception {
-        easyUpdateIP4Dom(namespaceId, domName, ips, term, "add");
-    }
+            Cluster cluster = new Cluster();
 
-    public void easyRemvIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long term) throws Exception {
-        easyUpdateIP4Dom(namespaceId, domName, ips, term, "remove");
-    }
+            cluster.setName(instance.getClusterName());
 
-    public void easyUpdateIP4Dom(String namespaceId, String domName, List<IpAddress> ips, long term, String action) throws Exception {
+            cluster.setDom(service);
+            cluster.init();
 
-        VirtualClusterDomain dom = (VirtualClusterDomain) chooseDomMap(namespaceId).get(domName);
-        if (dom == null) {
-            throw new IllegalArgumentException("dom doesn't exist: " + domName);
-        }
-
-        try {
-
-            if (!dom.getEnableClientBeat()) {
-                getDom2LockMap().get(domName).lock();
+            if (service.getClusterMap().containsKey(cluster.getName())) {
+                service.getClusterMap().get(cluster.getName()).update(cluster);
+            } else {
+                service.getClusterMap().put(cluster.getName(), cluster);
             }
 
-            Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
-            String oldJson = StringUtils.EMPTY;
+            service.setLastModifiedMillis(System.currentTimeMillis());
+            service.recalculateChecksum();
+            service.valid();
+            serviceUpdated = true;
+        }
 
-            if (datum1 != null) {
-                oldJson = datum1.value;
+        if (serviceUpdated) {
+            addOrReplaceService(service);
+        }
+
+        addInstance(namespaceId, serviceName, instance);
+    }
+
+    public void addInstance(String namespaceId, String serviceName, IpAddress... ips) throws NacosException {
+
+        String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
+
+        VirtualClusterDomain dom = (VirtualClusterDomain) getService(namespaceId, serviceName);
+
+        Map<String, IpAddress> ipAddressMap = addIpAddresses(dom, ips);
+
+        String value = JSON.toJSONString(ipAddressMap.values());
+
+        consistencyService.put(key, value);
+    }
+
+    public void removeInstance(String namespaceId, String serviceName, IpAddress... ips) throws NacosException {
+
+        String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
+
+        VirtualClusterDomain dom = (VirtualClusterDomain) getService(namespaceId, serviceName);
+
+        Map<String, IpAddress> ipAddressMap = substractIpAddresses(dom, ips);
+
+        String value = JSON.toJSONString(ipAddressMap.values());
+
+        consistencyService.put(key, value);
+    }
+
+    public IpAddress getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
+        VirtualClusterDomain service = (VirtualClusterDomain) getService(namespaceId, serviceName);
+        if (service == null) {
+            return null;
+        }
+
+        List<String> clusters = new ArrayList<>();
+        clusters.add(cluster);
+
+        List<IpAddress> ips = service.allIPs(clusters);
+        if (ips == null || ips.isEmpty()) {
+            throw new IllegalStateException("no ips found for cluster " + cluster + " in dom " + serviceName);
+        }
+
+        for (IpAddress ipAddress : ips) {
+            if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
+                return ipAddress;
+            }
+        }
+
+        return null;
+    }
+
+    public Map<String, IpAddress> updateIpAddresses(VirtualClusterDomain dom, String action, IpAddress... ips) throws NacosException {
+
+        Datum datum1 = (Datum) consistencyService.get(UtilsAndCommons.getIPListStoreKey(dom));
+        String oldJson = StringUtils.EMPTY;
+
+        if (datum1 != null) {
+            oldJson = datum1.value;
+        }
+
+        List<IpAddress> ipAddresses;
+        List<IpAddress> currentIPs = dom.allIPs();
+        Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
+
+        for (IpAddress ipAddress : currentIPs) {
+            map.put(ipAddress.toIPAddr(), ipAddress);
+        }
+
+        ipAddresses = setValid(oldJson, map);
+
+        Map<String, IpAddress> ipAddressMap = new HashMap<String, IpAddress>(ipAddresses.size());
+
+        for (IpAddress ipAddress : ipAddresses) {
+            ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
+        }
+
+        for (IpAddress ipAddress : ips) {
+            if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
+                Cluster cluster = new Cluster(ipAddress.getClusterName());
+                cluster.setDom(dom);
+                dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
+                Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                    ipAddress.getClusterName(), ipAddress.toJSON());
             }
 
-            List<IpAddress> ipAddresses;
-            List<IpAddress> currentIPs = dom.allIPs();
-            Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
-
-            for (IpAddress ipAddress : currentIPs) {
-                map.put(ipAddress.toIPAddr(), ipAddress);
-            }
-
-            ipAddresses = setValid(oldJson, map);
-
-            Map<String, IpAddress> ipAddressMap = new HashMap<String, IpAddress>(ipAddresses.size());
-
-            for (IpAddress ipAddress : ipAddresses) {
+            if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
+                ipAddressMap.remove(ipAddress.getDatumKey());
+            } else {
                 ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
             }
 
-            for (IpAddress ipAddress : ips) {
-                if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                    Cluster cluster = new Cluster(ipAddress.getClusterName());
-                    cluster.setDom(dom);
-                    dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
-                    Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                        ipAddress.getClusterName(), ipAddress.toJSON());
-                }
-
-                if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
-                    ipAddressMap.remove(ipAddress.getDatumKey());
-                } else {
-                    ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
-                }
-
-            }
-
-            if (ipAddressMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
-                throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
-                    + JSON.toJSONString(ipAddressMap.values()));
-            }
-
-            Loggers.EVT_LOG.info("{} {POS} {IP-UPDATE} {}, action: {}", dom, ips, action);
-
-            String key = UtilsAndCommons.getIPListStoreKey(dom);
-            String value = JSON.toJSONString(ipAddressMap.values());
-
-            Datum datum = new Datum();
-            datum.key = key;
-            datum.value = value;
-
-            datum.timestamp.set(datum1 == null ? 1 : datum1.timestamp.get() + 1);
-
-            Loggers.RAFT.info("datum " + key + " updated:" + datum.timestamp.get());
-
-            RaftPeer peer = new RaftPeer();
-            peer.ip = RaftCore.getLeader().ip;
-            peer.term.set(term);
-            peer.voteFor = RaftCore.getLeader().voteFor;
-            peer.heartbeatDueMs = RaftCore.getLeader().heartbeatDueMs;
-            peer.leaderDueMs = RaftCore.getLeader().leaderDueMs;
-            peer.state = RaftCore.getLeader().state;
-
-            boolean increaseTerm = !((VirtualClusterDomain) getDomain(namespaceId, domName)).getEnableClientBeat();
-
-            RaftCore.onPublish(datum, peer, increaseTerm);
-        } finally {
-            if (!dom.getEnableClientBeat()) {
-                getDom2LockMap().get(domName).unlock();
-            }
         }
 
+        if (ipAddressMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
+            throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
+                + JSON.toJSONString(ipAddressMap.values()));
+        }
+
+        return ipAddressMap;
+    }
+
+    public Map<String, IpAddress> substractIpAddresses(VirtualClusterDomain dom, IpAddress... ips) throws NacosException {
+        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ips);
+    }
+
+    public Map<String, IpAddress> addIpAddresses(VirtualClusterDomain dom, IpAddress... ips) throws NacosException {
+        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ips);
     }
 
     private List<IpAddress> setValid(String oldJson, Map<String, IpAddress> map) {
@@ -418,7 +536,7 @@ public class DomainsManager {
         return ipAddresses;
     }
 
-    public Domain getDomain(String namespaceId, String domName) {
+    public VirtualClusterDomain getService(String namespaceId, String domName) {
         if (serviceMap.get(namespaceId) == null) {
             return null;
         }
@@ -433,11 +551,10 @@ public class DomainsManager {
     }
 
 
-    public List<Domain> searchDomains(String namespaceId, String regex) {
-        List<Domain> result = new ArrayList<Domain>();
-        for (Map.Entry<String, Domain> entry : chooseDomMap(namespaceId).entrySet()) {
-            Domain dom = entry.getValue();
-
+    public List<VirtualClusterDomain> searchDomains(String namespaceId, String regex) {
+        List<VirtualClusterDomain> result = new ArrayList<>();
+        for (Map.Entry<String, VirtualClusterDomain> entry : chooseDomMap(namespaceId).entrySet()) {
+            VirtualClusterDomain dom = entry.getValue();
             String key = dom.getName() + ":" + ArrayUtils.toString(dom.getOwners());
             if (key.matches(regex)) {
                 result.add(dom);
@@ -465,17 +582,17 @@ public class DomainsManager {
         return total;
     }
 
-    public Map<String, Domain> getDomMap(String namespaceId) {
+    public Map<String, VirtualClusterDomain> getDomMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
 
     public int getPagedDom(String namespaceId, int startPage, int pageSize, String keyword, List<Domain> domainList) {
 
-        List<Domain> matchList;
+        List<VirtualClusterDomain> matchList;
         if (StringUtils.isNotBlank(keyword)) {
             matchList = searchDomains(namespaceId, ".*" + keyword + ".*");
         } else {
-            matchList = new ArrayList<Domain>(chooseDomMap(namespaceId).values());
+            matchList = new ArrayList<VirtualClusterDomain>(chooseDomMap(namespaceId).values());
         }
 
         if (pageSize >= matchList.size()) {
@@ -536,13 +653,13 @@ public class DomainsManager {
                     DomainChecksum checksum = new DomainChecksum(namespaceId);
 
                     for (String domName : allDomainNames.get(namespaceId)) {
-                        if (!DistroMapper.responsible(domName)) {
+                        if (!distroMapper.responsible(domName)) {
                             continue;
                         }
 
-                        Domain domain = getDomain(namespaceId, domName);
+                        Domain domain = getService(namespaceId, domName);
 
-                        if (domain == null || domain instanceof SwitchDomain) {
+                        if (domain == null) {
                             continue;
                         }
 
@@ -571,101 +688,9 @@ public class DomainsManager {
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending domain status", e);
             } finally {
-                UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, Switch.getDomStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
+                UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getDomStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
         }
-    }
-
-    public DomainsManager() {
-        // wait until distro-mapper ready because domain distribution check depends on it
-        while (DistroMapper.getLiveSites().size() == 0) {
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(1L));
-            } catch (InterruptedException ignore) {
-            }
-        }
-
-        PerformanceLoggerThread performanceLoggerThread = new PerformanceLoggerThread();
-        performanceLoggerThread.init(this);
-
-        UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new DomainReporter(), 60000, TimeUnit.MILLISECONDS);
-
-        UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
-
-        UtilsAndCommons.INIT_CONFIG_EXECUTOR.submit(new Runnable() {
-            @Override
-            public void run() {
-                initConfig();
-            }
-        });
-
-        final RaftListener raftListener = new RaftListener() {
-            @Override
-            public boolean interests(String key) {
-                return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID);
-            }
-
-            @Override
-            public boolean matchUnlistenKey(String key) {
-                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".*");
-            }
-
-            @SuppressFBWarnings("JLM_JSR166_LOCK_MONITORENTER")
-            @Override
-            public void onChange(String key, String value) throws Exception {
-                try {
-                    if (StringUtils.isEmpty(value)) {
-                        Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);
-                        return;
-                    }
-
-                    VirtualClusterDomain dom = VirtualClusterDomain.fromJSON(value);
-                    if (dom == null) {
-                        throw new IllegalStateException("dom parsing failed, json: " + value);
-                    }
-
-                    if (StringUtils.isBlank(dom.getNamespaceId())) {
-                        dom.setNamespaceId(UtilsAndCommons.getDefaultNamespaceId());
-                    }
-
-                    Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, value);
-
-                    Domain oldDom = getDomain(dom.getNamespaceId(), dom.getName());
-
-                    if (oldDom != null) {
-                        oldDom.update(dom);
-                    } else {
-
-                        addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
-
-                        putDomain(dom);
-                        dom.init();
-                        Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", dom.toJSON());
-                    }
-
-                    wakeUp(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
-
-                } catch (Throwable e) {
-                    Loggers.SRV_LOG.error("[NACOS-DOM] error while processing dom update", e);
-                }
-            }
-
-            @Override
-            public void onDelete(String key, String value) throws Exception {
-                String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
-                String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
-                String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
-                Domain dom = chooseDomMap(namespace).remove(name);
-                Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}, value: {}", key, value);
-
-                if (dom != null) {
-                    dom.destroy();
-                    Loggers.SRV_LOG.info("[DEAD-DOM] {}", dom.toJSON());
-                }
-            }
-        };
-        RaftCore.listen(raftListener);
-
     }
 
     public void wakeUp(String key) {

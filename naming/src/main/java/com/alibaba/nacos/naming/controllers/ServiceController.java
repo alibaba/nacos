@@ -20,14 +20,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -49,7 +48,10 @@ import java.util.*;
 public class ServiceController {
 
     @Autowired
-    protected DomainsManager domainsManager;
+    protected ServiceManager domainsManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
@@ -59,12 +61,12 @@ public class ServiceController {
 
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        if (domainsManager.getDomain(namespaceId, serviceName) != null) {
+        if (domainsManager.getService(namespaceId, serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
         }
 
         float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
-        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", Switch.getDefaultHealthCheckMode());
+        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", switchDomain.defaultHealthCheckMode);
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
@@ -87,7 +89,7 @@ public class ServiceController {
         domObj.recalculateChecksum();
         domObj.valid();
 
-        domainsManager.easyAddOrReplaceDom(domObj);
+        domainsManager.addOrReplaceService(domObj);
 
         return "ok";
     }
@@ -99,7 +101,7 @@ public class ServiceController {
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        VirtualClusterDomain service = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain service = domainsManager.getService(namespaceId, serviceName);
         if (service == null) {
             throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
         }
@@ -120,7 +122,7 @@ public class ServiceController {
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
@@ -143,9 +145,6 @@ public class ServiceController {
         res.put("metadata", domain.getMetadata());
 
         res.put("selector", domain.getSelector());
-
-        res.put("instanceTimestamp", RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(domain)).timestamp.get());
-        res.put("serviceTimestamp", RaftCore.getDatum(UtilsAndCommons.getDomStoreKey(domain)).timestamp.get());
 
         return res;
     }
@@ -227,7 +226,7 @@ public class ServiceController {
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
         }
@@ -258,7 +257,7 @@ public class ServiceController {
         domain.recalculateChecksum();
         domain.valid();
 
-        domainsManager.easyAddOrReplaceDom(domain);
+        domainsManager.addOrReplaceService(domain);
 
         return "ok";
     }
@@ -267,7 +266,7 @@ public class ServiceController {
 
         List<String> filteredServices = new ArrayList<>();
         for (String service : serivces) {
-            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, service);
+            VirtualClusterDomain serviceObj = domainsManager.getService(namespaceId, service);
             if (serviceObj == null) {
                 continue;
             }
@@ -285,7 +284,7 @@ public class ServiceController {
 
         List<String> filteredServices = new ArrayList<>();
         for (String service : serivces) {
-            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, service);
+            VirtualClusterDomain serviceObj = domainsManager.getService(namespaceId, service);
             if (serviceObj == null) {
                 continue;
             }

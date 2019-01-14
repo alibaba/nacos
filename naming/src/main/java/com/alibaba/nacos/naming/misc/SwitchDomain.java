@@ -17,11 +17,12 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
-import com.alibaba.nacos.naming.raft.RaftListener;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Component;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
@@ -30,7 +31,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author nacos
  */
-public class SwitchDomain implements Domain, RaftListener {
+@Component
+public class SwitchDomain implements Domain, DataListener {
+
     public String name = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
 
     public List<String> masters;
@@ -95,10 +98,6 @@ public class SwitchDomain implements Domain, RaftListener {
     public String pushJavaVersion = "0.1.0";
     public String pushPythonVersion = "0.4.3";
     public String pushCVersion = "1.0.12";
-    public String trafficSchedulingJavaVersion = "4.5.0";
-    public String trafficSchedulingPythonVersion = "9999.0.0";
-    public String trafficSchedulingCVersion = "1.0.5";
-    public String trafficSchedulingTengineVersion = "2.0.0";
 
     public boolean enableAuthentication = false;
 
@@ -265,6 +264,204 @@ public class SwitchDomain implements Domain, RaftListener {
 
     public void setAllDomNameCache(boolean enable) {
         allDomNameCache = enable;
+    }
+
+    public List<String> getMasters() {
+        return masters;
+    }
+
+    public void setMasters(List<String> masters) {
+        this.masters = masters;
+    }
+
+    public Map<String, Integer> getAdWeightMap() {
+        return adWeightMap;
+    }
+
+    public void setAdWeightMap(Map<String, Integer> adWeightMap) {
+        this.adWeightMap = adWeightMap;
+    }
+
+    public Integer getAdWeight(String key) {
+        return getAdWeightMap().get(key);
+    }
+
+    public long getDefaultPushCacheMillis() {
+        return defaultPushCacheMillis;
+    }
+
+    public void setDefaultPushCacheMillis(long defaultPushCacheMillis) {
+        this.defaultPushCacheMillis = defaultPushCacheMillis;
+    }
+
+    public long getDefaultCacheMillis() {
+        return defaultCacheMillis;
+    }
+
+    public void setDefaultCacheMillis(long defaultCacheMillis) {
+        this.defaultCacheMillis = defaultCacheMillis;
+    }
+
+    public float getDistroThreshold() {
+        return distroThreshold;
+    }
+
+    public void setDistroThreshold(float distroThreshold) {
+        this.distroThreshold = distroThreshold;
+    }
+
+    public long getPushCacheMillis(String dom) {
+        if (pushCacheMillisMap == null
+            || !pushCacheMillisMap.containsKey(dom)) {
+            return defaultPushCacheMillis;
+        }
+
+        return pushCacheMillisMap.get(dom);
+    }
+
+    @JSONField(serialize = false)
+    public void setPushCacheMillis(Long cacheMillis) {
+        defaultPushCacheMillis = cacheMillis;
+    }
+
+    public boolean isHealthCheckEnabled() {
+        return healthCheckEnabled;
+    }
+
+    public void setHealthCheckEnabled(boolean healthCheckEnabled) {
+        this.healthCheckEnabled = healthCheckEnabled;
+    }
+
+    public boolean isHealthCheckEnabled(String dom) {
+        return healthCheckEnabled || getHealthCheckWhiteList().contains(dom);
+    }
+
+    public String getDefaultHealthCheckMode() {
+        return defaultHealthCheckMode;
+    }
+
+    public void setDefaultHealthCheckMode(String defaultHealthCheckMode) {
+        this.defaultHealthCheckMode = defaultHealthCheckMode;
+    }
+
+    public boolean isDistroEnabled() {
+        return distroEnabled;
+    }
+
+    public void setDistroEnabled(boolean distroEnabled) {
+        this.distroEnabled = distroEnabled;
+    }
+
+    public int getCheckTimes() {
+        return checkTimes;
+    }
+
+    public void setCheckTimes(int checkTimes) {
+        this.checkTimes = checkTimes;
+    }
+
+    public HttpHealthParams getHttpHealthParams() {
+        return httpHealthParams;
+    }
+
+    public void setHttpHealthParams(HttpHealthParams httpHealthParams) {
+        this.httpHealthParams = httpHealthParams;
+    }
+
+    public TcpHealthParams getTcpHealthParams() {
+        return tcpHealthParams;
+    }
+
+    public void setTcpHealthParams(TcpHealthParams tcpHealthParams) {
+        this.tcpHealthParams = tcpHealthParams;
+    }
+
+    public MysqlHealthParams getMysqlHealthParams() {
+        return mysqlHealthParams;
+    }
+
+    public void setMysqlHealthParams(MysqlHealthParams mysqlHealthParams) {
+        this.mysqlHealthParams = mysqlHealthParams;
+    }
+
+    public long getServerStatusSynchronizationPeriodMillis() {
+        return serverStatusSynchronizationPeriodMillis;
+    }
+
+    public void setServerStatusSynchronizationPeriodMillis(long serverStatusSynchronizationPeriodMillis) {
+        this.serverStatusSynchronizationPeriodMillis = serverStatusSynchronizationPeriodMillis;
+    }
+
+    public long getDomStatusSynchronizationPeriodMillis() {
+        return domStatusSynchronizationPeriodMillis;
+    }
+
+    public void setDomStatusSynchronizationPeriodMillis(long domStatusSynchronizationPeriodMillis) {
+        this.domStatusSynchronizationPeriodMillis = domStatusSynchronizationPeriodMillis;
+    }
+
+    public boolean isDisableAddIP() {
+        return disableAddIP;
+    }
+
+    public void setDisableAddIP(boolean disableAddIP) {
+        this.disableAddIP = disableAddIP;
+    }
+
+    public void setEnableCache(boolean enableCache) {
+        this.enableCache = enableCache;
+    }
+
+    public Map<String, Integer> getLimitedUrlMap() {
+        return limitedUrlMap;
+    }
+
+    public void setLimitedUrlMap(Map<String, Integer> limitedUrlMap) {
+        this.limitedUrlMap = limitedUrlMap;
+    }
+
+    public long getDistroServerExpiredMillis() {
+        return distroServerExpiredMillis;
+    }
+
+    public void setDistroServerExpiredMillis(long distroServerExpiredMillis) {
+        this.distroServerExpiredMillis = distroServerExpiredMillis;
+    }
+
+    public String getPushGoVersion() {
+        return pushGoVersion;
+    }
+
+    public void setPushGoVersion(String pushGoVersion) {
+        this.pushGoVersion = pushGoVersion;
+    }
+
+    public String getPushJavaVersion() {
+        return pushJavaVersion;
+    }
+
+    public void setPushJavaVersion(String pushJavaVersion) {
+        this.pushJavaVersion = pushJavaVersion;
+    }
+
+    public String getPushPythonVersion() {
+        return pushPythonVersion;
+    }
+
+    public void setPushPythonVersion(String pushPythonVersion) {
+        this.pushPythonVersion = pushPythonVersion;
+    }
+
+    public String getPushCVersion() {
+        return pushCVersion;
+    }
+
+    public void setPushCVersion(String pushCVersion) {
+        this.pushCVersion = pushCVersion;
+    }
+
+    public void replace(SwitchDomain newSwitchDomain) {
+        // TODO
     }
 
     public interface HealthParams {

@@ -20,9 +20,10 @@ import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.*;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import javax.annotation.PostConstruct;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,43 +32,42 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
+@Component
 public class DistroMapper {
 
     public static final int STABLE_PERIOD = 60 * 1000;
 
-    public static List<String> getHealthyList() {
+    public List<String> getHealthyList() {
         return healthyList;
     }
 
-    private static List<String> healthyList = new ArrayList<String>();
+    private List<String> healthyList = new ArrayList<String>();
 
-    private static Map<String, List<Server>> distroConfig = new ConcurrentHashMap<String, List<Server>>();
+    private Map<String, List<Server>> distroConfig = new ConcurrentHashMap<String, List<Server>>();
 
-    private static Set<String> liveSites = new HashSet<String>();
+    private Set<String> liveSites = new HashSet<String>();
 
-    private static String localhostIP;
+    private String localhostIP;
 
-    public static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+    public final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
-    private static long LAST_HEALTH_SERVER_MILLIS = 0L;
+    private long lastHealthServerMillis = 0L;
 
-    private static boolean AUTO_DISABLED_HEALTH_CHECK = false;
+    private boolean autoDisabledHealthCheck = false;
 
-    private static Synchronizer synchronizer = new ServerStatusSynchronizer();
+    private Synchronizer synchronizer = new ServerStatusSynchronizer();
 
-    static {
-        localhostIP = NetUtils.localServer();
-
-        init();
-
-        UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(new ServerStatusReporter(),
-            60000, TimeUnit.MILLISECONDS);
-    }
+    @Autowired
+    private SwitchDomain switchDomain;
 
     /**
      * init server list
      */
-    private static void init() {
+    @PostConstruct
+    public void init() {
+
+        localhostIP = NetUtils.localServer();
+
         List<String> servers = NamingProxy.getServers();
 
         while (servers == null || servers.size() == 0) {
@@ -94,9 +94,12 @@ public class DistroMapper {
         }
 
         onServerStatusUpdate(sb.toString(), false);
+
+        UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(new ServerStatusReporter(),
+            60000, TimeUnit.MILLISECONDS);
     }
 
-    private static void onServerStatusUpdate(String configInfo, boolean isFromDiamond) {
+    private void onServerStatusUpdate(String configInfo, boolean isFromDiamond) {
 
         String[] configs = configInfo.split("\r\n");
         if (configs.length == 0) {
@@ -124,7 +127,7 @@ public class DistroMapper {
             server.lastRefTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
 
             server.weight = params.length == 4 ? Integer.parseInt(params[3]) : 1;
-            server.alive = System.currentTimeMillis() - server.lastRefTime < Switch.getdistroServerExpiredMillis();
+            server.alive = System.currentTimeMillis() - server.lastRefTime < switchDomain.getDistroServerExpiredMillis();
 
             List<Server> list = distroConfig.get(server.site);
             if (list == null) {
@@ -144,7 +147,7 @@ public class DistroMapper {
 
         List<String> allSiteSrvs = new ArrayList<String>();
         for (Server server : servers) {
-            server.adWeight = Switch.getAdWeight(server.ip) == null ? 0 : Switch.getAdWeight(server.ip);
+            server.adWeight = switchDomain.getAdWeight(server.ip) == null ? 0 : switchDomain.getAdWeight(server.ip);
 
             for (int i = 0; i < server.weight + server.adWeight; i++) {
                 allSiteSrvs.add(server.ip);
@@ -158,36 +161,36 @@ public class DistroMapper {
         Collections.sort(newHealthyList);
         float curRatio = (float) newHealthyList.size() / allSiteSrvs.size();
 
-        if (AUTO_DISABLED_HEALTH_CHECK
-            && curRatio > Switch.getDistroThreshold()
-            && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
+        if (autoDisabledHealthCheck
+            && curRatio > switchDomain.getDistroThreshold()
+            && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
             Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
                 "stable now, enable health check. current ratio: {}", curRatio);
 
-            Switch.setHeathCheckEnabled(true);
+            switchDomain.setHealthCheckEnabled(true);
 
             // we must set this variable, otherwise it will conflict with user's action
-            AUTO_DISABLED_HEALTH_CHECK = false;
+            autoDisabledHealthCheck = false;
         }
 
         if (!CollectionUtils.isEqualCollection(healthyList, newHealthyList)) {
             // for every change disable healthy check for some while
-            if (Switch.isHealthCheckEnabled()) {
+            if (switchDomain.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
                         "disable health check for {} ms from now on, healthList: {}, newHealthyList {}",
                     STABLE_PERIOD, healthyList, newHealthyList);
 
-                Switch.setHeathCheckEnabled(false);
-                AUTO_DISABLED_HEALTH_CHECK = true;
+                switchDomain.setHealthCheckEnabled(false);
+                autoDisabledHealthCheck = true;
 
-                LAST_HEALTH_SERVER_MILLIS = System.currentTimeMillis();
+                lastHealthServerMillis = System.currentTimeMillis();
             }
 
             healthyList = newHealthyList;
         }
     }
 
-    public static synchronized void onReceiveServerStatus(String configInfo) {
+    public synchronized void onReceiveServerStatus(String configInfo) {
         String[] configs = configInfo.split("\r\n");
         if (configs.length == 0) {
             return;
@@ -219,7 +222,7 @@ public class DistroMapper {
             server.lastRefTimeStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
 
             server.weight = params.length == 4 ? Integer.parseInt(params[3]) : 1;
-            server.alive = System.currentTimeMillis() - server.lastRefTime < Switch.getdistroServerExpiredMillis();
+            server.alive = System.currentTimeMillis() - server.lastRefTime < switchDomain.getDistroServerExpiredMillis();
             List<Server> list = distroConfig.get(server.site);
             if (list == null || list.size() <= 0) {
                 list = new ArrayList<Server>();
@@ -264,7 +267,7 @@ public class DistroMapper {
                 continue;
             }
 
-            server.adWeight = Switch.getAdWeight(server.ip) == null ? 0 : Switch.getAdWeight(server.ip);
+            server.adWeight = switchDomain.getAdWeight(server.ip) == null ? 0 : switchDomain.getAdWeight(server.ip);
 
             for (int i = 0; i < server.weight + server.adWeight; i++) {
 
@@ -281,36 +284,43 @@ public class DistroMapper {
         Collections.sort(newHealthyList);
         float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
 
-        if (AUTO_DISABLED_HEALTH_CHECK
-            && curRatio > Switch.getDistroThreshold()
-            && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
+        if (autoDisabledHealthCheck
+            && curRatio > switchDomain.getDistroThreshold()
+            && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
             Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
                 "stable now, enable health check. current ratio: {}", curRatio);
 
-            Switch.setHeathCheckEnabled(true);
+            switchDomain.setHealthCheckEnabled(true);
 
             // we must set this variable, otherwise it will conflict with user's action
-            AUTO_DISABLED_HEALTH_CHECK = false;
+            autoDisabledHealthCheck = false;
         }
 
         if (!CollectionUtils.isEqualCollection(healthyList, newHealthyList)) {
             // for every change disable healthy check for some while
-            if (Switch.isHealthCheckEnabled()) {
+            if (switchDomain.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
                     "disable health check for {} ms from now on", STABLE_PERIOD);
 
-                Switch.setHeathCheckEnabled(false);
-                AUTO_DISABLED_HEALTH_CHECK = true;
+                switchDomain.setHealthCheckEnabled(false);
+                autoDisabledHealthCheck = true;
 
-                LAST_HEALTH_SERVER_MILLIS = System.currentTimeMillis();
+                lastHealthServerMillis = System.currentTimeMillis();
             }
 
             healthyList = newHealthyList;
         }
     }
 
-    public static boolean responsible(String dom) {
-        if (!Switch.isDistroEnabled()) {
+    public boolean responsible(Cluster cluster, IpAddress ipAddress) {
+        return switchDomain.isHealthCheckEnabled(cluster.getServiceName())
+            && !cluster.getHealthCheckTask().isCancelled()
+            && responsible(cluster.getServiceName())
+            && cluster.contains(ipAddress);
+    }
+
+    public boolean responsible(String dom) {
+        if (!switchDomain.isDistroEnabled()) {
             return true;
         }
 
@@ -329,8 +339,8 @@ public class DistroMapper {
         return target >= index && target <= lastIndex;
     }
 
-    public static String mapSrv(String dom) {
-        if (CollectionUtils.isEmpty(healthyList) || !Switch.isDistroEnabled()) {
+    public String mapSrv(String dom) {
+        if (CollectionUtils.isEmpty(healthyList) || !switchDomain.distroEnabled) {
             return localhostIP;
         }
 
@@ -343,19 +353,19 @@ public class DistroMapper {
         }
     }
 
-    public static int distroHash(String dom) {
+    public int distroHash(String dom) {
         return Math.abs(dom.hashCode() % Integer.MAX_VALUE);
     }
 
-    public static String mapSrvName(String dom) {
+    public String mapSrvName(String dom) {
         return UtilsAndCommons.UNKNOWN_HOST;
     }
 
-    public static Set<String> getLiveSites() {
+    public Set<String> getLiveSites() {
         return liveSites;
     }
 
-    public static void clean() {
+    public void clean() {
         cleanInvalidServers();
 
         for (Map.Entry<String, List<Server>> entry : distroConfig.entrySet()) {
@@ -369,7 +379,7 @@ public class DistroMapper {
         }
     }
 
-    private static void cleanInvalidServers() {
+    private void cleanInvalidServers() {
 
         for (Map.Entry<String, List<Server>> entry : distroConfig.entrySet()) {
             List<Server> tmpServers = null;
@@ -396,7 +406,7 @@ public class DistroMapper {
         }
     }
 
-    private static void requestOtherServerCleanInvalidServers(String serverIP) {
+    private void requestOtherServerCleanInvalidServers(String serverIP) {
         Map<String, String> params = new HashMap<String, String>(1);
 
         params.put("action", "without-diamond-clean");
@@ -407,7 +417,7 @@ public class DistroMapper {
         }
     }
 
-    public static String getLocalhostIP() {
+    public String getLocalhostIP() {
         return localhostIP;
     }
 
@@ -447,7 +457,7 @@ public class DistroMapper {
         }
     }
 
-    private static class ServerStatusReporter implements Runnable {
+    private class ServerStatusReporter implements Runnable {
 
         @Override
         public void run() {
@@ -459,7 +469,7 @@ public class DistroMapper {
 
                 for (String key : distroConfig.keySet()) {
                     for (Server server : distroConfig.get(key)) {
-                        server.alive = System.currentTimeMillis() - server.lastRefTime < Switch.getdistroServerExpiredMillis();
+                        server.alive = System.currentTimeMillis() - server.lastRefTime < switchDomain.getDistroServerExpiredMillis();
                     }
                 }
 
@@ -503,13 +513,13 @@ public class DistroMapper {
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[SERVER-STATUS] Exception while sending server status", e);
             } finally {
-                UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(this, Switch.getServerStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
+                UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(this, switchDomain.getServerStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
 
         }
     }
 
-    public static Map<String, List<Server>> getDistroConfig() {
+    public Map<String, List<Server>> getDistroConfig() {
         return distroConfig;
     }
 }

@@ -15,12 +15,14 @@
  */
 package com.alibaba.nacos.naming.monitor;
 
-import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -30,10 +32,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author nacos
  */
+
+@Component
 public class PerformanceLoggerThread {
 
     @Autowired
-    private DomainsManager domainsManager;
+    private ServiceManager serviceManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
@@ -48,13 +55,13 @@ public class PerformanceLoggerThread {
     private static final long PERIOD = 1 * 60 * 60;
     private static final long HEALTH_CHECK_PERIOD = 5 * 60;
 
-    public void init(DomainsManager domainsManager) {
-        this.domainsManager = domainsManager;
+    @PostConstruct
+    public void init() {
         start();
     }
 
     private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", Switch.isHealthCheckEnabled());
+        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", switchDomain.isHealthCheckEnabled());
     }
 
     class HealthCheckSwitchTask implements Runnable {
@@ -80,8 +87,8 @@ public class PerformanceLoggerThread {
         @Override
         public void run() {
             try {
-                int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getInstanceCount();
+                int domCount = serviceManager.getDomCount();
+                int ipCount = serviceManager.getInstanceCount();
                 long maxPushMaxCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
                 Loggers.PERFORMANCE_LOG.info("[PERFORMANCE] " + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);

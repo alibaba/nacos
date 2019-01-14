@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.boot;
 
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.raft.RaftCore;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -47,12 +46,6 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
 
         serverPort = event.getWebServer().getPort();
         contextPath = servletContext.getContextPath();
-
-        try {
-            RaftCore.init();
-        } catch (Exception e) {
-            Loggers.RAFT.error("[NACOS-RAFT] {} {}", "failed to initialize raft sub system", e);
-        }
     }
 
     public static int getServerPort() {

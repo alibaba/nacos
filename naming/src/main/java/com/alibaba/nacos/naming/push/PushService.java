@@ -17,11 +17,13 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -38,7 +40,11 @@ import java.util.zip.GZIPOutputStream;
 /**
  * @author nacos
  */
+@Component
 public class PushService {
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
 
@@ -119,7 +125,7 @@ public class PushService {
         return totalPush;
     }
 
-    public static void addClient(String namespaceId,
+    public void addClient(String namespaceId,
                                  String dom,
                                  String clusters,
                                  String agent,
@@ -208,7 +214,7 @@ public class PushService {
         return dom + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
     }
 
-    public static void domChanged(final String namespaceId, final String dom) {
+    public void domChanged(final String namespaceId, final String dom) {
         if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, dom))) {
             return;
         }
@@ -237,7 +243,7 @@ public class PushService {
                         String key = getPushCacheKey(dom, client.getIp(), client.getAgent());
                         byte[] compressData = null;
                         Map<String, Object> data = null;
-                        if (Switch.getPushCacheMillis() >= 20000 && cache.containsKey(key)) {
+                        if (switchDomain.getDefaultPushCacheMillis() >= 20000 && cache.containsKey(key)) {
                             org.javatuples.Pair pair = (org.javatuples.Pair) cache.get(key);
                             compressData = (byte[]) (pair.getValue0());
                             data = (Map<String, Object>) pair.getValue1();
@@ -272,20 +278,20 @@ public class PushService {
         futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, dom), future);
     }
 
-    public static boolean canEnablePush(String agent) {
+    public boolean canEnablePush(String agent) {
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (ClientInfo.ClientType.JAVA == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushJavaVersion())) >= 0) {
+                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushJavaVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.DNS == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushPythonVersion())) >= 0) {
+                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushPythonVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.C == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushCVersion())) >= 0) {
+                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushCVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.GO == clientInfo.type
-                   && clientInfo.version.compareTo(VersionUtil.parseVersion(Switch.getPushGoVersion())) >= 0) {
+                   && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushGoVersion())) >= 0) {
             return true;
         }
 
@@ -304,7 +310,7 @@ public class PushService {
         ackMap.clear();
     }
 
-    public static class PushClient {
+    public class PushClient {
         private String namespaceId;
         private String dom;
         private String clusters;
@@ -352,7 +358,7 @@ public class PushService {
         }
 
         public boolean zombie() {
-            return System.currentTimeMillis() - lastRefTime > Switch.getPushCacheMillis(dom);
+            return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(dom);
         }
 
         @Override

@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -24,7 +23,8 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.HttpURLConnection;
 import java.util.Arrays;
@@ -34,51 +34,21 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * @author nacos
+ * Health check public methods
+ *
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 1.0.0
  */
-public abstract class AbstractHealthCheckProcessor {
+@Component
+public class HealthCheckCommon {
 
-    private static final String HTTP_CHECK_MSG_PREFIX = "http:";
+    @Autowired
+    private DistroMapper distroMapper;
 
-    static class HealthCheckResult {
-        private String dom;
-        private IpAddress ipAddress;
+    @Autowired
+    private SwitchDomain switchDomain;
 
-        public HealthCheckResult(String dom, IpAddress ipAddress) {
-            this.dom = dom;
-            this.ipAddress = ipAddress;
-        }
-
-        public String getDom() {
-            return dom;
-        }
-
-        public void setDom(String dom) {
-            this.dom = dom;
-        }
-
-        public IpAddress getIpAddress() {
-            return ipAddress;
-        }
-
-        public void setIpAddress(IpAddress ipAddress) {
-            this.ipAddress = ipAddress;
-        }
-    }
-
-    public static final int CONNECT_TIMEOUT_MS = 500;
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
-
-    private void addResult(HealthCheckResult result) {
-
-        if (!Switch.getIncrementalList().contains(result.getDom())) {
-            return;
-        }
-
-        if (!healthCheckResults.offer(result)) {
-            Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to add check result to queue, queue size: {}", healthCheckResults.size());
-        }
-    }
 
     private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
@@ -91,7 +61,7 @@ public abstract class AbstractHealthCheckProcessor {
     });
 
 
-    static {
+    public void init() {
         executorService.schedule(new Runnable() {
             @Override
             public void run() {
@@ -132,45 +102,7 @@ public abstract class AbstractHealthCheckProcessor {
         }, 500, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * Run check task for domain
-     *
-     * @param task check task
-     */
-    public abstract void process(HealthCheckTask task);
-
-    /**
-     * Get check task type, refer to enum HealthCheckType
-     *
-     * @return check type
-     */
-    public abstract String getType();
-
-    public static final HttpHealthCheckProcessor HTTP_PROCESSOR = new HttpHealthCheckProcessor();
-    public static final TcpSuperSenseProcessor TCP_PROCESSOR = new TcpSuperSenseProcessor();
-    public static final MysqlHealthCheckProcessor MYSQL_PROCESSOR = new MysqlHealthCheckProcessor();
-
-    public static AbstractHealthCheckProcessor getProcessor(AbstractHealthChecker config) {
-        if (config == null || StringUtils.isEmpty(config.getType())) {
-            throw new IllegalArgumentException("empty check type");
-        }
-
-        if (config.getType().equals(HTTP_PROCESSOR.getType())) {
-            return HTTP_PROCESSOR;
-        }
-
-        if (config.getType().equals(TCP_PROCESSOR.getType())) {
-            return TCP_PROCESSOR;
-        }
-
-        if (config.getType().equals(MYSQL_PROCESSOR.getType())) {
-            return MYSQL_PROCESSOR;
-        }
-
-        throw new IllegalArgumentException("Unknown check type: " + config.getType());
-    }
-
-    protected boolean isHealthCheckEnabled(VirtualClusterDomain virtualClusterDomain) {
+    public boolean isHealthCheckEnabled(VirtualClusterDomain virtualClusterDomain) {
         if (virtualClusterDomain.getEnableClientBeat()) {
             return false;
         }
@@ -178,7 +110,7 @@ public abstract class AbstractHealthCheckProcessor {
         return virtualClusterDomain.getEnableHealthCheck();
     }
 
-    protected void reEvaluateCheckRT(long checkRT, HealthCheckTask task, SwitchDomain.HealthParams params) {
+    public void reEvaluateCheckRT(long checkRT, HealthCheckTask task, SwitchDomain.HealthParams params) {
         task.setCheckRTLast(checkRT);
 
         if (checkRT > task.getCheckRTWorst()) {
@@ -202,13 +134,13 @@ public abstract class AbstractHealthCheckProcessor {
         task.setCheckRTNormalized(checkRT);
     }
 
-    protected void checkOK(IpAddress ip, HealthCheckTask task, String msg) {
+    public void checkOK(IpAddress ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
 
         try {
             if (!ip.isValid() || !ip.isMockValid()) {
-                if (ip.getOKCount().incrementAndGet() >= Switch.getCheckTimes()) {
-                    if (cluster.responsible(ip)) {
+                if (ip.getOKCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
+                    if (distroMapper.responsible(cluster, ip)) {
                         ip.setValid(true);
                         ip.setMockValid(true);
 
@@ -240,13 +172,13 @@ public abstract class AbstractHealthCheckProcessor {
         ip.setBeingChecked(false);
     }
 
-    protected void checkFail(IpAddress ip, HealthCheckTask task, String msg) {
+    public void checkFail(IpAddress ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
 
         try {
             if (ip.isValid() || ip.isMockValid()) {
-                if (ip.getFailCount().incrementAndGet() >= Switch.getCheckTimes()) {
-                    if (cluster.responsible(ip)) {
+                if (ip.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
+                    if (distroMapper.responsible(cluster, ip)) {
                         ip.setValid(false);
                         ip.setMockValid(false);
 
@@ -277,11 +209,11 @@ public abstract class AbstractHealthCheckProcessor {
         ip.setBeingChecked(false);
     }
 
-    protected void checkFailNow(IpAddress ip, HealthCheckTask task, String msg) {
+    public void checkFailNow(IpAddress ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
         try {
             if (ip.isValid() || ip.isMockValid()) {
-                if (cluster.responsible(ip)) {
+                if (distroMapper.responsible(cluster, ip)) {
                     ip.setValid(false);
                     ip.setMockValid(false);
 
@@ -308,5 +240,42 @@ public abstract class AbstractHealthCheckProcessor {
 
         ip.getOKCount().set(0);
         ip.setBeingChecked(false);
+    }
+
+    private void addResult(HealthCheckResult result) {
+
+        if (!switchDomain.getIncrementalList().contains(result.getDom())) {
+            return;
+        }
+
+        if (!healthCheckResults.offer(result)) {
+            Loggers.EVT_LOG.warn("[HEALTH-CHECK-SYNC] failed to add check result to queue, queue size: {}", healthCheckResults.size());
+        }
+    }
+
+    static class HealthCheckResult {
+        private String dom;
+        private IpAddress ipAddress;
+
+        public HealthCheckResult(String dom, IpAddress ipAddress) {
+            this.dom = dom;
+            this.ipAddress = ipAddress;
+        }
+
+        public String getDom() {
+            return dom;
+        }
+
+        public void setDom(String dom) {
+            this.dom = dom;
+        }
+
+        public IpAddress getIpAddress() {
+            return ipAddress;
+        }
+
+        public void setIpAddress(IpAddress ipAddress) {
+            this.ipAddress = ipAddress;
+        }
     }
 }

@@ -18,7 +18,9 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -27,10 +29,8 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import com.alibaba.nacos.naming.raft.RaftListener;
-import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.Selector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public class VirtualClusterDomain implements Domain, RaftListener {
+public class VirtualClusterDomain implements Domain, DataListener {
 
     private static final String DOMAIN_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
@@ -83,6 +83,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
+
+    private PushService pushService;
 
     public long getIpDeleteTimeout() {
         return ipDeleteTimeout;
@@ -155,7 +157,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     }
 
     public VirtualClusterDomain() {
-
+        pushService = SpringContext.getAppContext().getBean(PushService.class);
     }
 
     @Override
@@ -248,7 +250,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
-        PushService.domChanged(namespaceId, name);
+        pushService.domChanged(namespaceId, name);
         StringBuilder stringBuilder = new StringBuilder();
 
         for (IpAddress ipAddress : allIPs()) {
@@ -262,7 +264,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     @Override
     public void init() {
 
-        RaftCore.listen(this);
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
@@ -275,14 +276,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().destroy();
         }
-
-        if (RaftCore.isLeader(NetUtils.localServer())) {
-            RaftCore.signalDelete(UtilsAndCommons.getIPListStoreKey(this));
-        }
-
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
-
-        RaftCore.unlisten(UtilsAndCommons.getIPListStoreKey(this));
     }
 
     @Override

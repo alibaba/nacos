@@ -16,7 +16,8 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.naming.acl.AuthChecker;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.controllers.RaftController;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ public class AuthFilter implements Filter {
 
     @Autowired
     private AuthChecker authChecker;
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     private static ConcurrentMap<String, Method> methodCache = new
             ConcurrentHashMap<String, Method>();
@@ -62,14 +66,14 @@ public class AuthFilter implements Filter {
 
             if (method == null) {
                 if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-                    method = RaftCommands.class.getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
+                    method = RaftController.class.getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
                 } else {
                     method = ApiCommands.class.getMethod(target, HttpServletRequest.class);
                 }
                 methodCache.put(target, method);
             }
 
-            if (method.isAnnotationPresent(NeedAuth.class) && !Switch.isEnableAuthentication()) {
+            if (method.isAnnotationPresent(NeedAuth.class) && !switchDomain.isEnableAuthentication()) {
 
                 if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
                     authChecker.doRaftAuth(req);

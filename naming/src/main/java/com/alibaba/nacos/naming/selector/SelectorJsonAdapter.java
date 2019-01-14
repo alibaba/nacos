@@ -22,7 +22,6 @@ import com.alibaba.fastjson.parser.deserializer.ObjectDeserializer;
 import com.alibaba.fastjson.serializer.JSONSerializer;
 import com.alibaba.fastjson.serializer.ObjectSerializer;
 import com.alibaba.fastjson.serializer.SerializeWriter;
-import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import org.apache.commons.lang3.StringUtils;
 
@@ -36,6 +35,7 @@ import java.lang.reflect.Type;
  * its runtime child class object. And this adapter helps us to finish it.
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 public class SelectorJsonAdapter implements ObjectDeserializer, ObjectSerializer {
 

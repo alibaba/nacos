@@ -19,13 +19,15 @@ import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.Response;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -42,11 +44,18 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  *
  * @author xuanyin.zy
  */
-public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
+@Component
+public class HttpHealthCheckProcessor implements HealthCheckProcessor {
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+
     private static AsyncHttpClient asyncHttpClient;
 
-    public HttpHealthCheckProcessor() {
-    }
+    public static final int CONNECT_TIMEOUT_MS = 500;
 
     static {
         try {
@@ -82,7 +91,7 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
 
-        if (!isHealthCheckEnabled(virtualClusterDomain)) {
+        if (!switchDomain.isHealthCheckEnabled() || !virtualClusterDomain.getEnableHealthCheck()) {
             return;
         }
 
@@ -102,7 +111,7 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
                     SRV_LOG.warn("http check started before last one finished, dom: {}:{}:{}",
                         task.getCluster().getDom().getName(), task.getCluster().getName(), ip.getIp());
 
-                    reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getHttpHealthParams());
+                    healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getHttpHealthParams());
                     continue;
                 }
 
@@ -125,9 +134,9 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
                 builder.execute(new HttpHealthCheckCallback(ip, task));
             } catch (Throwable e) {
-                ip.setCheckRT(Switch.getHttpHealthParams().getMax());
-                checkFail(ip, task, "http:error:" + e.getMessage());
-                reEvaluateCheckRT(Switch.getHttpHealthParams().getMax(), task, Switch.getHttpHealthParams());
+                ip.setCheckRT(switchDomain.getHttpHealthParams().getMax());
+                healthCheckCommon.checkFail(ip, task, "http:error:" + e.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task, switchDomain.getHttpHealthParams());
             }
         }
     }
@@ -149,16 +158,16 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
             int httpCode = response.getStatusCode();
             if (HttpURLConnection.HTTP_OK == httpCode) {
-                checkOK(ip, task, "http:" + httpCode);
-                reEvaluateCheckRT(System.currentTimeMillis() - startTime, task, Switch.getHttpHealthParams());
+                healthCheckCommon.checkOK(ip, task, "http:" + httpCode);
+                healthCheckCommon.reEvaluateCheckRT(System.currentTimeMillis() - startTime, task, switchDomain.getHttpHealthParams());
             } else if (HttpURLConnection.HTTP_UNAVAILABLE == httpCode || HttpURLConnection.HTTP_MOVED_TEMP == httpCode) {
                 // server is busy, need verification later
-                checkFail(ip, task, "http:" + httpCode);
-                reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getHttpHealthParams());
+                healthCheckCommon.checkFail(ip, task, "http:" + httpCode);
+                healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getHttpHealthParams());
             } else {
                 //probably means the state files has been removed by administrator
-                checkFailNow(ip, task, "http:" + httpCode);
-                reEvaluateCheckRT(Switch.getHttpHealthParams().getMax(), task, Switch.getHttpHealthParams());
+                healthCheckCommon.checkFailNow(ip, task, "http:" + httpCode);
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task, switchDomain.getHttpHealthParams());
             }
 
             return httpCode;
@@ -177,8 +186,8 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
                         || cause instanceof TimeoutException
                         || cause.getCause() instanceof TimeoutException) {
 
-                    checkFail(ip, task, "http:timeout:" + cause.getMessage());
-                    reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getHttpHealthParams());
+                    healthCheckCommon.checkFail(ip, task, "http:timeout:" + cause.getMessage());
+                    healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getHttpHealthParams());
 
                     return;
                 }
@@ -188,11 +197,11 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
             // connection error, probably not reachable
             if (t instanceof ConnectException) {
-                checkFailNow(ip, task, "http:unable2connect:" + t.getMessage());
-                reEvaluateCheckRT(Switch.getHttpHealthParams().getMax(), task, Switch.getHttpHealthParams());
+                healthCheckCommon.checkFailNow(ip, task, "http:unable2connect:" + t.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task, switchDomain.getHttpHealthParams());
             } else {
-                checkFail(ip, task, "http:error:" + t.getMessage());
-                reEvaluateCheckRT(Switch.getHttpHealthParams().getMax(), task, Switch.getHttpHealthParams());
+                healthCheckCommon.checkFail(ip, task, "http:error:" + t.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task, switchDomain.getHttpHealthParams());
             }
         }
     }

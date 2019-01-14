@@ -34,6 +34,7 @@ import java.util.List;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @see com.alibaba.nacos.api.selector.SelectorType
  * @see SelectorJsonAdapter
+ * @since 0.7.0
  */
 public interface Selector {
 
