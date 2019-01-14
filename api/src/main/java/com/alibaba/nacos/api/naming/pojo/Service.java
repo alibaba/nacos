@@ -21,32 +21,34 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Service
+ *
+ * @author dungu.zpf
  */
 public class Service {
 
     /**
-     * Service name
+     * service name
      */
     private String name;
 
     /**
-     * Protect threshold
+     * protect threshold
      */
     private float protectThreshold = 0.0F;
 
     /**
-     * Application name of this service
+     * application name of this service
      */
     private String app;
 
     /**
-     * Service group is meant to classify services into different sets
+     * Service group which is meant to classify services into different sets.
      */
     private String group;
 
     /**
-     * Health check mode
+     * Health check mode.
      */
     private String healthCheckMode;
 
