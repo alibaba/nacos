@@ -30,14 +30,13 @@ import org.springframework.stereotype.Service;
  * @author wfnuser
  */
 @Service
-public class CustomUserDetailsService implements UserDetailsService {
+public class CustomUserDetailsServiceImpl implements UserDetailsService {
 
     @Autowired
     private transient PersistService persistService;
 
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
-        // 持久层写一个获取用户信息的sql
         User user = persistService.findUserByUsername(userName);
         if (user == null) {
             throw new UsernameNotFoundException(userName);

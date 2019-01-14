@@ -17,7 +17,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.config.server.model.RestResult;
-import com.alibaba.nacos.console.utils.JWTTokenUtils;
+import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +40,9 @@ import javax.servlet.http.HttpServletResponse;
 public class AuthController {
 
     @Autowired
-    private JWTTokenUtils jwtTokenUtils;
+    private JwtTokenUtils jwtTokenUtils;
     @Autowired
     private AuthenticationManager authenticationManager;
-
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     /**
      * Whether the Nacos is in broken states or not, and cannot recover except by being restarted

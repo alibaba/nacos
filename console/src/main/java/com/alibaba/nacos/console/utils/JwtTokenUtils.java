@@ -36,16 +36,20 @@ import java.util.List;
  * @author wfnuser
  */
 @Component
-public class JWTTokenUtils {
+public class JwtTokenUtils {
 
-    private final Logger log = LoggerFactory.getLogger(JWTTokenUtils.class);
+    private final Logger log = LoggerFactory.getLogger(JwtTokenUtils.class);
 
     private static final String AUTHORITIES_KEY = "auth";
 
-    // 签名密钥
+    /**
+     * secret key
+     */
     private String secretKey;
 
-    // 失效日期
+    /**
+     * Token validity time(ms)
+     */
     private long tokenValidityInMilliseconds;
 
     @PostConstruct
@@ -54,15 +58,26 @@ public class JWTTokenUtils {
         this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
     }
 
-    // 创建Token
+    /**
+     * Create token
+     *
+     * @param authentication auth info
+     * @return token
+     */
     public String createToken(Authentication authentication) {
-        // 获取当前时间戳
+        /**
+         * Current time
+         */
         long now = (new Date()).getTime();
-        // 存放过期时间
+        /**
+         * Validity date
+         */
         Date validity;
         validity = new Date(now + this.tokenValidityInMilliseconds);
 
-        // 创建Token令牌
+        /**
+         * create token
+         */
         return Jwts.builder()
             .setSubject(authentication.getName())
             .claim(AUTHORITIES_KEY, "")
@@ -71,9 +86,16 @@ public class JWTTokenUtils {
             .compact();
     }
 
-    // 获取用户权限
+    /**
+     * Get auth Info
+     *
+     * @param token token
+     * @return auth info
+     */
     public Authentication getAuthentication(String token) {
-        // 解析Token的payload
+        /**
+         *  parse the payload of token
+         */
         Claims claims = Jwts.parser()
             .setSigningKey(secretKey)
             .parseClaimsJws(token)
@@ -86,30 +108,29 @@ public class JWTTokenUtils {
         return new UsernamePasswordAuthenticationToken(principal, "", authorities);
     }
 
-    //验证Token是否正确
+    /**
+     * validate token
+     *
+     * @param token token
+     * @return whether valid
+     */
     public boolean validateToken(String token) {
         try {
-            //通过密钥验证Token
             Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
             return true;
         } catch (SignatureException e) {
-            //签名异常
             log.info("Invalid JWT signature.");
             log.trace("Invalid JWT signature trace: {}", e);
         } catch (MalformedJwtException e) {
-            //JWT格式错误
             log.info("Invalid JWT token.");
             log.trace("Invalid JWT token trace: {}", e);
         } catch (ExpiredJwtException e) {
-            //JWT过期
             log.info("Expired JWT token.");
             log.trace("Expired JWT token trace: {}", e);
         } catch (UnsupportedJwtException e) {
-            //不支持该JWT
             log.info("Unsupported JWT token.");
             log.trace("Unsupported JWT token trace: {}", e);
         } catch (IllegalArgumentException e) {
-            //参数错误异常
             log.info("JWT token compact of handler are invalid.");
             log.trace("JWT token compact of handler are invalid trace: {}", e);
         }

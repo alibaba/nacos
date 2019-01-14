@@ -16,9 +16,7 @@
 package com.alibaba.nacos.console.filter;
 
 import com.alibaba.nacos.console.config.WebSecurityConfig;
-import com.alibaba.nacos.console.utils.JWTTokenUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
@@ -37,11 +35,11 @@ import java.io.IOException;
  */
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationTokenFilter.class);
+    private static final String TOKEN_PREFIX = "Bearer ";
 
-    private JWTTokenUtils tokenProvider;
+    private JwtTokenUtils tokenProvider;
 
-    public JwtAuthenticationTokenFilter(JWTTokenUtils tokenProvider) {
+    public JwtAuthenticationTokenFilter(JwtTokenUtils tokenProvider) {
         this.tokenProvider = tokenProvider;
     }
 
@@ -51,9 +49,13 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
 
         if (!StringUtils.isEmpty(jwt.trim()) && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (this.tokenProvider.validateToken(jwt)) {
-                //获取用户认证信息
+                /**
+                 * get auth info
+                 */
                 Authentication authentication = this.tokenProvider.getAuthentication(jwt);
-                //将用户保存到SecurityContext
+                /**
+                 * save user info to securityContext
+                 */
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         }
@@ -61,14 +63,14 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+    /**
+     * Get token from header
+     */
     private String resolveToken(HttpServletRequest request) {
-        //从HTTP头部获取TOKEN
         String bearerToken = request.getHeader(WebSecurityConfig.AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            //返回Token字符串，去除Bearer
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
             return bearerToken.substring(7, bearerToken.length());
         }
-        //从请求参数中获取TOKEN
         String jwt = request.getParameter(WebSecurityConfig.AUTHORIZATION_TOKEN);
         if (StringUtils.hasText(jwt)) {
             return jwt;
