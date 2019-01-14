@@ -213,10 +213,6 @@ public class RaftController {
         return "ok";
     }
 
-    public void setDomainsManager(ServiceManager domainsManager) {
-        this.domainsManager = domainsManager;
-    }
-
     @RequestMapping("/getLeader")
     public JSONObject getLeader(HttpServletRequest request, HttpServletResponse response) {
 
