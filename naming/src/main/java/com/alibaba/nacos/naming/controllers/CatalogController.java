@@ -24,8 +24,8 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
@@ -60,7 +60,7 @@ import java.util.Map;
 public class CatalogController {
 
     @Autowired
-    protected DomainsManager domainsManager;
+    protected ServiceManager domainsManager;
 
     @RequestMapping(value = "/serviceList")
     public JSONObject serviceList(HttpServletRequest request) throws Exception {
@@ -115,7 +115,7 @@ public class CatalogController {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, "serviceName");
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
@@ -176,7 +176,7 @@ public class CatalogController {
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }

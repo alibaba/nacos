@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -44,7 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 public class ClusterController {
 
     @Autowired
-    protected DomainsManager domainsManager;
+    protected ServiceManager domainsManager;
 
     @RequestMapping(value = {"/update", "/add"}, method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
@@ -58,7 +58,7 @@ public class ClusterController {
         String checkPort = WebUtils.required(request, "checkPort");
         String useInstancePort4Check = WebUtils.required(request, "useInstancePort4Check");
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
         }
@@ -99,7 +99,7 @@ public class ClusterController {
         domain.recalculateChecksum();
         domain.valid();
 
-        domainsManager.easyAddOrReplaceDom(domain);
+        domainsManager.addOrReplaceService(domain);
 
         return "ok";
     }

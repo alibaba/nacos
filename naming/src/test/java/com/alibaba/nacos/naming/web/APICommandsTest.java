@@ -22,8 +22,10 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
@@ -42,8 +44,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.core.DomainsManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +61,7 @@ public class APICommandsTest {
     @InjectMocks
     private ApiCommands apiCommands;
     @Mock
-    private DomainsManager domainsManager;
+    private ServiceManager domainsManager;
     private MockMvc mockmvc;
 
     @Before
@@ -85,7 +85,7 @@ public class APICommandsTest {
     public void dom() throws Exception {
         VirtualClusterDomain domain = new VirtualClusterDomain();
         domain.setName("nacos.domain.1");
-        Mockito.when(domainsManager.getDomain(UtilsAndCommons.getDefaultNamespaceId(), "nacos.domain.1")).thenReturn(domain);
+        Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.domain.1")).thenReturn(domain);
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/naming/api/dom")
                 .param("dom", "nacos.domain.1");
@@ -113,7 +113,7 @@ public class APICommandsTest {
 
         domain.onChange("iplist", JSON.toJSONString(list));
 
-        Mockito.when(domainsManager.getDomain(UtilsAndCommons.getDefaultNamespaceId(), "nacos.domain.1")).thenReturn(domain);
+        Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.domain.1")).thenReturn(domain);
 
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get("/naming/api/ip4Dom")
                 .param("dom", "nacos.domain.1");

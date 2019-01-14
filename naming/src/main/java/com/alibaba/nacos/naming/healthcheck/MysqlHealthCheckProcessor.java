@@ -20,10 +20,12 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.SocketTimeoutException;
 import java.sql.Connection;
@@ -40,7 +42,16 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  *
  * @author nacos
  */
-public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
+@Component
+public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
+
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    public static final int CONNECT_TIMEOUT_MS = 500;
 
     private static final String CHECK_MYSQL_MASTER_SQL = "show global variables where variable_name='read_only'";
     private static final String MYSQL_SLAVE_READONLY = "ON";
@@ -86,7 +97,7 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
 
-        if (!isHealthCheckEnabled(virtualClusterDomain)) {
+        if (!healthCheckCommon.isHealthCheckEnabled(virtualClusterDomain)) {
             return;
         }
 
@@ -104,15 +115,15 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                     SRV_LOG.warn("mysql check started before last one finished, dom: {}:{}:{}",
                         task.getCluster().getDom().getName(), task.getCluster().getName(), ip.getIp());
 
-                    reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getMysqlHealthParams());
+                    healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());
                     continue;
                 }
 
                 EXECUTOR.execute(new MysqlCheckTask(ip, task));
             } catch (Exception e) {
-                ip.setCheckRT(Switch.getMysqlHealthParams().getMax());
-                checkFail(ip, task, "mysql:error:" + e.getMessage());
-                reEvaluateCheckRT(Switch.getMysqlHealthParams().getMax(), task, Switch.getMysqlHealthParams());
+                ip.setCheckRT(switchDomain.getMysqlHealthParams().getMax());
+                healthCheckCommon.checkFail(ip, task, "mysql:error:" + e.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getMysqlHealthParams().getMax(), task, switchDomain.getMysqlHealthParams());
             }
         }
     }
@@ -168,12 +179,12 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                     }
                 }
 
-                checkOK(ip, task, "mysql:+ok");
-                reEvaluateCheckRT(System.currentTimeMillis() - startTime, task, Switch.getMysqlHealthParams());
+                healthCheckCommon.checkOK(ip, task, "mysql:+ok");
+                healthCheckCommon.reEvaluateCheckRT(System.currentTimeMillis() - startTime, task, switchDomain.getMysqlHealthParams());
             } catch (SQLException e) {
                 // fail immediately
-                checkFailNow(ip, task, "mysql:" + e.getMessage());
-                reEvaluateCheckRT(Switch.getHttpHealthParams().getMax(), task, Switch.getMysqlHealthParams());
+                healthCheckCommon.checkFailNow(ip, task, "mysql:" + e.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task, switchDomain.getMysqlHealthParams());
             } catch (Throwable t) {
                 Throwable cause = t;
                 int maxStackDepth = 50;
@@ -183,8 +194,8 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                             || cause instanceof TimeoutException
                             || cause.getCause() instanceof TimeoutException) {
 
-                        checkFail(ip, task, "mysql:timeout:" + cause.getMessage());
-                        reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getMysqlHealthParams());
+                        healthCheckCommon.checkFail(ip, task, "mysql:timeout:" + cause.getMessage());
+                        healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());
                         return;
                     }
 
@@ -192,8 +203,8 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 }
 
                 // connection error, probably not reachable
-                checkFail(ip, task, "mysql:error:" + t.getMessage());
-                reEvaluateCheckRT(Switch.getMysqlHealthParams().getMax(), task, Switch.getMysqlHealthParams());
+                healthCheckCommon.checkFail(ip, task, "mysql:error:" + t.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getMysqlHealthParams().getMax(), task, switchDomain.getMysqlHealthParams());
             } finally {
                 ip.setCheckRT(System.currentTimeMillis() - startTime);
                 if (statement != null) {

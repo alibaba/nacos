@@ -18,8 +18,8 @@ package com.alibaba.nacos.naming.acl;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.DomainsManager;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,7 +37,10 @@ import java.util.Map;
 public class AuthChecker {
 
     @Autowired
-    private DomainsManager domainsManager;
+    private ServiceManager domainsManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     static private String[] APP_WHITE_LIST = {};
     static private String[] TOKEN_WHITE_LIST = {"traffic-scheduling@midware"};
@@ -73,9 +76,9 @@ public class AuthChecker {
         if (req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_UPDATE_SWITCH) ||
                 req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {
             // we consider switch is a kind of special domain
-            domObj = Switch.getDom();
+            domObj = switchDomain;
         } else {
-            domObj = domainsManager.getDomain(namespaceId, dom);
+            domObj = domainsManager.getService(namespaceId, dom);
         }
 
         if (domObj == null) {
@@ -115,7 +118,7 @@ public class AuthChecker {
         }
 
         if (!domObj.getOwners().contains(authInfo.getOperator())
-                && !Switch.getMasters().contains(authInfo.getOperator())) {
+                && !switchDomain.masters.contains(authInfo.getOperator())) {
             throw new AccessControlException("dom already exists and you're not among the owners");
         }
     }

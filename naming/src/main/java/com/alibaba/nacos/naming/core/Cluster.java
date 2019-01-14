@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -175,21 +174,17 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             for (IpAddress ip : updatedIPs) {
                 IpAddress oldIP = oldIPMap.get(ip.getDatumKey());
 
-                if (responsible(ip)) {
-                    // do not update the ip validation status of updated ips
-                    // because the checker has the most precise result
+                // do not update the ip validation status of updated ips
+                // because the checker has the most precise result
+                // Only when ip is not marked, don't we update the health status of IP:
+                if (!ip.isMarked()) {
+                    ip.setValid(oldIP.isValid());
+                }
 
-                    // Only when ip is not marked, don't we update the health status of IP:
-                    if (!ip.isMarked()) {
-                        ip.setValid(oldIP.isValid());
-                    }
-
-                } else {
-                    if (ip.isValid() != oldIP.isValid()) {
-                        // ip validation status updated
-                        Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
-                            getDom().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
-                    }
+                if (ip.isValid() != oldIP.isValid()) {
+                    // ip validation status updated
+                    Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
+                        getDom().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
                 }
 
                 if (ip.getWeight() != oldIP.getWeight()) {
@@ -389,11 +384,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.sitegroup = sitegroup;
     }
 
-    public boolean responsible(IpAddress ip) {
-        return Switch.isHealthCheckEnabled(dom.getName())
-            && !getHealthCheckTask().isCancelled()
-            && DistroMapper.responsible(getDom().getName())
-            && ipContains.containsKey(ip.toIPAddr());
+    public boolean contains(IpAddress ip) {
+        return ipContains.containsKey(ip.toIPAddr());
     }
 
     public void valid() {

@@ -15,13 +15,15 @@
  */
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.raft.RaftCore;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
 import javax.servlet.*;
@@ -35,6 +37,15 @@ import java.util.Map;
  */
 public class DistroFilter implements Filter {
 
+    @Autowired
+    private ConsistencyService consistencyService;
+
+    @Autowired
+    private DistroMapper distroMapper;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -47,7 +58,7 @@ public class DistroFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
         String urlString = req.getRequestURI() + "?" + req.getQueryString();
-        Map<String, Integer> limitedUrlMap = Switch.getLimitedUrlMap();
+        Map<String, Integer> limitedUrlMap = switchDomain.getLimitedUrlMap();
 
         if (limitedUrlMap != null && limitedUrlMap.size() > 0) {
             for (Map.Entry<String, Integer> entry : limitedUrlMap.entrySet()) {
@@ -59,20 +70,22 @@ public class DistroFilter implements Filter {
             }
         }
 
-        if (req.getRequestURI().contains(UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT) && !RaftCore.isLeader()) {
+        String serviceName = req.getParameter(Constants.REQUEST_PARAM_SERVICE_NAME);
 
-            if (HttpMethod.PUT.name().equals(req.getMethod()) && HttpMethod.DELETE.name().equals(req.getMethod())) {
-                String url = "http://" + RaftCore.getLeader().ip + req.getRequestURI() + "?" + req.getQueryString();
-                try {
-                    resp.sendRedirect(url);
-                } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
-                }
-                return;
+        if (StringUtils.isNoneBlank(serviceName) && !HttpMethod.GET.name().equals(req.getMethod())
+            && !consistencyService.isResponsible(serviceName)) {
+
+            String url = "http://" + consistencyService.getResponsibleServer(serviceName) +
+                req.getRequestURI() + "?" + req.getQueryString();
+            try {
+                resp.sendRedirect(url);
+            } catch (Exception ignore) {
+                Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
             }
+            return;
         }
 
-        if (!Switch.isDistroEnabled()) {
+        if (!switchDomain.isDistroEnabled()) {
             filterChain.doFilter(req, resp);
             return;
         }
@@ -95,9 +108,9 @@ public class DistroFilter implements Filter {
         }
 
         if (StringUtils.isEmpty(redirect) && StringUtils.isEmpty(targetIP)) {
-            if (!DistroMapper.responsible(dom)) {
+            if (!distroMapper.responsible(dom)) {
 
-                String url = "http://" + DistroMapper.mapSrv(dom) + ":" + req.getServerPort()
+                String url = "http://" + distroMapper.mapSrv(dom) + ":" + req.getServerPort()
                         + req.getRequestURI() + "?" + req.getQueryString();
                 try {
                     resp.sendRedirect(url);

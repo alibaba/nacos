@@ -13,10 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ap.renew;
+package com.alibaba.nacos.naming.healthcheck;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-public class RenewConsistencyService {
+public interface HealthCheckProcessor {
+
+    /**
+     * Run check task for domain
+     *
+     * @param task check task
+     */
+    void process(HealthCheckTask task);
+
+    /**
+     * Get check task type, refer to enum HealthCheckType
+     *
+     * @return check type
+     */
+    String getType();
 }

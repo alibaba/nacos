@@ -13,10 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ap.renew;
+package com.alibaba.nacos.naming.consistency.cp.simpleraft;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nacos
  */
-public class RenewConsistencyService {
+public class Datum {
+    public String key;
+
+    public String value;
+
+    public AtomicLong timestamp = new AtomicLong(0L);
 }

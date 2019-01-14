@@ -21,7 +21,10 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import java.util.List;
 
 /**
+ * Selector with no filtering.
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 public class NoneSelector extends com.alibaba.nacos.api.selector.AbstractSelector implements Selector {
 

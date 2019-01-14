@@ -25,6 +25,9 @@ import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftProxy;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.*;
@@ -32,14 +35,6 @@ import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.raft.Datum;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import com.alibaba.nacos.naming.raft.RaftPeer;
-import com.alibaba.nacos.naming.raft.RaftProxy;
-import com.ning.http.client.AsyncCompletionHandler;
-import com.ning.http.client.Response;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.catalina.util.ParameterMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -62,11 +57,6 @@ import java.security.AccessControlException;
 import java.security.InvalidParameterException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
@@ -81,7 +71,19 @@ import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
 public class ApiCommands {
 
     @Autowired
-    protected DomainsManager domainsManager;
+    protected ServiceManager serviceManager;
+
+    @Autowired
+    private SwitchManager switchManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private PushService pushService;
+
+    @Autowired
+    private DistroMapper distroMapper;
 
     private DataSource pushDataSource = new DataSource() {
 
@@ -109,7 +111,7 @@ public class ApiCommands {
             }
 
             // overdrive the cache millis to push mode
-            result.put("cacheMillis", Switch.getPushCacheMillis(client.getDom()));
+            result.put("cacheMillis", switchDomain.getPushCacheMillis(client.getDom()));
 
             return result.toJSONString();
         }
@@ -123,7 +125,7 @@ public class ApiCommands {
             UtilsAndCommons.getDefaultNamespaceId());
         String name = WebUtils.required(request, "dom");
 
-        Domain dom = domainsManager.getDomain(namespaceId, name);
+        Domain dom = serviceManager.getService(namespaceId, name);
         if (dom == null) {
             throw new NacosException(NacosException.NOT_FOUND, "Dom doesn't exist");
         }
@@ -135,7 +137,7 @@ public class ApiCommands {
     public JSONObject domCount(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
-        result.put("count", domainsManager.getDomCount());
+        result.put("count", serviceManager.getDomCount());
 
         return result;
     }
@@ -148,7 +150,7 @@ public class ApiCommands {
         String dom = WebUtils.required(request, "dom");
 
         VirtualClusterDomain domObj
-            = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+            = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
         if (domObj == null) {
             throw new IllegalArgumentException("request dom doesn't exist");
         }
@@ -179,7 +181,7 @@ public class ApiCommands {
             UtilsAndCommons.getDefaultNamespaceId());
         String domName = WebUtils.required(request, "dom");
 
-        VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, domName);
+        VirtualClusterDomain dom = (VirtualClusterDomain) serviceManager.getService(namespaceId, domName);
 
         if (dom == null) {
             throw new NacosException(NacosException.NOT_FOUND, "dom: " + domName + " not found.");
@@ -209,7 +211,7 @@ public class ApiCommands {
             String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
             String agent = WebUtils.optional(request, "header:Client-Version", StringUtils.EMPTY);
 
-            VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, domName);
+            VirtualClusterDomain dom = (VirtualClusterDomain) serviceManager.getService(namespaceId, domName);
 
             if (dom == null) {
                 throw new NacosException(NacosException.NOT_FOUND, "dom: " + domName + " not found!");
@@ -270,7 +272,7 @@ public class ApiCommands {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
-        if (domainsManager.getDomain(namespaceId, dom) != null) {
+        if (serviceManager.getService(namespaceId, dom) != null) {
             throw new IllegalArgumentException("specified dom already exists, dom : " + dom);
         }
 
@@ -289,9 +291,7 @@ public class ApiCommands {
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String dom = WebUtils.required(request, "serviceName");
-        String app;
-        app = WebUtils.optional(request, "app", StringUtils.EMPTY);
+        String serviceName = WebUtils.required(request, "serviceName");
         String clusterName = clientBeat.getCluster();
 
         if (StringUtils.isBlank(clusterName)) {
@@ -299,61 +299,33 @@ public class ApiCommands {
         }
 
         if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, dom);
+            Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
-        Map<String, String[]> stringMap = new HashMap<>(16);
-        stringMap.put(Constants.REQUEST_PARAM_SERVICE_NAME, Arrays.asList(dom).toArray(new String[1]));
-        stringMap.put("enableClientBeat", Arrays.asList("true").toArray(new String[1]));
-        stringMap.put("cktype", Arrays.asList("TCP").toArray(new String[1]));
-        stringMap.put("appName", Arrays.asList(app).toArray(new String[1]));
-        stringMap.put("clusterName", Arrays.asList(clusterName).toArray(new String[1]));
+        IpAddress ipAddress = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
+            clientBeat.getPort());
 
-        //if domain does not exist, register it.
+        if (ipAddress == null) {
+            ipAddress = new IpAddress();
+            ipAddress.setPort(clientBeat.getPort());
+            ipAddress.setIp(clientBeat.getIp());
+            ipAddress.setWeight(clientBeat.getWeight());
+            ipAddress.setMetadata(clientBeat.getMetadata());
+            ipAddress.setClusterName(clusterName);
+            ipAddress.setServiceName(serviceName);
+            ipAddress.setInstanceId(ipAddress.generateInstanceId());
+            serviceManager.registerInstance(namespaceId, serviceName, ipAddress);
+        }
+
+        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, serviceName);
+
         if (virtualClusterDomain == null) {
-            regDom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
-            Loggers.SRV_LOG.warn("dom not found, register it, dom: {}", dom);
+            throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
         }
 
-        virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
-
-        String ip = clientBeat.getIp();
-        int port = clientBeat.getPort();
-
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setPort(port);
-        ipAddress.setIp(ip);
-        ipAddress.setWeight(clientBeat.getWeight());
-        ipAddress.setMetadata(clientBeat.getMetadata());
-        ipAddress.setClusterName(clusterName);
-        ipAddress.setServiceName(dom);
-        ipAddress.setInstanceId(ipAddress.generateInstanceId());
-
-        if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
-            doAddCluster4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
-        }
-
-        JSONObject result = new JSONObject();
-
-        result.put("clientBeatInterval", Switch.getClientBeatInterval());
-
-        if (!virtualClusterDomain.allIPs().contains(ipAddress)) {
-
-            if (!virtualClusterDomain.getEnableClientBeat()) {
-                return result;
-            }
-
-            stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
-            stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
-            stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
-            addIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
-            Loggers.SRV_LOG.warn("ip not found, register it, dom: {}, ip: {}", dom, ipAddress);
-        }
-
-        if (!DistroMapper.responsible(dom)) {
-            String server = DistroMapper.mapSrv(dom);
-            Loggers.EVT_LOG.info("I'm not responsible for {}, proxy it to {}", dom, server);
+        if (!distroMapper.responsible(serviceName)) {
+            String server = distroMapper.mapSrv(serviceName);
+            Loggers.EVT_LOG.info("I'm not responsible for {}, proxy it to {}", serviceName, server);
             Map<String, String> proxyParams = new HashMap<>(16);
             for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
                 String key = entry.getKey();
@@ -376,9 +348,12 @@ public class ApiCommands {
             virtualClusterDomain.processClientBeat(clientBeat);
         }
 
+        JSONObject result = new JSONObject();
+
+        result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
+
         return result;
     }
-
 
     private String addOrReplaceDom(HttpServletRequest request) throws Exception {
 
@@ -394,13 +369,13 @@ public class ApiCommands {
         boolean resetWeight = Boolean.parseBoolean(WebUtils.optional(request, "resetWeight", "false"));
 
         boolean enableHealthCheck = Boolean.parseBoolean(WebUtils.optional(request, "enableHealthCheck",
-            String.valueOf(Switch.getDefaultHealthCheckMode().equals(HealthCheckMode.server.name()))));
+            String.valueOf(switchDomain.getDefaultHealthCheckMode().equals(HealthCheckMode.server.name()))));
 
         boolean enable = Boolean.parseBoolean(WebUtils.optional(request, "serviceEnabled", "true"));
 
         String disabledSites = WebUtils.optional(request, "disabledSites", StringUtils.EMPTY);
         boolean eanbleClientBeat = Boolean.parseBoolean(WebUtils.optional(request, "enableClientBeat",
-            String.valueOf(Switch.getDefaultHealthCheckMode().equals(HealthCheckMode.client.name()))));
+            String.valueOf(switchDomain.getDefaultHealthCheckMode().equals(HealthCheckMode.client.name()))));
 
         String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
@@ -497,7 +472,7 @@ public class ApiCommands {
         domObj.recalculateChecksum();
         domObj.valid();
 
-        domainsManager.easyAddOrReplaceDom(domObj);
+        serviceManager.addOrReplaceService(domObj);
 
         return "ok";
     }
@@ -528,93 +503,40 @@ public class ApiCommands {
         IpAddress ipAddress = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String dom = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, serviceName);
         if (virtualClusterDomain == null) {
             return "ok";
         }
 
-        ParameterMap<String, String[]> parameterMap = new ParameterMap<>();
-        parameterMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
-        parameterMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
-        parameterMap.put("json", Arrays.asList("true").toArray(new String[1]));
-        parameterMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
+        serviceManager.removeInstance(namespaceId, serviceName, ipAddress);
 
-        return remvIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, parameterMap));
-
+        return "ok";
     }
 
-    @SuppressFBWarnings("JLM_JSR166_LOCK_MONITORENTER")
     @RequestMapping("/regService")
     public String regService(HttpServletRequest request) throws Exception {
 
-        String dom = WebUtils.required(request, "serviceName");
-        String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
+        String serviceName = WebUtils.required(request, "serviceName");
         String app = WebUtils.optional(request, "app", "DEFAULT");
-        String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID, UtilsAndCommons.getDefaultNamespaceId());
-
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
 
         IpAddress ipAddress = getIPAddress(request);
         ipAddress.setApp(app);
-        ipAddress.setServiceName(dom);
+        ipAddress.setServiceName(serviceName);
         ipAddress.setInstanceId(ipAddress.generateInstanceId());
         ipAddress.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
             ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        if (virtualClusterDomain == null) {
-
-            Lock lock = domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
-            Condition condition = domainsManager.addCondtion(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
-            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        regDom(request);
-                    } catch (Exception e) {
-                        Loggers.SRV_LOG.error("[REG-SERIVCE] register service failed, service:" + dom, e);
-                    }
-                }
-            });
-            try {
-                lock.lock();
-                condition.await(5000, TimeUnit.MILLISECONDS);
-            } finally {
-                lock.unlock();
-            }
-
-            virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
-        }
-
-        if (virtualClusterDomain != null) {
-
-            if (!virtualClusterDomain.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                doAddCluster4Dom(request);
-            }
-
-            if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("reg-service add ip: {}|{}", dom, ipAddress.toJSON());
-            }
-
-            Map<String, String[]> stringMap = new HashMap<>(16);
-            stringMap.put("dom", Arrays.asList(dom).toArray(new String[1]));
-            stringMap.put("ipList", Arrays.asList(JSON.toJSONString(Arrays.asList(ipAddress))).toArray(new String[1]));
-            stringMap.put("json", Arrays.asList("true").toArray(new String[1]));
-            stringMap.put("token", Arrays.asList(virtualClusterDomain.getToken()).toArray(new String[1]));
-
-            addIP4Dom(OverrideParameterRequestWrapper.buildRequest(request, stringMap));
-        } else {
-            throw new IllegalArgumentException("dom not found: " + dom);
-        }
+        serviceManager.registerInstance(namespaceId, serviceName, ipAddress);
 
         return "ok";
     }
-
 
     @NeedAuth
     @RequestMapping("/updateDom")
@@ -622,14 +544,9 @@ public class ApiCommands {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String name = WebUtils.required(request, "dom");
-        VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, name);
+        VirtualClusterDomain dom = (VirtualClusterDomain) serviceManager.getService(namespaceId, name);
         if (dom == null) {
             throw new IllegalStateException("dom not found");
-        }
-
-        RaftPeer leader = RaftCore.getLeader();
-        if (leader == null) {
-            throw new IllegalStateException("not leader at present, cannot update");
         }
 
         String owners = WebUtils.optional(request, "owners", StringUtils.EMPTY);
@@ -672,16 +589,16 @@ public class ApiCommands {
                 throw new IllegalStateException("cluster not found");
             }
 
-            if (cktype.equals(AbstractHealthCheckProcessor.HTTP_PROCESSOR.getType())) {
+            if (cktype.equals(HealthCheckType.HTTP.name().toLowerCase())) {
                 AbstractHealthChecker.Http config = new AbstractHealthChecker.Http();
                 config.setType(cktype);
                 config.setPath(WebUtils.required(request, "path"));
                 cluster.setHealthChecker(config);
-            } else if (cktype.equals(AbstractHealthCheckProcessor.TCP_PROCESSOR.getType())) {
+            } else if (cktype.equals(HealthCheckType.TCP.name().toLowerCase())) {
                 AbstractHealthChecker.Tcp config = new AbstractHealthChecker.Tcp();
                 config.setType(cktype);
                 cluster.setHealthChecker(config);
-            } else if (cktype.equals(AbstractHealthCheckProcessor.MYSQL_PROCESSOR.getType())) {
+            } else if (cktype.equals(HealthCheckType.MYSQL.name().toLowerCase())) {
                 AbstractHealthChecker.Mysql config = new AbstractHealthChecker.Mysql();
                 config.setCmd(WebUtils.required(request, "cmd"));
                 config.setPwd(WebUtils.required(request, "pwd"));
@@ -773,7 +690,7 @@ public class ApiCommands {
         dom.recalculateChecksum();
         dom.valid();
 
-        domainsManager.easyAddOrReplaceDom(dom);
+        serviceManager.addOrReplaceService(dom);
 
         return "ok";
     }
@@ -781,11 +698,10 @@ public class ApiCommands {
     @RequestMapping("/hello")
     public JSONObject hello(HttpServletRequest request) {
         JSONObject result = new JSONObject();
-        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + domainsManager.getDomCount()
+        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getDomCount()
             + ", local port:" + RunningConfig.getServerPort());
         return result;
     }
-
 
     @NeedAuth
     @RequestMapping("/remvDom")
@@ -794,11 +710,11 @@ public class ApiCommands {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
-        if (domainsManager.getDomain(namespaceId, dom) == null) {
+        if (serviceManager.getService(namespaceId, dom) == null) {
             throw new IllegalStateException("specified domain doesn't exists.");
         }
 
-        domainsManager.easyRemoveDom(namespaceId, dom);
+        serviceManager.easyRemoveDom(namespaceId, dom);
 
         return "ok";
     }
@@ -808,11 +724,11 @@ public class ApiCommands {
         String ip = WebUtils.required(request, "ip");
 
         Set<String> doms = new HashSet<String>();
-        Map<String, Set<String>> domMap = domainsManager.getAllDomNames();
+        Map<String, Set<String>> domMap = serviceManager.getAllDomNames();
 
         for (String namespaceId : domMap.keySet()) {
             for (String dom : domMap.get(namespaceId)) {
-                Domain domObj = domainsManager.getDomain(namespaceId, dom);
+                Domain domObj = serviceManager.getService(namespaceId, dom);
                 List<IpAddress> ipObjs = domObj.allIPs();
                 for (IpAddress ipObj : ipObjs) {
                     if (ip.contains(":")) {
@@ -835,155 +751,14 @@ public class ApiCommands {
         return result;
     }
 
-    @RequestMapping("/onAddIP4Dom")
-    public String onAddIP4Dom(HttpServletRequest request) throws Exception {
-        if (Switch.getDisableAddIP()) {
-            throw new AccessControlException("Adding IP for dom is forbidden now.");
-        }
-
-        String clientIP = WebUtils.required(request, "clientIP");
-
-        long term = Long.parseLong(WebUtils.required(request, "term"));
-
-        if (!RaftCore.isLeader(clientIP)) {
-            Loggers.RAFT.warn("peer {} tried to publish data but wasn't leader, leader: {}",
-                JSON.toJSONString(clientIP), JSON.toJSONString(RaftCore.getLeader()));
-            throw new IllegalStateException("peer(" + clientIP + ") tried to publish " +
-                "data but wasn't leader");
-        }
-
-        if (term < RaftCore.getPeerSet().local().term.get()) {
-            Loggers.RAFT.warn("out of date publish, pub-term: {}, cur-term: {}",
-                JSON.toJSONString(clientIP), JSON.toJSONString(RaftCore.getPeerSet().local()));
-            throw new IllegalStateException("out of date publish, pub-term:"
-                + term + ", cur-term: " + RaftCore.getPeerSet().local().term.get());
-        }
-
-        RaftCore.getPeerSet().local().resetLeaderDue();
-
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        final String dom = WebUtils.required(request, "dom");
-        if (domainsManager.getDomain(namespaceId, dom) == null) {
-            throw new IllegalStateException("dom doesn't exist: " + dom);
-        }
-
-        boolean updateOnly = Boolean.parseBoolean(WebUtils.optional(request, "updateOnly", Boolean.FALSE.toString()));
-
-        String ipListString = WebUtils.required(request, "ipList");
-        List<IpAddress> newIPs = new ArrayList<>();
-
-        List<String> ipList;
-        if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
-            newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
-            });
-        } else {
-            ipList = Arrays.asList(ipListString.split(","));
-            for (String ip : ipList) {
-                IpAddress ipAddr = IpAddress.fromJSON(ip);
-                newIPs.add(ipAddr);
-            }
-        }
-
-        if (CollectionUtils.isEmpty(newIPs)) {
-            throw new IllegalArgumentException("Empty ip list");
-        }
-
-        if (updateOnly) {
-            //make sure every IP is in the dom, otherwise refuse update
-            List<IpAddress> oldIPs = domainsManager.getDomain(namespaceId, dom).allIPs();
-            Collection diff = CollectionUtils.subtract(newIPs, oldIPs);
-            if (diff.size() != 0) {
-                throw new IllegalArgumentException("these IPs are not present: " + Arrays.toString(diff.toArray())
-                    + ", if you want to add them, remove updateOnly flag");
-            }
-        }
-        domainsManager.easyAddIP4Dom(namespaceId, dom, newIPs, term);
-
-        return "ok";
-    }
-
-    private void syncOnUpdateIP4Dom(String namespaceId, String dom, Map<String, String> proxyParams, String action) throws InterruptedException {
-
-        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(namespaceId, dom));
-
-        final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
-        updateIpPublish(proxyParams, countDownLatch, action);
-        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
-            Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
-            throw new IllegalArgumentException("data publish failed, key=" + key);
-        }
-    }
-
-    private void syncOnAddIP4Dom(String namespaceId, String dom, Map<String, String> proxyParams) throws InterruptedException {
-        syncOnUpdateIP4Dom(namespaceId, dom, proxyParams, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
-    }
-
-    private void asyncOnAddIP4Dom(Map<String, String> proxyParams) {
-        updateIpPublish(proxyParams, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD);
-    }
-
-    private void syncOnRemvIP4Dom(String namespaceId, String dom, Map<String, String> proxyParams) throws InterruptedException {
-        syncOnUpdateIP4Dom(namespaceId, dom, proxyParams, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
-    }
-
-    private void asyncOnRemvIP4Dom(Map<String, String> proxyParams) {
-        updateIpPublish(proxyParams, null, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE);
-    }
-
-    private void updateIpPublish(Map<String, String> proxyParams, CountDownLatch countDownLatch, String action) {
-
-        for (final String peer : RaftCore.getPeerSet().allServersWithoutMySelf()) {
-
-            UtilsAndCommons.RAFT_PUBLISH_EXECUTOR.execute(new Runnable() {
-                @Override
-                public void run() {
-
-                    String server = peer;
-
-                    if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                        server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-                    }
-
-                    String api = action.equals("remove") ? "onRemvIP4Dom" : "onAddIP4Dom";
-
-                    String url = "http://" + server
-                        + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api;
-
-                    try {
-                        HttpClient.asyncHttpPost(url, null, proxyParams, new AsyncCompletionHandler() {
-                            @Override
-                            public Integer onCompleted(Response response) throws Exception {
-                                if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                    Loggers.SRV_LOG.warn("failed to add ip params: " + proxyParams
-                                        + ",code: " + response.getStatusCode() + ", caused " + response.getResponseBody()
-                                        + ", server: " + peer);
-                                    return 1;
-                                }
-                                if (countDownLatch != null) {
-                                    countDownLatch.countDown();
-                                }
-                                return 0;
-                            }
-                        });
-                    } catch (Exception e) {
-                        Loggers.SRV_LOG.error(action + "-IP", "failed when publish to peer." + url, e);
-                    }
-                }
-            });
-        }
-    }
-
     @NeedAuth
     @RequestMapping("/addIP4Dom")
     public String addIP4Dom(HttpServletRequest request) throws Exception {
 
-        if (Switch.getDisableAddIP()) {
+        if (switchDomain.isDisableAddIP()) {
             throw new AccessControlException("Adding IP for dom is forbidden now.");
         }
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
 
         Map<String, String> proxyParams = new HashMap<>(16);
         for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
@@ -994,12 +769,16 @@ public class ApiCommands {
             Loggers.DEBUG_LOG.debug("[ADD-IP] full arguments: {}", proxyParams);
         }
 
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+
         String ipListString = WebUtils.required(request, "ipList");
         final List<String> ipList;
         List<IpAddress> newIPs = new ArrayList<>();
 
         if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
-            ipList = Arrays.asList(ipListString);
             newIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
             });
         } else {
@@ -1010,96 +789,7 @@ public class ApiCommands {
             }
         }
 
-        if (!RaftCore.isLeader()) {
-            Loggers.RAFT.info("I'm not leader, will proxy to leader.");
-            if (RaftCore.getLeader() == null) {
-                throw new IllegalArgumentException("no leader now.");
-            }
-
-            RaftPeer leader = RaftCore.getLeader();
-
-            String server = leader.ip;
-            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-            }
-
-            String url = "http://" + server
-                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/addIP4Dom";
-            HttpClient.HttpResult result1 = HttpClient.httpPost(url, null, proxyParams);
-
-            if (result1.code != HttpURLConnection.HTTP_OK) {
-                Loggers.SRV_LOG.warn("failed to add ip for dom, caused {}", result1.content);
-                throw new IllegalArgumentException("failed to add ip for dom, caused " + result1.content);
-            }
-
-            return "ok";
-        }
-
-        final String dom = WebUtils.required(request, "dom");
-
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
-
-        if (domain == null) {
-            throw new IllegalStateException("dom doesn't exist: " + dom);
-        }
-
-        boolean updateOnly = Boolean.parseBoolean(WebUtils.optional(request, "updateOnly", "false"));
-
-        if (CollectionUtils.isEmpty(newIPs)) {
-            throw new IllegalArgumentException("Empty ip list");
-        }
-
-        if (updateOnly) {
-            //make sure every IP is in the dom, otherwise refuse update
-            List<IpAddress> oldIPs = domain.allIPs();
-            Collection diff = CollectionUtils.subtract(newIPs, oldIPs);
-            if (diff.size() != 0) {
-                throw new IllegalArgumentException("these IPs are not present: " + Arrays.toString(diff.toArray())
-                    + ", if you want to add them, remove updateOnly flag");
-            }
-        }
-
-        String key = UtilsAndCommons.getIPListStoreKey(domain);
-
-        Datum datum = RaftCore.getDatum(key);
-        if (datum == null) {
-            try {
-                domainsManager.getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, dom)).lock();
-                datum = RaftCore.getDatum(key);
-                if (datum == null) {
-                    datum = new Datum();
-                    datum.key = key;
-                    RaftCore.addDatum(datum);
-                }
-            } finally {
-                domainsManager.getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, dom)).unlock();
-            }
-        }
-
-        long timestamp = RaftCore.getDatum(key).timestamp.get();
-
-        if (RaftCore.isLeader()) {
-            try {
-                RaftCore.OPERATE_LOCK.lock();
-
-                OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
-                requestWrapper.addParameter("clientIP", NetUtils.localServer());
-                requestWrapper.addParameter("notify", "true");
-                requestWrapper.addParameter("term", String.valueOf(RaftCore.getPeerSet().local().term));
-                requestWrapper.addParameter("timestamp", String.valueOf(timestamp));
-
-                onAddIP4Dom(requestWrapper);
-
-                if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
-                    syncOnAddIP4Dom(namespaceId, dom, proxyParams);
-                } else {
-                    asyncOnAddIP4Dom(proxyParams);
-                }
-            } finally {
-                RaftCore.OPERATE_LOCK.unlock();
-            }
-
-        }
+        serviceManager.addInstance(namespaceId, serviceName, newIPs.toArray(new IpAddress[newIPs.size()]));
 
         return "ok";
     }
@@ -1108,7 +798,7 @@ public class ApiCommands {
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         JSONObject result = new JSONObject();
-        VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        VirtualClusterDomain domObj = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
 
         if (domObj == null) {
             throw new NacosException(NacosException.NOT_FOUND, "dom not found: " + dom);
@@ -1116,23 +806,23 @@ public class ApiCommands {
 
         checkIfDisabled(domObj);
 
-        long cacheMillis = Switch.getCacheMillis(dom);
+        long cacheMillis = switchDomain.getDefaultCacheMillis();
 
         // now try to enable the push
         try {
-            if (udpPort > 0 && PushService.canEnablePush(agent)) {
-                PushService.addClient(namespaceId, dom,
+            if (udpPort > 0 && pushService.canEnablePush(agent)) {
+                pushService.addClient(namespaceId, dom,
                     clusters,
                     agent,
                     new InetSocketAddress(clientIP, udpPort),
                     pushDataSource,
                     tid,
                     app);
-                cacheMillis = Switch.getPushCacheMillis(dom);
+                cacheMillis = switchDomain.getPushCacheMillis(dom);
             }
         } catch (Exception e) {
             Loggers.SRV_LOG.error("[NACOS-API] failed to added push client", e);
-            cacheMillis = Switch.getCacheMillis(dom);
+            cacheMillis = switchDomain.getDefaultCacheMillis();
         }
 
         List<IpAddress> srvedIPs;
@@ -1222,54 +912,12 @@ public class ApiCommands {
         return result;
     }
 
-    @RequestMapping("/onRemvIP4Dom")
-    public void onRemvIP4Dom(HttpServletRequest request) throws Exception {
-        if (Switch.getDisableAddIP()) {
-            throw new AccessControlException("Deleting IP for dom is forbidden now.");
-        }
-
-        String clientIP = WebUtils.required(request, "clientIP");
-        long term = Long.parseLong(WebUtils.required(request, "term"));
-
-        if (!RaftCore.isLeader(clientIP)) {
-            Loggers.RAFT.warn("peer(" + JSON.toJSONString(clientIP) + ") tried to publish " +
-                "data but wasn't leader, leader: " + JSON.toJSONString(RaftCore.getLeader()));
-            throw new IllegalStateException("peer(" + clientIP + ") tried to publish " +
-                "data but wasn't leader");
-        }
-
-        if (term < RaftCore.getPeerSet().local().term.get()) {
-            Loggers.RAFT.warn("out of date publish, pub-term: "
-                + JSON.toJSONString(clientIP) + ", cur-term: " + JSON.toJSONString(RaftCore.getPeerSet().local()));
-            throw new IllegalStateException("out of date publish, pub-term:"
-                + term + ", cur-term: " + RaftCore.getPeerSet().local().term);
-        }
-
-        RaftCore.getPeerSet().local().resetLeaderDue();
-
-        final String dom = WebUtils.required(request, "dom");
-        final String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-
-        if (domainsManager.getDomain(namespaceId, dom) == null) {
-            throw new IllegalStateException("dom doesn't exist: " + dom);
-        }
-
-        List<IpAddress> removedIPs = getIpAddresses(request);
-
-        if (CollectionUtils.isEmpty(removedIPs)) {
-            throw new IllegalArgumentException("Empty ip list");
-        }
-
-        domainsManager.easyRemvIP4Dom(namespaceId, dom, removedIPs, term);
-    }
-
     @RequestMapping("/srvIPXT")
     @ResponseBody
     public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
 
-        if (DistroMapper.getLocalhostIP().equals(UtilsAndCommons.LOCAL_HOST_IP)) {
-            throw new Exception("invalid localhost ip: " + DistroMapper.getLocalhostIP());
+        if (distroMapper.getLocalhostIP().equals(UtilsAndCommons.LOCAL_HOST_IP)) {
+            throw new Exception("invalid localhost ip: " + distroMapper.getLocalhostIP());
         }
 
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
@@ -1297,13 +945,8 @@ public class ApiCommands {
     @RequestMapping("/remvIP4Dom")
     public String remvIP4Dom(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String dom = WebUtils.required(request, "dom");
-        String ipListString = WebUtils.required(request, "ipList");
-
-        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: serviceName: {}, iplist: {}", dom, ipListString);
+        if (switchDomain.isDisableAddIP()) {
+            throw new AccessControlException("Adding IP for dom is forbidden now.");
         }
 
         Map<String, String> proxyParams = new HashMap<>(16);
@@ -1312,91 +955,30 @@ public class ApiCommands {
         }
 
         if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments, params: {}", proxyParams);
+            Loggers.DEBUG_LOG.debug("[REMOVE-IP] full arguments: {}", proxyParams);
         }
 
-        List<String> ipList = new ArrayList<>();
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
 
-        List<IpAddress> ipObjList = new ArrayList<>(ipList.size());
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+
+        String ipListString = WebUtils.required(request, "ipList");
+        final List<String> ipList;
+        List<IpAddress> removedIPs = new ArrayList<>();
+
         if (Boolean.parseBoolean(WebUtils.optional(request, SwitchEntry.PARAM_JSON, Boolean.FALSE.toString()))) {
-            ipList = Arrays.asList(ipListString);
-            ipObjList = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
+            removedIPs = JSON.parseObject(ipListString, new TypeReference<List<IpAddress>>() {
             });
         } else {
             ipList = Arrays.asList(ipListString.split(","));
             for (String ip : ipList) {
-                ipObjList.add(IpAddress.fromJSON(ip));
+                IpAddress ipAddr = IpAddress.fromJSON(ip);
+                removedIPs.add(ipAddr);
             }
         }
 
-        if (!RaftCore.isLeader()) {
-            Loggers.RAFT.info("I'm not leader, will proxy to leader.");
-            if (RaftCore.getLeader() == null) {
-                throw new IllegalArgumentException("no leader now.");
-            }
-
-            RaftPeer leader = RaftCore.getLeader();
-
-            String server = leader.ip;
-            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-            }
-
-            String url = "http://" + server
-                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/remvIP4Dom";
-            HttpClient.HttpResult result1 = HttpClient.httpPost(url, null, proxyParams);
-
-            if (result1.code != HttpURLConnection.HTTP_OK) {
-                Loggers.SRV_LOG.warn("failed to remove ip for dom, caused: {}", result1.content);
-                throw new IllegalArgumentException("failed to remove ip for dom, caused " + result1.content);
-            }
-
-            return "ok";
-        }
-
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
-
-        if (domain == null) {
-            throw new IllegalStateException("dom doesn't exist: " + dom);
-        }
-
-        if (CollectionUtils.isEmpty(ipObjList)) {
-            throw new IllegalArgumentException("Empty ip list");
-        }
-
-        String key = UtilsAndCommons.getIPListStoreKey(domainsManager.getDomain(namespaceId, dom));
-
-        long timestamp = 1;
-        if (RaftCore.getDatum(key) != null) {
-            timestamp = RaftCore.getDatum(key).timestamp.get();
-        }
-
-        if (RaftCore.isLeader()) {
-
-            try {
-
-                RaftCore.OPERATE_LOCK.lock();
-
-                OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
-                requestWrapper.addParameter("clientIP", NetUtils.localServer());
-                requestWrapper.addParameter("notify", "true");
-                requestWrapper.addParameter("term", String.valueOf(RaftCore.getPeerSet().local().term));
-                requestWrapper.addParameter("timestamp", String.valueOf(timestamp));
-
-                onRemvIP4Dom(requestWrapper);
-
-                if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
-                    syncOnRemvIP4Dom(namespaceId, dom, proxyParams);
-                } else {
-                    asyncOnRemvIP4Dom(proxyParams);
-                }
-            } finally {
-                RaftCore.OPERATE_LOCK.unlock();
-            }
-
-            Loggers.EVT_LOG.info("dom: {} {POS} {IP-REMV} new: {} operatorIP: {}",
-                dom, ipListString, WebUtils.optional(request, "clientIP", "unknown"));
-        }
+        serviceManager.removeInstance(namespaceId, serviceName, removedIPs.toArray(new IpAddress[removedIPs.size()]));
 
         return "ok";
     }
@@ -1441,397 +1023,16 @@ public class ApiCommands {
         return result;
     }
 
-
-    ReentrantLock lock = new ReentrantLock();
-
     @NeedAuth
     @RequestMapping("/updateSwitch")
     public String updateSwitch(HttpServletRequest request) throws Exception {
         Boolean debug = Boolean.parseBoolean(WebUtils.optional(request, "debug", "false"));
+        String entry = WebUtils.required(request, "entry");
+        String value = WebUtils.required(request, "value");
 
-        if (!RaftCore.isLeader() && !debug) {
-            Map<String, String> tmpParams = new HashMap<>(16);
-            for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-                tmpParams.put(entry.getKey(), entry.getValue()[0]);
-            }
+        switchManager.update(entry, value, debug);
 
-            RaftProxy.proxyGET(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/updateSwitch", tmpParams);
-            return "ok";
-        }
-
-        try {
-            lock.lock();
-            String entry = WebUtils.required(request, "entry");
-
-            Datum datum = RaftCore.getDatum(UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
-            SwitchDomain switchDomain = null;
-
-            if (datum != null) {
-                switchDomain = JSON.parseObject(datum.value, SwitchDomain.class);
-            } else {
-                Loggers.SRV_LOG.warn("datum: {}.00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00 is null", UtilsAndCommons.DOMAINS_DATA_ID);
-            }
-
-            if (SwitchEntry.BATCH.equals(entry)) {
-                //batch update
-                SwitchDomain dom = JSON.parseObject(WebUtils.required(request, "json"), SwitchDomain.class);
-                dom.setEnableStandalone(Switch.isEnableStandalone());
-                if (dom.httpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
-                    || dom.tcpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
-
-                    throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
-                }
-
-                if (dom.httpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
-                    || dom.tcpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
-
-                    throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
-                }
-
-                if (dom.httpHealthParams.getFactor() < 0
-                    || dom.httpHealthParams.getFactor() > 1
-                    || dom.tcpHealthParams.getFactor() < 0
-                    || dom.tcpHealthParams.getFactor() > 1) {
-
-                    throw new IllegalArgumentException("malformed factor");
-                }
-
-                Switch.setDom(dom);
-                if (!debug) {
-                    Switch.save();
-                }
-
-                return "ok";
-            }
-
-            if (switchDomain != null) {
-                Switch.setDom(switchDomain);
-            }
-
-            if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
-                Float threshold = Float.parseFloat(WebUtils.required(request, "distroThreshold"));
-
-                if (threshold <= 0) {
-                    throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
-                }
-
-                Switch.setDistroThreshold(threshold);
-
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-
-            if (entry.equals(SwitchEntry.ENABLE_ALL_DOM_NAME_CACHE)) {
-                Boolean enable = Boolean.parseBoolean(WebUtils.required(request, "enableAllDomNameCache"));
-                Switch.setAllDomNameCache(enable);
-
-                if (!debug) {
-                    Switch.save();
-                }
-
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.INCREMENTAL_LIST)) {
-                String action = WebUtils.required(request, "action");
-                List<String> doms = Arrays.asList(WebUtils.required(request, "incrementalList").split(","));
-
-                if (action.equals(SwitchEntry.ACTION_UPDATE)) {
-                    Switch.getIncrementalList().addAll(doms);
-                } else if (action.equals(SwitchEntry.ACTION_DELETE)) {
-                    Switch.getIncrementalList().removeAll(doms);
-                } else {
-                    throw new IllegalArgumentException("action is not allowed: " + action);
-                }
-
-                if (!debug) {
-                    Switch.save();
-                }
-
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.HEALTH_CHECK_WHITLE_LIST)) {
-                String action = WebUtils.required(request, "action");
-                List<String> whiteList = Arrays.asList(WebUtils.required(request, "healthCheckWhiteList").split(","));
-
-                if (action.equals(SwitchEntry.ACTION_UPDATE)) {
-                    Switch.getHealthCheckWhiteList().addAll(whiteList);
-                    if (!debug) {
-                        Switch.save();
-                    }
-
-                    return "ok";
-                }
-
-                if (action.equals(SwitchEntry.ACTION_DELETE)) {
-                    Switch.getHealthCheckWhiteList().removeAll(whiteList);
-                    if (!debug) {
-                        Switch.save();
-                    }
-                    return "ok";
-                }
-            }
-
-            if (entry.equals(SwitchEntry.CLIENT_BEAT_INTERVAL)) {
-                long clientBeatInterval = Long.parseLong(WebUtils.required(request, "clientBeatInterval"));
-                Switch.setClientBeatInterval(clientBeatInterval);
-
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.PUSH_VERSION)) {
-                String type = WebUtils.required(request, "type");
-                String version = WebUtils.required(request, "version");
-
-                if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
-                    throw new IllegalArgumentException("illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
-                }
-
-                if (StringUtils.equals(SwitchEntry.CLIENT_JAVA, type)) {
-                    Switch.setPushJavaVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_PYTHON, type)) {
-                    Switch.setPushPythonVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
-                    Switch.setPushCVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_GO, type)) {
-                    Switch.setPushGoVersion(version);
-                } else {
-                    throw new IllegalArgumentException("unsupported client type: " + type);
-                }
-
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.TRAFFIC_SCHEDULING_VERSION)) {
-                String type = WebUtils.required(request, "type");
-                String version = WebUtils.required(request, "version");
-
-                if (!version.matches(UtilsAndCommons.VERSION_STRING_SYNTAX)) {
-                    throw new IllegalArgumentException("illegal version, must match: " + UtilsAndCommons.VERSION_STRING_SYNTAX);
-                }
-
-                if (StringUtils.equals(SwitchEntry.CLIENT_JAVA, type)) {
-                    Switch.setTrafficSchedulingJavaVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_PYTHON, type)) {
-                    Switch.setTrafficSchedulingPythonVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_C, type)) {
-                    Switch.setTrafficSchedulingCVersion(version);
-                } else if (StringUtils.equals(SwitchEntry.CLIENT_TENGINE, type)) {
-                    Switch.setTrafficSchedulingTengineVersion(version);
-                } else {
-                    throw new IllegalArgumentException("unsupported client type: " + type);
-                }
-
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.PUSH_CACHE_MILLIS)) {
-                String dom = WebUtils.optional(request, "dom", StringUtils.EMPTY);
-                Long cacheMillis = Long.parseLong(WebUtils.required(request, "millis"));
-
-                if (cacheMillis < SwitchEntry.MIN_PUSH_CACHE_TIME_MIILIS) {
-                    throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
-                }
-
-                Switch.setPushCacheMillis(dom, cacheMillis);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            // extremely careful while modifying this, cause it will affect all clients without pushing enabled
-            if (entry.equals(SwitchEntry.DEFAULT_CACHE_MILLIS)) {
-                String dom = WebUtils.optional(request, "dom", StringUtils.EMPTY);
-                Long cacheMillis = Long.parseLong(WebUtils.required(request, "millis"));
-
-                if (cacheMillis < SwitchEntry.MIN_CACHE_TIME_MIILIS) {
-                    throw new IllegalArgumentException("min default cache time  is too small(<1000)");
-                }
-
-                Switch.setCacheMillis(dom, cacheMillis);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.MASTERS)) {
-                List<String> masters = Arrays.asList(WebUtils.required(request, "names").split(","));
-
-                Switch.setMasters(masters);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.DISTRO)) {
-                boolean enabled = Boolean.parseBoolean(WebUtils.required(request, "enabled"));
-
-                Switch.setDistroEnabled(enabled);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.CHECK)) {
-                boolean enabled = Boolean.parseBoolean(WebUtils.required(request, "enabled"));
-
-                Switch.setHeathCheckEnabled(enabled);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.DEFAULT_HEALTH_CHECK_MODE)) {
-                String defaultHealthCheckMode = WebUtils.required(request, "mode");
-
-                Switch.setDefaultHealthCheckMode(defaultHealthCheckMode);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.DOM_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(WebUtils.required(request, "millis"));
-
-                if (millis < SwitchEntry.MIN_DOM_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("domStatusSynchronizationPeriodMillis is too small(<5000)");
-                }
-
-                Switch.setDomStatusSynchronizationPeriodMillis(millis);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.SERVER_STATUS_SYNC_PERIOD)) {
-                Long millis = Long.parseLong(WebUtils.required(request, "millis"));
-
-                if (millis < SwitchEntry.MIN_SERVER_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("serverStatusSynchronizationPeriodMillis is too small(<15000)");
-                }
-
-                Switch.setServerStatusSynchronizationPeriodMillis(millis);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.HEALTH_CHECK_TIMES)) {
-                Integer times = Integer.parseInt(WebUtils.required(request, "times"));
-
-                Switch.setCheckTimes(times);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.DISABLE_ADD_IP)) {
-                boolean disableAddIP = Boolean.parseBoolean(WebUtils.required(request, "disableAddIP"));
-
-                Switch.setDisableAddIP(disableAddIP);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.ENABLE_CACHE)) {
-                boolean enableCache = Boolean.parseBoolean(WebUtils.required(request, "enableCache"));
-
-                Switch.setEnableCache(enableCache);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.SEND_BEAT_ONLY)) {
-                boolean sendBeatOnly = Boolean.parseBoolean(WebUtils.required(request, "sendBeatOnly"));
-
-                Switch.setSendBeatOnly(sendBeatOnly);
-                if (!debug) {
-                    Switch.save();
-                }
-                return "ok";
-            }
-
-            if (entry.equals(SwitchEntry.LIMITED_URL_MAP)) {
-                Map<String, Integer> limitedUrlMap = new HashMap<>(16);
-                String limitedUrls = WebUtils.required(request, "limitedUrls");
-
-                if (!StringUtils.isEmpty(limitedUrls)) {
-                    String[] entries = limitedUrls.split(",");
-                    for (int i = 0; i < entries.length; i++) {
-                        String[] parts = entries[i].split(":");
-                        if (parts.length < 2) {
-                            throw new IllegalArgumentException("invalid input for limited urls");
-                        }
-
-                        String limitedUrl = parts[0];
-                        if (StringUtils.isEmpty(limitedUrl)) {
-                            throw new IllegalArgumentException("url can not be empty, url: " + limitedUrl);
-                        }
-
-                        int statusCode = Integer.parseInt(parts[1]);
-                        if (statusCode <= 0) {
-                            throw new IllegalArgumentException("illegal normal status code: " + statusCode);
-                        }
-
-                        limitedUrlMap.put(limitedUrl, statusCode);
-
-                    }
-
-                    Switch.setLimitedUrlMap(limitedUrlMap);
-                    if (!debug) {
-                        Switch.save();
-                    }
-                    return "ok";
-                }
-            }
-
-            if (entry.equals(SwitchEntry.ENABLE_STANDALONE)) {
-                String enable = WebUtils.required(request, "enableStandalone");
-
-                if (!StringUtils.isNotEmpty(enable)) {
-                    Switch.setEnableStandalone(Boolean.parseBoolean(enable));
-                }
-
-                if (!debug) {
-                    Switch.save();
-                }
-
-                return "ok";
-            }
-
-
-            throw new IllegalArgumentException("update entry not found: " + entry);
-        } finally {
-            lock.unlock();
-        }
-
-
+        return "ok";
     }
 
     public void checkIfDisabled(VirtualClusterDomain domObj) throws Exception {
@@ -1842,7 +1043,7 @@ public class ApiCommands {
 
     @RequestMapping("/switches")
     public JSONObject switches(HttpServletRequest request) {
-        return JSON.parseObject(Switch.getDom().toJSON());
+        return JSON.parseObject(switchDomain.toJSON());
     }
 
     @RequestMapping("/getVersion")
@@ -1890,12 +1091,12 @@ public class ApiCommands {
 
         Map<String, Set<String>> doms = new HashMap<>(16);
 
-        Map<String, Set<String>> domMap = domainsManager.getAllDomNames();
+        Map<String, Set<String>> domMap = serviceManager.getAllDomNames();
 
         for (String namespaceId : domMap.keySet()) {
             doms.put(namespaceId, new HashSet<>());
             for (String dom : domMap.get(namespaceId)) {
-                if (DistroMapper.responsible(dom) || !responsibleOnly) {
+                if (distroMapper.responsible(dom) || !responsibleOnly) {
                     doms.get(namespaceId).add(dom);
                 }
             }
@@ -1917,8 +1118,8 @@ public class ApiCommands {
             UtilsAndCommons.getDefaultNamespaceId());
         String expr = WebUtils.required(request, "expr");
 
-        List<Domain> doms
-            = domainsManager.searchDomains(namespaceId, ".*" + expr + ".*");
+        List<VirtualClusterDomain> doms
+            = serviceManager.searchDomains(namespaceId, ".*" + expr + ".*");
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("doms", Collections.emptyList());
@@ -1964,7 +1165,7 @@ public class ApiCommands {
         String dom = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
         String json = WebUtils.optional(request, "clusterJson", StringUtils.EMPTY);
 
-        VirtualClusterDomain domObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        VirtualClusterDomain domObj = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
 
         if (domObj == null) {
             throw new IllegalArgumentException("dom not found: " + dom);
@@ -2047,7 +1248,7 @@ public class ApiCommands {
         domObj.recalculateChecksum();
         domObj.valid();
 
-        domainsManager.easyAddOrReplaceDom(domObj);
+        serviceManager.addOrReplaceService(domObj);
 
         return "ok";
     }
@@ -2066,12 +1267,12 @@ public class ApiCommands {
         String action = WebUtils.optional(request, "action", "view");
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
-            result.put("status", DistroMapper.getDistroConfig());
+            result.put("status", distroMapper.getDistroConfig());
             return result;
         }
 
         if (StringUtils.equals(SwitchEntry.ACTION_CLEAN, action)) {
-            DistroMapper.clean();
+            distroMapper.clean();
             return result;
         }
 
@@ -2083,11 +1284,11 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
 
-        int domCount = domainsManager.getDomCount();
-        int ipCount = domainsManager.getInstanceCount();
+        int domCount = serviceManager.getDomCount();
+        int ipCount = serviceManager.getInstanceCount();
 
-        int responsibleDomCount = domainsManager.getResponsibleDomCount();
-        int responsibleIPCount = domainsManager.getResponsibleIPCount();
+        int responsibleDomCount = serviceManager.getResponsibleDomCount();
+        int responsibleIPCount = serviceManager.getResponsibleIPCount();
 
         result.put("domCount", domCount);
         result.put("ipCount", ipCount);
@@ -2096,7 +1297,6 @@ public class ApiCommands {
         result.put("cpu", SystemUtils.getCPU());
         result.put("load", SystemUtils.getLoad());
         result.put("mem", SystemUtils.getMem());
-        result.put("notifyTask", RaftCore.notifier.getTaskSize());
 
         return result;
     }
@@ -2182,7 +1382,7 @@ public class ApiCommands {
     @RequestMapping("/serverStatus")
     public String serverStatus(HttpServletRequest request) {
         String serverStatus = WebUtils.required(request, "serverStatus");
-        DistroMapper.onReceiveServerStatus(serverStatus);
+        distroMapper.onReceiveServerStatus(serverStatus);
 
         return "ok";
     }
@@ -2193,7 +1393,7 @@ public class ApiCommands {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
 
         if (virtualClusterDomain == null) {
             throw new IllegalArgumentException("dom not found");
@@ -2213,7 +1413,7 @@ public class ApiCommands {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
 
         if (virtualClusterDomain == null) {
             throw new IllegalArgumentException("dom not found");
@@ -2221,7 +1421,7 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
 
-        result.put("responsibleServer", DistroMapper.mapSrv(dom));
+        result.put("responsibleServer", distroMapper.mapSrv(dom));
 
         return result;
     }
@@ -2230,7 +1430,7 @@ public class ApiCommands {
     public JSONObject getHealthyServerList(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
-        result.put("healthyList", DistroMapper.getHealthyList());
+        result.put("healthyList", distroMapper.getHealthyList());
 
         return result;
     }
@@ -2240,7 +1440,7 @@ public class ApiCommands {
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
+        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
 
         if (virtualClusterDomain == null) {
             throw new IllegalArgumentException("dom not found");
@@ -2248,7 +1448,7 @@ public class ApiCommands {
 
         JSONObject result = new JSONObject();
 
-        result.put("responsible", DistroMapper.responsible(dom));
+        result.put("responsible", distroMapper.responsible(dom));
 
         return result;
     }
@@ -2264,7 +1464,7 @@ public class ApiCommands {
         }
 
         try {
-            DomainsManager.DomainChecksum checksums = JSON.parseObject(domsStatusString, DomainsManager.DomainChecksum.class);
+            ServiceManager.DomainChecksum checksums = JSON.parseObject(domsStatusString, ServiceManager.DomainChecksum.class);
             if (checksums == null) {
                 Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
                 return "fail";
@@ -2276,7 +1476,7 @@ public class ApiCommands {
                 }
                 String dom = entry.getKey();
                 String checksum = entry.getValue();
-                Domain domain = domainsManager.getDomain(checksums.namespaceId, dom);
+                Domain domain = serviceManager.getService(checksums.namespaceId, dom);
 
                 if (domain == null) {
                     continue;
@@ -2289,7 +1489,7 @@ public class ApiCommands {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
                             dom, serverIP, checksum, domain.getChecksum());
                     }
-                    domainsManager.addUpdatedDom2Queue(checksums.namespaceId, dom, serverIP, checksum);
+                    serviceManager.addUpdatedDom2Queue(checksums.namespaceId, dom, serverIP, checksum);
                 }
             }
         } catch (Exception e) {
@@ -2338,7 +1538,7 @@ public class ApiCommands {
 
         pac.put("owners", vDom.getOwners());
         pac.put("token", vDom.getToken());
-        pac.put("checkServer", DistroMapper.mapSrvName(vDom.getName()));
+        pac.put("checkServer", distroMapper.mapSrvName(vDom.getName()));
 
         pac.put("protectThreshold", vDom.getProtectThreshold());
         pac.put("checksum", vDom.getChecksum());
@@ -2416,8 +1616,8 @@ public class ApiCommands {
         return newIPs;
     }
 
-    public void setDomainsManager(DomainsManager domainsManager) {
-        this.domainsManager = domainsManager;
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
     }
 
 }

@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.raft;
+package com.alibaba.nacos.naming.consistency.ap;
 
-import java.util.concurrent.atomic.AtomicLong;
+import com.alibaba.nacos.naming.consistency.ConsistencyService;
 
 /**
- * @author nacos
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 1.0.0
  */
-public class Datum {
-    public String key;
-
-    public String value;
-
-    public AtomicLong timestamp = new AtomicLong(0L);
+public interface ApConsistencyService extends ConsistencyService {
 }

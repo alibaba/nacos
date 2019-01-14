@@ -82,7 +82,7 @@ public class InstanceController extends ApiCommands {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
+        VirtualClusterDomain domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "no dom " + serviceName + " found!");
         }

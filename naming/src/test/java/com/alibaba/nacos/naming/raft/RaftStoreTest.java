@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.naming.raft;
 
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.Datum;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftStore;
 import org.junit.Assert;
 import org.junit.Test;
 

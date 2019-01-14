@@ -26,7 +26,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -37,33 +36,17 @@ import java.util.List;
 @WebAppConfiguration
 public class DomainsManagerTest extends BaseTest {
 
-    private DomainsManager domainsManager;
+    private ServiceManager domainsManager;
 
     @Before
     public void before() {
         super.before();
-        domainsManager = new DomainsManager();
+        domainsManager = new ServiceManager();
     }
 
     @Test
     public void easyRemoveDom() throws Exception {
         domainsManager.easyRemoveDom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1");
-    }
-
-    @Test
-    public void easyRemvIP4Dom() throws Exception {
-
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
-
-        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
-
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1"));
-        domainsManager.easyRemvIP4Dom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1", ipList, 1L);
     }
 
     @Test
