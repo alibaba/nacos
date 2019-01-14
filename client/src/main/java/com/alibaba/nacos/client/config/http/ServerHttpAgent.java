@@ -13,17 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
@@ -39,13 +43,14 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Server Agent
  *
  * @author water.lyl
  */
-public class ServerHttpAgent {
+public class ServerHttpAgent implements HttpAgent {
 
     final static public Logger log = LogUtils.logger(ServerHttpAgent.class);
 
@@ -58,6 +63,7 @@ public class ServerHttpAgent {
      * @return
      * @throws IOException
      */
+    @Override
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
@@ -101,6 +107,7 @@ public class ServerHttpAgent {
         throw new ConnectException("no available server");
     }
 
+    @Override
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
                                long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
@@ -143,6 +150,7 @@ public class ServerHttpAgent {
         throw new ConnectException("no available server");
     }
 
+    @Override
     public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding,
                                  long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
@@ -241,6 +249,7 @@ public class ServerHttpAgent {
         }
     }
 
+    @Override
     public synchronized void start() throws NacosException {
         serverListMgr.start();
     }
@@ -324,18 +333,22 @@ public class ServerHttpAgent {
             "can not get security credentials, responseCode: " + respCode + ", response: " + response);
     }
 
+    @Override
     public String getName() {
         return serverListMgr.getName();
     }
 
+    @Override
     public String getNamespace() {
         return serverListMgr.getNamespace();
     }
 
+    @Override
     public String getTenant() {
         return serverListMgr.getTenant();
     }
 
+    @Override
     public String getEncode() {
         return encode;
     }

@@ -19,6 +19,8 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -138,6 +140,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
             Beat beat = new Beat(ip, task);
             taskQueue.add(beat);
+            MetricsMonitor.getTcpHealthCheckMonitor().incrementAndGet();
         }
 
 //        selector.wakeup();

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.cp.simpleraft;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -154,6 +155,8 @@ public class RaftStore {
         }
 
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
+            MetricsMonitor.getDiskException().increment();
+
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
 
@@ -164,6 +167,9 @@ public class RaftStore {
             fc = new FileOutputStream(cacheFile, false).getChannel();
             fc.write(data, data.position());
             fc.force(true);
+        } catch (Exception e) {
+            MetricsMonitor.getDiskException().increment();
+            throw e;
         } finally {
             if (fc != null) {
                 fc.close();

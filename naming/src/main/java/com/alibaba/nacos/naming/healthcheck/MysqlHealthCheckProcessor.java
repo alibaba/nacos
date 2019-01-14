@@ -120,6 +120,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                 }
 
                 EXECUTOR.execute(new MysqlCheckTask(ip, task));
+                MetricsMonitor.getMysqlHealthCheckMonitor().incrementAndGet();
             } catch (Exception e) {
                 ip.setCheckRT(switchDomain.getMysqlHealthParams().getMax());
                 healthCheckCommon.checkFail(ip, task, "mysql:error:" + e.getMessage());
