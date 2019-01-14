@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
 
@@ -76,8 +78,12 @@ public class NotifyTaskProcessor implements TaskProcessor {
             if (result.code == HttpStatus.SC_OK) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
                     ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
+
+                MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
+
                 return true;
             } else {
+                MetricsMonitor.getConfigNotifyException().increment();
                 log.error("[notify-error] {}, {}, to {}, result {}", new Object[] {dataId, group,
                     serverIp, result.code});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
@@ -85,6 +91,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
                 return false;
             }
         } catch (Exception e) {
+            MetricsMonitor.getConfigNotifyException().increment();
             log.error(
                 "[notify-exception] " + dataId + ", " + group + ", to " + serverIp + ", "
                     + e.toString());

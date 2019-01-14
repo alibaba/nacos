@@ -60,7 +60,7 @@ public class ConfigServletInner {
 
     private static final int TRY_GET_LOCK_TIMES = 9;
 
-    private static final int START_LONGPULLING_VERSION_NUM = 204;
+    private static final int START_LONGPOLLING_VERSION_NUM = 204;
 
     /**
      * 轮询接口
@@ -70,8 +70,8 @@ public class ConfigServletInner {
         throws IOException, ServletException {
 
         // 长轮询
-        if (LongPollingService.isSupportLongPulling(request)) {
-            longPollingService.addLongPullingClient(request, response, clientMd5Map, probeRequestSize);
+        if (LongPollingService.isSupportLongPolling(request)) {
+            longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
 
@@ -91,7 +91,7 @@ public class ConfigServletInner {
         /**
          * 2.0.4版本以前, 返回值放入header中
          */
-        if (versionNum < START_LONGPULLING_VERSION_NUM) {
+        if (versionNum < START_LONGPOLLING_VERSION_NUM) {
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE, oldResult);
             response.addHeader(Constants.PROBE_MODIFY_RESPONSE_NEW, newResult);
         } else {
