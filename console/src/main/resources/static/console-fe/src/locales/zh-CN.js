@@ -26,6 +26,8 @@ const I18N_CONF = {
     pleaseInputUsername: '请输入用户名',
     pleaseInputPassword: '请输入密码',
     invalidUsernameOrPassword: '用户名或密码错误',
+    passwordRequired: '密码不能为空',
+    usernameRequired: '用户名不能为空',
   },
   MainLayout: {
     nacosName: 'NACOS',
