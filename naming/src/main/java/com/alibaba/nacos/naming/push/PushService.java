@@ -121,6 +121,11 @@ public class PushService {
 
     public static void addClient(String namespaceId,
                                  String dom,
+    public static void setTotalPush(int totalPush) {
+        PushService.totalPush = totalPush;
+    }
+
+    public static void addClient(String dom,
                                  String clusters,
                                  String agent,
                                  InetSocketAddress socketAddr,
@@ -299,6 +304,11 @@ public class PushService {
     public static int getFailedPushCount() {
         return ackMap.size() + failedPush;
     }
+
+    public static void setFailedPush(int failedPush) {
+        PushService.failedPush = failedPush;
+    }
+
 
     public static void resetPushState() {
         ackMap.clear();

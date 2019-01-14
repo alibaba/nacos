@@ -16,8 +16,10 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
@@ -44,7 +46,7 @@ public class HostReactor {
 
     private Map<String, Object> updatingMap;
 
-    private PushRecver pushRecver;
+    private PushReceiver pushReceiver;
 
     private EventDispatcher eventDispatcher;
 
@@ -84,7 +86,7 @@ public class HostReactor {
 
         this.updatingMap = new ConcurrentHashMap<String, Object>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
-        this.pushRecver = new PushRecver(this);
+        this.pushReceiver = new PushReceiver(this);
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -187,6 +189,8 @@ public class HostReactor {
             serviceInfo.setJsonFromServer(json);
             DiskCache.write(serviceInfo, cacheDir);
         }
+
+        MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
         LogUtils.LOG.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
             " -> " + JSON.toJSONString(serviceInfo.getHosts()));

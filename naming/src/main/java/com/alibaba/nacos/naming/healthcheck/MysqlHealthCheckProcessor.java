@@ -21,6 +21,7 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
@@ -109,6 +110,7 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 }
 
                 EXECUTOR.execute(new MysqlCheckTask(ip, task));
+                MetricsMonitor.getMysqlHealthCheckMonitor().incrementAndGet();
             } catch (Exception e) {
                 ip.setCheckRT(Switch.getMysqlHealthParams().getMax());
                 checkFail(ip, task, "mysql:error:" + e.getMessage());

@@ -22,6 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.collections.CollectionUtils;
@@ -617,6 +618,7 @@ public class RaftCore {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                                 Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}",
                                     response.getResponseBody(), server);
+                                MetricsMonitor.getLeaderSendBeatFailedException().increment();
                                 return 1;
                             }
 
@@ -628,10 +630,12 @@ public class RaftCore {
                         @Override
                         public void onThrowable(Throwable t) {
                             Loggers.RAFT.error("NACOS-RAFT error while sending heart-beat to peer: {} {}", server, t);
+                            MetricsMonitor.getLeaderSendBeatFailedException().increment();
                         }
                     });
                 } catch (Exception e) {
                     Loggers.RAFT.error("VIPSRV error while sending heart-beat to peer: {} {}", server, e);
+                    MetricsMonitor.getLeaderSendBeatFailedException().increment();
                 }
             }
 
