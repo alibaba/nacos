@@ -163,7 +163,7 @@ public class RaftCore {
         }
 
         try {
-            RaftCore.OPERATE_LOCK.lock();
+            OPERATE_LOCK.lock();
             long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;
@@ -218,7 +218,7 @@ public class RaftCore {
             long end = System.currentTimeMillis();
             Loggers.RAFT.info("signalPublish cost {} ms, key: {}", (end - start), key);
         } finally {
-            RaftCore.OPERATE_LOCK.unlock();
+            OPERATE_LOCK.unlock();
         }
     }
 
@@ -236,7 +236,10 @@ public class RaftCore {
             }
 
             JSONObject json = new JSONObject();
-            json.put("key", key);
+            // construct datum:
+            Datum datum = new Datum();
+            datum.key = key;
+            json.put("datum", datum);
             json.put("source", peers.local());
 
             for (final String server : peers.allServersIncludeMyself()) {
@@ -261,16 +264,6 @@ public class RaftCore {
         } finally {
             OPERATE_LOCK.unlock();
         }
-    }
-
-    public void onPublish(String key, String value, long timestamp, String source) {
-
-    }
-
-    public void onPublish(JSONObject json) throws Exception {
-        Datum datum = JSON.parseObject(json.getString("datum"), Datum.class);
-        RaftPeer source = JSON.parseObject(json.getString("source"), RaftPeer.class);
-        onPublish(datum, source);
     }
 
     public void onPublish(Datum datum, RaftPeer source) throws Exception {
@@ -322,14 +315,6 @@ public class RaftCore {
     }
 
     public void onDelete(Datum datum, RaftPeer source) throws Exception {
-
-//        RaftPeer source = new RaftPeer();
-//        source.ip = params.getJSONObject("source").getString("ip");
-//        source.state = RaftPeer.State.valueOf(params.getJSONObject("source").getString("state"));
-//        source.term.set(params.getJSONObject("source").getLongValue("term"));
-//        source.heartbeatDueMs = params.getJSONObject("source").getLongValue("heartbeatDueMs");
-//        source.leaderDueMs = params.getJSONObject("source").getLongValue("leaderDueMs");
-//        source.voteFor = params.getJSONObject("source").getString("voteFor");
 
         RaftPeer local = peers.local();
 
