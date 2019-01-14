@@ -18,9 +18,10 @@ const I18N_CONF = {
     blog: 'BLOG',
     community: 'COMMUNITY',
     languageSwitchButton: '中',
+    logout: 'logout',
   },
   Login: {
-    pleaseLogin: 'Plase login',
+    login: 'Login',
     submit: 'Submit',
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',

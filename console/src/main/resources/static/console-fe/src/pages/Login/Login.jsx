@@ -11,6 +11,8 @@ const FormItem = Form.Item;
 @withRouter
 @ConfigProvider.config
 class Login extends React.Component {
+  static displayName = 'Login';
+
   handleSubmit = values => {
     const { locale = {} } = this.props;
     request({
@@ -65,7 +67,7 @@ class Login extends React.Component {
           <div className="animation animation4" />
           <div className="animation animation5" />
           <Card className="login-panel" contentHeight="auto">
-            <div className="login-header">{locale.pleaseLogin}</div>
+            <div className="login-header">{locale.login}</div>
             <Form className="login-form">
               <FormItem>
                 <Input htmlType="text" name="username" placeholder={locale.pleaseInputUsername} />

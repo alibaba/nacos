@@ -75,7 +75,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             .antMatchers("/")
             .antMatchers("/**/*.css", "/**/*.js", "/**/*.html", "/**/*.map", "/**/*.svg", "/**/*.png", "/**/*.ico")
             .antMatchers("/**.css", "/**.js", "/**.html", "/**.map", "/**.svg", "/**.png", "/**.ico")
-            .antMatchers("/console-fe/public/*")
+            .antMatchers("/console-fe/public/**")
             .antMatchers("/v1/auth/login")
             .antMatchers("/v1/cs/health");
     }
