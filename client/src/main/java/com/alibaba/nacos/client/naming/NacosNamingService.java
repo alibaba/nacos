@@ -204,14 +204,12 @@ public class NacosNamingService implements NamingService {
         return getAllInstances(serviceName, clusters, true);
     }
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
     @Override
     public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-                StringUtils.EMPTY, false);
+            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
         } else {
             serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
         }
@@ -238,18 +236,12 @@ public class NacosNamingService implements NamingService {
         return selectInstances(serviceName, clusters, healthy, true);
     }
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
-        List<Instance> list;
-        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<Instance>();
     @Override
     public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy,
                                           boolean subscribe) throws NacosException {
-
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-                StringUtils.EMPTY, false);
+            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
         } else {
             serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
         }

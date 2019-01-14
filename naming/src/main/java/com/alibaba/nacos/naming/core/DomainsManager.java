@@ -235,6 +235,9 @@ public class DomainsManager {
     }
 
     public List<String> getAllDomNamesList(String namespaceId) {
+        if (chooseDomMap(namespaceId) == null) {
+            return new ArrayList<>();
+        }
         return new ArrayList<>(chooseDomMap(namespaceId).keySet());
     }
 

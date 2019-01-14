@@ -205,6 +205,14 @@ public class HostReactor {
         return serviceInfoMap.get(key);
     }
 
+    public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
+        String result = serverProxy.queryList(serviceName, clusters, 0, false);
+        if (StringUtils.isNotEmpty(result)) {
+            return JSON.parseObject(result, ServiceInfo.class);
+        }
+        return null;
+    }
+
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
 
         LogUtils.LOG.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
@@ -264,7 +272,7 @@ public class HostReactor {
         ServiceInfo oldService = getSerivceInfo0(serviceName, clusters);
         try {
 
-            String result = serverProxy.queryList(serviceName, clusters, pushRecver.getUDPPort(), false);
+            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
             }
@@ -281,7 +289,7 @@ public class HostReactor {
 
     public void refreshOnly(String serviceName, String clusters) {
         try {
-            serverProxy.queryList(serviceName, clusters, pushRecver.getUDPPort(), false);
+            serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
         } catch (Exception e) {
             LogUtils.LOG.error("NA", "failed to update serviceName: " + serviceName, e);
         }
