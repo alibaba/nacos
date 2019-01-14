@@ -16,9 +16,9 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
-import com.alibaba.nacos.console.security.CustomUserDetailsService;
+import com.alibaba.nacos.console.security.CustomUserDetailsServiceImpl;
 import com.alibaba.nacos.console.security.JwtAuthenticationEntryPoint;
-import com.alibaba.nacos.console.utils.JWTTokenUtils;
+import com.alibaba.nacos.console.utils.JwtTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -48,14 +48,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     public static final String AUTHORIZATION_TOKEN = "access_token";
 
+    public static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
+
     @Autowired
-    private CustomUserDetailsService userDetailsService;
+    private CustomUserDetailsServiceImpl userDetailsService;
 
     @Autowired
     private JwtAuthenticationEntryPoint unauthorizedHandler;
 
     @Autowired
-    private JWTTokenUtils tokenProvider;
+    private JwtTokenUtils tokenProvider;
 
     @Autowired
     private Environment env;
@@ -74,7 +76,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     public void configure(WebSecurity web) {
         String ignoreURLs = env.getProperty("nacos.security.ignore.urls", "/**");
-        for (String ignoreURL : ignoreURLs.trim().split(",")) {
+        for (String ignoreURL : ignoreURLs.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
             web.ignoring().antMatchers(ignoreURL.trim());
         }
     }
