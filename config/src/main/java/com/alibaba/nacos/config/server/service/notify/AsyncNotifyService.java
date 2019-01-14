@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
@@ -192,6 +193,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                     ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                     task.target);
 
+
                 //get delay time and set fail count to the task
                 int delay = getDelayTime(task);
 
@@ -207,6 +209,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                     new Object[] {task.target, task.getDataId(),
                         task.getGroup(), task.getLastModified()});
 
+                MetricsMonitor.getConfigNotifyException().increment();
             }
             HttpClientUtils.closeQuietly(response);
         }
@@ -238,6 +241,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                 new Object[] {task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified()});
 
+            MetricsMonitor.getConfigNotifyException().increment();
         }
 
         @Override
@@ -262,6 +266,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                 new Object[] {task.target, task.getDataId(),
                     task.getGroup(), task.getLastModified()});
 
+            MetricsMonitor.getConfigNotifyException().increment();
         }
 
         private NotifySingleTask task;

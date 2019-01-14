@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config longpulling
+ * Config longpolling
  *
  * @author Nacos
  */

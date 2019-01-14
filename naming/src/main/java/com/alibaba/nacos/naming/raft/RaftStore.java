@@ -154,6 +154,8 @@ public class RaftStore {
         }
 
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
+            MetricsMonitor.getDiskException().increment();
+
             throw new IllegalStateException("can not make cache file: " + cacheFile.getName());
         }
 
@@ -164,6 +166,9 @@ public class RaftStore {
             fc = new FileOutputStream(cacheFile, false).getChannel();
             fc.write(data, data.position());
             fc.force(true);
+        } catch (Exception e) {
+            MetricsMonitor.getDiskException().increment();
+            throw e;
         } finally {
             if (fc != null) {
                 fc.close();
