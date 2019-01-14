@@ -22,6 +22,7 @@ import com.alibaba.nacos.console.utils.JWTTokenUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -56,6 +57,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private JWTTokenUtils tokenProvider;
 
+    @Autowired
+    private Environment env;
+
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {
@@ -69,39 +73,28 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) {
-        // TODO: we should use a better way to match the resources
-        // requests for resource and auth api are always allowed
-        web.ignoring()
-            .antMatchers("/")
-            .antMatchers("/**/*.css", "/**/*.js", "/**/*.html", "/**/*.map", "/**/*.svg", "/**/*.png", "/**/*.ico")
-            .antMatchers("/**.css", "/**.js", "/**.html", "/**.map", "/**.svg", "/**.png", "/**.ico")
-            .antMatchers("/console-fe/public/**")
-            .antMatchers("/v1/auth/login")
-            .antMatchers("/v1/cs/health");
+        String ignoreURLs = env.getProperty("nacos.security.ignore.urls", "/**");
+        for (String ignoreURL : ignoreURLs.trim().split(",")) {
+            web.ignoring().antMatchers(ignoreURL.trim());
+        }
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+            .anyRequest().authenticated().and()
+            // custom token authorize exception handler
+            .exceptionHandling()
+            .authenticationEntryPoint(unauthorizedHandler).and()
+            // since we use jwt, session is not necessary
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+            // since we use jwt, csrf is not necessary
+            .csrf().disable();
+        http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
 
-        // TODO 做开关是否开启登录功能
-        if (false) {
-            http.authorizeRequests().antMatchers("/").permitAll();
-        } else {
-            http
-                .authorizeRequests()
-                .anyRequest().authenticated().and()
-                // custom token authorize exception handler
-                .exceptionHandling()
-                .authenticationEntryPoint(unauthorizedHandler).and()
-                // since we use jwt, session is not necessary
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                // since we use jwt, csrf is not necessary
-                .csrf().disable();
-            http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
-
-            // disable cache
-            http.headers().cacheControl();
-        }
+        // disable cache
+        http.headers().cacheControl();
     }
 
     @Bean
