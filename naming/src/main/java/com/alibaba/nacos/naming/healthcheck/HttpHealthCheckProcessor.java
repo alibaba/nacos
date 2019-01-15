@@ -63,7 +63,7 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
             asyncHttpClient = new AsyncHttpClient(builder.build());
 
         } catch (Throwable e) {
-            SRV_LOG.error("VIPSRV-HEALTH-CHECK", "Error while constructing HTTP asynchronous client, " + e.toString(), e);
+            SRV_LOG.error("[HEALTH-CHECK] Error while constructing HTTP asynchronous client", e);
         }
     }
 
@@ -92,16 +92,14 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
                 if (ip.isMarked()) {
                     if (SRV_LOG.isDebugEnabled()) {
-                        SRV_LOG.debug("http check, ip is marked as to skip health check, ip:" + ip.getIp());
+                        SRV_LOG.debug("http check, ip is marked as to skip health check, ip: {}" + ip.getIp());
                     }
                     continue;
                 }
 
                 if (!ip.markChecking()) {
-                    SRV_LOG.warn("http check started before last one finished, dom: "
-                            + task.getCluster().getDom().getName() + ":"
-                            + task.getCluster().getName() + ":"
-                            + ip.getIp());
+                    SRV_LOG.warn("http check started before last one finished, dom: {}:{}:{}",
+                        task.getCluster().getDom().getName(), task.getCluster().getName(), ip.getIp());
 
                     reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getHttpHealthParams());
                     continue;

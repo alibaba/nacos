@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.acl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.DomainsManager;
@@ -56,6 +57,9 @@ public class AuthChecker {
     }
 
     public void doAuth(Map<String, String[]> params, HttpServletRequest req) throws Exception {
+
+        String namespaceId = WebUtils.optional(req, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.optional(req, "name", "");
         if (StringUtils.isEmpty(dom)) {
             dom = WebUtils.optional(req, "dom", "");
@@ -71,7 +75,7 @@ public class AuthChecker {
             // we consider switch is a kind of special domain
             domObj = Switch.getDom();
         } else {
-            domObj = domainsManager.getDomain(dom);
+            domObj = domainsManager.getDomain(namespaceId, dom);
         }
 
         if (domObj == null) {

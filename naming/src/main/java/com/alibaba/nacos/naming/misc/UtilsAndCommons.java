@@ -20,8 +20,10 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Domain;
+import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -48,6 +50,8 @@ public class UtilsAndCommons {
     public static final String NACOS_NAMING_CATALOG_CONTEXT = "/catalog";
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
+
+    public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
 
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
 
@@ -98,11 +102,11 @@ public class UtilsAndCommons {
 
     public static final String API_SET_ALL_WEIGHTS = "/api/setWeight4AllIPs";
 
-    public static final String API_DOM_SERVE_STATUS = "/api/domServeStatus";
-
     public static final String API_IP_FOR_DOM = "/api/ip4Dom";
 
     public static final String API_DOM = "/api/dom";
+
+    public static final String SERVICE_GROUP_CONNECTOR = "##";
 
     public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
 
@@ -212,10 +216,18 @@ public class UtilsAndCommons {
 
 
     public static String getIPListStoreKey(Domain dom) {
+        if (dom instanceof VirtualClusterDomain) {
+            return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + ((VirtualClusterDomain) dom).getNamespaceId() +
+                UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
+        }
         return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getName();
     }
 
     public static String getDomStoreKey(Domain dom) {
+        if (dom instanceof VirtualClusterDomain) {
+            return UtilsAndCommons.DOMAINS_DATA_ID + "." + ((VirtualClusterDomain) dom).getNamespaceId() +
+                UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
+        }
         return UtilsAndCommons.DOMAINS_DATA_ID + "." + dom.getName();
     }
 
@@ -243,5 +255,13 @@ public class UtilsAndCommons {
         }
 
         return metadataMap;
+    }
+
+    public static String getDefaultNamespaceId() {
+        return "public";
+    }
+
+    public static String assembleFullServiceName(String namespaceId, String serviceName) {
+        return namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + serviceName;
     }
 }
