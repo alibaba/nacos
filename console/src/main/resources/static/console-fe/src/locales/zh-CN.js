@@ -18,6 +18,16 @@ const I18N_CONF = {
     blog: '博客',
     community: '社区',
     languageSwitchButton: 'En',
+    logout: '登出',
+  },
+  Login: {
+    login: '登录',
+    submit: '提交',
+    pleaseInputUsername: '请输入用户名',
+    pleaseInputPassword: '请输入密码',
+    invalidUsernameOrPassword: '用户名或密码错误',
+    passwordRequired: '密码不能为空',
+    usernameRequired: '用户名不能为空',
   },
   MainLayout: {
     nacosName: 'NACOS',

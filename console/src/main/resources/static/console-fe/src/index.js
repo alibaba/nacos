@@ -29,6 +29,7 @@ import Layout from './layouts/MainLayout';
 import CookieHelp from './utils/cookie';
 import { LANGUAGE_KEY } from './constants';
 
+import Login from './pages/Login';
 import Namespace from './pages/NameSpace';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
@@ -88,8 +89,9 @@ class App extends React.Component {
   static generateRouter() {
     return (
       <HashRouter>
-        <Layout navList={_menu.data}>
-          <Switch>
+        <Switch>
+          <Route path="/login" component={Login} />
+          <Layout navList={_menu.data}>
             <Route path="/" exact render={() => <Redirect to="/configurationManagement" />} />
             <Route path="/namespace" component={Namespace} />
             <Route path="/newconfig" component={Newconfig} />
@@ -103,8 +105,8 @@ class App extends React.Component {
             <Route path="/configurationManagement" component={ConfigurationManagement} />
             <Route path="/serviceManagement" component={ServiceList} />
             <Route path="/serviceDetail" component={ServiceDetail} />
-          </Switch>
-        </Layout>
+          </Layout>
+        </Switch>
       </HashRouter>
     );
   }
