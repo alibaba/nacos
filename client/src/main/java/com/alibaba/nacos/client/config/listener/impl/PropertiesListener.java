@@ -33,6 +33,7 @@ import java.util.Properties;
 public abstract class PropertiesListener extends AbstractListener {
     final static public Logger log = LogUtils.logger(PropertiesListener.class);
 
+    @Override
     public void receiveConfigInfo(String configInfo) {
         if (StringUtils.isEmpty(configInfo)) {
             return;

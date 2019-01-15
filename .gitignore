@@ -5,7 +5,9 @@
 target
 .project
 .idea
+.vscode
 .DS_Store
+.factorypath
 /logs
 *.iml
 node_modules

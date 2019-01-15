@@ -165,6 +165,7 @@ public class NacosNamingService implements NamingService {
         beatInfo.setCluster(instance.getClusterName());
         beatInfo.setWeight(instance.getWeight());
         beatInfo.setMetadata(instance.getMetadata());
+        beatInfo.setScheduled(false);
 
         beatReactor.addBeatInfo(serviceName, beatInfo);
 
