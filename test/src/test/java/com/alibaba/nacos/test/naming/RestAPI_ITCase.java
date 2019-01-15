@@ -575,7 +575,6 @@ public class RestAPI_ITCase {
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);
-
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         JSONObject json = JSON.parseObject(response.getBody());
