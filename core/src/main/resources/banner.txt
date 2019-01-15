@@ -1,11 +1,11 @@
 
          ,--.
        ,--.'|
-   ,--,:  : |                                           Nacos 0.7.0
+   ,--,:  : |                                           Nacos ${application.version}
 ,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode
-|   :  :  | |                      '   ,'\   .--.--.    Port: 8848
+|   :  :  | |                      '   ,'\   .--.--.    Port: ${server.port}
 :   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: ${pid}
-|   : '  '; | /       \   /     \.   ; ,. :|  :  /`./   Console: http://${nacos.local.ip}:8848/nacos/index.html
+|   : '  '; | /       \   /     \.   ; ,. :|  :  /`./   Console: http://${nacos.local.ip}:${server.port}/nacos/index.html
 '   ' ;.    ;.--.  .-. | /    / ''   | |: :|  :  ;_
 |   | | \   | \__\/: . ..    ' / '   | .; : \  \    `.      https://nacos.io
 '   : |  ; .' ," .--.; |'   ; :__|   :    |  `----.   \

@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Message, ConfigProvider } from '@alifd/next';
 import { DIALOG_FORM_LAYOUT } from './constant';
@@ -19,6 +20,15 @@ import { DIALOG_FORM_LAYOUT } from './constant';
 @ConfigProvider.config
 class EditInstanceDialog extends React.Component {
   static displayName = 'EditInstanceDialog';
+
+  static propTypes = {
+    serviceName: PropTypes.string,
+    clusterName: PropTypes.string,
+    openLoading: PropTypes.string,
+    closeLoading: PropTypes.string,
+    getInstanceList: PropTypes.func,
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);

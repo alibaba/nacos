@@ -25,16 +25,16 @@ import java.util.concurrent.Executor;
 public interface Listener {
 
     /**
-     * Executor to excute this receive
+     * Get executor for execute this receive
      *
      * @return Executor
      */
-    public Executor getExecutor();
+    Executor getExecutor();
 
     /**
-     * 接收配置信息
+     * Receive config info
      *
-     * @param configInfo 配置值
+     * @param configInfo config info
      */
-    public void receiveConfigInfo(final String configInfo);
+    void receiveConfigInfo(final String configInfo);
 }

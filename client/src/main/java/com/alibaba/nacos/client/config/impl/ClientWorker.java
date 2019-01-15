@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
+import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.LogUtils;
@@ -27,6 +28,7 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerHelper;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -43,7 +45,7 @@ import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
 /**
- * Longpulling
+ * Longpolling
  *
  * @author Nacos
  */
@@ -100,6 +102,8 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
         log.info(agent.getName(), "[unsubscribe] {}", groupKey);
+
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -111,6 +115,8 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
         log.info(agent.getName(), "[unsubscribe] {}", groupKey);
+
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
     @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
@@ -143,6 +149,8 @@ public class ClientWorker {
 
         log.info(agent.getName(), "[subscribe] {}", key);
 
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+
         return cache;
     }
 
@@ -170,6 +178,9 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
         log.info(agent.getName(), "[subscribe] {}", key);
+
+        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+
         return cache;
     }
 
@@ -289,7 +300,7 @@ public class ClientWorker {
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int)currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
-                executorService.execute(new LongPullingRunnable(i));
+                executorService.execute(new LongPollingRunnable(i));
             }
             currentLongingTaskCount = longingTaskCount;
         }
@@ -406,9 +417,10 @@ public class ClientWorker {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ServerHttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
+
         executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -423,7 +435,7 @@ public class ClientWorker {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPulling" + agent.getName());
+                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
                 t.setDaemon(true);
                 return t;
             }
@@ -440,10 +452,10 @@ public class ClientWorker {
         }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
 
-    class LongPullingRunnable implements Runnable {
+    class LongPollingRunnable implements Runnable {
         private int taskId;
 
-        public LongPullingRunnable(int taskId) {
+        public LongPollingRunnable(int taskId) {
             this.taskId = taskId;
         }
 
@@ -498,7 +510,7 @@ public class ClientWorker {
                 }
                 inInitializingCacheList.clear();
             } catch (Throwable e) {
-                log.error("500", "longPulling error", e);
+                log.error("500", "longPolling error", e);
             } finally {
                 executorService.execute(this);
             }
@@ -522,9 +534,9 @@ public class ClientWorker {
      */
     AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
         new HashMap<String, CacheData>());
-    ServerHttpAgent agent;
+
+    HttpAgent agent;
     ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
     private double currentLongingTaskCount = 0;
-
 }

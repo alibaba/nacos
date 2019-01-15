@@ -50,22 +50,6 @@ public class DomainsManagerTest extends BaseTest {
     }
 
     @Test
-    public void easyRemvIP4Dom() throws Exception {
-
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
-
-        domainsManager.chooseDomMap().put("nacos.test.1", domain);
-
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domainsManager.addLock("nacos.test.1");
-        domainsManager.easyRemvIP4Dom("nacos.test.1", ipList);
-    }
-
-    @Test
     public void searchDom() throws Exception {
         VirtualClusterDomain domain = new VirtualClusterDomain();
         domain.setName("nacos.test.1");

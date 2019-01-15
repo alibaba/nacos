@@ -88,11 +88,6 @@ public class Constants {
     /**
      * millisecond
      */
-    public static final int CONN_TIMEOUT = 2000;
-
-    /**
-     * millisecond
-     */
     public static final int SO_TIMEOUT = 60000;
 
     /**
@@ -114,7 +109,7 @@ public class Constants {
 
     public static final String WORD_SEPARATOR = Character.toString((char)2);
 
-    public static final String LONGPULLING_LINE_SEPARATOR = "\r\n";
+    public static final String LONGPOLLING_LINE_SEPARATOR = "\r\n";
 
     public static final String CLIENT_APPNAME_HEADER = "Client-AppName";
     public static final String CLIENT_REQUEST_TS_HEADER = "Client-RequestTS";
