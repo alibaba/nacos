@@ -48,7 +48,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ServiceListTest {
+public class ServiceList_ITCase {
 
     private NamingService naming;
 
