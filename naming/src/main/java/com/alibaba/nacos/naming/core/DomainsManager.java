@@ -474,6 +474,11 @@ public class DomainsManager {
     public int getPagedDom(String namespaceId, int startPage, int pageSize, String keyword, List<Domain> domainList) {
 
         List<Domain> matchList;
+
+        if (chooseDomMap(namespaceId) == null) {
+            return 0;
+        }
+
         if (StringUtils.isNotBlank(keyword)) {
             matchList = searchDomains(namespaceId, ".*" + keyword + ".*");
         } else {
