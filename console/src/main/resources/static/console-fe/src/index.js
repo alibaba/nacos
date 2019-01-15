@@ -30,6 +30,7 @@ import Layout from './layouts/MainLayout';
 import CookieHelp from './utils/cookie';
 import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
 
+import Login from './pages/Login';
 import Namespace from './pages/NameSpace';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
@@ -111,13 +112,15 @@ class App extends React.Component {
   get router() {
     return (
       <HashRouter>
-        <Layout navList={_menu.data}>
-          <Switch>
+        <Switch>
+          <Route path="/login" component={Login} />
+
+          <Layout navList={_menu.data}>
             {MENU.map(item => (
               <Route key={item.path} {...item} />
             ))}
-          </Switch>
-        </Layout>
+          </Layout>
+        </Switch>
       </HashRouter>
     );
   }
