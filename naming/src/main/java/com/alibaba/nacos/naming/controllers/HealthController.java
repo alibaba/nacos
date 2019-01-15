@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -38,15 +39,20 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nanamikon
+ * @since 0.8.0
  */
-@RestController("NamingHealthController")
+@RestController("namingHealthController")
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/health")
 public class HealthController {
     @Autowired
     private DomainsManager domainsManager;
 
-    @RequestMapping(method = RequestMethod.POST)
+    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     public String update(HttpServletRequest request) throws Exception {
+
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "serviceName");
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -75,16 +81,16 @@ public class HealthController {
                 throw new IllegalArgumentException("failed to proxy health update to " + server + ", dom: " + dom);
             }
         } else {
-            VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(dom);
+            VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, dom);
             // Only health check "none" need update health status with api
             if (!virtualClusterDomain.getEnableHealthCheck() && !virtualClusterDomain.getEnableClientBeat()) {
-                for (IpAddress ipAddress: virtualClusterDomain.allIPs(Lists.newArrayList(clusterName))) {
+                for (IpAddress ipAddress : virtualClusterDomain.allIPs(Lists.newArrayList(clusterName))) {
                     if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
                         ipAddress.setValid(valid);
                         Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
                             + ipAddress.getIp() + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName()
                             + ", dom: " + dom + ", msg: update thought HealthController api");
-                        PushService.domChanged(virtualClusterDomain.getName());
+                        PushService.domChanged(namespaceId, virtualClusterDomain.getName());
                         break;
                     }
                 }

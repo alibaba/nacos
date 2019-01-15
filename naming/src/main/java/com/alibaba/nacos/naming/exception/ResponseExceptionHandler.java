@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.exception;
 
+import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -29,17 +30,26 @@ public class ResponseExceptionHandler {
 
     @ExceptionHandler(NacosException.class)
     private ResponseEntity<String> handleNacosException(NacosException e) {
+        Loggers.SRV_LOG.error("got exception.", e);
         return ResponseEntity.status(e.getErrorCode()).body(e.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleParameterError(IllegalArgumentException ex) {
+        Loggers.SRV_LOG.error("got exception.", ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<String> handleMissingParams(MissingServletRequestParameterException ex) {
+        Loggers.SRV_LOG.error("got exception.", ex);
         String name = ex.getParameterName();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + name + "' is missing");
+    }
+
+    @ExceptionHandler(Exception.class)
+    private ResponseEntity<String> handleNacosException(Exception e) {
+        Loggers.SRV_LOG.error("got exception.", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
     }
 }

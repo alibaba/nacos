@@ -168,7 +168,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
                     NIO_EXECUTOR.execute(new PostProcessor(key));
                 }
             } catch (Throwable e) {
-                SRV_LOG.error("VIPSRV-HEALTH-CHECK", "error while processing NIO task", e);
+                SRV_LOG.error("[HEALTH-CHECK] error while processing NIO task", e);
             }
         }
     }
