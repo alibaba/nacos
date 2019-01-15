@@ -12,14 +12,25 @@
  */
 
 import React from 'react';
-import { Button, Checkbox, Dialog, Field, Form, Input, Loading } from '@alifd/next';
+import PropTypes from 'prop-types';
+import { Button, Checkbox, ConfigProvider, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 import SuccessDialog from '../../../components/SuccessDialog';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
+import { getParams, request } from '../../../globalLib';
+
 import './index.scss';
 
+@ConfigProvider.config
 class ConfigSync extends React.Component {
+  static displayName = 'ConfigSync';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
+    this.successDialog = React.createRef();
     this.field = new Field(this);
     this.dataId = getParams('dataId') || 'yanlin';
     this.group = getParams('group') || '';
@@ -77,6 +88,7 @@ class ConfigSync extends React.Component {
 
   getDataDetail() {
     const self = this;
+    const { locale = {} } = this.props;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
     let url = `/diamond-ops/configList/detail/serverId/${this.serverId}/dataId/${
@@ -125,8 +137,7 @@ class ConfigSync extends React.Component {
           });
         } else {
           Dialog.alert({
-            language: aliwareIntl.currentLanguageCode || 'zh-cn',
-            title: aliwareIntl.get('com.alibaba.nacos.page.configsync.error'),
+            title: locale.error,
             content: result.message,
           });
         }
@@ -145,6 +156,7 @@ class ConfigSync extends React.Component {
 
   sync() {
     const self = this;
+    const { locale = {} } = this.props;
     const payload = {
       dataId: this.field.getValue('dataId'),
       appName: this.field.getValue('appName'),
@@ -162,22 +174,18 @@ class ConfigSync extends React.Component {
       data: JSON.stringify(payload),
       success(res) {
         const _payload = {};
-        _payload.maintitle = aliwareIntl.get(
-          'com.alibaba.nacos.page.configsync.sync_configuration_main'
-        );
-        _payload.title = aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration');
+        _payload.maintitle = locale.syncConfigurationMain;
+        _payload.title = locale.syncConfiguration;
         _payload.content = '';
         _payload.dataId = payload.dataId;
         _payload.group = payload.group;
-        if (res.code === 200) {
-          _payload.isok = true;
-        } else {
+        _payload.isok = res.code === 200;
+        if (!_payload.isok) {
           _payload.isok = false;
           _payload.message = res.message;
         }
-        self.refs.success.openDialog(_payload);
+        self.successDialog.current.openDialog(_payload);
       },
-      error() {},
     });
   }
 
@@ -220,6 +228,7 @@ class ConfigSync extends React.Component {
 
   render() {
     const { init } = this.field;
+    const { locale = {} } = this.props;
     const formItemLayout = {
       labelCol: {
         span: 2,
@@ -238,17 +247,13 @@ class ConfigSync extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <h1>{aliwareIntl.get('com.alibaba.nacos.page.configsync.sync_configuration')}</h1>
+          <h1>{locale.syncConfiguration}</h1>
           <Form field={this.field}>
             <Form.Item label="Data ID:" required {...formItemLayout}>
               <Input htmlType="text" disabled={'disabled'} {...init('dataId')} />
               <div style={{ marginTop: 10 }}>
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore
-                    ? aliwareIntl.get('com.alibaba.nacos.page.configsync.retracted')
-                    : aliwareIntl.get(
-                        'com.alibaba.nacos.page.configsync.for_more_advanced_options'
-                      )}
+                  {this.state.showmore ? locale.collapse : locale.advancedOptions}
                 </a>
               </div>
             </Form.Item>
@@ -256,29 +261,15 @@ class ConfigSync extends React.Component {
               <Form.Item label="Group ID:" required {...formItemLayout}>
                 <Input htmlType="text" disabled={'disabled'} {...init('group')} />
               </Form.Item>
-              <Form.Item
-                label={aliwareIntl.get('com.alibaba.nacos.page.configsync.home')}
-                required
-                {...formItemLayout}
-              >
+              <Form.Item label={locale.home} required {...formItemLayout}>
                 <Input htmlType="text" disabled={'disabled'} {...init('appName')} />
               </Form.Item>
             </div>
-            <Form.Item
-              label={aliwareIntl.get(
-                'com.alibaba.nacos.page.configsync.belongs_to_the_environment'
-              )}
-              required
-              {...formItemLayout}
-            >
+            <Form.Item label={locale.region} required {...formItemLayout}>
               <Input htmlType="text" disabled={'disabled'} {...init('envs')} />
             </Form.Item>
 
-            <Form.Item
-              label={aliwareIntl.get('com.alibaba.nacos.page.configsync.configuration')}
-              required
-              {...formItemLayout}
-            >
+            <Form.Item label={locale.configuration} required {...formItemLayout}>
               <Input.TextArea
                 htmlType="text"
                 multiple
@@ -287,11 +278,7 @@ class ConfigSync extends React.Component {
                 {...init('content')}
               />
             </Form.Item>
-            <Form.Item
-              label={aliwareIntl.get('com.alibaba.nacos.page.configsync.target')}
-              required
-              {...formItemLayout}
-            >
+            <Form.Item label={locale.target} required {...formItemLayout}>
               <div>
                 <Checkbox.Group
                   value={this.state.envvalues}
@@ -303,16 +290,16 @@ class ConfigSync extends React.Component {
             <Form.Item label=" " {...formItemLayout}>
               <div style={{ textAlign: 'right' }}>
                 <Button type="primary" onClick={this.sync.bind(this)} style={{ marginRight: 10 }}>
-                  {aliwareIntl.get('com.alibaba.nacos.page.configsync.sync')}
+                  {locale.sync}
                 </Button>
                 {}
                 <Button type="light" onClick={this.goList.bind(this)}>
-                  {aliwareIntl.get('com.alibaba.nacos.page.configsync.return')}
+                  {locale.back}
                 </Button>
               </div>
             </Form.Item>
           </Form>
-          <SuccessDialog ref="success" />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );

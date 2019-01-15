@@ -14,7 +14,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Dialog, Pagination, Transfer } from '@alifd/next';
-import { request, aliwareIntl } from '../../globalLib';
+import { request } from '../../globalLib';
 import './index.scss';
 
 class BatchHandle extends React.Component {
@@ -118,7 +118,6 @@ class BatchHandle extends React.Component {
     return (
       <Dialog
         visible={this.state.visible}
-        language={aliwareIntl.currentLanguageCode || 'zh-cn'}
         style={{ width: '500px' }}
         onCancel={this.closeDialog.bind(this)}
         onClose={this.closeDialog.bind(this)}
@@ -132,12 +131,10 @@ class BatchHandle extends React.Component {
             dataSource={this.state.dataSourceList || []}
             value={this.state.valueList}
             onChange={this.onChange.bind(this)}
-            language={aliwareIntl.currentLanguageCode || 'zh-cn'}
           />
           <Pagination
             style={{ marginTop: 10 }}
             current={this.state.currentPage}
-            language={aliwareIntl.currentLanguageCode || 'zh-cn'}
             total={this.state.total}
             pageSize={this.state.pageSize}
             onChange={this.changePage.bind(this)}
