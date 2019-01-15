@@ -100,6 +100,9 @@ public class RaftCore {
     @Autowired
     private SwitchDomain switchDomain;
 
+    @Autowired
+    private RaftProxy raftProxy;
+
     public volatile Notifier notifier = new Notifier();
 
     @PostConstruct
@@ -158,7 +161,7 @@ public class RaftCore {
             Map<String, String> parameters = new HashMap<>(1);
             parameters.put("key", key);
 
-            RaftProxy.proxyPostLarge(API_PUB, params.toJSONString(), parameters);
+            raftProxy.proxyPostLarge(getLeader().ip, API_PUB, params.toJSONString(), parameters);
 
             return;
         }
@@ -232,7 +235,7 @@ public class RaftCore {
                 Map<String, String> params = new HashMap<>(1);
                 params.put("key", URLEncoder.encode(key, "UTF-8"));
 
-                RaftProxy.proxyGET(API_DEL, params);
+                raftProxy.proxyGET(getLeader().ip, API_DEL, params);
                 return;
             }
 

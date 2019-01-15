@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -33,8 +35,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.naming.raft.RaftPeer.State.FOLLOWER;
-
 /**
  * @author nacos
  */
@@ -47,6 +47,12 @@ public class PerformanceLoggerThread {
 
     @Autowired
     private SwitchDomain switchDomain;
+
+    @Autowired
+    private PushService pushService;
+
+    @Autowired
+    private RaftCore raftCore;
 
     private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
@@ -91,8 +97,8 @@ public class PerformanceLoggerThread {
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void refreshMetrics() {
-        PushService.setFailedPush(0);
-        PushService.setTotalPush(0);
+        pushService.setFailedPush(0);
+        pushService.setTotalPush(0);
         MetricsMonitor.getHttpHealthCheckMonitor().set(0);
         MetricsMonitor.getMysqlHealthCheckMonitor().set(0);
         MetricsMonitor.getTcpHealthCheckMonitor().set(0);
@@ -100,10 +106,10 @@ public class PerformanceLoggerThread {
 
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectmetrics() {
-        int domCount = domainsManager.getDomCount();
+        int domCount = serviceManager.getDomCount();
         MetricsMonitor.getDomCountMonitor().set(domCount);
 
-        int ipCount = domainsManager.getInstanceCount();
+        int ipCount = serviceManager.getInstanceCount();
         MetricsMonitor.getIpCountMonitor().set(ipCount);
 
         long maxPushCost = getMaxPushCost();
@@ -112,12 +118,12 @@ public class PerformanceLoggerThread {
         long avgPushCost = getAvgPushCost();
         MetricsMonitor.getAvgPushCostMonitor().set(avgPushCost);
 
-        MetricsMonitor.getTotalPushMonitor().set(PushService.getTotalPush());
-        MetricsMonitor.getFailedPushMonitor().set(PushService.getFailedPushCount());
+        MetricsMonitor.getTotalPushMonitor().set(pushService.getTotalPush());
+        MetricsMonitor.getFailedPushMonitor().set(pushService.getFailedPushCount());
 
-        if (RaftCore.isLeader()) {
+        if (raftCore.isLeader()) {
             MetricsMonitor.getLeaderStatusMonitor().set(1);
-        } else if (RaftCore.getPeerSet().local().state == FOLLOWER) {
+        } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
             MetricsMonitor.getLeaderStatusMonitor().set(0);
         } else {
             MetricsMonitor.getLeaderStatusMonitor().set(2);
@@ -132,8 +138,6 @@ public class PerformanceLoggerThread {
                 int domCount = serviceManager.getDomCount();
                 int ipCount = serviceManager.getInstanceCount();
                 long maxPushMaxCost = getMaxPushCost();
-                int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getInstanceCount();
                 long maxPushCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
 
