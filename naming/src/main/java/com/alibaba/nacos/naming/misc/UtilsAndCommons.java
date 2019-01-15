@@ -78,6 +78,8 @@ public class UtilsAndCommons {
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
+    public static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+
     public static final int RAFT_PUBLISH_TIMEOUT = 5000;
 
     static public final String RAFT_DOM_PRE = "meta";

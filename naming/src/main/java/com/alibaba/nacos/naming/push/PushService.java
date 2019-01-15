@@ -121,16 +121,15 @@ public class PushService {
         }
     }
 
-    public static int getTotalPush() {
+    public int getTotalPush() {
         return totalPush;
     }
 
-    public void addClient(String namespaceId,
-    public static void setTotalPush(int totalPush) {
+    public void setTotalPush(int totalPush) {
         PushService.totalPush = totalPush;
     }
 
-    public static void addClient(String namespaceId,
+    public void addClient(String namespaceId,
                                  String dom,
                                  String clusters,
                                  String agent,
@@ -307,11 +306,11 @@ public class PushService {
         return new ArrayList<Receiver.AckEntry>(ackMap.values());
     }
 
-    public static int getFailedPushCount() {
+    public int getFailedPushCount() {
         return ackMap.size() + failedPush;
     }
 
-    public static void setFailedPush(int failedPush) {
+    public void setFailedPush(int failedPush) {
         PushService.failedPush = failedPush;
     }
 

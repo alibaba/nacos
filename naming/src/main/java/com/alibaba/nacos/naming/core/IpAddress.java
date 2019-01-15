@@ -214,9 +214,9 @@ public class IpAddress extends Instance implements Comparable {
     @JSONField(serialize = false)
     public String getDatumKey() {
         if (getPort() > 0) {
-            return getIp() + ":" + getPort() + ":" + DistroMapper.LOCALHOST_SITE;
+            return getIp() + ":" + getPort() + ":" + UtilsAndCommons.LOCALHOST_SITE;
         } else {
-            return getIp() + ":" + DistroMapper.LOCALHOST_SITE;
+            return getIp() + ":" + UtilsAndCommons.LOCALHOST_SITE;
         }
     }
 

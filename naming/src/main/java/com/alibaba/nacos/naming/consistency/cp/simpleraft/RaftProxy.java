@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.cp.simpleraft;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.springframework.stereotype.Component;
 
 import java.net.HttpURLConnection;
 import java.util.Map;
@@ -25,18 +26,11 @@ import java.util.Map;
 /**
  * @author nacos
  */
+@Component
 public class RaftProxy {
-    public static void proxyGET(String api, Map<String, String> params) throws Exception {
-        if (RaftCore.isLeader()) {
-            throw new IllegalStateException("I'm leader, no need to do proxy");
-        }
 
-        if (RaftCore.getLeader() == null) {
-            throw new IllegalStateException("No leader at present");
-        }
-
+    public void proxyGET(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
-        String server = RaftCore.getLeader().ip;
         if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
             server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
         }
@@ -48,17 +42,8 @@ public class RaftProxy {
         }
     }
 
-    public static void proxyPostLarge(String api, String content, Map<String, String> headers) throws Exception {
-        if (RaftCore.isLeader()) {
-            throw new IllegalStateException("I'm leader, no need to do proxy");
-        }
-
-        if (RaftCore.getLeader() == null) {
-            throw new IllegalStateException("No leader at present");
-        }
-
+    public static void proxyPostLarge(String server, String api, String content, Map<String, String> headers) throws Exception {
         // do proxy
-        String server = RaftCore.getLeader().ip;
         if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
             server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
         }
