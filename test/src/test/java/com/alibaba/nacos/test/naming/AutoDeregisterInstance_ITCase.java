@@ -85,7 +85,6 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
 
@@ -123,7 +122,6 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
 
@@ -156,14 +154,13 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
 
         instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(instances.size(), 1);
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
 
@@ -200,14 +197,13 @@ public class AutoDeregisterInstance_ITCase {
 
         namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
 
         instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(instances.size(), 1);
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
         beatInfo.setCluster("c1");

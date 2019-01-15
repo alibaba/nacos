@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -45,9 +46,6 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
     private static AsyncHttpClient asyncHttpClient;
 
-    public HttpHealthCheckProcessor() {
-    }
-
     static {
         try {
             AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
@@ -63,8 +61,9 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
             builder.setMaxRequestRetry(0);
             builder.setUserAgent("VIPServer");
             asyncHttpClient = new AsyncHttpClient(builder.build());
+
         } catch (Throwable e) {
-            SRV_LOG.error("VIPSRV-HEALTH-CHECK", "Error while constructing HTTP asynchronous client, " + e.toString(), e);
+            SRV_LOG.error("[HEALTH-CHECK] Error while constructing HTTP asynchronous client", e);
         }
     }
 
@@ -93,16 +92,14 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
                 if (ip.isMarked()) {
                     if (SRV_LOG.isDebugEnabled()) {
-                        SRV_LOG.debug("http check, ip is marked as to skip health check, ip:" + ip.getIp());
+                        SRV_LOG.debug("http check, ip is marked as to skip health check, ip: {}" + ip.getIp());
                     }
                     continue;
                 }
 
                 if (!ip.markChecking()) {
-                    SRV_LOG.warn("http check started before last one finished, dom: "
-                            + task.getCluster().getDom().getName() + ":"
-                            + task.getCluster().getName() + ":"
-                            + ip.getIp());
+                    SRV_LOG.warn("http check started before last one finished, dom: {}:{}:{}",
+                        task.getCluster().getDom().getName(), task.getCluster().getName(), ip.getIp());
 
                     reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getHttpHealthParams());
                     continue;
@@ -126,6 +123,7 @@ public class HttpHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 }
 
                 builder.execute(new HttpHealthCheckCallback(ip, task));
+                MetricsMonitor.getHttpHealthCheckMonitor().incrementAndGet();
             } catch (Throwable e) {
                 ip.setCheckRT(Switch.getHttpHealthParams().getMax());
                 checkFail(ip, task, "http:error:" + e.getMessage());

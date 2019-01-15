@@ -34,7 +34,7 @@ public class UtilAndComs {
 
     public static final String NACOS_URL_INSTANCE = NACOS_URL_BASE + "/instance";
 
-    public static final String DEFAULT_NAMESPACE_ID = "default";
+    public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
 
@@ -45,4 +45,10 @@ public class UtilAndComs {
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
 
     public static final String SERVER_ADDR_IP_SPLITER = ":";
+
+    public static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT = Runtime.getRuntime().availableProcessors() > 1 ?
+        Runtime.getRuntime().availableProcessors() / 2 : 1;
+
+    public static final int DEFAULT_POLLING_THREAD_COUNT = Runtime.getRuntime().availableProcessors() > 1 ?
+        Runtime.getRuntime().availableProcessors() / 2 : 1;
 }

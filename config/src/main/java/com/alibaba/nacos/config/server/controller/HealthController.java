@@ -64,17 +64,17 @@ public class HealthController {
         } else if (dbStatus.contains(heathWarnStr) && ServerListService.isAddressServerHealth() && ServerListService
             .isInIpList()) {
             sb.append("WARN:");
-            sb.append("从数据库 ").append(dbStatus.split(":")[1]).append(" down. ");
+            sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {
             sb.append("DOWN:");
             if (dbStatus.contains(heathDownStr)) {
-                sb.append("主数据库 ").append(dbStatus.split(":")[1]).append(" down. ");
+                sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
             if (!ServerListService.isAddressServerHealth()) {
-                sb.append("地址服务器 down. ");
+                sb.append("address server down. ");
             }
             if (!ServerListService.isInIpList()) {
-                sb.append("server ").append(LOCAL_IP).append(" 不在地址服务器的IP列表中. ");
+                sb.append("server ip ").append(LOCAL_IP).append(" is not in the serverList of address server. ");
             }
         }
 

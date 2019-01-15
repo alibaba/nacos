@@ -12,13 +12,22 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
+import { getParams } from '../../globalLib';
+import { ConfigProvider, Dialog, Loading, Tab } from '@alifd/next';
+
 import './index.scss';
-import { getParams, aliwareIntl } from '../../globalLib';
-import { Dialog, Loading, Tab } from '@alifd/next';
 
 const TabPane = Tab.Item;
 
+@ConfigProvider.config
 class ShowCodeing extends React.Component {
+  static displayName = 'ShowCodeing';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -251,23 +260,19 @@ public class ConfigExample {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const footer = <div />;
     return (
       <div>
         <Dialog
-          title={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.Sample_code')}
+          title={locale.sampleCode}
           style={{ width: '80%' }}
           visible={this.state.dialogvisible}
           footer={footer}
           onClose={this.closeDialog.bind(this)}
-          language={aliwareIntl.currentLanguageCode}
         >
           <div style={{ height: 500 }}>
-            <Loading
-              tip={aliwareIntl.get('com.alibaba.nacos.component.ShowCodeing.loading')}
-              style={{ width: '100%' }}
-              visible={this.state.loading}
-            >
+            <Loading tip={locale.loading} style={{ width: '100%' }} visible={this.state.loading}>
               <Tab shape={'text'} style={{ height: 40, paddingBottom: 10 }}>
                 <TabPane
                   title={'Java'}

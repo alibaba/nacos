@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.collections.CollectionUtils;
 
 import java.net.ConnectException;
@@ -39,7 +40,6 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  * @author nacos
  */
 public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor implements Runnable {
-
     private Map<String, BeatKey> keyMap = new ConcurrentHashMap<>();
 
     private BlockingQueue<Beat> taskQueue = new LinkedBlockingQueue<Beat>();
@@ -127,6 +127,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
 
             Beat beat = new Beat(ip, task);
             taskQueue.add(beat);
+            MetricsMonitor.getTcpHealthCheckMonitor().incrementAndGet();
         }
 
 //        selector.wakeup();
@@ -167,7 +168,7 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
                     NIO_EXECUTOR.execute(new PostProcessor(key));
                 }
             } catch (Throwable e) {
-                SRV_LOG.error("VIPSRV-HEALTH-CHECK", "error while processing NIO task", e);
+                SRV_LOG.error("[HEALTH-CHECK] error while processing NIO task", e);
             }
         }
     }
