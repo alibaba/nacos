@@ -1,7 +1,7 @@
 
          ,--.
        ,--.'|
-   ,--,:  : |                                           Nacos 0.7.0
+   ,--,:  : |                                           Nacos ${application.version}
 ,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode
 |   :  :  | |                      '   ,'\   .--.--.    Port: ${server.port}
 :   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: ${pid}
