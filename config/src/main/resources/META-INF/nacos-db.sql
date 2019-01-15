@@ -177,3 +177,18 @@ CREATE TABLE `tenant_info` (
   UNIQUE KEY `uk_tenant_info_kptenantid` (`kp`,`tenant_id`),
   KEY `idx_tenant_id` (`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='tenant_info';
+
+CREATE TABLE users (
+	username varchar(50) NOT NULL PRIMARY KEY,
+	password varchar(500) NOT NULL,
+	enabled boolean NOT NULL
+);
+
+CREATE TABLE roles (
+	username varchar(50) NOT NULL,
+	role varchar(50) NOT NULL
+);
+
+INSERT INTO users (username, password, enabled) VALUES ('admin', '$2a$10$HxtJtd59imujvbux.i55zOGewhnJiLVXX8D9AETDMV.XtBLDGOXtW', TRUE);
+
+INSERT INTO roles (username, role) VALUES ('admin', 'ROLE_ADMIN');

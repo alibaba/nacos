@@ -24,7 +24,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * ServiceInfo
+ *
+ * @author dungu.zpf
  */
 public class ServiceInfo {
 
@@ -46,8 +48,6 @@ public class ServiceInfo {
 
     private String checksum = "";
 
-    private String env = "";
-
     private volatile boolean allIPs = false;
 
     public ServiceInfo() {
@@ -63,48 +63,22 @@ public class ServiceInfo {
 
     public ServiceInfo(String key) {
 
-        int maxKeySectionCount = 4;
-        int allIpFlagIndex = 3;
-        int envIndex = 2;
+        int maxIndex = 2;
         int clusterIndex = 1;
         int serviceNameIndex = 0;
 
         String[] keys = key.split(SPLITER);
-        if (keys.length >= maxKeySectionCount) {
+        if (keys.length >= maxIndex) {
             this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
-            this.env = keys[envIndex];
-            if (strEquals(keys[allIpFlagIndex], ALL_IPS)) {
-                this.setAllIPs(true);
-            }
-        } else if (keys.length >= allIpFlagIndex) {
-            this.name = keys[serviceNameIndex];
-            this.clusters = keys[clusterIndex];
-            if (strEquals(keys[envIndex], ALL_IPS)) {
-                this.setAllIPs(true);
-            } else {
-                this.env = keys[envIndex];
-            }
-        } else if (keys.length >= envIndex) {
-            this.name = keys[serviceNameIndex];
-            if (strEquals(keys[clusterIndex], ALL_IPS)) {
-                this.setAllIPs(true);
-            } else {
-                this.clusters = keys[clusterIndex];
-            }
         }
 
         this.name = keys[0];
     }
 
     public ServiceInfo(String name, String clusters) {
-        this(name, clusters, EMPTY);
-    }
-
-    public ServiceInfo(String name, String clusters, String env) {
         this.name = name;
         this.clusters = clusters;
-        this.env = env;
     }
 
     public int ipCount() {
@@ -156,7 +130,6 @@ public class ServiceInfo {
     }
 
     public List<Instance> getHosts() {
-
         return new ArrayList<Instance>(hosts);
     }
 
@@ -190,45 +163,39 @@ public class ServiceInfo {
 
     @JSONField(serialize = false)
     public String getKey() {
-        return getKey(name, clusters, env, isAllIPs());
+        return getKey(name, clusters);
     }
 
     @JSONField(serialize = false)
     public String getKeyEncoded() {
         try {
-            return getKey(URLEncoder.encode(name, "UTF-8"), clusters, env, isAllIPs());
+            return getKey(URLEncoder.encode(name, "UTF-8"), clusters);
         } catch (UnsupportedEncodingException e) {
             return getKey();
         }
     }
 
     @JSONField(serialize = false)
-    public static String getKey(String name, String clusters, String unit) {
-        return getKey(name, clusters, unit, false);
+    public static ServiceInfo fromKey(String key) {
+        ServiceInfo serviceInfo = new ServiceInfo();
+
+        if (key.contains(SPLITER)) {
+            serviceInfo.setName(key.split(SPLITER)[0]);
+            serviceInfo.setClusters(key.split(SPLITER)[1]);
+            return serviceInfo;
+        }
+        serviceInfo.setName(key);
+        return serviceInfo;
     }
 
     @JSONField(serialize = false)
-    public static String getKey(String name, String clusters, String unit, boolean isAllIPs) {
-
-        if (isEmpty(unit)) {
-            unit = EMPTY;
-        }
-
-        if (!isEmpty(clusters) && !isEmpty(unit)) {
-            return isAllIPs ? name + SPLITER + clusters + SPLITER + unit + SPLITER + ALL_IPS
-                : name + SPLITER + clusters + SPLITER + unit;
-        }
+    public static String getKey(String name, String clusters) {
 
         if (!isEmpty(clusters)) {
-            return isAllIPs ? name + SPLITER + clusters + SPLITER + ALL_IPS : name + SPLITER + clusters;
+            return name + SPLITER + clusters;
         }
 
-        if (!isEmpty(unit)) {
-            return isAllIPs ? name + SPLITER + EMPTY + SPLITER + unit + SPLITER + ALL_IPS :
-                name + SPLITER + EMPTY + SPLITER + unit;
-        }
-
-        return isAllIPs ? name + SPLITER + ALL_IPS : name;
+        return name;
     }
 
     @Override

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
@@ -85,9 +86,11 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(ipAddress);
         domain.updateIPs(ipList);
 
-        Mockito.when(domainsManager.getDomain("nacos.test.1")).thenReturn(domain);
+        Mockito.when(domainsManager.getDomain(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
 
-        Mockito.when(domainsManager.addLock("nacos.test.1")).thenReturn(new ReentrantLock());
+        Mockito.when(domainsManager.addLockIfAbsent(
+            UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")))
+            .thenReturn(new ReentrantLock());
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.put("/naming/instance")
@@ -132,7 +135,7 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(ipAddress);
         domain.updateIPs(ipList);
 
-        Mockito.when(domainsManager.getDomain("nacos.test.1")).thenReturn(domain);
+        Mockito.when(domainsManager.getDomain(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.get("/v1/ns/instances")

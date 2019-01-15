@@ -42,13 +42,12 @@ public class Limiter {
     /**
      * qps 5
      */
-    private static final String DEFAULT_LIMIT = "5";
     private static double limit = 5;
 
     static {
         try {
             String limitTimeStr = System
-                .getProperty("limitTime", DEFAULT_LIMIT);
+                .getProperty("limitTime", String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
             log.info("limitTime:{}", limit);
         } catch (Exception e) {

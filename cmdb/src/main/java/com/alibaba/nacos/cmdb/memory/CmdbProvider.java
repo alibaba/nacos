@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 @Component
 public class CmdbProvider implements CmdbReader, CmdbWriter {

@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Select, Message, ConfigProvider } from '@alifd/next';
 import { DIALOG_FORM_LAYOUT } from './constant';
@@ -19,6 +20,13 @@ import { DIALOG_FORM_LAYOUT } from './constant';
 @ConfigProvider.config
 class EditClusterDialog extends React.Component {
   static displayName = 'EditClusterDialog';
+
+  static propTypes = {
+    openLoading: PropTypes.func,
+    closeLoading: PropTypes.func,
+    getServiceDetail: PropTypes.func,
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);

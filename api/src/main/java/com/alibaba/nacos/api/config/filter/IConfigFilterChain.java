@@ -30,6 +30,6 @@ public interface IConfigFilterChain {
      * @param response response
      * @throws NacosException NacosException
      */
-    public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
+    void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
 
 }

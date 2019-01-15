@@ -16,7 +16,7 @@
 package com.alibaba.nacos.console.model;
 
 /**
- * 命名空间
+ * Namespace
  *
  * @author diamond
  */
@@ -30,7 +30,7 @@ public class Namespace {
 
     private int configCount;
     /**
-     * 0 全局配置， 1 默认私有命名空间 ，2 自定义命名空间
+     * 0 : Global configuration， 1 : Default private namespace ，2 : Custom namespace
      */
     private int type;
 
