@@ -12,14 +12,16 @@
  */
 
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
-import { ConfigProvider } from '@alifd/next';
+import { ConfigProvider, Dropdown, Menu } from '@alifd/next';
 import siteConfig from '../config';
 import { changeLanguage } from '@/reducers/locale';
 import { aliwareIntl } from '@/globalLib';
 
 import './index.scss';
 
+@withRouter
 @connect(
   state => ({ ...state.locale }),
   { changeLanguage }
@@ -37,8 +39,29 @@ class Header extends React.Component {
     window.location.reload();
   };
 
+  logout = () => {
+    window.localStorage.clear();
+    this.props.history.push('/login');
+  };
+
+  getUsername = () => {
+    const token = window.localStorage.getItem('token');
+    if (token) {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace('-', '+').replace('_', '/');
+      const parsedToken = JSON.parse(window.atob(base64));
+      console.log(parsedToken);
+      return parsedToken.sub;
+    }
+    return '';
+  };
+
   render() {
-    const { locale = {}, language = 'en-us' } = this.props;
+    const {
+      locale = {},
+      language = 'en-us',
+      location: { pathname },
+    } = this.props;
     const { home, docs, blog, community, languageSwitchButton } = locale;
     const BASE_URL = `https://nacos.io/${language}/`;
     const NAV_MENU = [
@@ -74,6 +97,14 @@ class Header extends React.Component {
               title={siteConfig.name}
             />
           </a>
+          {/* if is login page, we will show logout */}
+          {pathname !== '/login' && (
+            <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
+              <Menu>
+                <Menu.Item onClick={this.logout}>{locale.logout}</Menu.Item>
+              </Menu>
+            </Dropdown>
+          )}
           <span className="language-switch language-switch-primary" onClick={this.switchLang}>
             {languageSwitchButton}
           </span>
