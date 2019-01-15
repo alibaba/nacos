@@ -235,18 +235,8 @@
                         <exclude>REPORTING-BUGS.md</exclude>
                         <exclude>README.md</exclude>
                         <exclude>.github/**/*</exclude>
-                        <exclude>src/main/resources/*/*/*</exclude>
-                        <exclude>src/main/resources/*/*</exclude>
-                        <exclude>src/main/resources/*</exclude>
-                        <exclude>src/test/resources/*</exclude>
-                        <exclude>src/main/resources/static/**/*.js</exclude>
-                        <exclude>src/main/resources/**/*.svg</exclude>
-                        <exclude>src/main/resources/static/css/*</exclude>
-                        <exclude>src/main/resources/static/js/*</exclude>
-                        <exclude>src/main/resources/static/console-fe/public/css/console1412.css</exclude>
-                        <exclude>src/main/resources/static/console-fe/public/js/vs/editor/editor.main.css</exclude>
-                        <exclude>src/main/resources/static/console-fe/dist/js/vs/editor/editor.main.css</exclude>
-                        <exclude>src/main/resources/static/console-fe/dist/*/*</exclude>
+                        <exclude>src/main/resources/**</exclude>
+                        <exclude>src/test/**</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
@@ -708,6 +698,12 @@
             </dependency>
 
             <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt</artifactId>
+                <version>0.9.1</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>4.0.42.Final</version>
@@ -730,6 +726,7 @@
                 <artifactId>javatuples</artifactId>
                 <version>1.2</version>
             </dependency>
+
 
         </dependencies>
     </dependencyManagement>

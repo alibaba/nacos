@@ -33,6 +33,7 @@ import java.util.Map.Entry;
 
 import javax.annotation.PostConstruct;
 
+import com.alibaba.nacos.config.server.model.*;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -53,19 +54,6 @@ import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
-import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.model.SubInfo;
-import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
@@ -452,6 +440,15 @@ public class PersistService {
             info.setTenantName(rs.getString("tenant_name"));
             info.setTenantDesc(rs.getString("tenant_desc"));
             return info;
+        }
+    }
+
+    static final class UserRowMapper implements RowMapper<User> {
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User();
+            user.setUsername(rs.getString("username"));
+            user.setPassword(rs.getString("password"));
+            return user;
         }
     }
 
@@ -3113,6 +3110,22 @@ public class PersistService {
         }
     }
 
+    public User findUserByUsername(String username) {
+        String sql = "SELECT username,password FROM users WHERE username=? ";
+        try {
+            return this.jt.queryForObject(sql, new Object[] {username}, USER_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        } catch (Exception e) {
+            fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
     private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
         for (Map<String, Object> map : list) {
@@ -3264,6 +3277,8 @@ public class PersistService {
     }
 
     static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
+
+    static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
 
     static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 

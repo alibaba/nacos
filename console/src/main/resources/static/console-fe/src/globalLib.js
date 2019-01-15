@@ -603,7 +603,22 @@ const request = (function(_global) {
         beforeSend(xhr) {
           config.beforeSend && config.beforeSend(xhr);
         },
+        headers: {
+          Authorization: localStorage.getItem('token'),
+        },
       })
+    ).then(
+      success => {},
+      error => {
+        // 处理403 forbidden
+        if (error && (error.status === 403 || error.status === 401)) {
+          // 跳转至login页
+          // TODO: 用 react-router 重写，改造成本比较高，这里先hack
+          const url = window.location.href;
+          const base_url = url.split('#')[0];
+          window.location = `${base_url}#/login`;
+        }
+      }
     );
   }
   // 暴露方法
