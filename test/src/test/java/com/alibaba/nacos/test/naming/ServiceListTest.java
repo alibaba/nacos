@@ -92,7 +92,6 @@ public class ServiceListTest {
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
         serviceInfoList = naming.getSubscribeServices();
 
-        System.out.println("dfdfdfd = " + serviceInfoList);
         Assert.assertEquals(count+1, serviceInfoList.size());
     }
 
@@ -126,6 +125,7 @@ public class ServiceListTest {
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c2");
+        TimeUnit.SECONDS.sleep(5);
 
         Assert.assertEquals(count+1, serviceInfoList.size());
     }
