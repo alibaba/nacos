@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.UnknownHostException;
 
@@ -25,6 +26,7 @@ import java.net.UnknownHostException;
  *
  * @author Nacos
  */
+@EnableScheduling
 @SpringBootApplication
 public class Config {
 

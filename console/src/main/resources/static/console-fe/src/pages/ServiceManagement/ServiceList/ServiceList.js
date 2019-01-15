@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   Button,
   Field,
@@ -38,6 +39,11 @@ const { Column } = Table;
 @ConfigProvider.config
 class ServiceList extends React.Component {
   static displayName = 'ServiceList';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
