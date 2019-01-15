@@ -18,6 +18,16 @@ const I18N_CONF = {
     blog: 'BLOG',
     community: 'COMMUNITY',
     languageSwitchButton: '中',
+    logout: 'logout',
+    passwordRequired: 'password should not be empty',
+    usernameRequired: 'username should not be empty',
+  },
+  Login: {
+    login: 'Login',
+    submit: 'Submit',
+    pleaseInputUsername: 'Please input username',
+    pleaseInputPassword: 'Please input password',
+    invalidUsernameOrPassword: 'invalid username or password',
   },
   MainLayout: {
     nacosName: 'NACOS',

@@ -82,7 +82,7 @@ public class ClientBeatCheckTask implements Runnable {
                 + ipAddress.getWeight() + "_" + ipAddress.getClusterName();
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/remvIP4Dom?dom="
-                + domain.getName() + "&ipList=" + ipList + "&token=" + domain.getToken();
+                + domain.getName() + "&ipList=" + ipList + "&token=" + domain.getToken() + "&namespaceId=" + domain.getNamespaceId();
             HttpClient.HttpResult result = HttpClient.httpGet(url, null, null);
             if (result.code != HttpURLConnection.HTTP_OK) {
                 Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",

@@ -592,6 +592,11 @@ public class ServiceManager implements DataListener {
     public int getPagedDom(String namespaceId, int startPage, int pageSize, String keyword, List<Domain> domainList) {
 
         List<VirtualClusterDomain> matchList;
+
+        if (chooseDomMap(namespaceId) == null) {
+            return 0;
+        }
+
         if (StringUtils.isNotBlank(keyword)) {
             matchList = searchDomains(namespaceId, ".*" + keyword + ".*");
         } else {
