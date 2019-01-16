@@ -48,12 +48,12 @@ public class Switch {
         RaftCore.listen(new RaftListener() {
             @Override
             public boolean interests(String key) {
-                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
+                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME);
             }
 
             @Override
             public boolean matchUnlistenKey(String key) {
-                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
+                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME);
             }
 
             @Override

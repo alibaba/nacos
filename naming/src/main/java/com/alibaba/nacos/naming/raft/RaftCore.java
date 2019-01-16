@@ -354,7 +354,7 @@ public class RaftCore {
         local.resetLeaderDue();
 
         // do apply
-        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) || UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
+        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) || UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
             RaftStore.write(datum);
         }
 
@@ -411,7 +411,7 @@ public class RaftCore {
         String key = params.getString("key");
         deleteDatum(key);
 
-        if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+        if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
 
             if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
                 //set leader term:
@@ -570,8 +570,8 @@ public class RaftCore {
                     JSONObject element = new JSONObject();
                     String key;
 
-                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
-                        key = (datum.key).split(UtilsAndCommons.DOMAINS_DATA_ID)[1];
+                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
+                        key = (datum.key).split(UtilsAndCommons.DOMAINS_DATA_ID_PRE)[1];
                         element.put("key", UtilsAndCommons.RAFT_DOM_PRE + key);
                     } else if (datum.key.startsWith(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)) {
                         key = (datum.key).split(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)[1];
@@ -699,7 +699,7 @@ public class RaftCore {
 
                     if (key.startsWith(UtilsAndCommons.RAFT_DOM_PRE)) {
                         int index = key.indexOf(UtilsAndCommons.RAFT_DOM_PRE);
-                        datumKey = UtilsAndCommons.DOMAINS_DATA_ID + key.substring(index + UtilsAndCommons.RAFT_DOM_PRE.length());
+                        datumKey = UtilsAndCommons.DOMAINS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_DOM_PRE.length());
                     } else if (key.startsWith(UtilsAndCommons.RAFT_IPLIST_PRE)) {
                         int index = key.indexOf(UtilsAndCommons.RAFT_IPLIST_PRE);
                         datumKey = UtilsAndCommons.IPADDRESS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_IPLIST_PRE.length());
@@ -761,7 +761,7 @@ public class RaftCore {
                                             continue;
                                         }
 
-                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID) ||
+                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) ||
                                             UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
                                             RaftStore.write(datum);
                                         }
@@ -769,7 +769,7 @@ public class RaftCore {
                                         RaftCore.datums.put(datum.key, datum);
                                         local.resetLeaderDue();
 
-                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
                                             if (local.term.get() + 100 > remote.term.get()) {
                                                 getLeader().term.set(remote.term.get());
                                                 local.term.set(getLeader().term.get());
@@ -962,9 +962,7 @@ public class RaftCore {
     private static void deleteDatum(String key) {
         Datum deleted = datums.remove(key);
         if (deleted != null) {
-            if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
-                RaftStore.delete(deleted);
-            }
+            RaftStore.delete(deleted);
             notifier.addTask(deleted, Notifier.ApplyAction.DELETE);
             Loggers.RAFT.info("datum deleted, key: {}", key);
         }
