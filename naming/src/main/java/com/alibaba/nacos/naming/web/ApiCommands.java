@@ -1463,13 +1463,13 @@ public class ApiCommands {
             lock.lock();
             String entry = WebUtils.required(request, "entry");
 
-            Datum datum = RaftCore.getDatum(UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
+            Datum datum = RaftCore.getDatum(UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME);
             SwitchDomain switchDomain = null;
 
             if (datum != null) {
                 switchDomain = JSON.parseObject(datum.value, SwitchDomain.class);
             } else {
-                Loggers.SRV_LOG.warn("datum: {}.00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00 is null", UtilsAndCommons.DOMAINS_DATA_ID);
+                Loggers.SRV_LOG.warn("datum: {}{} is null", UtilsAndCommons.DOMAINS_DATA_ID_PRE, UtilsAndCommons.SWITCH_DOMAIN_NAME);
             }
 
             if (SwitchEntry.BATCH.equals(entry)) {
