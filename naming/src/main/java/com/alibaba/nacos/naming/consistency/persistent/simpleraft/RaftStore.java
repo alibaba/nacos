@@ -67,14 +67,14 @@ public class RaftStore {
         for (File cache : listCaches()) {
             if (cache.isDirectory() && cache.listFiles() != null) {
                 for (File datumFile : cache.listFiles()) {
-                    datum =readDatum(datumFile);
+                    datum =readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
                     }
                 }
                 continue;
             }
-            datum = readDatum(cache);
+            datum = readDatum(cache, StringUtils.EMPTY);
             if (datum != null) {
                 datums.put(datum.key, datum);
             }
@@ -110,13 +110,13 @@ public class RaftStore {
 
             Loggers.RAFT.info("finish loading datum, key: {} cost {} ms.",
                 key, (System.currentTimeMillis() - start));
-            return readDatum(cache);
+            return readDatum(cache, StringUtils.EMPTY);
         }
 
         return null;
     }
 
-    public synchronized static Datum readDatum(File file) throws IOException {
+    public synchronized static Datum readDatum(File file, String namespaceId) throws IOException {
 
         ByteBuffer buffer;
         FileChannel fc = null;
@@ -151,7 +151,7 @@ public class RaftStore {
                 }
             }
 
-            RaftCore.addDatum(datum);
+            return datum;
         } catch (Exception e) {
             Loggers.RAFT.warn("waning: failed to deserialize key: {}", file.getName());
             throw e;

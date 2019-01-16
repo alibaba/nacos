@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements Domain, RaftListener {
+public class SwitchDomain implements Domain, DataListener {
 
     public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 

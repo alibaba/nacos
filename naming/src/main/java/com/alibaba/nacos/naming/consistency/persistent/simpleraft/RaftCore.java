@@ -903,7 +903,7 @@ public class RaftCore {
         Datum deleted = datums.remove(key);
         if (deleted != null) {
             RaftStore.delete(deleted);
-            notifier.addTask(deleted, Notifier.ApplyAction.DELETE);
+            notifier.addTask(deleted, ApplyAction.DELETE);
             Loggers.RAFT.info("datum deleted, key: {}", key);
         }
     }
@@ -949,9 +949,9 @@ public class RaftCore {
 
                     int count = 0;
 
-                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID)) {
+                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
 
-                        for (DataListener listener : listeners.get(UtilsAndCommons.DOMAINS_DATA_ID)) {
+                        for (DataListener listener : listeners.get(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
                             try {
                                 if (action == ApplyAction.CHANGE) {
                                     listener.onChange(datum.key, getDatum(datum.key).value);
