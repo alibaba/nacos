@@ -57,7 +57,7 @@ class EditServiceDialog extends React.Component {
     const editService = Object.assign({}, this.state.editService);
     const { name, protectThreshold, healthCheckMode, metadataText, selector } = editService;
     request({
-      method: isCreate ? 'PUT' : 'POST',
+      method: isCreate ? 'POST' : 'PUT',
       url: 'v1/ns/service',
       data: {
         serviceName: name,
