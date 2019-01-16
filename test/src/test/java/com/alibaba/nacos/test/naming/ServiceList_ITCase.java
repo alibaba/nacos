@@ -48,7 +48,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class ServiceListTest {
+public class ServiceList_ITCase {
 
     private NamingService naming;
 
@@ -92,7 +92,6 @@ public class ServiceListTest {
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
         serviceInfoList = naming.getSubscribeServices();
 
-        System.out.println("dfdfdfd = " + serviceInfoList);
         Assert.assertEquals(count+1, serviceInfoList.size());
     }
 
@@ -126,6 +125,7 @@ public class ServiceListTest {
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c2");
+        TimeUnit.SECONDS.sleep(5);
 
         Assert.assertEquals(count+1, serviceInfoList.size());
     }

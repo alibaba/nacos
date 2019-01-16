@@ -217,6 +217,7 @@ const aliwareIntl = (function(_global) {
     this.nowData = nowData;
     this.setMomentLocale(this.currentLanguageCode);
   }
+
   let aliwareLocal = aliwareGetCookieByKeyName('aliyun_lang') || 'zh';
   let aliwareLocalSite = aliwareGetCookieByKeyName('aliyun_country') || 'cn';
   aliwareLocal = aliwareLocal.toLowerCase();
@@ -473,6 +474,7 @@ const request = (function(_global) {
       return serviceObj;
     };
   })();
+
   /**
    * 添加中间件函数
    * @param {*function} callback 回调函数
@@ -485,6 +487,7 @@ const request = (function(_global) {
     }
     return this;
   }
+
   /**
    * 处理中间件
    * @param {*Object} config ajax请求配置信息
@@ -504,6 +507,7 @@ const request = (function(_global) {
     }
     return config;
   }
+
   /**
    * 处理自定义url
    * @param {*Object} config ajax请求配置信息
@@ -594,6 +598,10 @@ const request = (function(_global) {
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
 
+    const namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
+    const namespaceConf = { namespaceId: namespace };
+    config.data = config.data ? Object.assign({}, config.data, namespaceConf) : namespaceConf;
+
     return $.ajax(
       Object.assign({}, config, {
         type: config.type,
@@ -621,6 +629,7 @@ const request = (function(_global) {
       }
     );
   }
+
   // 暴露方法
   Request.handleCustomService = handleCustomService;
   Request.handleMiddleWare = handleMiddleWare;
