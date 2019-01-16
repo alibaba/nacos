@@ -1,8 +1,8 @@
-package com.alibaba.nacos.naming.consistency.cp.simpleraft;
+package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.consistency.cp.CpConsistencyService;
+import com.alibaba.nacos.naming.consistency.persistent.CpConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class RaftConsistencyService implements CpConsistencyService {
+public class RaftConsistencyServiceImpl implements CpConsistencyService {
 
     @Autowired
     private RaftCore raftCore;

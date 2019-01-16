@@ -22,7 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Condition;
@@ -62,7 +63,7 @@ public class ServiceManager implements DataListener {
 
     private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
 
-    @Autowired
+    @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
     @Autowired

@@ -18,11 +18,12 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -41,7 +42,7 @@ public class SwitchManager {
     @Autowired
     private SwitchDomain switchDomain;
 
-    @Autowired
+    @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
     ReentrantLock lock = new ReentrantLock();

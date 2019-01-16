@@ -15,16 +15,20 @@
  */
 package com.alibaba.nacos.naming.raft;
 
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.Datum;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftStore;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftStore;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mock;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class RaftStoreTest {
+
+    @Mock
+    public RaftCore raftCore;
 
     @Test
     public void wrietDatum() throws Exception {
@@ -37,7 +41,7 @@ public class RaftStoreTest {
 
         RaftStore.load("1.2.3.4");
 
-        Datum result = RaftCore.getDatum("1.2.3.4");
+        Datum result = raftCore.getDatum("1.2.3.4");
 
         Assert.assertNotNull(result);
         Assert.assertEquals("value1", result.value);

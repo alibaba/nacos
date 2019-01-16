@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ap.renew;
+package com.alibaba.nacos.naming.consistency.ephemeral.partialrenew;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>

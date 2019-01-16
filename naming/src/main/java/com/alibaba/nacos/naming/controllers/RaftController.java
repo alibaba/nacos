@@ -21,7 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.*;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.*;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -50,7 +50,7 @@ import java.util.Map;
 public class RaftController {
 
     @Autowired
-    private RaftConsistencyService raftConsistencyService;
+    private RaftConsistencyServiceImpl raftConsistencyService;
 
     @Autowired
     private ServiceManager domainsManager;

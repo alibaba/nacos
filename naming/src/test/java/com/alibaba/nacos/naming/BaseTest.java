@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.PeerSet;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.PeerSet;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import org.junit.Before;
@@ -36,13 +36,16 @@ public class BaseTest {
     @Mock
     public PeerSet peerSet;
 
+    @Mock
+    public RaftCore raftCore;
+
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
 
         RaftPeer peer = new RaftPeer();
         peer.ip = NetUtils.localServer();
-        RaftCore.setPeerSet(peerSet);
+        raftCore.setPeerSet(peerSet);
         Mockito.when(peerSet.local()).thenReturn(peer);
         Mockito.when(peerSet.getLeader()).thenReturn(peer);
         Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);

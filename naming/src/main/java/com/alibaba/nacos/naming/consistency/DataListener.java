@@ -16,6 +16,8 @@
 package com.alibaba.nacos.naming.consistency;
 
 /**
+ * Data listener public interface
+ *
  * @author nacos
  */
 public interface DataListener {

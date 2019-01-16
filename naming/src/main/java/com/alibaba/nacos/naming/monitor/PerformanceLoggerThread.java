@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.monitor;
 
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -24,11 +24,8 @@ import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

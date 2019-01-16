@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.cp.simpleraft;
+package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,7 +28,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
@@ -36,15 +37,16 @@ import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
 /**
  * @author nacos
  */
+@Component
 public class RaftStore {
 
     private static String BASE_DIR = NACOS_HOME + File.separator + "raft";
 
     private static String META_FILE_NAME;
 
-    private static String CACHE_DIR;
+    private Properties meta = new Properties();
 
-    private static Properties meta = new Properties();
+    private static String CACHE_DIR;
 
     static {
 
@@ -56,33 +58,44 @@ public class RaftStore {
         CACHE_DIR = BASE_DIR + File.separator + "data";
     }
 
-    public synchronized static void load() throws Exception {
+    public synchronized ConcurrentHashMap<String, Datum> loadDatums() throws Exception {
+
+        ConcurrentHashMap<String, Datum> datums = new ConcurrentHashMap<>(32);
+        Datum datum;
         long start = System.currentTimeMillis();
         for (File cache : listCaches()) {
             if (cache.isDirectory() && cache.listFiles() != null) {
                 for (File datumFile : cache.listFiles()) {
-                    readDatum(datumFile);
+                    datum =readDatum(datumFile);
+                    if (datum != null) {
+                        datums.put(datum.key, datum);
+                    }
                 }
                 continue;
             }
-            readDatum(cache);
+            datum = readDatum(cache);
+            if (datum != null) {
+                datums.put(datum.key, datum);
+            }
         }
 
-        // load meta
-        File meta = new File(META_FILE_NAME);
-        if (!meta.exists() && !meta.getParentFile().mkdirs() && !meta.createNewFile()) {
-            throw new IllegalStateException("failed to create meta file: " + meta.getAbsolutePath());
-        }
-
-        try (FileInputStream inStream = new FileInputStream(meta)) {
-            RaftStore.meta.load(inStream);
-            RaftCore.setTerm(NumberUtils.toLong(RaftStore.meta.getProperty("term"), 0L));
-        }
-
-        Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", RaftCore.datumSize(), (System.currentTimeMillis() - start));
+        Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", datums.size(), (System.currentTimeMillis() - start));
+        return datums;
     }
 
-    public synchronized static void load(String key) throws Exception {
+    public synchronized Properties loadMeta() throws Exception {
+        File metaFile = new File(META_FILE_NAME);
+        if (!metaFile.exists() && !metaFile.getParentFile().mkdirs() && !metaFile.createNewFile()) {
+            throw new IllegalStateException("failed to create meta file: " + metaFile.getAbsolutePath());
+        }
+
+        try (FileInputStream inStream = new FileInputStream(metaFile)) {
+            meta.load(inStream);
+        }
+        return meta;
+    }
+
+    public synchronized static Datum load(String key) throws Exception {
         long start = System.currentTimeMillis();
         // load data
         for (File cache : listCaches()) {
@@ -93,14 +106,16 @@ public class RaftStore {
             if (!StringUtils.equals(decodeFileName(cache.getName()), key)) {
                 continue;
             }
-            readDatum(cache);
+
+            Loggers.RAFT.info("finish loading datum, key: {} cost {} ms.",
+                key, (System.currentTimeMillis() - start));
+            return readDatum(cache);
         }
 
-        Loggers.RAFT.info("finish loading datum, key: {} cost {} ms.",
-            key, (System.currentTimeMillis() - start));
+        return null;
     }
 
-    public synchronized static void readDatum(File file) throws IOException {
+    public synchronized static Datum readDatum(File file) throws IOException {
 
         ByteBuffer buffer;
         FileChannel fc = null;
@@ -111,11 +126,10 @@ public class RaftStore {
 
             String json = new String(buffer.array(), "UTF-8");
             if (StringUtils.isBlank(json)) {
-                return;
+                return null;
             }
 
-            Datum datum = JSON.parseObject(json, Datum.class);
-            RaftCore.addDatum(datum);
+            return JSON.parseObject(json, Datum.class);
         } catch (Exception e) {
             Loggers.RAFT.warn("waning: failed to deserialize key: {}", file.getName());
             throw e;
@@ -199,7 +213,7 @@ public class RaftStore {
         }
     }
 
-    public static void updateTerm(long term) throws Exception {
+    public void updateTerm(long term) throws Exception {
         File file = new File(META_FILE_NAME);
         if (!file.exists() && !file.getParentFile().mkdirs() && !file.createNewFile()) {
             throw new IllegalStateException("failed to create meta file");

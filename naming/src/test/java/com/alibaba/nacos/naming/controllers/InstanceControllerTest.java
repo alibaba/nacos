@@ -19,7 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.PeerSet;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.PeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;

@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
+import javax.annotation.Resource;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,7 +38,7 @@ import java.util.Map;
  */
 public class DistroFilter implements Filter {
 
-    @Autowired
+    @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
     @Autowired
@@ -111,7 +112,7 @@ public class DistroFilter implements Filter {
             if (!distroMapper.responsible(dom)) {
 
                 String url = "http://" + distroMapper.mapSrv(dom) + ":" + req.getServerPort()
-                        + req.getRequestURI() + "?" + req.getQueryString();
+                    + req.getRequestURI() + "?" + req.getQueryString();
                 try {
                     resp.sendRedirect(url);
                 } catch (Exception ignore) {
@@ -130,6 +131,6 @@ public class DistroFilter implements Filter {
 
     public boolean canDistro(String urlString) {
         return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_IP_FOR_DOM) ||
-                urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
+            urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
     }
 }

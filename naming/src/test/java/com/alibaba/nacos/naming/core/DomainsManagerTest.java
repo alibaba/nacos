@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
@@ -41,7 +42,11 @@ public class DomainsManagerTest extends BaseTest {
     @Before
     public void before() {
         super.before();
-        domainsManager = new ServiceManager();
+        try {
+            domainsManager = new ServiceManager();
+        } catch (NacosException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -56,7 +61,7 @@ public class DomainsManagerTest extends BaseTest {
 
         domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
 
-        List<Domain> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
+        List<VirtualClusterDomain> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());
