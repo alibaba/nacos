@@ -58,8 +58,8 @@ class EditInstanceDialog extends React.Component {
     const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props;
     const { ip, port, weight, enabled, metadataText } = this.state.editInstance;
     request({
-      method: 'POST',
-      url: 'v1/ns/instance/update',
+      method: 'PUT',
+      url: 'v1/ns/instance',
       data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
       dataType: 'text',
       beforeSend: () => openLoading(),

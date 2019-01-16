@@ -64,8 +64,8 @@ class EditClusterDialog extends React.Component {
       healthChecker,
     } = this.state.editCluster;
     request({
-      method: 'POST',
-      url: 'v1/ns/cluster/update',
+      method: 'PUT',
+      url: 'v1/ns/cluster',
       data: {
         serviceName,
         clusterName: name,
