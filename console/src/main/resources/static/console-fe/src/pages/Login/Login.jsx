@@ -51,6 +51,15 @@ class Login extends React.Component {
     });
   };
 
+  onKeyDown = event => {
+    // 'keypress' event misbehaves on mobile so we track 'Enter' key via 'keydown' event
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.handleSubmit();
+    }
+  };
+
   render() {
     const { locale = {} } = this.props;
 
@@ -90,6 +99,7 @@ class Login extends React.Component {
                     ],
                   })}
                   placeholder={locale.pleaseInputUsername}
+                  onKeyDown={this.onKeyDown}
                 />
               </FormItem>
               <FormItem>
@@ -104,6 +114,7 @@ class Login extends React.Component {
                       },
                     ],
                   })}
+                  onKeyDown={this.onKeyDown}
                 />
               </FormItem>
               <FormItem label=" ">
