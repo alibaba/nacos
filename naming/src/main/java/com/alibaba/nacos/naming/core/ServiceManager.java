@@ -103,7 +103,7 @@ public class ServiceManager implements DataListener {
 
         UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
 
-        consistencyService.listen(UtilsAndCommons.DOMAINS_DATA_ID, this);
+        consistencyService.listen(UtilsAndCommons.DOMAINS_DATA_ID_PRE, this);
     }
 
     public Map<String, VirtualClusterDomain> chooseDomMap(String namespaceId) {
@@ -126,12 +126,12 @@ public class ServiceManager implements DataListener {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID);
+        return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".*");
+        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + "*");
     }
 
     @Override
@@ -175,7 +175,7 @@ public class ServiceManager implements DataListener {
 
     @Override
     public void onDelete(String key, String value) throws Exception {
-        String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
+        String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
         String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
         String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
         VirtualClusterDomain dom = chooseDomMap(namespace).remove(name);
