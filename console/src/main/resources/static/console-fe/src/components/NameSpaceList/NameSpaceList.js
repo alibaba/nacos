@@ -83,6 +83,7 @@ class NameSpaceList extends React.Component {
    切换namespace
    * */
   changeNameSpace(ns, nsName) {
+    localStorage.setItem('namespace', ns);
     this.setnamespace(ns || '');
     setParams({
       namespace: ns || '',
@@ -140,6 +141,7 @@ class NameSpaceList extends React.Component {
     }
     window.namespaceShowName = namespaceShowName;
     setParams('namespace', nownamespace || '');
+    localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
     this.props.setNowNameSpace && this.props.setNowNameSpace(namespaceShowName, nownamespace);
     this.setState({
@@ -191,8 +193,8 @@ class NameSpaceList extends React.Component {
 
     return (
       <div
-        className={namespaceList.length > 0 ? 'namespacewrapper' : ''}
-        style={namespaceList.length > 0 ? namespacestyle : {}}
+        className={namespaceList.length ? 'namespacewrapper' : ''}
+        style={namespaceList.length ? namespacestyle : {}}
       >
         {}
         {title ? (

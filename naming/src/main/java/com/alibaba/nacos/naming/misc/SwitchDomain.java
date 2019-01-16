@@ -32,9 +32,9 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements Domain, DataListener {
+public class SwitchDomain implements Domain, RaftListener {
 
-    public String name = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
+    public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
     public List<String> masters;
 
@@ -235,12 +235,12 @@ public class SwitchDomain implements Domain, DataListener {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + "." + name);
+        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + "." + name);
+        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
     }
 
     @Override
