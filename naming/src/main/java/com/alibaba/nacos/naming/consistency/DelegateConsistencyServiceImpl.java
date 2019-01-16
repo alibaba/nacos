@@ -16,19 +16,21 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.consistency.ap.ApConsistencyService;
-import com.alibaba.nacos.naming.consistency.cp.CpConsistencyService;
+import com.alibaba.nacos.naming.consistency.ephemeral.ApConsistencyService;
+import com.alibaba.nacos.naming.consistency.persistent.CpConsistencyService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
- * Publish execute delegate
+ * Publish execution delegate
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @since 1.0.0
  */
-@Component
-public class PublishDelegate implements ConsistencyService {
+@Component("consistencyDelegate")
+public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
     private CpConsistencyService cpConsistencyService;

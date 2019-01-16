@@ -48,6 +48,9 @@ public class HealthCheckCommon {
     @Autowired
     private SwitchDomain switchDomain;
 
+    @Autowired
+    private PushService pushService;
+
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
 
     private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
@@ -147,16 +150,16 @@ public class HealthCheckCommon {
                         VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
 
-                        PushService.domChanged(vDom.getNamespaceId(), vDom.getName());
+                        pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), DistroMapper.LOCALHOST_SITE, msg);
+                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         if (!ip.isMockValid()) {
                             ip.setMockValid(true);
                             Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                                cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), DistroMapper.LOCALHOST_SITE, msg);
+                                cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                         }
                     }
                 } else {
@@ -186,13 +189,13 @@ public class HealthCheckCommon {
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
-                        PushService.domChanged(vDom.getNamespaceId(), vDom.getName());
+                        pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
 
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), DistroMapper.LOCALHOST_SITE, msg);
+                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), DistroMapper.LOCALHOST_SITE, msg);
+                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 } else {
@@ -220,16 +223,16 @@ public class HealthCheckCommon {
                     VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());
 
-                    PushService.domChanged(vDom.getNamespaceId(), vDom.getName());
+                    pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
                     addResult(new HealthCheckResult(vDom.getName(), ip));
 
                     Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
-                        cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), DistroMapper.LOCALHOST_SITE, msg);
+                        cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                 } else {
                     if (ip.isMockValid()) {
                         ip.setMockValid(false);
                         Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), DistroMapper.LOCALHOST_SITE, msg);
+                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 }

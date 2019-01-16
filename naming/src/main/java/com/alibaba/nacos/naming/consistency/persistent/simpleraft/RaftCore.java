@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.cp.simpleraft;
+package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -27,6 +27,7 @@ import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -103,6 +104,9 @@ public class RaftCore {
     @Autowired
     private RaftProxy raftProxy;
 
+    @Autowired
+    private RaftStore raftStore;
+
     public volatile Notifier notifier = new Notifier();
 
     @PostConstruct
@@ -116,7 +120,15 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
-        RaftStore.load();
+        ConcurrentMap<String, Datum> datumMap = raftStore.loadDatums();
+        if (datumMap != null && !datumMap.isEmpty()) {
+            datums = datumMap;
+            for (Map.Entry<String, Datum> entry : datumMap.entrySet()) {
+                notifier.addTask(entry.getValue(), ApplyAction.CHANGE);
+            }
+        }
+
+        setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
         Loggers.RAFT.info("cache loaded, peer count: {}, datum count: {}, current term: {}",
             peers.size(), datums.size(), peers.getTerm());
@@ -126,7 +138,6 @@ public class RaftCore {
                 break;
             }
             Thread.sleep(1000L);
-            System.out.println(notifier.tasks.size());
         }
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
@@ -311,7 +322,7 @@ public class RaftCore {
                 local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
             }
         }
-        RaftStore.updateTerm(local.term.get());
+        raftStore.updateTerm(local.term.get());
 
         notifier.addTask(datum, ApplyAction.CHANGE);
 
@@ -351,7 +362,7 @@ public class RaftCore {
                 local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
             }
 
-            RaftStore.updateTerm(local.term.get());
+            raftStore.updateTerm(local.term.get());
         }
 
     }
@@ -708,7 +719,7 @@ public class RaftCore {
                                             local.term.addAndGet(100);
                                         }
 
-                                        RaftStore.updateTerm(local.term.get());
+                                        raftStore.updateTerm(local.term.get());
                                     }
 
                                     Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",

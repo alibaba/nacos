@@ -16,8 +16,11 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 
 import java.util.List;
@@ -30,6 +33,9 @@ public class ClientBeatProcessor implements Runnable {
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
     private RsInfo rsInfo;
     private Domain domain;
+
+    @JSONField(serialize = false)
+    private PushService pushService;
 
     public RsInfo getRsInfo() {
         return rsInfo;
@@ -48,7 +54,7 @@ public class ClientBeatProcessor implements Runnable {
     }
 
     public ClientBeatProcessor() {
-
+        pushService = SpringContext.getAppContext().getBean(PushService.class);
     }
 
     public String getType() {
@@ -77,8 +83,8 @@ public class ClientBeatProcessor implements Runnable {
                     if (!ipAddress.isValid()) {
                         ipAddress.setValid(true);
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
-                            cluster.getDom().getName(), ip, port, cluster.getName(), DistroMapper.LOCALHOST_SITE);
-                        PushService.domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
+                            cluster.getDom().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
+                        pushService.domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
                     }
                 }
             }

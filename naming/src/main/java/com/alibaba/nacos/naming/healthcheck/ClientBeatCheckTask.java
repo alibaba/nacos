@@ -16,7 +16,9 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -32,10 +34,19 @@ import java.util.List;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class ClientBeatCheckTask implements Runnable {
+
     private VirtualClusterDomain domain;
+
+    @JSONField(serialize = false)
+    private PushService pushService;
+
+    @JSONField(serialize = false)
+    private DistroMapper distroMapper;
 
     public ClientBeatCheckTask(VirtualClusterDomain domain) {
         this.domain = domain;
+        pushService = SpringContext.getAppContext().getBean(PushService.class);
+        distroMapper = SpringContext.getAppContext().getBean(DistroMapper.class);
     }
 
     public String taskKey() {
@@ -45,7 +56,7 @@ public class ClientBeatCheckTask implements Runnable {
     @Override
     public void run() {
         try {
-            if (!domain.getEnableClientBeat() || !DistroMapper.responsible(domain.getName())) {
+            if (!domain.getEnableClientBeat() || !distroMapper.responsible(domain.getName())) {
                 return;
             }
 
@@ -58,8 +69,8 @@ public class ClientBeatCheckTask implements Runnable {
                             ipAddress.setValid(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 ipAddress.getIp(), ipAddress.getPort(), ipAddress.getClusterName(),
-                                DistroMapper.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, ipAddress.getLastBeat());
-                            PushService.domChanged(domain.getNamespaceId(), domain.getName());
+                                UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, ipAddress.getLastBeat());
+                            pushService.domChanged(domain.getNamespaceId(), domain.getName());
                         }
                     }
                 }

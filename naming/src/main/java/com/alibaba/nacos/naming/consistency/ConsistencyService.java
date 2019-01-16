@@ -18,22 +18,78 @@ package com.alibaba.nacos.naming.consistency;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
+ * Consistence service for all implementations to derive.
+ * <p>
+ * We announce this consistency service to decouple the specific consistency implementation with business logic.
+ * User should not be aware of what consistency protocol is being used.
+ * <p>
+ * In this way, we also provide space for user to extend the underlying consistency protocols, as long as they
+ * obey our consistency baseline.
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @since 1.0.0
  */
 public interface ConsistencyService {
 
+    /**
+     * Put a data related to a key to Nacos cluster
+     *
+     * @param key   key of data
+     * @param value value of data
+     * @throws NacosException
+     */
     void put(Object key, Object value) throws NacosException;
 
+    /**
+     * Remove a data from Nacos cluster
+     *
+     * @param key key of data
+     * @throws NacosException
+     */
     void remove(Object key) throws NacosException;
 
+    /**
+     * Get a data from Nacos cluster
+     *
+     * @param key key of data
+     * @return data related to the key
+     * @throws NacosException
+     */
     Object get(Object key) throws NacosException;
 
+    /**
+     * Listen for changes of a data
+     *
+     * @param key      key of data
+     * @param listener callback of data change
+     * @throws NacosException
+     */
     void listen(Object key, DataListener listener) throws NacosException;
 
+    /**
+     * Cancel listening of a data
+     *
+     * @param key      key of data
+     * @param listener callback of data change
+     * @throws NacosException
+     */
     void unlisten(Object key, DataListener listener) throws NacosException;
 
+    /**
+     * Is the local server responsible for a data.
+     * <p>
+     * Any write operation to a data in a server not responsible for the data is refused.
+     *
+     * @param key key of data
+     * @return true if the local server is responsible for the data
+     */
     boolean isResponsible(Object key);
 
+    /**
+     * Get the responsible server for a data
+     *
+     * @param key key of data
+     * @return responsible server for the data
+     */
     String getResponsibleServer(Object key);
 }

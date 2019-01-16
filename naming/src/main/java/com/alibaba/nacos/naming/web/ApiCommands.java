@@ -25,9 +25,6 @@ import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftCore;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.cp.simpleraft.RaftProxy;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.*;
@@ -992,12 +989,12 @@ public class ApiCommands {
         boolean reset = Boolean.parseBoolean(WebUtils.optional(request, "reset", "false"));
 
         List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
-        int failedPushCount = PushService.getFailedPushCount();
-        result.put("succeed", PushService.getTotalPush() - failedPushCount);
-        result.put("total", PushService.getTotalPush());
+        int failedPushCount = pushService.getFailedPushCount();
+        result.put("succeed", pushService.getTotalPush() - failedPushCount);
+        result.put("total", pushService.getTotalPush());
 
-        if (PushService.getTotalPush() > 0) {
-            result.put("ratio", ((float) PushService.getTotalPush() - failedPushCount) / PushService.getTotalPush());
+        if (pushService.getTotalPush() > 0) {
+            result.put("ratio", ((float) pushService.getTotalPush() - failedPushCount) / pushService.getTotalPush());
         } else {
             result.put("ratio", 0);
         }
