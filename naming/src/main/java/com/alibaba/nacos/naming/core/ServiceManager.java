@@ -174,7 +174,6 @@ public class ServiceManager implements DataListener {
                 consistencyService.listen(UtilsAndCommons.getDomStoreKey(dom), dom);
                 Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", dom.toJSON());
             }
-
             wakeUp(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
 
         } catch (Throwable e) {
@@ -376,7 +375,6 @@ public class ServiceManager implements DataListener {
     public void registerInstance(String namespaceId, String serviceName, IpAddress instance) throws Exception {
 
         VirtualClusterDomain service = getService(namespaceId, serviceName);
-
         boolean serviceUpdated = false;
         if (service == null) {
             service = new VirtualClusterDomain();
@@ -411,9 +409,16 @@ public class ServiceManager implements DataListener {
         }
 
         if (serviceUpdated) {
+            Lock lock = addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+            Condition condition = addCondtion(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
             addOrReplaceService(service);
+            try {
+                lock.lock();
+                condition.await(5000, TimeUnit.MILLISECONDS);
+            } finally {
+                lock.unlock();
+            }
         }
-
         addInstance(namespaceId, serviceName, instance);
     }
 
