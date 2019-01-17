@@ -371,6 +371,11 @@ public class RaftCore {
         @Override
         public void run() {
             try {
+
+                if (!peers.isReady()) {
+                    return;
+                }
+
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
                 if (local.leaderDueMs > 0) {
@@ -470,6 +475,10 @@ public class RaftCore {
         @Override
         public void run() {
             try {
+                if (!peers.isReady()) {
+                    return;
+                }
+
                 RaftPeer local = peers.local();
                 local.heartbeatDueMs -= GlobalExecutor.TICK_PERIOD_MS;
                 if (local.heartbeatDueMs > 0) {

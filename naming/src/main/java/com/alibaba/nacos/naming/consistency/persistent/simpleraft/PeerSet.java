@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -43,6 +44,8 @@ public class PeerSet {
 
     private Set<String> sites = new HashSet<>();
 
+    private boolean ready = false;
+
     public PeerSet() {
     }
 
@@ -55,6 +58,10 @@ public class PeerSet {
 
     public Set<String> allSites() {
         return sites;
+    }
+
+    public boolean isReady() {
+        return ready;
     }
 
     public void add(List<String> servers) {
@@ -70,6 +77,10 @@ public class PeerSet {
             local.state = RaftPeer.State.LEADER;
             local.voteFor = NetUtils.localServer();
 
+        }
+
+        if (RunningConfig.getServerPort() > 0) {
+            ready = true;
         }
     }
 
