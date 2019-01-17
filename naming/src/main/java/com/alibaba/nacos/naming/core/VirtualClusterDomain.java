@@ -83,7 +83,9 @@ public class VirtualClusterDomain implements Domain, DataListener {
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     @JSONField(serialize = false)
-    private PushService pushService;
+    public PushService getPushService() {
+        return SpringContext.getAppContext().getBean(PushService.class);
+    }
 
     public long getIpDeleteTimeout() {
         return ipDeleteTimeout;
@@ -153,10 +155,6 @@ public class VirtualClusterDomain implements Domain, DataListener {
 
     public void setSelector(Selector selector) {
         this.selector = selector;
-    }
-
-    public VirtualClusterDomain() {
-        pushService = SpringContext.getAppContext().getBean(PushService.class);
     }
 
     @Override
@@ -249,7 +247,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
-        pushService.domChanged(namespaceId, name);
+        getPushService().domChanged(namespaceId, name);
         StringBuilder stringBuilder = new StringBuilder();
 
         for (IpAddress ipAddress : allIPs()) {
@@ -536,7 +534,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
 
         for (IpAddress ip : ips) {
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                    + ip.isValid() + "_" + ip.getClusterName();
+                + ip.isValid() + "_" + ip.getClusterName();
             ipsString.append(string);
             ipsString.append(",");
         }

@@ -13,57 +13,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.partialrenew;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
-import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * Publish execution delegate
- *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
- * @since 1.0.0
  */
-@Component("consistencyDelegate")
-public class DelegateConsistencyServiceImpl implements ConsistencyService {
-
-    @Autowired
-    private PersistentConsistencyService persistentConsistencyService;
-
-    @Autowired
-    private EphemeralConsistencyService ephemeralConsistencyService;
+@Component
+public class RenewConsistencyServiceImpl implements EphemeralConsistencyService {
 
     @Override
     public void put(Object key, Object value) throws NacosException {
-        persistentConsistencyService.put(key, value);
+
     }
 
     @Override
     public void remove(Object key) throws NacosException {
-        persistentConsistencyService.remove(key);
+
     }
 
     @Override
     public Object get(Object key) throws NacosException {
-        return persistentConsistencyService.get(key);
+        return null;
     }
 
     @Override
     public void listen(Object key, DataListener listener) throws NacosException {
-        persistentConsistencyService.listen(key, listener);
+
     }
 
     @Override
     public void unlisten(Object key, DataListener listener) throws NacosException {
-        persistentConsistencyService.unlisten(key, listener);
+
     }
 
     @Override
     public boolean isResponsible(Object key) {
-        return true;
+        return false;
     }
 
     @Override
