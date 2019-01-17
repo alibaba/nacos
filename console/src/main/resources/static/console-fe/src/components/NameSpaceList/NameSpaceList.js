@@ -102,7 +102,7 @@ class NameSpaceList extends React.Component {
 
   getNameSpaces() {
     const { locale = {} } = this.props;
-    if (window.namespaceList) {
+    if (window.namespaceList && window.namespaceList.length) {
       this.handleNameSpaces(window.namespaceList);
     } else {
       request({
