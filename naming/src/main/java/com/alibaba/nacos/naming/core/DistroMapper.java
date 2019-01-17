@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-@Component
+@Component("distroMapper")
 public class DistroMapper {
 
     public static final int STABLE_PERIOD = 60 * 1000;

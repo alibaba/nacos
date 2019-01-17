@@ -22,9 +22,11 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 /**
+ * A global spring context bean to inject bean for non-bean classes
+ *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
-@Component
+@Component("nacosApplicationContext")
 public class SpringContext implements ApplicationContextAware {
 
     @Autowired
