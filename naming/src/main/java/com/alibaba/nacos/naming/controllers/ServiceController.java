@@ -27,7 +27,6 @@ import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -143,9 +142,6 @@ public class ServiceController {
         res.put("metadata", domain.getMetadata());
 
         res.put("selector", domain.getSelector());
-
-        res.put("instanceTimestamp", RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(domain)).timestamp.get());
-        res.put("serviceTimestamp", RaftCore.getDatum(UtilsAndCommons.getDomStoreKey(domain)).timestamp.get());
 
         return res;
     }
