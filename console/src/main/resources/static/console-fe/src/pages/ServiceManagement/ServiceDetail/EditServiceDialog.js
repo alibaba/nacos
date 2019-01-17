@@ -118,7 +118,7 @@ class EditServiceDialog extends React.Component {
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${locale.serviceName}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.serviceName}:`} {...formItemLayout} required>
             {!isCreate ? (
               <p>{name}</p>
             ) : (
