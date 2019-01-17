@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 /**
  * @author nacos
  */
-@Component
+@Component("healthCheckDelegate")
 public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
 
     @Autowired

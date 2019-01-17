@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -42,6 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @Component
+@DependsOn("nacosApplicationContext")
 public class ServiceManager implements DataListener {
 
     /**

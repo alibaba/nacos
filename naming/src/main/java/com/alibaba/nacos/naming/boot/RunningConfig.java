@@ -27,7 +27,7 @@ import javax.servlet.ServletContext;
 /**
  * @author nkorange
  */
-@Component
+@Component("runningConfig")
 public class RunningConfig implements ApplicationListener<WebServerInitializedEvent> {
 
     private static int serverPort;
