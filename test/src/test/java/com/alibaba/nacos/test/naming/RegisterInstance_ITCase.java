@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
@@ -44,7 +43,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
 
     private NamingService naming;
@@ -56,7 +55,7 @@ public class RegisterInstance_ITCase {
     public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + 8848);
         }
     }
 

@@ -639,19 +639,19 @@ public class RaftCore {
                 String key = entry.getString("key");
                 final String datumKey;
 
-                    if (key.startsWith(UtilsAndCommons.RAFT_DOM_PRE)) {
-                        int index = key.indexOf(UtilsAndCommons.RAFT_DOM_PRE);
-                        datumKey = UtilsAndCommons.DOMAINS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_DOM_PRE.length());
-                    } else if (key.startsWith(UtilsAndCommons.RAFT_IPLIST_PRE)) {
-                        int index = key.indexOf(UtilsAndCommons.RAFT_IPLIST_PRE);
-                        datumKey = UtilsAndCommons.IPADDRESS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_IPLIST_PRE.length());
-                    } else if (key.startsWith(UtilsAndCommons.RAFT_TAG_DOM_PRE)) {
-                        int index = key.indexOf(UtilsAndCommons.RAFT_TAG_DOM_PRE);
-                        datumKey = UtilsAndCommons.TAG_DOMAINS_DATA_ID + key.substring(index + UtilsAndCommons.RAFT_TAG_DOM_PRE.length());
-                    } else {
-                        int index = key.indexOf(UtilsAndCommons.RAFT_TAG_IPLIST_PRE);
-                        datumKey = UtilsAndCommons.NODE_TAG_IP_PRE + key.substring(index + UtilsAndCommons.RAFT_TAG_IPLIST_PRE.length());
-                    }
+                if (key.startsWith(UtilsAndCommons.RAFT_DOM_PRE)) {
+                    int index = key.indexOf(UtilsAndCommons.RAFT_DOM_PRE);
+                    datumKey = UtilsAndCommons.DOMAINS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_DOM_PRE.length());
+                } else if (key.startsWith(UtilsAndCommons.RAFT_IPLIST_PRE)) {
+                    int index = key.indexOf(UtilsAndCommons.RAFT_IPLIST_PRE);
+                    datumKey = UtilsAndCommons.IPADDRESS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_IPLIST_PRE.length());
+                } else if (key.startsWith(UtilsAndCommons.RAFT_TAG_DOM_PRE)) {
+                    int index = key.indexOf(UtilsAndCommons.RAFT_TAG_DOM_PRE);
+                    datumKey = UtilsAndCommons.TAG_DOMAINS_DATA_ID + key.substring(index + UtilsAndCommons.RAFT_TAG_DOM_PRE.length());
+                } else {
+                    int index = key.indexOf(UtilsAndCommons.RAFT_TAG_IPLIST_PRE);
+                    datumKey = UtilsAndCommons.NODE_TAG_IP_PRE + key.substring(index + UtilsAndCommons.RAFT_TAG_IPLIST_PRE.length());
+                }
 
                 long timestamp = entry.getLong("timestamp");
 
@@ -703,21 +703,21 @@ public class RaftCore {
                                         continue;
                                     }
 
-                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) ||
-                                            UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
-                                            RaftStore.write(datum);
-                                        }
+                                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) ||
+                                        UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
+                                        RaftStore.write(datum);
+                                    }
 
                                     datums.put(datum.key, datum);
                                     local.resetLeaderDue();
 
-                                        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
-                                            if (local.term.get() + 100 > remote.term.get()) {
-                                                getLeader().term.set(remote.term.get());
-                                                local.term.set(getLeader().term.get());
-                                            } else {
-                                                local.term.addAndGet(100);
-                                            }
+                                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
+                                        if (local.term.get() + 100 > remote.term.get()) {
+                                            getLeader().term.set(remote.term.get());
+                                            local.term.set(getLeader().term.get());
+                                        } else {
+                                            local.term.addAndGet(100);
+                                        }
 
                                         raftStore.updateTerm(local.term.get());
                                     }
@@ -949,7 +949,8 @@ public class RaftCore {
 
                     int count = 0;
 
-                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
+                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) &&
+                        listeners.containsKey(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
 
                         for (DataListener listener : listeners.get(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
                             try {

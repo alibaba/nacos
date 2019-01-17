@@ -35,7 +35,9 @@ public class ClientBeatProcessor implements Runnable {
     private Domain domain;
 
     @JSONField(serialize = false)
-    private PushService pushService;
+    public PushService getPushService() {
+        return SpringContext.getAppContext().getBean(PushService.class);
+    }
 
     public RsInfo getRsInfo() {
         return rsInfo;
@@ -51,10 +53,6 @@ public class ClientBeatProcessor implements Runnable {
 
     public void setDomain(Domain domain) {
         this.domain = domain;
-    }
-
-    public ClientBeatProcessor() {
-        pushService = SpringContext.getAppContext().getBean(PushService.class);
     }
 
     public String getType() {
@@ -84,7 +82,7 @@ public class ClientBeatProcessor implements Runnable {
                         ipAddress.setValid(true);
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
                             cluster.getDom().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
-                        pushService.domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
+                        getPushService().domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
                     }
                 }
             }

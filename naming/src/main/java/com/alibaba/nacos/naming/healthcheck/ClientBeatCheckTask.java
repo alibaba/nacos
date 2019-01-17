@@ -37,16 +37,19 @@ public class ClientBeatCheckTask implements Runnable {
 
     private VirtualClusterDomain domain;
 
-    @JSONField(serialize = false)
-    private PushService pushService;
-
-    @JSONField(serialize = false)
-    private DistroMapper distroMapper;
-
     public ClientBeatCheckTask(VirtualClusterDomain domain) {
         this.domain = domain;
-        pushService = SpringContext.getAppContext().getBean(PushService.class);
-        distroMapper = SpringContext.getAppContext().getBean(DistroMapper.class);
+    }
+
+
+    @JSONField(serialize = false)
+    public PushService getPushService() {
+        return SpringContext.getAppContext().getBean(PushService.class);
+    }
+
+    @JSONField(serialize = false)
+    public DistroMapper getDistroMapper() {
+        return SpringContext.getAppContext().getBean(DistroMapper.class);
     }
 
     public String taskKey() {
@@ -56,7 +59,7 @@ public class ClientBeatCheckTask implements Runnable {
     @Override
     public void run() {
         try {
-            if (!domain.getEnableClientBeat() || !distroMapper.responsible(domain.getName())) {
+            if (!domain.getEnableClientBeat() || !getDistroMapper().responsible(domain.getName())) {
                 return;
             }
 
@@ -70,7 +73,7 @@ public class ClientBeatCheckTask implements Runnable {
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 ipAddress.getIp(), ipAddress.getPort(), ipAddress.getClusterName(),
                                 UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, ipAddress.getLastBeat());
-                            pushService.domChanged(domain.getNamespaceId(), domain.getName());
+                            getPushService().domChanged(domain.getNamespaceId(), domain.getName());
                         }
                     }
                 }

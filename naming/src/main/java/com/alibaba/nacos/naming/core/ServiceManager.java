@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.*;
@@ -89,7 +90,8 @@ public class ServiceManager implements DataListener {
         }
     });
 
-    public ServiceManager() throws NacosException {
+    @PostConstruct
+    public void init() {
         // wait until distro-mapper ready because domain distribution check depends on it
         // TODO may be not necessary:
         while (distroMapper.getLiveSites().size() == 0) {
@@ -103,7 +105,12 @@ public class ServiceManager implements DataListener {
 
         UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
 
-        consistencyService.listen(UtilsAndCommons.DOMAINS_DATA_ID_PRE, this);
+        try {
+            Loggers.SRV_LOG.info("listen for {}", UtilsAndCommons.DOMAINS_DATA_ID_PRE);
+            consistencyService.listen(UtilsAndCommons.DOMAINS_DATA_ID_PRE, this);
+        } catch (NacosException e) {
+            Loggers.SRV_LOG.error("listen for {} failed!", UtilsAndCommons.DOMAINS_DATA_ID_PRE);
+        }
     }
 
     public Map<String, VirtualClusterDomain> chooseDomMap(String namespaceId) {
@@ -366,7 +373,7 @@ public class ServiceManager implements DataListener {
      */
     public void registerInstance(String namespaceId, String serviceName, IpAddress instance) throws Exception {
 
-        VirtualClusterDomain service = (VirtualClusterDomain) getService(namespaceId, serviceName);
+        VirtualClusterDomain service = getService(namespaceId, serviceName);
 
         boolean serviceUpdated = false;
         if (service == null) {

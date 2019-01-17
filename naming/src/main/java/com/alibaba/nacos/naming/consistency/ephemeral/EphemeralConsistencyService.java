@@ -21,5 +21,5 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  * @since 1.0.0
  */
-public interface ApConsistencyService extends ConsistencyService {
+public interface EphemeralConsistencyService extends ConsistencyService {
 }
