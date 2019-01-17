@@ -31,7 +31,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
-    nacosVersion: '0.7.0',
+    nacosVersion: '0.8.0',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
@@ -248,7 +248,7 @@ const I18N_CONF = {
     escExit: '发布',
     release: '返回',
     confirmSyanx: '配置信息可能有语法错误, 确定提交吗?',
-    dataIdExists: 'Data ID 已存在',
+    dataIdExists: '配置已存在, 试试别的dataid和group的组合吧',
     dataRequired: '数据不能为空, 提交失败',
   },
   CloneDialog: {

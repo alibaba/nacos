@@ -31,7 +31,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
-    nacosVersion: '0.7.0',
+    nacosVersion: '0.8.0',
     doesNotExist: 'The page you visit does not exist',
     configurationManagementVirtual: 'ConfigManagement',
     configurationManagement: 'Configurations',
@@ -249,7 +249,7 @@ const I18N_CONF = {
     escExit: 'Publish',
     release: 'Back',
     confirmSyanx: 'The configuration information may has a syntax error. Are you sure to submit?',
-    dataIdExists: 'Data ID exists',
+    dataIdExists: 'Configuration already exists. Enter a new Data ID and Group name.',
     dataRequired: 'Data cannot be empty, submission failed',
   },
   CloneDialog: {
