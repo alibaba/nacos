@@ -606,12 +606,12 @@ public class DomainsManager {
         final RaftListener raftListener = new RaftListener() {
             @Override
             public boolean interests(String key) {
-                return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID);
+                return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
             }
 
             @Override
             public boolean matchUnlistenKey(String key) {
-                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".*");
+                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + "*");
             }
 
             @SuppressFBWarnings("JLM_JSR166_LOCK_MONITORENTER")
@@ -656,7 +656,7 @@ public class DomainsManager {
 
             @Override
             public void onDelete(String key, String value) throws Exception {
-                String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID + ".");
+                String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
                 String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
                 String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
                 Domain dom = chooseDomMap(namespace).remove(name);

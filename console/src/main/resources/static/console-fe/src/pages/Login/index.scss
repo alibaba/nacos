@@ -26,6 +26,10 @@ $contentWidth: 1280px;
       width: 480px;
       height: 540px;
       top: 90px;
+      input,
+      input::-webkit-input-placeholder {
+        font-size: 16px;
+      }
       .login-header {
         width: 100%;
         line-height: 45px;
@@ -42,6 +46,7 @@ $contentWidth: 1280px;
         button {
           width: 100%;
           height: 60px;
+          font-size: 16px;
           background: #4190ff 100%;
           color: white;
         }
@@ -86,7 +91,7 @@ $contentWidth: 1280px;
       transform: translateY(-50%);
     }
     .product-area {
-      width: 431px;
+      width: 600px;
       margin-left: 40px;
     }
     .product-logo {

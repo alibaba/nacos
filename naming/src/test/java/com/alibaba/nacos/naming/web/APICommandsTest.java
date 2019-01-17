@@ -22,7 +22,9 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.core.Cluster;
+import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -42,8 +44,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.core.DomainsManager;
 
 import java.util.ArrayList;
 import java.util.List;
