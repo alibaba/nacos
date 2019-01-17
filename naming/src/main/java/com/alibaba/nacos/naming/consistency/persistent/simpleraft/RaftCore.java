@@ -173,7 +173,6 @@ public class RaftCore {
             parameters.put("key", key);
 
             raftProxy.proxyPostLarge(getLeader().ip, API_PUB, params.toJSONString(), parameters);
-
             return;
         }
 
@@ -818,6 +817,7 @@ public class RaftCore {
 
         if (listenerList == null) {
             listenerList = new CopyOnWriteArrayList<>();
+            listeners.put(key, listenerList);
         }
 
         Loggers.RAFT.info("add listener: {}", key);

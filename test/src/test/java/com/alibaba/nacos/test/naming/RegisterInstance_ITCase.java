@@ -55,7 +55,7 @@ public class RegisterInstance_ITCase {
     public void init() throws Exception {
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + 8848);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
 
@@ -92,16 +92,14 @@ public class RegisterInstance_ITCase {
     @Test
     public void regDomTest() throws Exception {
         String serviceName = randomDomainName();
-
-        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
-
         System.out.println(serviceName);
+        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
 
         TimeUnit.SECONDS.sleep(3);
 
         List<Instance> instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);

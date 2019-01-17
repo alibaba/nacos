@@ -42,7 +42,7 @@ public class RaftProxy {
         }
     }
 
-    public static void proxyPostLarge(String server, String api, String content, Map<String, String> headers) throws Exception {
+    public void proxyPostLarge(String server, String api, String content, Map<String, String> headers) throws Exception {
         // do proxy
         if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
             server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();

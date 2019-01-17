@@ -105,21 +105,6 @@ public class HealthCheckTask implements Runnable {
             }
         }
     }
-//
-//    @JSONField(serialize = false)
-//    public SwitchDomain getSwitchDomain() {
-//        return SpringContext.getAppContext().getBean(SwitchDomain.class);
-//    }
-//
-//    @JSONField(serialize = false)
-//    public DistroMapper getDistroMapper() {
-//        return SpringContext.getAppContext().getBean(DistroMapper.class);
-//    }
-//
-//    @JSONField(serialize = false)
-//    public HealthCheckProcessor getHealthCheckProcessor() {
-//        return SpringContext.getAppContext().getBean(HealthCheckProcessorDelegate.class);
-//    }
 
     public Cluster getCluster() {
         return cluster;
