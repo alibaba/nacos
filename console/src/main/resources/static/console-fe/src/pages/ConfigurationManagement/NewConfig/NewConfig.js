@@ -442,13 +442,10 @@ class NewConfig extends React.Component {
                       required: true,
                       message: locale.newConfig,
                     },
-                    {
-                      max: 255,
-                      message: locale.dataIdIsNotEmpty,
-                    },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
+                maxLength={255}
                 addonTextBefore={
                   this.state.addonBefore ? (
                     <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>

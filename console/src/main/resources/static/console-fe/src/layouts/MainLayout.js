@@ -31,6 +31,7 @@ class MainLayout extends React.Component {
   static propTypes = {
     navList: PropTypes.array,
     history: PropTypes.object,
+    location: PropTypes.object,
     locale: PropTypes.object,
     children: PropTypes.any,
   };
@@ -74,6 +75,11 @@ class MainLayout extends React.Component {
     iconClass.className = tmpClassName;
   }
 
+  /**
+   * Click the back button
+   * TODO: this.props.history.goBack(); ???
+   * @param url
+   */
   nacosGoBack(url) {
     const params = window.location.hash.split('?')[1];
     const urlArr = params.split('&') || [];
@@ -92,6 +98,9 @@ class MainLayout extends React.Component {
           queryParams.push(urlArr[i]);
         }
       }
+    }
+    if (localStorage.getItem('namespace')) {
+      queryParams.push(`namespace=${localStorage.getItem('namespace')}`);
     }
     this.props.history.push(`/${url}?${queryParams.join('&')}`);
   }
@@ -401,7 +410,6 @@ class MainLayout extends React.Component {
                     <span style={{ marginLeft: 5 }}>{nacosVersion}</span>
                   </div>
                 )}
-
                 <div
                   className="product-nav-list"
                   style={{ position: 'relative', top: 0, height: '100%' }}

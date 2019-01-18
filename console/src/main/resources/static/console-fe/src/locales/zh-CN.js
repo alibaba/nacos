@@ -125,6 +125,9 @@ const I18N_CONF = {
     healthCheckPatternService: '服务端',
     healthCheckPatternClient: '客户端',
     healthCheckPatternNone: '禁止',
+    serviceNameRequired: '请输入服务名',
+    protectThresholdRequired: '请输入保护阈值',
+    healthCheckModeRequired: '请选择健康检查模式',
   },
   InstanceTable: {
     operation: '操作',
