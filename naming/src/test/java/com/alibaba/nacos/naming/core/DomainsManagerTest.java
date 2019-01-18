@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +47,23 @@ public class DomainsManagerTest extends BaseTest {
 
     @Test
     public void easyRemoveDom() throws Exception {
-        domainsManager.easyRemoveDom("nacos.test.1");
+        domainsManager.easyRemoveDom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1");
+    }
+
+    @Test
+    public void easyRemvIP4Dom() throws Exception {
+
+        VirtualClusterDomain domain = new VirtualClusterDomain();
+        domain.setName("nacos.test.1");
+
+        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
+
+        IpAddress ipAddress = new IpAddress();
+        ipAddress.setIp("1.1.1.1");
+        List<IpAddress> ipList = new ArrayList<IpAddress>();
+        ipList.add(ipAddress);
+        domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1"));
+        domainsManager.easyRemvIP4Dom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1", ipList, 1L);
     }
 
     @Test
@@ -54,9 +71,9 @@ public class DomainsManagerTest extends BaseTest {
         VirtualClusterDomain domain = new VirtualClusterDomain();
         domain.setName("nacos.test.1");
 
-        domainsManager.chooseDomMap().put("nacos.test.1", domain);
+        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
 
-        List<Domain> list = domainsManager.searchDomains("nacos.test.*");
+        List<Domain> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());

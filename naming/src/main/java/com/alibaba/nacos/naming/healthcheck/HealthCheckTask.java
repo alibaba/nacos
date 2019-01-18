@@ -31,7 +31,7 @@ public class HealthCheckTask implements Runnable {
 
     private long checkRTNormalized = -1;
     private long checkRTBest = -1;
-    private long checkRTWorst=  -1;
+    private long checkRTWorst = -1;
 
     private long checkRTLast = -1;
     private long checkRTLastLast = -1;
@@ -55,38 +55,36 @@ public class HealthCheckTask implements Runnable {
 
     @Override
     public void run() {
-        AbstractHealthCheckProcessor processor  = AbstractHealthCheckProcessor.getProcessor(cluster.getHealthChecker());
+        AbstractHealthCheckProcessor processor = AbstractHealthCheckProcessor.getProcessor(cluster.getHealthChecker());
 
         try {
             if (DistroMapper.responsible(cluster.getDom().getName())) {
                 processor.process(this);
-                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: " + cluster.getDom().getName());
+                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getDom().getName());
             }
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("VIPSRV-HEALTH-CHECK", "error while process health check for " + cluster.getDom().getName() + ":" + cluster.getName(), e);
+            Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}, error: {}",
+                cluster.getDom().getName(), cluster.getName(), e);
         } finally {
             if (!cancelled) {
                 HealthCheckReactor.scheduleCheck(this);
 
                 // worst == 0 means never checked
                 if (this.getCheckRTWorst() > 0
-                        && Switch.isHealthCheckEnabled(cluster.getDom().getName())
-                        && DistroMapper.responsible(cluster.getDom().getName())) {
+                    && Switch.isHealthCheckEnabled(cluster.getDom().getName())
+                    && DistroMapper.responsible(cluster.getDom().getName())) {
                     // TLog doesn't support float so we must convert it into long
                     long diff = ((this.getCheckRTLast() - this.getCheckRTLastLast()) * 10000)
-                            / this.getCheckRTLastLast();
+                        / this.getCheckRTLastLast();
 
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
                     Cluster cluster = this.getCluster();
-                    if (((VirtualClusterDomain)cluster.getDom()).getEnableHealthCheck()) {
-                        Loggers.CHECK_RT.info(cluster.getDom().getName() + ":" + cluster.getName()
-                                + "@" + processor.getType()
-                                + "->normalized: " + this.getCheckRTNormalized()
-                                + ", worst: " + this.getCheckRTWorst()
-                                + ", best: " + this.getCheckRTBest()
-                                + ", last: " + this.getCheckRTLast()
-                                + ", diff: " + diff);
+                    if (((VirtualClusterDomain) cluster.getDom()).getEnableHealthCheck()) {
+                        Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
+                            cluster.getDom().getName(), cluster.getName(), processor.getType(),
+                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
+                            this.getCheckRTLast(), diff);
                     }
                 }
             }
