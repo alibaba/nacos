@@ -125,6 +125,9 @@ const I18N_CONF = {
     healthCheckPatternService: 'Service',
     healthCheckPatternClient: 'Client',
     healthCheckPatternNone: 'None',
+    serviceNameRequired: 'Please enter a service name',
+    protectThresholdRequired: 'Please enter a protect threshold',
+    healthCheckModeRequired: 'Please select health check pattern',
   },
   InstanceTable: {
     operation: 'Operation',
