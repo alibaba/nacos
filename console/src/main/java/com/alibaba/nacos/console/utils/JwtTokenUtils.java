@@ -54,7 +54,7 @@ public class JwtTokenUtils {
 
     @PostConstruct
     public void init() {
-        this.secretKey = "SecretKey";
+        this.secretKey = "SecretKey012345678901234567890123456789012345678901234567890123456789";
         this.tokenValidityInMilliseconds = 1000 * 60 * 30L;
     }
 
@@ -82,7 +82,7 @@ public class JwtTokenUtils {
             .setSubject(authentication.getName())
             .claim(AUTHORITIES_KEY, "")
             .setExpiration(validity)
-            .signWith(SignatureAlgorithm.HS512, secretKey)
+            .signWith(SignatureAlgorithm.HS256, secretKey)
             .compact();
     }
 

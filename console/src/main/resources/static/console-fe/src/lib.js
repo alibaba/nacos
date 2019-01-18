@@ -26,6 +26,14 @@ window.globalConfig = {
 request.middleWare((_config = {}) => {
   let config = _config;
   let { url = '' } = config;
+
+  const namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
+  // 如果url中已经有 namespaceId, 不在data中添加namespaceId
+  config.data =
+    url.indexOf('namespaceId=') === -1
+      ? Object.assign({}, config.data, { namespaceId: namespace })
+      : config.data;
+
   let tenant = window.nownamespace || getParams('namespace') || '';
   tenant = tenant === 'global' ? '' : tenant;
   const splitArr = url.split('?');

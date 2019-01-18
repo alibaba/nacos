@@ -598,10 +598,6 @@ const request = (function(_global) {
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
 
-    const namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
-    const namespaceConf = { namespaceId: namespace };
-    config.data = config.data ? Object.assign({}, config.data, namespaceConf) : namespaceConf;
-
     return $.ajax(
       Object.assign({}, config, {
         type: config.type,
