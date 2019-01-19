@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.selector;
  * The types of selector accepted by Nacos
  *
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 public enum SelectorType {
     /**

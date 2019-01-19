@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -29,10 +31,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -56,7 +55,7 @@ public class RegisterInstance_ITCase {
     @Before
     public void init() throws Exception {
         if (naming == null) {
-            //TimeUnit.SECONDS.sleep(10);
+            TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
@@ -64,7 +63,14 @@ public class RegisterInstance_ITCase {
     @Test
     @Ignore
     public void regService() throws NacosException, InterruptedException {
-        String serviceName = "dungu.test.99";
+
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.put(PropertyKeyConst.NAMESPACE, "t3");
+
+        naming = NamingFactory.createNamingService(properties);
+
+        String serviceName = "dungu.test.10";
         naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
         Thread.sleep(100000000L);

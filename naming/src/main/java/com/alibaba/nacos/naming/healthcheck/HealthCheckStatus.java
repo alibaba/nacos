@@ -64,7 +64,7 @@ public class HealthCheckStatus {
                     + clusterName + ":"
                     + datumKey;
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("BUILD-KEY", "Exception while set rt, ip " + ip.toJSON(), e);
+            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: {}", ip.toJSON(), e);
         }
 
         return ip.getDefaultKey();
