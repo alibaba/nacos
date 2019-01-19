@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Nacos cluster member change event listener
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 public interface MemberChangeListener {

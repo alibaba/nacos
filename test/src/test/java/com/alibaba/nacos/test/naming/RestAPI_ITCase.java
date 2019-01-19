@@ -43,7 +43,7 @@ import java.net.URL;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
@@ -698,7 +698,7 @@ public class RestAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("ok", response.getBody());
     }
-  
+
     private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
 
         HttpHeaders headers = new HttpHeaders();

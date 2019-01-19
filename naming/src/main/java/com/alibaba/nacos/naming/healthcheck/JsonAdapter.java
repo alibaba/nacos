@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
 

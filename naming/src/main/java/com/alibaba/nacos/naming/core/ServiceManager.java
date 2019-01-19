@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.raft.Datum;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -42,7 +42,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @Component
 @DependsOn("nacosApplicationContext")

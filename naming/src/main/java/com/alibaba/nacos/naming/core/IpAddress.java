@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 /**
  * IP under domain
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class IpAddress extends Instance implements Comparable {
 

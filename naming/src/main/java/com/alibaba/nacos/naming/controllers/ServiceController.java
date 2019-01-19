@@ -43,7 +43,7 @@ import java.util.*;
 /**
  * Service operation controller
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service")

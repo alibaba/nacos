@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftPeerSet;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import org.junit.Before;
@@ -26,7 +26,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class BaseTest {
 

@@ -1,4 +1,4 @@
-package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
+package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.DataListener;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 /**
  * Using simplified Raft protocol to maintain the consistency status of Nacos cluster.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 @Component

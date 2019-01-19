@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 /**
  * Publish execution delegate
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 @Component("consistencyDelegate")

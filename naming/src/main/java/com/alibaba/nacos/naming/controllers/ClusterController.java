@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")

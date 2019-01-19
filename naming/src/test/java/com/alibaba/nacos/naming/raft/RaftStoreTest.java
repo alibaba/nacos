@@ -15,15 +15,15 @@
  */
 package com.alibaba.nacos.naming.raft;
 
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftStore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mock;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class RaftStoreTest {
 

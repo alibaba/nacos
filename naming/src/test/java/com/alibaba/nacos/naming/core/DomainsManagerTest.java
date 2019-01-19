@@ -29,7 +29,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)

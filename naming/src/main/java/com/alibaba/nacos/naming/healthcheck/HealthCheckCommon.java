@@ -38,7 +38,7 @@ import java.util.concurrent.*;
 /**
  * Health check public methods
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 @Component

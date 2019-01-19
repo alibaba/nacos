@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
+package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.util.SystemUtils;
@@ -24,13 +24,11 @@ import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.util.PropertySource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;

@@ -51,7 +51,7 @@ import java.util.Set;
  * to the consumer. Note that this fallback strategy may also be abstracted in future to introduce
  * more kinds of behaviors.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @see CmdbReader
  * @since 0.7.0
  */

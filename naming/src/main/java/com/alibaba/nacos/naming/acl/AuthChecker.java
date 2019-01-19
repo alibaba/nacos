@@ -31,7 +31,7 @@ import java.security.AccessControlException;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @Component
 public class AuthChecker {

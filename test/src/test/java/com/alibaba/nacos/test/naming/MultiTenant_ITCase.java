@@ -27,7 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},

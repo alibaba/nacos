@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 /**
  * A global spring context bean to inject bean for non-bean classes
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @Component("nacosApplicationContext")
 public class SpringContext implements ApplicationContextAware {
