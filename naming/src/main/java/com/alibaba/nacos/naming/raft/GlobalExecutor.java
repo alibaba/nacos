@@ -15,12 +15,16 @@
  */
 package com.alibaba.nacos.naming.raft;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nacos
  */
 public class GlobalExecutor {
+
     public static final long HEARTBEAT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
 
     public static final long LEADER_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(15L);

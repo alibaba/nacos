@@ -140,7 +140,7 @@ public class PeerSet {
 
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
-                Loggers.RAFT.info(leader.ip + " has become the LEADER");
+                Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }
         }
 
@@ -150,7 +150,8 @@ public class PeerSet {
     public RaftPeer makeLeader(RaftPeer candidate) {
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
-            Loggers.RAFT.info(leader.ip + " has become the LEADER" + ",local :" + JSON.toJSONString(local()) + ", leader: " + JSON.toJSONString(leader));
+            Loggers.RAFT.info("{} has become the LEADER, local: {}, leader: {}",
+                leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
         }
 
         for (final RaftPeer peer : peers.values()) {
@@ -162,7 +163,8 @@ public class PeerSet {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
-                                Loggers.RAFT.error("VIPSRV-RAFT", "get peer failed: " + response.getResponseBody() + ", peer: " + peer.ip);
+                                Loggers.RAFT.error("[NACOS-RAFT] get peer failed: {}, peer: {}",
+                                    response.getResponseBody(), peer.ip);
                                 peer.state = RaftPeer.State.FOLLOWER;
                                 return 1;
                             }
@@ -174,7 +176,7 @@ public class PeerSet {
                     });
                 } catch (Exception e) {
                     peer.state = RaftPeer.State.FOLLOWER;
-                    Loggers.RAFT.error("VIPSRV-RAFT", "error while getting peer from peer: " + peer.ip);
+                    Loggers.RAFT.error("[NACOS-RAFT] error while getting peer from peer: {}", peer.ip);
                 }
             }
         }
@@ -186,7 +188,7 @@ public class PeerSet {
         RaftPeer peer = peers.get(NetUtils.localServer());
         if (peer == null) {
             throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
-                    + Arrays.toString(peers.keySet().toArray()));
+                + Arrays.toString(peers.keySet().toArray()));
         }
 
         return peer;

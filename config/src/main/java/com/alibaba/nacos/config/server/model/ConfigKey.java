@@ -36,8 +36,6 @@ public class ConfigKey implements Serializable {
     public ConfigKey() {
     }
 
-    ;
-
     public ConfigKey(String appName, String dataId, String group) {
         this.appName = appName;
         this.dataId = dataId;

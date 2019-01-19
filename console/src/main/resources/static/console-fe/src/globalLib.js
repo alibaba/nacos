@@ -217,6 +217,7 @@ const aliwareIntl = (function(_global) {
     this.nowData = nowData;
     this.setMomentLocale(this.currentLanguageCode);
   }
+
   let aliwareLocal = aliwareGetCookieByKeyName('aliyun_lang') || 'zh';
   let aliwareLocalSite = aliwareGetCookieByKeyName('aliyun_country') || 'cn';
   aliwareLocal = aliwareLocal.toLowerCase();
@@ -473,6 +474,7 @@ const request = (function(_global) {
       return serviceObj;
     };
   })();
+
   /**
    * 添加中间件函数
    * @param {*function} callback 回调函数
@@ -485,6 +487,7 @@ const request = (function(_global) {
     }
     return this;
   }
+
   /**
    * 处理中间件
    * @param {*Object} config ajax请求配置信息
@@ -504,6 +507,7 @@ const request = (function(_global) {
     }
     return config;
   }
+
   /**
    * 处理自定义url
    * @param {*Object} config ajax请求配置信息
@@ -603,9 +607,25 @@ const request = (function(_global) {
         beforeSend(xhr) {
           config.beforeSend && config.beforeSend(xhr);
         },
+        headers: {
+          Authorization: localStorage.getItem('token'),
+        },
       })
+    ).then(
+      success => {},
+      error => {
+        // 处理403 forbidden
+        if (error && (error.status === 403 || error.status === 401)) {
+          // 跳转至login页
+          // TODO: 用 react-router 重写，改造成本比较高，这里先hack
+          const url = window.location.href;
+          const base_url = url.split('#')[0];
+          window.location = `${base_url}#/login`;
+        }
+      }
     );
   }
+
   // 暴露方法
   Request.handleCustomService = handleCustomService;
   Request.handleMiddleWare = handleMiddleWare;

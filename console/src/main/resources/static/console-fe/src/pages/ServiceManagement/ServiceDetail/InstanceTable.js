@@ -80,8 +80,8 @@ class InstanceTable extends React.Component {
     const newVal = Object.assign({}, instance);
     newVal.list[index].enabled = !enabled;
     request({
-      method: 'POST',
-      url: 'v1/ns/instance/update',
+      method: 'PUT',
+      url: 'v1/ns/instance',
       data: {
         serviceName,
         clusterName,
