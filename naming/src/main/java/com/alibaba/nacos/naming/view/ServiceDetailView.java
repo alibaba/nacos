@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class ServiceDetailView {
 

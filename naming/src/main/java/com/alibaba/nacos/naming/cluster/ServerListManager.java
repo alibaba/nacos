@@ -4,7 +4,7 @@ import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.GlobalExecutor;
+import com.alibaba.nacos.naming.consistency.persistent.raft.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -20,7 +20,7 @@ import static com.alibaba.nacos.common.util.SystemUtils.*;
 /**
  * The manager to globally refresh and operate server list.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 @Component("serverListManager")

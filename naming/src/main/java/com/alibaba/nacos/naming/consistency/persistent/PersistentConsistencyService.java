@@ -26,7 +26,7 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
  * successfully written to the cluster. And the data should be consistent between servers after some time
  * without any outside interfere.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 public interface PersistentConsistencyService extends ConsistencyService {

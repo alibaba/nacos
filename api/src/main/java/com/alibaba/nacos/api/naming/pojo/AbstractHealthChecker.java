@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public abstract class AbstractHealthChecker implements Cloneable {
 

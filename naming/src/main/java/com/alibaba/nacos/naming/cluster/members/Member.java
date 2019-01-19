@@ -6,7 +6,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 /**
  * Member node of Nacos cluster
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 public class Member {

@@ -13,18 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.partialrenew;
+package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.core.DistroMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * A consistency protocol algorithm called <b>Partition</b>
+ * <p>
+ * Use a partition algorithm to divide data into many blocks. Each Nacos server node takes
+ * responsibility for exactly one block of data. Each block of data is generated, removed
+ * and synchronized by its associated server. So every Nacos only handles writings for a
+ * subset of the total service data, and at mean time stores complete service data.
+ *
+ * @author nkorange
+ * @since 1.0.0
  */
 @Component
-public class RenewConsistencyServiceImpl implements EphemeralConsistencyService {
+public class PartitionConsistencyServiceImpl implements EphemeralConsistencyService {
+
+    @Autowired
+    private DistroMapper distroMapper;
 
     @Override
     public void put(Object key, Object value) throws NacosException {
@@ -53,11 +66,11 @@ public class RenewConsistencyServiceImpl implements EphemeralConsistencyService 
 
     @Override
     public boolean isResponsible(Object key) {
-        return false;
+        return distroMapper.responsible((String) key);
     }
 
     @Override
     public String getResponsibleServer(Object key) {
-        return null;
+        return distroMapper.mapSrv((String) key);
     }
 }

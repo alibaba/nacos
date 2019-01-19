@@ -21,7 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.*;
+import com.alibaba.nacos.naming.consistency.persistent.raft.*;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -42,7 +42,7 @@ import java.util.Map;
 /**
  * HTTP interfaces for Raft consistency protocol. These interfaces should only be invoked by Nacos server itself.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 @RestController

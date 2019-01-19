@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.raft.Datum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -34,7 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Switch manager
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 @Component

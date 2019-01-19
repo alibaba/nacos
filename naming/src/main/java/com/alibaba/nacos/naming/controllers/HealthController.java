@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @author nanamikon
  * @since 0.8.0
  */

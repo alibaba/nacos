@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 /**
  * Health check mode
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public enum HealthCheckMode {
     /**

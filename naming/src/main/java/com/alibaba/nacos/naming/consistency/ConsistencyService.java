@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  * In this way, we also provide space for user to extend the underlying consistency protocols, as long as they
  * obey our consistency baseline.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 public interface ConsistencyService {

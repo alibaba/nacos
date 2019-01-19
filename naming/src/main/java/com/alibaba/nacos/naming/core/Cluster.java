@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 

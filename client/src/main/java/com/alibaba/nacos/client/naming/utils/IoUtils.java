@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class IoUtils {
 

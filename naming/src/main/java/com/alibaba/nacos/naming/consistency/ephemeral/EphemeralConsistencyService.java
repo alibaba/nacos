@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 1.0.0
  */
 public interface EphemeralConsistencyService extends ConsistencyService {

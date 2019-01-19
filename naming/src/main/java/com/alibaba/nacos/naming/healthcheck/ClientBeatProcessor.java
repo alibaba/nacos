@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class ClientBeatProcessor implements Runnable {
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);

@@ -30,7 +30,7 @@ import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class ConcurrentDiskUtil {
 

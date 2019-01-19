@@ -31,7 +31,7 @@ import java.util.List;
  * Every extended selector should also register its type to class SelectorType so Nacos
  * recognizes it and can correctly create this type of selector.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @see com.alibaba.nacos.api.selector.SelectorType
  * @see SelectorJsonAdapter
  * @since 0.7.0

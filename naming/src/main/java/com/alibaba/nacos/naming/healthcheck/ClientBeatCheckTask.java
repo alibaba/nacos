@@ -31,7 +31,7 @@ import java.net.HttpURLConnection;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class ClientBeatCheckTask implements Runnable {
 
