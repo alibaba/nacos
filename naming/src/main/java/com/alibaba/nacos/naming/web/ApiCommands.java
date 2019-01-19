@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.util.Md5Utils;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.*;
@@ -72,6 +73,9 @@ public class ApiCommands {
 
     @Autowired
     private SwitchManager switchManager;
+
+    @Autowired
+    private ServerListManager serverListManager;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -913,8 +917,8 @@ public class ApiCommands {
     @ResponseBody
     public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
 
-        if (distroMapper.getLocalhostIP().equals(UtilsAndCommons.LOCAL_HOST_IP)) {
-            throw new Exception("invalid localhost ip: " + distroMapper.getLocalhostIP());
+        if (NetUtils.localServer().equals(UtilsAndCommons.LOCAL_HOST_IP)) {
+            throw new Exception("invalid localhost ip: " + NetUtils.localServer());
         }
 
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
@@ -1456,7 +1460,7 @@ public class ApiCommands {
         String domsStatusString = WebUtils.required(request, "domsStatus");
         String serverIP = WebUtils.optional(request, "clientIP", "");
 
-        if (!NamingProxy.getServers().contains(serverIP)) {
+        if (!serverListManager.contains(serverIP)) {
             throw new IllegalArgumentException("ip: " + serverIP + " is not in serverlist");
         }
 

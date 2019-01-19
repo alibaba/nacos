@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.consistency.persistent.simpleraft.PeerSet;
+import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftPeerSet;
 import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.simpleraft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -34,7 +34,7 @@ public class BaseTest {
     public ServiceManager domainsManager;
 
     @Mock
-    public PeerSet peerSet;
+    public RaftPeerSet peerSet;
 
     @Mock
     public RaftCore raftCore;
