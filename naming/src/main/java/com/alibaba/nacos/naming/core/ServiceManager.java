@@ -20,6 +20,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.persistent.simpleraft.Datum;
@@ -76,6 +78,9 @@ public class ServiceManager implements DataListener {
     private DistroMapper distroMapper;
 
     @Autowired
+    private ServerListManager serverListManager;
+
+    @Autowired
     private PushService pushService;
 
     /**
@@ -94,14 +99,6 @@ public class ServiceManager implements DataListener {
 
     @PostConstruct
     public void init() {
-        // wait until distro-mapper ready because domain distribution check depends on it
-        // TODO may be not necessary:
-        while (distroMapper.getLiveSites().size() == 0) {
-            try {
-                Thread.sleep(TimeUnit.SECONDS.toMillis(1L));
-            } catch (InterruptedException ignore) {
-            }
-        }
 
         UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new DomainReporter(), 60000, TimeUnit.MILLISECONDS);
 
@@ -118,7 +115,6 @@ public class ServiceManager implements DataListener {
     public Map<String, VirtualClusterDomain> chooseDomMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
-
 
     public void addUpdatedDom2Queue(String namespaceId, String domName, String serverIP, String checksum) {
         lock.lock();
@@ -171,7 +167,7 @@ public class ServiceManager implements DataListener {
                 addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
                 putDomain(dom);
                 dom.init();
-                consistencyService.listen(UtilsAndCommons.getDomStoreKey(dom), dom);
+                consistencyService.listen(UtilsAndCommons.getIPListStoreKey(dom), dom);
                 Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", dom.toJSON());
             }
             wakeUp(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
@@ -695,17 +691,17 @@ public class ServiceManager implements DataListener {
 
                     msg.setData(JSON.toJSONString(checksum));
 
-                    List<String> sameSiteServers = NamingProxy.getSameSiteServers().get("sameSite");
+                    List<Member> sameSiteServers = serverListManager.getMembers();
 
-                    if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localServer())) {
+                    if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                         return;
                     }
 
-                    for (String server : sameSiteServers) {
-                        if (server.equals(NetUtils.localServer())) {
+                    for (Member server : sameSiteServers) {
+                        if (server.getKey().equals(NetUtils.localServer())) {
                             continue;
                         }
-                        synchronizer.send(server, msg);
+                        synchronizer.send(server.getKey(), msg);
                     }
                 }
             } catch (Exception e) {

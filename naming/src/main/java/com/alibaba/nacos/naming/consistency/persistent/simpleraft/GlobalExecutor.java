@@ -33,9 +33,10 @@ public class GlobalExecutor {
 
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
 
-    public static final long ADDRESS_SERVER_UPDATE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
+    private static final long NACOS_SERVER_LIST_REFRESH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
-    private static ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
+    private static ScheduledExecutorService executorService =
+        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
@@ -47,15 +48,23 @@ public class GlobalExecutor {
         }
     });
 
-    public static void register(Runnable runnable) {
+    public static void registerMasterElection(Runnable runnable) {
         executorService.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
 
-    public static void register1(Runnable runnable) {
+    public static void registerServerListUpdater(Runnable runnable) {
+        executorService.scheduleAtFixedRate(runnable, 0, NACOS_SERVER_LIST_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
+    }
+
+    public static void registerHeartbeat(Runnable runnable) {
         executorService.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
 
-    public static void register(Runnable runnable, long delay) {
+    public static void schedule(Runnable runnable, long delay) {
         executorService.scheduleAtFixedRate(runnable, 0, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void submit(Runnable runnable) {
+        executorService.submit(runnable);
     }
 }

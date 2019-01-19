@@ -29,7 +29,6 @@ import org.springframework.stereotype.Component;
 @Component("nacosApplicationContext")
 public class SpringContext implements ApplicationContextAware {
 
-    @Autowired
     static ApplicationContext context;
 
     @Override

@@ -17,6 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.IpAddress;
@@ -49,6 +51,9 @@ public class HealthCheckCommon {
     private SwitchDomain switchDomain;
 
     @Autowired
+    private ServerListManager serverListManager;
+
+    @Autowired
     private PushService pushService;
 
     private static LinkedBlockingDeque<HealthCheckResult> healthCheckResults = new LinkedBlockingDeque<>(1024 * 128);
@@ -71,14 +76,14 @@ public class HealthCheckCommon {
                 List list = Arrays.asList(healthCheckResults.toArray());
                 healthCheckResults.clear();
 
-                List<String> sameSiteServers = NamingProxy.getSameSiteServers().get("sameSite");
+                List<Member> sameSiteServers = serverListManager.getMembers();
 
-                if (sameSiteServers == null || sameSiteServers.size() <= 0 || !NamingProxy.getServers().contains(NetUtils.localServer())) {
+                if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                     return;
                 }
 
-                for (String server : sameSiteServers) {
-                    if (server.equals(NetUtils.localServer())) {
+                for (Member server : sameSiteServers) {
+                    if (server.getKey().equals(NetUtils.localServer())) {
                         continue;
                     }
                     Map<String, String> params = new HashMap<>(10);
@@ -87,10 +92,8 @@ public class HealthCheckCommon {
                         Loggers.DEBUG_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
                             server, JSON.toJSONString(list));
                     }
-                    if (!server.contains(":")) {
-                        server = server + ":" + RunningConfig.getServerPort();
-                    }
-                    HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server
+
+                    HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.getKey()
                         + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                         + "/api/healthCheckResult", null, params);
 

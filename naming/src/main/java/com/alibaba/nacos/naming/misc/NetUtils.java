@@ -30,10 +30,11 @@ public class NetUtils {
 
     private static String serverAddress = null;
 
-    public static String localServer() {
+    public static String getLocalAddress() {
+
         try {
             if (StringUtils.isNotBlank(serverAddress)) {
-                return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+                return serverAddress;
             }
 
             InetAddress inetAddress = InetAddress.getLocalHost();
@@ -45,10 +46,14 @@ public class NetUtils {
                     serverAddress = inetAddress.getCanonicalHostName();
                 }
             }
-            return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            return serverAddress;
         } catch (UnknownHostException e) {
             return "resolve_failed";
         }
+    }
+
+    public static String localServer() {
+        return getLocalAddress() + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
     }
 
     public static String num2ip(int ip) {

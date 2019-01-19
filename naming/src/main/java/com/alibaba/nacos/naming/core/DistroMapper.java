@@ -17,6 +17,8 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.misc.*;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.collections.CollectionUtils;
@@ -47,8 +49,6 @@ public class DistroMapper {
 
     private Set<String> liveSites = new HashSet<String>();
 
-    private String localhostIP;
-
     public final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
     private long lastHealthServerMillis = 0L;
@@ -60,46 +60,19 @@ public class DistroMapper {
     @Autowired
     private SwitchDomain switchDomain;
 
+    @Autowired
+    private ServerListManager serverListManager;
+
     /**
      * init server list
      */
     @PostConstruct
     public void init() {
-
-        localhostIP = NetUtils.localServer();
-
-        List<String> servers = NamingProxy.getServers();
-
-        while (servers == null || servers.size() == 0) {
-            Loggers.SRV_LOG.warn("[DISTRO-MAPPER] Server list is empty, sleep 3 seconds and try again.");
-            try {
-                TimeUnit.SECONDS.sleep(3);
-                servers = NamingProxy.getServers();
-            } catch (InterruptedException e) {
-                Loggers.SRV_LOG.warn("[DISTRO-MAPPER] Sleeping thread is interupted, try again.");
-            }
-        }
-
-        StringBuilder sb = new StringBuilder();
-
-        for (String serverIP : servers) {
-            String serverSite;
-            String serverConfig;
-
-            serverSite = UtilsAndCommons.UNKNOWN_SITE;
-
-            serverConfig = serverSite + "#" + serverIP + "#" + System.currentTimeMillis() + "#" + 1 + "\r\n";
-            sb.append(serverConfig);
-
-        }
-
-        onServerStatusUpdate(sb.toString(), false);
-
         UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(new ServerStatusReporter(),
             60000, TimeUnit.MILLISECONDS);
     }
 
-    private void onServerStatusUpdate(String configInfo, boolean isFromDiamond) {
+    private void onServerStatusUpdate(String configInfo) {
 
         String[] configs = configInfo.split("\r\n");
         if (configs.length == 0) {
@@ -214,7 +187,7 @@ public class DistroMapper {
             server.ip = params[1];
             server.lastRefTime = Long.parseLong(params[2]);
 
-            if (!NamingProxy.getServers().contains(server.ip)) {
+            if (!serverListManager.contains(server.ip)) {
                 throw new IllegalArgumentException("ip: " + server.ip + " is not in serverlist");
             }
 
@@ -329,8 +302,8 @@ public class DistroMapper {
             return false;
         }
 
-        int index = healthyList.indexOf(localhostIP);
-        int lastIndex = healthyList.lastIndexOf(localhostIP);
+        int index = healthyList.indexOf(NetUtils.localServer());
+        int lastIndex = healthyList.lastIndexOf(NetUtils.localServer());
         if (lastIndex < 0 || index < 0) {
             return true;
         }
@@ -341,15 +314,15 @@ public class DistroMapper {
 
     public String mapSrv(String dom) {
         if (CollectionUtils.isEmpty(healthyList) || !switchDomain.distroEnabled) {
-            return localhostIP;
+            return NetUtils.localServer();
         }
 
         try {
             return healthyList.get(distroHash(dom) % healthyList.size());
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + localhostIP, e);
+            Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + NetUtils.localServer(), e);
 
-            return localhostIP;
+            return NetUtils.localServer();
         }
     }
 
@@ -371,7 +344,7 @@ public class DistroMapper {
         for (Map.Entry<String, List<Server>> entry : distroConfig.entrySet()) {
             for (Server server : entry.getValue()) {
                 //request other server to clean invalid servers
-                if (!server.ip.equals(localhostIP)) {
+                if (!server.ip.equals(NetUtils.localServer())) {
                     requestOtherServerCleanInvalidServers(server.ip);
                 }
             }
@@ -415,10 +388,6 @@ public class DistroMapper {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[DISTRO-STATUS-CLEAN] Failed to request to clean server status to " + serverIP, e);
         }
-    }
-
-    public String getLocalhostIP() {
-        return localhostIP;
     }
 
     @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
@@ -478,35 +447,29 @@ public class DistroMapper {
                     weight = 1;
                 }
 
-                localhostIP = NetUtils.localServer();
-
                 long curTime = System.currentTimeMillis();
-                String status = LOCALHOST_SITE + "#" + localhostIP + "#" + curTime + "#" + weight + "\r\n";
+                String status = LOCALHOST_SITE + "#" + NetUtils.localServer() + "#" + curTime + "#" + weight + "\r\n";
 
                 //send status to itself
                 onReceiveServerStatus(status);
 
-                List<String> allServers = NamingProxy.getServers();
+                List<Member> allServers = serverListManager.getMembers();
 
-                if (!allServers.contains(localhostIP)) {
+                if (!serverListManager.contains(NetUtils.localServer())) {
+                    Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}", NetUtils.localServer(), allServers);
                     return;
                 }
 
-                if (allServers.size() > 0 && !localhostIP.contains(UtilsAndCommons.LOCAL_HOST_IP)) {
-                    for (String server : allServers) {
-                        if (server.equals(localhostIP)) {
+                if (allServers.size() > 0 && !NetUtils.localServer().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
+                    for (Member server : allServers) {
+                        if (server.getKey().equals(NetUtils.localServer())) {
                             continue;
-                        }
-
-                        if (!allServers.contains(localhostIP)) {
-                            Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}", localhostIP, allServers);
-                            return;
                         }
 
                         Message msg = new Message();
                         msg.setData(status);
 
-                        synchronizer.send(server, msg);
+                        synchronizer.send(server.getKey(), msg);
 
                     }
                 }

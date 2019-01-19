@@ -16,19 +16,29 @@
 package com.alibaba.nacos.naming.consistency.persistent.simpleraft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.members.Member;
+import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.collections.SortedBag;
 import org.apache.commons.collections.bag.TreeBag;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.PropertySource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.net.HttpURLConnection;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 
@@ -36,7 +46,13 @@ import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
  * @author nacos
  */
 @Component
-public class PeerSet {
+@DependsOn("serverListManager")
+public class RaftPeerSet implements MemberChangeListener {
+
+    @Autowired
+    private ServerListManager serverListManager;
+
+    private AtomicLong localTerm = new AtomicLong(0L);
 
     private RaftPeer leader = null;
 
@@ -46,7 +62,13 @@ public class PeerSet {
 
     private boolean ready = false;
 
-    public PeerSet() {
+    public RaftPeerSet() {
+
+    }
+
+    @PostConstruct
+    public void init() {
+        serverListManager.listen(this);
     }
 
     public RaftPeer getLeader() {
@@ -199,6 +221,13 @@ public class PeerSet {
 
     public RaftPeer local() {
         RaftPeer peer = peers.get(NetUtils.localServer());
+        if (peer == null && SystemUtils.STANDALONE_MODE) {
+            RaftPeer localPeer = new RaftPeer();
+            localPeer.ip = NetUtils.localServer();
+            localPeer.term.set(localTerm.get());
+            peers.put(localPeer.ip, localPeer);
+            return localPeer;
+        }
         if (peer == null) {
             throw new IllegalStateException("unable to find local peer: " + NetUtils.localServer() + ", all peers: "
                 + Arrays.toString(peers.keySet().toArray()));
@@ -232,13 +261,39 @@ public class PeerSet {
         }
 
         local.term.set(term);
+        localTerm.set(term);
     }
 
     public long getTerm() {
-        return local().term.get();
+        return localTerm.get();
     }
 
     public boolean contains(RaftPeer remote) {
         return peers.containsKey(remote.ip);
+    }
+
+    @Override
+    public void onChangeMemberList(List<Member> latestMembers) {
+
+        Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
+        for (Member member : latestMembers) {
+
+            if (peers.containsKey(member.getKey())) {
+                tmpPeers.put(member.getKey(), peers.get(member.getKey()));
+                continue;
+            }
+
+            RaftPeer raftPeer = new RaftPeer();
+            raftPeer.ip = member.getKey();
+            tmpPeers.put(member.getKey(), raftPeer);
+        }
+
+        // replace raft peer set:
+        peers = tmpPeers;
+    }
+
+    @Override
+    public void onChangeReachableMemberList(List<Member> latestReachableMembers) {
+
     }
 }

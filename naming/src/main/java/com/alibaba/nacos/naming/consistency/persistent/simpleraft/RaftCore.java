@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
@@ -57,8 +56,6 @@ public class RaftCore {
 
     public static final String API_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/publish";
 
-    public static final String API_UNSF_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/unSafePublish";
-
     public static final String API_DEL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/delete";
 
     public static final String API_GET = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/get";
@@ -85,18 +82,14 @@ public class RaftCore {
 
     public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
 
-    private static final int INIT_LOCK_TIME_SECONDS = 3;
-
     private volatile boolean initialized = false;
-
-    private static Lock lock = new ReentrantLock();
 
     private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
 
     private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<String, Datum>();
 
     @Autowired
-    private PeerSet peers;
+    private RaftPeerSet peers;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -116,8 +109,6 @@ public class RaftCore {
 
         executor.submit(notifier);
 
-        peers.add(NamingProxy.getServers());
-
         long start = System.currentTimeMillis();
 
         ConcurrentMap<String, Datum> datumMap = raftStore.loadDatums();
@@ -130,8 +121,7 @@ public class RaftCore {
 
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
-        Loggers.RAFT.info("cache loaded, peer count: {}, datum count: {}, current term: {}",
-            peers.size(), datums.size(), peers.getTerm());
+        Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
 
         while (true) {
             if (notifier.tasks.size() <= 0) {
@@ -142,18 +132,8 @@ public class RaftCore {
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
-        GlobalExecutor.register(new MasterElection());
-        GlobalExecutor.register1(new HeartBeat());
-        GlobalExecutor.register(new AddressServerUpdater(), GlobalExecutor.ADDRESS_SERVER_UPDATE_INTERVAL_MS);
-
-        if (peers.size() > 0) {
-            if (lock.tryLock(INIT_LOCK_TIME_SECONDS, TimeUnit.SECONDS)) {
-                initialized = true;
-                lock.unlock();
-            }
-        } else {
-            throw new Exception("peers is empty.");
-        }
+        GlobalExecutor.registerMasterElection(new MasterElection());
+        GlobalExecutor.registerHeartbeat(new HeartBeat());
 
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
             GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
@@ -774,40 +754,6 @@ public class RaftCore {
         return local;
     }
 
-    public class AddressServerUpdater implements Runnable {
-        @Override
-        public void run() {
-            try {
-                List<String> servers = NamingProxy.getServers();
-                List<RaftPeer> peerList = new ArrayList<RaftPeer>(peers.allPeers());
-                List<String> oldServers = new ArrayList<String>();
-
-                if (CollectionUtils.isEmpty(servers)) {
-                    Loggers.RAFT.warn("get empty server list from address server,ignore it.");
-                    return;
-                }
-
-                for (RaftPeer peer : peerList) {
-                    oldServers.add(peer.ip);
-                }
-
-                List<String> newServers = (List<String>) CollectionUtils.subtract(servers, oldServers);
-                if (!CollectionUtils.isEmpty(newServers)) {
-                    peers.add(newServers);
-                    Loggers.RAFT.info("server list is updated, new: {} servers: {}", newServers.size(), newServers);
-                }
-
-                List<String> deadServers = (List<String>) CollectionUtils.subtract(oldServers, servers);
-                if (!CollectionUtils.isEmpty(deadServers)) {
-                    peers.remove(deadServers);
-                    Loggers.RAFT.info("server list is updated, dead: {}, servers: {}", deadServers.size(), deadServers);
-                }
-            } catch (Exception e) {
-                Loggers.RAFT.info("error while updating server list.", e);
-            }
-        }
-    }
-
     public void listen(String key, DataListener listener) {
 
         List<DataListener> listenerList = listeners.get(key);
@@ -847,7 +793,8 @@ public class RaftCore {
         for (DataListener dl : listeners.get(key)) {
             // TODO maybe use equal:
             if (dl == listener) {
-                listeners.remove(listener);
+                listeners.get(key).remove(listener);
+                break;
             }
         }
     }
@@ -891,11 +838,11 @@ public class RaftCore {
         return new ArrayList<RaftPeer>(peers.allPeers());
     }
 
-    public PeerSet getPeerSet() {
+    public RaftPeerSet getPeerSet() {
         return peers;
     }
 
-    public void setPeerSet(PeerSet peerSet) {
+    public void setPeerSet(RaftPeerSet peerSet) {
         peers = peerSet;
     }
 
