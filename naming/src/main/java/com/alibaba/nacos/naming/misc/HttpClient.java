@@ -27,6 +27,8 @@ import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -274,6 +276,33 @@ public class HttpClient {
 
             return new HttpResult(response.getStatusLine().getStatusCode(), IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Throwable e) {
+            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
+        }
+    }
+
+    public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
+        try {
+            HttpClientBuilder builder = HttpClients.custom();
+            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+
+            CloseableHttpClient httpClient = builder.build();
+            HttpPut httpPut = new HttpPut(url);
+
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpPut.setHeader(entry.getKey(), entry.getValue());
+            }
+
+            httpPut.setEntity(new ByteArrayEntity(content));
+            HttpResponse response = httpClient.execute(httpPut);
+            HttpEntity entity = response.getEntity();
+
+            HeaderElement[] headerElements = entity.getContentType().getElements();
+            String charset = headerElements[0].getParameterByName("charset").getValue();
+
+            return new HttpResult(response.getStatusLine().getStatusCode(),
+                IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+        } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
     }

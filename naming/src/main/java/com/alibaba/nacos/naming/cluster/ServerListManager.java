@@ -4,7 +4,7 @@ import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
-import com.alibaba.nacos.naming.consistency.persistent.raft.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;

@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -958,16 +959,5 @@ public class RaftCore {
                 }
             }
         }
-    }
-
-    public enum ApplyAction {
-        /**
-         * Data changed
-         */
-        CHANGE,
-        /**
-         * Data deleted
-         */
-        DELETE
     }
 }
