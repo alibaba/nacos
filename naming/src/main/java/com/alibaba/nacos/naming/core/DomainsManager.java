@@ -315,7 +315,7 @@ public class DomainsManager {
         try {
 
             if (!dom.getEnableClientBeat()) {
-                getDom2LockMap().get(domName).lock();
+                getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, domName)).lock();
             }
 
             Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
@@ -389,7 +389,7 @@ public class DomainsManager {
             RaftCore.onPublish(datum, peer, increaseTerm);
         } finally {
             if (!dom.getEnableClientBeat()) {
-                getDom2LockMap().get(domName).unlock();
+                getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, domName)).unlock();
             }
         }
 
