@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.persistent.raft;
+package com.alibaba.nacos.naming.misc;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -37,16 +37,51 @@ public class GlobalExecutor {
 
     private static ScheduledExecutorService executorService =
         new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
 
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.raft.timer");
+                t.setDaemon(true);
+                t.setName("com.alibaba.nacos.naming.raft.timer");
 
-            return t;
-        }
-    });
+                return t;
+            }
+        });
+
+    private static ScheduledExecutorService taskDispatchExecutor =
+        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+
+                t.setDaemon(true);
+                t.setName("com.alibaba.nacos.naming.partition.task.dispatcher");
+
+                return t;
+            }
+        });
+
+
+    private static ScheduledExecutorService dataSyncExecutor =
+        new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+
+                t.setDaemon(true);
+                t.setName("com.alibaba.nacos.naming.partition.data.syncer");
+
+                return t;
+            }
+        });
+
+    public static void submitPartitionTaskExecute(Runnable runnable) {
+        taskDispatchExecutor.submit(runnable);
+    }
+
+    public static void submitDataSync(Runnable runnable) {
+        dataSyncExecutor.submit(runnable);
+    }
 
     public static void registerMasterElection(Runnable runnable) {
         executorService.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
