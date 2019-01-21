@@ -244,13 +244,13 @@ public class SwitchDomain implements Domain, DataListener {
     }
 
     @Override
-    public void onChange(String key, String value) throws Exception {
-        SwitchDomain domain = JSON.parseObject(value, SwitchDomain.class);
+    public void onChange(String key, Object value) throws Exception {
+        SwitchDomain domain = JSON.parseObject((String)value, SwitchDomain.class);
         update(domain);
     }
 
     @Override
-    public void onDelete(String key, String value) throws Exception {
+    public void onDelete(String key, Object value) throws Exception {
 
     }
 

@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public class NamingProxy {
 
-    private static final String DATA_SYNC_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/sync";
+    private static final String DATA_SYNC_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/onSync";
 
     public static boolean syncData(byte[] data, String curServer) throws Exception {
         try {

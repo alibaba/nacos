@@ -20,10 +20,12 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.Datum;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
@@ -140,14 +142,14 @@ public class ServiceManager implements DataListener {
     }
 
     @Override
-    public void onChange(String key, String value) throws Exception {
+    public void onChange(String key, Object value) throws Exception {
         try {
-            if (StringUtils.isEmpty(value)) {
+            if (StringUtils.isEmpty((String)value)) {
                 Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);
                 return;
             }
 
-            VirtualClusterDomain dom = VirtualClusterDomain.fromJSON(value);
+            VirtualClusterDomain dom = VirtualClusterDomain.fromJSON((String)value);
             if (dom == null) {
                 throw new IllegalStateException("dom parsing failed, json: " + value);
             }
@@ -178,7 +180,7 @@ public class ServiceManager implements DataListener {
     }
 
     @Override
-    public void onDelete(String key, String value) throws Exception {
+    public void onDelete(String key, Object value) throws Exception {
         String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
         String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
         String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
@@ -368,7 +370,7 @@ public class ServiceManager implements DataListener {
      * @param instance    instance to register
      * @throws Exception any error occurred in the process
      */
-    public void registerInstance(String namespaceId, String serviceName, IpAddress instance) throws Exception {
+    public void registerInstance(String namespaceId, String serviceName, String clusterName, IpAddress instance) throws Exception {
 
         VirtualClusterDomain service = getService(namespaceId, serviceName);
         boolean serviceUpdated = false;
@@ -415,14 +417,16 @@ public class ServiceManager implements DataListener {
                 lock.unlock();
             }
         }
-        addInstance(namespaceId, serviceName, instance);
+        addInstance(namespaceId, serviceName, clusterName, instance);
     }
 
-    public void addInstance(String namespaceId, String serviceName, IpAddress... ips) throws NacosException {
+    public void addInstance(String namespaceId, String serviceName, String clusterName, IpAddress... ips) throws NacosException {
 
         String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
 
-        VirtualClusterDomain dom = (VirtualClusterDomain) getService(namespaceId, serviceName);
+//        List<IpAddress> value = (List<IpAddress>) consistencyService.get(KeyBuilder.buildPersistentInstanceListKey(namespaceId, serviceName, clusterName));
+
+        VirtualClusterDomain dom = getService(namespaceId, serviceName);
 
         Map<String, IpAddress> ipAddressMap = addIpAddresses(dom, ips);
 
@@ -435,7 +439,7 @@ public class ServiceManager implements DataListener {
 
         String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
 
-        VirtualClusterDomain dom = (VirtualClusterDomain) getService(namespaceId, serviceName);
+        VirtualClusterDomain dom = getService(namespaceId, serviceName);
 
         Map<String, IpAddress> ipAddressMap = substractIpAddresses(dom, ips);
 

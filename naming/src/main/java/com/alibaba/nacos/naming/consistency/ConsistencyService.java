@@ -34,11 +34,12 @@ public interface ConsistencyService {
     /**
      * Put a data related to a key to Nacos cluster
      *
-     * @param key   key of data
+     * @param key   key of data, this key should be globally unique
      * @param value value of data
      * @throws NacosException
+     * @see
      */
-    void put(Object key, Object value) throws NacosException;
+    void put(String key, Object value) throws NacosException;
 
     /**
      * Remove a data from Nacos cluster
@@ -46,7 +47,7 @@ public interface ConsistencyService {
      * @param key key of data
      * @throws NacosException
      */
-    void remove(Object key) throws NacosException;
+    void remove(String key) throws NacosException;
 
     /**
      * Get a data from Nacos cluster
@@ -55,7 +56,7 @@ public interface ConsistencyService {
      * @return data related to the key
      * @throws NacosException
      */
-    Object get(Object key) throws NacosException;
+    Object get(String key) throws NacosException;
 
     /**
      * Listen for changes of a data
@@ -64,7 +65,7 @@ public interface ConsistencyService {
      * @param listener callback of data change
      * @throws NacosException
      */
-    void listen(Object key, DataListener listener) throws NacosException;
+    void listen(String key, DataListener listener) throws NacosException;
 
     /**
      * Cancel listening of a data
@@ -73,7 +74,7 @@ public interface ConsistencyService {
      * @param listener callback of data change
      * @throws NacosException
      */
-    void unlisten(Object key, DataListener listener) throws NacosException;
+    void unlisten(String key, DataListener listener) throws NacosException;
 
     /**
      * Is the local server responsible for a data.
@@ -83,7 +84,7 @@ public interface ConsistencyService {
      * @param key key of data
      * @return true if the local server is responsible for the data
      */
-    boolean isResponsible(Object key);
+    boolean isResponsible(String key);
 
     /**
      * Get the responsible server for a data
@@ -91,5 +92,5 @@ public interface ConsistencyService {
      * @param key key of data
      * @return responsible server for the data
      */
-    String getResponsibleServer(Object key);
+    String getResponsibleServer(String key);
 }
