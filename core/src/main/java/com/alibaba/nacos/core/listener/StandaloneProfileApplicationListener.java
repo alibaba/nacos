@@ -46,7 +46,10 @@ public class StandaloneProfileApplicationListener implements ApplicationListener
 
         ConfigurableEnvironment environment = event.getEnvironment();
 
-        if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, false)) {
+//        environment
+        // 实际该值为false
+        if (environment.getProperty(STANDALONE_MODE_PROPERTY_NAME, boolean.class, true)) {
+
             environment.addActiveProfile(STANDALONE_SPRING_PROFILE);
         }
 

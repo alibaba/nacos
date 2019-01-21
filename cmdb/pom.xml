@@ -18,7 +18,7 @@
     <parent>
         <artifactId>nacos-all</artifactId>
         <groupId>com.alibaba.nacos</groupId>
-        <version>0.5.0-cmdb-SNAPSHOT</version>
+        <version>0.7.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -51,6 +51,8 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-api</artifactId>
+            <version>0.7.0</version>
+
         </dependency>
 
         <dependency>

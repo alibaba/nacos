@@ -60,7 +60,9 @@ public class SystemUtils {
     /**
      * Standalone mode or not
      */
-    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+//    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+
+    public static final boolean STANDALONE_MODE = true;
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean)ManagementFactory
         .getOperatingSystemMXBean();
