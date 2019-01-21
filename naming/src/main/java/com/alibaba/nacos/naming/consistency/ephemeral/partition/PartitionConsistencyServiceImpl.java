@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -59,7 +60,11 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     public void put(String key, Object value) throws NacosException {
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
             List<Instance> instances = (List<Instance>) value;
-            dataStore.put(key, instances);
+            Datum<List<Instance>> datum = new Datum<>();
+            datum.value = instances;
+            datum.key = key;
+            datum.timestamp.set(System.currentTimeMillis());
+            dataStore.put(key, datum);
         }
         taskDispatcher.addTask(key);
         onPut(key, value);

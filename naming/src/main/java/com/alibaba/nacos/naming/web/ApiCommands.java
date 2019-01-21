@@ -292,12 +292,11 @@ public class ApiCommands {
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String dom = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
-        if (StringUtils.isBlank(dom)) {
-            dom = WebUtils.required(request, "dom");
+        String serviceName = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
+        if (StringUtils.isBlank(serviceName)) {
+            serviceName = WebUtils.required(request, "dom");
         }
-        String app;
-        app = WebUtils.optional(request, "app", StringUtils.EMPTY);
+
         String clusterName = clientBeat.getCluster();
 
         if (StringUtils.isBlank(clusterName)) {

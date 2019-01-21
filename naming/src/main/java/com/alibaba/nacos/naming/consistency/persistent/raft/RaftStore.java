@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;

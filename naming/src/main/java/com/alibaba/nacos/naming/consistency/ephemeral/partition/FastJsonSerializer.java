@@ -46,7 +46,7 @@ public class FastJsonSerializer implements Serializer {
         try {
             String dataString = new String(data, "UTF-8");
             JSONObject json = JSON.parseObject(dataString);
-            Map<String, T> dataMap = new HashMap<>();
+            Map<String, T> dataMap = new HashMap<>(16);
             for (String key : json.keySet()) {
                 dataMap.put(key, JSON.parseObject(json.getString(key), clazz));
             }

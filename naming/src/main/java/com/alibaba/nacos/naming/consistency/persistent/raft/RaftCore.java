@@ -22,6 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
@@ -263,7 +264,7 @@ public class RaftCore {
 
     public void onPublish(Datum datum, RaftPeer source) throws Exception {
         RaftPeer local = peers.local();
-        if (StringUtils.isBlank(datum.value)) {
+        if (StringUtils.isBlank((String) datum.value)) {
             Loggers.RAFT.warn("received empty datum");
             throw new IllegalStateException("received empty datum");
         }

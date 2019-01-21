@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.persistent.raft.Datum;
+import com.alibaba.nacos.naming.consistency.Datum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -67,7 +67,7 @@ public class SwitchManager {
             SwitchDomain switchDomain = null;
 
             if (datum != null) {
-                switchDomain = JSON.parseObject(datum.value, SwitchDomain.class);
+                switchDomain = JSON.parseObject((String) datum.value, SwitchDomain.class);
             } else {
                 Loggers.SRV_LOG.warn("switch domain is null");
                 throw new NacosException(NacosException.SERVER_ERROR, "switch datum is null!");

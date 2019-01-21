@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.persistent.raft;
+package com.alibaba.nacos.naming.consistency;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author nacos
  */
-public class Datum {
+public class Datum<T> {
+
     public String key;
 
-    public String value;
+    public T value;
 
     public AtomicLong timestamp = new AtomicLong(0L);
 }
