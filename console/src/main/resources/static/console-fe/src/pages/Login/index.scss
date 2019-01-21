@@ -26,6 +26,7 @@ $contentWidth: 1280px;
       width: 480px;
       height: 540px;
       top: 90px;
+      border: 0px;
       input,
       input::-webkit-input-placeholder {
         font-size: 16px;
@@ -49,6 +50,7 @@ $contentWidth: 1280px;
           font-size: 16px;
           background: #4190ff 100%;
           color: white;
+          border: 0px;
         }
       }
     }
@@ -88,6 +90,7 @@ $contentWidth: 1280px;
       position: absolute;
       left: 0;
       top: 50%;
+      margin-top: -47px;
       transform: translateY(-50%);
     }
     .product-area {
