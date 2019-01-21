@@ -168,16 +168,16 @@ public class VirtualClusterDomain implements Domain, DataListener {
     }
 
     @Override
-    public void onChange(String key, String value) throws Exception {
+    public void onChange(String key, Object value) throws Exception {
 
-        if (StringUtils.isEmpty(value)) {
+        if (StringUtils.isEmpty((String) value)) {
             Loggers.SRV_LOG.warn("[NACOS-DOM] received empty iplist config for dom: {}", name);
             return;
         }
 
         Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        List<IpAddress> ips = JSON.parseObject(value, new TypeReference<List<IpAddress>>() {
+        List<IpAddress> ips = JSON.parseObject((String) value, new TypeReference<List<IpAddress>>() {
         });
 
         for (IpAddress ip : ips) {
@@ -197,7 +197,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
     }
 
     @Override
-    public void onDelete(String key, String value) throws Exception {
+    public void onDelete(String key, Object value) throws Exception {
         // ignore
     }
 

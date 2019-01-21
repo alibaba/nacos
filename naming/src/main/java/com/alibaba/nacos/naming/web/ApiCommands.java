@@ -315,7 +315,7 @@ public class ApiCommands {
             ipAddress.setClusterName(clusterName);
             ipAddress.setServiceName(serviceName);
             ipAddress.setInstanceId(ipAddress.generateInstanceId());
-            serviceManager.registerInstance(namespaceId, serviceName, ipAddress);
+            serviceManager.registerInstance(namespaceId, serviceName, clusterName, ipAddress);
         }
 
         VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, serviceName);
@@ -520,6 +520,7 @@ public class ApiCommands {
     public String regService(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, "serviceName");
+        String clusterName = WebUtils.required(request, "clusterName");
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
@@ -534,7 +535,7 @@ public class ApiCommands {
             ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        serviceManager.registerInstance(namespaceId, serviceName, ipAddress);
+        serviceManager.registerInstance(namespaceId, serviceName, clusterName, ipAddress);
 
         return "ok";
     }
@@ -775,6 +776,8 @@ public class ApiCommands {
 
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
+        String clusterName = WebUtils.required(request, "clusterName");
+
         String ipListString = WebUtils.required(request, "ipList");
         final List<String> ipList;
         List<IpAddress> newIPs = new ArrayList<>();
@@ -790,7 +793,7 @@ public class ApiCommands {
             }
         }
 
-        serviceManager.addInstance(namespaceId, serviceName, newIPs.toArray(new IpAddress[newIPs.size()]));
+        serviceManager.addInstance(namespaceId, serviceName, clusterName, newIPs.toArray(new IpAddress[newIPs.size()]));
 
         return "ok";
     }

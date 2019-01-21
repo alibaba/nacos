@@ -45,7 +45,7 @@ public interface DataListener {
      * @param value data of the key
      * @throws Exception
      */
-    void onChange(String key, String value) throws Exception;
+    void onChange(String key, Object value) throws Exception;
 
     /**
      * Action to do if data of target key has been removed
@@ -54,5 +54,5 @@ public interface DataListener {
      * @param value data of the key
      * @throws Exception
      */
-    void onDelete(String key, String value) throws Exception;
+    void onDelete(String key, Object value) throws Exception;
 }

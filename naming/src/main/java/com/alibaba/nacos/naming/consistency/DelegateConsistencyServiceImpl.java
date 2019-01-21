@@ -37,37 +37,37 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     private EphemeralConsistencyService ephemeralConsistencyService;
 
     @Override
-    public void put(Object key, Object value) throws NacosException {
+    public void put(String key, Object value) throws NacosException {
         persistentConsistencyService.put(key, value);
     }
 
     @Override
-    public void remove(Object key) throws NacosException {
+    public void remove(String key) throws NacosException {
         persistentConsistencyService.remove(key);
     }
 
     @Override
-    public Object get(Object key) throws NacosException {
+    public Object get(String key) throws NacosException {
         return persistentConsistencyService.get(key);
     }
 
     @Override
-    public void listen(Object key, DataListener listener) throws NacosException {
+    public void listen(String key, DataListener listener) throws NacosException {
         persistentConsistencyService.listen(key, listener);
     }
 
     @Override
-    public void unlisten(Object key, DataListener listener) throws NacosException {
+    public void unlisten(String key, DataListener listener) throws NacosException {
         persistentConsistencyService.unlisten(key, listener);
     }
 
     @Override
-    public boolean isResponsible(Object key) {
+    public boolean isResponsible(String key) {
         return true;
     }
 
     @Override
-    public String getResponsibleServer(Object key) {
+    public String getResponsibleServer(String key) {
         return null;
     }
 }

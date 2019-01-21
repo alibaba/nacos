@@ -20,9 +20,9 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     private RaftCore raftCore;
 
     @Override
-    public void put(Object key, Object value) throws NacosException {
+    public void put(String key, Object value) throws NacosException {
         try {
-            raftCore.signalPublish((String) key, (String) value);
+            raftCore.signalPublish(key, (String) value);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft put failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft put failed, key:" + key + ", value:" + value);
@@ -30,9 +30,9 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
 
     @Override
-    public void remove(Object key) throws NacosException {
+    public void remove(String key) throws NacosException {
         try {
-            raftCore.signalDelete((String) key);
+            raftCore.signalDelete(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key);
@@ -40,27 +40,27 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
 
     @Override
-    public Object get(Object key) throws NacosException {
-        return raftCore.getDatum((String) key);
+    public Object get(String key) throws NacosException {
+        return raftCore.getDatum(key);
     }
 
     @Override
-    public void listen(Object key, DataListener listener) throws NacosException {
-        raftCore.listen((String) key, listener);
+    public void listen(String key, DataListener listener) throws NacosException {
+        raftCore.listen(key, listener);
     }
 
     @Override
-    public void unlisten(Object key, DataListener listener) throws NacosException {
-        raftCore.unlisten((String) key, listener);
+    public void unlisten(String key, DataListener listener) throws NacosException {
+        raftCore.unlisten(key, listener);
     }
 
     @Override
-    public boolean isResponsible(Object key) {
+    public boolean isResponsible(String key) {
         return false;
     }
 
     @Override
-    public String getResponsibleServer(Object key) {
+    public String getResponsibleServer(String key) {
         return null;
     }
 

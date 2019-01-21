@@ -35,6 +35,8 @@ public class GlobalExecutor {
 
     private static final long NACOS_SERVER_LIST_REFRESH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
+    private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
+
     private static ScheduledExecutorService executorService =
         new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
@@ -81,6 +83,11 @@ public class GlobalExecutor {
 
     public static void submitDataSync(Runnable runnable) {
         dataSyncExecutor.submit(runnable);
+    }
+
+    public static void schedulePartitionDataTimedSync(Runnable runnable) {
+        dataSyncExecutor.scheduleWithFixedDelay(runnable, PARTITION_DATA_TIMED_SYNC_INTERVAL,
+            PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
     public static void registerMasterElection(Runnable runnable) {
