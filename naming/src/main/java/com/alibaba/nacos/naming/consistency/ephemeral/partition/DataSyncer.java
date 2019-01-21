@@ -19,6 +19,8 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
@@ -27,6 +29,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +49,9 @@ public class DataSyncer implements MemberChangeListener {
 
     @Autowired
     private Serializer serializer;
+
+    @Autowired
+    private DistroMapper distroMapper;
 
     @Autowired
     private ServerListManager serverListManager;
@@ -81,8 +87,8 @@ public class DataSyncer implements MemberChangeListener {
                     }
 
                     List<String> keys = task.getKeys();
-                    Map<String, List<Instance>> instancMap = dataStore.batchGet(keys);
-                    byte[] data = serializer.serialize(instancMap);
+                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
+                    byte[] data = serializer.serialize(datumMap);
 
                     long timestamp = System.currentTimeMillis();
                     boolean success = NamingProxy.syncData(data, task.getTargetServer());
@@ -115,6 +121,19 @@ public class DataSyncer implements MemberChangeListener {
 
         @Override
         public void run() {
+
+            Map<String, Long> keyTimestamps = new HashMap<>();
+            for (String key : dataStore.keys()) {
+                if (!distroMapper.responsible(key)) {
+                    // this key is no longer in our hands:
+                    dataStore.remove(key);
+                    continue;
+                }
+                keyTimestamps.put(key, dataStore.get(key).timestamp.get());
+            }
+
+            // TODO
+//            for (Member member : )
 
         }
     }

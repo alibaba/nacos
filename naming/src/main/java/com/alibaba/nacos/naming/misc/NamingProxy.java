@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,18 +33,45 @@ public class NamingProxy {
 
     private static final String DATA_SYNC_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/onSync";
 
+    private static final String TIMESTAMP_SYNC_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/syncTimestamps";
+
+    public static boolean syncTimestamps(Map<String, Long> timestamps, String server) {
+
+        try {
+            Map<String, String> headers = new HashMap<>(128);
+
+            headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            headers.put("Connection", "Keep-Alive");
+
+            HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + server + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, headers, JSON.toJSONBytes(timestamps));
+
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                return true;
+            }
+
+            if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
+                return true;
+            }
+
+            throw new IOException("failed to req API:" + "http://" + server
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + ". code:"
+                + result.code + " msg: " + result.content);
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("NamingProxy", e);
+        }
+        return false;
+    }
+
     public static boolean syncData(byte[] data, String curServer) throws Exception {
         try {
-            Map<String, String> headers = new HashMap<>();
+            Map<String, String> headers = new HashMap<>(128);
 
             headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
             headers.put("Accept-Encoding", "gzip,deflate,sdch");
             headers.put("Connection", "Keep-Alive");
             headers.put("Content-Encoding", "gzip");
-
-            if (!curServer.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                curServer = curServer + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-            }
 
             HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + curServer + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_SYNC_URL, headers, data);
@@ -65,7 +93,6 @@ public class NamingProxy {
         }
         return false;
     }
-
 
     public static String reqAPI(String api, Map<String, String> params, String curServer, boolean isPost) throws Exception {
         try {

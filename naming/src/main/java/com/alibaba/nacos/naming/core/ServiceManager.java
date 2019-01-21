@@ -20,13 +20,11 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.persistent.raft.Datum;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -424,8 +422,6 @@ public class ServiceManager implements DataListener {
 
         String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
 
-//        List<IpAddress> value = (List<IpAddress>) consistencyService.get(KeyBuilder.buildPersistentInstanceListKey(namespaceId, serviceName, clusterName));
-
         VirtualClusterDomain dom = getService(namespaceId, serviceName);
 
         Map<String, IpAddress> ipAddressMap = addIpAddresses(dom, ips);
@@ -476,8 +472,9 @@ public class ServiceManager implements DataListener {
         Datum datum1 = (Datum) consistencyService.get(UtilsAndCommons.getIPListStoreKey(dom));
         String oldJson = StringUtils.EMPTY;
 
+        // TODO support ephemeral instances:
         if (datum1 != null) {
-            oldJson = datum1.value;
+            oldJson = (String) datum1.value;
         }
 
         List<IpAddress> ipAddresses;

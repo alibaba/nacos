@@ -25,7 +25,22 @@ import java.util.Map;
  */
 public interface Serializer {
 
+    /**
+     * Serialize data with some kind of serializing protocol
+     *
+     * @param data data to serialize
+     * @param <T>  type of data
+     * @return byte array of serialized data
+     */
     <T> byte[] serialize(Map<String, T> data);
 
+    /**
+     * Deserialize byte array data to target type
+     *
+     * @param data  data to deserialize
+     * @param clazz target type
+     * @param <T>   target type
+     * @return deserialized data map
+     */
     <T> Map<String, T> deserialize(byte[] data, Class<T> clazz);
 }
