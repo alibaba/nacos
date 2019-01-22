@@ -289,7 +289,10 @@ public class ApiCommands {
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String dom = WebUtils.required(request, "serviceName");
+        String dom = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
+        if (StringUtils.isBlank(dom)) {
+            dom = WebUtils.required(request, "dom");
+        }
         String app;
         app = WebUtils.optional(request, "app", StringUtils.EMPTY);
         String clusterName = clientBeat.getCluster();
@@ -1090,6 +1093,11 @@ public class ApiCommands {
 
                 onAddIP4Dom(requestWrapper);
 
+                proxyParams.put("clientIP", NetUtils.localServer());
+                proxyParams.put("notify", "true");
+                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                proxyParams.put("timestamp", String.valueOf(timestamp));
+
                 if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
                     syncOnAddIP4Dom(namespaceId, dom, proxyParams);
                 } else {
@@ -1384,6 +1392,11 @@ public class ApiCommands {
                 requestWrapper.addParameter("timestamp", String.valueOf(timestamp));
 
                 onRemvIP4Dom(requestWrapper);
+
+                proxyParams.put("clientIP", NetUtils.localServer());
+                proxyParams.put("notify", "true");
+                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                proxyParams.put("timestamp", String.valueOf(timestamp));
 
                 if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
                     syncOnRemvIP4Dom(namespaceId, dom, proxyParams);
@@ -1887,11 +1900,40 @@ public class ApiCommands {
     public JSONObject allDomNames(HttpServletRequest request) throws Exception {
 
         boolean responsibleOnly = Boolean.parseBoolean(WebUtils.optional(request, "responsibleOnly", "false"));
+        Map<String, Set<String>> domMap = domainsManager.getAllDomNames();
+        JSONObject result = new JSONObject();
+        // For old DNS-F client:
+        String dnsfVersion = "1.0.1";
+        String agent = request.getHeader("Client-Version");
+        ClientInfo clientInfo = new ClientInfo(agent);
+        if (clientInfo.type == ClientInfo.ClientType.DNS && clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
+
+            List<String> doms = new ArrayList<String>();
+            Set<String> domSet = null;
+
+            if (domMap.containsKey(Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID)) {
+                domSet = domMap.get(Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID);
+            }
+
+            if (CollectionUtils.isEmpty(domSet)) {
+                result.put("doms", new HashSet<>());
+                result.put("count", 0);
+                return result;
+            }
+
+            for (String dom : domSet) {
+                if (DistroMapper.responsible(dom) || !responsibleOnly) {
+                    doms.add(dom);
+                }
+            }
+
+            result.put("doms", doms);
+            result.put("count", doms.size());
+            return result;
+        }
 
         Map<String, Set<String>> doms = new HashMap<>(16);
-
-        Map<String, Set<String>> domMap = domainsManager.getAllDomNames();
-
+        int count = 0;
         for (String namespaceId : domMap.keySet()) {
             doms.put(namespaceId, new HashSet<>());
             for (String dom : domMap.get(namespaceId)) {
@@ -1899,12 +1941,11 @@ public class ApiCommands {
                     doms.get(namespaceId).add(dom);
                 }
             }
+            count += doms.get(namespaceId).size();
         }
 
-        JSONObject result = new JSONObject();
-
         result.put("doms", doms);
-        result.put("count", doms.size());
+        result.put("count", count);
 
         return result;
     }

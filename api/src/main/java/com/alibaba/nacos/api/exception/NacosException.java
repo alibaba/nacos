@@ -34,8 +34,6 @@ public class NacosException extends Exception {
     public NacosException() {
     }
 
-    ;
-
     public NacosException(int errCode, String errMsg) {
         this.errCode = errCode;
         this.errMsg = errMsg;

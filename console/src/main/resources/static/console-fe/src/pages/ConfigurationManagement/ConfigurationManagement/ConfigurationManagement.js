@@ -734,7 +734,7 @@ class ConfigurationManagement extends React.Component {
                 style={{
                   position: 'relative',
                   marginTop: 10,
-                  height: this.state.isAdvancedQuery ? 'auto' : 48,
+                  height: this.state.isAdvancedQuery ? 'auto' : 42,
                   overflow: 'hidden',
                 }}
               >
