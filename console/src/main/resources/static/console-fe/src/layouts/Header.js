@@ -32,6 +32,8 @@ class Header extends React.Component {
 
   static propTypes = {
     locale: PropTypes.object,
+    history: PropTypes.object,
+    location: PropTypes.object,
     language: PropTypes.string,
     changeLanguage: PropTypes.func,
   };
@@ -53,7 +55,6 @@ class Header extends React.Component {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace('-', '+').replace('_', '/');
       const parsedToken = JSON.parse(window.atob(base64));
-      console.log(parsedToken);
       return parsedToken.sub;
     }
     return '';
