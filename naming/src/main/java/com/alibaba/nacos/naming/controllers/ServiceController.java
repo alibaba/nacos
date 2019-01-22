@@ -16,20 +16,23 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,10 +53,16 @@ import java.util.*;
 public class ServiceController {
 
     @Autowired
-    protected ServiceManager domainsManager;
+    protected ServiceManager serviceManager;
 
     @Autowired
     private SwitchDomain switchDomain;
+
+    @Autowired
+    private DistroMapper distroMapper;
+
+    @Autowired
+    private ServerListManager serverListManager;
 
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
@@ -63,7 +72,7 @@ public class ServiceController {
 
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        if (domainsManager.getService(namespaceId, serviceName) != null) {
+        if (serviceManager.getService(namespaceId, serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
         }
 
@@ -91,7 +100,7 @@ public class ServiceController {
         domObj.recalculateChecksum();
         domObj.valid();
 
-        domainsManager.addOrReplaceService(domObj);
+        serviceManager.addOrReplaceService(domObj);
 
         return "ok";
     }
@@ -103,7 +112,7 @@ public class ServiceController {
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        VirtualClusterDomain service = domainsManager.getService(namespaceId, serviceName);
+        VirtualClusterDomain service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
             throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
         }
@@ -112,7 +121,7 @@ public class ServiceController {
             throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
         }
 
-        domainsManager.easyRemoveDom(namespaceId, serviceName);
+        serviceManager.easyRemoveDom(namespaceId, serviceName);
 
         return "ok";
     }
@@ -124,7 +133,7 @@ public class ServiceController {
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
+        VirtualClusterDomain domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
@@ -160,7 +169,7 @@ public class ServiceController {
             UtilsAndCommons.getDefaultNamespaceId());
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        List<String> doms = domainsManager.getAllDomNamesList(namespaceId);
+        List<String> doms = serviceManager.getAllDomNamesList(namespaceId);
 
         if (doms == null || doms.isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM, "No service exist in " + namespaceId);
@@ -228,7 +237,7 @@ public class ServiceController {
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
+        VirtualClusterDomain domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
         }
@@ -259,16 +268,198 @@ public class ServiceController {
         domain.recalculateChecksum();
         domain.valid();
 
-        domainsManager.addOrReplaceService(domain);
+        serviceManager.addOrReplaceService(domain);
 
         return "ok";
+    }
+
+    @RequestMapping("/rt4Dom")
+    public JSONObject rt4Dom(HttpServletRequest request) {
+
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String dom = WebUtils.required(request, "dom");
+
+        VirtualClusterDomain domObj = serviceManager.getService(namespaceId, dom);
+        if (domObj == null) {
+            throw new IllegalArgumentException("request dom doesn't exist");
+        }
+
+        JSONObject result = new JSONObject();
+
+        JSONArray clusters = new JSONArray();
+        for (Map.Entry<String, Cluster> entry : domObj.getClusterMap().entrySet()) {
+            JSONObject packet = new JSONObject();
+            HealthCheckTask task = entry.getValue().getHealthCheckTask();
+
+            packet.put("name", entry.getKey());
+            packet.put("checkRTBest", task.getCheckRTBest());
+            packet.put("checkRTWorst", task.getCheckRTWorst());
+            packet.put("checkRTNormalized", task.getCheckRTNormalized());
+
+            clusters.add(packet);
+        }
+        result.put("clusters", clusters);
+
+        return result;
+    }
+
+    @RequestMapping("/getDomsByIP")
+    public JSONObject getDomsByIP(HttpServletRequest request) {
+        String ip = WebUtils.required(request, "ip");
+
+        Set<String> doms = new HashSet<String>();
+        Map<String, Set<String>> domMap = serviceManager.getAllDomNames();
+
+        for (String namespaceId : domMap.keySet()) {
+            for (String dom : domMap.get(namespaceId)) {
+                Domain domObj = serviceManager.getService(namespaceId, dom);
+                List<IpAddress> ipObjs = domObj.allIPs();
+                for (IpAddress ipObj : ipObjs) {
+                    if (ip.contains(":")) {
+                        if (StringUtils.equals(ipObj.getIp() + ":" + ipObj.getPort(), ip)) {
+                            doms.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + domObj.getName());
+                        }
+                    } else {
+                        if (StringUtils.equals(ipObj.getIp(), ip)) {
+                            doms.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + domObj.getName());
+                        }
+                    }
+                }
+            }
+        }
+
+        JSONObject result = new JSONObject();
+
+        result.put("doms", doms);
+
+        return result;
+    }
+
+    @RequestMapping("/allDomNames")
+    public JSONObject allDomNames(HttpServletRequest request) throws Exception {
+
+        boolean responsibleOnly = Boolean.parseBoolean(WebUtils.optional(request, "responsibleOnly", "false"));
+
+        Map<String, Set<String>> doms = new HashMap<>(16);
+
+        Map<String, Set<String>> domMap = serviceManager.getAllDomNames();
+
+        for (String namespaceId : domMap.keySet()) {
+            doms.put(namespaceId, new HashSet<>());
+            for (String dom : domMap.get(namespaceId)) {
+                if (distroMapper.responsible(dom) || !responsibleOnly) {
+                    doms.get(namespaceId).add(dom);
+                }
+            }
+        }
+
+        JSONObject result = new JSONObject();
+
+        result.put("doms", doms);
+        result.put("count", doms.size());
+
+        return result;
+    }
+
+    @RequestMapping("/searchDom")
+    public JSONObject searchDom(HttpServletRequest request) {
+
+        JSONObject result = new JSONObject();
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String expr = WebUtils.required(request, "expr");
+
+        List<VirtualClusterDomain> doms
+            = serviceManager.searchDomains(namespaceId, ".*" + expr + ".*");
+
+        if (CollectionUtils.isEmpty(doms)) {
+            result.put("doms", Collections.emptyList());
+            return result;
+        }
+
+        JSONArray domArray = new JSONArray();
+        for (Domain dom : doms) {
+            domArray.add(dom.getName());
+        }
+
+        result.put("doms", domArray);
+
+        return result;
+    }
+
+    @RequestMapping("/domStatus")
+    public String domStatus(HttpServletRequest request) {
+        //format: dom1@@checksum@@@dom2@@checksum
+        String domsStatusString = WebUtils.required(request, "domsStatus");
+        String serverIP = WebUtils.optional(request, "clientIP", "");
+
+        if (!serverListManager.contains(serverIP)) {
+            throw new IllegalArgumentException("ip: " + serverIP + " is not in serverlist");
+        }
+
+        try {
+            ServiceManager.DomainChecksum checksums = JSON.parseObject(domsStatusString, ServiceManager.DomainChecksum.class);
+            if (checksums == null) {
+                Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
+                return "fail";
+            }
+
+            for (Map.Entry<String, String> entry : checksums.domName2Checksum.entrySet()) {
+                if (entry == null || StringUtils.isEmpty(entry.getKey()) || StringUtils.isEmpty(entry.getValue())) {
+                    continue;
+                }
+                String dom = entry.getKey();
+                String checksum = entry.getValue();
+                Domain domain = serviceManager.getService(checksums.namespaceId, dom);
+
+                if (domain == null) {
+                    continue;
+                }
+
+                domain.recalculateChecksum();
+
+                if (!checksum.equals(domain.getChecksum())) {
+                    if (Loggers.SRV_LOG.isDebugEnabled()) {
+                        Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
+                            dom, serverIP, checksum, domain.getChecksum());
+                    }
+                    serviceManager.addUpdatedDom2Queue(checksums.namespaceId, dom, serverIP, checksum);
+                }
+            }
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: " + domsStatusString, e);
+        }
+
+        return "ok";
+    }
+
+    @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
+    public JSONObject checksum(HttpServletRequest request) {
+
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, "serviceName");
+        VirtualClusterDomain virtualClusterDomain = serviceManager.getService(namespaceId, serviceName);
+
+        if (virtualClusterDomain == null) {
+            throw new IllegalArgumentException("serviceName not found: " + serviceName);
+        }
+
+        virtualClusterDomain.recalculateChecksum();
+
+        JSONObject result = new JSONObject();
+
+        result.put("checksum", virtualClusterDomain.getChecksum());
+
+        return result;
     }
 
     private List<String> filterInstanceMetadata(String namespaceId, List<String> serivces, String key, String value) {
 
         List<String> filteredServices = new ArrayList<>();
         for (String service : serivces) {
-            VirtualClusterDomain serviceObj = domainsManager.getService(namespaceId, service);
+            VirtualClusterDomain serviceObj = serviceManager.getService(namespaceId, service);
             if (serviceObj == null) {
                 continue;
             }
@@ -286,7 +477,7 @@ public class ServiceController {
 
         List<String> filteredServices = new ArrayList<>();
         for (String service : serivces) {
-            VirtualClusterDomain serviceObj = domainsManager.getService(namespaceId, service);
+            VirtualClusterDomain serviceObj = serviceManager.getService(namespaceId, service);
             if (serviceObj == null) {
                 continue;
             }

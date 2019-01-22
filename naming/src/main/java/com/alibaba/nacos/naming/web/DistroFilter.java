@@ -130,7 +130,6 @@ public class DistroFilter implements Filter {
     }
 
     public boolean canDistro(String urlString) {
-        return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_IP_FOR_DOM) ||
-            urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
+        return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
     }
 }
