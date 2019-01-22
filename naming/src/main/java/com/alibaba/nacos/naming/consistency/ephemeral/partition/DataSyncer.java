@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
+import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -132,9 +132,9 @@ public class DataSyncer implements MemberChangeListener {
                 keyTimestamps.put(key, dataStore.get(key).timestamp.get());
             }
 
-            // TODO
-//            for (Member member : )
-
+            for (Member member : servers) {
+                NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
+            }
         }
     }
 

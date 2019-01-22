@@ -15,14 +15,10 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.consistency.Datum;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -40,8 +36,8 @@ public class DataStore {
         dataMap.put(key, value);
     }
 
-    public void remove(String key) {
-        dataMap.remove(key);
+    public Datum remove(String key) {
+        return dataMap.remove(key);
     }
 
     public Set<String> keys() {
@@ -50,6 +46,10 @@ public class DataStore {
 
     public Datum get(String key) {
         return dataMap.get(key);
+    }
+
+    public boolean contains(String key) {
+        return dataMap.containsKey(key);
     }
 
     public Map<String, Datum> batchGet(List<String> keys) {

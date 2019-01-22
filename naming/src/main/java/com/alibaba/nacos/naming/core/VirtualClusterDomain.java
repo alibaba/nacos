@@ -197,7 +197,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
     }
 
     @Override
-    public void onDelete(String key, Object value) throws Exception {
+    public void onDelete(String key) throws Exception {
         // ignore
     }
 

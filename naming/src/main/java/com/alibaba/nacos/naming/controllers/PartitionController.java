@@ -2,9 +2,11 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
-import com.alibaba.nacos.naming.consistency.ephemeral.partition.Serializer;
+import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,5 +45,24 @@ public class PartitionController {
             }
         }
         return "ok";
+    }
+
+    @RequestMapping("/syncTimestamps")
+    public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String source = WebUtils.required(request, "source");
+        byte[] data = IoUtils.tryDecompress(request.getInputStream());
+        Map<String, Long> dataMap = serializer.deserialize(data, Long.class);
+        consistencyService.onReceiveTimestamps(dataMap, source);
+        return "ok";
+    }
+
+    @RequestMapping("/get")
+    public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String keys = WebUtils.required(request, "keys");
+        Map<String, Datum> datumMap = new HashMap<>();
+        for (String key : keys.split(",")) {
+            datumMap.put(key, (Datum) consistencyService.get(key));
+        }
+        response.getWriter().write(new String(serializer.serialize(datumMap), "UTF-8"));
     }
 }

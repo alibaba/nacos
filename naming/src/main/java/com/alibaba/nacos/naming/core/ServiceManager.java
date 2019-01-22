@@ -178,12 +178,12 @@ public class ServiceManager implements DataListener {
     }
 
     @Override
-    public void onDelete(String key, Object value) throws Exception {
+    public void onDelete(String key) throws Exception {
         String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
         String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
         String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
         VirtualClusterDomain dom = chooseDomMap(namespace).remove(name);
-        Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}, value: {}", key, value);
+        Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
 
         if (dom != null) {
             dom.destroy();

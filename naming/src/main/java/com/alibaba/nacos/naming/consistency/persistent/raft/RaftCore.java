@@ -752,7 +752,6 @@ public class RaftCore {
 
         }
 
-
         return local;
     }
 
@@ -917,7 +916,7 @@ public class RaftCore {
                                 }
 
                                 if (action == ApplyAction.DELETE) {
-                                    listener.onDelete(datum.key, datum.value);
+                                    listener.onDelete(datum.key);
                                 }
                             } catch (Throwable e) {
                                 Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {} {}", datum.key, e);
@@ -944,7 +943,7 @@ public class RaftCore {
                             }
 
                             if (action == ApplyAction.DELETE) {
-                                listener.onDelete(datum.key, datum.value);
+                                listener.onDelete(datum.key);
                                 continue;
                             }
                         } catch (Throwable e) {
