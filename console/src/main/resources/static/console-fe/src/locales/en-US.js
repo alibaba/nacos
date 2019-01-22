@@ -315,6 +315,7 @@ const I18N_CONF = {
     editNamespace: 'Loading...',
     load: 'Namespace:',
     namespace: 'Namespace cannot be empty',
+    namespaceDesc: 'Namespace description cannot be empty',
     description: 'Description:',
   },
   ExportDialog: {
@@ -369,6 +370,7 @@ const I18N_CONF = {
     loading: 'Loading...',
     name: 'Namespace:',
     namespacenotnull: 'Namespace cannot be empty',
+    namespacedescnotnull: 'Namespace description cannot be empty',
     description: 'Description:',
   },
   NameSpaceList: {

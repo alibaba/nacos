@@ -379,10 +379,10 @@ class NewConfig extends React.Component {
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
-        fixedSpan: 10,
+        span: 2,
       },
       wrapperCol: {
-        span: 14,
+        span: 22,
       },
     };
 
