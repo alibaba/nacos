@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
@@ -54,6 +55,14 @@ public class HealthController {
 
     @Autowired
     private PushService pushService;
+
+    @RequestMapping("/server")
+    public JSONObject hello(HttpServletRequest request) {
+        JSONObject result = new JSONObject();
+        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getDomCount()
+            + ", local port:" + RunningConfig.getServerPort());
+        return result;
+    }
 
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     public String update(HttpServletRequest request) throws Exception {

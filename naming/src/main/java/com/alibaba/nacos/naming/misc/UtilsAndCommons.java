@@ -105,8 +105,6 @@ public class UtilsAndCommons {
 
     public static final String API_SET_ALL_WEIGHTS = "/api/setWeight4AllIPs";
 
-    public static final String API_IP_FOR_DOM = "/api/ip4Dom";
-
     public static final String API_DOM = "/api/dom";
 
     public static final String SERVICE_GROUP_CONNECTOR = "##";
@@ -232,6 +230,10 @@ public class UtilsAndCommons {
                 UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
         }
         return UtilsAndCommons.DOMAINS_DATA_ID_PRE + dom.getName();
+    }
+
+    public static String getSwitchDomainKey() {
+        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
 
     public static Map<String, String> parseMetadata(String metadata) throws NacosException {

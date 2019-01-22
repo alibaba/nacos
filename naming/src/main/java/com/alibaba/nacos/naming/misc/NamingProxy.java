@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpMethod;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -156,5 +157,27 @@ public class NamingProxy {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }
         return StringUtils.EMPTY;
+    }
+
+    public static class Request {
+
+        private Map<String, String> params = new HashMap<>(8);
+
+        public static Request newRequest() {
+            return new Request();
+        }
+
+        public Request appendParam(String key, String value) {
+            params.put(key, value);
+            return this;
+        }
+
+        public String toUrl() {
+            StringBuilder sb = new StringBuilder();
+            for (String key : params.keySet()) {
+                sb.append(key).append("=").append(params.get(key)).append("&");
+            }
+            return sb.toString();
+        }
     }
 }

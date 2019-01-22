@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 
@@ -94,9 +95,16 @@ public class ClientBeatCheckTask implements Runnable {
         try {
             String ipList = ipAddress.getIp() + ":" + ipAddress.getPort() + "_"
                 + ipAddress.getWeight() + "_" + ipAddress.getClusterName();
+
+            NamingProxy.Request request = NamingProxy.Request.newRequest();
+            request.appendParam("ip", ipAddress.getIp())
+                .appendParam("port", String.valueOf(ipAddress.getPort()))
+                .appendParam("clusterName", ipAddress.getClusterName())
+                .appendParam("serviceName", domain.getName())
+                .appendParam("namespaceId", domain.getNamespaceId());
+
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/remvIP4Dom?dom="
-                + domain.getName() + "&ipList=" + ipList + "&token=" + domain.getToken() + "&namespaceId=" + domain.getNamespaceId();
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/?" + request.toUrl();
             HttpClient.HttpResult result = HttpClient.httpGet(url, null, null);
             if (result.code != HttpURLConnection.HTTP_OK) {
                 Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",

@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements Domain, DataListener {
+public class SwitchDomain implements DataListener {
 
     public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
@@ -142,21 +142,6 @@ public class SwitchDomain implements Domain, DataListener {
     public SwitchDomain() {
     }
 
-    @Override
-    public String getToken() {
-        return token;
-    }
-
-    @Override
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    @Override
-    public List<String> getOwners() {
-        return masters;
-    }
-
     public boolean isSendBeatOnly() {
         return sendBeatOnly;
     }
@@ -165,73 +150,16 @@ public class SwitchDomain implements Domain, DataListener {
         this.sendBeatOnly = sendBeatOnly;
     }
 
-    @Override
-    public void setOwners(List<String> owners) {
-        this.masters = owners;
-    }
-
     // the followings are not implemented
 
-    @Override
     public String getName() {
         return "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
     }
 
-    @Override
-    public void setName(String name) {
+
+    public void update(SwitchDomain dom) {
 
     }
-
-    @Override
-    public void init() {
-
-    }
-
-    @Override
-    public void destroy() throws Exception {
-
-    }
-
-    @Override
-    public List<IpAddress> allIPs() {
-        return null;
-    }
-
-    @Override
-    public List<IpAddress> srvIPs(String clientIp) {
-        return null;
-    }
-
-    public String toJSON() {
-        return JSON.toJSONString(this);
-    }
-
-    @Override
-    public void setProtectThreshold(float protectThreshold) {
-
-    }
-
-    @Override
-    public float getProtectThreshold() {
-        return 0;
-    }
-
-    @Override
-    public void update(Domain dom) {
-
-    }
-
-    @Override
-    @JSONField(serialize = false)
-    public String getChecksum() {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public void recalculateChecksum() {
-        throw new NotImplementedException();
-    }
-
 
     @Override
     public boolean interests(String key) {
