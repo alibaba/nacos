@@ -61,6 +61,9 @@ class EditServiceDialog extends React.Component {
       protectThreshold: locale.protectThresholdRequired,
       healthCheckMode: locale.healthCheckModeRequired,
     };
+    if (field.protectThreshold === 0) {
+      field.protectThreshold = '0';
+    }
     for (const key in field) {
       if (!field[key]) {
         errors[key] = { validateState: 'error', help: helpMap[key] };
