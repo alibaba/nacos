@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.partition;
+package com.alibaba.nacos.naming.cluster.transport;
 
 import java.util.Map;
 
 /**
- * Serializer for data
+ * Serializer specially for large map of data
  *
  * @author nkorange
  * @since 1.0.0
