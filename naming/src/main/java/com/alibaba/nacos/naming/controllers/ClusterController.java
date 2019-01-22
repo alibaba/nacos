@@ -46,7 +46,7 @@ public class ClusterController {
     @Autowired
     protected DomainsManager domainsManager;
 
-    @RequestMapping(value = {"/update", "/add"}, method = RequestMethod.PUT)
+    @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
