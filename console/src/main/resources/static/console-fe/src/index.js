@@ -114,7 +114,6 @@ class App extends React.Component {
       <HashRouter>
         <Switch>
           <Route path="/login" component={Login} />
-
           <Layout navList={_menu.data}>
             {MENU.map(item => (
               <Route key={item.path} {...item} />
