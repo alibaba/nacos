@@ -314,6 +314,7 @@ const I18N_CONF = {
     editNamespace: '加载中...',
     load: '命名空间名：',
     namespace: '命名空间不能为空',
+    namespaceDesc: '命名空间描述不能为空',
     description: '描述：',
   },
   ExportDialog: {
@@ -368,6 +369,7 @@ const I18N_CONF = {
     loading: '加载中...',
     name: '命名空间名：',
     namespacenotnull: '命名空间不能为空',
+    namespacedescnotnull: '命名空间描述不能为空',
     description: '描述：',
   },
   NameSpaceList: {

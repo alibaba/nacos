@@ -194,7 +194,7 @@ class EditorNameSpace extends React.Component {
                 <Input
                   {...this.field.init('namespaceDesc', {
                     rules: [
-                      { required: true, message: locale.namespace },
+                      { required: true, message: locale.namespaceDesc },
                       { validator: this.validateChart.bind(this) },
                     ],
                   })}
