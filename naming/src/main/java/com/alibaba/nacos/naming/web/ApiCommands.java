@@ -1093,6 +1093,11 @@ public class ApiCommands {
 
                 onAddIP4Dom(requestWrapper);
 
+                proxyParams.put("clientIP", NetUtils.localServer());
+                proxyParams.put("notify", "true");
+                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                proxyParams.put("timestamp", String.valueOf(timestamp));
+
                 if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
                     syncOnAddIP4Dom(namespaceId, dom, proxyParams);
                 } else {
@@ -1387,6 +1392,11 @@ public class ApiCommands {
                 requestWrapper.addParameter("timestamp", String.valueOf(timestamp));
 
                 onRemvIP4Dom(requestWrapper);
+
+                proxyParams.put("clientIP", NetUtils.localServer());
+                proxyParams.put("notify", "true");
+                proxyParams.put("term", String.valueOf(RaftCore.getPeerSet().local().term));
+                proxyParams.put("timestamp", String.valueOf(timestamp));
 
                 if (domain.getEnableHealthCheck() && !domain.getEnableClientBeat()) {
                     syncOnRemvIP4Dom(namespaceId, dom, proxyParams);
