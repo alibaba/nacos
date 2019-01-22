@@ -25,7 +25,7 @@ set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%conf/
 
 
 
-if not ""%2"" == "cluster" (
+if not "%2" == "cluster" (
     set "JAVA_OPT=%JAVA_OPT% -Xms512m -Xmx512m -Xmn256m"
     set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
  ) else (
