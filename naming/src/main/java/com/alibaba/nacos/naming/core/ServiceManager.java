@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -639,6 +640,10 @@ public class ServiceManager implements DataListener {
 
         public String namespaceId;
         public Map<String, String> domName2Checksum = new HashMap<String, String>();
+
+        public DomainChecksum() {
+            this.namespaceId = Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID;
+        }
 
         public DomainChecksum(String namespaceId) {
             this.namespaceId = namespaceId;
