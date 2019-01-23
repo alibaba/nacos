@@ -175,9 +175,19 @@ public class ApiCommands {
     @RequestMapping("/ip4Dom2")
     public JSONObject ip4Dom2(HttpServletRequest request) throws NacosException {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String domName = WebUtils.required(request, "dom");
+        String key = WebUtils.required(request, "dom");
+
+        String domName;
+
+        String namespaceId;
+
+        if (key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
+            namespaceId = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
+            domName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+        } else {
+            namespaceId = UtilsAndCommons.getDefaultNamespaceId();
+            domName = key;
+        }
 
         VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, domName);
 
