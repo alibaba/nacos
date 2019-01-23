@@ -125,6 +125,12 @@ class ServiceList extends React.Component {
     });
   }
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+    });
+
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
   render() {
@@ -140,7 +146,7 @@ class ServiceList extends React.Component {
       detail,
       deleteAction,
     } = locale;
-    const { keyword } = this.state;
+    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -154,7 +160,17 @@ class ServiceList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup left={serviceList} namespaceCallBack={this.getQueryLater} />
+          <RegionGroup
+            left={
+              <div className="page-title">
+                <h5 className="title">{serviceList}</h5>
+                {nowNamespaceName && <span className="namespace-name">{nowNamespaceName}</span>}
+                {nowNamespaceId && <span className="namespace-id">{nowNamespaceId}</span>}
+              </div>
+            }
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.getQueryLater}
+          />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>

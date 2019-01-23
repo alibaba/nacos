@@ -12,4 +12,26 @@
  */
 
 .service-management {
+  .page-title {
+    font-size: 14px;
+    .title {
+      line-height: 32px;
+      display: inline-block;
+      text-indent: 8px;
+      margin: 0 8px 0 0;
+      border-left: 2px solid #88b7E0;
+      font-size: 16px;
+    }
+    .namespace-name {
+      &:before {
+        content: '|';
+        font-size: 14px;
+        color: rgb(0, 0, 0);
+        margin-right: 8px;
+      }
+    }
+    .namespace-id {
+      margin-left: 12px;
+    }
+  }
 }
