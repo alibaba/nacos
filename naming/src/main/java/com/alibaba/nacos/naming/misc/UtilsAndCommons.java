@@ -32,10 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.*;
 
 /**
  * @author nacos
@@ -134,14 +131,14 @@ public class UtilsAndCommons {
     static {
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
-                .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
+            .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+            .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
 
         SerializeConfig.getGlobalInstance()
-                .put(Selector.class, SelectorJsonAdapter.getInstance());
+            .put(Selector.class, SelectorJsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
+            .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
@@ -151,19 +148,23 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
         DOMAIN_SYNCHRONIZATION_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.domains.worker", true));
+            = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.domains.worker", true));
 
         DOMAIN_UPDATE_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.domains.update.processor", true));
+            = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.domains.update.processor", true));
 
         INIT_CONFIG_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.init.config.worker", true));
+            = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.init.config.worker", true));
 
         SERVER_STATUS_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.status.worker", true));
+            = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.status.worker", true));
 
         RAFT_PUBLISH_EXECUTOR
-                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new NamedThreadFactory("nacos.naming.raft.publisher", true));
+            = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(),
+            Runtime.getRuntime().availableProcessors(),
+            0L, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(),
+            new NamedThreadFactory("nacos.naming.raft.publisher", true));
 
     }
 

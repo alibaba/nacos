@@ -32,8 +32,8 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -52,7 +52,7 @@ public class FailoverReactor {
     }
 
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("com.alibaba.nacos.naming.failover", true));
+    private ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("com.alibaba.nacos.naming.failover", true));
 
     private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
     private static final long DAY_PERIOD_MINUTES = 24 * 60;

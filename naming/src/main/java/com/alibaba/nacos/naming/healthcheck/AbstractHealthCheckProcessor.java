@@ -32,9 +32,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -84,7 +84,7 @@ public abstract class AbstractHealthCheckProcessor {
         }
     }
 
-    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("com.taobao.health-check.notifier", true));
+    private static ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("com.taobao.health-check.notifier", true));
 
 
     static {
