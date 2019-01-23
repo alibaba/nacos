@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -162,7 +163,7 @@ public class NamingProxy {
             namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
-        params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
@@ -182,7 +183,7 @@ public class NamingProxy {
             namespaceId, serviceName, ip, port, cluster);
 
         final Map<String, String> params = new HashMap<String, String>(8);
-        params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
         params.put("serviceName", serviceName);
@@ -194,7 +195,7 @@ public class NamingProxy {
     public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly) throws NacosException {
 
         final Map<String, String> params = new HashMap<String, String>(8);
-        params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put("serviceName", serviceName);
         params.put("clusters", clusters);
         params.put("udpPort", String.valueOf(udpPort));
@@ -209,7 +210,7 @@ public class NamingProxy {
             LogUtils.LOG.info("BEAT", "{} sending beat to server: {}", namespaceId, beatInfo.toString());
             Map<String, String> params = new HashMap<String, String>(4);
             params.put("beat", JSON.toJSONString(beatInfo));
-            params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
+            params.put(CommonParams.NAMESPACE_ID, namespaceId);
             params.put("serviceName", beatInfo.getServiceName());
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, HttpMethod.PUT);
             JSONObject jsonObject = JSON.parseObject(result);
@@ -243,7 +244,7 @@ public class NamingProxy {
         Map<String, String> params = new HashMap<String, String>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
-        params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
 
         if (selector != null) {
             switch (SelectorType.valueOf(selector.getType())) {
@@ -341,7 +342,7 @@ public class NamingProxy {
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) {
 
-        params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, getNamespaceId());
+        params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
 
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
             throw new IllegalArgumentException("no server available");

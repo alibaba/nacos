@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
@@ -67,10 +68,10 @@ public class ServiceController {
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
 
-        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         if (serviceManager.getService(namespaceId, serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
@@ -108,9 +109,9 @@ public class ServiceController {
     @RequestMapping(value = "", method = RequestMethod.DELETE)
     public String remove(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         VirtualClusterDomain service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -129,9 +130,9 @@ public class ServiceController {
     @RequestMapping(value = "", method = RequestMethod.GET)
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         VirtualClusterDomain domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
@@ -165,7 +166,7 @@ public class ServiceController {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
@@ -229,9 +230,9 @@ public class ServiceController {
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
         String healthCheckMode = WebUtils.required(request, "healthCheckMode");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
@@ -276,7 +277,7 @@ public class ServiceController {
     @RequestMapping("/rt4Dom")
     public JSONObject rt4Dom(HttpServletRequest request) {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
 
@@ -366,7 +367,7 @@ public class ServiceController {
     public JSONObject searchDom(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String expr = WebUtils.required(request, "expr");
 
@@ -437,7 +438,7 @@ public class ServiceController {
     @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
     public JSONObject checksum(HttpServletRequest request) {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, "serviceName");
         VirtualClusterDomain virtualClusterDomain = serviceManager.getService(namespaceId, serviceName);

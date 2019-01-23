@@ -38,6 +38,8 @@ import java.util.concurrent.*;
  */
 public class UtilsAndCommons {
 
+    // ********************** Nacos HTTP Context ************************ \\
+
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
     public static final String NACOS_SERVER_VERSION = "/v1";
@@ -50,9 +52,19 @@ public class UtilsAndCommons {
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
+    public static final String NACOS_NAMING_SERVICE_CONTEXT = "/service";
+
+    public static final String NACOS_NAMING_CLUSTER_CONTEXT = "/cluster";
+
     public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
 
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
+
+    public static final String NACOS_NAMING_PARTITION_CONTEXT = "/partition";
+
+    public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
+
+    // ********************** Nacos HTTP Context ************************ \\
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
 
@@ -114,6 +126,8 @@ public class UtilsAndCommons {
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
     public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
+
+    public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
 

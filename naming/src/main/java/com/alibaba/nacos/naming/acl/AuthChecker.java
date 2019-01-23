@@ -37,7 +37,7 @@ import java.util.Map;
 public class AuthChecker {
 
     @Autowired
-    private ServiceManager domainsManager;
+    private ServiceManager serviceManager;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -61,7 +61,7 @@ public class AuthChecker {
 
     public void doAuth(Map<String, String[]> params, HttpServletRequest req) throws Exception {
 
-        String namespaceId = WebUtils.optional(req, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(req, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.optional(req, "name", "");
         if (StringUtils.isEmpty(dom)) {
@@ -72,14 +72,7 @@ public class AuthChecker {
             dom = WebUtils.optional(req, "tag", "");
         }
 
-        Domain domObj;
-        if (req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_UPDATE_SWITCH) ||
-                req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {
-            // we consider switch is a kind of special domain
-            domObj = switchDomain;
-        } else {
-            domObj = domainsManager.getService(namespaceId, dom);
-        }
+        Domain domObj = serviceManager.getService(namespaceId, dom);
 
         if (domObj == null) {
             if (!req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {
@@ -118,7 +111,7 @@ public class AuthChecker {
         }
 
         if (!domObj.getOwners().contains(authInfo.getOperator())
-                && !switchDomain.masters.contains(authInfo.getOperator())) {
+            && !switchDomain.masters.contains(authInfo.getOperator())) {
             throw new AccessControlException("dom already exists and you're not among the owners");
         }
     }

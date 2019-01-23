@@ -123,9 +123,7 @@ public class Constants {
 
     public static final String NAMING_DEFAULT_CLUSTER_NAME = "DEFAULT";
 
-    public static final String REQUEST_PARAM_NAMESPACE_ID = "namespaceId";
     public static final String REQUEST_PARAM_DEFAULT_NAMESPACE_ID = "public";
-    public static final String REQUEST_PARAM_SERVICE_NAME = "serviceName";
     public static final String REQUEST_PARAM_GROUP = "group";
     public static final String REQUEST_PARAM_DEFAULT_GROUP = "DEFAULT_GROUP";
 }

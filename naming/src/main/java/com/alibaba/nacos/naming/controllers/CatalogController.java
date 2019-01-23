@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
@@ -65,7 +66,7 @@ public class CatalogController {
     @RequestMapping(value = "/serviceList")
     public JSONObject serviceList(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         JSONObject result = new JSONObject();
 
@@ -112,7 +113,7 @@ public class CatalogController {
     @RequestMapping(value = "/serviceDetail")
     public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, "serviceName");
         VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
@@ -169,7 +170,7 @@ public class CatalogController {
     @RequestMapping(value = "/instanceList")
     public JSONObject instanceList(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, "serviceName");
         String clusterName = WebUtils.required(request, "clusterName");
@@ -225,7 +226,7 @@ public class CatalogController {
     @RequestMapping(value = "/services", method = RequestMethod.GET)
     public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 

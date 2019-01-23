@@ -642,7 +642,7 @@ public class ServiceManager implements DataListener {
         public Map<String, String> domName2Checksum = new HashMap<String, String>();
 
         public DomainChecksum() {
-            this.namespaceId = Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID;
+            this.namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
         }
 
         public DomainChecksum(String namespaceId) {

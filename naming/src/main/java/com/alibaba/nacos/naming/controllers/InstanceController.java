@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -68,7 +69,6 @@ public class InstanceController {
 
     @Autowired
     private ServiceManager serviceManager;
-
 
     private DataSource pushDataSource = new DataSource() {
 
@@ -121,9 +121,9 @@ public class InstanceController {
     @RequestMapping(value = "/instance", method = RequestMethod.DELETE)
     public String deregister(HttpServletRequest request) throws Exception {
         IpAddress ipAddress = getIPAddress(request);
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         VirtualClusterDomain virtualClusterDomain = serviceManager.getService(namespaceId, serviceName);
         if (virtualClusterDomain == null) {
@@ -143,7 +143,7 @@ public class InstanceController {
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
     public JSONObject queryList(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
 
         String dom = WebUtils.required(request, "serviceName");
@@ -166,9 +166,9 @@ public class InstanceController {
     @RequestMapping(value = "/instance", method = RequestMethod.GET)
     public JSONObject queryDetail(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
-        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -206,7 +206,7 @@ public class InstanceController {
 
     @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
     public JSONObject sendBeat(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
@@ -285,7 +285,7 @@ public class InstanceController {
     @RequestMapping("/ip4Dom2")
     public JSONObject ip4Dom2(HttpServletRequest request) throws NacosException {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String domName = WebUtils.required(request, "dom");
 
@@ -314,7 +314,7 @@ public class InstanceController {
         String clusterName = WebUtils.required(request, "clusterName");
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
 
         IpAddress ipAddress = getIPAddress(request);

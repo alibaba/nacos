@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -71,7 +72,7 @@ public class DistroFilter implements Filter {
             }
         }
 
-        String serviceName = req.getParameter(Constants.REQUEST_PARAM_SERVICE_NAME);
+        String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
 
         if (StringUtils.isNoneBlank(serviceName) && !HttpMethod.GET.name().equals(req.getMethod())
             && !consistencyService.isResponsible(serviceName)) {
