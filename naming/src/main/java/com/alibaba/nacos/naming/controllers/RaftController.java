@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,6 +77,7 @@ public class RaftController {
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
 
         JSONObject json = JSON.parseObject(value);
         JSONObject beat = JSON.parseObject(json.getString("beat"));
@@ -124,6 +126,7 @@ public class RaftController {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
         raftConsistencyService.put(json.getString("key"), json.getString("value"));
@@ -150,6 +153,7 @@ public class RaftController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
         String keysString = WebUtils.required(request, "keys");
+        keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
 
@@ -186,6 +190,7 @@ public class RaftController {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 
         Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
@@ -205,6 +210,7 @@ public class RaftController {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 
         Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
