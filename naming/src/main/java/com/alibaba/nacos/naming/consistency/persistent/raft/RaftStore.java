@@ -134,7 +134,7 @@ public class RaftStore {
             Datum datum = JSON.parseObject(json, Datum.class);
 
             if (StringUtils.isBlank(namespaceId)) {
-                namespaceId = Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID;
+                namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
             }
 
             if (!datum.key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME) && !datum.key.contains(namespaceId)) {
@@ -181,7 +181,7 @@ public class RaftStore {
             cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
         }
 
-        if (Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID.equals(namespaceId)) {
+        if (UtilsAndCommons.DEFAULT_NAMESPACE_ID.equals(namespaceId)) {
             // remove old format file:
             String originDatumKey = null;
             if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
@@ -255,7 +255,7 @@ public class RaftStore {
 
             if (StringUtils.isNotBlank(namspaceId)) {
 
-                if (namspaceId.equals(Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID)) {
+                if (namspaceId.equals(UtilsAndCommons.DEFAULT_NAMESPACE_ID)) {
 
                     File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(originDatumKey));
                     if (cacheFile.exists() && !cacheFile.delete()) {

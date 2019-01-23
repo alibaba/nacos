@@ -16,7 +16,8 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.naming.acl.AuthChecker;
-import com.alibaba.nacos.naming.controllers.RaftController;
+import com.alibaba.nacos.naming.controllers.*;
+import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
@@ -65,11 +66,7 @@ public class AuthFilter implements Filter {
             Method method = methodCache.get(target);
 
             if (method == null) {
-                if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-                    method = RaftController.class.getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
-                } else {
-                    method = ApiCommands.class.getMethod(target, HttpServletRequest.class);
-                }
+                method = mapClass(path).getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
                 methodCache.put(target, method);
             }
 
@@ -98,6 +95,44 @@ public class AuthFilter implements Filter {
 
     @Override
     public void destroy() {
+
+    }
+
+    private Class<?> mapClass(String path) throws NacosException {
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)) {
+            return InstanceController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)) {
+            return ServiceController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
+            return ClusterController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT)) {
+            return OperatorController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)) {
+            return CatalogController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)) {
+            return HealthController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
+            return RaftController.class;
+        }
+
+        if (path.contains(UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)) {
+            return PartitionController.class;
+        }
+
+        throw new NacosException(NacosException.NOT_FOUND, "no matched controller found!");
 
     }
 

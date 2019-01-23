@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -39,6 +40,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Health status related operation controller
+ *
  * @author nkorange
  * @author nanamikon
  * @since 0.8.0
@@ -67,7 +70,7 @@ public class HealthController {
     @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
     public String update(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "serviceName");
         String ip = WebUtils.required(request, "ip");

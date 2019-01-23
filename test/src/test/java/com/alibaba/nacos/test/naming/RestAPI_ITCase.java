@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.After;
@@ -507,7 +508,7 @@ public class RestAPI_ITCase {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/reCalculateCheckSum4Dom",
                 Params.newParams()
-                        .appendParam(Constants.REQUEST_PARAM_NAMESPACE_ID, UtilsAndCommons.getDefaultNamespaceId())
+                        .appendParam(CommonParams.NAMESPACE_ID, UtilsAndCommons.getDefaultNamespaceId())
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);
