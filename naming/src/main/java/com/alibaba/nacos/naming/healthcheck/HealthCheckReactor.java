@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.Map;
@@ -33,16 +34,8 @@ public class HealthCheckReactor {
 
         int processorCount = Runtime.getRuntime().availableProcessors();
         EXECUTOR
-                = Executors
-                .newScheduledThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setDaemon(true);
-                        thread.setName("com.alibaba.nacos.naming.health");
-                        return thread;
-                    }
-                });
+            = Executors
+            .newScheduledThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new NamedThreadFactory("com.alibaba.nacos.naming.health", true));
     }
 
     public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {

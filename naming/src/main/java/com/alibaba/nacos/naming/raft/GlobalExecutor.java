@@ -15,9 +15,10 @@
  */
 package com.alibaba.nacos.naming.raft;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,17 +36,7 @@ public class GlobalExecutor {
 
     public static final long ADDRESS_SERVER_UPDATE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
 
-    private static ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.raft.timer");
-
-            return t;
-        }
-    });
+    private static ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new NamedThreadFactory("com.alibaba.nacos.naming.raft.timer", true));
 
 
     public static void register(Runnable runnable) {

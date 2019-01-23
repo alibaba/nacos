@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
@@ -28,7 +29,6 @@ import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.naming.raft.RaftPeer.State.FOLLOWER;
@@ -42,15 +42,7 @@ public class PerformanceLoggerThread {
     @Autowired
     private DomainsManager domainsManager;
 
-    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("nacos-server-performance");
-            return t;
-        }
-    });
+    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos-server-performance", true));
 
     private static final long PERIOD = 5 * 60;
     private static final long HEALTH_CHECK_PERIOD = 5 * 60;

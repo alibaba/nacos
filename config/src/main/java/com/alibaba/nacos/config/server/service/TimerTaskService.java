@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 定时任务服务
@@ -29,17 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TimerTaskService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private static ScheduledExecutorService scheduledExecutorService = Executors
-        .newScheduledThreadPool(10, new ThreadFactory() {
-            AtomicInteger count = new AtomicInteger(0);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.server.Timer-" + count.getAndIncrement());
-                return t;
-            }
-        });
+        .newScheduledThreadPool(10, new NamedThreadFactory("com.alibaba.nacos.server.Timer", true));
 
     static public void scheduleWithFixedDelay(Runnable command, long initialDelay, long delay,
                                               TimeUnit unit) {

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
@@ -258,7 +259,7 @@ public class LongPollingService extends AbstractEventListener {
             // ignore
         } else {
             if (event instanceof LocalDataChangeEvent) {
-                LocalDataChangeEvent evt = (LocalDataChangeEvent)event;
+                LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
                 scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
             }
         }
@@ -271,16 +272,7 @@ public class LongPollingService extends AbstractEventListener {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public LongPollingService() {
         allSubs = new ConcurrentLinkedQueue<ClientLongPolling>();
-
-        scheduler = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setDaemon(true);
-                t.setName("com.alibaba.nacos.LongPolling");
-                return t;
-            }
-        });
+        scheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("com.alibaba.nacos.LongPolling", true));
         scheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
     }
 
@@ -321,7 +313,7 @@ public class LongPollingService extends AbstractEventListener {
                         LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
                             (System.currentTimeMillis() - changeTime),
                             "in-advance",
-                            RequestUtil.getRemoteIp((HttpServletRequest)clientSub.asyncContext.getRequest()),
+                            RequestUtil.getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
                             "polling",
                             clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
                         clientSub.sendResponse(Arrays.asList(groupKey));
@@ -382,12 +374,12 @@ public class LongPollingService extends AbstractEventListener {
                         if (isFixedPolling()) {
                             LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
                                 (System.currentTimeMillis() - createTime),
-                                "fix", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
+                                "fix", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                 "polling",
                                 clientMd5Map.size(), probeRequestSize);
                             List<String> changedGroups = MD5Util.compareMd5(
-                                (HttpServletRequest)asyncContext.getRequest(),
-                                (HttpServletResponse)asyncContext.getResponse(), clientMd5Map);
+                                (HttpServletRequest) asyncContext.getRequest(),
+                                (HttpServletResponse) asyncContext.getResponse(), clientMd5Map);
                             if (changedGroups.size() > 0) {
                                 sendResponse(changedGroups);
                             } else {
@@ -396,7 +388,7 @@ public class LongPollingService extends AbstractEventListener {
                         } else {
                             LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
                                 (System.currentTimeMillis() - createTime),
-                                "timeout", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
+                                "timeout", RequestUtil.getRemoteIp((HttpServletRequest) asyncContext.getRequest()),
                                 "polling",
                                 clientMd5Map.size(), probeRequestSize);
                             sendResponse(null);
@@ -430,7 +422,7 @@ public class LongPollingService extends AbstractEventListener {
                 return;
             }
 
-            HttpServletResponse response = (HttpServletResponse)asyncContext.getResponse();
+            HttpServletResponse response = (HttpServletResponse) asyncContext.getResponse();
 
             try {
                 String respString = MD5Util.compareMd5ResultString(changedGroups);

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -53,15 +54,7 @@ public class ConfigSubService {
         this.serverListService = serverListService1;
 
         scheduler = Executors.newScheduledThreadPool(
-            ThreadUtil.getSuitableThreadCount(), new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setDaemon(true);
-                    t.setName("com.alibaba.nacos.ConfigSubService");
-                    return t;
-                }
-            });
+            ThreadUtil.getSuitableThreadCount(), new NamedThreadFactory("com.alibaba.nacos.ConfigSubService", true));
     }
 
     protected ConfigSubService() {
@@ -191,7 +184,7 @@ public class ConfigSubService {
                     Object resultObj = JSONUtils.deserializeObject(json,
                         new TypeReference<SampleResult>() {
                         });
-                    return (SampleResult)resultObj;
+                    return (SampleResult) resultObj;
 
                 } else {
 

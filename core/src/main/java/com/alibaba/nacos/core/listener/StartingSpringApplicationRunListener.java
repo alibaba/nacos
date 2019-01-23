@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.core.listener;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -28,7 +29,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
@@ -143,14 +143,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     private void logStarting() {
         if (!STANDALONE_MODE) {
 
-            scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r, "nacos-starting");
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            });
+            scheduledExecutorService = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos-starting", true));
 
             scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
                 @Override

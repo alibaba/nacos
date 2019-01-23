@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.File;
@@ -38,7 +39,10 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -138,7 +142,7 @@ public class ClientWorker {
                 //reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
-                int taskId = cacheMap.get().size() / (int)ParamUtil.getPerTaskConfigSize();
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
                 cache.setTaskId(taskId);
             }
 
@@ -296,9 +300,9 @@ public class ClientWorker {
         // 分任务
         int listenerSize = cacheMap.get().size();
         // 向上取整为批数
-        int longingTaskCount = (int)Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int)currentLongingTaskCount; i < longingTaskCount; i++) {
+            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
                 executorService.execute(new LongPollingRunnable(i));
             }
@@ -421,25 +425,9 @@ public class ClientWorker {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
 
-        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("com.alibaba.nacos.client.Worker." + agent.getName(), true));
 
-        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        executorService = Executors.newCachedThreadPool(new NamedThreadFactory("com.alibaba.nacos.client.Worker.longPolling" + agent.getName(), true));
 
         executor.scheduleWithFixedDelay(new Runnable() {
             public void run() {

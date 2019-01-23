@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.*;
@@ -64,17 +65,7 @@ public class RaftCore {
 
     public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/getPeer";
 
-    private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.raft.notifier");
-
-            return t;
-        }
-    });
+    private static ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("com.alibaba.nacos.naming.raft.notifier", true));
 
     public static final Lock OPERATE_LOCK = new ReentrantLock();
 

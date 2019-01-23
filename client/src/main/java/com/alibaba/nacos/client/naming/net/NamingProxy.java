@@ -29,6 +29,7 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.HttpMethod;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
@@ -37,7 +38,6 @@ import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -74,15 +74,7 @@ public class NamingProxy {
             }
         }
 
-        executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.naming.serverlist.updater");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+        executorService = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("com.alibaba.nacos.client.naming.serverlist.updater", true));
 
         executorService.scheduleWithFixedDelay(new Runnable() {
             @Override

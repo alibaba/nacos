@@ -15,9 +15,10 @@
  */
 package com.alibaba.nacos.cmdb.utils;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
+
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -34,14 +35,6 @@ public class UtilsAndCommons {
     static {
 
         GLOBAL_EXECUTOR
-                = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.cmdb.global.executor");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+            = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new NamedThreadFactory("nacos.cmdb.global.executor", true));
     }
 }

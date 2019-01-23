@@ -19,13 +19,13 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.nio.charset.Charset;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * @author xuanyin
@@ -45,15 +45,7 @@ public class PushReceiver implements Runnable {
             this.hostReactor = hostReactor;
             udpSocket = new DatagramSocket();
 
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.push.receiver");
-                    return thread;
-                }
-            });
+            executorService = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("com.alibaba.nacos.naming.push.receiver", true));
 
             executorService.execute(this);
         } catch (Exception e) {

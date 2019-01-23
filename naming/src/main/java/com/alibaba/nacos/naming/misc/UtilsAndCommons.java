@@ -21,6 +21,7 @@ import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -31,7 +32,10 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * @author nacos
@@ -147,59 +151,19 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
         DOMAIN_SYNCHRONIZATION_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.domains.worker");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.domains.worker", true));
 
         DOMAIN_UPDATE_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.domains.update.processor");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.domains.update.processor", true));
 
         INIT_CONFIG_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.init.config.worker");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.init.config.worker", true));
 
         SERVER_STATUS_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.status.worker");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+                = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.status.worker", true));
 
         RAFT_PUBLISH_EXECUTOR
-                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.raft.publisher");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new NamedThreadFactory("nacos.naming.raft.publisher", true));
 
     }
 

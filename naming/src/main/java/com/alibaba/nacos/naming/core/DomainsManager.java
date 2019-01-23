@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.Datum;
@@ -71,15 +72,7 @@ public class DomainsManager {
      * thread pool that processes getting domain detail from other server asynchronously
      */
     private ExecutorService domainUpdateExecutor
-        = Executors.newFixedThreadPool(DOMAIN_UPDATE_EXECUTOR_NUM, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.naming.domain.update.http.handler");
-            t.setDaemon(true);
-            return t;
-        }
-    });
+        = Executors.newFixedThreadPool(DOMAIN_UPDATE_EXECUTOR_NUM, new NamedThreadFactory("com.alibaba.nacos.naming.domain.update.http.handler", true));
 
     public Map<String, Domain> chooseDomMap(String namespaceId) {
         return serviceMap.get(namespaceId);

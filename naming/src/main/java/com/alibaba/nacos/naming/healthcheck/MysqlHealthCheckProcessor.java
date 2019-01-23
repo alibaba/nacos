@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -55,17 +56,7 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
         int processorCount = Runtime.getRuntime().availableProcessors();
         EXECUTOR
-                = Executors.newFixedThreadPool(processorCount <= 1 ? 1 : processorCount / 2,
-                new ThreadFactory() {
-                    @Override
-                    public Thread newThread(Runnable r) {
-                        Thread thread = new Thread(r);
-                        thread.setDaemon(true);
-                        thread.setName("com.nacos.mysql.checker");
-                        return thread;
-                    }
-                }
-        );
+            = Executors.newFixedThreadPool(processorCount <= 1 ? 1 : processorCount / 2, new NamedThreadFactory("com.nacos.mysql.checker", true));
     }
 
     public MysqlHealthCheckProcessor() {

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service.capacity;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.config.server.constant.CounterMode;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.base.Stopwatch;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,6 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -67,9 +66,7 @@ public class CapacityService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public void init() {
         // 每个Server都有修正usage的Job在跑，幂等
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(
-            "com.alibaba.nacos.CapacityManagement-%d").setDaemon(true).build();
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("com.alibaba.nacos.CapacityManagement", true));
         scheduledExecutorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
@@ -263,7 +260,7 @@ public class CapacityService {
         // 初始化的时候该Group/租户就已经到达限额，自动扩容，降低运维成本
         int initialExpansionPercent = PropertyUtil.getInitialExpansionPercent();
         if (initialExpansionPercent > 0) {
-            int finalQuota = (int)(usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
+            int finalQuota = (int) (usage + defaultQuota * (1.0 * initialExpansionPercent / 100));
             if (tenant != null) {
                 tenantCapacityPersistService.updateQuota(tenant, finalQuota);
                 LogUtil.defaultLog.warn("[capacityManagement] 初始化的时候该租户（{}）使用量（{}）就已经到达限额{}，自动扩容到{}", tenant,

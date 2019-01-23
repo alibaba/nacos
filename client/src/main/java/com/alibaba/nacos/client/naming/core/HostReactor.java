@@ -26,6 +26,7 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.*;
@@ -65,15 +66,7 @@ public class HostReactor {
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
 
-        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.client.naming.updater");
-                return thread;
-            }
-        });
+        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new NamedThreadFactory("com.alibaba.nacos.client.naming.updater", true));
 
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;

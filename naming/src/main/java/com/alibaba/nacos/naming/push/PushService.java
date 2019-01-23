@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -63,25 +64,9 @@ public class PushService {
     private static DatagramSocket udpSocket;
 
     private static Map<String, Future> futureMap = new ConcurrentHashMap<>();
-    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.push.retransmitter");
-            return t;
-        }
-    });
+    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("com.alibaba.nacos.naming.push.retransmitter", true));
 
-    private static ScheduledExecutorService udpSender = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.push.udpSender");
-            return t;
-        }
-    });
+    private static ScheduledExecutorService udpSender = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("com.alibaba.nacos.naming.push.udpSender", true));
 
 
     static {
@@ -259,7 +244,7 @@ public class PushService {
                         }
 
                         Loggers.PUSH.info("dom: {} changed, schedule push for: {}, agent: {}, key: {}",
-                            client.getDom(), client.getAddrStr(), client.getAgent(),  (ackEntry == null ? null : ackEntry.key));
+                            client.getDom(), client.getAddrStr(), client.getAgent(), (ackEntry == null ? null : ackEntry.key));
 
                         udpPush(ackEntry);
                     }

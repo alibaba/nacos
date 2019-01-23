@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.common.util.NamedThreadFactory;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
@@ -56,28 +57,10 @@ public class TcpSuperSenseProcessor extends AbstractHealthCheckProcessor impleme
     public static final long TCP_KEEP_ALIVE_MILLIS = 0;
 
     private static ScheduledExecutorService TCP_CHECK_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.tcp.check.worker");
-            t.setDaemon(true);
-            return t;
-        }
-    });
+            = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("nacos.naming.tcp.check.worker", true));
 
     private static ScheduledExecutorService NIO_EXECUTOR
-            = Executors.newScheduledThreadPool(NIO_THREAD_COUNT,
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("nacos.supersense.checker");
-                    return thread;
-                }
-            }
-    );
+            = Executors.newScheduledThreadPool(NIO_THREAD_COUNT, new NamedThreadFactory("nacos.supersense.checker", true));
 
     private Selector selector;
 
