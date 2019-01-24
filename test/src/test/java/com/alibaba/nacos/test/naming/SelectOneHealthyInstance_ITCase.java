@@ -46,9 +46,6 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
 public class SelectOneHealthyInstance_ITCase {
 
     private NamingService naming;
-    private ServerSocket localServer1 = null;
-    private ServerSocket localServer2 = null;
-    private ServerSocket localServer3 = null;
     @LocalServerPort
     private int port;
     @Before
@@ -57,24 +54,8 @@ public class SelectOneHealthyInstance_ITCase {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
-
-        localServer1 = new ServerSocket(60000);
-        localServer2 = new ServerSocket(60001);
-        localServer3 = new ServerSocket(60002);
     }
 
-    @After
-    public void stopLocalServer() throws Exception{
-        if (localServer1 != null) {
-            localServer1.close();
-        }
-        if (localServer2 != null) {
-            localServer2.close();
-        }
-        if (localServer3 != null) {
-            localServer3.close();
-        }
-    }
 
     /**
      * 获取一个健康的Instance

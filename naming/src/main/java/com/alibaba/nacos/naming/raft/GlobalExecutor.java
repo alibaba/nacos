@@ -15,21 +15,25 @@
  */
 package com.alibaba.nacos.naming.raft;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nacos
  */
 public class GlobalExecutor {
-    public static final long HEARTBEAT_INTVERAL_MS = TimeUnit.SECONDS.toMillis(5L);
+
+    public static final long HEARTBEAT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
 
     public static final long LEADER_TIMEOUT_MS = TimeUnit.SECONDS.toMillis(15L);
 
-    public static final long RAMDOM_MS = TimeUnit.SECONDS.toMillis(5L);
+    public static final long RANDOM_MS = TimeUnit.SECONDS.toMillis(5L);
 
     public static final long TICK_PERIOD_MS = TimeUnit.MILLISECONDS.toMillis(500L);
 
-    public static final long ADDRESS_SERVER_UPDATE_INTVERAL_MS = TimeUnit.SECONDS.toMillis(5L);
+    public static final long ADDRESS_SERVER_UPDATE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(5L);
 
     private static ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(2, new ThreadFactory() {
         @Override

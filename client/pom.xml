@@ -16,7 +16,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.7.0</version>
+        <version>0.8.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -105,6 +105,11 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
         </dependency>
 
     </dependencies>

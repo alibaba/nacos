@@ -12,14 +12,20 @@
  */
 
 import React from 'react';
-import { aliwareIntl } from '@/globalLib';
 import { isParentEdas } from '@/lib';
+import { Balloon, Button, ConfigProvider, Dialog, Form, Icon, Select, Upload } from '@alifd/next';
+
 import './index.scss';
-import { Balloon, Button, Dialog, Form, Icon, Select, Upload } from '@alifd/next';
 
 const FormItem = Form.Item;
 
+/**
+ * @deprecated
+ */
+@ConfigProvider.config
 class ImportDialog extends React.Component {
+  static displayName = 'ImportDialog';
+
   constructor(props) {
     super(props);
     this.formItemLayout = {
@@ -30,25 +36,27 @@ class ImportDialog extends React.Component {
         span: 20,
       },
     };
-    this.allPolicy = [
-      {
-        value: 'abort',
-        label: aliwareIntl.get('nacos.component.ImportDialog.To_terminate_the_import0'),
-      },
-      { value: 'skip', label: aliwareIntl.get('nacos.component.ImportDialog.skip1') },
-      {
-        value: 'overwrite',
-        label: aliwareIntl.get('nacos.component.ImportDialog.cover2'),
-      },
-    ];
     this.defaultPolicy = 'abort';
     this.state = {
       visible: false,
       serverId: '',
       tenant: '',
       policy: this.defaultPolicy,
-      policyLabel: aliwareIntl.get('nacos.component.ImportDialog.To_terminate_the_import0'),
+      policyLabel: '',
+      allPolicy: [],
     };
+  }
+
+  componentDidMount() {
+    const { locale = {} } = this.props;
+    this.setState({
+      policyLabel: locale.terminate,
+      allPolicy: [
+        { value: 'abort', label: locale.terminate },
+        { value: 'skip', label: locale.skip },
+        { value: 'overwrite', label: locale.overwrite },
+      ],
+    });
   }
 
   openDialog(payload, callback) {
@@ -91,6 +99,7 @@ class ImportDialog extends React.Component {
   };
 
   render() {
+    const { locale = {} } = this.props;
     let uploadLink = `/diamond-ops/batch/import/serverId/${this.state.serverId}/tenant/${
       this.state.tenant.id
     }?policy=${this.state.policy}`;
@@ -104,27 +113,24 @@ class ImportDialog extends React.Component {
           <span>
             Data ID{' '}
             <Icon
-              type={'help'}
-              size={'small'}
+              type="help"
+              size="small"
               style={{ color: '#1DC11D', marginRight: 5, verticalAlign: 'middle' }}
             />
           </span>
         }
-        align={'t'}
+        align="t"
         style={{ marginRight: 5 }}
-        triggerType={'hover'}
+        triggerType="hover"
       >
-        <a href={window._getLink && window._getLink('knowDataid')} target={'_blank'}>
-          {aliwareIntl.get(
-            'nacos.component.ImportDialog.You_can_only_upload._zip_file_format0'
-          ) /* 只能上传.zip格式的文件 */}
+        <a href={window._getLink && window._getLink('knowDataid')} target="_blank">
+          {locale.zipFileFormat}
         </a>
       </Balloon>
     );
     const footer = (
       <div>
         <Upload
-          language={aliwareIntl.currentLanguageCode || 'zh-cn'}
           listType={'text'}
           action={uploadLink}
           limit={1}
@@ -140,9 +146,7 @@ class ImportDialog extends React.Component {
           formatter={this.formatter}
           headers={{ poweredBy: 'simpleMVC', projectName: 'nacos' }}
         >
-          <Button type={'primary'}>
-            {aliwareIntl.get('nacos.component.ImportDialog.Upload_File3')}
-          </Button>
+          <Button type={'primary'}>{locale.uploadFile}</Button>
         </Upload>
       </div>
     );
@@ -152,35 +156,26 @@ class ImportDialog extends React.Component {
         <Dialog
           visible={this.state.visible}
           footer={footer}
-          footerAlign={'center'}
-          language={aliwareIntl.currentLanguageCode || 'zh-cn'}
+          footerAlign="center"
           style={{ width: 480 }}
           onCancel={this.closeDialog}
           onClose={this.closeDialog}
-          title={`${aliwareIntl.get('nacos.component.ImportDialog.Import_configuration4') +
-            this.state.serverId}）`}
+          title={`${locale.importLabel + this.state.serverId}）`}
         >
           <Form>
-            <FormItem
-              label={aliwareIntl.get('nacos.component.ImportDialog.target_space5')}
-              {...this.formItemLayout}
-            >
+            <FormItem label={locale.target} {...this.formItemLayout}>
               <p>
                 <span style={{ color: '#33cde5' }}>{this.state.tenant.name}</span>
                 {` | ${this.state.tenant.id}`}
               </p>
             </FormItem>
-            <FormItem
-              label={aliwareIntl.get('nacos.component.ImportDialog.the_same_configuration6')}
-              {...this.formItemLayout}
-            >
+            <FormItem label={locale.conflict} {...this.formItemLayout}>
               <Select
                 size={'medium'}
                 hasArrow
                 defaultValue={this.defaultPolicy}
-                dataSource={this.allPolicy}
+                dataSource={this.state.allPolicy}
                 onChange={this.setPolicy}
-                language={aliwareIntl.currentLanguageCode}
               />
             </FormItem>
           </Form>
@@ -190,9 +185,7 @@ class ImportDialog extends React.Component {
               type={'warning'}
               style={{ color: '#ff8a00', marginRight: 5, verticalAlign: 'middle' }}
             />
-            {aliwareIntl.get(
-              'nacos.component.ImportDialog.file_upload_directly_after_importing_the_configuration,_please_be_sure_to_exercise_caution7'
-            )}
+            {locale.beSureExerciseCaution}
             {helpTip}
           </div>
         </Dialog>

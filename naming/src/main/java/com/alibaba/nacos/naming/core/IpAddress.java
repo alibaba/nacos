@@ -301,7 +301,7 @@ public class IpAddress extends Instance implements Comparable {
     @Override
     public int compareTo(Object o) {
         if (!(o instanceof IpAddress)) {
-            Loggers.SRV_LOG.error("IPADDRESS-COMPARE", "Object is not an instance of IPAdress,object: " + o.getClass());
+            Loggers.SRV_LOG.error("[IPADDRESS-COMPARE] Object is not an instance of IPAdress, object: {}", o.getClass());
             throw new IllegalArgumentException("Object is not an instance of IPAdress,object: " + o.getClass());
         }
 

@@ -80,7 +80,8 @@ public class NamingProxy {
             if (System.currentTimeMillis() - lastSrvSiteRefreshTime > VIP_SRV_SITE_REF_INTER_MILLIS ||
                     !CollectionUtils.isEqualCollection(servers, lastServers)) {
                 if (!CollectionUtils.isEqualCollection(servers, lastServers)) {
-                    Loggers.SRV_LOG.info("[REFRESH-SERVER-SITE] server list is changed, old: " + lastServers + ", new: " + servers);
+                    Loggers.SRV_LOG.info("[REFRESH-SERVER-SITE] server list is changed, old: {}, new: {}",
+                        lastServers, servers);
                 }
 
                 lastServers = servers;
@@ -109,21 +110,6 @@ public class NamingProxy {
 
             List<String> serverlist = refreshServerListFromDisk();
 
-            if (!CollectionUtils.isEmpty(serverlist)) {
-                serverlistFromConfig = serverlist;
-            }
-
-            if (!CollectionUtils.isEqualCollection(serverlistFromConfig, servers) && CollectionUtils.isNotEmpty(serverlistFromConfig)) {
-                servers = serverlistFromConfig;
-            }
-
-            if (RunningConfig.getServerPort() > 0) {
-                lastSrvRefTime = System.currentTimeMillis();
-            }
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to update server list", e);
-            List<String> serverlist = refreshServerListFromDisk();
-
             if (CollectionUtils.isNotEmpty(serverlist)) {
                 serverlistFromConfig = serverlist;
             }
@@ -131,6 +117,13 @@ public class NamingProxy {
             if (CollectionUtils.isNotEmpty(serverlistFromConfig)) {
                 servers = serverlistFromConfig;
             }
+
+            if (RunningConfig.getServerPort() > 0) {
+                lastSrvRefTime = System.currentTimeMillis();
+            }
+
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("failed to update server list", e);
         }
     }
 
@@ -144,15 +137,21 @@ public class NamingProxy {
             Loggers.SRV_LOG.warn("failed to get config: " + CLUSTER_CONF_FILE_PATH, e);
         }
 
-        Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST1", result);
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST1 {}", result);
+        }
 
         //use system env
         if (CollectionUtils.isEmpty(result)) {
             result = SystemUtils.getIPsBySystemEnv(UtilsAndCommons.SELF_SERVICE_CLUSTER_ENV);
-            Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST4: " + result);
+            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+                Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST4: {}", result);
+            }
         }
 
-        Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST2" + result);
+        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+            Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST2 {}", result);
+        }
 
         if (!result.isEmpty() && !result.get(0).contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
             for (int i = 0; i < result.size(); i++) {
@@ -175,7 +174,9 @@ public class NamingProxy {
         servers.put("sameSite", snapshot);
         servers.put("otherSite", new ArrayList<String>());
 
-        Loggers.SRV_LOG.debug("sameSiteServers:" + servers.toString());
+        if (Loggers.SRV_LOG.isDebugEnabled()) {
+            Loggers.SRV_LOG.debug("sameSiteServers: {}", servers.toString());
+        }
         return servers;
     }
 

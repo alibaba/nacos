@@ -34,13 +34,11 @@ import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
-import CloneDialog from 'components/CloneDialog';
-import ImportDialog from 'components/ImportDialog';
-import ExportDialog from 'components/ExportDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
 import './index.scss';
+import { LANGUAGE_KEY } from '../../../constants';
 
 const { Panel } = Collapse;
 
@@ -49,11 +47,14 @@ class ConfigurationManagement extends React.Component {
   static displayName = 'ConfigurationManagement';
 
   static propTypes = {
+    locale: PropTypes.object,
     history: PropTypes.object,
   };
 
   constructor(props) {
     super(props);
+    this.deleteDialog = React.createRef();
+    this.showcode = React.createRef();
     this.field = new Field(this);
     this.appName = getParams('appName') || getParams('edasAppId') || '';
     this.preAppName = this.appName;
@@ -108,16 +109,7 @@ class ConfigurationManagement extends React.Component {
   componentDidMount() {
     const { locale = {} } = this.props;
     // this.getGroup();
-    if (aliwareIntl.currentLanguageCode === 'zh-cn') {
-      // this.getContentList(); //在中文站获取概览页
-      this.setState({
-        isCn: true,
-      });
-    } else {
-      this.setState({
-        isCn: false,
-      });
-    }
+    this.setIsCn();
     if (window._getLink && window._getLink('isCn') === 'true') {
       if (!this.checkQuestionnaire()) {
         if (window.location.host === 'acm.console.aliyun.com') {
@@ -144,6 +136,10 @@ class ConfigurationManagement extends React.Component {
         }
       }
     }
+  }
+
+  setIsCn() {
+    this.setState({ isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN' });
   }
 
   /**
@@ -360,7 +356,7 @@ class ConfigurationManagement extends React.Component {
               _payload.isok = false;
               _payload.message = res.message;
             }
-            self.refs.delete.openDialog(_payload);
+            self.deleteDialog.current.getInstance().openDialog(_payload);
             self.getData();
           },
         });
@@ -373,7 +369,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   showCode(record) {
-    this.refs.showcode.openDialog(record);
+    this.showcode.current.getInstance().openDialog(record);
   }
 
   renderCol(value, index, record) {
@@ -727,7 +723,7 @@ class ConfigurationManagement extends React.Component {
                     {this.state.nownamespace_id}
                   </span>
                   {locale.queryResults}
-                  <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
+                  <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
                   {locale.articleMeetRequirements}
                 </h3>
                 <div
@@ -738,7 +734,7 @@ class ConfigurationManagement extends React.Component {
                 style={{
                   position: 'relative',
                   marginTop: 10,
-                  height: this.state.isAdvancedQuery ? 'auto' : 48,
+                  height: this.state.isAdvancedQuery ? 'auto' : 42,
                   overflow: 'hidden',
                 }}
               >
@@ -873,11 +869,8 @@ class ConfigurationManagement extends React.Component {
                   </div>
                 )}
               </div>
-              <ShowCodeing ref={'showcode'} />
-              <DeleteDialog ref={'delete'} />
-              <CloneDialog ref={'cloneDialog'} />
-              <ImportDialog ref={'importDialog'} />
-              <ExportDialog ref={'exportDialog'} />
+              <ShowCodeing ref={this.showcode} />
+              <DeleteDialog ref={this.deleteDialog} />
             </div>
             {this.state.hasdash && (
               <div

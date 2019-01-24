@@ -25,7 +25,7 @@ set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%conf/
 
 
 
-if not ""%2"" == "cluster" (
+if not "%2" == "cluster" (
     set "JAVA_OPT=%JAVA_OPT% -Xms512m -Xmx512m -Xmn256m"
     set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
  ) else (
@@ -34,7 +34,7 @@ if not ""%2"" == "cluster" (
     set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
  )
 
-set "JAVA_OPT=%JAVA_OPT% -Djava.ext.dirs=%BASE_DIR%\plugins\cmdb"
+set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
 set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location="%CUSTOM_SEARCH_LOCATIONS%""
