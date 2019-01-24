@@ -20,6 +20,8 @@ import $ from 'jquery';
 import { setParams } from '../globalLib';
 import { connect } from 'react-redux';
 
+import './index.scss';
+
 @withRouter
 @connect(state => ({ ...state.locale }))
 @ConfigProvider.config
@@ -29,6 +31,8 @@ class MainLayout extends React.Component {
   static propTypes = {
     navList: PropTypes.array,
     history: PropTypes.object,
+    location: PropTypes.object,
+    locale: PropTypes.object,
     children: PropTypes.any,
   };
 
@@ -71,6 +75,11 @@ class MainLayout extends React.Component {
     iconClass.className = tmpClassName;
   }
 
+  /**
+   * Click the back button
+   * TODO: this.props.history.goBack(); ???
+   * @param url
+   */
   nacosGoBack(url) {
     const params = window.location.hash.split('?')[1];
     const urlArr = params.split('&') || [];
@@ -89,6 +98,9 @@ class MainLayout extends React.Component {
           queryParams.push(urlArr[i]);
         }
       }
+    }
+    if (localStorage.getItem('namespace')) {
+      queryParams.push(`namespace=${localStorage.getItem('namespace')}`);
     }
     this.props.history.push(`/${url}?${queryParams.join('&')}`);
   }
@@ -200,7 +212,8 @@ class MainLayout extends React.Component {
   }
 
   nacosLoopNav(data, _index = 0, parent) {
-    const { locale = {} } = this.props;
+    const { locale = {}, location = {} } = this.props;
+    const { pathname } = location;
     let index = _index;
     // 遍历导航，只显示2级
     const self = this;
@@ -237,6 +250,7 @@ class MainLayout extends React.Component {
         } else {
           return (
             <li
+              className={pathname === `/${item.serviceName}` ? 'selected' : ''}
               key={`${item.serviceName}`}
               data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
               onClick={this.navTo.bind(this, `/${item.serviceName}`)}
@@ -255,6 +269,7 @@ class MainLayout extends React.Component {
       }
       return (
         <li
+          className={pathname === `/${item.serviceName}` ? 'selected' : ''}
           key={`${item.serviceName}`}
           data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
           onClick={this.navTo.bind(this, `/${item.serviceName}`)}
@@ -395,7 +410,6 @@ class MainLayout extends React.Component {
                     <span style={{ marginLeft: 5 }}>{nacosVersion}</span>
                   </div>
                 )}
-
                 <div
                   className="product-nav-list"
                   style={{ position: 'relative', top: 0, height: '100%' }}

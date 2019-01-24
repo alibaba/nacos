@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.config.server.exception;
 
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -37,6 +40,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public void handleIllegalArgumentException(HttpServletResponse response, Exception ex) throws IOException {
+        MetricsMonitor.getIllegalArgumentException().increment();
         response.setStatus(400);
         if (ex.getMessage() != null) {
             response.getWriter().println(ex.getMessage());
@@ -52,12 +56,24 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NacosException.class)
     public void handleNacosException(HttpServletResponse response, NacosException ex) throws IOException {
+        MetricsMonitor.getNacosException().increment();
         response.setStatus(ex.getErrCode());
         if (ex.getErrMsg() != null) {
             response.getWriter().println(ex.getErrMsg());
         } else {
             response.getWriter().println("unknown exception");
         }
+    }
+
+    /**
+     * For DataAccessException
+     *
+     * @throws DataAccessException
+     */
+    @ExceptionHandler(DataAccessException.class)
+    public void handleDataAccessException(HttpServletResponse response, DataAccessException ex) throws DataAccessException {
+        MetricsMonitor.getDbException().increment();
+        throw new CannotGetJdbcConnectionException(ex.getMessage());
     }
 
 }

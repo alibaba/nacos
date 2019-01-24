@@ -34,6 +34,7 @@ import java.util.Map;
  * @author nacos
  */
 public class DistroFilter implements Filter {
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -65,7 +66,7 @@ public class DistroFilter implements Filter {
                 try {
                     resp.sendRedirect(url);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
                 }
                 return;
             }
@@ -101,7 +102,7 @@ public class DistroFilter implements Filter {
                 try {
                     resp.sendRedirect(url);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
                 }
             }
         }
@@ -115,11 +116,6 @@ public class DistroFilter implements Filter {
     }
 
     public boolean canDistro(String urlString) {
-
-        if (urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM_SERVE_STATUS)) {
-            return false;
-        }
-
         return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_IP_FOR_DOM) ||
                 urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
     }

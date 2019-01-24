@@ -379,7 +379,7 @@ public class SelectInstances_ITCase {
         TimeUnit.SECONDS.sleep(10);
 
         ExpressionSelector expressionSelector = new ExpressionSelector();
-        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+        expressionSelector.setExpression("INSTANCE.label.registerSource = 'dubbo'");
         ListView<String> serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
 
         Assert.assertTrue(serviceList.getData().contains(serviceName));
@@ -394,7 +394,7 @@ public class SelectInstances_ITCase {
 
         TimeUnit.SECONDS.sleep(10);
 
-        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'spring'");
+        expressionSelector.setExpression("INSTANCE.label.registerSource = 'spring'");
         serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
 
         Assert.assertTrue(serviceList.getData().contains(serviceName));

@@ -27,21 +27,22 @@ public class BeatInfo {
     private int port;
     private String ip;
     private double weight;
-    private String dom;
+    private String serviceName;
     private String cluster;
     private Map<String, String> metadata;
+    private boolean scheduled;
 
     @Override
     public String toString() {
         return JSON.toJSONString(this);
     }
 
-    public String getDom() {
-        return dom;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setDom(String dom) {
-        this.dom = dom;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public String getCluster() {
@@ -82,5 +83,13 @@ public class BeatInfo {
 
     public void setWeight(double weight) {
         this.weight = weight;
+    }
+
+    public boolean isScheduled() {
+        return scheduled;
+    }
+
+    public void setScheduled(boolean scheduled) {
+        this.scheduled = scheduled;
     }
 }

@@ -62,7 +62,7 @@ public class HealthCheckReactor {
         try {
             scheduledFuture.cancel(true);
         } catch (Exception e) {
-            Loggers.EVT_LOG.error("CANCEL-CHECK", "cancel failed!", e);
+            Loggers.EVT_LOG.error("[CANCEL-CHECK] cancel failed!", e);
         }
     }
 

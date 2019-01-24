@@ -19,7 +19,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Cluster
+ *
+ * @author dungu.zpf
  */
 public class Cluster {
 

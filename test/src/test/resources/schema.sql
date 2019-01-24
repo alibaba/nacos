@@ -159,3 +159,17 @@ CREATE TABLE tenant_capacity (
   constraint tenant_capacity_id_key PRIMARY KEY (id),
   constraint uk_tenant_id UNIQUE (tenant_id));
 
+CREATE TABLE users (
+	username varchar(50) NOT NULL PRIMARY KEY,
+	password varchar(500) NOT NULL,
+	enabled boolean NOT NULL
+);
+
+CREATE TABLE roles (
+	username varchar(50) NOT NULL,
+	role varchar(50) NOT NULL
+);
+
+INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
+
+INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');

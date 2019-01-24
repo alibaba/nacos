@@ -15,7 +15,19 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -27,15 +39,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
@@ -50,9 +53,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
     private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
-
-    @Autowired
-    private PropertyUtil propertyUtil;
 
     /**
      * JDBC执行超时时间, 单位秒
@@ -109,7 +109,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!STANDALONE_MODE || propertyUtil.isStandaloneUseMysql()) {
+        if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
             try {
                 reload();
             } catch (IOException e) {
@@ -124,6 +124,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         }
     }
 
+    @Override
     public synchronized void reload() throws IOException {
         List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
         try {
@@ -201,6 +202,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         }
     }
 
+    @Override
     public boolean checkMasterWritable() {
 
         testMasterWritableJT.setDataSource(jt.getDataSource());
@@ -224,14 +226,17 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     }
 
+    @Override
     public JdbcTemplate getJdbcTemplate() {
         return this.jt;
     }
 
+    @Override
     public TransactionTemplate getTransactionTemplate() {
         return this.tjt;
     }
 
+    @Override
     public String getCurrentDBUrl() {
         DataSource ds = this.jt.getDataSource();
         if (ds == null) {
@@ -241,6 +246,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         return bds.getUrl();
     }
 
+    @Override
     public String getHealth() {
         for (int i = 0; i < isHealthList.size(); i++) {
             if (!isHealthList.get(i)) {
@@ -276,6 +282,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     }
 
     class SelectMasterTask implements Runnable {
+        @Override
         public void run() {
             defaultLog.info("check master db.");
             boolean isFound = false;
@@ -303,12 +310,14 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
             if (!isFound) {
                 fatalLog.error("[master-db] master db not found.");
+                MetricsMonitor.getDbException().increment();
             }
         }
     }
 
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     class CheckDBHealthTask implements Runnable {
+        @Override
         public void run() {
             defaultLog.info("check db health.");
             String sql = "SELECT * FROM config_info_beta WHERE id = 1";
@@ -325,6 +334,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                         fatalLog.error("[db-error] slave db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
+
+                    MetricsMonitor.getDbException().increment();
                 }
             }
         }

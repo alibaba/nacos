@@ -56,27 +56,22 @@ public class ClientBeatCheckTask implements Runnable {
                     if (!ipAddress.isMarked()) {
                         if (ipAddress.isValid()) {
                             ipAddress.setValid(false);
-                            Loggers.EVT_LOG.info("{" + ipAddress.getClusterName() + "} {POS} {IP-DISABLED} valid: "
-                                    + ipAddress.getIp() + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName()
-                                    + ", region: " + DistroMapper.LOCALHOST_SITE + ", msg: " + "client timeout after "
-                                    + ClientBeatProcessor.CLIENT_BEAT_TIMEOUT + ", last beat: " + ipAddress.getLastBeat());
-                            PushService.domChanged(domain.getName());
+                            Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
+                                ipAddress.getIp(), ipAddress.getPort(), ipAddress.getClusterName(),
+                                DistroMapper.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, ipAddress.getLastBeat());
+                            PushService.domChanged(domain.getNamespaceId(), domain.getName());
                         }
                     }
                 }
 
                 if (System.currentTimeMillis() - ipAddress.getLastBeat() > domain.getIpDeleteTimeout()) {
                     // delete ip
-//                    if (domain.allIPs().size() > 1) {
-                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: " + domain.getName() + ", ip: " + JSON.toJSONString(ipAddress));
+                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: {}, ip: {}", domain.getName(), JSON.toJSONString(ipAddress));
                     deleteIP(ipAddress);
-//                    }
                 }
             }
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
-        } finally {
-//            HealthCheckReactor.scheduleCheck(this);
         }
 
     }
@@ -84,17 +79,17 @@ public class ClientBeatCheckTask implements Runnable {
     private void deleteIP(IpAddress ipAddress) {
         try {
             String ipList = ipAddress.getIp() + ":" + ipAddress.getPort() + "_"
-                    + ipAddress.getWeight() + "_" + ipAddress.getClusterName();
+                + ipAddress.getWeight() + "_" + ipAddress.getClusterName();
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/remvIP4Dom?dom="
-                    + domain.getName() + "&ipList=" + ipList + "&token=" + domain.getToken();
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/remvIP4Dom?dom="
+                + domain.getName() + "&ipList=" + ipList + "&token=" + domain.getToken() + "&namespaceId=" + domain.getNamespaceId();
             HttpClient.HttpResult result = HttpClient.httpGet(url, null, null);
             if (result.code != HttpURLConnection.HTTP_OK) {
-                Loggers.SRV_LOG.error("IP-DEAD", "failed to delete ip automatically, ip: "
-                        + ipAddress.toJSON() + ", caused " + result.content + ",resp code: " + result.code);
+                Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
+                    ipAddress.toJSON(), result.content, result.code);
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("IP-DEAD", "failed to delete ip automatically, ip: " + ipAddress.toJSON(), e);
+            Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", ipAddress.toJSON(), e);
         }
 
     }

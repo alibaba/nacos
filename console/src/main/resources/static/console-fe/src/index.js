@@ -23,12 +23,14 @@ import { Provider, connect } from 'react-redux';
 import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { ConfigProvider, Loading } from '@alifd/next';
 
+import './lib';
 import _menu from './menu';
 
 import Layout from './layouts/MainLayout';
 import CookieHelp from './utils/cookie';
-import { LANGUAGE_KEY } from './constants';
+import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
 
+import Login from './pages/Login';
 import Namespace from './pages/NameSpace';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
@@ -46,11 +48,12 @@ import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
 
 import './index.scss';
+import PropTypes from 'prop-types';
 
 module.hot && module.hot.accept();
 
-if (!CookieHelp.getValue(LANGUAGE_KEY)) {
-  CookieHelp.setValue(LANGUAGE_KEY, navigator.language === 'zh-CN' ? 'zh-cn' : 'en-us');
+if (!localStorage.getItem(LANGUAGE_KEY)) {
+  localStorage.setItem(LANGUAGE_KEY, navigator.language === 'zh-CN' ? 'zh-CN' : 'en-US');
 }
 
 const reducer = combineReducers({
@@ -62,15 +65,36 @@ const store = createStore(
   reducer,
   compose(
     applyMiddleware(thunk),
-    window.devToolsExtension ? window.devToolsExtension() : f => f
+    window[REDUX_DEVTOOLS] ? window[REDUX_DEVTOOLS]() : f => f
   )
 );
+
+const MENU = [
+  { path: '/', exact: true, render: () => <Redirect to="/configurationManagement" /> },
+  { path: '/namespace', component: Namespace },
+  { path: '/newconfig', component: Newconfig },
+  { path: '/configsync', component: Configsync },
+  { path: '/configdetail', component: Configdetail },
+  { path: '/configeditor', component: Configeditor },
+  { path: '/historyDetail', component: HistoryDetail },
+  { path: '/configRollback', component: ConfigRollback },
+  { path: '/historyRollback', component: HistoryRollback },
+  { path: '/listeningToQuery', component: ListeningToQuery },
+  { path: '/configurationManagement', component: ConfigurationManagement },
+  { path: '/serviceManagement', component: ServiceList },
+  { path: '/serviceDetail', component: ServiceDetail },
+];
 
 @connect(
   state => ({ ...state.locale }),
   { changeLanguage }
 )
 class App extends React.Component {
+  static propTypes = {
+    locale: PropTypes.object,
+    changeLanguage: PropTypes.func,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -81,30 +105,21 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    const language = CookieHelp.getValue(LANGUAGE_KEY);
+    const language = localStorage.getItem(LANGUAGE_KEY);
     this.props.changeLanguage(language);
   }
 
-  static generateRouter() {
+  get router() {
     return (
       <HashRouter>
-        <Layout navList={_menu.data}>
-          <Switch>
-            <Route path="/" exact render={() => <Redirect to="/configurationManagement" />} />
-            <Route path="/namespace" component={Namespace} />
-            <Route path="/newconfig" component={Newconfig} />
-            <Route path="/configsync" component={Configsync} />
-            <Route path="/configdetail" component={Configdetail} />
-            <Route path="/configeditor" component={Configeditor} />
-            <Route path="/historyDetail" component={HistoryDetail} />
-            <Route path="/configRollback" component={ConfigRollback} />
-            <Route path="/historyRollback" component={HistoryRollback} />
-            <Route path="/listeningToQuery" component={ListeningToQuery} />
-            <Route path="/configurationManagement" component={ConfigurationManagement} />
-            <Route path="/serviceManagement" component={ServiceList} />
-            <Route path="/serviceDetail" component={ServiceDetail} />
-          </Switch>
-        </Layout>
+        <Switch>
+          <Route path="/login" component={Login} />
+          <Layout navList={_menu.data}>
+            {MENU.map(item => (
+              <Route key={item.path} {...item} />
+            ))}
+          </Layout>
+        </Switch>
       </HashRouter>
     );
   }
@@ -120,7 +135,7 @@ class App extends React.Component {
         fullScreen
         {...this.state.nacosLoading}
       >
-        <ConfigProvider locale={locale}>{App.generateRouter()}</ConfigProvider>
+        <ConfigProvider locale={locale}>{this.router}</ConfigProvider>
       </Loading>
     );
   }
