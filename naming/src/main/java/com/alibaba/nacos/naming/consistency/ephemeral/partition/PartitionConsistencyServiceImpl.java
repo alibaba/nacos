@@ -76,7 +76,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     }
 
     @Override
-    public Object get(String key) throws NacosException {
+    public Datum get(String key) throws NacosException {
         return dataStore.get(key);
     }
 

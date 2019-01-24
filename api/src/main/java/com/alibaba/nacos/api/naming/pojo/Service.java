@@ -59,6 +59,9 @@ public class Service {
 
     private Map<String, String> metadata = new HashMap<String, String>();
 
+    public Service() {
+    }
+
     public Service(String name) {
         this.name = name;
     }
@@ -113,13 +116,5 @@ public class Service {
 
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
-    }
-
-    public AbstractSelector getSelector() {
-        return selector;
-    }
-
-    public void setSelector(AbstractSelector selector) {
-        this.selector = selector;
     }
 }

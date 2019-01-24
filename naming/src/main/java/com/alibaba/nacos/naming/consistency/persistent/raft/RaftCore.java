@@ -90,7 +90,7 @@ public class RaftCore {
 
     private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
 
-    private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<String, Datum>();
+    private volatile ConcurrentMap<String, Datum<?>> datums = new ConcurrentHashMap<>();
 
     @Autowired
     private RaftPeerSet peers;
@@ -115,10 +115,10 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
-        ConcurrentMap<String, Datum> datumMap = raftStore.loadDatums();
+        ConcurrentMap<String, Datum<?>> datumMap = raftStore.loadDatums();
         if (datumMap != null && !datumMap.isEmpty()) {
             datums = datumMap;
-            for (Map.Entry<String, Datum> entry : datumMap.entrySet()) {
+            for (Map.Entry<String, Datum<?>> entry : datumMap.entrySet()) {
                 notifier.addTask(entry.getValue(), ApplyAction.CHANGE);
             }
         }
@@ -147,7 +147,7 @@ public class RaftCore {
         return listeners;
     }
 
-    public void signalPublish(String key, String value) throws Exception {
+    public <T> void signalPublish(String key, T value) throws Exception {
 
         if (!isLeader()) {
             JSONObject params = new JSONObject();
@@ -163,7 +163,7 @@ public class RaftCore {
         try {
             OPERATE_LOCK.lock();
             long start = System.currentTimeMillis();
-            final Datum datum = new Datum();
+            final Datum<T> datum = new Datum<>();
             datum.key = key;
             datum.value = value;
             if (getDatum(key) == null) {
@@ -264,7 +264,7 @@ public class RaftCore {
         }
     }
 
-    public void onPublish(Datum datum, RaftPeer source) throws Exception {
+    public <T> void onPublish(Datum<T> datum, RaftPeer source) throws Exception {
         RaftPeer local = peers.local();
         if (StringUtils.isBlank((String) datum.value)) {
             Loggers.RAFT.warn("received empty datum");
@@ -614,7 +614,7 @@ public class RaftCore {
 
         Map<String, Integer> receivedKeysMap = new HashMap<String, Integer>(datums.size());
 
-        for (Map.Entry<String, Datum> entry : datums.entrySet()) {
+        for (Map.Entry<String, Datum<?>> entry : datums.entrySet()) {
             receivedKeysMap.put(entry.getKey(), 0);
         }
 
@@ -829,7 +829,7 @@ public class RaftCore {
         return "http://" + ip + RunningConfig.getContextPath() + api;
     }
 
-    public Datum getDatum(String key) {
+    public Datum<?> getDatum(String key) {
         return datums.get(key);
     }
 

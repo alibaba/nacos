@@ -56,7 +56,7 @@ public interface ConsistencyService {
      * @return data related to the key
      * @throws NacosException
      */
-    Object get(String key) throws NacosException;
+    Datum get(String key) throws NacosException;
 
     /**
      * Listen for changes of a data

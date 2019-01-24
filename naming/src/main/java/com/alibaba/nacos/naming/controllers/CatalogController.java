@@ -17,25 +17,18 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
-import com.alibaba.nacos.naming.selector.LabelSelector;
-import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
 import org.apache.commons.collections.CollectionUtils;
@@ -47,21 +40,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author nkorange
  */
 @RestController
-
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)
 public class CatalogController {
 
     @Autowired
-    protected ServiceManager domainsManager;
+    protected ServiceManager serviceManager;
 
     @RequestMapping(value = "/serviceList")
     public JSONObject serviceList(HttpServletRequest request) throws Exception {
@@ -74,8 +63,8 @@ public class CatalogController {
         int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
         String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
-        List<Domain> doms = new ArrayList<>();
-        int total = domainsManager.getPagedDom(namespaceId, page - 1, pageSize, keyword, doms);
+        List<Service> doms = new ArrayList<>();
+        int total = serviceManager.getPagedDom(namespaceId, page - 1, pageSize, keyword, doms);
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("serviceList", Collections.emptyList());
@@ -84,17 +73,16 @@ public class CatalogController {
         }
 
         JSONArray domArray = new JSONArray();
-        for (Domain dom : doms) {
-            VirtualClusterDomain vDomain = (VirtualClusterDomain) dom;
+        for (Service dom : doms) {
             ServiceView serviceView = new ServiceView();
-            serviceView.setName(vDomain.getName());
-            serviceView.setClusterCount(vDomain.getClusterMap().size());
-            serviceView.setIpCount(vDomain.allIPs().size());
+            serviceView.setName(dom.getName());
+            serviceView.setClusterCount(dom.getClusterMap().size());
+            serviceView.setIpCount(dom.allIPs().size());
 
             // FIXME should be optimized:
             int validCount = 0;
-            for (IpAddress ipAddress : vDomain.allIPs()) {
-                if (ipAddress.isValid()) {
+            for (Instance instance : dom.allIPs()) {
+                if (instance.isValid()) {
                     validCount++;
                 }
             }
@@ -116,37 +104,14 @@ public class CatalogController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, "serviceName");
-        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
+        Service domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
         ServiceDetailView detailView = new ServiceDetailView();
 
-        Service service = new Service(serviceName);
-        service.setName(serviceName);
-        service.setProtectThreshold(domain.getProtectThreshold());
-        service.setHealthCheckMode(HealthCheckMode.none.name());
-        if (domain.getEnableHealthCheck()) {
-            service.setHealthCheckMode(HealthCheckMode.server.name());
-        }
-        if (domain.getEnableClientBeat()) {
-            service.setHealthCheckMode(HealthCheckMode.client.name());
-        }
-        service.setMetadata(domain.getMetadata());
-
-        switch (SelectorType.valueOf(domain.getSelector().getType())) {
-            case label:
-                service.setSelector((LabelSelector) domain.getSelector());
-                break;
-            case none:
-            case unknown:
-            default:
-                service.setSelector((NoneSelector) domain.getSelector());
-                break;
-        }
-
-        detailView.setService(service);
+        detailView.setService(domain);
 
         List<Cluster> clusters = new ArrayList<>();
 
@@ -177,7 +142,7 @@ public class CatalogController {
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
 
-        VirtualClusterDomain domain = domainsManager.getService(namespaceId, serviceName);
+        Service domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
@@ -186,20 +151,7 @@ public class CatalogController {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
 
-        List<Instance> instances = new ArrayList<>();
-
-        for (IpAddress ipAddress : domain.getClusterMap().get(clusterName).allIPs()) {
-            Instance instance = new Instance();
-            instance.setIp(ipAddress.getIp());
-            instance.setMetadata(ipAddress.getMetadata());
-            instance.setHealthy(ipAddress.isValid());
-            instance.setPort(ipAddress.getPort());
-            instance.setInstanceId(ipAddress.getInstanceId());
-            instance.setWeight(ipAddress.getWeight());
-            instance.setEnabled(ipAddress.isEnabled());
-
-            instances.add(instance);
-        }
+        List<Instance> instances = domain.getClusterMap().get(clusterName).allIPs();
 
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
@@ -230,39 +182,98 @@ public class CatalogController {
             UtilsAndCommons.getDefaultNamespaceId());
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 
-        domainsManager
-                .getDomMap(namespaceId)
-                .forEach(
-                        (serviceName, domain) -> {
+        serviceManager
+            .getDomMap(namespaceId)
+            .forEach(
+                (serviceName, service) -> {
 
-                            if (domain instanceof VirtualClusterDomain) {
+                    ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+                    serviceDetailInfo.setServiceName(serviceName);
+                    serviceDetailInfo.setMetadata(service.getMetadata());
 
-                                VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domain;
-                                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                                serviceDetailInfo.setServiceName(serviceName);
-                                serviceDetailInfo.setMetadata(virtualClusterDomain.getMetadata());
+                    Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
+                    serviceDetailInfo.setClusterMap(clusterInfoMap);
 
-                                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(virtualClusterDomain);
-                                serviceDetailInfo.setClusterMap(clusterInfoMap);
-
-                                serviceDetailInfoList.add(serviceDetailInfo);
-                            }
-                        });
+                    serviceDetailInfoList.add(serviceDetailInfo);
+                });
 
         return serviceDetailInfoList;
 
     }
 
+    @RequestMapping("/rt4Dom")
+    public JSONObject rt4Dom(HttpServletRequest request) {
+
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String dom = WebUtils.required(request, "dom");
+
+        Service domObj = serviceManager.getService(namespaceId, dom);
+        if (domObj == null) {
+            throw new IllegalArgumentException("request dom doesn't exist");
+        }
+
+        JSONObject result = new JSONObject();
+
+        JSONArray clusters = new JSONArray();
+        for (Map.Entry<String, com.alibaba.nacos.naming.core.Cluster> entry : domObj.getClusterMap().entrySet()) {
+            JSONObject packet = new JSONObject();
+            HealthCheckTask task = entry.getValue().getHealthCheckTask();
+
+            packet.put("name", entry.getKey());
+            packet.put("checkRTBest", task.getCheckRTBest());
+            packet.put("checkRTWorst", task.getCheckRTWorst());
+            packet.put("checkRTNormalized", task.getCheckRTNormalized());
+
+            clusters.add(packet);
+        }
+        result.put("clusters", clusters);
+
+        return result;
+    }
+
+    @RequestMapping("/getDomsByIP")
+    public JSONObject getDomsByIP(HttpServletRequest request) {
+        String ip = WebUtils.required(request, "ip");
+
+        Set<String> doms = new HashSet<String>();
+        Map<String, Set<String>> serviceNameMap = serviceManager.getAllDomNames();
+
+        for (String namespaceId : serviceNameMap.keySet()) {
+            for (String serviceName : serviceNameMap.get(namespaceId)) {
+                Service service = serviceManager.getService(namespaceId, serviceName);
+                List<Instance> instances = service.allIPs();
+                for (Instance instance : instances) {
+                    if (ip.contains(":")) {
+                        if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), ip)) {
+                            doms.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
+                        }
+                    } else {
+                        if (StringUtils.equals(instance.getIp(), ip)) {
+                            doms.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
+                        }
+                    }
+                }
+            }
+        }
+
+        JSONObject result = new JSONObject();
+
+        result.put("doms", doms);
+
+        return result;
+    }
+
     /**
      * getStringClusterInfoMap
      *
-     * @param virtualClusterDomain
+     * @param service
      * @return
      */
-    private Map<String, ClusterInfo> getStringClusterInfoMap(VirtualClusterDomain virtualClusterDomain) {
+    private Map<String, ClusterInfo> getStringClusterInfoMap(Service service) {
         Map<String, ClusterInfo> clusterInfoMap = new HashedMap();
 
-        virtualClusterDomain.getClusterMap().forEach((clusterName, cluster) -> {
+        service.getClusterMap().forEach((clusterName, cluster) -> {
 
             ClusterInfo clusterInfo = new ClusterInfo();
             List<IpAddressInfo> ipAddressInfos = getIpAddressInfos(cluster.allIPs());
@@ -276,13 +287,13 @@ public class CatalogController {
     /**
      * getIpAddressInfos
      *
-     * @param ipAddresses
+     * @param instances
      * @return
      */
-    private List<IpAddressInfo> getIpAddressInfos(List<IpAddress> ipAddresses) {
+    private List<IpAddressInfo> getIpAddressInfos(List<Instance> instances) {
         List<IpAddressInfo> ipAddressInfos = new ArrayList<>();
 
-        ipAddresses.forEach((ipAddress) -> {
+        instances.forEach((ipAddress) -> {
 
             IpAddressInfo ipAddressInfo = new IpAddressInfo();
             ipAddressInfo.setIp(ipAddress.getIp());

@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,11 +36,11 @@ public class HealthCheckStatus {
     private static ConcurrentMap<String, HealthCheckStatus> statusMap =
             new ConcurrentHashMap<String, HealthCheckStatus>();
 
-    public static void reset(IpAddress ip) {
+    public static void reset(Instance ip) {
         statusMap.put(buildKey(ip), new HealthCheckStatus());
     }
 
-    public static HealthCheckStatus get(IpAddress ip) {
+    public static HealthCheckStatus get(Instance ip) {
         String key = buildKey(ip);
 
         if (!statusMap.containsKey(key)) {
@@ -50,11 +50,11 @@ public class HealthCheckStatus {
         return statusMap.get(key);
     }
 
-    public static void remv(IpAddress ip) {
+    public static void remv(Instance ip) {
         statusMap.remove(buildKey(ip));
     }
 
-    private static String buildKey(IpAddress ip) {
+    private static String buildKey(Instance ip) {
         try {
 
             String clusterName = ip.getClusterName();

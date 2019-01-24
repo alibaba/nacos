@@ -48,9 +48,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private int defIPPort = -1;
 
-    @JSONField(name = "nodegroup")
-    private String legacySyncConfig;
-
     @JSONField(name = "healthChecker")
     private AbstractHealthChecker healthChecker = new AbstractHealthChecker.Tcp();
 
@@ -58,10 +55,13 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private HealthCheckTask checkTask;
 
     @JSONField(serialize = false)
-    private Set<IpAddress> raftIPs = new HashSet<IpAddress>();
+    private Set<Instance> persistentInstances = new HashSet<>();
 
     @JSONField(serialize = false)
-    private Domain dom;
+    private Set<Instance> ephemeralInstances = new HashSet<>();
+
+    @JSONField(serialize = false)
+    private Service dom;
 
     private Map<String, Boolean> ipContains = new ConcurrentHashMap<>();
 
@@ -86,30 +86,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.defIPPort = defIPPort;
     }
 
-    public List<IpAddress> allIPs() {
-        return new ArrayList<IpAddress>(chooseIPs());
-    }
-
-    public List<IpAddress> allIPs(String tenant) {
-
-        List<IpAddress> list = new ArrayList<>();
-        for (IpAddress ipAddress : chooseIPs()) {
-            if (ipAddress.getTenant().equals(tenant)) {
-                list.add(ipAddress);
-            }
-        }
-        return list;
-    }
-
-    public List<IpAddress> allIPs(String tenant, String app) {
-
-        List<IpAddress> list = new ArrayList<>();
-        for (IpAddress ipAddress : chooseIPs()) {
-            if (ipAddress.getTenant().equals(tenant) && ipAddress.getApp().equals(app)) {
-                list.add(ipAddress);
-            }
-        }
-        return list;
+    public List<Instance> allIPs() {
+        List<Instance> allInstances = new ArrayList<>();
+        allInstances.addAll(persistentInstances);
+        allInstances.addAll(ephemeralInstances);
+        return allInstances;
     }
 
     public void init() {
@@ -121,32 +102,16 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         checkTask.setCancelled(true);
     }
 
-    public void addIP(IpAddress ip) {
-        chooseIPs().add(ip);
-    }
-
-    public void removeIP(IpAddress ip) {
-        chooseIPs().remove(ip);
-    }
-
     public HealthCheckTask getHealthCheckTask() {
         return checkTask;
     }
 
-    public Domain getDom() {
+    public Service getDom() {
         return dom;
     }
 
-    public void setDom(Domain dom) {
+    public void setDom(Service dom) {
         this.dom = dom;
-    }
-
-    public String getLegacySyncConfig() {
-        return legacySyncConfig;
-    }
-
-    public void setLegacySyncConfig(String nodegroup) {
-        this.legacySyncConfig = nodegroup;
     }
 
     @Override
@@ -156,23 +121,23 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         cluster.setHealthChecker(healthChecker.clone());
         cluster.setDom(getDom());
-        cluster.raftIPs = new HashSet<IpAddress>();
+        cluster.persistentInstances = new HashSet<Instance>();
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
     }
 
-    public void updateIPs(List<IpAddress> ips) {
-        HashMap<String, IpAddress> oldIPMap = new HashMap<>(raftIPs.size());
+    public void updateIPs(List<Instance> ips) {
+        HashMap<String, Instance> oldIPMap = new HashMap<>(persistentInstances.size());
 
-        for (IpAddress ip : this.raftIPs) {
+        for (Instance ip : this.persistentInstances) {
             oldIPMap.put(ip.getDatumKey(), ip);
         }
 
-        List<IpAddress> updatedIPs = updatedIPs(ips, oldIPMap.values());
+        List<Instance> updatedIPs = updatedIPs(ips, oldIPMap.values());
         if (updatedIPs.size() > 0) {
-            for (IpAddress ip : updatedIPs) {
-                IpAddress oldIP = oldIPMap.get(ip.getDatumKey());
+            for (Instance ip : updatedIPs) {
+                Instance oldIP = oldIPMap.get(ip.getDatumKey());
 
                 // do not update the ip validation status of updated ips
                 // because the checker has the most precise result
@@ -194,75 +159,68 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
-        List<IpAddress> newIPs = subtract(ips, oldIPMap.values());
+        List<Instance> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
                 getDom().getName(), getName(), newIPs.size(), newIPs.toString());
 
-            for (IpAddress ip : newIPs) {
+            for (Instance ip : newIPs) {
                 HealthCheckStatus.reset(ip);
             }
         }
 
-        List<IpAddress> deadIPs = subtract(oldIPMap.values(), ips);
+        List<Instance> deadIPs = subtract(oldIPMap.values(), ips);
 
         if (deadIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}",
                 getDom().getName(), getName(), deadIPs.size(), deadIPs.toString());
 
-            for (IpAddress ip : deadIPs) {
+            for (Instance ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
             }
         }
 
-        this.raftIPs = new HashSet<IpAddress>(ips);
-
-        StringBuilder stringBuilder = new StringBuilder();
-        for (IpAddress ipAddress : raftIPs) {
-            stringBuilder.append(ipAddress.toIPAddr()).append(ipAddress.isValid());
-        }
+        this.persistentInstances = new HashSet<>(ips);
 
         ipContains.clear();
 
-        for (IpAddress ipAddress : raftIPs) {
-            ipContains.put(ipAddress.toIPAddr(), true);
+        for (Instance instance : persistentInstances) {
+            ipContains.put(instance.toIPAddr(), true);
         }
 
     }
 
-    public List<IpAddress> updatedIPs(Collection<IpAddress> a, Collection<IpAddress> b) {
+    public List<Instance> updatedIPs(Collection<Instance> a, Collection<Instance> b) {
 
-        List<IpAddress> intersects = (List<IpAddress>) CollectionUtils.intersection(a, b);
-        Map<String, IpAddress> stringIPAddressMap = new ConcurrentHashMap<>(intersects.size());
+        List<Instance> intersects = (List<Instance>) CollectionUtils.intersection(a, b);
+        Map<String, Instance> stringIPAddressMap = new ConcurrentHashMap<>(intersects.size());
 
-        for (IpAddress ipAddress : intersects) {
-            stringIPAddressMap.put(ipAddress.getIp() + ":" + ipAddress.getPort(), ipAddress);
+        for (Instance instance : intersects) {
+            stringIPAddressMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
 
         Map<String, Integer> intersectMap = new ConcurrentHashMap<>(a.size() + b.size());
-        Map<String, IpAddress> ipAddressMap = new ConcurrentHashMap<>(a.size());
-        Map<String, IpAddress> ipAddressMap1 = new ConcurrentHashMap<>(b.size());
-        Map<String, IpAddress> ipAddressMap2 = new ConcurrentHashMap<>(a.size());
+        Map<String, Instance> instanceMap = new ConcurrentHashMap<>(a.size());
+        Map<String, Instance> instanceMap1 = new ConcurrentHashMap<>(a.size());
 
-        for (IpAddress ipAddress : b) {
-            if (stringIPAddressMap.containsKey(ipAddress.getIp() + ":" + ipAddress.getPort())) {
-                intersectMap.put(ipAddress.toString(), 1);
+        for (Instance instance : b) {
+            if (stringIPAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                intersectMap.put(instance.toString(), 1);
             }
-            ipAddressMap1.put(ipAddress.toString(), ipAddress);
         }
 
 
-        for (IpAddress ipAddress : a) {
-            if (stringIPAddressMap.containsKey(ipAddress.getIp() + ":" + ipAddress.getPort())) {
+        for (Instance instance : a) {
+            if (stringIPAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
 
-                if (intersectMap.containsKey(ipAddress.toString())) {
-                    intersectMap.put(ipAddress.toString(), 2);
+                if (intersectMap.containsKey(instance.toString())) {
+                    intersectMap.put(instance.toString(), 2);
                 } else {
-                    intersectMap.put(ipAddress.toString(), 1);
+                    intersectMap.put(instance.toString(), 1);
                 }
             }
 
-            ipAddressMap2.put(ipAddress.toString(), ipAddress);
+            instanceMap1.put(instance.toString(), instance);
 
         }
 
@@ -271,34 +229,30 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             Integer value = entry.getValue();
 
             if (value == 1) {
-                if (ipAddressMap2.containsKey(key)) {
-                    ipAddressMap.put(key, ipAddressMap2.get(key));
+                if (instanceMap1.containsKey(key)) {
+                    instanceMap.put(key, instanceMap1.get(key));
                 }
             }
         }
 
-        return new ArrayList<>(ipAddressMap.values());
+        return new ArrayList<>(instanceMap.values());
     }
 
-    public List<IpAddress> subtract(Collection<IpAddress> a, Collection<IpAddress> b) {
-        Map<String, IpAddress> mapa = new HashMap<>(b.size());
-        for (IpAddress o : b) {
+    public List<Instance> subtract(Collection<Instance> a, Collection<Instance> b) {
+        Map<String, Instance> mapa = new HashMap<>(b.size());
+        for (Instance o : b) {
             mapa.put(o.getIp() + ":" + o.getPort(), o);
         }
 
-        List<IpAddress> result = new ArrayList<IpAddress>();
+        List<Instance> result = new ArrayList<Instance>();
 
-        for (IpAddress o : a) {
+        for (Instance o : a) {
             if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
                 result.add(o);
             }
         }
 
         return result;
-    }
-
-    public Set<IpAddress> chooseIPs() {
-        return raftIPs;
     }
 
     @Override
@@ -384,11 +338,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.sitegroup = sitegroup;
     }
 
-    public boolean contains(IpAddress ip) {
+    public boolean contains(Instance ip) {
         return ipContains.containsKey(ip.toIPAddr());
     }
 
-    public void valid() {
+    public void validate() {
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
             throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
         }

@@ -16,8 +16,8 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -106,18 +106,18 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
     @Override
     public void process(HealthCheckTask task) {
-        List<IpAddress> ips = task.getCluster().allIPs();
+        List<Instance> ips = task.getCluster().allIPs();
 
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
+        Service service = (Service) task.getCluster().getDom();
 
-        if (!healthCheckCommon.isHealthCheckEnabled(virtualClusterDomain)) {
+        if (!healthCheckCommon.isHealthCheckEnabled(service)) {
             return;
         }
 
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
 
             if (ip.isMarked()) {
                 if (SRV_LOG.isDebugEnabled()) {
@@ -238,13 +238,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     }
 
     private class Beat {
-        IpAddress ip;
+        Instance ip;
 
         HealthCheckTask task;
 
         long startTime = System.currentTimeMillis();
 
-        Beat(IpAddress ip, HealthCheckTask task) {
+        Beat(Instance ip, HealthCheckTask task) {
             this.ip = ip;
             this.task = task;
         }
@@ -257,7 +257,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             return startTime;
         }
 
-        public IpAddress getIp() {
+        public Instance getIp() {
             return ip;
         }
 
@@ -378,13 +378,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
             SocketChannel channel = null;
             try {
-                IpAddress ipAddress = beat.getIp();
+                Instance instance = beat.getIp();
                 Cluster cluster = beat.getTask().getCluster();
 
                 BeatKey beatKey = keyMap.get(beat.toString());
                 if (beatKey != null && beatKey.key.isValid()) {
                     if (System.currentTimeMillis() - beatKey.birthTime < TCP_KEEP_ALIVE_MILLIS) {
-                        ipAddress.setBeingChecked(false);
+                        instance.setBeingChecked(false);
                         return null;
                     }
 
@@ -400,8 +400,8 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                 channel.socket().setKeepAlive(true);
                 channel.socket().setTcpNoDelay(true);
 
-                int port = cluster.isUseIPPort4Check() ? ipAddress.getPort() : cluster.getDefCkport();
-                channel.connect(new InetSocketAddress(ipAddress.getIp(), port));
+                int port = cluster.isUseIPPort4Check() ? instance.getPort() : cluster.getDefCkport();
+                channel.connect(new InetSocketAddress(instance.getIp(), port));
 
                 SelectionKey key
                     = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);

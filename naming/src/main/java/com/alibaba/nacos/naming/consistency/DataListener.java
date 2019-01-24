@@ -20,7 +20,7 @@ package com.alibaba.nacos.naming.consistency;
  *
  * @author nacos
  */
-public interface DataListener {
+public interface DataListener<T> {
 
     /**
      * Determine if the listener was registered with this key
@@ -45,12 +45,12 @@ public interface DataListener {
      * @param value data of the key
      * @throws Exception
      */
-    void onChange(String key, Object value) throws Exception;
+    void onChange(String key, T value) throws Exception;
 
     /**
      * Action to do if data of target key has been removed
      *
-     * @param key   target key
+     * @param key target key
      * @throws Exception
      */
     void onDelete(String key) throws Exception;

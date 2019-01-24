@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,11 +31,11 @@ import java.util.Map;
  */
 public class DomainTest {
 
-    private VirtualClusterDomain domain;
+    private Service domain;
 
     @Before
     public void before() {
-        domain = new VirtualClusterDomain();
+        domain = new Service();
         domain.setName("nacos.domain.1");
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
@@ -45,10 +46,9 @@ public class DomainTest {
     @Test
     public void updateDomain() {
 
-        VirtualClusterDomain newDomain = new VirtualClusterDomain();
+        Service newDomain = new Service();
         newDomain.setName("nacos.domain.1");
-        newDomain.setEnableClientBeat(false);
-        newDomain.setEnableHealthCheck(false);
+        newDomain.setHealthCheckMode(HealthCheckMode.client.name());
         newDomain.setProtectThreshold(0.7f);
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
@@ -57,8 +57,7 @@ public class DomainTest {
 
         domain.update(newDomain);
 
-        Assert.assertEquals(false, domain.getEnableClientBeat());
-        Assert.assertEquals(false, domain.getEnableHealthCheck());
+        Assert.assertEquals(HealthCheckMode.client.name(), domain.getHealthCheckMode());
         Assert.assertEquals(0.7f, domain.getProtectThreshold(), 0.0001f);
     }
 
@@ -78,15 +77,15 @@ public class DomainTest {
     @Test
     public void updateIps() throws Exception {
 
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        ipAddress.setPort(1234);
-        List<IpAddress> list = new ArrayList<IpAddress>();
-        list.add(ipAddress);
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(1234);
+        List<Instance> list = new ArrayList<Instance>();
+        list.add(instance);
 
         domain.onChange("iplist", JSON.toJSONString(list));
 
-        List<IpAddress> ips = domain.allIPs();
+        List<Instance> ips = domain.allIPs();
 
         Assert.assertNotNull(ips);
         Assert.assertEquals(1, ips.size());

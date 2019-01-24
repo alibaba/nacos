@@ -38,16 +38,20 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Service of Nacos
+ * <p>
+ * We introduce a 'service --> cluster --> instance' model, so service stores a list of clusters, which contains
+ * a list of instances.
+ * <p>
+ * Typically we put some common properties between instances to service level.
+ *
  * @author nkorange
  */
-public class VirtualClusterDomain implements Domain, DataListener {
+public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<List<Instance>> {
 
     private static final String DOMAIN_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
-
-    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -55,13 +59,10 @@ public class VirtualClusterDomain implements Domain, DataListener {
     @JSONField(serialize = false)
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
-    private String name;
     private String token;
     private List<String> owners = new ArrayList<>();
     private Boolean resetWeight = false;
-    private Boolean enableHealthCheck = true;
     private Boolean enabled = true;
-    private Boolean enableClientBeat = false;
     private Selector selector = new NoneSelector();
     private String namespaceId;
 
@@ -72,15 +73,9 @@ public class VirtualClusterDomain implements Domain, DataListener {
 
     private volatile long lastModifiedMillis = 0L;
 
-    private boolean useSpecifiedURL = false;
-
-    private float protectThreshold = 0.0F;
-
     private volatile String checksum;
 
     private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
-
-    private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     @JSONField(serialize = false)
     public PushService getPushService() {
@@ -96,17 +91,9 @@ public class VirtualClusterDomain implements Domain, DataListener {
     }
 
     public void processClientBeat(final RsInfo rsInfo) {
-        clientBeatProcessor.setDomain(this);
+        clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
         HealthCheckReactor.scheduleNow(clientBeatProcessor);
-    }
-
-    public Boolean getEnableClientBeat() {
-        return enableClientBeat;
-    }
-
-    public void setEnableClientBeat(Boolean enableClientBeat) {
-        this.enableClientBeat = enableClientBeat;
     }
 
     public Boolean getEnabled() {
@@ -117,13 +104,6 @@ public class VirtualClusterDomain implements Domain, DataListener {
         this.enabled = enabled;
     }
 
-    public Boolean getEnableHealthCheck() {
-        return enableHealthCheck;
-    }
-
-    public void setEnableHealthCheck(Boolean enableHealthCheck) {
-        this.enableHealthCheck = enableHealthCheck;
-    }
 
     public long getLastModifiedMillis() {
         return lastModifiedMillis;
@@ -141,14 +121,6 @@ public class VirtualClusterDomain implements Domain, DataListener {
         this.resetWeight = resetWeight;
     }
 
-    public Map<String, String> getMetadata() {
-        return metadata;
-    }
-
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
-    }
-
     public Selector getSelector() {
         return selector;
     }
@@ -159,28 +131,20 @@ public class VirtualClusterDomain implements Domain, DataListener {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + name);
+        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + name);
+        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
     }
 
     @Override
-    public void onChange(String key, Object value) throws Exception {
-
-        if (StringUtils.isEmpty((String) value)) {
-            Loggers.SRV_LOG.warn("[NACOS-DOM] received empty iplist config for dom: {}", name);
-            return;
-        }
+    public void onChange(String key, List<Instance> value) throws Exception {
 
         Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        List<IpAddress> ips = JSON.parseObject((String) value, new TypeReference<List<IpAddress>>() {
-        });
-
-        for (IpAddress ip : ips) {
+        for (Instance ip : value) {
 
             if (ip.getWeight() > 10000.0D) {
                 ip.setWeight(10000.0D);
@@ -191,7 +155,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
             }
         }
 
-        updateIPs(ips);
+        updateIPs(value);
 
         recalculateChecksum();
     }
@@ -201,18 +165,18 @@ public class VirtualClusterDomain implements Domain, DataListener {
         // ignore
     }
 
-    public void updateIPs(List<IpAddress> ips) {
+    public void updateIPs(List<Instance> ips) {
         if (CollectionUtils.isEmpty(ips) && allIPs().size() > 1) {
             return;
         }
 
 
-        Map<String, List<IpAddress>> ipMap = new HashMap<String, List<IpAddress>>(clusterMap.size());
+        Map<String, List<Instance>> ipMap = new HashMap<String, List<Instance>>(clusterMap.size());
         for (String clusterName : clusterMap.keySet()) {
-            ipMap.put(clusterName, new ArrayList<IpAddress>());
+            ipMap.put(clusterName, new ArrayList<Instance>());
         }
 
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             try {
                 if (ip == null) {
                     Loggers.SRV_LOG.error("[NACOS-DOM] received malformed ip: null");
@@ -229,9 +193,9 @@ public class VirtualClusterDomain implements Domain, DataListener {
                     continue;
                 }
 
-                List<IpAddress> clusterIPs = ipMap.get(ip.getClusterName());
+                List<Instance> clusterIPs = ipMap.get(ip.getClusterName());
                 if (clusterIPs == null) {
-                    clusterIPs = new LinkedList<IpAddress>();
+                    clusterIPs = new LinkedList<Instance>();
                     ipMap.put(ip.getClusterName(), clusterIPs);
                 }
 
@@ -241,24 +205,23 @@ public class VirtualClusterDomain implements Domain, DataListener {
             }
         }
 
-        for (Map.Entry<String, List<IpAddress>> entry : ipMap.entrySet()) {
+        for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
             //make every ip mine
-            List<IpAddress> entryIPs = entry.getValue();
+            List<Instance> entryIPs = entry.getValue();
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
-        getPushService().domChanged(namespaceId, name);
+        getPushService().domChanged(namespaceId, getName());
         StringBuilder stringBuilder = new StringBuilder();
 
-        for (IpAddress ipAddress : allIPs()) {
-            stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
+        for (Instance instance : allIPs()) {
+            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
         }
 
         Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", getName(), stringBuilder.toString());
 
     }
 
-    @Override
     public void init() {
 
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
@@ -268,7 +231,6 @@ public class VirtualClusterDomain implements Domain, DataListener {
         }
     }
 
-    @Override
     public void destroy() throws Exception {
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().destroy();
@@ -276,9 +238,8 @@ public class VirtualClusterDomain implements Domain, DataListener {
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
     }
 
-    @Override
-    public List<IpAddress> allIPs() {
-        List<IpAddress> allIPs = new ArrayList<IpAddress>();
+    public List<Instance> allIPs() {
+        List<Instance> allIPs = new ArrayList<Instance>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             allIPs.addAll(entry.getValue().allIPs());
         }
@@ -286,23 +247,8 @@ public class VirtualClusterDomain implements Domain, DataListener {
         return allIPs;
     }
 
-    public List<IpAddress> allIPs(String tenant, String app) {
-
-        List<IpAddress> allIPs = new ArrayList<IpAddress>();
-        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
-
-            if (StringUtils.isEmpty(app)) {
-                allIPs.addAll(entry.getValue().allIPs(tenant));
-            } else {
-                allIPs.addAll(entry.getValue().allIPs(tenant, app));
-            }
-        }
-
-        return allIPs;
-    }
-
-    public List<IpAddress> allIPs(List<String> clusters) {
-        List<IpAddress> allIPs = new ArrayList<IpAddress>();
+    public List<Instance> allIPs(List<String> clusters) {
+        List<Instance> allIPs = new ArrayList<Instance>();
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
@@ -315,13 +261,12 @@ public class VirtualClusterDomain implements Domain, DataListener {
         return allIPs;
     }
 
-    @Override
-    public List<IpAddress> srvIPs(String clientIP) {
+    public List<Instance> srvIPs(String clientIP) {
         return srvIPs(clientIP, Collections.EMPTY_LIST);
     }
 
-    public List<IpAddress> srvIPs(String clientIP, List<String> clusters) {
-        List<IpAddress> ips;
+    public List<Instance> srvIPs(String clientIP, List<String> clusters) {
+        List<Instance> ips;
 
         if (CollectionUtils.isEmpty(clusters)) {
             clusters = new ArrayList<>();
@@ -330,9 +275,9 @@ public class VirtualClusterDomain implements Domain, DataListener {
         return allIPs(clusters);
     }
 
-    public static VirtualClusterDomain fromJSON(String json) {
+    public static Service fromJSON(String json) {
         try {
-            VirtualClusterDomain vDom = JSON.parseObject(json, VirtualClusterDomain.class);
+            Service vDom = JSON.parseObject(json, Service.class);
             for (Cluster cluster : vDom.clusterMap.values()) {
                 cluster.setDom(vDom);
             }
@@ -344,7 +289,6 @@ public class VirtualClusterDomain implements Domain, DataListener {
         }
     }
 
-    @Override
     public String toJSON() {
         return JSON.toJSONString(this);
     }
@@ -352,14 +296,14 @@ public class VirtualClusterDomain implements Domain, DataListener {
     @JSONField(serialize = false)
     public String getDomString() {
         Map<Object, Object> domain = new HashMap<Object, Object>(10);
-        VirtualClusterDomain vDom = this;
+        Service vDom = this;
 
         domain.put("name", vDom.getName());
 
-        List<IpAddress> ips = vDom.allIPs();
+        List<Instance> ips = vDom.allIPs();
         int invalidIPCount = 0;
         int ipCount = 0;
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             if (!ip.isValid()) {
                 invalidIPCount++;
             }
@@ -397,44 +341,27 @@ public class VirtualClusterDomain implements Domain, DataListener {
         return JSON.toJSONString(domain);
     }
 
-    @Override
-    public String getName() {
-        return name;
-    }
 
-    @Override
     public void setName(String name) {
         if (!name.matches(DOMAIN_NAME_SYNTAX)) {
             throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z.:_-; current: " + name);
         }
 
-        this.name = name;
+        super.setName(name);
     }
 
-    public boolean isUseSpecifiedURL() {
-        return useSpecifiedURL;
-    }
-
-    public void setUseSpecifiedURL(boolean isUseSpecifiedURL) {
-        this.useSpecifiedURL = isUseSpecifiedURL;
-    }
-
-    @Override
     public String getToken() {
         return token;
     }
 
-    @Override
     public void setToken(String token) {
         this.token = token;
     }
 
-    @Override
     public List<String> getOwners() {
         return owners;
     }
 
-    @Override
     public void setOwners(List<String> owners) {
         this.owners = owners;
     }
@@ -455,63 +382,46 @@ public class VirtualClusterDomain implements Domain, DataListener {
         this.namespaceId = namespaceId;
     }
 
-    @Override
-    public void update(Domain dom) {
-        if (!(dom instanceof VirtualClusterDomain)) {
-            return;
-        }
+    public void update(Service vDom) {
 
-        VirtualClusterDomain vDom = (VirtualClusterDomain) dom;
         if (!StringUtils.equals(token, vDom.getToken())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, token: {} -> {}", name, token, vDom.getToken());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, token: {} -> {}", getName(), token, vDom.getToken());
             token = vDom.getToken();
         }
 
         if (!ListUtils.isEqualList(owners, vDom.getOwners())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, owners: {} -> {}", name, owners, vDom.getOwners());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, owners: {} -> {}", getName(), owners, vDom.getOwners());
             owners = vDom.getOwners();
         }
 
-        if (protectThreshold != vDom.getProtectThreshold()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, protectThreshold: {} -> {}", name, protectThreshold, vDom.getProtectThreshold());
-            protectThreshold = vDom.getProtectThreshold();
-        }
-
-        if (useSpecifiedURL != vDom.isUseSpecifiedURL()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, useSpecifiedURL: {} -> {}", name, useSpecifiedURL, vDom.isUseSpecifiedURL());
-            useSpecifiedURL = vDom.isUseSpecifiedURL();
+        if (getProtectThreshold() != vDom.getProtectThreshold()) {
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, protectThreshold: {} -> {}", getName(), getProtectThreshold(), vDom.getProtectThreshold());
+            setProtectThreshold(vDom.getProtectThreshold());
         }
 
         if (resetWeight != vDom.getResetWeight().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, resetWeight: {} -> {}", name, resetWeight, vDom.getResetWeight());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, resetWeight: {} -> {}", getName(), resetWeight, vDom.getResetWeight());
             resetWeight = vDom.getResetWeight();
         }
 
-        if (enableHealthCheck != vDom.getEnableHealthCheck().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enableHealthCheck: {} -> {}", name, enableHealthCheck, vDom.getEnableHealthCheck());
-            enableHealthCheck = vDom.getEnableHealthCheck();
-        }
-
-        if (enableClientBeat != vDom.getEnableClientBeat().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enableClientBeat: {} -> {}", name, enableClientBeat, vDom.getEnableClientBeat());
-            enableClientBeat = vDom.getEnableClientBeat();
+        if (getHealthCheckMode().equals(vDom.getHealthCheckMode())) {
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, healthCheckMode: {} -> {}", getName(), getHealthCheckMode(), vDom.getHealthCheckMode());
         }
 
         if (enabled != vDom.getEnabled().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enabled: {} -> {}", name, enabled, vDom.getEnabled());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
 
         selector = vDom.getSelector();
 
-        metadata = vDom.getMetadata();
+        setMetadata(vDom.getMetadata());
 
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);
         recalculateChecksum();
     }
 
-    @Override
     public String getChecksum() {
         if (StringUtils.isEmpty(checksum)) {
             recalculateChecksum();
@@ -521,7 +431,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
     }
 
     public synchronized void recalculateChecksum() {
-        List<IpAddress> ips = allIPs();
+        List<Instance> ips = allIPs();
 
         StringBuilder ipsString = new StringBuilder();
         ipsString.append(getDomString());
@@ -532,7 +442,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
             Collections.sort(ips);
         }
 
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
                 + ip.isValid() + "_" + ip.getClusterName();
             ipsString.append(string);
@@ -568,7 +478,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
         }
     }
 
-    private void remvDeadClusters(VirtualClusterDomain oldDom, VirtualClusterDomain newDom) {
+    private void remvDeadClusters(Service oldDom, Service newDom) {
         Collection<Cluster> oldClusters = oldDom.getClusterMap().values();
         Collection<Cluster> newClusters = newDom.getClusterMap().values();
         List<Cluster> deadClusters = (List<Cluster>) CollectionUtils.subtract(oldClusters, newClusters);
@@ -579,23 +489,13 @@ public class VirtualClusterDomain implements Domain, DataListener {
         }
     }
 
-    @Override
-    public float getProtectThreshold() {
-        return protectThreshold;
-    }
-
-    @Override
-    public void setProtectThreshold(float protectThreshold) {
-        this.protectThreshold = protectThreshold;
-    }
-
     public void addCluster(Cluster cluster) {
         clusterMap.put(cluster.getName(), cluster);
     }
 
     public void valid() {
-        if (!name.matches(DOMAIN_NAME_SYNTAX)) {
-            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + name);
+        if (!getName().matches(DOMAIN_NAME_SYNTAX)) {
+            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
         }
 
         Map<String, List<String>> map = new HashMap<>(clusterMap.size());
@@ -610,7 +510,7 @@ public class VirtualClusterDomain implements Domain, DataListener {
             }
 
             list.add(cluster.getName());
-            cluster.valid();
+            cluster.validate();
         }
 
         for (Map.Entry<String, List<String>> entry : map.entrySet()) {

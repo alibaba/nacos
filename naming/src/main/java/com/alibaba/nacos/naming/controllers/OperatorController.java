@@ -18,13 +18,12 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
@@ -41,6 +40,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 /**
+ * Operation for operators
+ *
  * @author nkorange
  */
 @RestController
@@ -146,9 +147,9 @@ public class OperatorController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
-        VirtualClusterDomain virtualClusterDomain = serviceManager.getService(namespaceId, dom);
+        Service service = serviceManager.getService(namespaceId, dom);
 
-        if (virtualClusterDomain == null) {
+        if (service == null) {
             throw new IllegalArgumentException("dom not found");
         }
 
@@ -173,9 +174,9 @@ public class OperatorController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String dom = WebUtils.required(request, "dom");
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
+        Service service = (Service) serviceManager.getService(namespaceId, dom);
 
-        if (virtualClusterDomain == null) {
+        if (service == null) {
             throw new IllegalArgumentException("dom not found");
         }
 

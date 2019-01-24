@@ -51,12 +51,12 @@ public class DomainsManagerTest extends BaseTest {
 
     @Test
     public void searchDom() throws Exception {
-        VirtualClusterDomain domain = new VirtualClusterDomain();
+        Service domain = new Service();
         domain.setName("nacos.test.1");
 
         domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
 
-        List<VirtualClusterDomain> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
+        List<Service> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());

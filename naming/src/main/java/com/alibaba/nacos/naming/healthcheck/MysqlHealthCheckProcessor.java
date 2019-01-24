@@ -17,8 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -89,20 +89,20 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-        List<IpAddress> ips = task.getCluster().allIPs();
+        List<Instance> ips = task.getCluster().allIPs();
 
         SRV_LOG.debug("mysql check, ips:" + ips);
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
 
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
+        Service service = (Service) task.getCluster().getDom();
 
-        if (!healthCheckCommon.isHealthCheckEnabled(virtualClusterDomain)) {
+        if (!healthCheckCommon.isHealthCheckEnabled(service)) {
             return;
         }
 
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             try {
 
                 if (ip.isMarked()) {
@@ -131,11 +131,11 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
     }
 
     private class MysqlCheckTask implements Runnable {
-        private IpAddress ip;
+        private Instance ip;
         private HealthCheckTask task;
         private long startTime = System.currentTimeMillis();
 
-        public MysqlCheckTask(IpAddress ip, HealthCheckTask task) {
+        public MysqlCheckTask(Instance ip, HealthCheckTask task) {
             this.ip = ip;
             this.task = task;
         }

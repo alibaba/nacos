@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
 
 import java.util.List;
 
@@ -33,7 +33,7 @@ public class NoneSelector extends com.alibaba.nacos.api.selector.AbstractSelecto
     }
 
     @Override
-    public List<IpAddress> select(String consumer, List<IpAddress> providers) {
+    public List<Instance> select(String consumer, List<Instance> providers) {
         return providers;
     }
 }

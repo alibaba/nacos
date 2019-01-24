@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.naming.acl;
 
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Domain;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -72,7 +72,7 @@ public class AuthChecker {
             dom = WebUtils.optional(req, "tag", "");
         }
 
-        Domain domObj = serviceManager.getService(namespaceId, dom);
+        Service domObj = serviceManager.getService(namespaceId, dom);
 
         if (domObj == null) {
             if (!req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {

@@ -21,8 +21,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,7 +70,7 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void registerInstance() throws Exception {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
+        Service domain = new Service();
         domain.setName("nacos.test.1");
 
         Cluster cluster = new Cluster();
@@ -78,11 +78,11 @@ public class InstanceControllerTest extends BaseTest {
         cluster.setDom(domain);
         domain.addCluster(cluster);
 
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        ipAddress.setPort(9999);
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(9999);
+        List<Instance> ipList = new ArrayList<Instance>();
+        ipList.add(instance);
         domain.updateIPs(ipList);
 
         Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
@@ -118,7 +118,7 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void getInstances() throws Exception {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
+        Service domain = new Service();
         domain.setName("nacos.test.1");
 
         Cluster cluster = new Cluster();
@@ -126,12 +126,12 @@ public class InstanceControllerTest extends BaseTest {
         cluster.setDom(domain);
         domain.addCluster(cluster);
 
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("10.10.10.10");
-        ipAddress.setPort(8888);
-        ipAddress.setWeight(2.0);
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
+        Instance instance = new Instance();
+        instance.setIp("10.10.10.10");
+        instance.setPort(8888);
+        instance.setWeight(2.0);
+        List<Instance> ipList = new ArrayList<Instance>();
+        ipList.add(instance);
         domain.updateIPs(ipList);
 
         Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
