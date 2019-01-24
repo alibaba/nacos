@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
@@ -351,7 +350,7 @@ public class ServiceManager implements DataListener<Service> {
     }
 
     public void addOrReplaceService(Service newDom) throws Exception {
-        consistencyService.put(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom), String.class);
+        consistencyService.put(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
     }
 
     /**
@@ -431,7 +430,7 @@ public class ServiceManager implements DataListener<Service> {
 
         String value = JSON.toJSONString(ipAddressMap.values());
 
-        consistencyService.put(key, value, String.class);
+        consistencyService.put(key, value);
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
@@ -446,7 +445,7 @@ public class ServiceManager implements DataListener<Service> {
 
         String value = JSON.toJSONString(ipAddressMap.values());
 
-        consistencyService.put(key, value, String.class);
+        consistencyService.put(key, value);
     }
 
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
@@ -474,26 +473,25 @@ public class ServiceManager implements DataListener<Service> {
 
     public Map<String, Instance> updateIpAddresses(Service dom, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
-
-        Datum datum1 = consistencyService.get(KeyBuilder.buildInstanceListKey(dom.getNamespaceId(), dom.getName(), ephemeral),
-            String.class);
+        Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(dom.getNamespaceId(), dom.getName(), ephemeral));
 
         String oldJson = StringUtils.EMPTY;
 
-        // TODO support ephemeral instances:
-        if (datum1 != null) {
-            oldJson = (String) datum1.value;
+        List<Instance> oldInstances = new ArrayList<>();
+
+        if (datum != null) {
+            oldInstances = (List<Instance>) datum.value;
         }
 
         List<Instance> instances;
-        List<Instance> currentIPs = dom.allIPs();
+        List<Instance> currentIPs = dom.allIPs(ephemeral);
         Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
 
         for (Instance instance : currentIPs) {
             map.put(instance.toIPAddr(), instance);
         }
 
-        instances = setValid(oldJson, map);
+        instances = setValid(oldInstances, map);
 
         Map<String, Instance> instanceMap = new HashMap<>(instances.size());
 
@@ -534,29 +532,15 @@ public class ServiceManager implements DataListener<Service> {
         return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
 
-    private List<Instance> setValid(String oldJson, Map<String, Instance> map) {
-        List<Instance> instances = new ArrayList<>();
-        if (StringUtils.isNotEmpty(oldJson)) {
-            try {
-                instances = JSON.parseObject(oldJson, new TypeReference<List<Instance>>() {
-                });
-                for (Instance instance : instances) {
-                    Instance instance1 = map.get(instance.toIPAddr());
-                    if (instance1 != null) {
-                        instance.setValid(instance1.isValid());
-                        instance.setLastBeat(instance1.getLastBeat());
-                    }
-                }
-            } catch (Throwable throwable) {
-                Loggers.RAFT.error("error while processing json: " + oldJson, throwable);
-            } finally {
-                if (instances == null) {
-                    instances = new ArrayList<>();
-                }
+    private List<Instance> setValid(List<Instance> oldInstances, Map<String, Instance> map) {
+        for (Instance instance : oldInstances) {
+            Instance instance1 = map.get(instance.toIPAddr());
+            if (instance1 != null) {
+                instance.setValid(instance1.isValid());
+                instance.setLastBeat(instance1.getLastBeat());
             }
         }
-
-        return instances;
+        return oldInstances;
     }
 
     public Service getService(String namespaceId, String domName) {
