@@ -433,8 +433,8 @@ class NewConfig extends React.Component {
           color={'#333'}
         >
           <h1>{locale.newListing}</h1>
-          <Form field={this.field}>
-            <FormItem label={'Data ID:'} required {...formItemLayout}>
+          <Form className="new-config-form" field={this.field} {...formItemLayout}>
+            <FormItem label={'Data ID:'} required>
               <Input
                 {...init('dataId', {
                   rules: [
@@ -442,13 +442,10 @@ class NewConfig extends React.Component {
                       required: true,
                       message: locale.newConfig,
                     },
-                    {
-                      max: 255,
-                      message: locale.dataIdIsNotEmpty,
-                    },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
+                maxLength={255}
                 addonTextBefore={
                   this.state.addonBefore ? (
                     <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
@@ -456,7 +453,7 @@ class NewConfig extends React.Component {
                 }
               />
             </FormItem>
-            <FormItem label={'Group:'} required {...formItemLayout}>
+            <FormItem label={'Group:'} required>
               <Combobox
                 style={{ width: '100%' }}
                 size={'large'}
@@ -483,49 +480,52 @@ class NewConfig extends React.Component {
             </FormItem>
             <FormItem
               label={' '}
-              {...formItemLayout}
               style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}
             >
               <Message type={'warning'} size={'medium'} animation={false}>
                 {locale.annotation}
               </Message>
             </FormItem>
-            <FormItem label={''} {...formItemLayout}>
-              <div>
+
+            <FormItem
+              label={locale.tags}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Select
+                size={'medium'}
+                hasArrow
+                style={{ width: '100%', height: '100%!important' }}
+                autoWidth
+                multiple
+                mode="tag"
+                filterLocal
+                placeholder={locale.pleaseEnterTag}
+                dataSource={this.state.tagLst}
+                value={this.state.config_tags}
+                onChange={this.setConfigTags.bind(this)}
+                hasClear
+              />
+            </FormItem>
+
+            <FormItem
+              label={locale.groupIdCannotBeLonger}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Input {...init('appName')} readOnly={this.inApp} />
+            </FormItem>
+            <FormItem label=" ">
+              <div className="more-container">
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
                   {this.state.showmore ? locale.dataIdLength : locale.collapse}
                 </a>
               </div>
             </FormItem>
 
-            <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-              <FormItem label={locale.tags} {...formItemLayout}>
-                <Select
-                  size={'medium'}
-                  hasArrow
-                  style={{ width: '100%', height: '100%!important' }}
-                  autoWidth
-                  multiple
-                  mode="tag"
-                  filterLocal
-                  placeholder={locale.pleaseEnterTag}
-                  dataSource={this.state.tagLst}
-                  value={this.state.config_tags}
-                  onChange={this.setConfigTags.bind(this)}
-                  hasClear
-                />
-              </FormItem>
-
-              <FormItem label={locale.groupIdCannotBeLonger} {...formItemLayout}>
-                <Input {...init('appName')} readOnly={this.inApp} />
-              </FormItem>
-            </div>
-
-            <FormItem label={locale.description} {...formItemLayout}>
+            <FormItem label={locale.description}>
               <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
             </FormItem>
 
-            <FormItem label={locale.targetEnvironment} {...formItemLayout}>
+            <FormItem label={locale.targetEnvironment}>
               <RadioGroup
                 dataSource={list}
                 value={this.state.configType}
@@ -543,9 +543,8 @@ class NewConfig extends React.Component {
                         size={'small'}
                         style={{
                           color: '#1DC11D',
-                          marginRight: 5,
+                          margin: '0 5px',
                           verticalAlign: 'middle',
-                          marginTop: 2,
                         }}
                       />
                     }
@@ -560,12 +559,11 @@ class NewConfig extends React.Component {
                 </span>
               }
               required
-              {...formItemLayout}
             >
               <div id={'container'} style={{ width: '100%', height: 300 }} />
             </FormItem>
 
-            <FormItem {...formItemLayout} label={''}>
+            <FormItem label=" ">
               <div style={{ textAlign: 'right' }}>
                 <Button
                   type={'primary'}

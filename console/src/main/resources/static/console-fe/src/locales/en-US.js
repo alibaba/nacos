@@ -125,6 +125,9 @@ const I18N_CONF = {
     healthCheckPatternService: 'Service',
     healthCheckPatternClient: 'Client',
     healthCheckPatternNone: 'None',
+    serviceNameRequired: 'Please enter a service name',
+    protectThresholdRequired: 'Please enter a protect threshold',
+    healthCheckModeRequired: 'Please select health check pattern',
   },
   InstanceTable: {
     operation: 'Operation',
@@ -312,6 +315,7 @@ const I18N_CONF = {
     editNamespace: 'Loading...',
     load: 'Namespace:',
     namespace: 'Namespace cannot be empty',
+    namespaceDesc: 'Namespace description cannot be empty',
     description: 'Description:',
   },
   ExportDialog: {
@@ -366,6 +370,7 @@ const I18N_CONF = {
     loading: 'Loading...',
     name: 'Namespace:',
     namespacenotnull: 'Namespace cannot be empty',
+    namespacedescnotnull: 'Namespace description cannot be empty',
     description: 'Description:',
   },
   NameSpaceList: {

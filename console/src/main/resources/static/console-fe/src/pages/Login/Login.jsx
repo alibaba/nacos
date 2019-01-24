@@ -5,6 +5,7 @@ import { withRouter } from 'react-router-dom';
 import './index.scss';
 import Header from '../../layouts/Header';
 import { request } from '../../globalLib';
+import PropTypes from 'prop-types';
 
 const FormItem = Form.Item;
 
@@ -12,6 +13,11 @@ const FormItem = Form.Item;
 @ConfigProvider.config
 class Login extends React.Component {
   static displayName = 'Login';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -28,15 +34,14 @@ class Login extends React.Component {
         type: 'post',
         url: 'v1/auth/login',
         data: values,
-        success: res => {
-          if (res.code === 200) {
-            const data = res.data;
+        success: ({ code, data }) => {
+          if (code === 200) {
             // TODO: 封装一个方法存储、读取token
             localStorage.setItem('token', data);
             // TODO: 使用react router
             this.props.history.push('/');
           }
-          if (res.code === 401) {
+          if (code === 401) {
             Message.error({
               content: locale.invalidUsernameOrPassword,
             });
