@@ -285,11 +285,11 @@ public class DistroMapper {
         }
     }
 
-    public boolean responsible(Cluster cluster, IpAddress ipAddress) {
+    public boolean responsible(Cluster cluster, Instance instance) {
         return switchDomain.isHealthCheckEnabled(cluster.getServiceName())
             && !cluster.getHealthCheckTask().isCancelled()
             && responsible(cluster.getServiceName())
-            && cluster.contains(ipAddress);
+            && cluster.contains(instance);
     }
 
     public boolean responsible(String dom) {

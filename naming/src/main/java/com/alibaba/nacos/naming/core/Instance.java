@@ -17,7 +17,6 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -28,11 +27,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * IP under domain
+ * IP under service
  *
  * @author nkorange
  */
-public class IpAddress extends Instance implements Comparable {
+public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
 
     private static final double MAX_WEIGHT_VALUE = 10000.0D;
     private static final double MIN_POSTIVE_WEIGHT_VALUE = 0.01D;
@@ -54,7 +53,7 @@ public class IpAddress extends Instance implements Comparable {
 
     public static final String SPLITER = "_";
 
-    public IpAddress() {
+    public Instance() {
     }
 
     public boolean isMockValid() {
@@ -73,19 +72,19 @@ public class IpAddress extends Instance implements Comparable {
         this.lastBeat = lastBeat;
     }
 
-    public IpAddress(String ip, int port) {
+    public Instance(String ip, int port) {
         this.setIp(ip);
         this.setPort(port);
         this.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
     }
 
-    public IpAddress(String ip, int port, String clusterName) {
+    public Instance(String ip, int port, String clusterName) {
         this.setIp(ip.trim());
         this.setPort(port);
         this.setClusterName(clusterName);
     }
 
-    public IpAddress(String ip, int port, String clusterName, String tenant, String app) {
+    public Instance(String ip, int port, String clusterName, String tenant, String app) {
         this.setIp(ip.trim());
         this.setPort(port);
         this.setClusterName(clusterName);
@@ -93,7 +92,7 @@ public class IpAddress extends Instance implements Comparable {
         this.app = app;
     }
 
-    public static IpAddress fromString(String config) {
+    public static Instance fromString(String config) {
         String[] ipAddressAttributes = config.split(SPLITER);
         if (ipAddressAttributes.length < 1) {
             return null;
@@ -112,7 +111,7 @@ public class IpAddress extends Instance implements Comparable {
             port = Integer.parseInt(matcher.group(expectedGroupCount));
         }
 
-        IpAddress ipAddress = new IpAddress(matcher.group(1), port);
+        Instance instance = new Instance(matcher.group(1), port);
 
         // 7 possible formats of config:
         // ip:port
@@ -126,7 +125,7 @@ public class IpAddress extends Instance implements Comparable {
 
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'weight':
-            ipAddress.setWeight(NumberUtils.toDouble(ipAddressAttributes[minimumLength], 1));
+            instance.setWeight(NumberUtils.toDouble(ipAddressAttributes[minimumLength], 1));
         }
 
         minimumLength++;
@@ -135,13 +134,13 @@ public class IpAddress extends Instance implements Comparable {
             // determine 'valid':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
                     Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
-                ipAddress.setValid(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
+                instance.setValid(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
 
             // determine 'cluster':
             if (!Boolean.TRUE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1]) &&
                     !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
-                ipAddress.setClusterName(ipAddressAttributes[ipAddressAttributes.length - 1]);
+                instance.setClusterName(ipAddressAttributes[ipAddressAttributes.length - 1]);
             }
         }
 
@@ -151,11 +150,11 @@ public class IpAddress extends Instance implements Comparable {
             // determine 'marked':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
                     Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
-                ipAddress.setMarked(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
+                instance.setMarked(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
         }
 
-        return ipAddress;
+        return instance;
     }
 
     public String toIPAddr() {
@@ -172,11 +171,11 @@ public class IpAddress extends Instance implements Comparable {
     }
 
 
-    public static IpAddress fromJSON(String json) {
-        IpAddress ip;
+    public static Instance fromJSON(String json) {
+        Instance ip;
 
         try {
-            ip = JSON.parseObject(json, IpAddress.class);
+            ip = JSON.parseObject(json, Instance.class);
         } catch (Exception e) {
             ip = fromString(json);
         }
@@ -205,7 +204,7 @@ public class IpAddress extends Instance implements Comparable {
         if (obj == this) {
             return true;
         }
-        IpAddress other = (IpAddress) obj;
+        Instance other = (Instance) obj;
 
         // 0 means wild
         return getIp().equals(other.getIp()) && (getPort() == other.getPort() || getPort() == 0);
@@ -300,13 +299,13 @@ public class IpAddress extends Instance implements Comparable {
 
     @Override
     public int compareTo(Object o) {
-        if (!(o instanceof IpAddress)) {
+        if (!(o instanceof Instance)) {
             Loggers.SRV_LOG.error("[IPADDRESS-COMPARE] Object is not an instance of IPAdress, object: {}", o.getClass());
             throw new IllegalArgumentException("Object is not an instance of IPAdress,object: " + o.getClass());
         }
 
-        IpAddress ipAddress = (IpAddress) o;
-        String ipKey = ipAddress.toString();
+        Instance instance = (Instance) o;
+        String ipKey = instance.toString();
 
         return this.toString().compareTo(ipKey);
     }

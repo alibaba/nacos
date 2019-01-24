@@ -60,9 +60,9 @@ public class RaftStore {
         CACHE_DIR = BASE_DIR + File.separator + "data";
     }
 
-    public synchronized ConcurrentHashMap<String, Datum> loadDatums() throws Exception {
+    public synchronized ConcurrentHashMap<String, Datum<?>> loadDatums() throws Exception {
 
-        ConcurrentHashMap<String, Datum> datums = new ConcurrentHashMap<>(32);
+        ConcurrentHashMap<String, Datum<?>> datums = new ConcurrentHashMap<>(32);
         Datum datum;
         long start = System.currentTimeMillis();
         for (File cache : listCaches()) {

@@ -33,7 +33,7 @@ public class ClusterTest {
     @Before
     public void before() {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
+        Service domain = new Service();
         domain.setName("nacos.domain.1");
 
         cluster = new Cluster();
@@ -56,7 +56,7 @@ public class ClusterTest {
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
         newCluster.setHealthChecker(healthCheckConfig);
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
+        Service domain = new Service();
         domain.setName("nacos.domain.2");
 
         newCluster.setDom(domain);
@@ -75,21 +75,21 @@ public class ClusterTest {
     @Test
     public void updateIps() {
 
-        IpAddress ipAddress1 = new IpAddress();
-        ipAddress1.setIp("1.1.1.1");
-        ipAddress1.setPort(1234);
+        Instance instance1 = new Instance();
+        instance1.setIp("1.1.1.1");
+        instance1.setPort(1234);
 
-        IpAddress ipAddress2 = new IpAddress();
-        ipAddress2.setIp("1.1.1.1");
-        ipAddress2.setPort(2345);
+        Instance instance2 = new Instance();
+        instance2.setIp("1.1.1.1");
+        instance2.setPort(2345);
 
-        List<IpAddress> list = new ArrayList<IpAddress>();
-        list.add(ipAddress1);
-        list.add(ipAddress2);
+        List<Instance> list = new ArrayList<Instance>();
+        list.add(instance1);
+        list.add(instance2);
 
         cluster.updateIPs(list);
 
-        List<IpAddress> ips = cluster.allIPs();
+        List<Instance> ips = cluster.allIPs();
         Assert.assertNotNull(ips);
         Assert.assertEquals(2, ips.size());
         Assert.assertEquals("1.1.1.1", ips.get(0).getIp());

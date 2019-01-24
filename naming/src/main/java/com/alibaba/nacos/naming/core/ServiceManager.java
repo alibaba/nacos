@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -47,12 +47,12 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 @DependsOn("nacosApplicationContext")
-public class ServiceManager implements DataListener {
+public class ServiceManager implements DataListener<Service> {
 
     /**
      * Map<namespace, Map<group::serviceName, Service>>
      */
-    private Map<String, Map<String, VirtualClusterDomain>> serviceMap = new ConcurrentHashMap<>();
+    private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
 
     private LinkedBlockingDeque<DomainKey> toBeUpdatedDomsQueue = new LinkedBlockingDeque<>(1024 * 1024);
 
@@ -113,7 +113,7 @@ public class ServiceManager implements DataListener {
         }
     }
 
-    public Map<String, VirtualClusterDomain> chooseDomMap(String namespaceId) {
+    public Map<String, Service> chooseDomMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
 
@@ -141,37 +141,32 @@ public class ServiceManager implements DataListener {
     }
 
     @Override
-    public void onChange(String key, Object value) throws Exception {
+    public void onChange(String key, Service service) throws Exception {
         try {
-            if (StringUtils.isEmpty((String)value)) {
+            if (service == null) {
                 Loggers.SRV_LOG.warn("received empty push from raft, key: {}", key);
                 return;
             }
 
-            VirtualClusterDomain dom = VirtualClusterDomain.fromJSON((String)value);
-            if (dom == null) {
-                throw new IllegalStateException("dom parsing failed, json: " + value);
+            if (StringUtils.isBlank(service.getNamespaceId())) {
+                service.setNamespaceId(UtilsAndCommons.getDefaultNamespaceId());
             }
 
-            if (StringUtils.isBlank(dom.getNamespaceId())) {
-                dom.setNamespaceId(UtilsAndCommons.getDefaultNamespaceId());
-            }
+            Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, service);
 
-            Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, value);
-
-            Domain oldDom = getService(dom.getNamespaceId(), dom.getName());
+            Service oldDom = getService(service.getNamespaceId(), service.getName());
 
             if (oldDom != null) {
-                oldDom.update(dom);
+                oldDom.update(service);
             } else {
 
-                addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
-                putDomain(dom);
-                dom.init();
-                consistencyService.listen(UtilsAndCommons.getIPListStoreKey(dom), dom);
-                Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", dom.toJSON());
+                addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
+                putDomain(service);
+                service.init();
+                consistencyService.listen(UtilsAndCommons.getIPListStoreKey(service), service);
+                Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", service.toJSON());
             }
-            wakeUp(UtilsAndCommons.assembleFullServiceName(dom.getNamespaceId(), dom.getName()));
+            wakeUp(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
 
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[NACOS-DOM] error while processing dom update", e);
@@ -183,7 +178,7 @@ public class ServiceManager implements DataListener {
         String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
         String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
         String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
-        VirtualClusterDomain dom = chooseDomMap(namespace).remove(name);
+        Service dom = chooseDomMap(namespace).remove(name);
         Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
 
         if (dom != null) {
@@ -263,32 +258,32 @@ public class ServiceManager implements DataListener {
             ipsMap.put(strings[0], strings[1]);
         }
 
-        VirtualClusterDomain raftVirtualClusterDomain = (VirtualClusterDomain) getService(namespaceId, domName);
+        Service raftService = (Service) getService(namespaceId, domName);
 
-        if (raftVirtualClusterDomain == null) {
+        if (raftService == null) {
             return;
         }
 
-        List<IpAddress> ipAddresses = raftVirtualClusterDomain.allIPs();
-        for (IpAddress ipAddress : ipAddresses) {
+        List<Instance> instances = raftService.allIPs();
+        for (Instance instance : instances) {
 
-            Boolean valid = Boolean.parseBoolean(ipsMap.get(ipAddress.toIPAddr()));
-            if (valid != ipAddress.isValid()) {
-                ipAddress.setValid(valid);
+            Boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIPAddr()));
+            if (valid != instance.isValid()) {
+                instance.setValid(valid);
                 Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}",
-                    domName, (ipAddress.isValid() ? "ENABLED" : "DISABLED"),
-                    ipAddress.getIp(), ipAddress.getPort(), ipAddress.getClusterName());
+                    domName, (instance.isValid() ? "ENABLED" : "DISABLED"),
+                    instance.getIp(), instance.getPort(), instance.getClusterName());
             }
         }
 
-        pushService.domChanged(raftVirtualClusterDomain.getNamespaceId(), raftVirtualClusterDomain.getName());
+        pushService.domChanged(raftService.getNamespaceId(), raftService.getName());
         StringBuilder stringBuilder = new StringBuilder();
-        List<IpAddress> allIps = raftVirtualClusterDomain.allIPs();
-        for (IpAddress ipAddress : allIps) {
-            stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
+        List<Instance> allIps = raftService.allIPs();
+        for (Instance instance : allIps) {
+            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", raftVirtualClusterDomain.getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", raftService.getName(), stringBuilder.toString());
 
     }
 
@@ -312,12 +307,12 @@ public class ServiceManager implements DataListener {
         return new ArrayList<>(chooseDomMap(namespaceId).keySet());
     }
 
-    public Map<String, Set<Domain>> getResponsibleDoms() {
-        Map<String, Set<Domain>> result = new HashMap<>(16);
+    public Map<String, Set<Service>> getResponsibleDoms() {
+        Map<String, Set<Service>> result = new HashMap<>(16);
         for (String namespaceId : serviceMap.keySet()) {
             result.put(namespaceId, new HashSet<>());
-            for (Map.Entry<String, VirtualClusterDomain> entry : serviceMap.get(namespaceId).entrySet()) {
-                Domain domain = entry.getValue();
+            for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
+                Service domain = entry.getValue();
                 if (distroMapper.responsible(entry.getKey())) {
                     result.get(namespaceId).add(domain);
                 }
@@ -329,7 +324,7 @@ public class ServiceManager implements DataListener {
     public int getResponsibleDomCount() {
         int domCount = 0;
         for (String namespaceId : serviceMap.keySet()) {
-            for (Map.Entry<String, VirtualClusterDomain> entry : serviceMap.get(namespaceId).entrySet()) {
+            for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
                 if (distroMapper.responsible(entry.getKey())) {
                     domCount++;
                 }
@@ -339,10 +334,10 @@ public class ServiceManager implements DataListener {
     }
 
     public int getResponsibleIPCount() {
-        Map<String, Set<Domain>> responsibleDoms = getResponsibleDoms();
+        Map<String, Set<Service>> responsibleDoms = getResponsibleDoms();
         int count = 0;
         for (String namespaceId : responsibleDoms.keySet()) {
-            for (Domain domain : responsibleDoms.get(namespaceId)) {
+            for (Service domain : responsibleDoms.get(namespaceId)) {
                 count += domain.allIPs().size();
             }
         }
@@ -351,33 +346,33 @@ public class ServiceManager implements DataListener {
     }
 
     public void easyRemoveDom(String namespaceId, String serviceName) throws Exception {
-        Domain dom = getService(namespaceId, serviceName);
+        Service dom = getService(namespaceId, serviceName);
         consistencyService.remove(UtilsAndCommons.getDomStoreKey(dom));
     }
 
-    public void addOrReplaceService(VirtualClusterDomain newDom) throws Exception {
-        consistencyService.put(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
+    public void addOrReplaceService(Service newDom) throws Exception {
+        consistencyService.put(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom), String.class);
     }
 
     /**
      * Register an instance to a service.
      * <p>
-     * This method create service or cluster silently if they don't exist.
+     * This method creates service or cluster silently if they don't exist.
      *
      * @param namespaceId id of namespace
      * @param serviceName service name
      * @param instance    instance to register
      * @throws Exception any error occurred in the process
      */
-    public void registerInstance(String namespaceId, String serviceName, String clusterName, IpAddress instance) throws Exception {
+    public void registerInstance(String namespaceId, String serviceName, String clusterName, Instance instance) throws Exception {
 
-        VirtualClusterDomain service = getService(namespaceId, serviceName);
+        Service service = getService(namespaceId, serviceName);
         boolean serviceUpdated = false;
         if (service == null) {
-            service = new VirtualClusterDomain();
+            service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
-            // now valid the dom. if failed, exception will be thrown
+            // now validate the dom. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
             service.valid();
@@ -416,37 +411,46 @@ public class ServiceManager implements DataListener {
                 lock.unlock();
             }
         }
-        addInstance(namespaceId, serviceName, clusterName, instance);
+
+        if (service.allIPs().contains(instance)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance already exist: " + instance);
+        }
+
+        addInstance(namespaceId, serviceName, clusterName, instance.isEphemeral(), instance);
     }
 
-    public void addInstance(String namespaceId, String serviceName, String clusterName, IpAddress... ips) throws NacosException {
+    public void addInstance(String namespaceId, String serviceName, String clusterName, boolean ephemeral, Instance... ips) throws NacosException {
 
         String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
 
-        VirtualClusterDomain dom = getService(namespaceId, serviceName);
+        key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
-        Map<String, IpAddress> ipAddressMap = addIpAddresses(dom, ips);
+        Service dom = getService(namespaceId, serviceName);
+
+        Map<String, Instance> ipAddressMap = addIpAddresses(dom, ephemeral, ips);
 
         String value = JSON.toJSONString(ipAddressMap.values());
 
-        consistencyService.put(key, value);
+        consistencyService.put(key, value, String.class);
     }
 
-    public void removeInstance(String namespaceId, String serviceName, IpAddress... ips) throws NacosException {
+    public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
 
         String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
 
-        VirtualClusterDomain dom = getService(namespaceId, serviceName);
+        key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
-        Map<String, IpAddress> ipAddressMap = substractIpAddresses(dom, ips);
+        Service dom = getService(namespaceId, serviceName);
+
+        Map<String, Instance> ipAddressMap = substractIpAddresses(dom, ephemeral, ips);
 
         String value = JSON.toJSONString(ipAddressMap.values());
 
-        consistencyService.put(key, value);
+        consistencyService.put(key, value, String.class);
     }
 
-    public IpAddress getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
-        VirtualClusterDomain service = (VirtualClusterDomain) getService(namespaceId, serviceName);
+    public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
+        Service service = getService(namespaceId, serviceName);
         if (service == null) {
             return null;
         }
@@ -454,23 +458,26 @@ public class ServiceManager implements DataListener {
         List<String> clusters = new ArrayList<>();
         clusters.add(cluster);
 
-        List<IpAddress> ips = service.allIPs(clusters);
+        List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
             throw new IllegalStateException("no ips found for cluster " + cluster + " in dom " + serviceName);
         }
 
-        for (IpAddress ipAddress : ips) {
-            if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
-                return ipAddress;
+        for (Instance instance : ips) {
+            if (instance.getIp().equals(ip) && instance.getPort() == port) {
+                return instance;
             }
         }
 
         return null;
     }
 
-    public Map<String, IpAddress> updateIpAddresses(VirtualClusterDomain dom, String action, IpAddress... ips) throws NacosException {
+    public Map<String, Instance> updateIpAddresses(Service dom, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
-        Datum datum1 = (Datum) consistencyService.get(UtilsAndCommons.getIPListStoreKey(dom));
+
+        Datum datum1 = consistencyService.get(KeyBuilder.buildInstanceListKey(dom.getNamespaceId(), dom.getName(), ephemeral),
+            String.class);
+
         String oldJson = StringUtils.EMPTY;
 
         // TODO support ephemeral instances:
@@ -478,88 +485,88 @@ public class ServiceManager implements DataListener {
             oldJson = (String) datum1.value;
         }
 
-        List<IpAddress> ipAddresses;
-        List<IpAddress> currentIPs = dom.allIPs();
-        Map<String, IpAddress> map = new ConcurrentHashMap(currentIPs.size());
+        List<Instance> instances;
+        List<Instance> currentIPs = dom.allIPs();
+        Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
 
-        for (IpAddress ipAddress : currentIPs) {
-            map.put(ipAddress.toIPAddr(), ipAddress);
+        for (Instance instance : currentIPs) {
+            map.put(instance.toIPAddr(), instance);
         }
 
-        ipAddresses = setValid(oldJson, map);
+        instances = setValid(oldJson, map);
 
-        Map<String, IpAddress> ipAddressMap = new HashMap<String, IpAddress>(ipAddresses.size());
+        Map<String, Instance> instanceMap = new HashMap<>(instances.size());
 
-        for (IpAddress ipAddress : ipAddresses) {
-            ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
+        for (Instance instance : instances) {
+            instanceMap.put(instance.getDatumKey(), instance);
         }
 
-        for (IpAddress ipAddress : ips) {
-            if (!dom.getClusterMap().containsKey(ipAddress.getClusterName())) {
-                Cluster cluster = new Cluster(ipAddress.getClusterName());
+        for (Instance instance : ips) {
+            if (!dom.getClusterMap().containsKey(instance.getClusterName())) {
+                Cluster cluster = new Cluster(instance.getClusterName());
                 cluster.setDom(dom);
-                dom.getClusterMap().put(ipAddress.getClusterName(), cluster);
+                dom.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                    ipAddress.getClusterName(), ipAddress.toJSON());
+                    instance.getClusterName(), instance.toJSON());
             }
 
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
-                ipAddressMap.remove(ipAddress.getDatumKey());
+                instanceMap.remove(instance.getDatumKey());
             } else {
-                ipAddressMap.put(ipAddress.getDatumKey(), ipAddress);
+                instanceMap.put(instance.getDatumKey(), instance);
             }
 
         }
 
-        if (ipAddressMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
+        if (instanceMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
             throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
-                + JSON.toJSONString(ipAddressMap.values()));
+                + JSON.toJSONString(instanceMap.values()));
         }
 
-        return ipAddressMap;
+        return instanceMap;
     }
 
-    public Map<String, IpAddress> substractIpAddresses(VirtualClusterDomain dom, IpAddress... ips) throws NacosException {
-        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ips);
+    public Map<String, Instance> substractIpAddresses(Service dom, boolean ephemeral, Instance... ips) throws NacosException {
+        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
     }
 
-    public Map<String, IpAddress> addIpAddresses(VirtualClusterDomain dom, IpAddress... ips) throws NacosException {
-        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ips);
+    public Map<String, Instance> addIpAddresses(Service dom, boolean ephemeral, Instance... ips) throws NacosException {
+        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
 
-    private List<IpAddress> setValid(String oldJson, Map<String, IpAddress> map) {
-        List<IpAddress> ipAddresses = new ArrayList<>();
+    private List<Instance> setValid(String oldJson, Map<String, Instance> map) {
+        List<Instance> instances = new ArrayList<>();
         if (StringUtils.isNotEmpty(oldJson)) {
             try {
-                ipAddresses = JSON.parseObject(oldJson, new TypeReference<List<IpAddress>>() {
+                instances = JSON.parseObject(oldJson, new TypeReference<List<Instance>>() {
                 });
-                for (IpAddress ipAddress : ipAddresses) {
-                    IpAddress ipAddress1 = map.get(ipAddress.toIPAddr());
-                    if (ipAddress1 != null) {
-                        ipAddress.setValid(ipAddress1.isValid());
-                        ipAddress.setLastBeat(ipAddress1.getLastBeat());
+                for (Instance instance : instances) {
+                    Instance instance1 = map.get(instance.toIPAddr());
+                    if (instance1 != null) {
+                        instance.setValid(instance1.isValid());
+                        instance.setLastBeat(instance1.getLastBeat());
                     }
                 }
             } catch (Throwable throwable) {
                 Loggers.RAFT.error("error while processing json: " + oldJson, throwable);
             } finally {
-                if (ipAddresses == null) {
-                    ipAddresses = new ArrayList<>();
+                if (instances == null) {
+                    instances = new ArrayList<>();
                 }
             }
         }
 
-        return ipAddresses;
+        return instances;
     }
 
-    public VirtualClusterDomain getService(String namespaceId, String domName) {
+    public Service getService(String namespaceId, String domName) {
         if (serviceMap.get(namespaceId) == null) {
             return null;
         }
         return chooseDomMap(namespaceId).get(domName);
     }
 
-    public void putDomain(VirtualClusterDomain domain) {
+    public void putDomain(Service domain) {
         if (!serviceMap.containsKey(domain.getNamespaceId())) {
             serviceMap.put(domain.getNamespaceId(), new ConcurrentHashMap<>(16));
         }
@@ -567,10 +574,10 @@ public class ServiceManager implements DataListener {
     }
 
 
-    public List<VirtualClusterDomain> searchDomains(String namespaceId, String regex) {
-        List<VirtualClusterDomain> result = new ArrayList<>();
-        for (Map.Entry<String, VirtualClusterDomain> entry : chooseDomMap(namespaceId).entrySet()) {
-            VirtualClusterDomain dom = entry.getValue();
+    public List<Service> searchDomains(String namespaceId, String regex) {
+        List<Service> result = new ArrayList<>();
+        for (Map.Entry<String, Service> entry : chooseDomMap(namespaceId).entrySet()) {
+            Service dom = entry.getValue();
             String key = dom.getName() + ":" + ArrayUtils.toString(dom.getOwners());
             if (key.matches(regex)) {
                 result.add(dom);
@@ -591,20 +598,20 @@ public class ServiceManager implements DataListener {
     public int getInstanceCount() {
         int total = 0;
         for (String namespaceId : serviceMap.keySet()) {
-            for (Domain domain : serviceMap.get(namespaceId).values()) {
+            for (Service domain : serviceMap.get(namespaceId).values()) {
                 total += domain.allIPs().size();
             }
         }
         return total;
     }
 
-    public Map<String, VirtualClusterDomain> getDomMap(String namespaceId) {
+    public Map<String, Service> getDomMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedDom(String namespaceId, int startPage, int pageSize, String keyword, List<Domain> domainList) {
+    public int getPagedDom(String namespaceId, int startPage, int pageSize, String keyword, List<Service> domainList) {
 
-        List<VirtualClusterDomain> matchList;
+        List<Service> matchList;
 
         if (chooseDomMap(namespaceId) == null) {
             return 0;
@@ -613,7 +620,7 @@ public class ServiceManager implements DataListener {
         if (StringUtils.isNotBlank(keyword)) {
             matchList = searchDomains(namespaceId, ".*" + keyword + ".*");
         } else {
-            matchList = new ArrayList<VirtualClusterDomain>(chooseDomMap(namespaceId).values());
+            matchList = new ArrayList<Service>(chooseDomMap(namespaceId).values());
         }
 
         if (pageSize >= matchList.size()) {
@@ -682,7 +689,7 @@ public class ServiceManager implements DataListener {
                             continue;
                         }
 
-                        Domain domain = getService(namespaceId, domName);
+                        Service domain = getService(namespaceId, domName);
 
                         if (domain == null) {
                             continue;

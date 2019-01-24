@@ -23,7 +23,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     @Override
     public void put(String key, Object value) throws NacosException {
         try {
-            raftCore.signalPublish(key, (String) value);
+            raftCore.signalPublish(key, value);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft put failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft put failed, key:" + key + ", value:" + value);
@@ -41,7 +41,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
 
     @Override
-    public Object get(String key) throws NacosException {
+    public Datum get(String key) throws NacosException {
         return raftCore.getDatum(key);
     }
 

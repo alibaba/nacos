@@ -21,8 +21,8 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -108,12 +108,8 @@ public class HealthCheckCommon {
         }, 500, TimeUnit.MILLISECONDS);
     }
 
-    public boolean isHealthCheckEnabled(VirtualClusterDomain virtualClusterDomain) {
-        if (virtualClusterDomain.getEnableClientBeat()) {
-            return false;
-        }
-
-        return virtualClusterDomain.getEnableHealthCheck();
+    public boolean isHealthCheckEnabled(Service service) {
+        return service.getHealthCheckMode().equals(HealthCheckMode.server.name());
     }
 
     public void reEvaluateCheckRT(long checkRT, HealthCheckTask task, SwitchDomain.HealthParams params) {
@@ -140,7 +136,7 @@ public class HealthCheckCommon {
         task.setCheckRTNormalized(checkRT);
     }
 
-    public void checkOK(IpAddress ip, HealthCheckTask task, String msg) {
+    public void checkOK(Instance ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
 
         try {
@@ -150,7 +146,7 @@ public class HealthCheckCommon {
                         ip.setValid(true);
                         ip.setMockValid(true);
 
-                        VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
+                        Service vDom = (Service) cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
 
                         pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
@@ -178,7 +174,7 @@ public class HealthCheckCommon {
         ip.setBeingChecked(false);
     }
 
-    public void checkFail(IpAddress ip, HealthCheckTask task, String msg) {
+    public void checkFail(Instance ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
 
         try {
@@ -188,7 +184,7 @@ public class HealthCheckCommon {
                         ip.setValid(false);
                         ip.setMockValid(false);
 
-                        VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
+                        Service vDom = (Service) cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
@@ -215,7 +211,7 @@ public class HealthCheckCommon {
         ip.setBeingChecked(false);
     }
 
-    public void checkFailNow(IpAddress ip, HealthCheckTask task, String msg) {
+    public void checkFailNow(Instance ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
         try {
             if (ip.isValid() || ip.isMockValid()) {
@@ -223,7 +219,7 @@ public class HealthCheckCommon {
                     ip.setValid(false);
                     ip.setMockValid(false);
 
-                    VirtualClusterDomain vDom = (VirtualClusterDomain) cluster.getDom();
+                    Service vDom = (Service) cluster.getDom();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());
 
                     pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
@@ -261,11 +257,11 @@ public class HealthCheckCommon {
 
     static class HealthCheckResult {
         private String dom;
-        private IpAddress ipAddress;
+        private Instance instance;
 
-        public HealthCheckResult(String dom, IpAddress ipAddress) {
+        public HealthCheckResult(String dom, Instance instance) {
             this.dom = dom;
-            this.ipAddress = ipAddress;
+            this.instance = instance;
         }
 
         public String getDom() {
@@ -276,12 +272,12 @@ public class HealthCheckCommon {
             this.dom = dom;
         }
 
-        public IpAddress getIpAddress() {
-            return ipAddress;
+        public Instance getInstance() {
+            return instance;
         }
 
-        public void setIpAddress(IpAddress ipAddress) {
-            this.ipAddress = ipAddress;
+        public void setInstance(Instance instance) {
+            this.instance = instance;
         }
     }
 }

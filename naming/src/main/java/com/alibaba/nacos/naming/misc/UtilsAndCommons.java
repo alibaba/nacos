@@ -21,8 +21,7 @@ import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -144,14 +143,14 @@ public class UtilsAndCommons {
     static {
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
-                .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
+            .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+            .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
 
         SerializeConfig.getGlobalInstance()
-                .put(Selector.class, SelectorJsonAdapter.getInstance());
+            .put(Selector.class, SelectorJsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
+            .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
@@ -161,7 +160,7 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
         DOMAIN_SYNCHRONIZATION_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -172,7 +171,7 @@ public class UtilsAndCommons {
         });
 
         DOMAIN_UPDATE_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -183,7 +182,7 @@ public class UtilsAndCommons {
         });
 
         INIT_CONFIG_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -194,7 +193,7 @@ public class UtilsAndCommons {
         });
 
         SERVER_STATUS_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -205,7 +204,7 @@ public class UtilsAndCommons {
         });
 
         RAFT_PUBLISH_EXECUTOR
-                = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -230,20 +229,14 @@ public class UtilsAndCommons {
     }
 
 
-    public static String getIPListStoreKey(Domain dom) {
-        if (dom instanceof VirtualClusterDomain) {
-            return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + ((VirtualClusterDomain) dom).getNamespaceId() +
-                UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
-        }
-        return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getName();
+    public static String getIPListStoreKey(Service dom) {
+        return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getNamespaceId() +
+            UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
     }
 
-    public static String getDomStoreKey(Domain dom) {
-        if (dom instanceof VirtualClusterDomain) {
-            return UtilsAndCommons.DOMAINS_DATA_ID_PRE + ((VirtualClusterDomain) dom).getNamespaceId() +
-                UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
-        }
-        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + dom.getName();
+    public static String getDomStoreKey(Service dom) {
+        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + dom.getNamespaceId() +
+            UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
     }
 
     public static String getSwitchDomainKey() {
@@ -259,7 +252,8 @@ public class UtilsAndCommons {
         }
 
         try {
-            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>(){});
+            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>() {
+            });
         } catch (Exception e) {
             String[] datas = metadata.split(",");
             if (datas.length > 0) {

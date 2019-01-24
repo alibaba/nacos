@@ -129,7 +129,7 @@ public class RaftController {
         value = URLDecoder.decode(value, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
-        raftConsistencyService.put(json.getString("key"), json.getString("value"));
+        raftConsistencyService.put(json.getString("key"), json.getString("value"), String.class);
 
         return "ok";
     }

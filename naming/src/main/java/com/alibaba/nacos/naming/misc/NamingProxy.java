@@ -20,7 +20,6 @@ import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpMethod;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -117,6 +116,42 @@ public class NamingProxy {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }
         return false;
+    }
+
+    public static String reqAPI(String api, Map<String, String> params, String curServer) throws Exception {
+        try {
+            List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "Content-Encoding", "gzip");
+
+
+            HttpClient.HttpResult result;
+
+            if (!curServer.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+                curServer = curServer + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            }
+
+
+            result = HttpClient.httpGet("http://" + curServer + api, headers, params);
+
+
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                return result.content;
+            }
+
+            if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
+                return StringUtils.EMPTY;
+            }
+
+            throw new IOException("failed to req API:" + "http://" + curServer
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api + ". code:"
+                + result.code + " msg: " + result.content);
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("NamingProxy", e);
+        }
+        return StringUtils.EMPTY;
     }
 
     public static String reqAPI(String api, Map<String, String> params, String curServer, boolean isPost) throws Exception {

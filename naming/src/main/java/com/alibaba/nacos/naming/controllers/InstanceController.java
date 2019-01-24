@@ -18,14 +18,13 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -34,7 +33,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -104,33 +102,22 @@ public class InstanceController {
 
     @RequestMapping(value = "/instance", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
-
-        OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
-
-        String serviceJson = WebUtils.optional(request, "service", StringUtils.EMPTY);
-
-        // set service info:
-        if (StringUtils.isNotEmpty(serviceJson)) {
-            JSONObject service = JSON.parseObject(serviceJson);
-            requestWrapper.addParameter("serviceName", service.getString("name"));
-        }
-
-        return regService(requestWrapper);
+        return regService(request);
     }
 
     @RequestMapping(value = "/instance", method = RequestMethod.DELETE)
     public String deregister(HttpServletRequest request) throws Exception {
-        IpAddress ipAddress = getIPAddress(request);
+        Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
-        VirtualClusterDomain virtualClusterDomain = serviceManager.getService(namespaceId, serviceName);
-        if (virtualClusterDomain == null) {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             return "ok";
         }
 
-        serviceManager.removeInstance(namespaceId, serviceName, ipAddress);
+        serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
 
         return "ok";
     }
@@ -141,7 +128,7 @@ public class InstanceController {
     }
 
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
-    public JSONObject queryList(HttpServletRequest request) throws Exception {
+    public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
@@ -164,7 +151,7 @@ public class InstanceController {
     }
 
     @RequestMapping(value = "/instance", method = RequestMethod.GET)
-    public JSONObject queryDetail(HttpServletRequest request) throws Exception {
+    public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
@@ -173,7 +160,7 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
 
-        VirtualClusterDomain domain = serviceManager.getService(namespaceId, serviceName);
+        Service domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "no dom " + serviceName + " found!");
         }
@@ -181,22 +168,22 @@ public class InstanceController {
         List<String> clusters = new ArrayList<>();
         clusters.add(cluster);
 
-        List<IpAddress> ips = domain.allIPs(clusters);
+        List<Instance> ips = domain.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
             throw new IllegalStateException("no ips found for cluster " + cluster + " in dom " + serviceName);
         }
 
-        for (IpAddress ipAddress : ips) {
-            if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
+        for (Instance instance : ips) {
+            if (instance.getIp().equals(ip) && instance.getPort() == port) {
                 JSONObject result = new JSONObject();
                 result.put("service", serviceName);
                 result.put("ip", ip);
                 result.put("port", port);
                 result.put("clusterName", cluster);
-                result.put("weight", ipAddress.getWeight());
-                result.put("healthy", ipAddress.isValid());
-                result.put("metadata", ipAddress.getMetadata());
-                result.put("instanceId", ipAddress.generateInstanceId());
+                result.put("weight", instance.getWeight());
+                result.put("healthy", instance.isValid());
+                result.put("metadata", instance.getMetadata());
+                result.put("instanceId", instance.generateInstanceId());
                 return result;
             }
         }
@@ -205,7 +192,7 @@ public class InstanceController {
     }
 
     @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
-    public JSONObject sendBeat(HttpServletRequest request) throws Exception {
+    public JSONObject beat(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
         String beat = WebUtils.required(request, "beat");
@@ -228,24 +215,24 @@ public class InstanceController {
             Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
-        IpAddress ipAddress = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
             clientBeat.getPort());
 
-        if (ipAddress == null) {
-            ipAddress = new IpAddress();
-            ipAddress.setPort(clientBeat.getPort());
-            ipAddress.setIp(clientBeat.getIp());
-            ipAddress.setWeight(clientBeat.getWeight());
-            ipAddress.setMetadata(clientBeat.getMetadata());
-            ipAddress.setClusterName(clusterName);
-            ipAddress.setServiceName(serviceName);
-            ipAddress.setInstanceId(ipAddress.generateInstanceId());
-            serviceManager.registerInstance(namespaceId, serviceName, clusterName, ipAddress);
+        if (instance == null) {
+            instance = new Instance();
+            instance.setPort(clientBeat.getPort());
+            instance.setIp(clientBeat.getIp());
+            instance.setWeight(clientBeat.getWeight());
+            instance.setMetadata(clientBeat.getMetadata());
+            instance.setClusterName(clusterName);
+            instance.setServiceName(serviceName);
+            instance.setInstanceId(instance.generateInstanceId());
+            serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
         }
 
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) serviceManager.getService(namespaceId, serviceName);
+        Service service = (Service) serviceManager.getService(namespaceId, serviceName);
 
-        if (virtualClusterDomain == null) {
+        if (service == null) {
             throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
         }
 
@@ -271,7 +258,7 @@ public class InstanceController {
                 throw new IllegalArgumentException("failed to proxy client beat to" + server + ", beat: " + beat);
             }
         } else {
-            virtualClusterDomain.processClientBeat(clientBeat);
+            service.processClientBeat(clientBeat);
         }
 
         JSONObject result = new JSONObject();
@@ -282,25 +269,34 @@ public class InstanceController {
     }
 
 
-    @RequestMapping("/ip4Dom2")
-    public JSONObject ip4Dom2(HttpServletRequest request) throws NacosException {
+    @RequestMapping("/listWithHealthStatus")
+    public JSONObject listWithHealthStatus(HttpServletRequest request) throws NacosException {
 
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String domName = WebUtils.required(request, "dom");
+        String key = WebUtils.required(request, "key");
 
-        VirtualClusterDomain dom = serviceManager.getService(namespaceId, domName);
+        String domName;
+        String namespaceId;
+
+        if (key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
+            namespaceId = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
+            domName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+        } else {
+            namespaceId = UtilsAndCommons.getDefaultNamespaceId();
+            domName = key;
+        }
+
+        Service dom = serviceManager.getService(namespaceId, domName);
 
         if (dom == null) {
             throw new NacosException(NacosException.NOT_FOUND, "dom: " + domName + " not found.");
         }
 
-        List<IpAddress> ips = dom.allIPs();
+        List<Instance> ips = dom.allIPs();
 
         JSONObject result = new JSONObject();
         JSONArray ipArray = new JSONArray();
 
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             ipArray.add(ip.toIPAddr() + "_" + ip.isValid());
         }
 
@@ -317,42 +313,41 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.getDefaultNamespaceId());
 
-        IpAddress ipAddress = getIPAddress(request);
-        ipAddress.setApp(app);
-        ipAddress.setServiceName(serviceName);
-        ipAddress.setInstanceId(ipAddress.generateInstanceId());
-        ipAddress.setLastBeat(System.currentTimeMillis());
+        Instance instance = getIPAddress(request);
+        instance.setApp(app);
+        instance.setServiceName(serviceName);
+        instance.setInstanceId(instance.generateInstanceId());
+        instance.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
-            ipAddress.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        serviceManager.registerInstance(namespaceId, serviceName, clusterName, ipAddress);
+        serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
 
         return "ok";
     }
 
-    private IpAddress getIPAddress(HttpServletRequest request) {
+    private Instance getIPAddress(HttpServletRequest request) {
 
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String weight = WebUtils.optional(request, "weight", "1");
-        String cluster = WebUtils.optional(request, "cluster", StringUtils.EMPTY);
-        if (StringUtils.isEmpty(cluster)) {
-            cluster = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        }
+        String cluster = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+        boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral", "true"));
 
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setPort(Integer.parseInt(port));
-        ipAddress.setIp(ip);
-        ipAddress.setWeight(Double.parseDouble(weight));
-        ipAddress.setClusterName(cluster);
-        ipAddress.setEnabled(enabled);
+        Instance instance = new Instance();
+        instance.setPort(Integer.parseInt(port));
+        instance.setIp(ip);
+        instance.setWeight(Double.parseDouble(weight));
+        instance.setClusterName(cluster);
+        instance.setEnabled(enabled);
+        instance.setEphemeral(ephemeral);
 
-        return ipAddress;
+        return instance;
     }
 
-    public void checkIfDisabled(VirtualClusterDomain domObj) throws Exception {
+    public void checkIfDisabled(Service domObj) throws Exception {
         if (!domObj.getEnabled()) {
             throw new Exception("domain is disabled now.");
         }
@@ -362,7 +357,7 @@ public class InstanceController {
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         JSONObject result = new JSONObject();
-        VirtualClusterDomain domObj = (VirtualClusterDomain) serviceManager.getService(namespaceId, dom);
+        Service domObj = (Service) serviceManager.getService(namespaceId, dom);
 
         if (domObj == null) {
             throw new NacosException(NacosException.NOT_FOUND, "dom not found: " + dom);
@@ -389,7 +384,7 @@ public class InstanceController {
             cacheMillis = switchDomain.getDefaultCacheMillis();
         }
 
-        List<IpAddress> srvedIPs;
+        List<Instance> srvedIPs;
 
         srvedIPs = domObj.srvIPs(clientIP, Arrays.asList(StringUtils.split(clusters, ",")));
 
@@ -404,11 +399,11 @@ public class InstanceController {
             Loggers.SRV_LOG.debug(msg);
         }
 
-        Map<Boolean, List<IpAddress>> ipMap = new HashMap<>(2);
-        ipMap.put(Boolean.TRUE, new ArrayList<IpAddress>());
-        ipMap.put(Boolean.FALSE, new ArrayList<IpAddress>());
+        Map<Boolean, List<Instance>> ipMap = new HashMap<>(2);
+        ipMap.put(Boolean.TRUE, new ArrayList<Instance>());
+        ipMap.put(Boolean.FALSE, new ArrayList<Instance>());
 
-        for (IpAddress ip : srvedIPs) {
+        for (Instance ip : srvedIPs) {
             ipMap.get(ip.isValid()).add(ip);
         }
 
@@ -438,14 +433,14 @@ public class InstanceController {
 
         JSONArray hosts = new JSONArray();
 
-        for (Map.Entry<Boolean, List<IpAddress>> entry : ipMap.entrySet()) {
-            List<IpAddress> ips = entry.getValue();
+        for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
+            List<Instance> ips = entry.getValue();
 
             if (healthyOnly && !entry.getKey()) {
                 continue;
             }
 
-            for (IpAddress ip : ips) {
+            for (Instance ip : ips) {
                 JSONObject ipObj = new JSONObject();
 
                 ipObj.put("ip", ip.getIp());

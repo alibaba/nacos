@@ -17,8 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
@@ -85,20 +85,20 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-        List<IpAddress> ips = task.getCluster().allIPs();
+        List<Instance> ips = task.getCluster().allIPs();
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
 
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
+        Service service = (Service) task.getCluster().getDom();
 
-        if (!switchDomain.isHealthCheckEnabled() || !virtualClusterDomain.getEnableHealthCheck()) {
+        if (!switchDomain.isHealthCheckEnabled() || !service.getHealthCheckMode().equals(HealthCheckMode.server.name())) {
             return;
         }
 
         Cluster cluster = task.getCluster();
 
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             try {
 
                 if (ip.isMarked()) {
@@ -144,12 +144,12 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
     }
 
     private class HttpHealthCheckCallback extends AsyncCompletionHandler<Integer> {
-        private IpAddress ip;
+        private Instance ip;
         private HealthCheckTask task;
 
         private long startTime = System.currentTimeMillis();
 
-        public HttpHealthCheckCallback(IpAddress ip, HealthCheckTask task) {
+        public HttpHealthCheckCallback(Instance ip, HealthCheckTask task) {
             this.ip = ip;
             this.task = task;
         }

@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.exception.NacosException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -103,14 +103,14 @@ public class LabelSelector extends ExpressionSelector implements Selector {
 
 
     @Override
-    public List<IpAddress> select(String consumer, List<IpAddress> providers) {
+    public List<Instance> select(String consumer, List<Instance> providers) {
 
         if (labels.isEmpty()) {
             return providers;
         }
 
-        List<IpAddress> ipAddressList = new ArrayList<>();
-        for (IpAddress ipAddress : providers) {
+        List<Instance> instanceList = new ArrayList<>();
+        for (Instance instance : providers) {
 
             boolean matched = true;
             for (String labelName : getLabels()) {
@@ -119,21 +119,21 @@ public class LabelSelector extends ExpressionSelector implements Selector {
 
                 if (StringUtils.isNotBlank(consumerLabelValue) &&
                         !StringUtils.equals(consumerLabelValue,
-                                cmdbReader.queryLabel(ipAddress.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
+                                cmdbReader.queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
                     break;
                 }
             }
             if (matched) {
-                ipAddressList.add(ipAddress);
+                instanceList.add(instance);
             }
         }
 
-        if (ipAddressList.isEmpty()) {
+        if (instanceList.isEmpty()) {
             return providers;
         }
 
-        return ipAddressList;
+        return instanceList;
     }
 
     /**

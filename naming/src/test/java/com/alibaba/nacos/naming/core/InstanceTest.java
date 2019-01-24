@@ -27,33 +27,33 @@ import java.util.Map;
 /**
  * @author nkorange
  */
-public class IpAddressTest {
+public class InstanceTest {
 
-    private IpAddress ipAddress;
+    private Instance instance;
 
     @Before
     public void before() {
-        ipAddress = new IpAddress();
+        instance = new Instance();
     }
 
     @Test
     public void updateIp() {
-        ipAddress.setIp("1.1.1.1");
-        ipAddress.setPort(1234);
-        ipAddress.setWeight(5);
+        instance.setIp("1.1.1.1");
+        instance.setPort(1234);
+        instance.setWeight(5);
 
-        Assert.assertEquals("1.1.1.1", ipAddress.getIp());
-        Assert.assertEquals(1234, ipAddress.getPort());
-        Assert.assertEquals(5, ipAddress.getWeight(), 0.001);
+        Assert.assertEquals("1.1.1.1", instance.getIp());
+        Assert.assertEquals(1234, instance.getPort());
+        Assert.assertEquals(5, instance.getWeight(), 0.001);
     }
 
     @Test
     public void fromJson() {
-        ipAddress = IpAddress.fromJSON("2.2.2.2:8888_2_TEST1");
-        Assert.assertEquals("2.2.2.2", ipAddress.getIp());
-        Assert.assertEquals(8888, ipAddress.getPort());
-        Assert.assertEquals(2, ipAddress.getWeight(), 0.001);
-        Assert.assertEquals("TEST1", ipAddress.getClusterName());
+        instance = Instance.fromJSON("2.2.2.2:8888_2_TEST1");
+        Assert.assertEquals("2.2.2.2", instance.getIp());
+        Assert.assertEquals(8888, instance.getPort());
+        Assert.assertEquals(2, instance.getWeight(), 0.001);
+        Assert.assertEquals("TEST1", instance.getClusterName());
     }
 
     @Test

@@ -20,8 +20,8 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
@@ -36,9 +36,9 @@ import java.util.List;
  */
 public class ClientBeatCheckTask implements Runnable {
 
-    private VirtualClusterDomain domain;
+    private Service domain;
 
-    public ClientBeatCheckTask(VirtualClusterDomain domain) {
+    public ClientBeatCheckTask(Service domain) {
         this.domain = domain;
     }
 
@@ -60,29 +60,30 @@ public class ClientBeatCheckTask implements Runnable {
     @Override
     public void run() {
         try {
-            if (!domain.getEnableClientBeat() || !getDistroMapper().responsible(domain.getName())) {
+            if (!domain.getHealthCheckMode().equals(HealthCheckMode.client.name()) ||
+                !getDistroMapper().responsible(domain.getName())) {
                 return;
             }
 
-            List<IpAddress> ipAddresses = domain.allIPs();
+            List<Instance> instances = domain.allIPs();
 
-            for (IpAddress ipAddress : ipAddresses) {
-                if (System.currentTimeMillis() - ipAddress.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {
-                    if (!ipAddress.isMarked()) {
-                        if (ipAddress.isValid()) {
-                            ipAddress.setValid(false);
+            for (Instance instance : instances) {
+                if (System.currentTimeMillis() - instance.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {
+                    if (!instance.isMarked()) {
+                        if (instance.isValid()) {
+                            instance.setValid(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
-                                ipAddress.getIp(), ipAddress.getPort(), ipAddress.getClusterName(),
-                                UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, ipAddress.getLastBeat());
+                                instance.getIp(), instance.getPort(), instance.getClusterName(),
+                                UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, instance.getLastBeat());
                             getPushService().domChanged(domain.getNamespaceId(), domain.getName());
                         }
                     }
                 }
 
-                if (System.currentTimeMillis() - ipAddress.getLastBeat() > domain.getIpDeleteTimeout()) {
+                if (System.currentTimeMillis() - instance.getLastBeat() > domain.getIpDeleteTimeout()) {
                     // delete ip
-                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: {}, ip: {}", domain.getName(), JSON.toJSONString(ipAddress));
-                    deleteIP(ipAddress);
+                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: {}, ip: {}", domain.getName(), JSON.toJSONString(instance));
+                    deleteIP(instance);
                 }
             }
         } catch (Exception e) {
@@ -91,15 +92,15 @@ public class ClientBeatCheckTask implements Runnable {
 
     }
 
-    private void deleteIP(IpAddress ipAddress) {
+    private void deleteIP(Instance instance) {
         try {
-            String ipList = ipAddress.getIp() + ":" + ipAddress.getPort() + "_"
-                + ipAddress.getWeight() + "_" + ipAddress.getClusterName();
+            String ipList = instance.getIp() + ":" + instance.getPort() + "_"
+                + instance.getWeight() + "_" + instance.getClusterName();
 
             NamingProxy.Request request = NamingProxy.Request.newRequest();
-            request.appendParam("ip", ipAddress.getIp())
-                .appendParam("port", String.valueOf(ipAddress.getPort()))
-                .appendParam("clusterName", ipAddress.getClusterName())
+            request.appendParam("ip", instance.getIp())
+                .appendParam("port", String.valueOf(instance.getPort()))
+                .appendParam("clusterName", instance.getClusterName())
                 .appendParam("serviceName", domain.getName())
                 .appendParam("namespaceId", domain.getNamespaceId());
 
@@ -108,10 +109,10 @@ public class ClientBeatCheckTask implements Runnable {
             HttpClient.HttpResult result = HttpClient.httpGet(url, null, null);
             if (result.code != HttpURLConnection.HTTP_OK) {
                 Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
-                    ipAddress.toJSON(), result.content, result.code);
+                    instance.toJSON(), result.content, result.code);
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", ipAddress.toJSON(), e);
+            Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJSON(), e);
         }
 
     }

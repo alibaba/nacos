@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.consistency;
 
 /**
  * @author nkorange
+ * @since 1.0.0
  */
 public class KeyBuilder {
 
@@ -25,18 +26,26 @@ public class KeyBuilder {
     private static final String PERSISTENT_KEY_PREFIX = "persistent";
     private static final String INSTANCE_LIST_KEY_PREFIX = "instanceList";
 
-    public static String buildEphemeralInstanceListKey(String namespaceId, String serviceName, String clusterName) {
-        return namespaceId + KEY_CONNECTOR + PERSISTENT_KEY_PREFIX + KEY_CONNECTOR + INSTANCE_LIST_KEY_PREFIX + KEY_CONNECTOR
-            + serviceName + KEY_CONNECTOR + clusterName;
+    public static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
+        return namespaceId + KEY_CONNECTOR
+            + serviceName + KEY_CONNECTOR + EPHEMERAL_KEY_PREFIX + KEY_CONNECTOR + INSTANCE_LIST_KEY_PREFIX;
     }
 
-    public static String buildPersistentInstanceListKey(String namespaceId, String serviceName, String clusterName) {
-        return namespaceId + KEY_CONNECTOR + EPHEMERAL_KEY_PREFIX + KEY_CONNECTOR + INSTANCE_LIST_KEY_PREFIX + KEY_CONNECTOR
-            + serviceName + KEY_CONNECTOR + clusterName;
+    public static String buildPersistentInstanceListKey(String namespaceId, String serviceName) {
+        return namespaceId + KEY_CONNECTOR
+            + serviceName + KEY_CONNECTOR + PERSISTENT_KEY_PREFIX + KEY_CONNECTOR + INSTANCE_LIST_KEY_PREFIX;
     }
+
+    public static String buildInstanceListKey(String namespaceId, String serviceName, boolean ephemeral) {
+        if (ephemeral) {
+            return buildEphemeralInstanceListKey(namespaceId, serviceName);
+        }
+        return buildPersistentInstanceListKey(namespaceId, serviceName);
+    }
+
 
     public static boolean matchEphemeralInstanceListKey(String key) {
-        return key.contains(KEY_CONNECTOR + EPHEMERAL_KEY_PREFIX + KEY_CONNECTOR + INSTANCE_LIST_KEY_PREFIX + KEY_CONNECTOR);
+        return key.endsWith(KEY_CONNECTOR + EPHEMERAL_KEY_PREFIX + KEY_CONNECTOR + INSTANCE_LIST_KEY_PREFIX);
     }
 
     public static boolean matchInstanceListKey(String key) {

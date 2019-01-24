@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientBeatProcessor implements Runnable {
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
     private RsInfo rsInfo;
-    private Domain domain;
+    private Service service;
 
     @JSONField(serialize = false)
     public PushService getPushService() {
@@ -47,12 +47,12 @@ public class ClientBeatProcessor implements Runnable {
         this.rsInfo = rsInfo;
     }
 
-    public Domain getDomain() {
-        return domain;
+    public Service getService() {
+        return service;
     }
 
-    public void setDomain(Domain domain) {
-        this.domain = domain;
+    public void setService(Service service) {
+        this.service = service;
     }
 
     public String getType() {
@@ -60,8 +60,8 @@ public class ClientBeatProcessor implements Runnable {
     }
 
     public void process() {
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) domain;
-        if (!virtualClusterDomain.getEnableClientBeat()) {
+        Service service = this.service;
+        if (!service.getHealthCheckMode().equals(HealthCheckMode.client.name())) {
             return;
         }
 
@@ -70,19 +70,19 @@ public class ClientBeatProcessor implements Runnable {
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
         int port = rsInfo.getPort();
-        Cluster cluster = virtualClusterDomain.getClusterMap().get(clusterName);
-        List<IpAddress> ipAddresses = cluster.allIPs();
+        Cluster cluster = service.getClusterMap().get(clusterName);
+        List<Instance> instances = cluster.allIPs();
 
-        for (IpAddress ipAddress: ipAddresses) {
-            if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
+        for (Instance instance : instances) {
+            if (instance.getIp().equals(ip) && instance.getPort() == port) {
                 Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
-                ipAddress.setLastBeat(System.currentTimeMillis());
-                if (!ipAddress.isMarked()) {
-                    if (!ipAddress.isValid()) {
-                        ipAddress.setValid(true);
+                instance.setLastBeat(System.currentTimeMillis());
+                if (!instance.isMarked()) {
+                    if (!instance.isValid()) {
+                        instance.setValid(true);
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
                             cluster.getDom().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
-                        getPushService().domChanged(virtualClusterDomain.getNamespaceId(), domain.getName());
+                        getPushService().domChanged(service.getNamespaceId(), this.service.getName());
                     }
                 }
             }

@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
 
 import java.util.List;
 
@@ -52,5 +52,5 @@ public interface Selector {
      * @param providers candidate provider addresses
      * @return selected provider addresses
      */
-    List<IpAddress> select(String consumer, List<IpAddress> providers);
+    List<Instance> select(String consumer, List<Instance> providers);
 }

@@ -15,15 +15,11 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +28,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements DataListener {
+public class SwitchDomain implements DataListener<SwitchDomain> {
 
     public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
@@ -172,8 +168,7 @@ public class SwitchDomain implements DataListener {
     }
 
     @Override
-    public void onChange(String key, Object value) throws Exception {
-        SwitchDomain domain = JSON.parseObject((String)value, SwitchDomain.class);
+    public void onChange(String key, SwitchDomain domain) throws Exception {
         update(domain);
     }
 

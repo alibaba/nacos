@@ -47,7 +47,7 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
 
     @Override
-    public Object get(String key) throws NacosException {
+    public Datum get(String key) throws NacosException {
         return persistentConsistencyService.get(key);
     }
 

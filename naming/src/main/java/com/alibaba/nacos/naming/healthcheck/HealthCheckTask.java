@@ -19,13 +19,10 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.RandomUtils;
-
-import java.util.Random;
 
 /**
  * @author nacos
@@ -95,7 +92,7 @@ public class HealthCheckTask implements Runnable {
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
                     Cluster cluster = this.getCluster();
-                    if (((VirtualClusterDomain) cluster.getDom()).getEnableHealthCheck()) {
+                    if ((cluster.getDom()).getHealthCheckMode().equals(HealthCheckMode.server.name())) {
                         Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
                             cluster.getDom().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
                             this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),

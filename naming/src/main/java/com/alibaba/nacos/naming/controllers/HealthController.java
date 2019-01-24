@@ -16,14 +16,14 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -60,14 +60,14 @@ public class HealthController {
     private PushService pushService;
 
     @RequestMapping("/server")
-    public JSONObject hello(HttpServletRequest request) {
+    public JSONObject server(HttpServletRequest request) {
         JSONObject result = new JSONObject();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getDomCount()
             + ", local port:" + RunningConfig.getServerPort());
         return result;
     }
 
-    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})
+    @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -100,16 +100,16 @@ public class HealthController {
                 throw new IllegalArgumentException("failed to proxy health update to " + server + ", dom: " + dom);
             }
         } else {
-            VirtualClusterDomain virtualClusterDomain = serviceManager.getService(namespaceId, dom);
+            Service service = serviceManager.getService(namespaceId, dom);
             // Only health check "none" need update health status with api
-            if (!virtualClusterDomain.getEnableHealthCheck() && !virtualClusterDomain.getEnableClientBeat()) {
-                for (IpAddress ipAddress : virtualClusterDomain.allIPs(Lists.newArrayList(clusterName))) {
-                    if (ipAddress.getIp().equals(ip) && ipAddress.getPort() == port) {
-                        ipAddress.setValid(valid);
+            if (service.getHealthCheckMode().equals(HealthCheckMode.none.name())) {
+                for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
+                    if (instance.getIp().equals(ip) && instance.getPort() == port) {
+                        instance.setValid(valid);
                         Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
-                            + ipAddress.getIp() + ":" + ipAddress.getPort() + "@" + ipAddress.getClusterName()
+                            + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
                             + ", dom: " + dom + ", msg: update thought HealthController api");
-                        pushService.domChanged(namespaceId, virtualClusterDomain.getName());
+                        pushService.domChanged(namespaceId, service.getName());
                         break;
                     }
                 }
