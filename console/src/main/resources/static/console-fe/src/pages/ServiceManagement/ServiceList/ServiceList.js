@@ -160,10 +160,12 @@ class ServiceList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup
-            setNowNameSpace={this.setNowNameSpace}
-            namespaceCallBack={this.getQueryLater}
-          />
+          <div style={{ marginTop: -15 }}>
+            <RegionGroup
+              setNowNameSpace={this.setNowNameSpace}
+              namespaceCallBack={this.getQueryLater}
+            />
+          </div>
           <h3 className="page-title">
             <span className="title-item">{serviceList}</span>
             <span className="title-item">|</span>
