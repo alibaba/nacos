@@ -239,7 +239,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public List<Instance> allIPs() {
-        List<Instance> allIPs = new ArrayList<Instance>();
+        List<Instance> allIPs = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             allIPs.addAll(entry.getValue().allIPs());
         }
@@ -247,8 +247,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return allIPs;
     }
 
+    public List<Instance> allIPs(boolean ephemeral) {
+        List<Instance> allIPs = new ArrayList<>();
+        for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            allIPs.addAll(entry.getValue().allIPs(ephemeral));
+        }
+
+        return allIPs;
+    }
+
     public List<Instance> allIPs(List<String> clusters) {
-        List<Instance> allIPs = new ArrayList<Instance>();
+        List<Instance> allIPs = new ArrayList<>();
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
