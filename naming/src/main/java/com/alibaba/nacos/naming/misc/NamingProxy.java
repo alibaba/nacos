@@ -73,10 +73,10 @@ public class NamingProxy {
 
     public static byte[] getData(List<String> keys, String server) throws Exception {
 
-        Map<String, String> params = new HashMap<>();
+        Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
         HttpClient.HttpResult result = HttpClient.httpGet("http://" + server + RunningConfig.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new ArrayList<String>(), params);
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new ArrayList<>(), params);
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content.getBytes();

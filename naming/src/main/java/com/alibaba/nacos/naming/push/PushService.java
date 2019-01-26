@@ -219,9 +219,12 @@ public class PushService {
     }
 
     public void domChanged(final String namespaceId, final String dom) {
+
+        // merge some change events to reduce the push frequency:
         if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, dom))) {
             return;
         }
+
         Future future = udpSender.schedule(new Runnable() {
             @Override
             public void run() {

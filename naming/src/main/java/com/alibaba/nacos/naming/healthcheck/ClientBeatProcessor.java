@@ -71,7 +71,7 @@ public class ClientBeatProcessor implements Runnable {
         String clusterName = rsInfo.getCluster();
         int port = rsInfo.getPort();
         Cluster cluster = service.getClusterMap().get(clusterName);
-        List<Instance> instances = cluster.allIPs();
+        List<Instance> instances = cluster.allIPs(true);
 
         for (Instance instance : instances) {
             if (instance.getIp().equals(ip) && instance.getPort() == port) {

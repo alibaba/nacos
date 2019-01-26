@@ -131,10 +131,13 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return cluster;
     }
 
-    public void updateIPs(List<Instance> ips) {
-        HashMap<String, Instance> oldIPMap = new HashMap<>(persistentInstances.size());
+    public void updateIPs(List<Instance> ips, boolean ephemeral) {
 
-        for (Instance ip : this.persistentInstances) {
+        Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
+
+        HashMap<String, Instance> oldIPMap = new HashMap<>(toUpdateInstances.size());
+
+        for (Instance ip : toUpdateInstances) {
             oldIPMap.put(ip.getDatumKey(), ip);
         }
 
@@ -184,14 +187,13 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
-        this.persistentInstances = new HashSet<>(ips);
+        toUpdateInstances = new HashSet<>(ips);
 
-        ipContains.clear();
-
-        for (Instance instance : persistentInstances) {
-            ipContains.put(instance.toIPAddr(), true);
+        if (ephemeral) {
+            ephemeralInstances = toUpdateInstances;
+        } else {
+            persistentInstances = toUpdateInstances;
         }
-
     }
 
     public List<Instance> updatedIPs(Collection<Instance> a, Collection<Instance> b) {
@@ -343,7 +345,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     public boolean contains(Instance ip) {
-        return ipContains.containsKey(ip.toIPAddr());
+        return persistentInstances.contains(ip) || ephemeralInstances.contains(ip);
     }
 
     public void validate() {

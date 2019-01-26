@@ -49,7 +49,7 @@ import java.util.*;
  *
  * @author nkorange
  */
-public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<List<Instance>> {
+public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<Instances> {
 
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
@@ -142,11 +142,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     @Override
-    public void onChange(String key, List<Instance> value) throws Exception {
+    public void onChange(String key, Instances value) throws Exception {
 
         Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        for (Instance ip : value) {
+        for (Instance ip : value.getInstanceMap().values()) {
 
             if (ip.getWeight() > 10000.0D) {
                 ip.setWeight(10000.0D);
@@ -157,7 +157,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             }
         }
 
-        updateIPs(value);
+        updateIPs(value.getInstanceMap().values(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
         recalculateChecksum();
     }
@@ -167,11 +167,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         // ignore
     }
 
-    public void updateIPs(List<Instance> ips) {
+    public void updateIPs(Collection<Instance> ips, boolean ephemeral) {
         if (CollectionUtils.isEmpty(ips) && allIPs().size() > 1) {
             return;
         }
-
 
         Map<String, List<Instance>> ipMap = new HashMap<String, List<Instance>>(clusterMap.size());
         for (String clusterName : clusterMap.keySet()) {
@@ -191,13 +190,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
                 // put wild ip into DEFAULT cluster
                 if (!clusterMap.containsKey(ip.getClusterName())) {
-                    Loggers.SRV_LOG.warn("cluster of IP not found: {}", ip.toJSON());
+                    Loggers.SRV_LOG.warn("cluster of IP not found: {}", ip);
                     continue;
                 }
 
                 List<Instance> clusterIPs = ipMap.get(ip.getClusterName());
                 if (clusterIPs == null) {
-                    clusterIPs = new LinkedList<Instance>();
+                    clusterIPs = new LinkedList<>();
                     ipMap.put(ip.getClusterName(), clusterIPs);
                 }
 
@@ -210,8 +209,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
             //make every ip mine
             List<Instance> entryIPs = entry.getValue();
-            clusterMap.get(entry.getKey()).updateIPs(entryIPs);
+            clusterMap.get(entry.getKey()).updateIPs(entryIPs, ephemeral);
         }
+
         setLastModifiedMillis(System.currentTimeMillis());
         getPushService().domChanged(namespaceId, getName());
         StringBuilder stringBuilder = new StringBuilder();
@@ -272,13 +272,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return allIPs;
     }
 
-    public List<Instance> srvIPs(String clientIP) {
-        return srvIPs(clientIP, Collections.EMPTY_LIST);
-    }
-
-    public List<Instance> srvIPs(String clientIP, List<String> clusters) {
-        List<Instance> ips;
-
+    public List<Instance> srvIPs(List<String> clusters) {
         if (CollectionUtils.isEmpty(clusters)) {
             clusters = new ArrayList<>();
             clusters.addAll(clusterMap.keySet());

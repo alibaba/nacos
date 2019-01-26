@@ -39,7 +39,7 @@ public class RaftStoreTest {
 
         RaftStore.write(datum);
 
-        RaftStore.load("1.2.3.4");
+        raftCore.loadDatum("1.2.3.4");
 
         Datum result = raftCore.getDatum("1.2.3.4");
 

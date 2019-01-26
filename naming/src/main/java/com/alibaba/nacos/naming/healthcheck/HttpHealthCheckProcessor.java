@@ -85,12 +85,12 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-        List<Instance> ips = task.getCluster().allIPs();
+        List<Instance> ips = task.getCluster().allIPs(false);
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
 
-        Service service = (Service) task.getCluster().getDom();
+        Service service = task.getCluster().getDom();
 
         if (!switchDomain.isHealthCheckEnabled() || !service.getHealthCheckMode().equals(HealthCheckMode.server.name())) {
             return;

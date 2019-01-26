@@ -30,13 +30,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class DataStore {
 
-    private Map<String, Datum> dataMap = new ConcurrentHashMap<>(1024);
+    private Map<String, Datum<?>> dataMap = new ConcurrentHashMap<>(1024);
 
-    public void put(String key, Datum value) {
+    public void put(String key, Datum<?> value) {
         dataMap.put(key, value);
     }
 
-    public Datum remove(String key) {
+    public Datum<?> remove(String key) {
         return dataMap.remove(key);
     }
 
@@ -44,7 +44,7 @@ public class DataStore {
         return dataMap.keySet();
     }
 
-    public Datum get(String key) {
+    public Datum<?> get(String key) {
         return dataMap.get(key);
     }
 
@@ -52,8 +52,8 @@ public class DataStore {
         return dataMap.containsKey(key);
     }
 
-    public Map<String, Datum> batchGet(List<String> keys) {
-        Map<String, Datum> map = new HashMap<>();
+    public Map<String, Datum<?>> batchGet(List<String> keys) {
+        Map<String, Datum<?>> map = new HashMap<>(128);
         for (String key : keys) {
             if (!dataMap.containsKey(key)) {
                 continue;

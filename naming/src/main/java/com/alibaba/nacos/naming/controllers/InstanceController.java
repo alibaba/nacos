@@ -357,7 +357,7 @@ public class InstanceController {
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         JSONObject result = new JSONObject();
-        Service domObj = (Service) serviceManager.getService(namespaceId, dom);
+        Service domObj = serviceManager.getService(namespaceId, dom);
 
         if (domObj == null) {
             throw new NacosException(NacosException.NOT_FOUND, "dom not found: " + dom);
@@ -386,7 +386,7 @@ public class InstanceController {
 
         List<Instance> srvedIPs;
 
-        srvedIPs = domObj.srvIPs(clientIP, Arrays.asList(StringUtils.split(clusters, ",")));
+        srvedIPs = domObj.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
         if (domObj.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
@@ -394,14 +394,26 @@ public class InstanceController {
         }
 
         if (CollectionUtils.isEmpty(srvedIPs)) {
-            String msg = "no ip to serve for dom: " + dom;
 
-            Loggers.SRV_LOG.debug(msg);
+            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + dom);
+            }
+
+            result.put("hosts", new JSONArray());
+            result.put("dom", dom);
+            result.put("cacheMillis", cacheMillis);
+            result.put("lastRefTime", System.currentTimeMillis());
+            result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
+            result.put("useSpecifiedURL", false);
+            result.put("clusters", clusters);
+            result.put("env", env);
+            result.put("metadata", domObj.getMetadata());
+            return result;
         }
 
         Map<Boolean, List<Instance>> ipMap = new HashMap<>(2);
-        ipMap.put(Boolean.TRUE, new ArrayList<Instance>());
-        ipMap.put(Boolean.FALSE, new ArrayList<Instance>());
+        ipMap.put(Boolean.TRUE, new ArrayList<>());
+        ipMap.put(Boolean.FALSE, new ArrayList<>());
 
         for (Instance ip : srvedIPs) {
             ipMap.get(ip.isValid()).add(ip);

@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -87,8 +88,10 @@ public class DataSyncer implements MemberChangeListener {
                     }
 
                     List<String> keys = task.getKeys();
-                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
-                    byte[] data = serializer.serializeMap(datumMap);
+
+                    Map<String, Datum<?>> datumMap = dataStore.batchGet(keys);
+
+                    byte[] data = serializer.serialize(datumMap);
 
                     long timestamp = System.currentTimeMillis();
                     boolean success = NamingProxy.syncData(data, task.getTargetServer());
@@ -122,7 +125,7 @@ public class DataSyncer implements MemberChangeListener {
         @Override
         public void run() {
 
-            Map<String, Long> keyTimestamps = new HashMap<>();
+            Map<String, Long> keyTimestamps = new HashMap<>(64);
             for (String key : dataStore.keys()) {
                 if (!distroMapper.responsible(key)) {
                     // this key is no longer in our hands:

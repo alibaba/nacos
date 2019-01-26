@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.view;
+package com.alibaba.nacos.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.Cluster;

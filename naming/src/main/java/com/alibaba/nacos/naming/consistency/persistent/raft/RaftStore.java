@@ -20,6 +20,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -32,9 +33,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
@@ -101,7 +100,7 @@ public class RaftStore {
         return meta;
     }
 
-    public synchronized static Datum load(String key) throws Exception {
+    public synchronized Datum load(String key) throws Exception {
         long start = System.currentTimeMillis();
         // load data
         for (File cache : listCaches()) {
@@ -109,7 +108,7 @@ public class RaftStore {
                 Loggers.RAFT.warn("warning: encountered directory in cache dir: {}", cache.getAbsolutePath());
             }
 
-            if (!StringUtils.equals(decodeFileName(cache.getName()), key)) {
+            if (!StringUtils.equals(cache.getName(), encodeFileName(key))) {
                 continue;
             }
 
@@ -136,13 +135,25 @@ public class RaftStore {
             }
 
             if (KeyBuilder.matchServiceMetaKey(file.getName())) {
-                return JSON.parseObject(json, new TypeReference<Datum<Service>>() {
+                return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
                 });
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {
-                return JSON.parseObject(json, new TypeReference<Datum<List<Instance>>>() {
+                Datum<List<Instance>> datum = JSON.parseObject(json, new TypeReference<Datum<List<Instance>>>() {
                 });
+                Map<String, Instance> instanceMap = new HashMap<>(64);
+                if (datum.value == null || datum.value.isEmpty()) {
+                    return datum;
+                }
+                for (Instance instance : datum.value) {
+                    instanceMap.put(instance.getDatumKey(), instance);
+                }
+                Datum<Map<String, Instance>> mapDatum = new Datum<>();
+                mapDatum.value = instanceMap;
+                mapDatum.key = datum.key;
+                mapDatum.timestamp.set(datum.timestamp.get());
+                return mapDatum;
             }
 
             return JSON.parseObject(json, Datum.class);
@@ -162,7 +173,6 @@ public class RaftStore {
         String namespaceId = KeyBuilder.getNamespace(datum.key);
 
         File cacheFile;
-        File oldCacheFile = null;
 
         if (StringUtils.isNotBlank(namespaceId)) {
             cacheFile = new File(CACHE_DIR + File.separator + namespaceId + File.separator + encodeFileName(datum.key));
@@ -177,7 +187,17 @@ public class RaftStore {
         }
 
         FileChannel fc = null;
-        ByteBuffer data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
+        ByteBuffer data;
+
+        if (KeyBuilder.matchInstanceListKey(datum.key)) {
+            Datum<Collection<Instance>> listDatum = new Datum<>();
+            listDatum.key = datum.key;
+            listDatum.value = ((Instances) datum.value).getInstanceMap().values();
+            listDatum.timestamp.set(datum.timestamp.get());
+            data = ByteBuffer.wrap(JSON.toJSONString(listDatum).getBytes("UTF-8"));
+        } else {
+            data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
+        }
 
         try {
             fc = new FileOutputStream(cacheFile, false).getChannel();
@@ -191,11 +211,6 @@ public class RaftStore {
                 fc.close();
             }
         }
-
-        if (oldCacheFile != null) {
-            oldCacheFile.delete();
-        }
-
     }
 
     private static File[] listCaches() throws Exception {
