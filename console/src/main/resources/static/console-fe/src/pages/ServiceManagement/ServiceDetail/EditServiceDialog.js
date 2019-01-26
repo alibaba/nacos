@@ -33,6 +33,7 @@ class EditServiceDialog extends React.Component {
       isCreate: false,
       editService: {},
       editServiceDialogVisible: false,
+      errors: { name: {}, protectThreshold: {}, healthCheckMode: {} },
     };
     this.show = this.show.bind(this);
   }
@@ -52,10 +53,32 @@ class EditServiceDialog extends React.Component {
     this.setState({ editServiceDialogVisible: false });
   }
 
+  validator(field) {
+    const { locale = {} } = this.props;
+    const errors = Object.assign({}, this.state.errors);
+    const helpMap = {
+      name: locale.serviceNameRequired,
+      protectThreshold: locale.protectThresholdRequired,
+      healthCheckMode: locale.healthCheckModeRequired,
+    };
+    if (field.protectThreshold === 0) {
+      field.protectThreshold = '0';
+    }
+    for (const key in field) {
+      if (!field[key]) {
+        errors[key] = { validateState: 'error', help: helpMap[key] };
+        this.setState({ errors });
+        return false;
+      }
+    }
+    return true;
+  }
+
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
     const { name, protectThreshold, healthCheckMode, metadataText, selector } = editService;
+    if (!this.validator({ name, protectThreshold, healthCheckMode })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
       url: 'v1/ns/service',
@@ -86,7 +109,15 @@ class EditServiceDialog extends React.Component {
   }
 
   onChangeCluster(changeVal) {
+    const resetKey = ['name', 'protectThreshold', 'healthCheckMode'];
     const { editService = {} } = this.state;
+    const errors = Object.assign({}, this.state.errors);
+    resetKey.forEach(key => {
+      if (changeVal[key]) {
+        errors[key] = {};
+        this.setState({ errors });
+      }
+    });
     this.setState({
       editService: Object.assign({}, editService, changeVal),
     });
@@ -99,7 +130,7 @@ class EditServiceDialog extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { isCreate, editService, editServiceDialogVisible } = this.state;
+    const { isCreate, editService, editServiceDialogVisible, errors } = this.state;
     const {
       name,
       protectThreshold,
@@ -118,20 +149,35 @@ class EditServiceDialog extends React.Component {
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${locale.serviceName}:`} {...formItemLayout}>
+          <Form.Item
+            required={isCreate}
+            {...formItemLayout}
+            label={`${locale.serviceName}:`}
+            {...errors.name}
+          >
             {!isCreate ? (
               <p>{name}</p>
             ) : (
               <Input value={name} onChange={name => this.onChangeCluster({ name })} />
             )}
           </Form.Item>
-          <Form.Item label={`${locale.protectThreshold}:`} {...formItemLayout}>
+          <Form.Item
+            required
+            {...formItemLayout}
+            label={`${locale.protectThreshold}:`}
+            {...errors.protectThreshold}
+          >
             <Input
               value={protectThreshold}
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.healthCheckPattern}:`} {...formItemLayout}>
+          <Form.Item
+            required
+            {...formItemLayout}
+            label={`${locale.healthCheckPattern}:`}
+            {...errors.healthCheckMode}
+          >
             <Select
               className="full-width"
               defaultValue={healthCheckMode}
