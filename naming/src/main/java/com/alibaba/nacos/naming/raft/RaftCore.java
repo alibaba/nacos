@@ -31,7 +31,9 @@ import org.javatuples.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.*;
@@ -960,7 +962,13 @@ public class RaftCore {
     }
 
     private static void deleteDatum(String key) {
-        Datum deleted = datums.remove(key);
+
+        Datum deleted = null;
+        try {
+            deleted = datums.remove(URLDecoder.decode(key, "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            Loggers.RAFT.warn("datum key decode failed: {}", key);
+        }
         if (deleted != null) {
             RaftStore.delete(deleted);
             notifier.addTask(deleted, Notifier.ApplyAction.DELETE);

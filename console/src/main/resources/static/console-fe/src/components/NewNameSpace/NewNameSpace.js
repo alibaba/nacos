@@ -213,7 +213,7 @@ class NewNameSpace extends React.Component {
                     rules: [
                       {
                         required: true,
-                        message: locale.namespacenotnull,
+                        message: locale.namespacedescnotnull,
                       },
                       { validator: this.validateChart.bind(this) },
                     ],
