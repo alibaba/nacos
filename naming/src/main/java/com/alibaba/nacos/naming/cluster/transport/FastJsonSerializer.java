@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +34,12 @@ import java.util.Map;
 public class FastJsonSerializer implements Serializer {
 
     @Override
-    public <T> byte[] serialize(Map<String, T> dataMap) {
+    public <T> byte[] serialize(T data) {
+        return JSON.toJSONBytes(data);
+    }
+
+    @Override
+    public <T> byte[] serializeMap(Map<String, T> dataMap) {
         JSONObject json = new JSONObject();
         for (Map.Entry<String, T> entry : dataMap.entrySet()) {
             json.put(entry.getKey(), entry.getValue());
@@ -42,7 +48,16 @@ public class FastJsonSerializer implements Serializer {
     }
 
     @Override
-    public <T> Map<String, T> deserialize(byte[] data, Class<T> clazz) {
+    public <T> T deserialize(byte[] data, Class<T> clazz) {
+        try {
+            return JSON.parseObject(new String(data, "UTF-8"), clazz);
+        } catch (UnsupportedEncodingException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public <T> Map<String, T> deserializeMap(byte[] data, Class<T> clazz) {
         try {
             String dataString = new String(data, "UTF-8");
             JSONObject json = JSON.parseObject(dataString);

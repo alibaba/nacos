@@ -16,10 +16,10 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -51,7 +51,7 @@ import java.util.*;
  */
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<List<Instance>> {
 
-    private static final String DOMAIN_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
+    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -131,12 +131,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
+        return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
+//        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
+        return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
+//        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
     }
 
     @Override
@@ -352,7 +354,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
 
     public void setName(String name) {
-        if (!name.matches(DOMAIN_NAME_SYNTAX)) {
+        if (!name.matches(SERVICE_NAME_SYNTAX)) {
             throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z.:_-; current: " + name);
         }
 
@@ -503,7 +505,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void valid() {
-        if (!getName().matches(DOMAIN_NAME_SYNTAX)) {
+        if (!getName().matches(SERVICE_NAME_SYNTAX)) {
             throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
         }
 

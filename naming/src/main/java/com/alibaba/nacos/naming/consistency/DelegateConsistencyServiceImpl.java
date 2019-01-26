@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
+import com.alibaba.nacos.naming.core.DistroMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -34,40 +35,65 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     private PersistentConsistencyService persistentConsistencyService;
 
     @Autowired
+    private DistroMapper distroMapper;
+
+    @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
 
     @Override
     public void put(String key, Object value) throws NacosException {
-        persistentConsistencyService.put(key, value);
+        if (KeyBuilder.matchEphemeralKey(key)) {
+            ephemeralConsistencyService.put(key, value);
+        } else {
+            persistentConsistencyService.put(key, value);
+        }
     }
 
     @Override
     public void remove(String key) throws NacosException {
-        persistentConsistencyService.remove(key);
+        if (KeyBuilder.matchEphemeralKey(key)) {
+            ephemeralConsistencyService.remove(key);
+        } else {
+            persistentConsistencyService.remove(key);
+        }
     }
 
     @Override
     public Datum get(String key) throws NacosException {
-        return persistentConsistencyService.get(key);
+        if (KeyBuilder.matchEphemeralKey(key)) {
+            return ephemeralConsistencyService.get(key);
+        } else {
+            return persistentConsistencyService.get(key);
+        }
     }
 
     @Override
     public void listen(String key, DataListener listener) throws NacosException {
-        persistentConsistencyService.listen(key, listener);
+        if (KeyBuilder.matchEphemeralKey(key)) {
+            ephemeralConsistencyService.listen(key, listener);
+        } else {
+            persistentConsistencyService.listen(key, listener);
+        }
     }
 
     @Override
     public void unlisten(String key, DataListener listener) throws NacosException {
-        persistentConsistencyService.unlisten(key, listener);
+        if (KeyBuilder.matchEphemeralKey(key)) {
+            ephemeralConsistencyService.unlisten(key, listener);
+        } else {
+            persistentConsistencyService.unlisten(key, listener);
+        }
     }
 
     @Override
     public boolean isResponsible(String key) {
-        return true;
+        // TODO convert key to service name:
+        return distroMapper.responsible(key);
     }
 
     @Override
     public String getResponsibleServer(String key) {
-        return null;
+        // TODO convert key to service name:
+        return distroMapper.mapSrv(key);
     }
 }

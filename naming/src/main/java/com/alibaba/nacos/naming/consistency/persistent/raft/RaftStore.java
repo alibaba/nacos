@@ -16,10 +16,12 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -30,7 +32,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
@@ -68,7 +72,7 @@ public class RaftStore {
         for (File cache : listCaches()) {
             if (cache.isDirectory() && cache.listFiles() != null) {
                 for (File datumFile : cache.listFiles()) {
-                    datum =readDatum(datumFile, cache.getName());
+                    datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
                     }
@@ -131,28 +135,18 @@ public class RaftStore {
                 return null;
             }
 
-            Datum datum = JSON.parseObject(json, Datum.class);
-
-            if (StringUtils.isBlank(namespaceId)) {
-                namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
+            if (KeyBuilder.matchServiceMetaKey(file.getName())) {
+                return JSON.parseObject(json, new TypeReference<Datum<Service>>() {
+                });
             }
 
-            if (!datum.key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME) && !datum.key.contains(namespaceId)) {
-
-                if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
-                    datum.key = UtilsAndCommons.DOMAINS_DATA_ID_PRE + namespaceId +
-                        UtilsAndCommons.SERVICE_GROUP_CONNECTOR +
-                        datum.key.substring(UtilsAndCommons.DOMAINS_DATA_ID_PRE.length());
-                }
-
-                if (datum.key.startsWith(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)) {
-                    datum.key = UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId +
-                        UtilsAndCommons.SERVICE_GROUP_CONNECTOR +
-                        datum.key.substring(UtilsAndCommons.IPADDRESS_DATA_ID_PRE.length());
-                }
+            if (KeyBuilder.matchInstanceListKey(file.getName())) {
+                return JSON.parseObject(json, new TypeReference<Datum<List<Instance>>>() {
+                });
             }
 
-            return datum;
+            return JSON.parseObject(json, Datum.class);
+
         } catch (Exception e) {
             Loggers.RAFT.warn("waning: failed to deserialize key: {}", file.getName());
             throw e;
@@ -165,12 +159,7 @@ public class RaftStore {
 
     public synchronized static void write(final Datum datum) throws Exception {
 
-        String namespaceId = null;
-
-        if (datum.key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
-            String[] segments = datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0].split("\\.");
-            namespaceId = segments[segments.length - 1];
-        }
+        String namespaceId = KeyBuilder.getNamespace(datum.key);
 
         File cacheFile;
         File oldCacheFile = null;
@@ -179,23 +168,6 @@ public class RaftStore {
             cacheFile = new File(CACHE_DIR + File.separator + namespaceId + File.separator + encodeFileName(datum.key));
         } else {
             cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
-        }
-
-        if (UtilsAndCommons.DEFAULT_NAMESPACE_ID.equals(namespaceId)) {
-            // remove old format file:
-            String originDatumKey = null;
-            if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
-                originDatumKey = UtilsAndCommons.DOMAINS_DATA_ID_PRE +
-                    datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
-            } else if (datum.key.startsWith(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)) {
-                originDatumKey = UtilsAndCommons.IPADDRESS_DATA_ID_PRE +
-                    datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
-            }
-
-            oldCacheFile = new File(CACHE_DIR + File.separator + encodeFileName(originDatumKey));
-            if (oldCacheFile.exists() && !oldCacheFile.delete()) {
-                throw new IllegalStateException("remove old format file failed, key:" + originDatumKey);
-            }
         }
 
         if (!cacheFile.exists() && !cacheFile.getParentFile().mkdirs() && !cacheFile.createNewFile()) {
@@ -237,41 +209,12 @@ public class RaftStore {
 
     public static void delete(Datum datum) {
 
-        if (datum.key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
-            // datum key contains namespace info:
-            String namspaceId = null;
-            String originDatumKey = null;
-            if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
-                namspaceId = datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0]
-                    .substring(UtilsAndCommons.DOMAINS_DATA_ID_PRE.length());
-                originDatumKey = UtilsAndCommons.DOMAINS_DATA_ID_PRE +
-                    datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
-            } else if (datum.key.startsWith(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)) {
-                namspaceId = datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0]
-                    .substring(UtilsAndCommons.IPADDRESS_DATA_ID_PRE.length());
-                originDatumKey = UtilsAndCommons.IPADDRESS_DATA_ID_PRE +
-                    datum.key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
-            }
+        // datum key contains namespace info:
+        String namespaceId = KeyBuilder.getNamespace(datum.key);
 
-            if (StringUtils.isNotBlank(namspaceId)) {
+        if (StringUtils.isNotBlank(namespaceId)) {
 
-                if (namspaceId.equals(UtilsAndCommons.DEFAULT_NAMESPACE_ID)) {
-
-                    File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(originDatumKey));
-                    if (cacheFile.exists() && !cacheFile.delete()) {
-                        Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", datum.key, datum.value);
-                        throw new IllegalStateException("failed to delete datum: " + datum.key);
-                    }
-                }
-
-                File cacheFile = new File(CACHE_DIR + File.separator + namspaceId + File.separator + encodeFileName(datum.key));
-                if (cacheFile.exists() && !cacheFile.delete()) {
-                    Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", datum.key, datum.value);
-                    throw new IllegalStateException("failed to delete datum: " + datum.key);
-                }
-            }
-        } else {
-            File cacheFile = new File(CACHE_DIR + File.separator + encodeFileName(datum.key));
+            File cacheFile = new File(CACHE_DIR + File.separator + namespaceId + File.separator + encodeFileName(datum.key));
             if (cacheFile.exists() && !cacheFile.delete()) {
                 Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", datum.key, datum.value);
                 throw new IllegalStateException("failed to delete datum: " + datum.key);
