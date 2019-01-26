@@ -847,6 +847,19 @@ public class RaftCore {
         notifier.addTask(datum, ApplyAction.CHANGE);
     }
 
+    public void loadDatum(String key) {
+        try {
+            Datum datum = raftStore.load(key);
+            if (datum == null) {
+                return;
+            }
+            datums.put(key, datum);
+        } catch (Exception e) {
+            Loggers.RAFT.error("load datum failed: " + key, e);
+        }
+
+    }
+
     private void deleteDatum(String key) {
 
         Datum deleted = null;

@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.naming.cluster.transport;
 
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.naming.consistency.Datum;
+
 import java.util.Map;
 
 /**
@@ -35,15 +38,6 @@ public interface Serializer {
     <T> byte[] serialize(T data);
 
     /**
-     * Serialize map data with some kind of serializing protocol
-     *
-     * @param data data to serialize
-     * @param <T>  type of data
-     * @return byte array of serialized data
-     */
-    <T> byte[] serializeMap(Map<String, T> data);
-
-    /**
      * Deserialize byte array data to target type
      *
      * @param data  data to deserialize
@@ -54,12 +48,22 @@ public interface Serializer {
     <T> T deserialize(byte[] data, Class<T> clazz);
 
     /**
-     * Deserialize byte array data to target type
+     * Deserialize byte array data to target generic type
      *
      * @param data  data to deserialize
      * @param clazz target type
      * @param <T>   target type
+     * @return deserialized data
+     */
+    <T> T deserialize(byte[] data, TypeReference<T> clazz);
+
+    /**
+     * Deserialize byte array data to target type
+     *
+     * @param <T>   target type
+     * @param data  data to deserialize
+     * @param clazz target type
      * @return deserialized data map
      */
-    <T> Map<String, T> deserializeMap(byte[] data, Class<T> clazz);
+    <T> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz);
 }

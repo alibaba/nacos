@@ -89,14 +89,14 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-        List<Instance> ips = task.getCluster().allIPs();
+        List<Instance> ips = task.getCluster().allIPs(false);
 
         SRV_LOG.debug("mysql check, ips:" + ips);
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
 
-        Service service = (Service) task.getCluster().getDom();
+        Service service = task.getCluster().getDom();
 
         if (!healthCheckCommon.isHealthCheckEnabled(service)) {
             return;

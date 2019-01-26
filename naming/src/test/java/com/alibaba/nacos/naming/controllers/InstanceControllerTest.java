@@ -83,7 +83,7 @@ public class InstanceControllerTest extends BaseTest {
         instance.setPort(9999);
         List<Instance> ipList = new ArrayList<Instance>();
         ipList.add(instance);
-        domain.updateIPs(ipList);
+        domain.updateIPs(ipList, false);
 
         Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
 
@@ -132,7 +132,7 @@ public class InstanceControllerTest extends BaseTest {
         instance.setWeight(2.0);
         List<Instance> ipList = new ArrayList<Instance>();
         ipList.add(instance);
-        domain.updateIPs(ipList);
+        domain.updateIPs(ipList, false);
 
         Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
 

@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -22,6 +24,7 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
+import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -52,11 +55,12 @@ public class PartitionController {
     @RequestMapping("/onSync")
     public String onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
         byte[] data = IoUtils.tryDecompress(request.getInputStream());
-        Map<String, Object> dataMap = serializer.deserializeMap(data, Object.class);
-        for (String key : dataMap.keySet()) {
-            if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
-                List<Instance> list = (List<Instance>) dataMap.get(key);
-                consistencyService.onPut(key, list);
+        Map<String, Datum<Instances>> dataMap =
+            serializer.deserializeMap(data, Instances.class);
+
+        for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
+            if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
+                consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
         }
         return "ok";
@@ -66,7 +70,7 @@ public class PartitionController {
     public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         byte[] data = IoUtils.tryDecompress(request.getInputStream());
-        Map<String, Long> dataMap = serializer.deserializeMap(data, Long.class);
+        Map<String, Long> dataMap = serializer.deserialize(data, new TypeReference<Map<String, Long>>(){});
         consistencyService.onReceiveTimestamps(dataMap, source);
         return "ok";
     }
@@ -74,10 +78,11 @@ public class PartitionController {
     @RequestMapping("/get")
     public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String keys = WebUtils.required(request, "keys");
-        Map<String, Datum> datumMap = new HashMap<>();
-        for (String key : keys.split(",")) {
-            datumMap.put(key, (Datum) consistencyService.get(key));
+        String keySplitter = ",";
+        Map<String, Datum<?>> datumMap = new HashMap<>(64);
+        for (String key : keys.split(keySplitter)) {
+            datumMap.put(key, consistencyService.get(key));
         }
-        response.getWriter().write(new String(serializer.serializeMap(datumMap), "UTF-8"));
+        response.getWriter().write(new String(serializer.serialize(datumMap), "UTF-8"));
     }
 }

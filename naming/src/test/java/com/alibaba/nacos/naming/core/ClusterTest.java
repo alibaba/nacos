@@ -87,7 +87,7 @@ public class ClusterTest {
         list.add(instance1);
         list.add(instance2);
 
-        cluster.updateIPs(list);
+        cluster.updateIPs(list, false);
 
         List<Instance> ips = cluster.allIPs();
         Assert.assertNotNull(ips);

@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -83,7 +84,17 @@ public class DomainTest {
         List<Instance> list = new ArrayList<Instance>();
         list.add(instance);
 
-        domain.onChange("iplist", JSON.toJSONString(list));
+        Instances instances = new Instances();
+
+        Map<String, Instance> instanceMap = new HashMap<>();
+
+        for (Instance instance1 : list) {
+            instanceMap.put(instance1.getDatumKey(), instance1);
+        }
+
+        instances.setInstanceMap(instanceMap);
+
+        domain.onChange("iplist", instances);
 
         List<Instance> ips = domain.allIPs();
 

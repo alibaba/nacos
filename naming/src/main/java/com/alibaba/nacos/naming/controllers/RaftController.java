@@ -18,12 +18,17 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.*;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.NeedAuth;
@@ -75,8 +80,8 @@ public class RaftController {
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
-
-        String value = Arrays.asList(entity).toArray(new String[1])[0];
+//        String value = Arrays.asList(entity).toArray(new String[1])[0];
+        String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
 
         JSONObject json = JSON.parseObject(value);
@@ -111,7 +116,7 @@ public class RaftController {
     @RequestMapping("/reloadDatum")
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String key = WebUtils.required(request, "key");
-        RaftStore.load(key);
+        raftCore.loadDatum(key);
         return "ok";
     }
 
@@ -124,14 +129,23 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-
-        String value = Arrays.asList(entity).toArray(new String[1])[0];
+//        String value = Arrays.asList(entity).toArray(new String[1])[0];
+        String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
-        raftConsistencyService.put(json.getString("key"), json.getString("value"), String.class);
+        String key = json.getString("key");
+        if (KeyBuilder.matchInstanceListKey(key)) {
+            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), new TypeReference<Map<String, Instance>>(){}));
+            return "ok";
+        }
 
-        return "ok";
+        if (KeyBuilder.matchServiceMetaKey(key)) {
+            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), new TypeReference<Service>(){}));
+            return "ok";
+        }
+
+        throw new NacosException(NacosException.INVALID_PARAM, "unknown type publish key: " + key);
     }
 
     @NeedAuth
@@ -188,9 +202,8 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-
-        String value = Arrays.asList(entity).toArray(new String[1])[0];
-        value = URLDecoder.decode(value, "UTF-8");
+//        String value = Arrays.asList(entity).toArray(new String[1])[0];
+        String value = URLDecoder.decode(entity, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 
         Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
@@ -209,7 +222,8 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        String value = Arrays.asList(entity).toArray(new String[1])[0];
+//        String value = Arrays.asList(entity).toArray(new String[1])[0];
+        String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 

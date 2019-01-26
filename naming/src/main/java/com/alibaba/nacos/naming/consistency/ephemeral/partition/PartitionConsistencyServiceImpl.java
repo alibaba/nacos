@@ -16,13 +16,14 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,16 +77,16 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     }
 
     @Override
-    public Datum get(String key) throws NacosException {
+    public Datum<?> get(String key) throws NacosException {
         return dataStore.get(key);
     }
 
     public void onPut(String key, Object value) {
 
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
-            List<Instance> instances = (List<Instance>) value;
-            Datum<List<Instance>> datum = new Datum<>();
-            datum.value = instances;
+            Instances instances = (Instances) value;
+            Datum<Map<String, Instance>> datum = new Datum<>();
+            datum.value = instances.getInstanceMap();
             datum.key = key;
             datum.timestamp.set(System.currentTimeMillis());
             dataStore.put(key, datum);
@@ -126,7 +127,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         for (Map.Entry<String, Long> entry : timestamps.entrySet()) {
             if (isResponsible(entry.getKey())) {
                 // this key should not be sent from remote server:
-                Loggers.EPHEMERAL.error("receive timestamp of " + entry.getKey() + " from " + server);
+                Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
                 continue;
             }
             if (!dataStore.contains(entry.getKey()) || dataStore.get(entry.getKey()).timestamp.get() < entry.getValue()) {
@@ -149,9 +150,22 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         try {
             byte[] result = NamingProxy.getData(toUpdateKeys, server);
             if (result.length > 0) {
-                Map<String, Datum> datumMap = serializer.deserializeMap(result, Datum.class);
-                for (Map.Entry<String, Datum> entry : datumMap.entrySet()) {
+                Map<String, Datum<Instances>> datumMap =
+                    serializer.deserializeMap(result, Instances.class);
+
+                for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
                     dataStore.put(entry.getKey(), entry.getValue());
+
+                    if (!listeners.containsKey(entry.getKey())) {
+                        return;
+                    }
+                    for (DataListener listener : listeners.get(entry.getKey())) {
+                        try {
+                            listener.onChange(entry.getKey(), entry.getValue());
+                        } catch (Exception e) {
+                            Loggers.EPHEMERAL.error("notify " + listener + ", key: " + entry.getKey() + " failed.", e);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {

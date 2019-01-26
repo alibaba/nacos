@@ -352,7 +352,6 @@ public class ServiceManager implements DataListener<Service> {
     }
 
     public void addOrReplaceService(Service service) throws Exception {
-        // TODO use Service to put:
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
     }
 
@@ -431,9 +430,10 @@ public class ServiceManager implements DataListener<Service> {
 
         Map<String, Instance> instanceMap = addIpAddresses(service, ephemeral, ips);
 
-//        String value = JSON.toJSONString(ipAddressMap.values());
+        Instances instances = new Instances();
+        instances.setInstanceMap(instanceMap);
 
-        consistencyService.put(key, instanceMap);
+        consistencyService.put(key, instances);
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
@@ -446,9 +446,10 @@ public class ServiceManager implements DataListener<Service> {
 
         Map<String, Instance> instanceMap = substractIpAddresses(dom, ephemeral, ips);
 
-//        String value = JSON.toJSONString(ipAddressMap.values());
+        Instances instances = new Instances();
+        instances.setInstanceMap(instanceMap);
 
-        consistencyService.put(key, instanceMap);
+        consistencyService.put(key, instances);
     }
 
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
@@ -478,10 +479,10 @@ public class ServiceManager implements DataListener<Service> {
 
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(dom.getNamespaceId(), dom.getName(), ephemeral));
 
-        Map<String, Instance> oldInstances = new HashMap<>();
+        Map<String, Instance> oldInstances = new HashMap<>(16);
 
         if (datum != null) {
-            oldInstances = (Map<String, Instance>) datum.value;
+            oldInstances = ((Instances) datum.value).getInstanceMap();
         }
 
         Map<String, Instance> instances;
