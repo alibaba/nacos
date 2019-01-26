@@ -149,7 +149,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         try {
             byte[] result = NamingProxy.getData(toUpdateKeys, server);
             if (result.length > 0) {
-                Map<String, Datum> datumMap = serializer.deserialize(result, Datum.class);
+                Map<String, Datum> datumMap = serializer.deserializeMap(result, Datum.class);
                 for (Map.Entry<String, Datum> entry : datumMap.entrySet()) {
                     dataStore.put(entry.getKey(), entry.getValue());
                 }

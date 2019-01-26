@@ -88,7 +88,7 @@ public class DataSyncer implements MemberChangeListener {
 
                     List<String> keys = task.getKeys();
                     Map<String, Datum> datumMap = dataStore.batchGet(keys);
-                    byte[] data = serializer.serialize(datumMap);
+                    byte[] data = serializer.serializeMap(datumMap);
 
                     long timestamp = System.currentTimeMillis();
                     boolean success = NamingProxy.syncData(data, task.getTargetServer());

@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.members.Member;
+import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -83,6 +84,9 @@ public class ServiceManager implements DataListener<Service> {
     @Autowired
     private PushService pushService;
 
+    @Autowired
+    private Serializer serializer;
+
     /**
      * thread pool that processes getting domain detail from other server asynchronously
      */
@@ -105,10 +109,10 @@ public class ServiceManager implements DataListener<Service> {
         UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
 
         try {
-            Loggers.SRV_LOG.info("listen for {}", UtilsAndCommons.DOMAINS_DATA_ID_PRE);
-            consistencyService.listen(UtilsAndCommons.DOMAINS_DATA_ID_PRE, this);
+            Loggers.SRV_LOG.info("listen for service meta change");
+            consistencyService.listen(KeyBuilder.SERVICE_META_KEY_PREFIX, this);
         } catch (NacosException e) {
-            Loggers.SRV_LOG.error("listen for {} failed!", UtilsAndCommons.DOMAINS_DATA_ID_PRE);
+            Loggers.SRV_LOG.error("listen for service meta change failed!");
         }
     }
 
@@ -131,12 +135,12 @@ public class ServiceManager implements DataListener<Service> {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.startsWith(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
+        return KeyBuilder.matchServiceMetaKey(key);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + "*");
+        return KeyBuilder.matchServiceMetaKey(key);
     }
 
     @Override
@@ -174,9 +178,8 @@ public class ServiceManager implements DataListener<Service> {
 
     @Override
     public void onDelete(String key) throws Exception {
-        String domKey = StringUtils.removeStart(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE);
-        String namespace = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
-        String name = domKey.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+        String namespace = KeyBuilder.getNamespace(key);
+        String name = KeyBuilder.getServiceName(key);
         Service dom = chooseDomMap(namespace).remove(name);
         Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
 
@@ -345,12 +348,12 @@ public class ServiceManager implements DataListener<Service> {
     }
 
     public void easyRemoveDom(String namespaceId, String serviceName) throws Exception {
-        Service dom = getService(namespaceId, serviceName);
-        consistencyService.remove(UtilsAndCommons.getDomStoreKey(dom));
+        consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
     }
 
-    public void addOrReplaceService(Service newDom) throws Exception {
-        consistencyService.put(UtilsAndCommons.getDomStoreKey(newDom), JSON.toJSONString(newDom));
+    public void addOrReplaceService(Service service) throws Exception {
+        // TODO use Service to put:
+        consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
     }
 
     /**
@@ -424,13 +427,13 @@ public class ServiceManager implements DataListener<Service> {
 
         key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
-        Service dom = getService(namespaceId, serviceName);
+        Service service = getService(namespaceId, serviceName);
 
-        Map<String, Instance> ipAddressMap = addIpAddresses(dom, ephemeral, ips);
+        Map<String, Instance> instanceMap = addIpAddresses(service, ephemeral, ips);
 
-        String value = JSON.toJSONString(ipAddressMap.values());
+//        String value = JSON.toJSONString(ipAddressMap.values());
 
-        consistencyService.put(key, value);
+        consistencyService.put(key, instanceMap);
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
@@ -441,11 +444,11 @@ public class ServiceManager implements DataListener<Service> {
 
         Service dom = getService(namespaceId, serviceName);
 
-        Map<String, Instance> ipAddressMap = substractIpAddresses(dom, ephemeral, ips);
+        Map<String, Instance> instanceMap = substractIpAddresses(dom, ephemeral, ips);
 
-        String value = JSON.toJSONString(ipAddressMap.values());
+//        String value = JSON.toJSONString(ipAddressMap.values());
 
-        consistencyService.put(key, value);
+        consistencyService.put(key, instanceMap);
     }
 
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
@@ -475,15 +478,13 @@ public class ServiceManager implements DataListener<Service> {
 
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(dom.getNamespaceId(), dom.getName(), ephemeral));
 
-        String oldJson = StringUtils.EMPTY;
-
-        List<Instance> oldInstances = new ArrayList<>();
+        Map<String, Instance> oldInstances = new HashMap<>();
 
         if (datum != null) {
-            oldInstances = (List<Instance>) datum.value;
+            oldInstances = (Map<String, Instance>) datum.value;
         }
 
-        List<Instance> instances;
+        Map<String, Instance> instances;
         List<Instance> currentIPs = dom.allIPs(ephemeral);
         Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
 
@@ -493,11 +494,9 @@ public class ServiceManager implements DataListener<Service> {
 
         instances = setValid(oldInstances, map);
 
-        Map<String, Instance> instanceMap = new HashMap<>(instances.size());
-
-        for (Instance instance : instances) {
-            instanceMap.put(instance.getDatumKey(), instance);
-        }
+        // use HashMap for deep copy:
+        HashMap<String, Instance> instanceMap = new HashMap<>(instances.size());
+        instanceMap.putAll(instances);
 
         for (Instance instance : ips) {
             if (!dom.getClusterMap().containsKey(instance.getClusterName())) {
@@ -532,8 +531,8 @@ public class ServiceManager implements DataListener<Service> {
         return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
 
-    private List<Instance> setValid(List<Instance> oldInstances, Map<String, Instance> map) {
-        for (Instance instance : oldInstances) {
+    private Map<String, Instance> setValid(Map<String, Instance> oldInstances, Map<String, Instance> map) {
+        for (Instance instance : oldInstances.values()) {
             Instance instance1 = map.get(instance.toIPAddr());
             if (instance1 != null) {
                 instance.setValid(instance1.isValid());

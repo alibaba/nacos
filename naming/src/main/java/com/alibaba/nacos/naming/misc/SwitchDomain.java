@@ -159,12 +159,12 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
+        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
+        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }
 
     @Override

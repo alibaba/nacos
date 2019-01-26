@@ -94,9 +94,6 @@ public class ClientBeatCheckTask implements Runnable {
 
     private void deleteIP(Instance instance) {
         try {
-            String ipList = instance.getIp() + ":" + instance.getPort() + "_"
-                + instance.getWeight() + "_" + instance.getClusterName();
-
             NamingProxy.Request request = NamingProxy.Request.newRequest();
             request.appendParam("ip", instance.getIp())
                 .appendParam("port", String.valueOf(instance.getPort()))
@@ -114,6 +111,5 @@ public class ClientBeatCheckTask implements Runnable {
         } catch (Exception e) {
             Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJSON(), e);
         }
-
     }
 }

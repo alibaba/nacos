@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
@@ -240,7 +241,9 @@ public class RaftCore {
             json.put("datum", datum);
             json.put("source", peers.local());
 
-            for (final String server : peers.allServersIncludeMyself()) {
+            onDelete(datum, peers.local());
+
+            for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildURL(server, API_ON_DEL);
                 HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(json)
                     , new AsyncCompletionHandler<Integer>() {
@@ -266,7 +269,7 @@ public class RaftCore {
 
     public <T> void onPublish(Datum<T> datum, RaftPeer source) throws Exception {
         RaftPeer local = peers.local();
-        if (StringUtils.isBlank((String) datum.value)) {
+        if (datum.value == null) {
             Loggers.RAFT.warn("received empty datum");
             throw new IllegalStateException("received empty datum");
         }
@@ -287,8 +290,8 @@ public class RaftCore {
 
         local.resetLeaderDue();
 
-        // do apply
-        if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) || UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
+        // if data should be persistent, usually this is always true:
+        if (KeyBuilder.matchPersistentKey(datum.key)) {
             RaftStore.write(datum);
         }
 
@@ -335,7 +338,7 @@ public class RaftCore {
         String key = datum.key;
         deleteDatum(key);
 
-        if (key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
+        if (KeyBuilder.matchServiceMetaKey(key)) {
 
             if (local.term.get() + PUBLISH_TERM_INCREASE_COUNT > source.term.get()) {
                 //set leader term:
@@ -501,20 +504,11 @@ public class RaftCore {
                 for (Datum datum : datums.values()) {
 
                     JSONObject element = new JSONObject();
-                    String key;
 
-                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
-                        key = (datum.key).split(UtilsAndCommons.DOMAINS_DATA_ID_PRE)[1];
-                        element.put("key", UtilsAndCommons.RAFT_DOM_PRE + key);
-                    } else if (datum.key.startsWith(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)) {
-                        key = (datum.key).split(UtilsAndCommons.IPADDRESS_DATA_ID_PRE)[1];
-                        element.put("key", UtilsAndCommons.RAFT_IPLIST_PRE + key);
-                    } else if (datum.key.startsWith(UtilsAndCommons.TAG_DOMAINS_DATA_ID)) {
-                        key = (datum.key).split(UtilsAndCommons.TAG_DOMAINS_DATA_ID)[1];
-                        element.put("key", UtilsAndCommons.RAFT_TAG_DOM_PRE + key);
-                    } else if (datum.key.startsWith(UtilsAndCommons.NODE_TAG_IP_PRE)) {
-                        key = (datum.key).split(UtilsAndCommons.NODE_TAG_IP_PRE)[1];
-                        element.put("key", UtilsAndCommons.RAFT_TAG_IPLIST_PRE + key);
+                    if (KeyBuilder.matchServiceMetaKey(datum.key)) {
+                        element.put("key", KeyBuilder.briefServiceMetaKey(datum.key));
+                    } else if (KeyBuilder.matchInstanceListKey(datum.key)) {
+                        element.put("key", KeyBuilder.briefInstanceListkey(datum.key));
                     }
                     element.put("timestamp", datum.timestamp);
 
@@ -631,18 +625,13 @@ public class RaftCore {
                 String key = entry.getString("key");
                 final String datumKey;
 
-                if (key.startsWith(UtilsAndCommons.RAFT_DOM_PRE)) {
-                    int index = key.indexOf(UtilsAndCommons.RAFT_DOM_PRE);
-                    datumKey = UtilsAndCommons.DOMAINS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_DOM_PRE.length());
-                } else if (key.startsWith(UtilsAndCommons.RAFT_IPLIST_PRE)) {
-                    int index = key.indexOf(UtilsAndCommons.RAFT_IPLIST_PRE);
-                    datumKey = UtilsAndCommons.IPADDRESS_DATA_ID_PRE + key.substring(index + UtilsAndCommons.RAFT_IPLIST_PRE.length());
-                } else if (key.startsWith(UtilsAndCommons.RAFT_TAG_DOM_PRE)) {
-                    int index = key.indexOf(UtilsAndCommons.RAFT_TAG_DOM_PRE);
-                    datumKey = UtilsAndCommons.TAG_DOMAINS_DATA_ID + key.substring(index + UtilsAndCommons.RAFT_TAG_DOM_PRE.length());
+                if (KeyBuilder.matchServiceMetaKey(key)) {
+                    datumKey = KeyBuilder.detailServiceMetaKey(key);
+                } else if  (KeyBuilder.matchInstanceListKey(key)) {
+                    datumKey = KeyBuilder.detailInstanceListkey(key);
                 } else {
-                    int index = key.indexOf(UtilsAndCommons.RAFT_TAG_IPLIST_PRE);
-                    datumKey = UtilsAndCommons.NODE_TAG_IP_PRE + key.substring(index + UtilsAndCommons.RAFT_TAG_IPLIST_PRE.length());
+                    // ignore corrupted key:
+                    continue;
                 }
 
                 long timestamp = entry.getLong("timestamp");
@@ -866,6 +855,7 @@ public class RaftCore {
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
         }
+        // FIXME should we ignore the value of 'deleted'?
         if (deleted != null) {
             RaftStore.delete(deleted);
             notifier.addTask(deleted, ApplyAction.DELETE);
@@ -914,10 +904,10 @@ public class RaftCore {
 
                     int count = 0;
 
-                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) &&
-                        listeners.containsKey(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
+                    if (KeyBuilder.matchServiceMetaKey(datum.key) &&
+                        listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
 
-                        for (DataListener listener : listeners.get(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
+                        for (DataListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                             try {
                                 if (action == ApplyAction.CHANGE) {
                                     listener.onChange(datum.key, getDatum(datum.key).value);

@@ -63,7 +63,7 @@ public class UtilsAndCommons {
 
     public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
 
-    // ********************** Nacos HTTP Context ************************ \\
+    // ********************** Nacos HTTP Context ************************ //
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
 
@@ -74,10 +74,6 @@ public class UtilsAndCommons {
     public static final String DOMAINS_DATA_ID_PRE = "com.alibaba.nacos.naming.domains.meta.";
 
     public static final String IPADDRESS_DATA_ID_PRE = "com.alibaba.nacos.naming.iplist.";
-
-    static public final String NODE_TAG_IP_PRE = "com.alibaba.nacos.naming.tag.iplist.";
-
-    public static final String TAG_DOMAINS_DATA_ID = "com.alibaba.nacos.naming.domains.tag.meta";
 
     public static final String SWITCH_DOMAIN_NAME = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
 

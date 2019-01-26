@@ -52,7 +52,7 @@ public class PartitionController {
     @RequestMapping("/onSync")
     public String onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
         byte[] data = IoUtils.tryDecompress(request.getInputStream());
-        Map<String, Object> dataMap = serializer.deserialize(data, Object.class);
+        Map<String, Object> dataMap = serializer.deserializeMap(data, Object.class);
         for (String key : dataMap.keySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
                 List<Instance> list = (List<Instance>) dataMap.get(key);
@@ -66,7 +66,7 @@ public class PartitionController {
     public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         byte[] data = IoUtils.tryDecompress(request.getInputStream());
-        Map<String, Long> dataMap = serializer.deserialize(data, Long.class);
+        Map<String, Long> dataMap = serializer.deserializeMap(data, Long.class);
         consistencyService.onReceiveTimestamps(dataMap, source);
         return "ok";
     }
@@ -78,6 +78,6 @@ public class PartitionController {
         for (String key : keys.split(",")) {
             datumMap.put(key, (Datum) consistencyService.get(key));
         }
-        response.getWriter().write(new String(serializer.serialize(datumMap), "UTF-8"));
+        response.getWriter().write(new String(serializer.serializeMap(datumMap), "UTF-8"));
     }
 }
