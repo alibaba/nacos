@@ -108,10 +108,6 @@ public class HealthCheckCommon {
         }, 500, TimeUnit.MILLISECONDS);
     }
 
-    public boolean isHealthCheckEnabled(Service service) {
-        return service.getHealthCheckMode().equals(HealthCheckMode.server.name());
-    }
-
     public void reEvaluateCheckRT(long checkRT, HealthCheckTask task, SwitchDomain.HealthParams params) {
         task.setCheckRTLast(checkRT);
 

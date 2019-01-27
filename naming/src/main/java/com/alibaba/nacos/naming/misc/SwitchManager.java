@@ -235,17 +235,6 @@ public class SwitchManager {
                 return;
             }
 
-            if (entry.equals(SwitchEntry.DEFAULT_HEALTH_CHECK_MODE)) {
-                String defaultHealthCheckMode = value;
-
-                switchDomain.setDefaultHealthCheckMode(defaultHealthCheckMode);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
-                }
-                return;
-            }
-
             if (entry.equals(SwitchEntry.DOM_STATUS_SYNC_PERIOD)) {
                 Long millis = Long.parseLong(value);
 

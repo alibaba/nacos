@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -102,7 +102,7 @@ public class HealthController {
         } else {
             Service service = serviceManager.getService(namespaceId, dom);
             // Only health check "none" need update health status with api
-            if (service.getHealthCheckMode().equals(HealthCheckMode.none.name())) {
+            if (HealthCheckType.NONE.name().equals(service.getClusterMap().get(clusterName).getHealthChecker().getType())) {
                 for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
                     if (instance.getIp().equals(ip) && instance.getPort() == port) {
                         instance.setValid(valid);

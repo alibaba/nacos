@@ -19,7 +19,6 @@ import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.lang3.RandomUtils;
@@ -70,7 +69,8 @@ public class HealthCheckTask implements Runnable {
     public void run() {
 
         try {
-            if (distroMapper.responsible(cluster.getDom().getName())) {
+            if (distroMapper.responsible(cluster.getDom().getName()) &&
+                switchDomain.isHealthCheckEnabled(cluster.getDom().getName())) {
                 healthCheckProcessor.process(this);
                 Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getDom().getName());
             }
@@ -92,12 +92,10 @@ public class HealthCheckTask implements Runnable {
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
                     Cluster cluster = this.getCluster();
-                    if ((cluster.getDom()).getHealthCheckMode().equals(HealthCheckMode.server.name())) {
-                        Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                            cluster.getDom().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
-                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
-                            this.getCheckRTLast(), diff);
-                    }
+                    Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
+                        cluster.getDom().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                        this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
+                        this.getCheckRTLast(), diff);
                 }
             }
         }

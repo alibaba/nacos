@@ -135,25 +135,37 @@ public class RaftStore {
             }
 
             if (KeyBuilder.matchServiceMetaKey(file.getName())) {
-                return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
-                });
+                try {
+                    return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
+                    });
+                } catch (Exception e) {
+                    Datum<String> datum = JSON.parseObject(json, new TypeReference<Datum<String>>(){});
+                    Datum<Service> serviceDatum = new Datum<>();
+                    serviceDatum.timestamp.set(datum.timestamp.get());
+                    serviceDatum.key = datum.key;
+                    serviceDatum.value = JSON.parseObject(datum.value, Service.class);
+                    return serviceDatum;
+                }
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {
-                Datum<List<Instance>> datum = JSON.parseObject(json, new TypeReference<Datum<List<Instance>>>() {
-                });
-                Map<String, Instance> instanceMap = new HashMap<>(64);
-                if (datum.value == null || datum.value.isEmpty()) {
-                    return datum;
+                try {
+                    return JSON.parseObject(json, new TypeReference<Datum<Instances>>() {
+                    });
+                } catch (Exception e) {
+                    Datum<String> datum = JSON.parseObject(json, new TypeReference<Datum<String>>(){});
+                    List<Instance> instanceList = JSON.parseObject(datum.value, new TypeReference<List<Instance>>(){});
+                    Datum<Instances> instancesDatum = new Datum<>();
+                    instancesDatum.key = datum.key;
+                    instancesDatum.timestamp.set(datum.timestamp.get());
+
+                    Instances instances = new Instances();
+                    instances.setInstanceMap(new HashMap<>(16));
+                    for (Instance instance : instanceList) {
+                        instances.getInstanceMap().put(instance.getDatumKey(), instance);
+                    }
+                    return instancesDatum;
                 }
-                for (Instance instance : datum.value) {
-                    instanceMap.put(instance.getDatumKey(), instance);
-                }
-                Datum<Map<String, Instance>> mapDatum = new Datum<>();
-                mapDatum.value = instanceMap;
-                mapDatum.key = datum.key;
-                mapDatum.timestamp.set(datum.timestamp.get());
-                return mapDatum;
             }
 
             return JSON.parseObject(json, Datum.class);

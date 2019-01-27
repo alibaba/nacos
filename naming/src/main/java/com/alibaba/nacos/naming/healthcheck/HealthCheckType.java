@@ -30,5 +30,9 @@ public enum HealthCheckType {
     /**
      * MySQL type
      */
-    MYSQL
+    MYSQL,
+    /**
+     * No check
+     */
+    NONE
 }

@@ -33,6 +33,9 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
     @Autowired
     private MysqlHealthCheckProcessor mysqlProcessor;
 
+    @Autowired
+    private NoneHealthCheckProcessor noneProcessor;
+
     @Override
     public void process(HealthCheckTask task) {
 
@@ -53,7 +56,7 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
             return;
         }
 
-        throw new IllegalArgumentException("Unknown check type: " + type);
+        noneProcessor.process(task);
     }
 
     @Override
