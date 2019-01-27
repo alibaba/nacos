@@ -409,10 +409,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             resetWeight = vDom.getResetWeight();
         }
 
-        if (getHealthCheckMode().equals(vDom.getHealthCheckMode())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, healthCheckMode: {} -> {}", getName(), getHealthCheckMode(), vDom.getHealthCheckMode());
-        }
-
         if (enabled != vDom.getEnabled().booleanValue()) {
             Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
             enabled = vDom.getEnabled();

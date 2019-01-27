@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
 import org.junit.Before;
@@ -49,7 +47,6 @@ public class DomainTest {
 
         Service newDomain = new Service();
         newDomain.setName("nacos.domain.1");
-        newDomain.setHealthCheckMode(HealthCheckMode.client.name());
         newDomain.setProtectThreshold(0.7f);
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
@@ -58,7 +55,6 @@ public class DomainTest {
 
         domain.update(newDomain);
 
-        Assert.assertEquals(HealthCheckMode.client.name(), domain.getHealthCheckMode());
         Assert.assertEquals(0.7f, domain.getProtectThreshold(), 0.0001f);
     }
 

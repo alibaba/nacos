@@ -28,8 +28,10 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 @Component
+@DependsOn("serverListManager")
 public class DataSyncer implements MemberChangeListener {
 
     @Autowired
@@ -61,7 +64,8 @@ public class DataSyncer implements MemberChangeListener {
 
     private List<Member> servers;
 
-    public DataSyncer() {
+    @PostConstruct
+    public void init() {
         serverListManager.listen(this);
         startTimedSync();
     }

@@ -61,10 +61,6 @@ public class ClientBeatProcessor implements Runnable {
 
     public void process() {
         Service service = this.service;
-        if (!service.getHealthCheckMode().equals(HealthCheckMode.client.name())) {
-            return;
-        }
-
         Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: {}", rsInfo.toString());
 
         String ip = rsInfo.getIp();

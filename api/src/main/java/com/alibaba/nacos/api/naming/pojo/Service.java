@@ -50,6 +50,7 @@ public class Service {
     /**
      * Health check mode.
      */
+    @Deprecated
     private String healthCheckMode;
 
     /**

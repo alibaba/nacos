@@ -78,7 +78,6 @@ public class ServiceController {
         }
 
         float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
-        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", switchDomain.defaultHealthCheckMode);
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
@@ -89,7 +88,6 @@ public class ServiceController {
         Service domObj = new Service();
         domObj.setName(serviceName);
         domObj.setProtectThreshold(protectThreshold);
-        domObj.setHealthCheckMode(healthCheckMode.toLowerCase());
         domObj.setEnabled(true);
         domObj.setMetadata(metadataMap);
         domObj.setSelector(parseSelector(selector));
@@ -142,7 +140,6 @@ public class ServiceController {
         res.put("name", serviceName);
         res.put("namespaceId", domain.getNamespaceId());
         res.put("protectThreshold", domain.getProtectThreshold());
-        res.put("healthCheckMode", domain.getHealthCheckMode());
         res.put("metadata", domain.getMetadata());
         res.put("selector", domain.getSelector());
 

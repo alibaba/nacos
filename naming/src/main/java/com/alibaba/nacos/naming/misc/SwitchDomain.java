@@ -17,8 +17,6 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.consistency.DataListener;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -51,8 +49,6 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
     public Map<String, Long> pushCacheMillisMap = new HashMap<String, Long>();
 
     public boolean healthCheckEnabled = true;
-
-    public String defaultHealthCheckMode = HealthCheckMode.client.name();
 
     public boolean distroEnabled = true;
 
@@ -257,14 +253,6 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     public boolean isHealthCheckEnabled(String dom) {
         return healthCheckEnabled || getHealthCheckWhiteList().contains(dom);
-    }
-
-    public String getDefaultHealthCheckMode() {
-        return defaultHealthCheckMode;
-    }
-
-    public void setDefaultHealthCheckMode(String defaultHealthCheckMode) {
-        this.defaultHealthCheckMode = defaultHealthCheckMode;
     }
 
     public boolean isDistroEnabled() {

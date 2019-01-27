@@ -96,12 +96,6 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
             return;
         }
 
-        Service service = task.getCluster().getDom();
-
-        if (!healthCheckCommon.isHealthCheckEnabled(service)) {
-            return;
-        }
-
         for (Instance ip : ips) {
             try {
 

@@ -60,12 +60,11 @@ public class ClientBeatCheckTask implements Runnable {
     @Override
     public void run() {
         try {
-            if (!domain.getHealthCheckMode().equals(HealthCheckMode.client.name()) ||
-                !getDistroMapper().responsible(domain.getName())) {
+            if (!getDistroMapper().responsible(domain.getName())) {
                 return;
             }
 
-            List<Instance> instances = domain.allIPs();
+            List<Instance> instances = domain.allIPs(true);
 
             for (Instance instance : instances) {
                 if (System.currentTimeMillis() - instance.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {

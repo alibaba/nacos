@@ -90,9 +90,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
             return;
         }
 
-        Service service = task.getCluster().getDom();
-
-        if (!switchDomain.isHealthCheckEnabled() || !service.getHealthCheckMode().equals(HealthCheckMode.server.name())) {
+        if (!switchDomain.isHealthCheckEnabled()) {
             return;
         }
 

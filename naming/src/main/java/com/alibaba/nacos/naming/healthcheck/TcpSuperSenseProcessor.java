@@ -113,10 +113,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
         }
         Service service = task.getCluster().getDom();
 
-        if (!healthCheckCommon.isHealthCheckEnabled(service)) {
-            return;
-        }
-
         for (Instance ip : ips) {
 
             if (ip.isMarked()) {

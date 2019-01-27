@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * Stores some configurations for Partition protocol
@@ -23,15 +24,16 @@ import org.springframework.beans.factory.annotation.Value;
  * @author nkorange
  * @since 1.0.0
  */
+@Component
 public class PartitionConfig {
 
-    @Value("taskDispatchThreadCount")
+    @Value("${nacos.naming.partition.taskDispatchThreadCount}")
     private int taskDispatchThreadCount = 10;
 
-    @Value("taskDispatchPeriod")
+    @Value("${nacos.naming.partition.taskDispatchPeriod}")
     private int taskDispatchPeriod = 2000;
 
-    @Value("batchSyncKeyCount")
+    @Value("${nacos.naming.partition.batchSyncKeyCount}")
     private int batchSyncKeyCount = 1000;
 
     public int getTaskDispatchThreadCount() {
