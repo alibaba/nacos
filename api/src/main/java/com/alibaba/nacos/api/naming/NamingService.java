@@ -39,6 +39,7 @@ public interface NamingService {
      * @param port        instance port
      * @throws NacosException
      */
+    @Deprecated
     void registerInstance(String serviceName, String ip, int port) throws NacosException;
 
     /**
@@ -50,6 +51,7 @@ public interface NamingService {
      * @param clusterName instance cluster name
      * @throws NacosException
      */
+    @Deprecated
     void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
 
     /**
@@ -60,6 +62,16 @@ public interface NamingService {
      * @throws NacosException
      */
     void registerInstance(String serviceName, Instance instance) throws NacosException;
+
+    /**
+     * register a instance to service with specified instance properties
+     *
+     * @param serviceName name of service
+     * @param namespace namespace of service
+     * @param instance    instance to register
+     * @throws NacosException
+     */
+    void registerInstance(String serviceName, String namespace, Instance instance) throws NacosException;
 
     /**
      * deregister instance from a service

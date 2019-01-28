@@ -156,7 +156,7 @@ public class NamingProxy {
         }
     }
 
-    public void registerService(String serviceName, Instance instance) throws NacosException {
+    public void registerService(String serviceName, String namespace, Instance instance) throws NacosException {
 
         LogUtils.LOG.info("REGISTER-SERVICE", "{} registering service {} with instance: {}",
             namespaceId, serviceName, instance);
@@ -171,6 +171,10 @@ public class NamingProxy {
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
         params.put("serviceName", serviceName);
         params.put("clusterName", instance.getClusterName());
+
+        if (StringUtils.isNotEmpty(namespace)) {
+            params.put("namespace", namespace);
+        }
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
