@@ -164,6 +164,21 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, Instance instance) throws NacosException {
 
+        registerInstance(serviceName, null, instance);
+
+    }
+
+    /**
+     * register a instance to service with specified instance properties
+     *
+     * @param serviceName name of service
+     * @param namespace   name of namespace
+     * @param instance    instance to register
+     * @throws NacosException
+     */
+    @Override
+    public void registerInstance(String serviceName, String namespace, Instance instance) throws NacosException {
+
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName(serviceName);
         beatInfo.setIp(instance.getIp());
@@ -175,7 +190,8 @@ public class NacosNamingService implements NamingService {
 
         beatReactor.addBeatInfo(serviceName, beatInfo);
 
-        serverProxy.registerService(serviceName, instance);
+        serverProxy.registerService(serviceName, namespace, instance);
+
     }
 
     @Override
