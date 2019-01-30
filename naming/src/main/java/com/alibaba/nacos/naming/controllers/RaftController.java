@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.*;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -206,8 +207,26 @@ public class RaftController {
         String value = URLDecoder.decode(entity, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 
-        Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
         RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
+        Datum<JSONObject> datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<JSONObject>>(){});
+
+        if (KeyBuilder.matchInstanceListKey(datum.key)) {
+            Datum<Instances> instancesDatum = new Datum<>();
+            instancesDatum.key = datum.key;
+            instancesDatum.timestamp.set(datum.timestamp.get());
+            instancesDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Instances.class);
+            raftConsistencyService.onPut(instancesDatum, source);
+            return "ok";
+        }
+
+        if (KeyBuilder.matchServiceMetaKey(datum.key)) {
+            Datum<Service> serviceDatum = new Datum<>();
+            serviceDatum.key = datum.key;
+            serviceDatum.timestamp.set(datum.timestamp.get());
+            serviceDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Service.class);
+            raftConsistencyService.onPut(serviceDatum, source);
+            return "ok";
+        }
 
         raftConsistencyService.onPut(datum, source);
         return "ok";

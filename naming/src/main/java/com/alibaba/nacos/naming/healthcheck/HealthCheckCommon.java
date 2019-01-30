@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.members.Member;
+import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -76,13 +76,13 @@ public class HealthCheckCommon {
                 List list = Arrays.asList(healthCheckResults.toArray());
                 healthCheckResults.clear();
 
-                List<Member> sameSiteServers = serverListManager.getMembers();
+                List<Server> sameSiteServers = serverListManager.getServers();
 
                 if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                     return;
                 }
 
-                for (Member server : sameSiteServers) {
+                for (Server server : sameSiteServers) {
                     if (server.getKey().equals(NetUtils.localServer())) {
                         continue;
                     }

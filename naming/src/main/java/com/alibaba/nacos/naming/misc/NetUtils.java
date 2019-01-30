@@ -53,7 +53,7 @@ public class NetUtils {
     }
 
     public static String localServer() {
-        return getLocalAddress() + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+        return getLocalAddress() + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
     }
 
     public static String num2ip(int ip) {

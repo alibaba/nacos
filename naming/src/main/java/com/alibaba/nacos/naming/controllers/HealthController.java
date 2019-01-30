@@ -71,7 +71,7 @@ public class HealthController {
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "serviceName");
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
@@ -88,8 +88,8 @@ public class HealthController {
                 proxyParams.put(key, value);
             }
 
-            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
             }
 
             String url = "http://" + server + RunningConfig.getContextPath()

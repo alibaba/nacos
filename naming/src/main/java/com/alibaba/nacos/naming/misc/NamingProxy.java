@@ -128,8 +128,8 @@ public class NamingProxy {
 
             HttpClient.HttpResult result;
 
-            if (!curServer.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                curServer = curServer + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
             }
 
 
@@ -164,8 +164,8 @@ public class NamingProxy {
 
             HttpClient.HttpResult result;
 
-            if (!curServer.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                curServer = curServer + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
             }
 
             if (isPost) {

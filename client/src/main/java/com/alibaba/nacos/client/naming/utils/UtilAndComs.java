@@ -20,7 +20,7 @@ package com.alibaba.nacos.client.naming.utils;
  */
 public class UtilAndComs {
 
-    public static final String VERSION = "Nacos-Java-Client:v0.2.1";
+    public static final String VERSION = "Nacos-Java-Client:v1.0.0";
 
     public static final String ENCODING = "UTF-8";
 
@@ -37,8 +37,6 @@ public class UtilAndComs {
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
-
-    public static final String DEFAULT_NAMING_ID = "default";
 
     public static final String NACOS_NAMING_LOG_NAME = "com.alibaba.nacos.naming.log.filename";
 

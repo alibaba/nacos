@@ -86,50 +86,11 @@ public class DistroFilter implements Filter {
             return;
         }
 
-        if (!switchDomain.isDistroEnabled()) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
-
-        if (!canDistro(urlString)) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
-
-        String redirect = req.getParameter("redirect");
-        String dom = req.getParameter("domainString");
-        String targetIP = req.getParameter("targetIP");
-        if (StringUtils.isEmpty(dom)) {
-            dom = req.getParameter("dom");
-        }
-
-        if (StringUtils.isEmpty(dom)) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
-
-        if (StringUtils.isEmpty(redirect) && StringUtils.isEmpty(targetIP)) {
-            if (!distroMapper.responsible(dom)) {
-
-                String url = "http://" + distroMapper.mapSrv(dom) + ":" + req.getServerPort()
-                    + req.getRequestURI() + "?" + req.getQueryString();
-                try {
-                    resp.sendRedirect(url);
-                } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
-                }
-            }
-        }
-
         filterChain.doFilter(req, resp);
     }
 
     @Override
     public void destroy() {
 
-    }
-
-    public boolean canDistro(String urlString) {
-        return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
     }
 }

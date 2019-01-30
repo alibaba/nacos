@@ -43,7 +43,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
         String url = "http://" + serverIP + ":" + RunningConfig.getServerPort() + RunningConfig.getContextPath() +
                 UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/serviceStatus";
 
-        if (serverIP.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+        if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + RunningConfig.getContextPath() +
                     UtilsAndCommons.NACOS_NAMING_CONTEXT + "/service/serviceStatus";
         }

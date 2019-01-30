@@ -84,9 +84,8 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     public void onPut(String key, Object value) {
 
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
-            Instances instances = (Instances) value;
-            Datum<Map<String, Instance>> datum = new Datum<>();
-            datum.value = instances.getInstanceMap();
+            Datum<Instances> datum = new Datum<>();
+            datum.value = (Instances) value;
             datum.key = key;
             datum.timestamp.set(System.currentTimeMillis());
             dataStore.put(key, datum);

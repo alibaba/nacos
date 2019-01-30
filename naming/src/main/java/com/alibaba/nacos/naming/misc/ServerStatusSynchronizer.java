@@ -38,9 +38,9 @@ public class ServerStatusSynchronizer implements Synchronizer {
         params.put("serverStatus", msg.getData());
 
         String url = "http://" + serverIP + ":" + RunningConfig.getServerPort()
-                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/serverStatus";
+                + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/serverStatus";
 
-        if (serverIP.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
+        if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/api/serverStatus";
         }

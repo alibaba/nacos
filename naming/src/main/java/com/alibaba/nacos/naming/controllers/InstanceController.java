@@ -43,7 +43,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.*;
 
@@ -73,28 +72,17 @@ public class InstanceController {
         @Override
         public String getData(PushService.PushClient client) throws Exception {
 
-            Map<String, String[]> params = new HashMap<String, String[]>(10);
-            params.put("dom", new String[]{client.getDom()});
-            params.put("clusters", new String[]{client.getClusters()});
-
-            // set udp port to 0, otherwise will cause recursion
-            params.put("udpPort", new String[]{"0"});
-
-            InetAddress inetAddress = client.getSocketAddr().getAddress();
-            params.put("clientIP", new String[]{inetAddress.getHostAddress()});
-            params.put("header:Client-Version", new String[]{client.getAgent()});
-
             JSONObject result = new JSONObject();
             try {
-                result = doSrvIPXT(client.getNamespaceId(), client.getDom(), client.getAgent(),
-                    client.getClusters(), inetAddress.getHostAddress(), 0, StringUtils.EMPTY,
+                result = doSrvIPXT(client.getNamespaceId(), client.getServiceName(), client.getAgent(),
+                    client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
                     false, StringUtils.EMPTY, StringUtils.EMPTY, false);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("PUSH-SERVICE: dom is not modified", e);
             }
 
             // overdrive the cache millis to push mode
-            result.put("cacheMillis", switchDomain.getPushCacheMillis(client.getDom()));
+            result.put("cacheMillis", switchDomain.getPushCacheMillis(client.getServiceName()));
 
             return result.toJSONString();
         }
@@ -109,7 +97,7 @@ public class InstanceController {
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -131,9 +119,9 @@ public class InstanceController {
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
 
-        String dom = WebUtils.required(request, "serviceName");
+        String dom = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String agent = request.getHeader("Client-Version");
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
@@ -154,9 +142,9 @@ public class InstanceController {
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
 
@@ -194,7 +182,7 @@ public class InstanceController {
     @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
     public JSONObject beat(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
         if (StringUtils.isBlank(clientBeat.getCluster())) {
@@ -246,8 +234,8 @@ public class InstanceController {
                 proxyParams.put(key, value);
             }
 
-            if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
             }
 
             String url = "http://" + server + RunningConfig.getContextPath()
@@ -281,7 +269,7 @@ public class InstanceController {
             namespaceId = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
             domName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
         } else {
-            namespaceId = UtilsAndCommons.getDefaultNamespaceId();
+            namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
             domName = key;
         }
 
@@ -306,12 +294,12 @@ public class InstanceController {
 
     private String regService(HttpServletRequest request) throws Exception {
 
-        String serviceName = WebUtils.required(request, "serviceName");
-        String clusterName = WebUtils.required(request, "clusterName");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
 
         Instance instance = getIPAddress(request);
         instance.setApp(app);
@@ -332,7 +320,7 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String weight = WebUtils.optional(request, "weight", "1");
-        String cluster = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral", "true"));
 
@@ -452,19 +440,20 @@ public class InstanceController {
                 continue;
             }
 
-            for (Instance ip : ips) {
+            for (Instance instance : ips) {
                 JSONObject ipObj = new JSONObject();
 
-                ipObj.put("ip", ip.getIp());
-                ipObj.put("port", ip.getPort());
+                ipObj.put("ip", instance.getIp());
+                ipObj.put("port", instance.getPort());
                 ipObj.put("valid", entry.getKey());
-                ipObj.put("marked", ip.isMarked());
-                ipObj.put("instanceId", ip.getInstanceId());
-                ipObj.put("metadata", ip.getMetadata());
-                ipObj.put("enabled", ip.isEnabled());
-                ipObj.put("weight", ip.getWeight());
-                ipObj.put("clusterName", ip.getClusterName());
-                ipObj.put("serviceName", ip.getServiceName());
+                ipObj.put("marked", instance.isMarked());
+                ipObj.put("instanceId", instance.getInstanceId());
+                ipObj.put("metadata", instance.getMetadata());
+                ipObj.put("enabled", instance.isEnabled());
+                ipObj.put("weight", instance.getWeight());
+                ipObj.put("clusterName", instance.getClusterName());
+                ipObj.put("serviceName", instance.getServiceName());
+                ipObj.put("ephemeral", instance.isEphemeral());
                 hosts.add(ipObj);
 
             }

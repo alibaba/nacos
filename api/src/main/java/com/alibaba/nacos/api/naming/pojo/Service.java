@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
-import com.alibaba.nacos.api.selector.AbstractSelector;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +24,8 @@ import java.util.Map;
  * @author dungu.zpf
  */
 public class Service {
+
+    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
     /**
      * service name
@@ -47,17 +47,6 @@ public class Service {
      */
     private String group;
 
-    /**
-     * Health check mode.
-     */
-    @Deprecated
-    private String healthCheckMode;
-
-    /**
-     * Selector name of this service
-     */
-    private AbstractSelector selector;
-
     private Map<String, String> metadata = new HashMap<String, String>();
 
     public Service() {
@@ -73,14 +62,6 @@ public class Service {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getHealthCheckMode() {
-        return healthCheckMode;
-    }
-
-    public void setHealthCheckMode(String healthCheckMode) {
-        this.healthCheckMode = healthCheckMode;
     }
 
     public float getProtectThreshold() {

@@ -19,8 +19,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.members.Member;
-import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
+import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -45,7 +45,7 @@ import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
  */
 @Component
 @DependsOn("serverListManager")
-public class RaftPeerSet implements MemberChangeListener {
+public class RaftPeerSet implements ServerChangeListener {
 
     @Autowired
     private ServerListManager serverListManager;
@@ -82,26 +82,6 @@ public class RaftPeerSet implements MemberChangeListener {
 
     public boolean isReady() {
         return ready;
-    }
-
-    public void add(List<String> servers) {
-        for (String server : servers) {
-            RaftPeer peer = new RaftPeer();
-            peer.ip = server;
-
-            peers.put(server, peer);
-        }
-
-        if (STANDALONE_MODE) {
-            RaftPeer local = local();
-            local.state = RaftPeer.State.LEADER;
-            local.voteFor = NetUtils.localServer();
-
-        }
-
-        if (RunningConfig.getServerPort() > 0) {
-            ready = true;
-        }
     }
 
     public void remove(List<String> servers) {
@@ -252,13 +232,6 @@ public class RaftPeerSet implements MemberChangeListener {
     }
 
     public void setTerm(long term) {
-        RaftPeer local = local();
-
-        if (term < local.term.get()) {
-            return;
-        }
-
-        local.term.set(term);
         localTerm.set(term);
     }
 
@@ -271,10 +244,10 @@ public class RaftPeerSet implements MemberChangeListener {
     }
 
     @Override
-    public void onChangeMemberList(List<Member> latestMembers) {
+    public void onChangeServerList(List<Server> latestMembers) {
 
         Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
-        for (Member member : latestMembers) {
+        for (Server member : latestMembers) {
 
             if (peers.containsKey(member.getKey())) {
                 tmpPeers.put(member.getKey(), peers.get(member.getKey()));
@@ -283,15 +256,27 @@ public class RaftPeerSet implements MemberChangeListener {
 
             RaftPeer raftPeer = new RaftPeer();
             raftPeer.ip = member.getKey();
+
+            // first time meet the local server:
+            if (NetUtils.localServer().equals(member.getKey())) {
+                raftPeer.term.set(localTerm.get());
+            }
+
             tmpPeers.put(member.getKey(), raftPeer);
         }
 
         // replace raft peer set:
         peers = tmpPeers;
+
+        if (RunningConfig.getServerPort() > 0) {
+            ready = true;
+        }
+
+        Loggers.RAFT.info("raft peers changed: " + latestMembers);
     }
 
     @Override
-    public void onChangeReachableMemberList(List<Member> latestReachableMembers) {
+    public void onChangeHealthServerList(List<Server> latestReachableMembers) {
 
     }
 }

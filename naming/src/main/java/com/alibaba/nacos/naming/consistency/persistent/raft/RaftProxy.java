@@ -31,8 +31,8 @@ public class RaftProxy {
 
     public void proxyGET(String server, String api, Map<String, String> params) throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-            server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
         }
         String url = "http://" + server + RunningConfig.getContextPath() + api;
 
@@ -44,8 +44,8 @@ public class RaftProxy {
 
     public void proxyPostLarge(String server, String api, String content, Map<String, String> headers) throws Exception {
         // do proxy
-        if (!server.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-            server = server + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
         }
         String url = "http://" + server + RunningConfig.getContextPath() + api;
 

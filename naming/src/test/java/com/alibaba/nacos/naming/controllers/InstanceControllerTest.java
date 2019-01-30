@@ -85,10 +85,10 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         domain.updateIPs(ipList, false);
 
-        Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
+        Mockito.when(domainsManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(domain);
 
         Mockito.when(domainsManager.addLockIfAbsent(
-            UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")))
+            UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")))
             .thenReturn(new ReentrantLock());
 
         MockHttpServletRequestBuilder builder =
@@ -134,7 +134,7 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         domain.updateIPs(ipList, false);
 
-        Mockito.when(domainsManager.getService(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
+        Mockito.when(domainsManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(domain);
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.get("/v1/ns/instances")

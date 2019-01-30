@@ -42,16 +42,14 @@ import java.util.*;
 /**
  * Service of Nacos
  * <p>
- * We introduce a 'service --> cluster --> instance' model, so service stores a list of clusters, which contains
- * a list of instances.
+ * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
+ * which contains a list of instances.
  * <p>
  * Typically we put some common properties between instances to service level.
  *
  * @author nkorange
  */
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<Instances> {
-
-    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -76,6 +74,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     private volatile String checksum;
 
     private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
+
+    public Service() {
+    }
+
+    public Service(String name) {
+        super(name);
+    }
 
     @JSONField(serialize = false)
     public PushService getPushService() {
@@ -132,13 +137,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     @Override
     public boolean interests(String key) {
         return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
-//        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
         return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
-//        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + getName());
     }
 
     @Override
@@ -229,6 +232,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            entry.getValue().setDom(this);
             entry.getValue().init();
         }
     }
@@ -278,20 +282,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             clusters.addAll(clusterMap.keySet());
         }
         return allIPs(clusters);
-    }
-
-    public static Service fromJSON(String json) {
-        try {
-            Service vDom = JSON.parseObject(json, Service.class);
-            for (Cluster cluster : vDom.clusterMap.values()) {
-                cluster.setDom(vDom);
-            }
-
-            return vDom;
-        } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-DOM] parse cluster json content: {}, error: {}", json, e);
-            return null;
-        }
     }
 
     public String toJSON() {
@@ -344,15 +334,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         domain.put("clusters", clustersList);
 
         return JSON.toJSONString(domain);
-    }
-
-
-    public void setName(String name) {
-        if (!name.matches(SERVICE_NAME_SYNTAX)) {
-            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z.:_-; current: " + name);
-        }
-
-        super.setName(name);
     }
 
     public String getToken() {
@@ -495,10 +476,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void valid() {
-        if (!getName().matches(SERVICE_NAME_SYNTAX)) {
-            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
-        }
-
         Map<String, List<String>> map = new HashMap<>(clusterMap.size());
         for (Cluster cluster : clusterMap.values()) {
             if (StringUtils.isEmpty(cluster.getSyncKey())) {

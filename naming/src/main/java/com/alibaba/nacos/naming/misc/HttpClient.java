@@ -86,15 +86,15 @@ public class HttpClient {
         postClient = builder2.build();
     }
 
+    public static HttpResult httpDelete(String url, List<String> headers, Map<String, String> paramValues) {
+        return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "DELETE");
+    }
+
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues) {
-        return httpGetWithTimeOut(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8");
+        return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "GET");
     }
 
-    public static HttpResult httpGetWithTimeOut(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout) {
-        return httpGetWithTimeOut(url, headers, paramValues, connectTimeout, readTimeout, "UTF-8");
-    }
-
-    public static HttpResult httpGetWithTimeOut(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout, String encoding) {
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -103,7 +103,7 @@ public class HttpClient {
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(connectTimeout);
             conn.setReadTimeout(readTimeout);
-            conn.setRequestMethod("GET");
+            conn.setRequestMethod(method);
 
             conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
             setHeaders(conn, headers, encoding);

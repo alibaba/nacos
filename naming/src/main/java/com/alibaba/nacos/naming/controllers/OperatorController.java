@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -57,6 +58,9 @@ public class OperatorController {
 
     @Autowired
     private ServiceManager serviceManager;
+
+    @Autowired
+    private ServerListManager serverListManager;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -147,7 +151,7 @@ public class OperatorController {
     @RequestMapping("/getResponsibleServer4Dom")
     public JSONObject getResponsibleServer4Dom(HttpServletRequest request) {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "dom");
         Service service = serviceManager.getService(namespaceId, dom);
 
@@ -174,7 +178,7 @@ public class OperatorController {
     @RequestMapping("/responsible")
     public JSONObject responsible(HttpServletRequest request) {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "dom");
         Service service = (Service) serviceManager.getService(namespaceId, dom);
 
@@ -196,12 +200,12 @@ public class OperatorController {
         String action = WebUtils.optional(request, "action", "view");
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
-            result.put("status", distroMapper.getDistroConfig());
+            result.put("status", serverListManager.getDistroConfig());
             return result;
         }
 
         if (StringUtils.equals(SwitchEntry.ACTION_CLEAN, action)) {
-            distroMapper.clean();
+            serverListManager.clean();
             return result;
         }
 
@@ -211,8 +215,7 @@ public class OperatorController {
     @RequestMapping("/serverStatus")
     public String serverStatus(HttpServletRequest request) {
         String serverStatus = WebUtils.required(request, "serverStatus");
-        distroMapper.onReceiveServerStatus(serverStatus);
-
+        serverListManager.onReceiveServerStatus(serverStatus);
         return "ok";
     }
 }
