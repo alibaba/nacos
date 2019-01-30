@@ -102,7 +102,7 @@ public class UtilsAndCommons {
 
     public static final String LOCAL_HOST_IP = "127.0.0.1";
 
-    public static final String CLUSTER_CONF_IP_SPLITER = ":";
+    public static final String IP_PORT_SPLITER = ":";
 
     public static final int MAX_PUBLISH_WAIT_TIME_MILLIS = 5000;
 
@@ -125,8 +125,6 @@ public class UtilsAndCommons {
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
-
-    public static final ScheduledExecutorService SERVER_STATUS_EXECUTOR;
 
     public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
 
@@ -183,17 +181,6 @@ public class UtilsAndCommons {
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
                 t.setName("nacos.naming.init.config.worker");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        SERVER_STATUS_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("nacos.naming.status.worker");
                 t.setDaemon(true);
                 return t;
             }

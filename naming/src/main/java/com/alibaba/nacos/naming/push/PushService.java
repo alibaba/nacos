@@ -150,8 +150,8 @@ public class PushService {
     }
 
     public static void addClient(PushClient client) {
-        // client is stored by key 'dom' because notify event is driven by dom change
-        String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getDom());
+        // client is stored by key 'serviceName' because notify event is driven by serviceName change
+        String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getServiceName());
         ConcurrentMap<String, PushClient> clients =
             clientMap.get(serviceKey);
         if (clients == null) {
@@ -167,7 +167,7 @@ public class PushService {
             if (res != null) {
                 Loggers.PUSH.warn("client: {} already associated with key {}", res.getAddrStr(), res.toString());
             }
-            Loggers.PUSH.debug("client: {} added for dom: {}", client.getAddrStr(), client.getDom());
+            Loggers.PUSH.debug("client: {} added for serviceName: {}", client.getAddrStr(), client.getServiceName());
         }
     }
 
@@ -246,7 +246,7 @@ public class PushService {
                         }
 
                         Receiver.AckEntry ackEntry;
-                        Loggers.PUSH.debug("push dom: {} to client: {}", dom, client.toString());
+                        Loggers.PUSH.debug("push serviceName: {} to client: {}", dom, client.toString());
                         String key = getPushCacheKey(dom, client.getIp(), client.getAgent());
                         byte[] compressData = null;
                         Map<String, Object> data = null;
@@ -267,13 +267,13 @@ public class PushService {
                             }
                         }
 
-                        Loggers.PUSH.info("dom: {} changed, schedule push for: {}, agent: {}, key: {}",
-                            client.getDom(), client.getAddrStr(), client.getAgent(),  (ackEntry == null ? null : ackEntry.key));
+                        Loggers.PUSH.info("serviceName: {} changed, schedule push for: {}, agent: {}, key: {}",
+                            client.getServiceName(), client.getAddrStr(), client.getAgent(),  (ackEntry == null ? null : ackEntry.key));
 
                         udpPush(ackEntry);
                     }
                 } catch (Exception e) {
-                    Loggers.PUSH.error("[NACOS-PUSH] failed to push dom: {} to client, error: {}", dom, e);
+                    Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", dom, e);
 
                 } finally {
                     futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
@@ -324,7 +324,7 @@ public class PushService {
 
     public class PushClient {
         private String namespaceId;
-        private String dom;
+        private String serviceName;
         private String clusters;
         private String agent;
         private String tenant;
@@ -344,7 +344,7 @@ public class PushService {
         public long lastRefTime = System.currentTimeMillis();
 
         public PushClient(String namespaceId,
-                          String dom,
+                          String serviceName,
                           String clusters,
                           String agent,
                           InetSocketAddress socketAddr,
@@ -352,7 +352,7 @@ public class PushService {
                           String tenant,
                           String app) {
             this.namespaceId = namespaceId;
-            this.dom = dom;
+            this.serviceName = serviceName;
             this.clusters = clusters;
             this.agent = agent;
             this.socketAddr = socketAddr;
@@ -370,12 +370,12 @@ public class PushService {
         }
 
         public boolean zombie() {
-            return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(dom);
+            return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(serviceName);
         }
 
         @Override
         public String toString() {
-            return "dom: " + dom
+            return "serviceName: " + serviceName
                     + ", clusters: " + clusters
                     + ", ip: " + socketAddr.getAddress().getHostAddress()
                     + ", port: " + socketAddr.getPort()
@@ -396,7 +396,7 @@ public class PushService {
 
         @Override
         public int hashCode() {
-            return Objects.hash(dom, clusters, socketAddr);
+            return Objects.hash(serviceName, clusters, socketAddr);
         }
 
         @Override
@@ -407,7 +407,7 @@ public class PushService {
 
             PushClient other = (PushClient) obj;
 
-            return dom.equals(other.dom) && clusters.equals(other.clusters) && socketAddr.equals(other.socketAddr);
+            return serviceName.equals(other.serviceName) && clusters.equals(other.clusters) && socketAddr.equals(other.socketAddr);
         }
 
         public String getClusters() {
@@ -426,12 +426,12 @@ public class PushService {
             this.namespaceId = namespaceId;
         }
 
-        public String getDom() {
-            return dom;
+        public String getServiceName() {
+            return serviceName;
         }
 
-        public void setDom(String dom) {
-            this.dom = dom;
+        public void setServiceName(String serviceName) {
+            this.serviceName = serviceName;
         }
 
         public String getTenant() {
@@ -476,7 +476,7 @@ public class PushService {
 
     private static Map<String, Object> prepareHostsData(PushClient client) throws Exception {
         Map<String, Object> cmd = new HashMap<String, Object>(2);
-        cmd.put("type", "dom");
+        cmd.put("type", "serviceName");
         cmd.put("data", client.getDataSource().getData(client));
 
         return cmd;

@@ -50,7 +50,7 @@ public class ClusterController {
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String clusterName = WebUtils.required(request, "clusterName");
         String serviceName = WebUtils.required(request, "serviceName");
         String healthChecker = WebUtils.required(request, "healthChecker");

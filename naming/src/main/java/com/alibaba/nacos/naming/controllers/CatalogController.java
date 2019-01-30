@@ -56,7 +56,7 @@ public class CatalogController {
     public JSONObject serviceList(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         JSONObject result = new JSONObject();
 
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
@@ -102,7 +102,7 @@ public class CatalogController {
     public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, "serviceName");
         Service domain = serviceManager.getService(namespaceId, serviceName);
         if (domain == null) {
@@ -136,7 +136,7 @@ public class CatalogController {
     public JSONObject instanceList(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, "serviceName");
         String clusterName = WebUtils.required(request, "clusterName");
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
@@ -179,7 +179,7 @@ public class CatalogController {
     public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 
         serviceManager
@@ -205,7 +205,7 @@ public class CatalogController {
     public JSONObject rt4Dom(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "dom");
 
         Service domObj = serviceManager.getService(namespaceId, dom);

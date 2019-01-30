@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
-import com.alibaba.nacos.naming.cluster.members.Member;
+import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,14 +46,14 @@ public class TaskDispatcher {
 
     @PostConstruct
     public void init() {
-        for (int i = 0; i < partitionConfig.getTaskDispatchThreadCount(); i++) {
+        for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
             taskList.add(new LinkedBlockingQueue<>(128 * 1024));
-            GlobalExecutor.submit(new TaskScheduler(i));
+            GlobalExecutor.submitTaskDispatch(new TaskScheduler(i));
         }
     }
 
     public int mapTask(String key) {
-        return Math.abs(key.hashCode() % Integer.MAX_VALUE) % partitionConfig.getTaskDispatchThreadCount();
+        return Math.abs(key.hashCode() % Integer.MAX_VALUE) % Runtime.getRuntime().availableProcessors();
     }
 
     public void addTask(String key) {
@@ -98,7 +98,7 @@ public class TaskDispatcher {
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
-                        for (Member member : dataSyncer.getServers()) {
+                        for (Server member : dataSyncer.getServers()) {
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getKey());

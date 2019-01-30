@@ -87,8 +87,6 @@ public class RaftCore {
 
     public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
 
-    private volatile boolean initialized = false;
-
     private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
 
     private volatile ConcurrentMap<String, Datum<?>> datums = new ConcurrentHashMap<>();
@@ -364,6 +362,7 @@ public class RaftCore {
 
                 RaftPeer local = peers.local();
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
+
                 if (local.leaderDueMs > 0) {
                     return;
                 }
@@ -380,10 +379,6 @@ public class RaftCore {
         }
 
         public void sendVote() {
-            if (!initialized) {
-                // not ready yet
-                return;
-            }
 
             RaftPeer local = peers.get(NetUtils.localServer());
             Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}",
@@ -429,10 +424,6 @@ public class RaftCore {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
 
-        if (!initialized) {
-            throw new IllegalStateException("not ready yet");
-        }
-
         RaftPeer local = peers.get(NetUtils.localServer());
         if (remote.term.get() <= local.term.get()) {
             String msg = "received illegitimate vote" +
@@ -461,6 +452,7 @@ public class RaftCore {
         @Override
         public void run() {
             try {
+
                 if (!peers.isReady()) {
                     return;
                 }
@@ -795,14 +787,6 @@ public class RaftCore {
         peers.setTerm(term);
     }
 
-    public long getTerm() {
-        return peers.getTerm();
-    }
-
-    public boolean isInitialized() {
-        return initialized;
-    }
-
     public boolean isLeader(String ip) {
         return peers.isLeader(ip);
     }
@@ -812,8 +796,8 @@ public class RaftCore {
     }
 
     public static String buildURL(String ip, String api) {
-        if (!ip.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-            ip = ip + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+        if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            ip = ip + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
         }
         return "http://" + ip + RunningConfig.getContextPath() + api;
     }
@@ -827,7 +811,7 @@ public class RaftCore {
     }
 
     public List<RaftPeer> getPeers() {
-        return new ArrayList<RaftPeer>(peers.allPeers());
+        return new ArrayList<>(peers.allPeers());
     }
 
     public RaftPeerSet getPeerSet() {

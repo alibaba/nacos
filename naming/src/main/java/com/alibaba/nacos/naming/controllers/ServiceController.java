@@ -69,7 +69,7 @@ public class ServiceController {
     public String create(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
@@ -85,20 +85,19 @@ public class ServiceController {
             metadataMap = UtilsAndCommons.parseMetadata(metadata);
         }
 
-        Service domObj = new Service();
-        domObj.setName(serviceName);
-        domObj.setProtectThreshold(protectThreshold);
-        domObj.setEnabled(true);
-        domObj.setMetadata(metadataMap);
-        domObj.setSelector(parseSelector(selector));
-        domObj.setNamespaceId(namespaceId);
+        Service service = new Service(serviceName);
+        service.setProtectThreshold(protectThreshold);
+        service.setEnabled(true);
+        service.setMetadata(metadataMap);
+        service.setSelector(parseSelector(selector));
+        service.setNamespaceId(namespaceId);
 
         // now valid the dom. if failed, exception will be thrown
-        domObj.setLastModifiedMillis(System.currentTimeMillis());
-        domObj.recalculateChecksum();
-        domObj.valid();
+        service.setLastModifiedMillis(System.currentTimeMillis());
+        service.recalculateChecksum();
+        service.valid();
 
-        serviceManager.addOrReplaceService(domObj);
+        serviceManager.addOrReplaceService(service);
 
         return "ok";
     }
@@ -107,7 +106,7 @@ public class ServiceController {
     public String remove(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -128,7 +127,7 @@ public class ServiceController {
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service domain = serviceManager.getService(namespaceId, serviceName);
@@ -152,7 +151,7 @@ public class ServiceController {
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
         List<String> doms = serviceManager.getAllDomNamesList(namespaceId);
@@ -216,10 +215,9 @@ public class ServiceController {
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
-        String healthCheckMode = WebUtils.required(request, "healthCheckMode");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
@@ -229,8 +227,6 @@ public class ServiceController {
         }
 
         domain.setProtectThreshold(protectThreshold);
-
-        domain.setHealthCheckMode(healthCheckMode);
 
         Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
         domain.setMetadata(metadataMap);
@@ -277,7 +273,7 @@ public class ServiceController {
 
         JSONObject result = new JSONObject();
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String expr = WebUtils.required(request, "expr");
 
         List<Service> doms
@@ -348,7 +344,7 @@ public class ServiceController {
     public JSONObject checksum(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, "serviceName");
         Service service = serviceManager.getService(namespaceId, serviceName);
 

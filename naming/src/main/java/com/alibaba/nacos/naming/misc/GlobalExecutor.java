@@ -77,9 +77,29 @@ public class GlobalExecutor {
             }
         });
 
-    public static void submitPartitionTaskExecute(Runnable runnable) {
-        taskDispatchExecutor.submit(runnable);
-    }
+    private static ScheduledExecutorService notifyServerListExecutor =
+        new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+
+                t.setDaemon(true);
+                t.setName("com.alibaba.nacos.naming.server.list.notifier");
+
+                return t;
+            }
+        });
+
+    private static final ScheduledExecutorService SERVER_STATUS_EXECUTOR
+        = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+            t.setName("nacos.naming.status.worker");
+            t.setDaemon(true);
+            return t;
+        }
+    });
 
     public static void submitDataSync(Runnable runnable) {
         dataSyncExecutor.submit(runnable);
@@ -98,12 +118,24 @@ public class GlobalExecutor {
         executorService.scheduleAtFixedRate(runnable, 0, NACOS_SERVER_LIST_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
+    public static void registerServerStatusReporter(Runnable runnable, long delay) {
+        SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
+    }
+
     public static void registerHeartbeat(Runnable runnable) {
         executorService.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
 
     public static void schedule(Runnable runnable, long delay) {
         executorService.scheduleAtFixedRate(runnable, 0, delay, TimeUnit.MILLISECONDS);
+    }
+
+    public static void notifyServerListChange(Runnable runnable) {
+        notifyServerListExecutor.submit(runnable);
+    }
+
+    public static void submitTaskDispatch(Runnable runnable) {
+        taskDispatchExecutor.submit(runnable);
     }
 
     public static void submit(Runnable runnable) {

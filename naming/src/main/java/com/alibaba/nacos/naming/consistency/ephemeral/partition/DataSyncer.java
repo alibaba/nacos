@@ -16,8 +16,8 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.members.Member;
-import com.alibaba.nacos.naming.cluster.members.MemberChangeListener;
+import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -26,7 +26,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
@@ -46,7 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @DependsOn("serverListManager")
-public class DataSyncer implements MemberChangeListener {
+public class DataSyncer implements ServerChangeListener {
 
     @Autowired
     private DataStore dataStore;
@@ -62,7 +61,7 @@ public class DataSyncer implements MemberChangeListener {
 
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
 
-    private List<Member> servers;
+    private List<Server> servers;
 
     @PostConstruct
     public void init() {
@@ -139,13 +138,13 @@ public class DataSyncer implements MemberChangeListener {
                 keyTimestamps.put(key, dataStore.get(key).timestamp.get());
             }
 
-            for (Member member : servers) {
+            for (Server member : servers) {
                 NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
             }
         }
     }
 
-    public List<Member> getServers() {
+    public List<Server> getServers() {
         return servers;
     }
 
@@ -154,12 +153,12 @@ public class DataSyncer implements MemberChangeListener {
     }
 
     @Override
-    public void onChangeMemberList(List<Member> latestMembers) {
+    public void onChangeServerList(List<Server> latestMembers) {
 
     }
 
     @Override
-    public void onChangeReachableMemberList(List<Member> latestReachableMembers) {
-        servers = latestReachableMembers;
+    public void onChangeHealthServerList(List<Server> healthServers) {
+        servers = healthServers;
     }
 }

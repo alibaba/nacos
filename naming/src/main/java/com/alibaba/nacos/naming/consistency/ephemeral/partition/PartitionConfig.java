@@ -27,18 +27,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class PartitionConfig {
 
-    @Value("${nacos.naming.partition.taskDispatchThreadCount}")
-    private int taskDispatchThreadCount = 10;
-
     @Value("${nacos.naming.partition.taskDispatchPeriod}")
     private int taskDispatchPeriod = 2000;
 
     @Value("${nacos.naming.partition.batchSyncKeyCount}")
     private int batchSyncKeyCount = 1000;
-
-    public int getTaskDispatchThreadCount() {
-        return taskDispatchThreadCount;
-    }
 
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;

@@ -62,7 +62,7 @@ public class AuthChecker {
     public void doAuth(Map<String, String[]> params, HttpServletRequest req) throws Exception {
 
         String namespaceId = WebUtils.optional(req, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
+            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.optional(req, "name", "");
         if (StringUtils.isEmpty(dom)) {
             dom = WebUtils.optional(req, "dom", "");

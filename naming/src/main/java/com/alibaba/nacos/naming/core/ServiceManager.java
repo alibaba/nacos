@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.members.Member;
+import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
@@ -152,7 +152,7 @@ public class ServiceManager implements DataListener<Service> {
             }
 
             if (StringUtils.isBlank(service.getNamespaceId())) {
-                service.setNamespaceId(UtilsAndCommons.getDefaultNamespaceId());
+                service.setNamespaceId(UtilsAndCommons.DEFAULT_NAMESPACE_ID);
             }
 
             Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, service);
@@ -166,7 +166,8 @@ public class ServiceManager implements DataListener<Service> {
                 addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
                 putDomain(service);
                 service.init();
-                consistencyService.listen(UtilsAndCommons.getIPListStoreKey(service), service);
+                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
+                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
                 Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", service.toJSON());
             }
             wakeUp(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
@@ -185,8 +186,9 @@ public class ServiceManager implements DataListener<Service> {
 
         if (dom != null) {
             dom.destroy();
-            consistencyService.remove(UtilsAndCommons.getIPListStoreKey(dom));
-            consistencyService.unlisten(UtilsAndCommons.getDomStoreKey(dom), dom);
+            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
+            consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
+            consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), dom);
             Loggers.SRV_LOG.info("[DEAD-DOM] {}", dom.toJSON());
         }
     }
@@ -422,9 +424,7 @@ public class ServiceManager implements DataListener<Service> {
 
     public void addInstance(String namespaceId, String serviceName, String clusterName, boolean ephemeral, Instance... ips) throws NacosException {
 
-        String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
-
-        key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
         Service service = getService(namespaceId, serviceName);
 
@@ -438,9 +438,7 @@ public class ServiceManager implements DataListener<Service> {
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
 
-        String key = UtilsAndCommons.getIPListStoreKey(getService(namespaceId, serviceName));
-
-        key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
         Service dom = getService(namespaceId, serviceName);
 
@@ -688,13 +686,13 @@ public class ServiceManager implements DataListener<Service> {
 
                     msg.setData(JSON.toJSONString(checksum));
 
-                    List<Member> sameSiteServers = serverListManager.getMembers();
+                    List<Server> sameSiteServers = serverListManager.getServers();
 
                     if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                         return;
                     }
 
-                    for (Member server : sameSiteServers) {
+                    for (Server server : sameSiteServers) {
                         if (server.getKey().equals(NetUtils.localServer())) {
                             continue;
                         }
