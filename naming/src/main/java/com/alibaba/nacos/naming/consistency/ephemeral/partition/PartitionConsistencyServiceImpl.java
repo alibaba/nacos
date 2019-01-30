@@ -196,11 +196,11 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
 
     @Override
     public boolean isResponsible(String key) {
-        return distroMapper.responsible(key);
+        return distroMapper.responsible(KeyBuilder.getServiceName(key));
     }
 
     @Override
     public String getResponsibleServer(String key) {
-        return distroMapper.mapSrv(key);
+        return distroMapper.mapSrv(KeyBuilder.getServiceName(key));
     }
 }

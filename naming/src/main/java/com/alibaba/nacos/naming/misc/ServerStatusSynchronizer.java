@@ -42,7 +42,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
 
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                    + "/api/serverStatus";
+                    + "/operator/serverStatus";
         }
 
         try {

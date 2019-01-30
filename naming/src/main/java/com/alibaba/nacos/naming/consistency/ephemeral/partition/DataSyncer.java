@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -71,13 +72,21 @@ public class DataSyncer implements ServerChangeListener {
 
     public void submit(SyncTask task) {
 
-        Iterator<String> iterator = task.getKeys().iterator();
-        while (iterator.hasNext()) {
-            String key = iterator.next();
-            if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
-                // associated key already exist:
-                iterator.remove();
+        // If it's a new task:
+        if (task.getRetryCount() == 0) {
+            Iterator<String> iterator = task.getKeys().iterator();
+            while (iterator.hasNext()) {
+                String key = iterator.next();
+                if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
+                    // associated key already exist:
+                    iterator.remove();
+                }
             }
+        }
+
+        if (task.getKeys().isEmpty()) {
+            // all keys are removed:
+            return;
         }
 
         GlobalExecutor.submitDataSync(new Runnable() {
@@ -92,7 +101,17 @@ public class DataSyncer implements ServerChangeListener {
 
                     List<String> keys = task.getKeys();
 
+                    Loggers.EPHEMERAL.info("sync keys: {}", keys);
+
                     Map<String, Datum<?>> datumMap = dataStore.batchGet(keys);
+
+                    if (datumMap == null || datumMap.isEmpty()) {
+                        // clear all flags of this task:
+                        for (String key : task.getKeys()) {
+                            taskMap.remove(buildKey(key, task.getTargetServer()));
+                        }
+                        return;
+                    }
 
                     byte[] data = serializer.serialize(datumMap);
 
@@ -130,12 +149,17 @@ public class DataSyncer implements ServerChangeListener {
 
             Map<String, Long> keyTimestamps = new HashMap<>(64);
             for (String key : dataStore.keys()) {
-                if (!distroMapper.responsible(key)) {
+                if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
                     // this key is no longer in our hands:
+                    Loggers.EPHEMERAL.warn("remove key: {}", key);
                     dataStore.remove(key);
                     continue;
                 }
                 keyTimestamps.put(key, dataStore.get(key).timestamp.get());
+            }
+
+            if (keyTimestamps.isEmpty()) {
+                return;
             }
 
             for (Server member : servers) {
@@ -158,7 +182,7 @@ public class DataSyncer implements ServerChangeListener {
     }
 
     @Override
-    public void onChangeHealthServerList(List<Server> healthServers) {
+    public void onChangeHealthyServerList(List<Server> healthServers) {
         servers = healthServers;
     }
 }

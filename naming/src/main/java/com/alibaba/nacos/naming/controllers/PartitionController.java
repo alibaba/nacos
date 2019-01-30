@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsist
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,6 +56,9 @@ public class PartitionController {
     @RequestMapping("/onSync")
     public String onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
         byte[] data = IoUtils.tryDecompress(request.getInputStream());
+
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+
         Map<String, Datum<Instances>> dataMap =
             serializer.deserializeMap(data, Instances.class);
 

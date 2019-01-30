@@ -16,17 +16,14 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 
-import javax.annotation.Resource;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,9 +34,6 @@ import java.util.Map;
  * @author nacos
  */
 public class DistroFilter implements Filter {
-
-    @Resource(name = "consistencyDelegate")
-    private ConsistencyService consistencyService;
 
     @Autowired
     private DistroMapper distroMapper;
@@ -74,9 +68,9 @@ public class DistroFilter implements Filter {
         String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
 
         if (StringUtils.isNoneBlank(serviceName) && !HttpMethod.GET.name().equals(req.getMethod())
-            && !consistencyService.isResponsible(serviceName)) {
+            && !distroMapper.responsible(serviceName)) {
 
-            String url = "http://" + consistencyService.getResponsibleServer(serviceName) +
+            String url = "http://" + distroMapper.mapSrv(serviceName) +
                 req.getRequestURI() + "?" + req.getQueryString();
             try {
                 resp.sendRedirect(url);

@@ -139,7 +139,7 @@ public class ServerListManager {
             public void run() {
                 for (ServerChangeListener listener : listeners) {
                     listener.onChangeServerList(servers);
-                    listener.onChangeHealthServerList(healthyServers);
+                    listener.onChangeHealthyServerList(healthyServers);
                 }
             }
         });

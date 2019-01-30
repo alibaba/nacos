@@ -257,7 +257,7 @@ public class InstanceController {
     }
 
 
-    @RequestMapping("/listWithHealthStatus")
+    @RequestMapping("/instance/listWithHealthStatus")
     public JSONObject listWithHealthStatus(HttpServletRequest request) throws NacosException {
 
         String key = WebUtils.required(request, "key");

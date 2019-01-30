@@ -276,7 +276,7 @@ public class RaftPeerSet implements ServerChangeListener {
     }
 
     @Override
-    public void onChangeHealthServerList(List<Server> latestReachableMembers) {
+    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
 
     }
 }
