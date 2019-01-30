@@ -135,10 +135,9 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![郑州山水](http://www.zzssxx.com/style/images/logo.png)
 ![联采科技](http://www.lckjep.com:80//theme/img/logoTop.png)
 ![南京28研究所](https://img.alicdn.com/tfs/TB1G216EsbpK1RjSZFyXXX_qFXa-325-53.jpg)
-![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![长亮科技](http://www.sunline.cn/Uploads/image/20170724/59759a405c3b2.png)
 ![深圳易停车库](http://www.ytparking.com/yiting/images/logo.png)
-![凤凰-汽车](https://img.alicdn.com/tfs/TB1uZa.ErrpK1RjSZTEXXcWAVXa-289-109.jpg)
+![凤凰网-汽车](https://p1.ifengimg.com/auto/image/2017/0922/auto_logo.png)
 ![武汉日创科技](http://www.dragonwake.cn/static/css/default/images/logo.png)
 ![易管智能](http://ebmsw.mro1598.com/UpLoadFile/MainCompany/20170308-1501-495c-a62f-fc03424f86f1/20170405/20170405-1056-4fe5-90e8-c055f8a1bb23.png)
 ![云帐房](http://www.yunzhangfang.com/yzf-pc/img/logo.png)
@@ -149,5 +148,6 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![chigua](https://img.alicdn.com/tfs/TB1aUe5EpzqK1RjSZSgXXcpAVXa-248-124.png)
 ![宅无限](https://img.alicdn.com/tfs/TB1H9O5EAvoK1RjSZFNXXcxMVXa-221-221.jpg)
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
+![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
 
