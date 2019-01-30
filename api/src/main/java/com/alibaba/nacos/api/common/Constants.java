@@ -88,11 +88,6 @@ public class Constants {
     /**
      * millisecond
      */
-    public static final int CONN_TIMEOUT = 2000;
-
-    /**
-     * millisecond
-     */
     public static final int SO_TIMEOUT = 60000;
 
     /**
@@ -114,7 +109,7 @@ public class Constants {
 
     public static final String WORD_SEPARATOR = Character.toString((char)2);
 
-    public static final String LONGPULLING_LINE_SEPARATOR = "\r\n";
+    public static final String LONGPOLLING_LINE_SEPARATOR = "\r\n";
 
     public static final String CLIENT_APPNAME_HEADER = "Client-AppName";
     public static final String CLIENT_REQUEST_TS_HEADER = "Client-RequestTS";
@@ -127,4 +122,10 @@ public class Constants {
     public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
 
     public static final String NAMING_DEFAULT_CLUSTER_NAME = "DEFAULT";
+
+    public static final String REQUEST_PARAM_NAMESPACE_ID = "namespaceId";
+    public static final String REQUEST_PARAM_DEFAULT_NAMESPACE_ID = "public";
+    public static final String REQUEST_PARAM_SERVICE_NAME = "serviceName";
+    public static final String REQUEST_PARAM_GROUP = "group";
+    public static final String REQUEST_PARAM_DEFAULT_GROUP = "DEFAULT_GROUP";
 }

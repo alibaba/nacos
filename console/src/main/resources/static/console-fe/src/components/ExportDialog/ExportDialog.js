@@ -12,13 +12,19 @@
  */
 
 import React from 'react';
-import { aliwareIntl } from '../../globalLib';
+import { Button, ConfigProvider, Dialog, Form } from '@alifd/next';
+
 import './index.scss';
-import { Button, Dialog, Form } from '@alifd/next';
 
 const FormItem = Form.Item;
 
+/**
+ * @deprecated
+ */
+@ConfigProvider.config
 class ExportDialog extends React.Component {
+  static displayName = 'ExportDialog';
+
   constructor(props) {
     super(props);
     this.state = {
@@ -33,12 +39,8 @@ class ExportDialog extends React.Component {
       total: 0,
     };
     this.formItemLayout = {
-      labelCol: {
-        fixedSpan: 4,
-      },
-      wrapperCol: {
-        span: 20,
-      },
+      labelCol: { fixedSpan: 4 },
+      wrapperCol: { span: 20 },
     };
   }
 
@@ -65,9 +67,8 @@ class ExportDialog extends React.Component {
   };
 
   getQuery() {
-    if (this.state.records.length > 0) {
-      return aliwareIntl.get('nacos.component.ExportDialog.|_The_selected_entry0');
-    }
+    const { locale = {} } = this.props;
+    if (this.state.records.length > 0) return locale.selectedEntry;
     if (
       this.state.dataId === '' &&
       this.state.group === '' &&
@@ -84,11 +85,10 @@ class ExportDialog extends React.Component {
       query += ` Group: ${this.state.group},`;
     }
     if (this.state.appName !== '') {
-      query += `${aliwareIntl.get('nacos.component.ExportDialog.HOME_Application1') +
-        this.state.appName},`;
+      query += `${locale.application + this.state.appName},`;
     }
     if (this.state.configTags.length !== 0) {
-      query += `${aliwareIntl.get('nacos.component.ExportDialog.tags2') + this.state.configTags},`;
+      query += `${locale.tags + this.state.configTags},`;
     }
     return query.substr(0, query.length - 1);
   }
@@ -118,11 +118,12 @@ class ExportDialog extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const footer = (
       <div>
         {/* <a id="downloadLink" style={{ display: "none" }} href={this.getLink()} /> */}
         <Button type="primary" onClick={this.doExport} {...{ disabled: this.state.total <= 0 }}>
-          {aliwareIntl.get('nacos.component.ExportDialog.export3')}
+          {locale.exportBtn}
         </Button>
       </div>
     );
@@ -133,27 +134,19 @@ class ExportDialog extends React.Component {
           visible={this.state.visible}
           footer={footer}
           footerAlign="center"
-          language={aliwareIntl.currentLanguageCode || 'zh-cn'}
           style={{ width: 480 }}
           onCancel={this.closeDialog}
           onClose={this.closeDialog}
-          title={`${aliwareIntl.get('nacos.component.ExportDialog.export_configuration4') +
-            this.state.serverId}）`}
+          title={`${locale.exportConfiguration + this.state.serverId}）`}
         >
           <Form>
-            <FormItem
-              label={aliwareIntl.get('nacos.component.ExportDialog.source_space5')}
-              {...this.formItemLayout}
-            >
+            <FormItem label={locale.source} {...this.formItemLayout}>
               <p>
                 <span style={{ color: '#33cde5' }}>{this.state.tenant.name}</span>
                 {` | ${this.state.tenant.id}`}
               </p>
             </FormItem>
-            <FormItem
-              label={aliwareIntl.get('nacos.component.ExportDialog.configuration_number6')}
-              {...this.formItemLayout}
-            >
+            <FormItem label={locale.items} {...this.formItemLayout}>
               <p>
                 <span style={{ color: '#33cde5' }}>{this.state.total}</span> {this.getQuery()}{' '}
               </p>

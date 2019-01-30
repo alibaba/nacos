@@ -12,13 +12,28 @@
  */
 
 import React from 'react';
+import { request } from '../../globalLib';
+import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading } from '@alifd/next';
+
 import './index.scss';
-import { request, aliwareIntl } from '../../globalLib';
-import { Button, Dialog, Field, Form, Input, Loading } from '@alifd/next';
+import PropTypes from 'prop-types';
 
 const FormItem = Form.Item;
 
+const formItemLayout = {
+  labelCol: { fixedSpan: 6 },
+  wrapperCol: { span: 18 },
+};
+
+@ConfigProvider.config
 class NewNameSpace extends React.Component {
+  static displayName = 'NewNameSpace';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    getNameSpaces: PropTypes.func,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -80,21 +95,14 @@ class NewNameSpace extends React.Component {
   }
 
   handleSubmit() {
+    const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
-      if (errors) {
-        return;
-      }
-      const flag = this.state.dataSource.every(val => {
-        if (val.namespaceShowName === values.namespaceShowName) {
-          return false;
-        }
-        return true;
-      });
+      if (errors) return;
+      const flag = this.state.dataSource.every(
+        val => val.namespaceShowName !== values.namespaceShowName
+      );
       if (!flag) {
-        Dialog.alert({
-          content: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.norepeat'),
-          language: aliwareIntl.currentLanguageCode,
-        });
+        Dialog.alert({ content: locale.norepeat });
         return;
       }
       this.disabled = true;
@@ -105,9 +113,7 @@ class NewNameSpace extends React.Component {
         type: 'post',
         url: 'v1/console/namespaces',
         contentType: 'application/x-www-form-urlencoded',
-        beforeSend: () => {
-          this.openLoading();
-        },
+        beforeSend: () => this.openLoading(),
         data: {
           namespaceName: values.namespaceShowName,
           namespaceDesc: values.namespaceDesc,
@@ -123,15 +129,12 @@ class NewNameSpace extends React.Component {
             this.refreshNameSpace(); // 刷新全局namespace
           } else {
             Dialog.alert({
-              title: aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.prompt'),
+              title: locale.notice,
               content: res.message,
-              language: aliwareIntl.currentLanguageCode,
             });
           }
         },
-        complete: () => {
-          this.closeLoading();
-        },
+        complete: () => this.closeLoading(),
       });
     });
   }
@@ -151,66 +154,52 @@ class NewNameSpace extends React.Component {
   }
 
   validateChart(rule, value, callback) {
+    const { locale = {} } = this.props;
     const chartReg = /[@#\$%\^&\*]+/g;
 
     if (chartReg.test(value)) {
-      callback(aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.input'));
+      callback(locale.input);
     } else {
       callback();
     }
   }
 
   render() {
-    const formItemLayout = {
-      labelCol: {
-        fixedSpan: 6,
-      },
-      wrapperCol: {
-        span: 18,
-      },
-    };
-
+    const { locale = {} } = this.props;
     const footer = (
       <div>
         <Button type="primary" onClick={this.handleSubmit.bind(this)} disabled={this.disabled}>
-          {aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.confirm')}
+          {locale.ok}
         </Button>
         <Button type="normal" onClick={this.closeDialog.bind(this)} style={{ marginLeft: 5 }}>
-          {aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.cancel')}
+          {locale.cancel}
         </Button>
       </div>
     );
     return (
       <div>
         <Dialog
-          title={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.newnamespce')}
+          title={locale.newnamespce}
           style={{ width: '50%' }}
           visible={this.state.dialogvisible}
           onOk={this.handleSubmit.bind(this)}
           onCancel={this.closeDialog.bind(this)}
           footer={footer}
           onClose={this.closeDialog.bind(this)}
-          language={aliwareIntl.currentLanguageCode}
         >
           <Form field={this.field}>
             <Loading
-              tip={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.loading')}
+              tip={locale.loading}
               style={{ width: '100%', position: 'relative' }}
               visible={this.state.loading}
             >
-              <FormItem
-                label={aliwareIntl.get('com.alibaba.nacos.component.NewNameSpace.name')}
-                required
-                {...formItemLayout}
-              >
+              <FormItem label={locale.name} required {...formItemLayout}>
                 <Input
                   {...this.field.init('namespaceShowName', {
                     rules: [
                       {
                         required: true,
-                        message: aliwareIntl.get(
-                          'com.alibaba.nacos.component.NewNameSpace.namespacenotnull'
-                        ),
+                        message: locale.namespacenotnull,
                       },
                       { validator: this.validateChart.bind(this) },
                     ],
@@ -218,19 +207,13 @@ class NewNameSpace extends React.Component {
                   style={{ width: '100%' }}
                 />
               </FormItem>
-              <FormItem
-                label={aliwareIntl.get('nacos.page.configdetail.Description')}
-                required
-                {...formItemLayout}
-              >
+              <FormItem label={locale.description} required {...formItemLayout}>
                 <Input
                   {...this.field.init('namespaceDesc', {
                     rules: [
                       {
                         required: true,
-                        message: aliwareIntl.get(
-                          'com.alibaba.nacos.component.NewNameSpace.namespacenotnull'
-                        ),
+                        message: locale.namespacedescnotnull,
                       },
                       { validator: this.validateChart.bind(this) },
                     ],

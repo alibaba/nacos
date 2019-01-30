@@ -1,3 +1,36 @@
+## 0.8.0(Jan 22, 2019) PRE-GA
+
+* [#162] Support open metrics and prometheus
+* [#268] Health check is performed in the Nacos startup script
+* [#320] Nacos supports multiple configuration files, configuration template abstraction and inheritance
+* [#333] Use nacos in k8s to get hostname exception
+* [#335] update nacos.io docker img priority/low
+* [#339] Project language problem identified in github
+* [#381] Discuss：How to support Login
+* [#397] Some questions for Nacos
+* [#402] When the configuration is added or edited, the edit box will not come out 
+* [#462] Nacos monitor discuss (0.8 version)
+* [#496] Warning log printing when quering a nonexistent service
+* [#497] Make subscription of service triggered by getInstance method optional
+* [#498] Support namespace for service discovery
+* [#499] When the configuration is newly created (if data-id and group already exist), the original configuration will be overwritten
+* [#512] nacos-logs start.out always print 8848 (but port can be changed)
+* [#514] Nacos 0.7 not support namespace
+* [#523] Add a switch to control server detection and client reporting heartbeat switching
+* [#526] Possible data loss in server side health check mode
+* [#527] Many repeat client beat tasks can be generated
+* [#558] Enable access log recording by default 
+* [#560] Nacos server startup issues
+* [#579] New API support - “update health in none health check mode through api”
+* [#587] Client sends request concurrently
+* [#592] Service restful interface put/post is reversed
+* [#599] getSubscribeServices method gets services that were deregistered
+* [#603] Format log of naming module 
+* [#609] Always print a NPE log at start
+* [#663] Nacos update instance info NPE
+* [#668] 0.8.0-SNAPSHOT naming heartbeat not compatible with lower version client
+* [#672] Startup.cmd bug
+
 ## 0.7.0(Dec, 2018)
 
 * [ #461 ] Registration failed when instance port is set to 0

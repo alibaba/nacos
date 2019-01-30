@@ -12,18 +12,26 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
+import { Button, ConfigProvider, Dialog, Grid, Icon } from '@alifd/next';
+
 import './index.scss';
-import { aliwareIntl } from '../../globalLib';
-import { Button, Dialog, Grid, Icon } from '@alifd/next';
 
 const { Row, Col } = Grid;
 
+@ConfigProvider.config
 class DeleteDialog extends React.Component {
+  static displayName = 'DeleteDialog';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
     this.state = {
       visible: false,
-      title: aliwareIntl.get('nacos.component.DeleteDialog.Configuration_management'),
+      title: '',
       content: '',
       isok: true,
       dataId: '',
@@ -31,7 +39,14 @@ class DeleteDialog extends React.Component {
     };
   }
 
-  componentDidMount() {}
+  componentDidMount() {
+    this.initData();
+  }
+
+  initData() {
+    const { locale = {} } = this.props;
+    this.setState({ title: locale.confManagement });
+  }
 
   openDialog(payload) {
     this.setState({
@@ -52,10 +67,11 @@ class DeleteDialog extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const footer = (
       <div style={{ textAlign: 'right' }}>
         <Button type="primary" onClick={this.closeDialog.bind(this)}>
-          {aliwareIntl.get('nacos.component.DeleteDialog.determine')}
+          {locale.determine}
         </Button>
       </div>
     );
@@ -64,32 +80,23 @@ class DeleteDialog extends React.Component {
         <Dialog
           visible={this.state.visible}
           footer={footer}
-          language={aliwareIntl.currentLanguageCode || 'zh-cn'}
           style={{ width: 555 }}
           onCancel={this.closeDialog.bind(this)}
           onClose={this.closeDialog.bind(this)}
-          title={aliwareIntl.get('nacos.component.DeleteDialog.deletetitle')}
+          title={locale.deletetitle}
         >
           <div>
             <Row>
               <Col span={'4'} style={{ paddingTop: 16 }}>
-                {this.state.isok ? (
-                  <Icon type="success-filling" style={{ color: 'green' }} size={'xl'} />
-                ) : (
-                  <Icon type="delete-filling" style={{ color: 'red' }} size={'xl'} />
-                )}
+                <Icon
+                  type={`${this.state.isok ? 'success' : 'delete'}-filling`}
+                  style={{ color: this.state.isok ? 'green' : 'red' }}
+                  size={'xl'}
+                />
               </Col>
               <Col span={'20'}>
                 <div>
-                  <h3>
-                    {this.state.isok
-                      ? aliwareIntl.get(
-                          'nacos.component.DeleteDialog.deleted_successfully_configured'
-                        )
-                      : aliwareIntl.get(
-                          'nacos.component.DeleteDialog.delete_the_configuration_failed'
-                        )}
-                  </h3>
+                  <h3>{this.state.isok ? locale.deletedSuccessfully : locale.deleteFailed}</h3>
                   <p>
                     <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
                     <span style={{ color: '#c7254e' }}>{this.state.dataId}</span>
