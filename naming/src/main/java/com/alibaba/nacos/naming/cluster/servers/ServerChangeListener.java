@@ -13,14 +13,14 @@ public interface ServerChangeListener {
     /**
      * If member list changed, this method is invoked.
      *
-     * @param latestMembers servers after chang
+     * @param servers servers after change
      */
-    void onChangeServerList(List<Server> latestMembers);
+    void onChangeServerList(List<Server> servers);
 
     /**
      * If reachable member list changed, this method is invoked.
      *
-     * @param latestReachableMembers reachable servers after change
+     * @param healthyServer reachable servers after change
      */
-    void onChangeHealthServerList(List<Server> latestReachableMembers);
+    void onChangeHealthyServerList(List<Server> healthyServer);
 }

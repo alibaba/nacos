@@ -194,8 +194,7 @@ public class ServiceManager implements DataListener<Service> {
     }
 
     private class UpdatedDomainProcessor implements Runnable {
-        //get changed domain  from other server asynchronously
-
+        //get changed domain from other server asynchronously
         @Override
         public void run() {
             String domName = null;
@@ -262,13 +261,13 @@ public class ServiceManager implements DataListener<Service> {
             ipsMap.put(strings[0], strings[1]);
         }
 
-        Service raftService = (Service) getService(namespaceId, domName);
+        Service service = getService(namespaceId, domName);
 
-        if (raftService == null) {
+        if (service == null) {
             return;
         }
 
-        List<Instance> instances = raftService.allIPs();
+        List<Instance> instances = service.allIPs();
         for (Instance instance : instances) {
 
             Boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIPAddr()));
@@ -280,14 +279,14 @@ public class ServiceManager implements DataListener<Service> {
             }
         }
 
-        pushService.domChanged(raftService.getNamespaceId(), raftService.getName());
+        pushService.domChanged(service.getNamespaceId(), service.getName());
         StringBuilder stringBuilder = new StringBuilder();
-        List<Instance> allIps = raftService.allIPs();
+        List<Instance> allIps = service.allIPs();
         for (Instance instance : allIps) {
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", raftService.getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", service.getName(), stringBuilder.toString());
 
     }
 

@@ -63,8 +63,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @JSONField(serialize = false)
     private Service dom;
 
-    private Map<String, Boolean> ipContains = new ConcurrentHashMap<>();
-
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     public Cluster() {

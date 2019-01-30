@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.selector;
 
+import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.naming.core.Instance;
 
@@ -26,7 +27,7 @@ import java.util.List;
  * @author nkorange
  * @since 0.7.0
  */
-public class NoneSelector extends com.alibaba.nacos.api.selector.AbstractSelector implements Selector {
+public class NoneSelector extends AbstractSelector implements Selector {
 
     public NoneSelector() {
         this.setType(SelectorType.none.name());

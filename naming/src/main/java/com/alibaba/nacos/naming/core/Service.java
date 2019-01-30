@@ -109,7 +109,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         this.enabled = enabled;
     }
 
-
     public long getLastModifiedMillis() {
         return lastModifiedMillis;
     }

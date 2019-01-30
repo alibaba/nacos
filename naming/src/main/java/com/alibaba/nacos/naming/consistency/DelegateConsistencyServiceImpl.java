@@ -87,13 +87,11 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Override
     public boolean isResponsible(String key) {
-        // TODO convert key to service name:
-        return distroMapper.responsible(key);
+        return distroMapper.responsible(KeyBuilder.getServiceName(key));
     }
 
     @Override
     public String getResponsibleServer(String key) {
-        // TODO convert key to service name:
-        return distroMapper.mapSrv(key);
+        return distroMapper.mapSrv(KeyBuilder.getServiceName(key));
     }
 }

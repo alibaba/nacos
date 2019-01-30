@@ -30,11 +30,11 @@ import java.util.*;
  */
 public class NamingProxy {
 
-    private static final String DATA_ON_SYNC_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/onSync";
+    private static final String DATA_ON_SYNC_URL = "/partition/onSync";
 
-    private static final String DATA_GET_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/get";
+    private static final String DATA_GET_URL = "/partition/get";
 
-    private static final String TIMESTAMP_SYNC_URL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition/syncTimestamps";
+    private static final String TIMESTAMP_SYNC_URL = "/partition/syncTimestamps";
 
     public static void syncTimestamps(Map<String, Long> timestamps, String server) {
 
@@ -144,9 +144,7 @@ public class NamingProxy {
                 return StringUtils.EMPTY;
             }
 
-            throw new IOException("failed to req API:" + "http://" + curServer
-                + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api + ". code:"
+            throw new IOException("failed to req API:" + "http://" + curServer + api + ". code:"
                 + result.code + " msg: " + result.content);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);

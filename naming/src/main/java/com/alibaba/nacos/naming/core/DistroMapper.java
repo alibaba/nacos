@@ -19,7 +19,6 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.collections.CollectionUtils;
@@ -27,7 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author nkorange
@@ -62,7 +62,7 @@ public class DistroMapper implements ServerChangeListener {
             && cluster.contains(instance);
     }
 
-    public boolean responsible(String dom) {
+    public boolean responsible(String serviceName) {
         if (!switchDomain.isDistroEnabled()) {
             return true;
         }
@@ -78,7 +78,7 @@ public class DistroMapper implements ServerChangeListener {
             return true;
         }
 
-        int target = distroHash(dom) % healthyList.size();
+        int target = distroHash(serviceName) % healthyList.size();
         return target >= index && target <= lastIndex;
     }
 
@@ -106,7 +106,7 @@ public class DistroMapper implements ServerChangeListener {
     }
 
     @Override
-    public void onChangeHealthServerList(List<Server> latestReachableMembers) {
+    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
 
         List<String> newHealthyList = new ArrayList<>();
         for (Server server : latestReachableMembers) {
