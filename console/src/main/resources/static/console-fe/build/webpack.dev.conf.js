@@ -26,7 +26,7 @@ module.exports = Object.assign({}, base, {
       context: ['/'],
       changeOrigin: true,
       secure: false,
-      target: 'http://console.nacos.io',
+      target: 'http://localhost:8848',
       pathRewrite: {'^/v1' : '/nacos/v1'}
     }],
     disableHostCheck: true,

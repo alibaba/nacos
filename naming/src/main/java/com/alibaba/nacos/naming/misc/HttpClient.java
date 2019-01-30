@@ -24,11 +24,9 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
-import org.apache.http.client.RedirectStrategy;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -36,7 +34,6 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HttpContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,7 +109,7 @@ public class HttpClient {
 
             return getResult(conn);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("VIPSRV", "Exception while request: " + url + ", caused: " + e.getMessage());
+            Loggers.SRV_LOG.warn("[VIPSRV] Exception while request: {}, caused: {}", url, e);
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {
             if (conn != null) {

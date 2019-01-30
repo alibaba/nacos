@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DomainsManager;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.naming.core.IpAddress;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
+import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -48,16 +50,20 @@ public class ServiceController {
     @Autowired
     protected DomainsManager domainsManager;
 
-    @RequestMapping(value = "", method = RequestMethod.PUT)
+    @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
-        String serviceName = WebUtils.required(request, "serviceName");
 
-        if (domainsManager.getDomain(serviceName) != null) {
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+
+        if (domainsManager.getDomain(namespaceId, serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
         }
 
         float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
-        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", "client");
+        String healthCheckMode = WebUtils.optional(request, "healthCheckMode", Switch.getDefaultHealthCheckMode());
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
@@ -73,6 +79,7 @@ public class ServiceController {
         domObj.setEnableClientBeat(HealthCheckMode.client.name().equals(healthCheckMode.toLowerCase()));
         domObj.setMetadata(metadataMap);
         domObj.setSelector(parseSelector(selector));
+        domObj.setNamespaceId(namespaceId);
 
         // now valid the dom. if failed, exception will be thrown
         domObj.setLastModifiedMillis(System.currentTimeMillis());
@@ -87,9 +94,11 @@ public class ServiceController {
     @RequestMapping(value = "", method = RequestMethod.DELETE)
     public String remove(HttpServletRequest request) throws Exception {
 
-        String serviceName = WebUtils.required(request, "serviceName");
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
 
-        VirtualClusterDomain service = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        VirtualClusterDomain service = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (service == null) {
             throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
         }
@@ -98,7 +107,7 @@ public class ServiceController {
             throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
         }
 
-        domainsManager.easyRemoveDom(serviceName);
+        domainsManager.easyRemoveDom(namespaceId, serviceName);
 
         return "ok";
     }
@@ -106,14 +115,18 @@ public class ServiceController {
     @RequestMapping(value = "", method = RequestMethod.GET)
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
-        String serviceName = WebUtils.required(request, "serviceName");
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
+
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
         JSONObject res = new JSONObject();
         res.put("name", serviceName);
+        res.put("namespaceId", domain.getNamespaceId());
         res.put("protectThreshold", domain.getProtectThreshold());
 
         res.put("healthCheckMode", HealthCheckMode.none.name());
@@ -138,9 +151,15 @@ public class ServiceController {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        List<String> doms = domainsManager.getAllDomNamesList();
+        List<String> doms = domainsManager.getAllDomNamesList(namespaceId);
+
+        if (doms == null || doms.isEmpty()) {
+            throw new NacosException(NacosException.INVALID_PARAM, "No service exist in " + namespaceId);
+        }
 
         if (StringUtils.isNotBlank(selectorString)) {
 
@@ -159,10 +178,10 @@ public class ServiceController {
                     String[] factors = terms[0].split("\\.");
                     switch (factors[0]) {
                         case "INSTANCE":
-                            doms = filterInstanceMetadata(doms, factors[factors.length - 1], terms[1].replace("'", ""));
+                            doms = filterInstanceMetadata(namespaceId, doms, factors[factors.length - 1], terms[1].replace("'", ""));
                             break;
                         case "SERVICE":
-                            doms = filterServiceMetadata(doms, factors[factors.length - 1], terms[1].replace("'", ""));
+                            doms = filterServiceMetadata(namespaceId, doms, factors[factors.length - 1], terms[1].replace("'", ""));
                             break;
                         default:
                             break;
@@ -193,16 +212,18 @@ public class ServiceController {
 
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
-        String serviceName = WebUtils.required(request, "serviceName");
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, Constants.REQUEST_PARAM_SERVICE_NAME);
         float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
         String healthCheckMode = WebUtils.required(request, "healthCheckMode");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
         }
@@ -238,16 +259,16 @@ public class ServiceController {
         return "ok";
     }
 
-    private List<String> filterInstanceMetadata(List<String> serivces, String key, String value) {
+    private List<String> filterInstanceMetadata(String namespaceId, List<String> serivces, String key, String value) {
 
         List<String> filteredServices = new ArrayList<>();
         for (String service : serivces) {
-            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(service);
+            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, service);
             if (serviceObj == null) {
                 continue;
             }
             for (IpAddress address : serviceObj.allIPs()) {
-                if (value.equals(address.getMetadata().get(key))) {
+                if (address.getMetadata() != null && value.equals(address.getMetadata().get(key))) {
                     filteredServices.add(service);
                     break;
                 }
@@ -256,11 +277,11 @@ public class ServiceController {
         return filteredServices;
     }
 
-    private List<String> filterServiceMetadata(List<String> serivces, String key, String value) {
+    private List<String> filterServiceMetadata(String namespaceId, List<String> serivces, String key, String value) {
 
         List<String> filteredServices = new ArrayList<>();
         for (String service : serivces) {
-            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(service);
+            VirtualClusterDomain serviceObj = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, service);
             if (serviceObj == null) {
                 continue;
             }

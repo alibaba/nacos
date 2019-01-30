@@ -19,6 +19,7 @@ import java.util.Map;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 public class Entity {
 

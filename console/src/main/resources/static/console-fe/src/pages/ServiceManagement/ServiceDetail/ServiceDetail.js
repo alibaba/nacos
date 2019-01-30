@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '@/globalLib';
-import { Button, Card, ConfigProvider, Form, Loading } from '@alifd/next';
+import { Input, Button, Card, ConfigProvider, Form, Loading } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
@@ -29,6 +30,12 @@ const pageFormLayout = {
 @ConfigProvider.config
 class ServiceDetail extends React.Component {
   static displayName = 'ServiceDetail';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+    location: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -119,25 +126,25 @@ class ServiceDetail extends React.Component {
             </Button>
           </h1>
 
-          <Form style={{ width: '60%' }} {...pageFormLayout}>
+          <Form {...pageFormLayout}>
             <FormItem label={`${locale.serviceName}:`}>
-              <p>{service.name}</p>
+              <Input value={service.name} readOnly />
             </FormItem>
             <FormItem label={`${locale.protectThreshold}:`}>
-              <p>{service.protectThreshold}</p>
+              <Input value={service.protectThreshold} readOnly />
             </FormItem>
             <FormItem label={`${locale.healthCheckPattern}:`}>
-              <p>{service.healthCheckMode}</p>
+              <Input value={service.healthCheckMode} readOnly />
             </FormItem>
             <FormItem label={`${locale.metadata}:`}>
-              <p>{metadataText}</p>
+              <Input value={metadataText} readOnly />
             </FormItem>
             <FormItem label={`${locale.type}:`}>
-              <p>{selector.type}</p>
+              <Input value={selector.type} readOnly />
             </FormItem>
             {service.type === 'label' && (
               <FormItem label={`${locale.selector}:`}>
-                <p>{selector.selector}</p>
+                <Input value={selector.selector} readOnly />
               </FormItem>
             )}
           </Form>

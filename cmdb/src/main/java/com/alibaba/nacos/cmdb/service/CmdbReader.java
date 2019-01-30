@@ -22,6 +22,7 @@ import java.util.List;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 public interface CmdbReader {
 
