@@ -22,6 +22,7 @@ import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Domain;
+import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -49,6 +50,8 @@ public class UtilsAndCommons {
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
+    public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
+
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
@@ -57,13 +60,15 @@ public class UtilsAndCommons {
 
     public static final String SUPER_TOKEN = "xy";
 
-    public static final String DOMAINS_DATA_ID = "com.alibaba.nacos.naming.domains.meta";
+    public static final String DOMAINS_DATA_ID_PRE = "com.alibaba.nacos.naming.domains.meta.";
 
     public static final String IPADDRESS_DATA_ID_PRE = "com.alibaba.nacos.naming.iplist.";
 
     static public final String NODE_TAG_IP_PRE = "com.alibaba.nacos.naming.tag.iplist.";
 
     public static final String TAG_DOMAINS_DATA_ID = "com.alibaba.nacos.naming.domains.tag.meta";
+
+    public static final String SWITCH_DOMAIN_NAME = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
 
     static public final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
 
@@ -75,7 +80,7 @@ public class UtilsAndCommons {
 
     public static final int RAFT_PUBLISH_TIMEOUT = 5000;
 
-    static public final String RAFT_DOM_PRE = "meta";
+    static public final String RAFT_DOM_PRE = "meta.";
     static public final String RAFT_IPLIST_PRE = "iplist.";
     static public final String RAFT_TAG_DOM_PRE = "tag.meta";
     static public final String RAFT_TAG_IPLIST_PRE = "tag.iplist.";
@@ -98,11 +103,15 @@ public class UtilsAndCommons {
 
     public static final String API_SET_ALL_WEIGHTS = "/api/setWeight4AllIPs";
 
-    public static final String API_DOM_SERVE_STATUS = "/api/domServeStatus";
-
     public static final String API_IP_FOR_DOM = "/api/ip4Dom";
 
     public static final String API_DOM = "/api/dom";
+
+    public static final String SERVICE_GROUP_CONNECTOR = "##";
+
+    public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
+
+    public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
     public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
 
@@ -208,11 +217,19 @@ public class UtilsAndCommons {
 
 
     public static String getIPListStoreKey(Domain dom) {
+        if (dom instanceof VirtualClusterDomain) {
+            return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + ((VirtualClusterDomain) dom).getNamespaceId() +
+                UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
+        }
         return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getName();
     }
 
     public static String getDomStoreKey(Domain dom) {
-        return UtilsAndCommons.DOMAINS_DATA_ID + "." + dom.getName();
+        if (dom instanceof VirtualClusterDomain) {
+            return UtilsAndCommons.DOMAINS_DATA_ID_PRE + ((VirtualClusterDomain) dom).getNamespaceId() +
+                UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
+        }
+        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + dom.getName();
     }
 
     public static Map<String, String> parseMetadata(String metadata) throws NacosException {
@@ -239,5 +256,13 @@ public class UtilsAndCommons {
         }
 
         return metadataMap;
+    }
+
+    public static String getDefaultNamespaceId() {
+        return "public";
+    }
+
+    public static String assembleFullServiceName(String namespaceId, String serviceName) {
+        return namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + serviceName;
     }
 }

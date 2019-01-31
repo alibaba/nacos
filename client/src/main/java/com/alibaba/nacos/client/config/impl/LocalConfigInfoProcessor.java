@@ -104,10 +104,14 @@ public class LocalConfigInfoProcessor {
             }
         } else {
             try {
-                boolean isMdOk = file.getParentFile().mkdirs();
-                if (!isMdOk) {
-                    log.error(envName, "NACOS-XXXX", "save snapshot error");
+                File parentFile = file.getParentFile();
+                if (!parentFile.exists()) {
+                    boolean isMdOk = parentFile.mkdirs();
+                    if (!isMdOk) {
+                        log.error(envName, "NACOS-XXXX", "save snapshot error");
+                    }
                 }
+
                 if (JVMUtil.isMultiInstance()) {
                     ConcurrentDiskUtil.writeFileContent(file, config,
                         Constants.ENCODE);

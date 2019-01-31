@@ -12,6 +12,7 @@
     "no-template-curly-in-string": "off",
     "no-unused-vars": "off",
     "no-tabs": "off",
+    "no-param-reassign": "off",
     "react/no-string-refs": "off",
     "react/no-unused-state": "off",
     "no-return-assign": "off",
@@ -29,6 +30,6 @@
     "generator-star-spacing": "off",
     "wrap-iife": "off",
     "arrow-parens": "off",
-    "indent": "off",
+    "indent": "off"
   }
 }
