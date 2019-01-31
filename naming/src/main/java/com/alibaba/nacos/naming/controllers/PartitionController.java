@@ -25,8 +25,11 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -55,12 +58,16 @@ public class PartitionController {
 
     @RequestMapping("/onSync")
     public String onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        byte[] data = IoUtils.tryDecompress(request.getInputStream());
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
+        if (StringUtils.isBlank(entity)) {
+            Loggers.EPHEMERAL.error("[onSync] receive empty entity!");
+            throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
+        }
+
         Map<String, Datum<Instances>> dataMap =
-            serializer.deserializeMap(data, Instances.class);
+            serializer.deserializeMap(entity.getBytes(), Instances.class);
 
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
@@ -73,8 +80,8 @@ public class PartitionController {
     @RequestMapping("/syncTimestamps")
     public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
-        byte[] data = IoUtils.tryDecompress(request.getInputStream());
-        Map<String, Long> dataMap = serializer.deserialize(data, new TypeReference<Map<String, Long>>(){});
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        Map<String, Long> dataMap = serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, Long>>(){});
         consistencyService.onReceiveTimestamps(dataMap, source);
         return "ok";
     }

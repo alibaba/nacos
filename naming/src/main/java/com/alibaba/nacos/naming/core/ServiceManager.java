@@ -384,9 +384,7 @@ public class ServiceManager implements DataListener<Service> {
         if (!service.getClusterMap().containsKey(instance.getClusterName())) {
 
             Cluster cluster = new Cluster();
-
             cluster.setName(instance.getClusterName());
-
             cluster.setDom(service);
             cluster.init();
 
@@ -405,7 +403,19 @@ public class ServiceManager implements DataListener<Service> {
         if (serviceUpdated) {
             Lock lock = addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
             Condition condition = addCondtion(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-            addOrReplaceService(service);
+
+            final Service finalService = service;
+            GlobalExecutor.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        addOrReplaceService(finalService);
+                    } catch (Exception e) {
+                        Loggers.SRV_LOG.error("register or update service failed, service: {}", finalService, e);
+                    }
+                }
+            });
+
             try {
                 lock.lock();
                 condition.await(5000, TimeUnit.MILLISECONDS);

@@ -16,12 +16,14 @@
 package com.alibaba.nacos.naming.cluster.transport;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -62,8 +64,20 @@ public class FastJsonSerializer implements Serializer {
     public <T> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
         try {
             String dataString = new String(data, "UTF-8");
-            return JSON.parseObject(dataString, new TypeReference<Map<String, Datum<T>>>() {
+            Map<String, Datum<JSONObject>> dataMap = JSON.parseObject(dataString, new TypeReference<Map<String, Datum<JSONObject>>>() {
             });
+
+            Map<String, Datum<T>> resultMap = new HashMap<>(dataMap.size());
+            for (Map.Entry<String, Datum<JSONObject>> entry : dataMap.entrySet()) {
+
+                Datum<T> datum = new Datum<>();
+                datum.timestamp.set(entry.getValue().timestamp.get());
+                datum.key = entry.getValue().key;
+                datum.value = JSON.parseObject(entry.getValue().value.toJSONString(), clazz);
+                resultMap.put(entry.getKey(), datum);
+            }
+
+            return resultMap;
         } catch (Exception e) {
             Loggers.SRV_LOG.error("deserialize data failed.", e);
         }

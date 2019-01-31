@@ -130,19 +130,17 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-//        String value = Arrays.asList(entity).toArray(new String[1])[0];
         String value = URLDecoder.decode(entity, "UTF-8");
-        value = URLDecoder.decode(value, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
         String key = json.getString("key");
         if (KeyBuilder.matchInstanceListKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), new TypeReference<Map<String, Instance>>(){}));
+            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Instances.class));
             return "ok";
         }
 
         if (KeyBuilder.matchServiceMetaKey(key)) {
-            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), new TypeReference<Service>(){}));
+            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Service.class));
             return "ok";
         }
 

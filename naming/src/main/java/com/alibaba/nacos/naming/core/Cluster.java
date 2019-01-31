@@ -48,9 +48,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private int defIPPort = -1;
 
-    @JSONField(name = "healthChecker")
-    private AbstractHealthChecker healthChecker = new AbstractHealthChecker.Tcp();
-
     @JSONField(serialize = false)
     private HealthCheckTask checkTask;
 
@@ -121,7 +118,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         super.clone();
         Cluster cluster = new Cluster();
 
-        cluster.setHealthChecker(healthChecker.clone());
+        cluster.setHealthChecker(getHealthChecker().clone());
         cluster.setDom(getDom());
         cluster.persistentInstances = new HashSet<Instance>();
         cluster.checkTask = null;
@@ -283,10 +280,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     public void update(Cluster cluster) {
 
-        if (!healthChecker.equals(cluster.getHealthChecker())) {
+        if (!getHealthChecker().equals(cluster.getHealthChecker())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), healthChecker.toString(), cluster.getHealthChecker().toString());
-            healthChecker = cluster.getHealthChecker();
+                cluster.getDom().getName(), cluster.getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
+            setHealthChecker(cluster.getHealthChecker());
         }
 
         if (defCkport != cluster.getDefCkport()) {

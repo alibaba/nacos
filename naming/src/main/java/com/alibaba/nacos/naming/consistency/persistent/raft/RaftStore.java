@@ -33,7 +33,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
@@ -139,7 +142,8 @@ public class RaftStore {
                     return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
                     });
                 } catch (Exception e) {
-                    Datum<String> datum = JSON.parseObject(json, new TypeReference<Datum<String>>(){});
+                    Datum<String> datum = JSON.parseObject(json, new TypeReference<Datum<String>>() {
+                    });
                     Datum<Service> serviceDatum = new Datum<>();
                     serviceDatum.timestamp.set(datum.timestamp.get());
                     serviceDatum.key = datum.key;
@@ -149,23 +153,20 @@ public class RaftStore {
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {
-                try {
-                    return JSON.parseObject(json, new TypeReference<Datum<Instances>>() {
-                    });
-                } catch (Exception e) {
-                    Datum<String> datum = JSON.parseObject(json, new TypeReference<Datum<String>>(){});
-                    List<Instance> instanceList = JSON.parseObject(datum.value, new TypeReference<List<Instance>>(){});
-                    Datum<Instances> instancesDatum = new Datum<>();
-                    instancesDatum.key = datum.key;
-                    instancesDatum.timestamp.set(datum.timestamp.get());
 
-                    Instances instances = new Instances();
-                    instances.setInstanceMap(new HashMap<>(16));
-                    for (Instance instance : instanceList) {
-                        instances.getInstanceMap().put(instance.getDatumKey(), instance);
-                    }
-                    return instancesDatum;
+                Datum<List<Instance>> datum = JSON.parseObject(json, new TypeReference<Datum<List<Instance>>>() {
+                });
+                Datum<Instances> instancesDatum = new Datum<>();
+                instancesDatum.key = datum.key;
+                instancesDatum.timestamp.set(datum.timestamp.get());
+
+                Instances instances = new Instances();
+                instances.setInstanceMap(new HashMap<>(16));
+                for (Instance instance : datum.value) {
+                    instances.getInstanceMap().put(instance.getDatumKey(), instance);
                 }
+                return instancesDatum;
+
             }
 
             return JSON.parseObject(json, Datum.class);
