@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { ConfigProvider, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
 import RegionGroup from 'components/RegionGroup';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
@@ -21,6 +22,11 @@ import './index.scss';
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
   static displayName = 'HistoryRollback';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -300,10 +306,6 @@ class HistoryRollback extends React.Component {
             left={locale.toConfigure}
             namespaceCallBack={this.cleanAndGetData.bind(this)}
           />
-          {/** <div className={'namespacewrapper'}>
-                              <NameSpaceList namespaceCallBack={this.cleanAndGetData.bind(this)} />
-                           </div>* */}
-
           <div>
             <Form inline field={this.field}>
               <Form.Item label="Data ID:" required>

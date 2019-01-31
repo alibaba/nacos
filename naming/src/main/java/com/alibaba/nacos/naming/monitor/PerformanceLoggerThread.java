@@ -19,18 +19,24 @@ import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.raft.RaftCore;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.naming.raft.RaftPeer.State.FOLLOWER;
+
 /**
  * @author nacos
  */
+@Component
 public class PerformanceLoggerThread {
 
     @Autowired
@@ -46,16 +52,16 @@ public class PerformanceLoggerThread {
         }
     });
 
-    private static final long PERIOD = 1 * 60 * 60;
+    private static final long PERIOD = 5 * 60;
     private static final long HEALTH_CHECK_PERIOD = 5 * 60;
 
-    public void init(DomainsManager domainsManager) {
-        this.domainsManager = domainsManager;
+    @PostConstruct
+    public void init() {
         start();
     }
 
     private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is " + Switch.isHealthCheckEnabled());
+        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", Switch.isHealthCheckEnabled());
     }
 
     class HealthCheckSwitchTask implements Runnable {
@@ -74,20 +80,41 @@ public class PerformanceLoggerThread {
         PerformanceLogTask task = new PerformanceLogTask();
         executor.scheduleWithFixedDelay(task, 30, PERIOD, TimeUnit.SECONDS);
         executor.scheduleWithFixedDelay(new HealthCheckSwitchTask(), 30, HEALTH_CHECK_PERIOD, TimeUnit.SECONDS);
-        executor.scheduleWithFixedDelay(new AllDomNamesTask(), 60, 60, TimeUnit.SECONDS);
 
     }
 
-    class AllDomNamesTask implements Runnable {
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void refreshMetrics() {
+        PushService.setFailedPush(0);
+        PushService.setTotalPush(0);
+        MetricsMonitor.getHttpHealthCheckMonitor().set(0);
+        MetricsMonitor.getMysqlHealthCheckMonitor().set(0);
+        MetricsMonitor.getTcpHealthCheckMonitor().set(0);
+    }
 
-        @Override
-        public void run() {
-            try {
-                domainsManager.setAllDomNames(new ArrayList<String>(domainsManager.getAllDomNames()));
-                Loggers.PERFORMANCE_LOG.debug("refresh all dom names: " + domainsManager.getAllDomNamesCache().size());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+    @Scheduled(cron = "0/15 * * * * ?")
+    public void collectmetrics() {
+        int domCount = domainsManager.getDomCount();
+        MetricsMonitor.getDomCountMonitor().set(domCount);
+
+        int ipCount = domainsManager.getInstanceCount();
+        MetricsMonitor.getIpCountMonitor().set(ipCount);
+
+        long maxPushCost = getMaxPushCost();
+        MetricsMonitor.getMaxPushCostMonitor().set(maxPushCost);
+
+        long avgPushCost = getAvgPushCost();
+        MetricsMonitor.getAvgPushCostMonitor().set(avgPushCost);
+
+        MetricsMonitor.getTotalPushMonitor().set(PushService.getTotalPush());
+        MetricsMonitor.getFailedPushMonitor().set(PushService.getFailedPushCount());
+
+        if (RaftCore.isLeader()) {
+            MetricsMonitor.getLeaderStatusMonitor().set(1);
+        } else if (RaftCore.getPeerSet().local().state == FOLLOWER) {
+            MetricsMonitor.getLeaderStatusMonitor().set(0);
+        } else {
+            MetricsMonitor.getLeaderStatusMonitor().set(2);
         }
     }
 
@@ -97,12 +124,13 @@ public class PerformanceLoggerThread {
         public void run() {
             try {
                 int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getIPCount();
-                long maxPushMaxCost = getMaxPushCost();
+                int ipCount = domainsManager.getInstanceCount();
+                long maxPushCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushMaxCost + "|" + avgPushCost);
+
+                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("PERFORMANCE", "Exception while print performance log.", e);
+                Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }
 
         }

@@ -13,15 +13,20 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import { ConfigProvider, Dialog } from '@alifd/next';
+import { getParams, setParams, request } from '../../globalLib';
+
 import './index.scss';
-import { Dialog } from '@alifd/next';
-import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
 
 /**
  * 命名空间列表
  */
+@ConfigProvider.config
 class NameSpaceList extends React.Component {
+  static displayName = 'NameSpaceList';
+
   static propTypes = {
+    locale: PropTypes.object,
     setNowNameSpace: PropTypes.func,
     namespaceCallBack: PropTypes.func,
     title: PropTypes.string,
@@ -67,6 +72,7 @@ class NameSpaceList extends React.Component {
       });
     }
   }
+
   // if (!this.state.namespaceList || this.state.namespaceList.length === 0) {
   //     this.getNameSpaces();
   // } else {
@@ -74,9 +80,10 @@ class NameSpaceList extends React.Component {
   // }
 
   /**
-      切换namespace
-    * */
+   切换namespace
+   * */
   changeNameSpace(ns, nsName) {
+    localStorage.setItem('namespace', ns);
     this.setnamespace(ns || '');
     setParams({
       namespace: ns || '',
@@ -94,7 +101,8 @@ class NameSpaceList extends React.Component {
   }
 
   getNameSpaces() {
-    if (window.namespaceList) {
+    const { locale = {} } = this.props;
+    if (window.namespaceList && window.namespaceList.length) {
       this.handleNameSpaces(window.namespaceList);
     } else {
       request({
@@ -105,8 +113,7 @@ class NameSpaceList extends React.Component {
             this.handleNameSpaces(res.data);
           } else {
             Dialog.alert({
-              language: aliwareIntl.currentLanguageCode || 'zh-cn',
-              title: aliwareIntl.get('com.alibaba.nacos.component.NameSpaceList.Prompt'),
+              title: locale.notice,
               content: res.message,
             });
           }
@@ -134,6 +141,7 @@ class NameSpaceList extends React.Component {
     }
     window.namespaceShowName = namespaceShowName;
     setParams('namespace', nownamespace || '');
+    localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
     this.props.setNowNameSpace && this.props.setNowNameSpace(namespaceShowName, nownamespace);
     this.setState({
@@ -185,8 +193,8 @@ class NameSpaceList extends React.Component {
 
     return (
       <div
-        className={namespaceList.length > 0 ? 'namespacewrapper' : ''}
-        style={namespaceList.length > 0 ? namespacestyle : {}}
+        className={namespaceList.length ? 'namespacewrapper' : ''}
+        style={namespaceList.length ? namespacestyle : {}}
       >
         {}
         {title ? (

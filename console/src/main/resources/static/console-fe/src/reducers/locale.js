@@ -26,9 +26,9 @@ const initialState = {
 };
 
 const changeLanguage = lang => dispatch => {
-  const language = lang === 'zh-cn' ? 'zh-cn' : 'en-us';
-  CookieHelp.setValue(LANGUAGE_KEY, language);
-  dispatch({ type: LANGUAGE_SWITCH, language, locale: language === 'zh-cn' ? zhCN : enUS });
+  const language = lang === 'zh-CN' ? 'zh-CN' : 'en-US';
+  localStorage.setItem(LANGUAGE_KEY, language);
+  dispatch({ type: LANGUAGE_SWITCH, language, locale: language === 'zh-CN' ? zhCN : enUS });
 };
 
 export default (state = initialState, action) => {

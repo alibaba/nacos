@@ -50,6 +50,10 @@ public class WebUtils {
 
         String value = req.getParameter(key);
 
+        if (StringUtils.isBlank(value)) {
+            return defaultValue;
+        }
+
         String encoding = req.getParameter("encoding");
         if (!StringUtils.isEmpty(encoding)) {
             try {

@@ -21,8 +21,6 @@ import com.alibaba.nacos.naming.misc.*;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.collections.CollectionUtils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +59,7 @@ public class DistroMapper {
         init();
 
         UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(new ServerStatusReporter(),
-                60000, TimeUnit.MILLISECONDS);
+            60000, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -110,7 +108,7 @@ public class DistroMapper {
             // site:ip:lastReportTime:weight
             String[] params = config.split("#");
             if (params.length <= 3) {
-                Loggers.SRV_LOG.warn("received malformed distro map data: " + config);
+                Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
 
@@ -159,10 +157,10 @@ public class DistroMapper {
         float curRatio = (float) newHealthyList.size() / allSiteSrvs.size();
 
         if (AUTO_DISABLED_HEALTH_CHECK
-                && curRatio > Switch.getDistroThreshold()
-                && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
+            && curRatio > Switch.getDistroThreshold()
+            && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
             Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
-                    "stable now, enable health check. current ratio: " + curRatio);
+                "stable now, enable health check. current ratio: {}", curRatio);
 
             Switch.setHeathCheckEnabled(true);
 
@@ -174,7 +172,8 @@ public class DistroMapper {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
-                        "disable health check for " + STABLE_PERIOD + "ms from now on, healthList: " + healthyList + ",newHealthyList " + newHealthyList);
+                        "disable health check for {} ms from now on, healthList: {}, newHealthyList {}",
+                    STABLE_PERIOD, healthyList, newHealthyList);
 
                 Switch.setHeathCheckEnabled(false);
                 AUTO_DISABLED_HEALTH_CHECK = true;
@@ -200,7 +199,7 @@ public class DistroMapper {
             // site:ip:lastReportTime:weight
             String[] params = config.split("#");
             if (params.length <= 3) {
-                Loggers.SRV_LOG.warn("received malformed distro map data: " + config);
+                Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);
                 continue;
             }
 
@@ -232,8 +231,8 @@ public class DistroMapper {
 
                 if (serverId.equals(newServerId)) {
                     if (s.alive != server.alive || s.weight != server.weight) {
-                        Loggers.SRV_LOG.warn("server beat out of date, current: " + JSON.toJSONString(server)
-                                + ", last: " + JSON.toJSONString(s));
+                        Loggers.SRV_LOG.warn("server beat out of date, current: {}, last: {}",
+                            JSON.toJSONString(server), JSON.toJSONString(s));
                     }
                     tmpServerList.add(server);
                     continue;
@@ -281,10 +280,10 @@ public class DistroMapper {
         float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
 
         if (AUTO_DISABLED_HEALTH_CHECK
-                && curRatio > Switch.getDistroThreshold()
-                && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
+            && curRatio > Switch.getDistroThreshold()
+            && System.currentTimeMillis() - LAST_HEALTH_SERVER_MILLIS > STABLE_PERIOD) {
             Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
-                    "stable now, enable health check. current ratio: " + curRatio);
+                "stable now, enable health check. current ratio: {}", curRatio);
 
             Switch.setHeathCheckEnabled(true);
 
@@ -296,7 +295,7 @@ public class DistroMapper {
             // for every change disable healthy check for some while
             if (Switch.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
-                        "disable health check for " + STABLE_PERIOD + "ms from now on");
+                    "disable health check for {} ms from now on", STABLE_PERIOD);
 
                 Switch.setHeathCheckEnabled(false);
                 AUTO_DISABLED_HEALTH_CHECK = true;
@@ -402,7 +401,7 @@ public class DistroMapper {
         try {
             NamingProxy.reqAPI("distroStatus", params, serverIP, false);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("DISTRO-STATUS-CLEAN", "Failed to request to clean server status to " + serverIP, e);
+            Loggers.SRV_LOG.warn("[DISTRO-STATUS-CLEAN] Failed to request to clean server status to " + serverIP, e);
         }
     }
 
@@ -488,7 +487,7 @@ public class DistroMapper {
                         }
 
                         if (!allServers.contains(localhostIP)) {
-                            Loggers.SRV_LOG.error("NA", "local ip is not in serverlist, ip: " + localhostIP + ", serverlist: " + allServers);
+                            Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}", localhostIP, allServers);
                             return;
                         }
 
@@ -500,7 +499,7 @@ public class DistroMapper {
                     }
                 }
             } catch (Exception e) {
-                Loggers.SRV_LOG.error("SERVER-STATUS", "Exception while sending server status: ", e);
+                Loggers.SRV_LOG.error("[SERVER-STATUS] Exception while sending server status", e);
             } finally {
                 UtilsAndCommons.SERVER_STATUS_EXECUTOR.schedule(this, Switch.getServerStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }

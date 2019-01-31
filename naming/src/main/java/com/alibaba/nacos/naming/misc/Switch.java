@@ -48,24 +48,22 @@ public class Switch {
         RaftCore.listen(new RaftListener() {
             @Override
             public boolean interests(String key) {
-                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
+                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME);
             }
 
             @Override
             public boolean matchUnlistenKey(String key) {
-                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + ".00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00");
+                return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME);
             }
 
             @Override
             public void onChange(String key, String value) throws Exception {
-                Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
+                Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
                 if (StringUtils.isEmpty(value)) {
                     return;
                 }
-                SwitchDomain switchDomain = JSON.parseObject(value, new TypeReference<SwitchDomain>() {
+                dom = JSON.parseObject(value, new TypeReference<SwitchDomain>() {
                 });
-
-                dom = switchDomain;
             }
 
             @Override
@@ -77,7 +75,7 @@ public class Switch {
 
     public static long getPushCacheMillis(String dom) {
         if (Switch.dom.pushCacheMillisMap == null
-                || !Switch.dom.pushCacheMillisMap.containsKey(dom)) {
+            || !Switch.dom.pushCacheMillisMap.containsKey(dom)) {
             return Switch.dom.defaultPushCacheMillis;
         }
 
@@ -90,7 +88,7 @@ public class Switch {
 
     public static long getCacheMillis(String dom) {
         if (Switch.dom.cacheMillisMap == null
-                || !Switch.dom.cacheMillisMap.containsKey(dom)) {
+            || !Switch.dom.cacheMillisMap.containsKey(dom)) {
             return Switch.dom.defaultCacheMillis;
         }
 
@@ -135,9 +133,9 @@ public class Switch {
 
     public static void save() {
         try {
-            RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(dom), JSON.toJSONString(dom));
+            RaftCore.doSignalPublish(UtilsAndCommons.getDomStoreKey(dom), JSON.toJSONString(dom), true);
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("VIPSRV-SWITCH", "failed to save switch", e);
+            Loggers.SRV_LOG.error("[SWITCH] failed to save switch", e);
         }
     }
 
@@ -163,6 +161,14 @@ public class Switch {
 
     public static void setHeathCheckEnabled(boolean enabled) {
         Switch.dom.healthCheckEnabled = enabled;
+    }
+
+    public static String getDefaultHealthCheckMode() {
+        return Switch.dom.defaultHealthCheckMode;
+    }
+
+    public static void setDefaultHealthCheckMode(String healthCheckMode) {
+        Switch.dom.defaultHealthCheckMode = healthCheckMode;
     }
 
     public static boolean isEnableAuthentication() {
@@ -191,7 +197,7 @@ public class Switch {
 
     public static Integer getAdWeight(String ip) {
         if (dom.adWeightMap == null
-                || !dom.adWeightMap.containsKey(ip)) {
+            || !dom.adWeightMap.containsKey(ip)) {
             return 0;
         }
 
@@ -205,6 +211,7 @@ public class Switch {
     public static String getPushJavaVersion() {
         return dom.pushJavaVersion;
     }
+
     public static String getPushGoVersion() {
         return dom.pushGoVersion;
     }
@@ -220,6 +227,7 @@ public class Switch {
     public static void setPushJavaVersion(String pushJavaVersion) {
         dom.pushJavaVersion = pushJavaVersion;
     }
+
     public static void setPushGoVersion(String pushGoVersion) {
         dom.pushGoVersion = pushGoVersion;
     }
