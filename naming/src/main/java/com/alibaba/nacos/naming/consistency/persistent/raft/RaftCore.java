@@ -925,10 +925,6 @@ public class RaftCore {
 
                     for (DataListener listener : listeners.get(datum.key)) {
 
-                        if (!listener.interests(datum.key)) {
-                            continue;
-                        }
-
                         count++;
 
                         try {

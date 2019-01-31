@@ -101,7 +101,7 @@ public class ClientBeatCheckTask implements Runnable {
                 .appendParam("namespaceId", domain.getNamespaceId());
 
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/?" + request.toUrl();
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
             HttpClient.HttpResult result = HttpClient.httpDelete(url, null, null);
             if (result.code != HttpURLConnection.HTTP_OK) {
                 Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",

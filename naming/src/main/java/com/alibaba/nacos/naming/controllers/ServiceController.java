@@ -22,10 +22,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -130,17 +127,28 @@ public class ServiceController {
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
-        Service domain = serviceManager.getService(namespaceId, serviceName);
-        if (domain == null) {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
         JSONObject res = new JSONObject();
         res.put("name", serviceName);
-        res.put("namespaceId", domain.getNamespaceId());
-        res.put("protectThreshold", domain.getProtectThreshold());
-        res.put("metadata", domain.getMetadata());
-        res.put("selector", domain.getSelector());
+        res.put("namespaceId", service.getNamespaceId());
+        res.put("protectThreshold", service.getProtectThreshold());
+        res.put("metadata", service.getMetadata());
+        res.put("selector", service.getSelector());
+
+        JSONArray clusters = new JSONArray();
+        for (Cluster cluster : service.getClusterMap().values()) {
+            JSONObject clusterJson = new JSONObject();
+            clusterJson.put("name", cluster.getName());
+            clusterJson.put("healthChecker", cluster.getHealthChecker());
+            clusterJson.put("metadata", cluster.getMetadata());
+            clusters.add(clusterJson);
+        }
+
+        res.put("clusters", clusters);
 
         return res;
     }

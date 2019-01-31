@@ -316,7 +316,8 @@ public class HttpClient {
                 httpPut.setHeader(entry.getKey(), entry.getValue());
             }
 
-            httpPut.setEntity(new ByteArrayEntity(content));
+            httpPut.setEntity(new StringEntity(new String(content, "UTF-8"), ContentType.create("application/json", "UTF-8")));
+
             HttpResponse response = httpClient.execute(httpPut);
             HttpEntity entity = response.getEntity();
 

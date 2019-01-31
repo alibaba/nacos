@@ -75,7 +75,7 @@ public class HealthCheckTask implements Runnable {
                 Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getDom().getName());
             }
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}, error: {}",
+            Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}",
                 cluster.getDom().getName(), cluster.getName(), e);
         } finally {
             if (!cancelled) {

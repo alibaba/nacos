@@ -146,6 +146,10 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
             onRemove(key);
         }
 
+        if (toUpdateKeys.isEmpty()) {
+            return;
+        }
+
         try {
             byte[] result = NamingProxy.getData(toUpdateKeys, server);
             if (result.length > 0) {
@@ -160,7 +164,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
                     }
                     for (DataListener listener : listeners.get(entry.getKey())) {
                         try {
-                            listener.onChange(entry.getKey(), entry.getValue());
+                            listener.onChange(entry.getKey(), entry.getValue().value);
                         } catch (Exception e) {
                             Loggers.EPHEMERAL.error("notify " + listener + ", key: " + entry.getKey() + " failed.", e);
                         }
