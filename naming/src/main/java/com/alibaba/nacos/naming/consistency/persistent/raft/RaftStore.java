@@ -165,6 +165,8 @@ public class RaftStore {
                 Instances instances = new Instances();
                 instances.setInstanceMap(new HashMap<>(16));
                 for (Instance instance : datum.value) {
+                    // make every instance not ephemeral:
+                    instance.setEphemeral(false);
                     instances.getInstanceMap().put(instance.getDatumKey(), instance);
                 }
                 instancesDatum.value = instances;

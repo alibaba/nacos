@@ -73,7 +73,9 @@ public class DistroFilter implements Filter {
             String url = "http://" + distroMapper.mapSrv(serviceName) +
                 req.getRequestURI() + "?" + req.getQueryString();
             try {
-                resp.sendRedirect(url);
+                resp.setCharacterEncoding("utf-8");
+                resp.getWriter().write(distroMapper.mapSrv(serviceName));
+                resp.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
             } catch (Exception ignore) {
                 Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
             }

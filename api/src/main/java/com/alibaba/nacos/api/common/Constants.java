@@ -126,4 +126,6 @@ public class Constants {
     public static final String REQUEST_PARAM_DEFAULT_NAMESPACE_ID = "public";
     public static final String REQUEST_PARAM_GROUP = "group";
     public static final String REQUEST_PARAM_DEFAULT_GROUP = "DEFAULT_GROUP";
+
+    public static final int WRITE_REDIRECT_CODE = 307;
 }

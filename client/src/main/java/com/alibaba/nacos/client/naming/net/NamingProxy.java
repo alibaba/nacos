@@ -327,6 +327,12 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
+        // TODO make a maximum count try:
+        if (Constants.WRITE_REDIRECT_CODE == result.code) {
+            LogUtils.LOG.info("redirect to " + result.content);
+            callServer(api, params, result.content, method);
+        }
+
         LogUtils.LOG.error("CALL-SERVER", "failed to req API:" + HttpClient.getPrefix() + curServer
             + api + ". code:"
             + result.code + " msg: " + result.content);
