@@ -110,6 +110,9 @@ const I18N_CONF = {
     protectThreshold: 'Protect Threshold',
     serviceName: 'Service Name',
     editService: 'Edit Service',
+    healthCheckPatternService: 'Service',
+    healthCheckPatternClient: 'Client',
+    healthCheckPatternNone: 'None',
   },
   EditServiceDialog: {
     createService: 'Create Service',
