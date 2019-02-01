@@ -218,7 +218,7 @@ public class InstanceController {
             serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
         }
 
-        Service service = (Service) serviceManager.getService(namespaceId, serviceName);
+        Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
             throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);

@@ -24,6 +24,8 @@ import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.ning.http.client.AsyncCompletionHandler;
@@ -114,13 +116,7 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
-        ConcurrentMap<String, Datum<?>> datumMap = raftStore.loadDatums();
-        if (datumMap != null && !datumMap.isEmpty()) {
-            datums = datumMap;
-            for (Map.Entry<String, Datum<?>> entry : datumMap.entrySet()) {
-                notifier.addTask(entry.getValue(), ApplyAction.CHANGE);
-            }
-        }
+        datums = raftStore.loadDatums(notifier);
 
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
@@ -619,7 +615,7 @@ public class RaftCore {
 
                 if (KeyBuilder.matchServiceMetaKey(key)) {
                     datumKey = KeyBuilder.detailServiceMetaKey(key);
-                } else if  (KeyBuilder.matchInstanceListKey(key)) {
+                } else if (KeyBuilder.matchInstanceListKey(key)) {
                     datumKey = KeyBuilder.detailInstanceListkey(key);
                 } else {
                     // ignore corrupted key:
@@ -676,29 +672,41 @@ public class RaftCore {
                                         continue;
                                     }
 
-                                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE) ||
-                                        UtilsAndCommons.INSTANCE_LIST_PERSISTED) {
-                                        RaftStore.write(datum);
+                                    RaftStore.write(datum);
+
+                                    if (KeyBuilder.matchServiceMetaKey(datum.key)) {
+                                        Datum<Service> serviceDatum = new Datum<>();
+                                        serviceDatum.key = datum.key;
+                                        serviceDatum.timestamp.set(datum.timestamp.get());
+                                        serviceDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Service.class);
+                                        datum = serviceDatum;
+                                    }
+
+                                    if (KeyBuilder.matchInstanceListKey(datum.key)) {
+                                        Datum<Instances> instancesDatum = new Datum<>();
+                                        instancesDatum.key = datum.key;
+                                        instancesDatum.timestamp.set(datum.timestamp.get());
+                                        instancesDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Instances.class);
+                                        datum = instancesDatum;
                                     }
 
                                     datums.put(datum.key, datum);
+                                    notifier.addTask(datum, ApplyAction.CHANGE);
+
                                     local.resetLeaderDue();
 
-                                    if (datum.key.startsWith(UtilsAndCommons.DOMAINS_DATA_ID_PRE)) {
-                                        if (local.term.get() + 100 > remote.term.get()) {
-                                            getLeader().term.set(remote.term.get());
-                                            local.term.set(getLeader().term.get());
-                                        } else {
-                                            local.term.addAndGet(100);
-                                        }
-
-                                        raftStore.updateTerm(local.term.get());
+                                    if (local.term.get() + 100 > remote.term.get()) {
+                                        getLeader().term.set(remote.term.get());
+                                        local.term.set(getLeader().term.get());
+                                    } else {
+                                        local.term.addAndGet(100);
                                     }
+
+                                    raftStore.updateTerm(local.term.get());
 
                                     Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
                                         datum.key, datum.timestamp, JSON.toJSONString(remote), local.term);
 
-                                    notifier.addTask(datum, ApplyAction.CHANGE);
                                 } catch (Throwable e) {
                                     Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader, key: {} {}", datum.key, e);
                                 } finally {

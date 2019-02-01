@@ -22,10 +22,7 @@ import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NamingProxy;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
@@ -150,9 +147,6 @@ public class DataSyncer implements ServerChangeListener {
             Map<String, Long> keyTimestamps = new HashMap<>(64);
             for (String key : dataStore.keys()) {
                 if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
-                    // this key is no longer in our hands:
-                    Loggers.EPHEMERAL.warn("remove key: {}", key);
-                    dataStore.remove(key);
                     continue;
                 }
                 keyTimestamps.put(key, dataStore.get(key).timestamp.get());
@@ -163,6 +157,9 @@ public class DataSyncer implements ServerChangeListener {
             }
 
             for (Server member : servers) {
+                if (NetUtils.localServer().equals(member.getKey())) {
+                    continue;
+                }
                 NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
             }
         }

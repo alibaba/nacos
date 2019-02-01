@@ -142,7 +142,7 @@ public class HealthCheckCommon {
                         ip.setValid(true);
                         ip.setMockValid(true);
 
-                        Service vDom = (Service) cluster.getDom();
+                        Service vDom = cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
 
                         pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
@@ -180,7 +180,7 @@ public class HealthCheckCommon {
                         ip.setValid(false);
                         ip.setMockValid(false);
 
-                        Service vDom = (Service) cluster.getDom();
+                        Service vDom = cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
@@ -215,7 +215,7 @@ public class HealthCheckCommon {
                     ip.setValid(false);
                     ip.setMockValid(false);
 
-                    Service vDom = (Service) cluster.getDom();
+                    Service vDom = cluster.getDom();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());
 
                     pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
