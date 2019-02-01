@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public abstract class AbstractHealthChecker implements Cloneable {
 
@@ -113,7 +113,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Http other = (Http) obj;
+            Http other = (Http)obj;
 
             if (!strEquals(type, other.getType())) {
                 return false;
@@ -212,7 +212,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Mysql other = (Mysql) obj;
+            Mysql other = (Mysql)obj;
 
             if (!strEquals(user, other.getUser())) {
                 return false;

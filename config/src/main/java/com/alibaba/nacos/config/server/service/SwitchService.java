@@ -29,17 +29,18 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Switch
+ *
  * @author Nacos
  */
 @Service
 public class SwitchService {
-	public static final String SWITCH_META_DATAID = "com.alibaba.nacos.meta.switch";
+    public static final String SWITCH_META_DATAID = "com.alibaba.nacos.meta.switch";
 
     public static final String FIXED_POLLING = "isFixedPolling";
     public static final String FIXED_POLLING_INTERVAL = "fixedPollingInertval";
-    
+
     public static final String FIXED_DELAY_TIME = "fixedDelayTime";
-    
+
     public static final String DISABLE_APP_COLLECTOR = "disableAppCollector";
 
     private static volatile Map<String, String> switches = new HashMap<String, String>();
@@ -48,7 +49,7 @@ public class SwitchService {
         boolean rtn = defaultValue;
         try {
             String value = switches.get(key);
-            rtn =  value != null ? Boolean.valueOf(value).booleanValue() : defaultValue;
+            rtn = value != null ? Boolean.valueOf(value).booleanValue() : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
             LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
@@ -60,7 +61,7 @@ public class SwitchService {
         int rtn = defaultValue;
         try {
             String status = switches.get(key);
-            rtn =  status != null ? Integer.parseInt(status) : defaultValue;
+            rtn = status != null ? Integer.parseInt(status) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
             LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
@@ -68,12 +69,11 @@ public class SwitchService {
         return rtn;
     }
 
-    
-    public static String getSwitchString(String key, String defaultValue){
-    	 String value = switches.get(key);
-         return  StringUtils.isBlank(value) ? defaultValue : value ;
+    public static String getSwitchString(String key, String defaultValue) {
+        String value = switches.get(key);
+        return StringUtils.isBlank(value) ? defaultValue : value;
     }
-    
+
     public static void load(String config) {
         if (StringUtils.isBlank(config)) {
             fatalLog.error("switch config is blank.");
@@ -83,7 +83,7 @@ public class SwitchService {
 
         Map<String, String> map = new HashMap<String, String>(30);
         try {
-            for (String line :  IOUtils.readLines(new StringReader(config))) {
+            for (String line : IOUtils.readLines(new StringReader(config))) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
                     String[] array = line.split("=");
 

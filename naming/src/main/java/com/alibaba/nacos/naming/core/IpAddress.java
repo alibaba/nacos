@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 /**
  * IP under domain
  *
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class IpAddress extends Instance implements Comparable {
 
@@ -301,7 +301,7 @@ public class IpAddress extends Instance implements Comparable {
     @Override
     public int compareTo(Object o) {
         if (!(o instanceof IpAddress)) {
-            Loggers.SRV_LOG.error("IPADDRESS-COMPARE", "Object is not an instance of IPAdress,object: " + o.getClass());
+            Loggers.SRV_LOG.error("[IPADDRESS-COMPARE] Object is not an instance of IPAdress, object: {}", o.getClass());
             throw new IllegalArgumentException("Object is not an instance of IPAdress,object: " + o.getClass());
         }
 

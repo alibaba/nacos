@@ -19,28 +19,24 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.raft.Datum;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import com.alibaba.nacos.naming.raft.RaftListener;
-import com.alibaba.nacos.naming.raft.RaftPeer;
-import com.alibaba.nacos.naming.raft.RaftStore;
-
+import com.alibaba.nacos.naming.raft.*;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * @author nacos
@@ -57,7 +53,7 @@ public class RaftCommands {
     public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         RaftPeer peer = RaftCore.MasterElection.receivedVote(
-                JSON.parseObject(BaseServlet.required(request, "vote"), RaftPeer.class));
+                JSON.parseObject(WebUtils.required(request, "vote"), RaftPeer.class));
 
         return JSON.parseObject(JSON.toJSONString(peer));
     }
@@ -69,6 +65,7 @@ public class RaftCommands {
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
 
         JSONObject json = JSON.parseObject(value);
         JSONObject beat = JSON.parseObject(json.getString("beat"));
@@ -101,7 +98,7 @@ public class RaftCommands {
     @NeedAuth
     @RequestMapping("/reloadDatum")
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String key = BaseServlet.required(request, "key");
+        String key = WebUtils.required(request, "key");
         RaftStore.load(key);
         return "ok";
     }
@@ -117,27 +114,11 @@ public class RaftCommands {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
-        RaftCore.doSignalPublish(json.getString("key"), json.getString("value"));
+        RaftCore.doSignalPublish(json.getString("key"), json.getString("value"), json.getBooleanValue("locked"));
 
-        return "ok";
-    }
-
-    @NeedAuth
-    @RequestMapping("/unSafePublish")
-    public String unSafePublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-        response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
-        response.setHeader("Cache-Control", "no-cache");
-        response.setHeader("Content-Encode", "gzip");
-
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-
-        String value = Arrays.asList(entity).toArray(new String[1])[0];
-        JSONObject json = JSON.parseObject(value);
-
-        RaftCore.unsafePublish(json.getString("key"), json.getString("value"));
         return "ok";
     }
 
@@ -148,7 +129,7 @@ public class RaftCommands {
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
-        RaftCore.signalDelete(BaseServlet.required(request, "key"));
+        RaftCore.signalDelete(WebUtils.required(request, "key"));
         return "ok";
     }
 
@@ -159,7 +140,8 @@ public class RaftCommands {
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
-        String keysString = BaseServlet.required(request, "keys");
+        String keysString = WebUtils.required(request, "keys");
+        keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
 
@@ -179,7 +161,7 @@ public class RaftCommands {
         response.setHeader("Content-Encode", "gzip");
 
         JSONObject result = new JSONObject();
-        result.put("doms", domainsManager.getRaftDomMap().size());
+        result.put("doms", domainsManager.getDomCount());
         result.put("peers", RaftCore.getPeers());
 
         return result;
@@ -196,9 +178,10 @@ public class RaftCommands {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 
-        RaftCore.onPublish(jsonObject);
+        RaftCore.onPublish(jsonObject, jsonObject.getBoolean("increaseTerm"));
         return "ok";
     }
 
@@ -213,6 +196,7 @@ public class RaftCommands {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         RaftCore.onDelete(JSON.parseObject(value));
         return "ok";
     }

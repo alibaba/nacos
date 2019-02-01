@@ -13,12 +13,17 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
-import { Button, Field, Form, Input } from '@alifd/next';
+import { Button, ConfigProvider, Field, Form, Input } from '@alifd/next';
+import { getParams, request } from '@/globalLib';
 
+import './index.scss';
+
+@ConfigProvider.config
 class HistoryDetail extends React.Component {
+  static displayName = 'HistoryDetail';
+
   static propTypes = {
+    locale: PropTypes.object,
     history: PropTypes.object,
   };
 
@@ -37,11 +42,6 @@ class HistoryDetail extends React.Component {
     this.nid = getParams('nid') || '123509854';
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     // this.params = window.location.hash.split('?')[1]||'';
-    this.typeMap = {
-      U: aliwareIntl.get('com.alibaba.nacos.page.historyDetail.update'),
-      I: aliwareIntl.get('com.alibaba.nacos.page.historyDetail.insert'),
-      D: aliwareIntl.get('com.alibaba.nacos.page.historyDetail.delete'),
-    };
   }
 
   componentDidMount() {
@@ -55,10 +55,15 @@ class HistoryDetail extends React.Component {
   }
 
   getDataDetail() {
+    const { locale = {} } = this.props;
     const self = this;
-
+    const typeMap = {
+      U: locale.update,
+      I: locale.insert,
+      D: locale.deleteAction,
+    };
     request({
-      url: `/nacos/v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
+      url: `v1/cs/history?dataId=${this.dataId}&group=${this.group}&nid=${this.nid}`,
       success(result) {
         if (result != null) {
           const data = result;
@@ -66,7 +71,7 @@ class HistoryDetail extends React.Component {
           self.field.setValue('content', data.content);
           self.field.setValue('appName', self.inApp ? self.edasAppName : data.appName);
           self.field.setValue('envs', self.serverId);
-          self.field.setValue('opType', self.typeMap[data.opType.trim()]);
+          self.field.setValue('opType', typeMap[data.opType.trim()]);
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
         }
@@ -83,6 +88,7 @@ class HistoryDetail extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -94,15 +100,13 @@ class HistoryDetail extends React.Component {
     };
     return (
       <div style={{ padding: 10 }}>
-        <h1>{aliwareIntl.get('com.alibaba.nacos.page.historyDetail.history_details')}</h1>
+        <h1>{locale.historyDetails}</h1>
         <Form field={this.field}>
           <Form.Item label="Data ID:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>
               <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                {this.state.showmore
-                  ? aliwareIntl.get('com.alibaba.nacos.page.historyDetail.recipient_from')
-                  : aliwareIntl.get('com.alibaba.nacos.page.historyDetail.more_advanced_options')}
+                {this.state.showmore ? locale.recipientFrom : locale.moreAdvancedOptions}
               </a>
             </div>
           </Form.Item>
@@ -110,33 +114,22 @@ class HistoryDetail extends React.Component {
             <Form.Item label="Group:" required {...formItemLayout}>
               <Input htmlType="text" readOnly {...init('group')} />
             </Form.Item>
-            <Form.Item
-              label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.home')}
-              {...formItemLayout}
-            >
+            <Form.Item label={locale.home} {...formItemLayout}>
               <Input htmlType="text" readOnly {...init('appName')} />
             </Form.Item>
           </div>
-          <Form.Item
-            label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.action_type')}
-            required
-            {...formItemLayout}
-          >
+          <Form.Item label={locale.actionType} required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('opType')} />
           </Form.Item>
           <Form.Item label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />
           </Form.Item>
-          <Form.Item
-            label={aliwareIntl.get('com.alibaba.nacos.page.historyDetail.configure_content')}
-            required
-            {...formItemLayout}
-          >
+          <Form.Item label={locale.configureContent} required {...formItemLayout}>
             <Input.TextArea htmlType="text" multiple rows={15} readOnly {...init('content')} />
           </Form.Item>
           <Form.Item label=" " {...formItemLayout}>
             <Button type="primary" onClick={this.goList.bind(this)}>
-              {aliwareIntl.get('com.alibaba.nacos.page.historyDetail.return')}
+              {locale.back}
             </Button>
           </Form.Item>
         </Form>

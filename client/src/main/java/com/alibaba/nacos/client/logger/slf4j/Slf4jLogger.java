@@ -65,8 +65,12 @@ public class Slf4jLogger extends LoggerSupport implements Logger {
             activateOptionClass = "com.alibaba.nacos.client.logger.option.Slf4jLog4j2AdapterActivateOption";
         }
 
+        if (activateOptionClass == null) {
+            throw new IllegalArgumentException("delegate must be logback impl or slf4j-log4j impl");
+        }
+
         try {
-            Class<ActivateOption> clazz = (Class<ActivateOption>) Class.forName(activateOptionClass);
+            Class<ActivateOption> clazz = (Class<ActivateOption>)Class.forName(activateOptionClass);
             Constructor<ActivateOption> c = clazz.getConstructor(Object.class);
             this.activateOption = c.newInstance(delegate);
         } catch (Exception e) {

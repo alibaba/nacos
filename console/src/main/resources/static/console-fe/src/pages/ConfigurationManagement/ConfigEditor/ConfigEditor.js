@@ -11,12 +11,13 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
+import React from 'react';
+import PropTypes from 'prop-types';
+import { getParams, request } from '../../../globalLib';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import SuccessDialog from '../../../components/SuccessDialog';
-import './index.less';
+import validateContent from 'utils/validateContent';
 import {
   Balloon,
   Button,
@@ -30,15 +31,28 @@ import {
   Select,
   Tab,
   Message,
+  ConfigProvider,
 } from '@alifd/next';
+
+import './index.scss';
 
 const TabPane = Tab.Item;
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
 
+@ConfigProvider.config
 class ConfigEditor extends React.Component {
+  static displayName = 'ConfigEditor';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
+    this.diffEditorDialog = React.createRef();
+    this.successDialog = React.createRef();
     this.edasAppName = getParams('edasAppName') || '';
     this.edasAppId = getParams('edasAppId') || '';
     this.inApp = this.edasAppName;
@@ -62,9 +76,7 @@ class ConfigEditor extends React.Component {
       tagLst: [],
       config_tags: [],
       switchEncrypt: false,
-      tag: [
-        { title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'), key: 'normal' },
-      ],
+      tag: [],
     };
     this.codeValue = '';
     this.mode = 'text';
@@ -75,14 +87,25 @@ class ConfigEditor extends React.Component {
   }
 
   componentDidMount() {
-    if (this.dataId.startsWith('cipher-')) {
-      this.setState({
-        switchEncrypt: true,
-      });
-    }
+    this.initData();
     this.betaips = document.getElementById('betaips');
     this.getDataDetail();
     this.chontenttab = document.getElementById('chontenttab'); // diff标签
+  }
+
+  initData() {
+    const { locale = {} } = this.props;
+    this.setState({
+      tag: [
+        {
+          title: locale.official,
+          key: 'normal',
+        },
+      ],
+    });
+    if (this.dataId.startsWith('cipher-')) {
+      this.setState({ switchEncrypt: true });
+    }
   }
 
   initMoacoEditor(language, value) {
@@ -98,7 +121,7 @@ class ConfigEditor extends React.Component {
           lineNumbersMinChars: true,
           theme: 'vs-dark',
           wordWrapColumn: 120,
-          folding: true,
+          folding: false,
           showFoldingControls: 'always',
           wordWrap: 'wordWrapColumn',
           cursorStyle: 'line',
@@ -116,7 +139,7 @@ class ConfigEditor extends React.Component {
         lineNumbersMinChars: true,
         theme: 'vs-dark',
         wordWrapColumn: 120,
-        folding: true,
+        folding: false,
         showFoldingControls: 'always',
         wordWrap: 'wordWrapColumn',
         cursorStyle: 'line',
@@ -154,10 +177,11 @@ class ConfigEditor extends React.Component {
   }
 
   getDataDetail() {
+    const { locale = {} } = this.props;
     const self = this;
     this.tenant = getParams('namespace') || '';
     this.serverId = getParams('serverId') || 'center';
-    const url = `/nacos/v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
+    const url = `v1/cs/configs?show=all&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -196,11 +220,7 @@ class ConfigEditor extends React.Component {
           self.serverId = env.serverId;
           self.targetEnvs = envvalues;
         } else {
-          Dialog.alert({
-            language: aliwareIntl.currentLanguageCode || 'zh-cn',
-            title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.wrong'),
-            content: result.message,
-          });
+          Dialog.alert({ title: locale.wrong, content: result.message });
         }
       },
       complete() {
@@ -247,9 +267,8 @@ class ConfigEditor extends React.Component {
   }
 
   createDiffCodeMirror(leftCode, rightCode) {
-    const target = this.refs.diffeditor;
+    const target = this.diffEditorDialog.current.getInstance();
     target.innerHTML = '';
-
     this.diffeditor = window.CodeMirror.MergeView(target, {
       value: leftCode || '',
       origLeft: null,
@@ -304,18 +323,13 @@ class ConfigEditor extends React.Component {
   }
 
   publishConfig() {
+    const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
       if (errors) {
         return;
       }
       let content = '';
-      const self = this;
-      // if (this.commoneditor) {
-      //     content = this.commoneditor.doc.getValue();
-      //     //content = content.replace("↵", "\n\r");
-      // } else {
-      //     content = this.codeValue;
-      // }
+      let { configType } = this.state;
 
       if (this.monacoEditor) {
         content = this.monacoEditor.getValue();
@@ -324,86 +338,96 @@ class ConfigEditor extends React.Component {
       }
       if (!content) {
         Message.error({
-          content: aliwareIntl.get('nacos.page.ConfigEditor.submit_failed'),
+          content: locale.submitFailed,
           align: 'cc cc',
         });
         return;
       }
-      this.codeValue = content;
-      this.tenant = getParams('namespace') || '';
-      this.serverId = getParams('serverId') || 'center';
-
-      const payload = {
-        dataId: this.field.getValue('dataId'),
-        appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-        group: this.field.getValue('group'),
-        desc: this.field.getValue('desc'),
-        config_tags: this.state.config_tags.join(),
-        type: this.state.configType,
-        content,
-        tenant: this.tenant,
-      };
-      const url = '/nacos/v1/cs/configs';
-      request({
-        type: 'post',
-        contentType: 'application/x-www-form-urlencoded',
-        url,
-        data: payload,
-        success(res) {
-          const _payload = {};
-          _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedittitle');
-          _payload.title = (
-            <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}</div>
-          );
-          _payload.content = '';
-          _payload.dataId = payload.dataId;
-          _payload.group = payload.group;
-
-          if (res != null) {
-            _payload.isok = true;
-            const activeKey = self.state.activeKey.split('-')[0];
-            if (activeKey === 'normal' && self.hasips === true) {
-              // 如果是在normal面板选择了beta发布
-              const sufex = new Date().getTime();
-              self.setState({
-                tag: [
-                  {
-                    title: aliwareIntl.get('com.alibaba.nacos.page.configeditor.official'),
-                    key: `normal-${sufex}`,
-                  },
-                  { title: 'BETA', key: `beta-${sufex}` },
-                ],
-                hasbeta: true,
-                activeKey: `beta-${sufex}`,
-              });
-              payload.betaIps = payload.betaIps || payload.ips;
-              self.valueMap.beta = payload; // 赋值beta
-              self.changeTab(`beta-${sufex}`);
-            }
-            if (activeKey === 'normal' && self.hasips === false) {
-              // 如果是在normal面板选择了发布
-              self.valueMap.normal = payload; // 赋值正式
-            }
-            if (activeKey === 'beta' && self.hasips === true) {
-              // 如果是在beta面板继续beta发布
-              self.valueMap.beta = payload; // 赋值beta
-            }
-          } else {
-            _payload.isok = false;
-            _payload.message = res.message;
-          }
-          self.refs.success.openDialog(_payload);
-        },
-        error() {},
-      });
+      if (validateContent.validate({ content, type: configType })) {
+        this._publishConfig(content);
+      } else {
+        Dialog.confirm({
+          content: '配置信息可能有语法错误, 确定提交吗?',
+          onOk: () => {
+            this._publishConfig(content);
+          },
+        });
+      }
     });
   }
 
-  validateChart(rule, value, callback) {
-    const chartReg = /[@#\$%\^&\*]+/g;
+  _publishConfig = content => {
+    const { locale = {} } = this.props;
+    const self = this;
+    this.codeValue = content;
+    this.tenant = getParams('namespace') || '';
+    this.serverId = getParams('serverId') || 'center';
 
+    const payload = {
+      dataId: this.field.getValue('dataId'),
+      appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
+      group: this.field.getValue('group'),
+      desc: this.field.getValue('desc'),
+      config_tags: this.state.config_tags.join(),
+      type: this.state.configType,
+      content,
+      tenant: this.tenant,
+    };
+    const url = 'v1/cs/configs';
+    request({
+      type: 'post',
+      contentType: 'application/x-www-form-urlencoded',
+      url,
+      data: payload,
+      success(res) {
+        const _payload = {};
+        _payload.maintitle = locale.toedittitle;
+        _payload.title = <div>{locale.toedit}</div>;
+        _payload.content = '';
+        _payload.dataId = payload.dataId;
+        _payload.group = payload.group;
+
+        if (res != null) {
+          _payload.isok = true;
+          const activeKey = self.state.activeKey.split('-')[0];
+          if (activeKey === 'normal' && self.hasips === true) {
+            // 如果是在normal面板选择了beta发布
+            const sufex = new Date().getTime();
+            self.setState({
+              tag: [
+                { title: locale.official, key: `normal-${sufex}` },
+                { title: 'BETA', key: `beta-${sufex}` },
+              ],
+              hasbeta: true,
+              activeKey: `beta-${sufex}`,
+            });
+            payload.betaIps = payload.betaIps || payload.ips;
+            self.valueMap.beta = payload; // 赋值beta
+            self.changeTab(`beta-${sufex}`);
+          }
+          if (activeKey === 'normal' && self.hasips === false) {
+            // 如果是在normal面板选择了发布
+            self.valueMap.normal = payload; // 赋值正式
+          }
+          if (activeKey === 'beta' && self.hasips === true) {
+            // 如果是在beta面板继续beta发布
+            self.valueMap.beta = payload; // 赋值beta
+          }
+        } else {
+          _payload.isok = false;
+          _payload.message = res.message;
+        }
+        self.successDialog.current.getInstance().openDialog(_payload);
+      },
+      error() {},
+    });
+  };
+
+  validateChart(rule, value, callback) {
+    const { locale = {} } = this.props;
+    const chartReg = /[@#\$%\^&\*]+/g;
     if (chartReg.test(value)) {
-      callback(aliwareIntl.get('com.alibaba.nacos.page.configeditor.vdchart'));
+      callback(locale.vdchart);
     } else {
       callback();
     }
@@ -480,7 +504,7 @@ class ConfigEditor extends React.Component {
     rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     // let rightvalue = this.diffeditor.doc.getValue();
     // console.log(this.commoneditor, leftvalue==rightvalue)
-    this.refs.diffeditor.openDialog(leftvalue, rightvalue);
+    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
   }
 
   changeTab(value) {
@@ -531,14 +555,11 @@ class ConfigEditor extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { init } = this.field;
     const formItemLayout = {
-      labelCol: {
-        span: 2,
-      },
-      wrapperCol: {
-        span: 22,
-      },
+      labelCol: { span: 2 },
+      wrapperCol: { span: 22 },
     };
 
     // const list = [{
@@ -552,30 +573,12 @@ class ConfigEditor extends React.Component {
     //     label: 'XML'
     // }];
     const list = [
-      {
-        value: 'text',
-        label: 'TEXT',
-      },
-      {
-        value: 'json',
-        label: 'JSON',
-      },
-      {
-        value: 'xml',
-        label: 'XML',
-      },
-      {
-        value: 'yaml',
-        label: 'YAML',
-      },
-      {
-        value: 'html',
-        label: 'HTML',
-      },
-      {
-        value: 'properties',
-        label: 'Properties',
-      },
+      { value: 'text', label: 'TEXT' },
+      { value: 'json', label: 'JSON' },
+      { value: 'xml', label: 'XML' },
+      { value: 'yaml', label: 'YAML' },
+      { value: 'html', label: 'HTML' },
+      { value: 'properties', label: 'Properties' },
     ];
     const activeKey = this.state.activeKey.split('-')[0];
 
@@ -589,7 +592,7 @@ class ConfigEditor extends React.Component {
           color="#333"
         >
           <h1 style={{ overflow: 'hidden', height: 50, width: '100%' }}>
-            <div>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.toedit')}</div>
+            <div>{locale.toedit}</div>
           </h1>
           {this.state.hasbeta ? (
             <div style={{ display: 'inline-block', height: 40, width: '80%', overflow: 'hidden' }}>
@@ -614,12 +617,7 @@ class ConfigEditor extends React.Component {
                 disabled
                 {...init('dataId', {
                   rules: [
-                    {
-                      required: true,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.configeditor.recipient_from'
-                      ),
-                    },
+                    { required: true, message: locale.recipientFrom },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
@@ -630,12 +628,7 @@ class ConfigEditor extends React.Component {
                 disabled
                 {...init('group', {
                   rules: [
-                    {
-                      required: true,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.configeditor.Home_application:'
-                      ),
-                    },
+                    { required: true, message: locale.homeApplication },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
@@ -644,14 +637,12 @@ class ConfigEditor extends React.Component {
             <FormItem label="" {...formItemLayout}>
               <div>
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore
-                    ? aliwareIntl.get('com.alibaba.nacos.page.configeditor.more_advanced_options')
-                    : aliwareIntl.get('com.alibaba.nacos.page.configeditor.group_is_not_empty')}
+                  {this.state.showmore ? locale.collapse : locale.groupNotEmpty}
                 </a>
               </div>
             </FormItem>
             <div style={{ height: this.state.showmore ? 'auto' : '0', overflow: 'hidden' }}>
-              <FormItem label={aliwareIntl.get('nacos.page.configeditor.Tags')} {...formItemLayout}>
+              <FormItem label={locale.tags} {...formItemLayout}>
                 <Select
                   size="medium"
                   hasArrow
@@ -659,37 +650,23 @@ class ConfigEditor extends React.Component {
                   autoWidth
                   mode="tag"
                   filterLocal
-                  placeholder={aliwareIntl.get(
-                    'nacos.page.configurationManagement.Please_enter_tag'
-                  )}
+                  placeholder={locale.pleaseEnterTag}
                   dataSource={this.state.tagLst}
                   value={this.state.config_tags}
                   onChange={this.setConfigTags.bind(this)}
                   hasClear
-                  language={aliwareIntl.currentLanguageCode}
                 />
               </FormItem>
 
-              <FormItem
-                label={aliwareIntl.get(
-                  'com.alibaba.nacos.page.configeditor.the_target_environment:'
-                )}
-                {...formItemLayout}
-              >
+              <FormItem label={locale.targetEnvironment} {...formItemLayout}>
                 <Input {...init('appName')} readOnly={!!this.inApp} />
               </FormItem>
             </div>
 
-            <FormItem
-              label={aliwareIntl.get('nacos.page.configeditor.Description')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.description} {...formItemLayout}>
               <Input.TextArea htmlType="text" multiple rows={3} {...init('desc')} />
             </FormItem>
-            <FormItem
-              label={aliwareIntl.get('com.alibaba.nacos.page.configeditor.configure_contents_of')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.format} {...formItemLayout}>
               <RadioGroup
                 dataSource={list}
                 value={this.state.configType}
@@ -699,7 +676,7 @@ class ConfigEditor extends React.Component {
             <FormItem
               label={
                 <span style={{ marginRight: 5 }}>
-                  {aliwareIntl.get('com.alibaba.nacos.page.configeditor.configcontent')}
+                  {locale.configcontent}
                   <Balloon
                     trigger={
                       <Icon
@@ -717,8 +694,8 @@ class ConfigEditor extends React.Component {
                     style={{ marginRight: 5 }}
                     triggerType="hover"
                   >
-                    <p>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.Esc_exit')}</p>
-                    <p>{aliwareIntl.get('com.alibaba.nacos.page.configeditor.release_beta')}</p>
+                    <p>{locale.escExit}</p>
+                    <p>{locale.releaseBeta}</p>
                   </Balloon>
                   :
                 </span>
@@ -735,7 +712,7 @@ class ConfigEditor extends React.Component {
                     type="primary"
                     onClick={this.openDiff.bind(this, true)}
                   >
-                    {aliwareIntl.get('com.alibaba.nacos.page.configeditor.release')}
+                    {locale.release}
                   </Button>
                 ) : (
                   ''
@@ -747,9 +724,7 @@ class ConfigEditor extends React.Component {
                     style={{ marginRight: 10 }}
                     onClick={this.openDiff.bind(this, this.state.checkedBeta)}
                   >
-                    {this.state.checkedBeta
-                      ? aliwareIntl.get('com.alibaba.nacos.page.configeditor.release')
-                      : aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}
+                    {this.state.checkedBeta ? locale.release : locale.publish}
                   </Button>
                 ) : (
                   <Button
@@ -757,18 +732,21 @@ class ConfigEditor extends React.Component {
                     style={{ marginRight: 10 }}
                     onClick={this.openDiff.bind(this, false)}
                   >
-                    {aliwareIntl.get('com.alibaba.nacos.page.configeditor.return')}
+                    {locale.publish}
                   </Button>
                 )}
 
                 <Button type="normal" onClick={this.goList.bind(this)}>
-                  {aliwareIntl.get('com.alibaba.nacos.page.configeditor.')}
+                  {locale.back}
                 </Button>
               </div>
             </FormItem>
           </Form>
-          <DiffEditorDialog ref="diffeditor" publishConfig={this.publishConfig.bind(this)} />
-          <SuccessDialog ref="success" />
+          <DiffEditorDialog
+            ref={this.diffEditorDialog}
+            publishConfig={this.publishConfig.bind(this)}
+          />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );

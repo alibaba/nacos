@@ -15,31 +15,35 @@
  */
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.nacos.api.selector.AbstractSelector;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Service
+ *
  * @author dungu.zpf
  */
 public class Service {
 
     /**
-     * Service name
+     * service name
      */
     private String name;
 
     /**
-     * Protect threshold
+     * protect threshold
      */
     private float protectThreshold = 0.0F;
 
     /**
-     * Application name of this service
+     * application name of this service
      */
     private String app;
 
     /**
-     * Service group is meant to classify services into different sets.
+     * Service group which is meant to classify services into different sets.
      */
     private String group;
 
@@ -47,6 +51,11 @@ public class Service {
      * Health check mode.
      */
     private String healthCheckMode;
+
+    /**
+     * Selector name of this service
+     */
+    private AbstractSelector selector;
 
     private Map<String, String> metadata = new HashMap<String, String>();
 
@@ -104,5 +113,13 @@ public class Service {
 
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
+    }
+
+    public AbstractSelector getSelector() {
+        return selector;
+    }
+
+    public void setSelector(AbstractSelector selector) {
+        this.selector = selector;
     }
 }

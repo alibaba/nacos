@@ -17,9 +17,12 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
+import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.core.IpAddress;
@@ -30,9 +33,10 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
 import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
+import com.alibaba.nacos.naming.selector.LabelSelector;
+import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.view.ServiceDetailView;
 import com.alibaba.nacos.naming.view.ServiceView;
-import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
@@ -48,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @RestController
 
@@ -61,14 +65,16 @@ public class CatalogController {
     @RequestMapping(value = "/serviceList")
     public JSONObject serviceList(HttpServletRequest request) throws Exception {
 
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
         JSONObject result = new JSONObject();
 
-        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
-        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
-        String keyword = BaseServlet.optional(request, "keyword", StringUtils.EMPTY);
+        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
+        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
         List<Domain> doms = new ArrayList<>();
-        int total = domainsManager.getPagedDom(page - 1, pageSize, keyword, doms);
+        int total = domainsManager.getPagedDom(namespaceId, page - 1, pageSize, keyword, doms);
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("serviceList", Collections.emptyList());
@@ -106,8 +112,10 @@ public class CatalogController {
     @RequestMapping(value = "/serviceDetail")
     public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, "serviceName");
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
@@ -125,6 +133,18 @@ public class CatalogController {
             service.setHealthCheckMode(HealthCheckMode.client.name());
         }
         service.setMetadata(domain.getMetadata());
+
+        switch (SelectorType.valueOf(domain.getSelector().getType())) {
+            case label:
+                service.setSelector((LabelSelector) domain.getSelector());
+                break;
+            case none:
+            case unknown:
+            default:
+                service.setSelector((NoneSelector) domain.getSelector());
+                break;
+        }
+
         detailView.setService(service);
 
         List<Cluster> clusters = new ArrayList<>();
@@ -149,12 +169,14 @@ public class CatalogController {
     @RequestMapping(value = "/instanceList")
     public JSONObject instanceList(HttpServletRequest request) throws Exception {
 
-        String serviceName = BaseServlet.required(request, "serviceName");
-        String clusterName = BaseServlet.required(request, "clusterName");
-        int page = Integer.parseInt(BaseServlet.required(request, "startPg"));
-        int pageSize = Integer.parseInt(BaseServlet.required(request, "pgSize"));
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String serviceName = WebUtils.required(request, "serviceName");
+        String clusterName = WebUtils.required(request, "clusterName");
+        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
 
-        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(serviceName);
+        VirtualClusterDomain domain = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, serviceName);
         if (domain == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
@@ -203,10 +225,12 @@ public class CatalogController {
     @RequestMapping(value = "/services", method = RequestMethod.GET)
     public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
 
+        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 
         domainsManager
-                .getRaftDomMap()
+                .getDomMap(namespaceId)
                 .forEach(
                         (serviceName, domain) -> {
 

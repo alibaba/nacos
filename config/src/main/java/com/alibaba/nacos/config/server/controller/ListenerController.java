@@ -35,59 +35,60 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config longpulling
- * 
- * @author Nacos
+ * Config longpolling
  *
+ * @author Nacos
  */
 @Controller
 @RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
 public class ListenerController {
-    
-	private final ConfigSubService configSubService;
 
-	@Autowired
-	public ListenerController(ConfigSubService configSubService) {this.configSubService = configSubService;}
+    private final ConfigSubService configSubService;
 
-	/*
-	 * 获取客户端订阅配置信息
-	 */
-	@RequestMapping(method = RequestMethod.GET)
-	@ResponseBody
-	public GroupkeyListenserStatus getAllSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
-			@RequestParam("ip") String ip, @RequestParam(value = "all", required = false) boolean all,
-			@RequestParam(value = "tenant", required = false) String tenant,
-			@RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) throws Exception {
-		SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
-		GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
-		gls.setCollectStatus(200);
-		Map<String, String> configMd5Status = new HashMap<String, String>(100);
-		if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-			Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
-			for (Map.Entry<String, String> config : status.entrySet()) {
-				if (!StringUtils.isBlank(tenant)) {
-					if (config.getKey().contains(tenant)) {
-						configMd5Status.put(config.getKey(), config.getValue());
-					}
-				} else {
-					// 默认值获取公共配置，如果想看所有配置，要加all
-					if (all) {
-						configMd5Status.put(config.getKey(), config.getValue());
-					} else {
-						String[] configKeys = GroupKey2.parseKey(config.getKey());
-						if (StringUtils.isBlank(configKeys[2])) {
-							configMd5Status.put(config.getKey(), config.getValue());
-						}
-					}
-				}
-			}
-			gls.setLisentersGroupkeyStatus(configMd5Status);
-		}
+    @Autowired
+    public ListenerController(ConfigSubService configSubService) {this.configSubService = configSubService;}
 
-		return gls;
-	}
-    
-	
+    /**
+     * 获取客户端订阅配置信息
+     */
+    @RequestMapping(method = RequestMethod.GET)
+    @ResponseBody
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
+                                                             @RequestParam("ip") String ip,
+                                                             @RequestParam(value = "all", required = false) boolean all,
+                                                             @RequestParam(value = "tenant", required = false)
+                                                                 String tenant,
+                                                             @RequestParam(value = "sampleTime", required = false,
+                                                                 defaultValue = "1") int sampleTime, ModelMap modelMap)
+        throws Exception {
+        SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
+        GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
+        gls.setCollectStatus(200);
+        Map<String, String> configMd5Status = new HashMap<String, String>(100);
+        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
+            Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+            for (Map.Entry<String, String> config : status.entrySet()) {
+                if (!StringUtils.isBlank(tenant)) {
+                    if (config.getKey().contains(tenant)) {
+                        configMd5Status.put(config.getKey(), config.getValue());
+                    }
+                } else {
+                    // 默认值获取公共配置，如果想看所有配置，要加all
+                    if (all) {
+                        configMd5Status.put(config.getKey(), config.getValue());
+                    } else {
+                        String[] configKeys = GroupKey2.parseKey(config.getKey());
+                        if (StringUtils.isBlank(configKeys[2])) {
+                            configMd5Status.put(config.getKey(), config.getValue());
+                        }
+                    }
+                }
+            }
+            gls.setLisentersGroupkeyStatus(configMd5Status);
+        }
+
+        return gls;
+    }
 
 }
 

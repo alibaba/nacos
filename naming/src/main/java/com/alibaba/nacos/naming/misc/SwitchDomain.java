@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
 import com.alibaba.nacos.naming.raft.RaftListener;
 import org.apache.commons.lang3.StringUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
@@ -30,7 +31,8 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 public class SwitchDomain implements Domain, RaftListener {
-    public String name = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
+
+    public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
     public List<String> masters;
 
@@ -51,6 +53,8 @@ public class SwitchDomain implements Domain, RaftListener {
     public Map<String, Long> pushCacheMillisMap = new HashMap<String, Long>();
 
     public boolean healthCheckEnabled = true;
+
+    public String defaultHealthCheckMode = HealthCheckMode.client.name();
 
     public boolean distroEnabled = true;
 
@@ -233,12 +237,12 @@ public class SwitchDomain implements Domain, RaftListener {
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + "." + name);
+        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID + "." + name);
+        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
     }
 
     @Override

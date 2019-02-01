@@ -19,21 +19,17 @@ import com.alibaba.nacos.api.exception.NacosException;
 
 /**
  * Config Filter Chain Interface
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public interface IConfigFilterChain {
-	/**
-	 * Filter aciton
-	 * 
-	 * @param request
-	 *            request
-	 * @param response
-	 *            response
-	 * @throws NacosException
-	 *             NacosException
-	 */
-	public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
-	
+    /**
+     * Filter aciton
+     *
+     * @param request  request
+     * @param response response
+     * @throws NacosException NacosException
+     */
+    void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException;
+
 }

@@ -28,6 +28,8 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.RaftCore;
 import com.alibaba.nacos.naming.raft.RaftListener;
+import com.alibaba.nacos.naming.selector.NoneSelector;
+import com.alibaba.nacos.naming.selector.Selector;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -40,11 +42,19 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 public class VirtualClusterDomain implements Domain, RaftListener {
 
     private static final String DOMAIN_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
+
+    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
+
+    @JSONField(serialize = false)
+    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
+
+    @JSONField(serialize = false)
+    private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     private String name;
     private String token;
@@ -53,18 +63,13 @@ public class VirtualClusterDomain implements Domain, RaftListener {
     private Boolean enableHealthCheck = true;
     private Boolean enabled = true;
     private Boolean enableClientBeat = false;
+    private Selector selector = new NoneSelector();
+    private String namespaceId;
 
-    public static final int MINIMUM_IP_DELETE_TIMEOUT = 60 * 1000;
     /**
-     * IP will be deleted if it has not send beat for some time, default timeout is half an hour .
+     * IP will be deleted if it has not send beat for some time, default timeout is 30 seconds.
      */
     private long ipDeleteTimeout = 30 * 1000;
-
-    @JSONField(serialize = false)
-    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
-
-    @JSONField(serialize = false)
-    private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     private volatile long lastModifiedMillis = 0L;
 
@@ -140,33 +145,43 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         this.metadata = metadata;
     }
 
+    public Selector getSelector() {
+        return selector;
+    }
+
+    public void setSelector(Selector selector) {
+        this.selector = selector;
+    }
+
     public VirtualClusterDomain() {
 
     }
 
     @Override
     public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + name);
+        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + name);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + name);
+        return StringUtils.equals(key, UtilsAndCommons.IPADDRESS_DATA_ID_PRE + namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + name);
     }
 
     @Override
     public void onChange(String key, String value) throws Exception {
 
         if (StringUtils.isEmpty(value)) {
-            Loggers.SRV_LOG.warn("[VIPSRV-DOM] received empty iplist config for dom: " + name);
+            Loggers.SRV_LOG.warn("[NACOS-DOM] received empty iplist config for dom: {}", name);
             return;
         }
 
-        Loggers.RAFT.info("[VIPSRV-RAFT] datum is changed, key: " + key + ", value: " + value);
+        Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
         List<IpAddress> ips = JSON.parseObject(value, new TypeReference<List<IpAddress>>() {
         });
+
         for (IpAddress ip : ips) {
+
             if (ip.getWeight() > 10000.0D) {
                 ip.setWeight(10000.0D);
             }
@@ -200,12 +215,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         for (IpAddress ip : ips) {
             try {
                 if (ip == null) {
-                    Loggers.SRV_LOG.error("VIPSRV-DOM", "received malformed ip");
+                    Loggers.SRV_LOG.error("[NACOS-DOM] received malformed ip: null");
                     continue;
-                }
-
-                if (ip.getPort() == 0) {
-                    ip.setPort(getLegacyCkPort());
                 }
 
                 if (StringUtils.isEmpty(ip.getClusterName())) {
@@ -214,7 +225,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
                 // put wild ip into DEFAULT cluster
                 if (!clusterMap.containsKey(ip.getClusterName())) {
-                    Loggers.SRV_LOG.warn("cluster of IP not found: " + ip.toJSON());
+                    Loggers.SRV_LOG.warn("cluster of IP not found: {}", ip.toJSON());
                     continue;
                 }
 
@@ -226,7 +237,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
                 clusterIPs.add(ip);
             } catch (Exception e) {
-                Loggers.SRV_LOG.error("VIPSRV-DOM", "failed to process ip: " + ip, e);
+                Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + ip, e);
             }
         }
 
@@ -236,14 +247,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             clusterMap.get(entry.getKey()).updateIPs(entryIPs);
         }
         setLastModifiedMillis(System.currentTimeMillis());
-        PushService.domChanged(name);
+        PushService.domChanged(namespaceId, name);
         StringBuilder stringBuilder = new StringBuilder();
 
         for (IpAddress ipAddress : allIPs()) {
             stringBuilder.append(ipAddress.toIPAddr()).append("_").append(ipAddress.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] dom: " + getName() + ", ips: " + stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", getName(), stringBuilder.toString());
 
     }
 
@@ -336,7 +347,7 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
             return vDom;
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("VIPSRV-DOM", "parse cluster json error, " + e.toString() + ", content=" + json, e);
+            Loggers.SRV_LOG.error("[NACOS-DOM] parse cluster json content: {}, error: {}", json, e);
             return null;
         }
     }
@@ -372,9 +383,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
         domain.put("protectThreshold", vDom.getProtectThreshold());
 
-        int totalCkRTMillis = 0;
-        int validCkRTCount = 0;
-
         List<Object> clustersList = new ArrayList<Object>();
 
         for (Map.Entry<String, Cluster> entry : vDom.getClusterMap().entrySet()) {
@@ -395,15 +403,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         domain.put("clusters", clustersList);
 
         return JSON.toJSONString(domain);
-    }
-
-
-    /**
-     * the legacy check port is the default check port for old domain format
-     */
-    @JSONField(serialize = false)
-    public int getLegacyCkPort() {
-        return clusterMap.get(UtilsAndCommons.DEFAULT_CLUSTER_NAME).getDefCkport();
     }
 
     @Override
@@ -456,6 +455,14 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         this.clusterMap = clusterMap;
     }
 
+    public String getNamespaceId() {
+        return namespaceId;
+    }
+
+    public void setNamespaceId(String namespaceId) {
+        this.namespaceId = namespaceId;
+    }
+
     @Override
     public void update(Domain dom) {
         if (!(dom instanceof VirtualClusterDomain)) {
@@ -464,44 +471,46 @@ public class VirtualClusterDomain implements Domain, RaftListener {
 
         VirtualClusterDomain vDom = (VirtualClusterDomain) dom;
         if (!StringUtils.equals(token, vDom.getToken())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ",token" + token + " -> " + vDom.getToken());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, token: {} -> {}", name, token, vDom.getToken());
             token = vDom.getToken();
         }
 
         if (!ListUtils.isEqualList(owners, vDom.getOwners())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ",owners: " + owners + " -> " + vDom.getToken());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, owners: {} -> {}", name, owners, vDom.getOwners());
             owners = vDom.getOwners();
         }
 
         if (protectThreshold != vDom.getProtectThreshold()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ",protectThreshold: " + protectThreshold + " -> " + vDom.getProtectThreshold());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, protectThreshold: {} -> {}", name, protectThreshold, vDom.getProtectThreshold());
             protectThreshold = vDom.getProtectThreshold();
         }
 
         if (useSpecifiedURL != vDom.isUseSpecifiedURL()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ",useSpecifiedURL: " + useSpecifiedURL + " -> " + vDom.isUseSpecifiedURL());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, useSpecifiedURL: {} -> {}", name, useSpecifiedURL, vDom.isUseSpecifiedURL());
             useSpecifiedURL = vDom.isUseSpecifiedURL();
         }
 
         if (resetWeight != vDom.getResetWeight().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ",resetWeight: " + resetWeight + " -> " + vDom.getResetWeight());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, resetWeight: {} -> {}", name, resetWeight, vDom.getResetWeight());
             resetWeight = vDom.getResetWeight();
         }
 
         if (enableHealthCheck != vDom.getEnableHealthCheck().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enableHealthCheck: " + enableHealthCheck + " -> " + vDom.getEnableHealthCheck());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enableHealthCheck: {} -> {}", name, enableHealthCheck, vDom.getEnableHealthCheck());
             enableHealthCheck = vDom.getEnableHealthCheck();
         }
 
         if (enableClientBeat != vDom.getEnableClientBeat().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enableClientBeat: " + enableClientBeat + " -> " + vDom.getEnableClientBeat());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enableClientBeat: {} -> {}", name, enableClientBeat, vDom.getEnableClientBeat());
             enableClientBeat = vDom.getEnableClientBeat();
         }
 
         if (enabled != vDom.getEnabled().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: " + name + ", enabled: " + enabled + " -> " + vDom.getEnabled());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enabled: {} -> {}", name, enabled, vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
+
+        selector = vDom.getSelector();
 
         metadata = vDom.getMetadata();
 
@@ -544,13 +553,13 @@ public class VirtualClusterDomain implements Domain, RaftListener {
                 MessageDigest md5 = MessageDigest.getInstance("MD5");
                 result = new BigInteger(1, md5.digest((ipsString.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
             } catch (Exception e) {
-                Loggers.SRV_LOG.error("VIPSRV-DOM", "error while calculating checksum(md5)", e);
+                Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
                 result = RandomStringUtils.randomAscii(32);
             }
 
             checksum = result;
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("VIPSRV-DOM", "error while calculating checksum(md5)", e);
+            Loggers.SRV_LOG.error("[NACOS-DOM] error while calculating checksum(md5)", e);
             checksum = RandomStringUtils.randomAscii(32);
         }
     }

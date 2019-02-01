@@ -16,20 +16,24 @@ let hasAlert = false;
 
 window.edasprefix = 'acm'; // 固定的edas网关需要的项目名
 
+export const isParentEdas = () =>
+  window.parent && window.parent.location.host.indexOf('edas') !== -1;
+
 window.globalConfig = {
-  isParentEdas() {
-    try {
-      if (window.parent.location.host.indexOf('edas') !== -1) {
-        return true;
-      }
-    } catch (error) {}
-    return false;
-  },
+  isParentEdas,
 };
 
 request.middleWare((_config = {}) => {
   let config = _config;
   let { url = '' } = config;
+
+  const namespace = localStorage.getItem('namespace') ? localStorage.getItem('namespace') : '';
+  // 如果url中已经有 namespaceId, 不在data中添加namespaceId
+  config.data =
+    url.indexOf('namespaceId=') === -1
+      ? Object.assign({}, config.data, { namespaceId: namespace })
+      : config.data;
+
   let tenant = window.nownamespace || getParams('namespace') || '';
   tenant = tenant === 'global' ? '' : tenant;
   const splitArr = url.split('?');
@@ -99,7 +103,7 @@ request.middleWare((_config = {}) => {
  * 配置 monaco
  */
 window.require.config({
-  paths: { vs: 'js/vs' },
+  paths: { vs: process.env.NODE_ENV === 'production' ? 'console-fe/public/js/vs' : 'js/vs' },
 });
 window.require.config({
   'vs/nls': {
@@ -197,9 +201,7 @@ window.addEventListener('resize', () => {
 // 判断是否是国际站国际用户
 window.isIntel = function() {
   const { host } = window.location;
-  if (host.indexOf('alibabacloud.com') !== -1) {
-    return true;
-  } else {
-    return false;
-  }
+  return host.indexOf('alibabacloud.com') !== -1;
 };
+
+export default {};
