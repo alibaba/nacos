@@ -180,7 +180,7 @@ public class OperatorController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "dom");
-        Service service = (Service) serviceManager.getService(namespaceId, dom);
+        Service service = serviceManager.getService(namespaceId, dom);
 
         if (service == null) {
             throw new IllegalArgumentException("dom not found");

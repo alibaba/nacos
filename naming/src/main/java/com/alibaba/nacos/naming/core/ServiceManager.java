@@ -470,7 +470,7 @@ public class ServiceManager implements DataListener<Service> {
 
         List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
-            throw new IllegalStateException("no ips found for cluster " + cluster + " in dom " + serviceName);
+            return null;
         }
 
         for (Instance instance : ips) {

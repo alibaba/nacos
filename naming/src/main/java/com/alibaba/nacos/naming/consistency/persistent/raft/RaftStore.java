@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instance;
@@ -66,7 +67,7 @@ public class RaftStore {
         CACHE_DIR = BASE_DIR + File.separator + "data";
     }
 
-    public synchronized ConcurrentHashMap<String, Datum<?>> loadDatums() throws Exception {
+    public synchronized ConcurrentHashMap<String, Datum<?>> loadDatums(RaftCore.Notifier notifier) throws Exception {
 
         ConcurrentHashMap<String, Datum<?>> datums = new ConcurrentHashMap<>(32);
         Datum datum;
@@ -77,6 +78,7 @@ public class RaftStore {
                     datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
+                        notifier.addTask(datum, ApplyAction.CHANGE);
                     }
                 }
                 continue;
@@ -165,6 +167,7 @@ public class RaftStore {
                 for (Instance instance : datum.value) {
                     instances.getInstanceMap().put(instance.getDatumKey(), instance);
                 }
+                instancesDatum.value = instances;
                 return instancesDatum;
 
             }

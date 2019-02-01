@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.consistency;
 
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -28,7 +27,6 @@ public class KeyBuilder {
 
     public static final String KEY_CONNECTOR = "##";
     private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
-    private static final String PERSISTENT_KEY_PREFIX = "persistent.";
 
     public static final String SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta.";
 
@@ -70,7 +68,7 @@ public class KeyBuilder {
     }
 
     public static boolean matchServiceName(String key, String namespaceId, String serviceName) {
-        return key.startsWith(namespaceId + KEY_CONNECTOR + serviceName);
+        return key.endsWith(namespaceId + KEY_CONNECTOR + serviceName);
     }
 
     public static boolean matchServiceMetaKey(String key, String namespaceId, String serviceName) {

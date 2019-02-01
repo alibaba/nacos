@@ -140,7 +140,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
             }
         }
 
-        Loggers.EPHEMERAL.info("to remove keys:" + toRemoveKeys);
+        Loggers.EPHEMERAL.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
 
         for (String key : toRemoveKeys) {
             onRemove(key);
