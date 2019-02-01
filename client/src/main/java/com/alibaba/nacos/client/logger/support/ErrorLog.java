@@ -24,7 +24,7 @@ package com.alibaba.nacos.client.logger.support;
 
 /**
  * 兼容老的ErrorLog，后续请使用{@link LoggerHelper}
- * 
+ *
  * @author zhuyong 2014年7月1日 上午11:41:22
  */
 public class ErrorLog {

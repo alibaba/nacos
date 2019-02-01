@@ -13,8 +13,6 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import RegionGroup from '../../../components/RegionGroup/index';
-import { request, aliwareIntl } from '../../../globalLib';
 import {
   Button,
   Field,
@@ -26,22 +24,30 @@ import {
   Table,
   Dialog,
   Message,
+  ConfigProvider,
 } from '@alifd/next';
+import { request } from '../../../globalLib';
+import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
-import { I18N, STATUS_COLOR_MAPPING } from './constant';
-import './ServiceList.less';
+
+import './ServiceList.scss';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
 const { Column } = Table;
 
+@ConfigProvider.config
 class ServiceList extends React.Component {
+  static displayName = 'ServiceList';
+
   static propTypes = {
+    locale: PropTypes.object,
     history: PropTypes.object,
   };
 
   constructor(props) {
     super(props);
+    this.editServiceDialog = React.createRef();
     this.state = {
       loading: false,
       total: 0,
@@ -62,14 +68,16 @@ class ServiceList extends React.Component {
   }
 
   openEditServiceDialog() {
-    this.refs.editServiceDialog.show(this.state.service);
+    try {
+      this.editServiceDialog.current.getInstance().show(this.state.service);
+    } catch (error) {}
   }
 
   queryServiceList() {
     const { currentPage, pageSize, keyword } = this.state;
     const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`];
     request({
-      url: `/nacos/v1/ns/catalog/serviceList?${parameter.join('&')}`,
+      url: `v1/ns/catalog/serviceList?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
@@ -92,13 +100,15 @@ class ServiceList extends React.Component {
   };
 
   deleteService(serviceName) {
+    const { locale = {} } = this.props;
+    const { prompt, promptDelete } = locale;
     Dialog.confirm({
-      title: I18N.PROMPT,
-      content: I18N.PROMPT_DELETE,
+      title: prompt,
+      content: promptDelete,
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `/nacos/v1/ns/service/remove?serviceName=${serviceName}`,
+          url: `v1/ns/service?serviceName=${serviceName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {
@@ -115,14 +125,31 @@ class ServiceList extends React.Component {
     });
   }
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+    });
+
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
   render() {
-    const { keyword } = this.state;
+    const { locale = {} } = this.props;
+    const {
+      pubNoData,
+      serviceList,
+      serviceName,
+      serviceNamePlaceholder,
+      query,
+      create,
+      operation,
+      detail,
+      deleteAction,
+    } = locale;
+    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
-    const locale = { empty: I18N.PUBNODEDATA };
 
     return (
       <div className="main-container service-management">
@@ -133,13 +160,24 @@ class ServiceList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup left={I18N.SERVICE_LIST} namespaceCallBack={this.getQueryLater} />
+          <div style={{ marginTop: -15 }}>
+            <RegionGroup
+              setNowNameSpace={this.setNowNameSpace}
+              namespaceCallBack={this.getQueryLater}
+            />
+          </div>
+          <h3 className="page-title">
+            <span className="title-item">{serviceList}</span>
+            <span className="title-item">|</span>
+            <span className="title-item">{nowNamespaceName}</span>
+            <span className="title-item">{nowNamespaceId}</span>
+          </h3>
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
-                <FormItem label={I18N.SERVICE_NAME}>
+                <FormItem label={serviceName}>
                   <Input
-                    placeholder={I18N.ENTER_SERVICE_NAME}
+                    placeholder={serviceNamePlaceholder}
                     style={{ width: 200 }}
                     value={keyword}
                     onChange={keyword => this.setState({ keyword })}
@@ -151,12 +189,12 @@ class ServiceList extends React.Component {
                     onClick={() => this.setState({ currentPage: 1 }, () => this.queryServiceList())}
                     style={{ marginRight: 10 }}
                   >
-                    {I18N.QUERY}
+                    {query}
                   </Button>
                 </FormItem>
                 <FormItem label="" style={{ float: 'right' }}>
                   <Button type="secondary" onClick={() => this.openEditServiceDialog()}>
-                    {I18N.CREATE}
+                    {create}
                   </Button>
                 </FormItem>
               </Form>
@@ -168,19 +206,18 @@ class ServiceList extends React.Component {
                 dataSource={this.state.dataSource}
                 fixedHeader
                 maxBodyHeight={530}
-                locale={locale}
-                language={aliwareIntl.currentLanguageCode}
+                locale={{ empty: pubNoData }}
                 getRowProps={row => this.rowColor(row)}
               >
-                <Column title={I18N.COLUMN_SERVICE_NAME} dataIndex="name" />
-                <Column title={I18N.COLUMN_CLUSTER_COUNT} dataIndex="clusterCount" />
-                <Column title={I18N.COLUMN_IP_COUNT} dataIndex="ipCount" />
+                <Column title={locale.columnServiceName} dataIndex="name" />
+                <Column title={locale.columnClusterCount} dataIndex="clusterCount" />
+                <Column title={locale.columnIpCount} dataIndex="ipCount" />
                 <Column
-                  title={I18N.COLUMN_HEALTHY_INSTANCE_COUNT}
+                  title={locale.columnHealthyInstanceCount}
                   dataIndex="healthyInstanceCount"
                 />
                 <Column
-                  title={I18N.COLUMN_OPERATION}
+                  title={operation}
                   align="center"
                   cell={(value, index, record) => (
                     <div>
@@ -190,14 +227,14 @@ class ServiceList extends React.Component {
                           this.props.history.push(`/serviceDetail?name=${record.name}`)
                         }
                       >
-                        {I18N.DETAIL}
+                        {detail}
                       </Button>
                       <Button
                         style={{ marginLeft: 12 }}
                         type="normal"
                         onClick={() => this.deleteService(record.name)}
                       >
-                        {I18N.DELETE}
+                        {deleteAction}
                       </Button>
                     </div>
                   )}
@@ -214,13 +251,12 @@ class ServiceList extends React.Component {
                 onChange={currentPage =>
                   this.setState({ currentPage }, () => this.queryServiceList())
                 }
-                language={aliwareIntl.currentLanguageCode}
               />
             </div>
           )}
         </Loading>
         <EditServiceDialog
-          ref="editServiceDialog"
+          ref={this.editServiceDialog}
           openLoading={() => this.openLoading()}
           closeLoading={() => this.closeLoading()}
           queryServiceList={() => this.setState({ currentPage: 1 }, () => this.queryServiceList())}

@@ -17,12 +17,14 @@ package com.alibaba.nacos.naming;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Hello world!
  *
  * @author xxc
  */
+@EnableScheduling
 @SpringBootApplication
 public class NamingApp {
 

@@ -15,11 +15,12 @@
  */
 package com.alibaba.nacos.naming.acl;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Domain;
 import com.alibaba.nacos.naming.core.DomainsManager;
 import com.alibaba.nacos.naming.misc.Switch;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.BaseServlet;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ import java.security.AccessControlException;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @Component
 public class AuthChecker {
@@ -56,13 +57,16 @@ public class AuthChecker {
     }
 
     public void doAuth(Map<String, String[]> params, HttpServletRequest req) throws Exception {
-        String dom = BaseServlet.optional(req, "name", "");
+
+        String namespaceId = WebUtils.optional(req, Constants.REQUEST_PARAM_NAMESPACE_ID,
+            UtilsAndCommons.getDefaultNamespaceId());
+        String dom = WebUtils.optional(req, "name", "");
         if (StringUtils.isEmpty(dom)) {
-            dom = BaseServlet.optional(req, "dom", "");
+            dom = WebUtils.optional(req, "dom", "");
         }
 
         if (StringUtils.isEmpty(dom)) {
-            dom = BaseServlet.optional(req, "tag", "");
+            dom = WebUtils.optional(req, "tag", "");
         }
 
         Domain domObj;
@@ -71,7 +75,7 @@ public class AuthChecker {
             // we consider switch is a kind of special domain
             domObj = Switch.getDom();
         } else {
-            domObj = domainsManager.getDomain(dom);
+            domObj = domainsManager.getDomain(namespaceId, dom);
         }
 
         if (domObj == null) {
@@ -101,7 +105,7 @@ public class AuthChecker {
         }
 
         // if token failed, try AuthInfo
-        AuthInfo authInfo = AuthInfo.fromString(auth, BaseServlet.getAcceptEncoding(req));
+        AuthInfo authInfo = AuthInfo.fromString(auth, WebUtils.getAcceptEncoding(req));
         if (authInfo == null) {
             throw new IllegalAccessException("invalid token or malformed auth info");
         }

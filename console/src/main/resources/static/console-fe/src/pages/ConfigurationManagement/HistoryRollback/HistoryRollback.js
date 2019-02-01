@@ -12,12 +12,22 @@
  */
 
 import React from 'react';
-import { Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
-import RegionGroup from '../../../components/RegionGroup';
-import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
+import PropTypes from 'prop-types';
+import { ConfigProvider, Field, Form, Input, Loading, Pagination, Table } from '@alifd/next';
+import RegionGroup from 'components/RegionGroup';
+import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
+import './index.scss';
+
+@ConfigProvider.config
 class HistoryRollback extends React.Component {
+  static displayName = 'HistoryRollback';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
 
@@ -123,7 +133,7 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `/nacos/v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
+      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
         this.group
       }&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(data) {
@@ -144,14 +154,15 @@ class HistoryRollback extends React.Component {
   showMore() {}
 
   renderCol(value, index, record) {
+    const { locale = {} } = this.props;
     return (
       <div>
         <a onClick={this.goDetail.bind(this, record)} style={{ marginRight: 5 }}>
-          {aliwareIntl.get('com.alibaba.nacos.page.historyRollback.details')}
+          {locale.details}
         </a>
         <span style={{ marginRight: 5 }}>|</span>
         <a style={{ marginRight: 5 }} onClick={this.goRollBack.bind(this, record)}>
-          {aliwareIntl.get('com.alibaba.nacos.page.historyRollback.rollback')}
+          {locale.rollback}
         </a>
       </div>
     );
@@ -279,15 +290,9 @@ class HistoryRollback extends React.Component {
   }
 
   render() {
-    const pubnodedata = aliwareIntl.get('pubnodata');
-
-    const locale = {
-      empty: pubnodedata,
-    };
-
+    const { locale = {} } = this.props;
     const { init } = this.field;
     this.init = init;
-
     return (
       <div style={{ padding: 10 }}>
         <Loading
@@ -298,26 +303,20 @@ class HistoryRollback extends React.Component {
           color="#333"
         >
           <RegionGroup
-            left={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.to_configure')}
+            left={locale.toConfigure}
             namespaceCallBack={this.cleanAndGetData.bind(this)}
           />
-          {/** <div className={'namespacewrapper'}>
-                              <NameSpaceList namespaceCallBack={this.cleanAndGetData.bind(this)} />
-                           </div>* */}
-
           <div>
             <Form inline field={this.field}>
               <Form.Item label="Data ID:" required>
                 <Input
-                  placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.dataid')}
+                  placeholder={locale.dataId}
                   style={{ width: 200 }}
                   {...this.init('dataId', {
                     rules: [
                       {
                         required: true,
-                        message: aliwareIntl.get(
-                          'com.alibaba.nacos.page.form.Data_Id_can_not_be_empty'
-                        ),
+                        message: locale.dataIdCanNotBeEmpty,
                       },
                     ],
                   })}
@@ -325,15 +324,13 @@ class HistoryRollback extends React.Component {
               </Form.Item>
               <Form.Item label="Group:" required>
                 <Input
-                  placeholder={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.group')}
+                  placeholder={locale.group}
                   style={{ width: 200 }}
                   {...this.init('group', {
                     rules: [
                       {
                         required: true,
-                        message: aliwareIntl.get(
-                          'com.alibaba.nacos.page.listeningToQuery.group_can_not_be_empty'
-                        ),
+                        message: locale.groupCanNotBeEmpty,
                       },
                     ],
                   })}
@@ -347,7 +344,7 @@ class HistoryRollback extends React.Component {
                   onClick={this.selectAll.bind(this)}
                   style={{ marginRight: 10 }}
                 >
-                  {aliwareIntl.get('com.alibaba.nacos.page.historyrollback.query')}
+                  {locale.query}
                 </Form.Submit>
               </Form.Item>
             </Form>
@@ -362,36 +359,29 @@ class HistoryRollback extends React.Component {
                 margin: 0,
                 paddingLeft: 10,
                 borderLeft: '3px solid #09c',
+                fontSize: 16,
               }}
             >
-              {aliwareIntl.get('com.alibaba.nacos.page.historyRollback.queryresult')}
+              {locale.queryResult}
               <strong style={{ fontWeight: 'bold' }}> {this.state.total} </strong>
-              {aliwareIntl.get('com.alibaba.nacos.page.historyRollback.article_meet')}
+              {locale.articleMeet}
             </h3>
           </div>
           <div>
-            <Table
-              dataSource={this.state.dataSource}
-              locale={locale}
-              language={aliwareIntl.currentLanguageCode}
-            >
+            <Table dataSource={this.state.dataSource} locale={{ empty: locale.pubNoData }}>
               <Table.Column title="Data ID" dataIndex="dataId" />
               <Table.Column title="Group" dataIndex="group" />
               <Table.Column
-                title={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.last_update_time')}
+                title={locale.lastUpdateTime}
                 dataIndex="time"
                 cell={this.renderLastTime.bind(this)}
               />
-              <Table.Column
-                title={aliwareIntl.get('com.alibaba.nacos.page.historyRollback.operation')}
-                cell={this.renderCol.bind(this)}
-              />
+              <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
             </Table>
           </div>
           <div style={{ marginTop: 10, textAlign: 'right' }}>
             <Pagination
               current={this.state.currentPage}
-              language={aliwareIntl.currentLanguageCode}
               total={this.state.total}
               pageSize={this.state.pageSize}
               onChange={this.changePage.bind(this)}

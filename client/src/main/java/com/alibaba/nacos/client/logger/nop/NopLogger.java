@@ -17,14 +17,15 @@ package com.alibaba.nacos.client.logger.nop;
 
 import com.alibaba.nacos.client.logger.Logger;
 import com.alibaba.nacos.client.logger.support.LoggerSupport;
+
 /**
  * NopLogger
- * @author Nacos
  *
+ * @author Nacos
  */
 public class NopLogger extends LoggerSupport implements Logger {
 
-    public NopLogger(){
+    public NopLogger() {
         super(null);
     }
 

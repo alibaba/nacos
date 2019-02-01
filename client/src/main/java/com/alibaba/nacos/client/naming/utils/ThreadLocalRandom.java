@@ -26,18 +26,18 @@ import java.util.concurrent.atomic.AtomicLong;
  * A random number generator isolated to the current thread. Like the global {@link java.util.Random} generator used by
  * the {@link java.lang.Math} class, a {@code ThreadLocalRandom} is initialized with an internally generated seed that
  * may not otherwise be modified. When applicable, use of {@code ThreadLocalRandom} rather than shared {@code Random}
- * objects in concurrent programs will typically encounter much less overhead and contention. Use of
- * {@code ThreadLocalRandom} is particularly appropriate when multiple tasks (for example, each a
- * {@link io.netty.util.internal.chmv8.ForkJoinTask}) use random numbers in parallel in thread pools.
- *
+ * objects in concurrent programs will typically encounter much less overhead and contention. Use of {@code
+ * ThreadLocalRandom} is particularly appropriate when multiple tasks (for example, each a {@link
+ * io.netty.util.internal.chmv8.ForkJoinTask}) use random numbers in parallel in thread pools.
+ * <p>
  * <p>
  * Usages of this class should typically be of the form: {@code ThreadLocalRandom.current().nextX(...)} (where {@code X}
  * is {@code Int}, {@code Long}, etc). When all usages are of this form, it is never possible to accidently share a
  * {@code ThreadLocalRandom} across multiple threads.
- *
+ * <p>
  * <p>
  * This class also provides additional commonly used bounded random generation methods.
- *
+ * <p>
  * //since 1.7 //author Doug Lea
  */
 @SuppressWarnings("all")
@@ -71,7 +71,7 @@ public class ThreadLocalRandom extends Random {
             // Get the random seed from the thread with timeout.
             final long timeoutSeconds = 3;
             final long deadLine = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
-            for (;;) {
+            for (; ; ) {
                 long waitTime = deadLine - System.nanoTime();
                 if (waitTime <= 0) {
                     break;
@@ -99,7 +99,7 @@ public class ThreadLocalRandom extends Random {
     }
 
     private static long newSeed() {
-        for (;;) {
+        for (; ; ) {
             final long current = seedUniquifier.get();
             final long actualCurrent = current != 0 ? current : getInitialSeedUniquifier();
 
@@ -163,8 +163,7 @@ public class ThreadLocalRandom extends Random {
     /**
      * Throws {@code UnsupportedOperationException}. Setting seeds in this generator is not supported.
      *
-     * @throws UnsupportedOperationException
-     *             always
+     * @throws UnsupportedOperationException always
      */
     public void setSeed(long seed) {
         if (initialized) {
@@ -175,20 +174,17 @@ public class ThreadLocalRandom extends Random {
 
     protected int next(int bits) {
         rnd = (rnd * multiplier + addend) & mask;
-        return (int) (rnd >>> (48 - bits));
+        return (int)(rnd >>> (48 - bits));
     }
 
     /**
      * Returns a pseudorandom, uniformly distributed value between the given least value (inclusive) and bound
      * (exclusive).
      *
-     * @param least
-     *            the least value returned
-     * @param bound
-     *            the upper bound (exclusive)
-     * @throws IllegalArgumentException
-     *             if least greater than or equal to bound
+     * @param least the least value returned
+     * @param bound the upper bound (exclusive)
      * @return the next value
+     * @throws IllegalArgumentException if least greater than or equal to bound
      */
     public int nextInt(int least, int bound) {
         if (least >= bound) {
@@ -200,11 +196,9 @@ public class ThreadLocalRandom extends Random {
     /**
      * Returns a pseudorandom, uniformly distributed value between 0 (inclusive) and the specified value (exclusive).
      *
-     * @param n
-     *            the bound on the random number to be returned. Must be positive.
+     * @param n the bound on the random number to be returned. Must be positive.
      * @return the next value
-     * @throws IllegalArgumentException
-     *             if n is not positive
+     * @throws IllegalArgumentException if n is not positive
      */
     public long nextLong(long n) {
         if (n <= 0) {
@@ -226,20 +220,17 @@ public class ThreadLocalRandom extends Random {
             }
             n = nextn;
         }
-        return offset + nextInt((int) n);
+        return offset + nextInt((int)n);
     }
 
     /**
      * Returns a pseudorandom, uniformly distributed value between the given least value (inclusive) and bound
      * (exclusive).
      *
-     * @param least
-     *            the least value returned
-     * @param bound
-     *            the upper bound (exclusive)
+     * @param least the least value returned
+     * @param bound the upper bound (exclusive)
      * @return the next value
-     * @throws IllegalArgumentException
-     *             if least greater than or equal to bound
+     * @throws IllegalArgumentException if least greater than or equal to bound
      */
     public long nextLong(long least, long bound) {
         if (least >= bound) {
@@ -252,11 +243,9 @@ public class ThreadLocalRandom extends Random {
      * Returns a pseudorandom, uniformly distributed {@code double} value between 0 (inclusive) and the specified value
      * (exclusive).
      *
-     * @param n
-     *            the bound on the random number to be returned. Must be positive.
+     * @param n the bound on the random number to be returned. Must be positive.
      * @return the next value
-     * @throws IllegalArgumentException
-     *             if n is not positive
+     * @throws IllegalArgumentException if n is not positive
      */
     public double nextDouble(double n) {
         if (n <= 0) {
@@ -269,13 +258,10 @@ public class ThreadLocalRandom extends Random {
      * Returns a pseudorandom, uniformly distributed value between the given least value (inclusive) and bound
      * (exclusive).
      *
-     * @param least
-     *            the least value returned
-     * @param bound
-     *            the upper bound (exclusive)
+     * @param least the least value returned
+     * @param bound the upper bound (exclusive)
      * @return the next value
-     * @throws IllegalArgumentException
-     *             if least greater than or equal to bound
+     * @throws IllegalArgumentException if least greater than or equal to bound
      */
     public double nextDouble(double least, double bound) {
         if (least >= bound) {

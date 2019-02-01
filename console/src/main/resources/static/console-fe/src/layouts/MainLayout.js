@@ -12,17 +12,27 @@
  */
 
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { Icon } from '@alifd/next';
-import siteConfig from '../config';
+import { ConfigProvider, Icon } from '@alifd/next';
 import Header from './Header';
 import $ from 'jquery';
-import { aliwareGetCookieByKeyName, setParams, aliwareIntl } from '../globalLib';
+import { setParams } from '../globalLib';
+import { connect } from 'react-redux';
 
-export default class MainLayout extends React.Component {
+import './index.scss';
+
+@withRouter
+@connect(state => ({ ...state.locale }))
+@ConfigProvider.config
+class MainLayout extends React.Component {
+  static displayName = 'MainLayout';
+
   static propTypes = {
     navList: PropTypes.array,
     history: PropTypes.object,
+    location: PropTypes.object,
+    locale: PropTypes.object,
     children: PropTypes.any,
   };
 
@@ -65,6 +75,11 @@ export default class MainLayout extends React.Component {
     iconClass.className = tmpClassName;
   }
 
+  /**
+   * Click the back button
+   * TODO: this.props.history.goBack(); ???
+   * @param url
+   */
   nacosGoBack(url) {
     const params = window.location.hash.split('?')[1];
     const urlArr = params.split('&') || [];
@@ -83,6 +98,9 @@ export default class MainLayout extends React.Component {
           queryParams.push(urlArr[i]);
         }
       }
+    }
+    if (localStorage.getItem('namespace')) {
+      queryParams.push(`namespace=${localStorage.getItem('namespace')}`);
     }
     this.props.history.push(`/${url}?${queryParams.join('&')}`);
   }
@@ -194,17 +212,15 @@ export default class MainLayout extends React.Component {
   }
 
   nacosLoopNav(data, _index = 0, parent) {
+    const { locale = {}, location = {} } = this.props;
+    const { pathname } = location;
     let index = _index;
     // 遍历导航，只显示2级
     const self = this;
     return data.map(item => {
-      if (!item) {
-        return '';
-      }
+      if (!item) return '';
       index++;
-      if (item.dontUseChild === true) {
-        return '';
-      }
+      if (item.dontUseChild === true) return '';
       if (item.children && item.children.length > 0) {
         if (item.isVirtual) {
           // 如果是虚拟菜单需要增加展开箭头
@@ -223,7 +239,7 @@ export default class MainLayout extends React.Component {
               <div>
                 <a href="" onClick={this.nacosToggleNav.bind(this, item.serviceName)}>
                   <div className="nav-icon">{icon}</div>
-                  <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                  <div className="nav-title">{locale[item.serviceName]}</div>
                 </a>
               </div>
               <ul className={`subnavlist ${hiddenClass}`}>
@@ -234,6 +250,7 @@ export default class MainLayout extends React.Component {
         } else {
           return (
             <li
+              className={pathname === `/${item.serviceName}` ? 'selected' : ''}
               key={`${item.serviceName}`}
               data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
               onClick={this.navTo.bind(this, `/${item.serviceName}`)}
@@ -244,7 +261,7 @@ export default class MainLayout extends React.Component {
                 onClick={this.activeNav.bind(this, `nav${index}`)}
               >
                 <div className="nav-icon" />
-                <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+                <div className="nav-title">{locale[item.serviceName]}</div>
               </a>
             </li>
           );
@@ -252,6 +269,7 @@ export default class MainLayout extends React.Component {
       }
       return (
         <li
+          className={pathname === `/${item.serviceName}` ? 'selected' : ''}
           key={`${item.serviceName}`}
           data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
           onClick={this.navTo.bind(this, `/${item.serviceName}`)}
@@ -262,7 +280,7 @@ export default class MainLayout extends React.Component {
             onClick={this.activeNav.bind(this, `nav${index}`)}
           >
             <div className="nav-icon" />
-            <div className="nav-title">{aliwareIntl.get(item.id) || item.name}</div>
+            <div className="nav-title">{locale[item.serviceName]}</div>
           </a>
         </li>
       );
@@ -278,15 +296,7 @@ export default class MainLayout extends React.Component {
     return navRow;
   }
 
-  UNSAFE_componentWillMount() {
-    const nav = this.props.navList || [];
-    const navRow = this.nacosGetNav(nav);
-    this.setState({
-      navRow,
-    });
-  }
-
-  componentDidMount() {
+  renderNav() {
     this.nacosLeftBarDom = document.getElementById('viewFramework-product-navbar');
     this.nacosBodyDom = document.getElementById('viewFramework-product-body');
     this.nacosToggleIconDom = document.getElementById('viewFramework-product-navbar-collapse');
@@ -366,25 +376,21 @@ export default class MainLayout extends React.Component {
     });
   }
 
-  onLanguageChange = language => {
-    aliwareIntl.changeLanguage(language);
-    document.cookie = `docsite_language=${language}`;
-    window.location.reload();
-  };
+  componentWillReceiveProps() {
+    setTimeout(() => {
+      const nav = this.props.navList || [];
+      const navRow = this.nacosGetNav(nav);
+      this.setState({ navRow }, () => this.renderNav());
+    });
+  }
 
   render() {
-    const language = aliwareGetCookieByKeyName('docsite_language') || siteConfig.defaultLanguage;
-
-    const { headerType, showLink, navRow, leftBarClose, noChild } = this.state;
-    const headerLogo = 'img/TB118jPv_mWBKNjSZFBXXXxUFXa-2000-390.svg';
+    const { locale = {} } = this.props;
+    const { nacosVersion, nacosName, doesNotExist } = locale;
+    const { showLink, navRow, leftBarClose, noChild } = this.state;
     return (
       <div className="viewFramework-product" style={{ top: 66 }}>
-        <Header
-          type={headerType}
-          logo={headerLogo}
-          language={language}
-          onLanguageChange={this.onLanguageChange}
-        />
+        <Header />
         <div
           className="viewFramework-product-navbar"
           style={{ width: 180, marginLeft: 0 }}
@@ -399,24 +405,11 @@ export default class MainLayout extends React.Component {
                     {showLink}
                   </div>
                 ) : (
-                  <div
-                    style={{ textIndent: 0 }}
-                    className={'product-nav-title'}
-                    title={aliwareIntl.get(
-                      'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
-                    )}
-                  >
-                    <span>
-                      {aliwareIntl.get(
-                        'com.alibaba.nacos.layout.noenv.app_configuration_management_acm'
-                      )}
-                    </span>
-                    <span style={{ marginLeft: 5 }}>
-                      {aliwareIntl.get('com.alibaba.nacos.layout.noenv.nacosversion')}
-                    </span>
+                  <div style={{ textIndent: 0 }} className={'product-nav-title'} title={nacosName}>
+                    <span>{nacosName}</span>
+                    <span style={{ marginLeft: 5 }}>{nacosVersion}</span>
                   </div>
                 )}
-
                 <div
                   className="product-nav-list"
                   style={{ position: 'relative', top: 0, height: '100%' }}
@@ -455,7 +448,7 @@ export default class MainLayout extends React.Component {
               <div
                 style={{ height: 300, lineHeight: '300px', textAlign: 'center', fontSize: '18px' }}
               >
-                {aliwareIntl.get('com.alibaba.nacos.layout.noenv.does_not_exist')}
+                {doesNotExist}
               </div>
             )}
           </div>
@@ -464,3 +457,5 @@ export default class MainLayout extends React.Component {
     );
   }
 }
+
+export default MainLayout;

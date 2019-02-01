@@ -26,14 +26,14 @@ import java.util.Properties;
 
 /**
  * Properties Listener
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class PropertiesListener extends AbstractListener {
-	final static public Logger log = LogUtils.logger(PropertiesListener.class);
-	
+    final static public Logger log = LogUtils.logger(PropertiesListener.class);
+
+    @Override
     public void receiveConfigInfo(String configInfo) {
         if (StringUtils.isEmpty(configInfo)) {
             return;
@@ -43,19 +43,17 @@ public abstract class PropertiesListener extends AbstractListener {
         try {
             properties.load(new StringReader(configInfo));
             innerReceive(properties);
-        }
-        catch (IOException e) {
-            log.error("NACOS-XXXX","load properties error：" + configInfo, e);
+        } catch (IOException e) {
+            log.error("NACOS-XXXX", "load properties error：" + configInfo, e);
         }
 
     }
 
-	/**
-	 * properties type for receiver
-	 * 
-	 * @param properties
-	 *            properties
-	 */
-	public abstract void innerReceive(Properties properties);
+    /**
+     * properties type for receiver
+     *
+     * @param properties properties
+     */
+    public abstract void innerReceive(Properties properties);
 
 }

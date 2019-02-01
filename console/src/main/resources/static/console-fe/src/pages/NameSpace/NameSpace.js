@@ -12,17 +12,27 @@
  */
 
 import React from 'react';
-import { Button, Dialog, Loading, Table } from '@alifd/next';
+import PropTypes from 'prop-types';
+import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
-import DeleteDialog from '../../components/DeleteDialog';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
-import { getParams, setParams, request, aliwareIntl } from '../../globalLib';
-import './index.less';
+import { getParams, setParams, request } from '../../globalLib';
 
+import './index.scss';
+
+@ConfigProvider.config
 class NameSpace extends React.Component {
+  static displayName = 'NameSpace';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
+    this.editgroup = React.createRef();
+    this.newnamespace = React.createRef();
     this.state = {
       loading: false,
       defaultNamespace: '',
@@ -35,14 +45,15 @@ class NameSpace extends React.Component {
   }
 
   getNameSpaces(delayTime = 2000) {
+    const { locale = {} } = this.props;
+    const { prompt } = locale;
     const self = this;
-    // let serverId = getParams('serverId') || 'center';
     self.openLoading();
     setTimeout(() => {
       request({
         type: 'get',
         beforeSend() {},
-        url: '/nacos/v1/console/namespaces',
+        url: 'v1/console/namespaces',
         success: res => {
           if (res.code === 200) {
             const data = res.data || [];
@@ -61,8 +72,7 @@ class NameSpace extends React.Component {
             });
           } else {
             Dialog.alert({
-              language: aliwareIntl.currentLanguageCode || 'zh-cn',
-              title: aliwareIntl.get('com.alibaba.nacos.page.namespace.prompt'),
+              title: prompt,
               content: res.message,
             });
           }
@@ -96,9 +106,11 @@ class NameSpace extends React.Component {
   }
 
   detailNamespace(record) {
+    const { locale = {} } = this.props;
+    const { namespaceDetails, namespaceName, namespaceID, configuration, description } = locale;
     const { namespace } = record; // 获取ak,sk
     request({
-      url: `/nacos/v1/console/namespaces?show=all&namespaceId=${namespace}`,
+      url: `v1/console/namespaces?show=all&namespaceId=${namespace}`,
       beforeSend: () => {
         this.openLoading();
       },
@@ -107,35 +119,26 @@ class NameSpace extends React.Component {
           Dialog.alert({
             style: { width: '500px' },
             needWrapper: false,
-            language: aliwareIntl.currentLanguageCode || 'zh-cn',
-            title: aliwareIntl.get('nacos.page.namespace.Namespace_details'),
+            title: namespaceDetails,
             content: (
               <div>
                 <div style={{ marginTop: '10px' }}>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>
-                      {aliwareIntl.get('nacos.page.namespace.namespace_name')}
-                    </span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceName}:`}</span>
                     <span style={{ color: '#c7254e' }}>{res.namespaceShowName}</span>
                   </p>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>
-                      {aliwareIntl.get('nacos.page.namespace.namespace_ID')}
-                    </span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceID}:`}</span>
                     <span style={{ color: '#c7254e' }}>{res.namespace}</span>
                   </p>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>
-                      {aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')}
-                    </span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${configuration}:`}</span>
                     <span style={{ color: '#c7254e' }}>
                       {res.configCount} / {res.quota}
                     </span>
                   </p>
                   <p>
-                    <span style={{ color: '#999', marginRight: 5 }}>
-                      {aliwareIntl.get('nacos.page.configdetail.Description')}
-                    </span>
+                    <span style={{ color: '#999', marginRight: 5 }}>{`${description}:`}</span>
                     <span style={{ color: '#c7254e' }}>{res.namespaceDesc}</span>
                   </p>
                 </div>
@@ -151,59 +154,49 @@ class NameSpace extends React.Component {
   }
 
   removeNamespace(record) {
-    // let serverId = getParams('serverId') || 'center';
+    const { locale = {} } = this.props;
+    const {
+      removeNamespace,
+      confirmDelete,
+      namespaceName,
+      namespaceID,
+      configurationManagement,
+      removeSuccess,
+      deletedSuccessfully,
+      deletedFailure,
+    } = locale;
     Dialog.confirm({
-      title: aliwareIntl.get('nacos.page.namespace.remove_the_namespace'),
+      title: removeNamespace,
       content: (
         <div style={{ marginTop: '-20px' }}>
-          <h3>
-            {aliwareIntl.get(
-              'nacos.page.namespace.sure_you_want_to_delete_the_following_namespaces?'
-            )}
-          </h3>
+          <h3>{confirmDelete}</h3>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>
-              {aliwareIntl.get('nacos.page.namespace.namespace_name')}
-            </span>
+            <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceName}:`}</span>
             <span style={{ color: '#c7254e' }}>{record.namespaceShowName}</span>
           </p>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>
-              {aliwareIntl.get('nacos.page.namespace.namespace_ID')}
-            </span>
+            <span style={{ color: '#999', marginRight: 5 }}>{`${namespaceID}:`}</span>
             <span style={{ color: '#c7254e' }}>{record.namespace}</span>
           </p>
         </div>
       ),
-      language: aliwareIntl.currentLanguageCode || 'zh-cn',
       onOk: () => {
-        const url = `/nacos/v1/console/namespaces?namespaceId=${record.namespace}`;
+        const url = `v1/console/namespaces?namespaceId=${record.namespace}`;
         request({
           url,
           type: 'delete',
           success: res => {
             const _payload = {};
-            _payload.title = aliwareIntl.get(
-              'com.alibaba.nacos.page.configurationManagement.configuration_management'
-            );
+            _payload.title = configurationManagement;
             if (res === true) {
               const urlnamespace = getParams('namespace');
               if (record.namespace === urlnamespace) {
                 setParams('namespace', this.state.defaultNamespace);
               }
-              Dialog.confirm({
-                language: aliwareIntl.currentLanguageCode || 'zh-cn',
-                content: aliwareIntl.get('nacos.page.namespace._Remove_the_namespace_success'),
-                title: aliwareIntl.get('nacos.page.namespace.deleted_successfully'),
-              });
+              Dialog.confirm({ content: removeSuccess, title: deletedSuccessfully });
             } else {
-              Dialog.confirm({
-                language: aliwareIntl.currentLanguageCode || 'zh-cn',
-                content: res.message,
-                title: '删除失败',
-              });
+              Dialog.confirm({ content: res.message, title: deletedFailure });
             }
-
             this.getNameSpaces();
           },
         });
@@ -214,7 +207,7 @@ class NameSpace extends React.Component {
   refreshNameSpace() {
     request({
       type: 'get',
-      url: '/nacos/v1/console/namespaces',
+      url: 'v1/console/namespaces',
       success: res => {
         if (res.code === 200) {
           window.namespaceList = res.data;
@@ -233,37 +226,35 @@ class NameSpace extends React.Component {
   }
 
   openToEdit(record) {
-    this.refs.editgroup.openDialog(record);
+    this.editgroup.current.getInstance().openDialog(record);
   }
 
   renderOption(value, index, record) {
+    const { locale = {} } = this.props;
+    const { namespaceDelete, details, edit } = locale;
     let _delinfo = (
       <a onClick={this.removeNamespace.bind(this, record)} style={{ marginRight: 10 }}>
-        {aliwareIntl.get('com.alibaba.nacos.page.namespace.delete')}
+        {namespaceDelete}
       </a>
     );
     if (record.type === 1 || record.type === 0) {
       _delinfo = (
         <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled>
-          {aliwareIntl.get('com.alibaba.nacos.page.namespace.delete')}
+          {namespaceDelete}
         </span>
       );
     }
     const _detailinfo = (
       <a onClick={this.detailNamespace.bind(this, record)} style={{ marginRight: 10 }}>
-        {aliwareIntl.get('nacos.page.namespace.details')}
+        {details}
       </a>
     );
 
-    let _editinfo = (
-      <a onClick={this.openToEdit.bind(this, record)}>
-        {aliwareIntl.get('com.alibaba.nacos.page.namespace.edit')}
-      </a>
-    );
+    let _editinfo = <a onClick={this.openToEdit.bind(this, record)}>{edit}</a>;
     if (record.type === 0 || record.type === 1) {
       _editinfo = (
         <span style={{ marginRight: 10, cursor: 'not-allowed' }} disabled>
-          {aliwareIntl.get('com.alibaba.nacos.page.namespace.edit')}
+          {edit}
         </span>
       );
     }
@@ -277,13 +268,15 @@ class NameSpace extends React.Component {
   }
 
   addNameSpace() {
-    this.refs.newnamespace.openDialog(this.state.dataSource);
+    this.newnamespace.current.getInstance().openDialog(this.state.dataSource);
   }
 
   renderName(value, index, record) {
+    const { locale = {} } = this.props;
+    const { namespacePublic } = locale;
     let name = record.namespaceShowName;
     if (record.type === 0) {
-      name = aliwareIntl.get('com.alibaba.nacos.page.namespace.public');
+      name = namespacePublic;
     }
     return <div>{name}</div>;
   }
@@ -297,14 +290,19 @@ class NameSpace extends React.Component {
   }
 
   render() {
-    const pubnodedata = aliwareIntl.get('pubnodata');
-
-    const locale = {
-      empty: pubnodedata,
-    };
+    const { locale = {} } = this.props;
+    const {
+      pubNoData,
+      namespace,
+      namespaceAdd,
+      namespaceNames,
+      namespaceNumber,
+      configuration,
+      namespaceOperation,
+    } = locale;
     return (
       <div style={{ padding: 10 }} className="clearfix">
-        <RegionGroup left={aliwareIntl.get('nacos.page.namespace.Namespace')} />
+        <RegionGroup left={namespace} />
         <div className="fusion-demo">
           <Loading
             shape="flower"
@@ -320,32 +318,25 @@ class NameSpace extends React.Component {
                   style={{ marginRight: 0, marginTop: 10 }}
                   onClick={this.addNameSpace.bind(this)}
                 >
-                  {aliwareIntl.get('com.alibaba.nacos.page.namespace.add')}
+                  {namespaceAdd}
                 </Button>
               </div>
               <div>
-                <Table
-                  dataSource={this.state.dataSource}
-                  locale={locale}
-                  language={aliwareIntl.currentLanguageCode}
-                >
+                <Table dataSource={this.state.dataSource} locale={{ empty: pubNoData }}>
                   <Table.Column
-                    title={aliwareIntl.get('com.alibaba.nacos.page.namespace.namespace_names')}
+                    title={namespaceNames}
                     dataIndex="namespaceShowName"
                     cell={this.renderName.bind(this)}
                   />
+                  <Table.Column title={namespaceNumber} dataIndex="namespace" />
                   <Table.Column
-                    title={aliwareIntl.get('nacos.page.namespace.namespace_number')}
-                    dataIndex="namespace"
-                  />
-                  <Table.Column
-                    title={aliwareIntl.get('com.alibaba.nacos.page.namespace.configuration')}
+                    title={configuration}
                     dataIndex="configCount"
                     cell={this.renderConfigCount.bind(this)}
                   />
 
                   <Table.Column
-                    title={aliwareIntl.get('com.alibaba.nacos.page.namespace.operation')}
+                    title={namespaceOperation}
                     dataIndex="time"
                     cell={this.renderOption.bind(this)}
                   />
@@ -353,9 +344,8 @@ class NameSpace extends React.Component {
               </div>
             </div>
 
-            <DeleteDialog ref="delete" />
-            <NewNameSpace ref={'newnamespace'} getNameSpaces={this.getNameSpaces.bind(this)} />
-            <EditorNameSpace ref={'editgroup'} getNameSpaces={this.getNameSpaces.bind(this)} />
+            <NewNameSpace ref={this.newnamespace} getNameSpaces={this.getNameSpaces.bind(this)} />
+            <EditorNameSpace ref={this.editgroup} getNameSpaces={this.getNameSpaces.bind(this)} />
           </Loading>
         </div>
       </div>

@@ -11,11 +11,11 @@
  * limitations under the License.
  */
 
-import React from 'react';
 import $ from 'jquery';
+import React from 'react';
+import PropTypes from 'prop-types';
 import SuccessDialog from '../../../components/SuccessDialog';
 import { getParams, setParams, request, aliwareIntl } from '../../../globalLib';
-import './index.less';
 import {
   Balloon,
   Button,
@@ -28,15 +28,28 @@ import {
   Message,
   Select,
   Radio,
+  ConfigProvider,
 } from '@alifd/next';
+import validateContent from 'utils/validateContent';
+
+import './index.scss';
 
 const FormItem = Form.Item;
 const { Group: RadioGroup } = Radio;
 const { AutoComplete: Combobox } = Select;
 
+@ConfigProvider.config
 class NewConfig extends React.Component {
+  static displayName = 'NewConfig';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
+    this.successDialog = React.createRef();
     this.field = new Field(this);
     this.edasAppName = getParams('edasAppName') || '';
     this.edasAppId = getParams('edasAppId') || '';
@@ -212,10 +225,12 @@ class NewConfig extends React.Component {
   }
 
   publishConfig() {
+    const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
       if (errors) {
         return;
       }
+      let { configType } = this.state;
       let content = '';
       const self = this;
       if (this.monacoEditor) {
@@ -224,60 +239,110 @@ class NewConfig extends React.Component {
         content = this.codeValue;
       }
       if (!content) {
+        Message.error({
+          content: locale.dataRequired,
+          align: 'cc cc',
+        });
         return;
       }
-      this.tenant = getParams('namespace') || '';
-      const payload = {
-        dataId: self.state.addonBefore + this.field.getValue('dataId'),
-        group: this.field.getValue('group'),
-        content,
-        desc: this.field.getValue('desc'),
-        config_tags: this.state.config_tags.join(),
-        type: this.state.configType,
-        appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
-        tenant: this.tenant,
-      };
-      this.serverId = getParams('serverId') || 'center';
-      const url = '/nacos/v1/cs/configs';
-      request({
-        type: 'post',
-        contentType: 'application/x-www-form-urlencoded',
-        url,
-        data: payload,
-        beforeSend: () => {
-          this.openLoading();
-        },
-        success(res) {
-          const _payload = {};
-          _payload.maintitle = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing_main');
-          _payload.title = aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing');
-          _payload.content = '';
-          _payload.dataId = payload.dataId;
-          _payload.group = payload.group;
-          if (res === true) {
-            self.group = payload.group;
-            self.dataId = payload.dataId;
-            setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
-            _payload.isok = true;
-          } else {
-            _payload.isok = false;
-            _payload.message = res.message;
-          }
-          self.refs.success.openDialog(_payload);
-        },
-        complete() {
-          self.closeLoading();
-        },
-        error(res) {
-          Dialog.alert({
-            language: aliwareIntl.currentLanguageCode || 'zh-cn',
-            content: aliwareIntl.get('com.alibaba.nacos.page.newconfig.publish_failed'),
-          });
-          self.closeLoading();
-        },
-      });
+
+      if (validateContent.validate({ content, type: configType })) {
+        this.publicConfigBeforeCheck(content);
+      } else {
+        Dialog.confirm({
+          content: locale.confirmSyanx,
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          onOk: () => {
+            this.publicConfigBeforeCheck(content);
+          },
+        });
+      }
     });
   }
+
+  /**
+   * 因为后端接口没有做是否存在配置逻辑 会覆盖原先配置 所以提交前先判断是否存在
+   */
+  publicConfigBeforeCheck = content => {
+    const { locale = {} } = this.props;
+    const { addonBefore } = this.state;
+    request({
+      url: 'v1/cs/configs',
+      data: {
+        show: 'all',
+        dataId: addonBefore + this.field.getValue('dataId'),
+        group: this.field.getValue('group'),
+        tenant: getParams('namespace') || '',
+      },
+      success: res => {
+        // 返回成功 说明存在就不提交配置
+        Message.error({
+          content: locale.dataIdExists,
+          align: 'cc cc',
+        });
+      },
+      error: err => {
+        // 后端接口很不规范 响应为空 说明没有数据 就可以新增
+        this._publishConfig(content);
+      },
+    });
+  };
+
+  _publishConfig = content => {
+    const self = this;
+    const { locale = {} } = this.props;
+    let { addonBefore, config_tags, configType } = this.state;
+    this.tenant = getParams('namespace') || '';
+    const payload = {
+      dataId: addonBefore + this.field.getValue('dataId'),
+      group: this.field.getValue('group'),
+      content,
+      desc: this.field.getValue('desc'),
+      config_tags: config_tags.join(),
+      type: configType,
+      appName: this.inApp ? this.edasAppId : this.field.getValue('appName'),
+      tenant: this.tenant,
+    };
+    this.serverId = getParams('serverId') || 'center';
+    const url = 'v1/cs/configs';
+    request({
+      type: 'post',
+      contentType: 'application/x-www-form-urlencoded',
+      url,
+      data: payload,
+      beforeSend: () => {
+        this.openLoading();
+      },
+      success(res) {
+        const _payload = {};
+        _payload.maintitle = locale.newListingMain;
+        _payload.title = locale.newListing;
+        _payload.content = '';
+        _payload.dataId = payload.dataId;
+        _payload.group = payload.group;
+        if (res === true) {
+          self.group = payload.group;
+          self.dataId = payload.dataId;
+          setParams({ group: payload.group, dataId: payload.dataId }); // 设置参数
+          _payload.isok = true;
+        } else {
+          _payload.isok = false;
+          _payload.message = res.message;
+        }
+        self.successDialog.current.getInstance().openDialog(_payload);
+      },
+      complete() {
+        self.closeLoading();
+      },
+      error(res) {
+        Dialog.alert({
+          language: aliwareIntl.currentLanguageCode || 'zh-cn',
+          content: locale.publishFailed,
+        });
+        self.closeLoading();
+      },
+    });
+  };
 
   changeEnv(values) {
     this.targetEnvs = values;
@@ -299,16 +364,18 @@ class NewConfig extends React.Component {
   }
 
   validateChart(rule, value, callback) {
+    const { locale = {} } = this.props;
     const chartReg = /[@#\$%\^&\*]+/g;
 
     if (chartReg.test(value)) {
-      callback(aliwareIntl.get('com.alibaba.nacos.page.newconfig.do_not_ente'));
+      callback(locale.doNotEnte);
     } else {
       callback();
     }
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -365,25 +432,20 @@ class NewConfig extends React.Component {
           visible={this.state.loading}
           color={'#333'}
         >
-          <h1>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.new_listing')}</h1>
-          <Form field={this.field}>
-            <FormItem label={'Data ID:'} required {...formItemLayout}>
+          <h1>{locale.newListing}</h1>
+          <Form className="new-config-form" field={this.field} {...formItemLayout}>
+            <FormItem label={'Data ID:'} required>
               <Input
                 {...init('dataId', {
                   rules: [
                     {
                       required: true,
-                      message: aliwareIntl.get('com.alibaba.nacos.page.newconfig'),
-                    },
-                    {
-                      max: 255,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.newconfig.dataId_is_not_empty'
-                      ),
+                      message: locale.newConfig,
                     },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
+                maxLength={255}
                 addonTextBefore={
                   this.state.addonBefore ? (
                     <div style={{ minWidth: 100, color: '#373D41' }}>{this.state.addonBefore}</div>
@@ -391,99 +453,79 @@ class NewConfig extends React.Component {
                 }
               />
             </FormItem>
-            <FormItem label={'Group:'} required {...formItemLayout}>
+            <FormItem label={'Group:'} required>
               <Combobox
                 style={{ width: '100%' }}
                 size={'large'}
                 hasArrow
                 dataSource={this.state.groups}
-                placeholder={aliwareIntl.get('com.alibaba.nacos.page.newconfig.group_placeholder')}
+                placeholder={locale.groupPlaceholder}
                 defaultValue={this.group}
                 {...init('group', {
                   rules: [
                     {
                       required: true,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.newconfig.the_more_advanced'
-                      ),
+                      message: locale.moreAdvanced,
                     },
                     {
                       max: 127,
-                      message: aliwareIntl.get(
-                        'com.alibaba.nacos.page.newconfig.group_is_not_empty'
-                      ),
+                      message: locale.groupNotEmpty,
                     },
                     { validator: this.validateChart.bind(this) },
                   ],
                 })}
                 onChange={this.setGroup.bind(this)}
                 hasClear
-                language={aliwareIntl.currentLanguageCode}
               />
             </FormItem>
             <FormItem
               label={' '}
-              {...formItemLayout}
               style={{ display: this.state.showGroupWarning ? 'block' : 'none' }}
             >
               <Message type={'warning'} size={'medium'} animation={false}>
-                {aliwareIntl.get(
-                  'nacos.page.newconfig.Note_You_are_to_be_a_custom_packet_the_new_configuration,_make_sure_that_the_client_use_the_Pandora_version_higher_than_3._4._0,_otherwise_it_may_read_less_than_the_configuration.0'
-                )}
+                {locale.annotation}
               </Message>
             </FormItem>
-            <FormItem label={''} {...formItemLayout}>
-              <div>
+
+            <FormItem
+              label={locale.tags}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Select
+                size={'medium'}
+                hasArrow
+                style={{ width: '100%', height: '100%!important' }}
+                autoWidth
+                multiple
+                mode="tag"
+                filterLocal
+                placeholder={locale.pleaseEnterTag}
+                dataSource={this.state.tagLst}
+                value={this.state.config_tags}
+                onChange={this.setConfigTags.bind(this)}
+                hasClear
+              />
+            </FormItem>
+
+            <FormItem
+              label={locale.groupIdCannotBeLonger}
+              className={`more-item${!this.state.showmore ? ' hide' : ''}`}
+            >
+              <Input {...init('appName')} readOnly={this.inApp} />
+            </FormItem>
+            <FormItem label=" ">
+              <div className="more-container">
                 <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                  {this.state.showmore
-                    ? aliwareIntl.get('com.alibaba.nacos.page.newconfig.Data_ID_length')
-                    : aliwareIntl.get('com.alibaba.nacos.page.newconfig.collapse')}
+                  {this.state.showmore ? locale.dataIdLength : locale.collapse}
                 </a>
               </div>
             </FormItem>
 
-            <div style={{ overflow: 'hidden', height: this.state.showmore ? 'auto' : '0' }}>
-              <FormItem label={aliwareIntl.get('nacos.page.newconfig.Tags')} {...formItemLayout}>
-                <Select
-                  size={'medium'}
-                  hasArrow
-                  style={{ width: '100%', height: '100%!important' }}
-                  autoWidth
-                  multiple
-                  mode="tag"
-                  filterLocal
-                  placeholder={aliwareIntl.get(
-                    'nacos.page.configurationManagement.Please_enter_tag'
-                  )}
-                  dataSource={this.state.tagLst}
-                  value={this.state.config_tags}
-                  onChange={this.setConfigTags.bind(this)}
-                  hasClear
-                  language={aliwareIntl.currentLanguageCode}
-                />
-              </FormItem>
-
-              <FormItem
-                label={aliwareIntl.get(
-                  'com.alibaba.nacos.page.newconfig.Group_ID_cannot_be_longer'
-                )}
-                {...formItemLayout}
-              >
-                <Input {...init('appName')} readOnly={this.inApp} />
-              </FormItem>
-            </div>
-
-            <FormItem
-              label={aliwareIntl.get('nacos.page.newconfig.Description')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.description}>
               <Input.TextArea htmlType={'text'} multiple rows={3} {...init('desc')} />
             </FormItem>
 
-            <FormItem
-              label={aliwareIntl.get('com.alibaba.nacos.page.newconfig.the_target_environment')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.targetEnvironment}>
               <RadioGroup
                 dataSource={list}
                 value={this.state.configType}
@@ -493,7 +535,7 @@ class NewConfig extends React.Component {
             <FormItem
               label={
                 <span>
-                  {aliwareIntl.get('com.alibaba.nacos.page.newconfig.configuration_format')}
+                  {locale.configurationFormat}
                   <Balloon
                     trigger={
                       <Icon
@@ -501,9 +543,8 @@ class NewConfig extends React.Component {
                         size={'small'}
                         style={{
                           color: '#1DC11D',
-                          marginRight: 5,
+                          margin: '0 5px',
                           verticalAlign: 'middle',
-                          marginTop: 2,
                         }}
                       />
                     }
@@ -511,37 +552,34 @@ class NewConfig extends React.Component {
                     style={{ marginRight: 5 }}
                     triggerType={'hover'}
                   >
-                    <p>
-                      {aliwareIntl.get('com.alibaba.nacos.page.newconfig.configure_contents_of')}
-                    </p>
-                    <p>{aliwareIntl.get('com.alibaba.nacos.page.newconfig.full_screen')}</p>
+                    <p>{locale.configureContentsOf}</p>
+                    <p>{locale.fullScreen}</p>
                   </Balloon>
                   :
                 </span>
               }
               required
-              {...formItemLayout}
             >
               <div id={'container'} style={{ width: '100%', height: 300 }} />
             </FormItem>
 
-            <FormItem {...formItemLayout} label={''}>
+            <FormItem label=" ">
               <div style={{ textAlign: 'right' }}>
                 <Button
                   type={'primary'}
                   style={{ marginRight: 10 }}
                   onClick={this.publishConfig.bind(this)}
                 >
-                  {aliwareIntl.get('com.alibaba.nacos.page.newconfig.esc_exit')}
+                  {locale.escExit}
                 </Button>
 
                 <Button type={'light'} onClick={this.goList.bind(this)}>
-                  {aliwareIntl.get('com.alibaba.nacos.page.newconfig.release')}
+                  {locale.release}
                 </Button>
               </div>
             </FormItem>
           </Form>
-          <SuccessDialog ref={'success'} />
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );
