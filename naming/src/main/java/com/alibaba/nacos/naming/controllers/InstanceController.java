@@ -295,7 +295,7 @@ public class InstanceController {
     private String regService(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
+        String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
