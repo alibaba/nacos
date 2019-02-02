@@ -311,8 +311,6 @@ public class MultiTenant_InstanceAPI_ITCase {
     public void multipleTenant_updateInstance() throws Exception {
         String serviceName = randomDomainName();
 
-        naming1.registerInstance(serviceName, "11.11.11.11", 80);
-
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
 
         naming.registerInstance(serviceName, "33.33.33.33", 8888);

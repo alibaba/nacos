@@ -476,7 +476,7 @@ public class PushService {
 
     private static Map<String, Object> prepareHostsData(PushClient client) throws Exception {
         Map<String, Object> cmd = new HashMap<String, Object>(2);
-        cmd.put("type", "serviceName");
+        cmd.put("type", "dom");
         cmd.put("data", client.getDataSource().getData(client));
 
         return cmd;

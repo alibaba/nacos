@@ -98,11 +98,11 @@ public class MultiTenant_ITCase {
     @Test
     public void multipleTenant_equalIP() throws Exception {
         String serviceName = randomDomainName();
+        System.out.println(serviceName);
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
 
         naming2.registerInstance(serviceName, "11.11.11.11", 80);
 
-        naming.registerInstance(serviceName, "11.11.11.11", 80);
         naming.registerInstance(serviceName, "11.11.11.11", 80);
 
         TimeUnit.SECONDS.sleep(5L);
