@@ -17,11 +17,9 @@ package com.alibaba.nacos.naming.view;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>

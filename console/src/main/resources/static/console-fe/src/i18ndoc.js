@@ -12,7 +12,7 @@
  */
 module.exports = {
   'zh-cn': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.7.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.8.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': '配置管理',
     'com.alibaba.nacos.page.serviceManagementVirtual': '服务管理',
     'nacos.component.ExportDialog.tags2': '标签:',
@@ -574,7 +574,7 @@ module.exports = {
     'nacos.page.ConfigEditor.submit_failed': '不能为空, 提交失败',
   },
   'en-us': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.7.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.8.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': 'ConfigManagement',
     'com.alibaba.nacos.page.serviceManagementVirtual': 'ServiceManagement',
     'nacos.component.CloneDialog.the_same_configuration': 'Conflict:',
