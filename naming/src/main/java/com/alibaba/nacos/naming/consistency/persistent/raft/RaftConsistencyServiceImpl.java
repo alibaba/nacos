@@ -82,7 +82,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
     @Override
     public boolean isAvailable() {
-        return true;
+        return raftCore.isInitialized();
     }
 
     public void onPut(Datum datum, RaftPeer source) throws NacosException {
