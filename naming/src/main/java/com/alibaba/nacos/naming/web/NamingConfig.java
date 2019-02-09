@@ -24,13 +24,12 @@ import javax.servlet.Filter;
 /**
  * @author nkorange
  */
-
 @Configuration
 public class NamingConfig {
 
     @Bean
     public FilterRegistrationBean distroFilterRegistration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
+        FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
         registration.addUrlPatterns("/*");
         registration.setName("distroFilter");
@@ -40,8 +39,19 @@ public class NamingConfig {
     }
 
     @Bean
+    public FilterRegistrationBean trafficReviseFilterRegistration() {
+        FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(trafficReviseFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("trafficReviseFilter");
+        registration.setOrder(1);
+
+        return registration;
+    }
+
+    @Bean
     public FilterRegistrationBean authFilterRegistration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
+        FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
 
         registration.setFilter(authFilter());
         registration.addUrlPatterns("/api/*", "/raft/*");
@@ -52,12 +62,17 @@ public class NamingConfig {
     }
 
     @Bean
-    public Filter distroFilter() {
+    public DistroFilter distroFilter() {
         return new DistroFilter();
     }
 
     @Bean
-    public Filter authFilter() {
+    public TrafficReviseFilter trafficReviseFilter() {
+        return new TrafficReviseFilter();
+    }
+
+    @Bean
+    public AuthFilter authFilter() {
         return new AuthFilter();
     }
 

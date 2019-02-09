@@ -286,7 +286,7 @@ public class RaftCore {
 
         // if data should be persistent, usually this is always true:
         if (KeyBuilder.matchPersistentKey(datum.key)) {
-            RaftStore.write(datum);
+            raftStore.write(datum);
         }
 
         datums.put(datum.key, datum);
@@ -672,7 +672,7 @@ public class RaftCore {
                                         continue;
                                     }
 
-                                    RaftStore.write(datum);
+                                    raftStore.write(datum);
 
                                     if (KeyBuilder.matchServiceMetaKey(datum.key)) {
                                         Datum<Service> serviceDatum = new Datum<>();
@@ -862,7 +862,7 @@ public class RaftCore {
         }
         // FIXME should we ignore the value of 'deleted'?
         if (deleted != null) {
-            RaftStore.delete(deleted);
+            raftStore.delete(deleted);
             notifier.addTask(deleted, ApplyAction.DELETE);
             Loggers.RAFT.info("datum deleted, key: {}", key);
         }

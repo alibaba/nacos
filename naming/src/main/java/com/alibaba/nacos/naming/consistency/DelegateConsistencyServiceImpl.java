@@ -20,7 +20,7 @@ import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyServic
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
  * Publish execution delegate
@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
  * @author nkorange
  * @since 1.0.0
  */
-@Component("consistencyDelegate")
+@Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
@@ -93,5 +93,10 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     @Override
     public String getResponsibleServer(String key) {
         return distroMapper.mapSrv(KeyBuilder.getServiceName(key));
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
     }
 }

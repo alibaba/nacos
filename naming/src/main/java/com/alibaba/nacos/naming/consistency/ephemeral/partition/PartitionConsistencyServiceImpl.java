@@ -22,12 +22,11 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author nkorange
  * @since 1.0.0
  */
-@Component("partitionConsistencyService")
+@Service("partitionConsistencyService")
 public class PartitionConsistencyServiceImpl implements EphemeralConsistencyService {
 
     @Autowired
@@ -59,6 +58,9 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
 
     @Autowired
     private TaskDispatcher taskDispatcher;
+
+    @Autowired
+    private DataSyncer dataSyncer;
 
     @Autowired
     private Serializer serializer;
@@ -206,5 +208,10 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     @Override
     public String getResponsibleServer(String key) {
         return distroMapper.mapSrv(KeyBuilder.getServiceName(key));
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return dataSyncer.isInitialized();
     }
 }

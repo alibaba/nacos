@@ -42,6 +42,7 @@ public class NamingProxy {
             Map<String, String> headers = new HashMap<>(128);
 
             headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
             headers.put("Connection", "Keep-Alive");
 
             HttpClient.asyncHttpPutLarge("http://" + server + RunningConfig.getContextPath()
@@ -93,6 +94,7 @@ public class NamingProxy {
             Map<String, String> headers = new HashMap<>(128);
 
             headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
             headers.put("Accept-Encoding", "gzip,deflate,sdch");
             headers.put("Connection", "Keep-Alive");
             headers.put("Content-Encoding", "gzip");
@@ -121,6 +123,7 @@ public class NamingProxy {
     public static String reqAPI(String api, Map<String, String> params, String curServer) throws Exception {
         try {
             List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
+                "User-Agent", UtilsAndCommons.SERVER_VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch",
                 "Connection", "Keep-Alive",
                 "Content-Encoding", "gzip");
@@ -155,6 +158,7 @@ public class NamingProxy {
     public static String reqAPI(String api, Map<String, String> params, String curServer, boolean isPost) throws Exception {
         try {
             List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
+                "User-Agent", UtilsAndCommons.SERVER_VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch",
                 "Connection", "Keep-Alive",
                 "Content-Encoding", "gzip");

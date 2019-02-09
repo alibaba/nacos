@@ -89,7 +89,6 @@ public class PushService {
         }
     });
 
-
     static {
         try {
             udpSocket = new DatagramSocket();
@@ -218,10 +217,10 @@ public class PushService {
         return dom + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
     }
 
-    public void domChanged(final String namespaceId, final String dom) {
+    public void serviceChanged(final String namespaceId, final String serviceName) {
 
         // merge some change events to reduce the push frequency:
-        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, dom))) {
+        if (futureMap.containsKey(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName))) {
             return;
         }
 
@@ -229,8 +228,8 @@ public class PushService {
             @Override
             public void run() {
                 try {
-                    Loggers.PUSH.info(dom + " is changed, add it to push queue.");
-                    ConcurrentMap<String, PushClient> clients = clientMap.get(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
+                    Loggers.PUSH.info(serviceName + " is changed, add it to push queue.");
+                    ConcurrentMap<String, PushClient> clients = clientMap.get(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
                     if (MapUtils.isEmpty(clients)) {
                         return;
                     }
@@ -246,8 +245,8 @@ public class PushService {
                         }
 
                         Receiver.AckEntry ackEntry;
-                        Loggers.PUSH.debug("push serviceName: {} to client: {}", dom, client.toString());
-                        String key = getPushCacheKey(dom, client.getIp(), client.getAgent());
+                        Loggers.PUSH.debug("push serviceName: {} to client: {}", serviceName, client.toString());
+                        String key = getPushCacheKey(serviceName, client.getIp(), client.getAgent());
                         byte[] compressData = null;
                         Map<String, Object> data = null;
                         if (switchDomain.getDefaultPushCacheMillis() >= 20000 && cache.containsKey(key)) {
@@ -255,7 +254,7 @@ public class PushService {
                             compressData = (byte[]) (pair.getValue0());
                             data = (Map<String, Object>) pair.getValue1();
 
-                            Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", dom, client.getAddrStr());
+                            Loggers.PUSH.debug("[PUSH-CACHE] cache hit: {}:{}", serviceName, client.getAddrStr());
                         }
 
                         if (compressData != null) {
@@ -273,16 +272,16 @@ public class PushService {
                         udpPush(ackEntry);
                     }
                 } catch (Exception e) {
-                    Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", dom, e);
+                    Loggers.PUSH.error("[NACOS-PUSH] failed to push serviceName: {} to client, error: {}", serviceName, e);
 
                 } finally {
-                    futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, dom));
+                    futureMap.remove(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
                 }
 
             }
         }, 1000, TimeUnit.MILLISECONDS);
 
-        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, dom), future);
+        futureMap.put(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName), future);
     }
 
     public boolean canEnablePush(String agent) {

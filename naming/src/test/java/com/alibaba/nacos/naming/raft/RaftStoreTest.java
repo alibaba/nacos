@@ -30,6 +30,9 @@ public class RaftStoreTest {
     @Mock
     public RaftCore raftCore;
 
+    @Mock
+    public RaftStore raftStore;
+
     @Test
     public void wrietDatum() throws Exception {
 
@@ -37,7 +40,7 @@ public class RaftStoreTest {
         datum.key = "1.2.3.4";
         datum.value = "value1";
 
-        RaftStore.write(datum);
+        raftStore.write(datum);
 
         raftCore.loadDatum("1.2.3.4");
 

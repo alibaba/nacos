@@ -78,7 +78,7 @@ public class ClientBeatProcessor implements Runnable {
                         instance.setValid(true);
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
                             cluster.getDom().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
-                        getPushService().domChanged(service.getNamespaceId(), this.service.getName());
+                        getPushService().serviceChanged(service.getNamespaceId(), this.service.getName());
                     }
                 }
             }

@@ -54,7 +54,7 @@ public class ServiceManager implements DataListener<Service> {
      */
     private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
 
-    private LinkedBlockingDeque<DomainKey> toBeUpdatedDomsQueue = new LinkedBlockingDeque<>(1024 * 1024);
+    private LinkedBlockingDeque<ServiceKey> toBeUpdatedDomsQueue = new LinkedBlockingDeque<>(1024 * 1024);
 
     private Synchronizer synchronizer = new DomainStatusSynchronizer();
 
@@ -65,9 +65,9 @@ public class ServiceManager implements DataListener<Service> {
 
     private final Lock lock = new ReentrantLock();
 
-    private Map<String, Condition> dom2ConditionMap = new ConcurrentHashMap<>();
+    private Map<String, Condition> service2ConditionMap = new ConcurrentHashMap<>();
 
-    private Map<String, Lock> dom2LockMap = new ConcurrentHashMap<>();
+    private Map<String, Lock> service2LockMap = new ConcurrentHashMap<>();
 
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
@@ -88,14 +88,14 @@ public class ServiceManager implements DataListener<Service> {
     private Serializer serializer;
 
     /**
-     * thread pool that processes getting domain detail from other server asynchronously
+     * thread pool that processes getting service detail from other server asynchronously
      */
-    private ExecutorService domainUpdateExecutor
+    private ExecutorService serviceUpdateExecutor
         = Executors.newFixedThreadPool(DOMAIN_UPDATE_EXECUTOR_NUM, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.naming.domain.update.http.handler");
+            t.setName("com.alibaba.nacos.naming.service.update.http.handler");
             t.setDaemon(true);
             return t;
         }
@@ -104,7 +104,7 @@ public class ServiceManager implements DataListener<Service> {
     @PostConstruct
     public void init() {
 
-        UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new DomainReporter(), 60000, TimeUnit.MILLISECONDS);
+        UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
         UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
 
@@ -116,18 +116,18 @@ public class ServiceManager implements DataListener<Service> {
         }
     }
 
-    public Map<String, Service> chooseDomMap(String namespaceId) {
+    public Map<String, Service> chooseServiceMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
 
-    public void addUpdatedDom2Queue(String namespaceId, String domName, String serverIP, String checksum) {
+    public void addUpdatedService2Queue(String namespaceId, String serviceName, String serverIP, String checksum) {
         lock.lock();
         try {
-            toBeUpdatedDomsQueue.offer(new DomainKey(namespaceId, domName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
+            toBeUpdatedDomsQueue.offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             toBeUpdatedDomsQueue.poll();
-            toBeUpdatedDomsQueue.add(new DomainKey(namespaceId, domName, serverIP, checksum));
-            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add domain to be updatd to queue.", e);
+            toBeUpdatedDomsQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
+            Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updatd to queue.", e);
         } finally {
             lock.unlock();
         }
@@ -164,16 +164,16 @@ public class ServiceManager implements DataListener<Service> {
             } else {
 
                 addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
-                putDomain(service);
+                putService(service);
                 service.init();
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
-                Loggers.SRV_LOG.info("[NEW-DOM-RAFT] {}", service.toJSON());
+                Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
             }
             wakeUp(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
 
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[NACOS-DOM] error while processing dom update", e);
+            Loggers.SRV_LOG.error("[NACOS-SERVICE] error while processing service update", e);
         }
     }
 
@@ -181,78 +181,78 @@ public class ServiceManager implements DataListener<Service> {
     public void onDelete(String key) throws Exception {
         String namespace = KeyBuilder.getNamespace(key);
         String name = KeyBuilder.getServiceName(key);
-        Service dom = chooseDomMap(namespace).remove(name);
+        Service service = chooseServiceMap(namespace).remove(name);
         Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
 
-        if (dom != null) {
-            dom.destroy();
+        if (service != null) {
+            service.destroy();
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
-            consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), dom);
-            Loggers.SRV_LOG.info("[DEAD-DOM] {}", dom.toJSON());
+            consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), service);
+            Loggers.SRV_LOG.info("[DEAD-DOM] {}", service.toJSON());
         }
     }
 
     private class UpdatedDomainProcessor implements Runnable {
-        //get changed domain from other server asynchronously
+        //get changed service from other server asynchronously
         @Override
         public void run() {
-            String domName = null;
+            String serviceName = null;
             String serverIP = null;
 
             try {
                 while (true) {
-                    DomainKey domainKey = null;
+                    ServiceKey serviceKey = null;
 
                     try {
-                        domainKey = toBeUpdatedDomsQueue.take();
+                        serviceKey = toBeUpdatedDomsQueue.take();
                     } catch (Exception e) {
                         Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while taking item from LinkedBlockingDeque.");
                     }
 
-                    if (domainKey == null) {
+                    if (serviceKey == null) {
                         continue;
                     }
 
-                    domName = domainKey.getDomName();
-                    serverIP = domainKey.getServerIP();
+                    serviceName = serviceKey.getServiceName();
+                    serverIP = serviceKey.getServerIP();
 
-                    domainUpdateExecutor.execute(new DomUpdater(domainKey.getNamespaceId(), domName, serverIP));
+                    serviceUpdateExecutor.execute(new ServiceUpdater(serviceKey.getNamespaceId(), serviceName, serverIP));
                 }
             } catch (Exception e) {
-                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update dom: {} from {}, error: {}", domName, serverIP, e);
+                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update service: {} from {}, error: {}", serviceName, serverIP, e);
             }
         }
     }
 
-    private class DomUpdater implements Runnable {
+    private class ServiceUpdater implements Runnable {
 
         String namespaceId;
-        String domName;
+        String serviceName;
         String serverIP;
 
-        public DomUpdater(String namespaceId, String domName, String serverIP) {
+        public ServiceUpdater(String namespaceId, String serviceName, String serverIP) {
             this.namespaceId = namespaceId;
-            this.domName = domName;
+            this.serviceName = serviceName;
             this.serverIP = serverIP;
         }
 
         @Override
         public void run() {
             try {
-                updatedDom2(namespaceId, domName, serverIP);
+                updatedHealthStatus(namespaceId, serviceName, serverIP);
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("[DOMAIN-UPDATER] Exception while update dom: {} from {}, error: {}",
-                    domName, serverIP, e);
+                Loggers.SRV_LOG.warn("[DOMAIN-UPDATER] Exception while update service: {} from {}, error: {}",
+                    serviceName, serverIP, e);
             }
         }
     }
 
-    public void updatedDom2(String namespaceId, String domName, String serverIP) {
-        Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, domName));
-        JSONObject dom = JSON.parseObject(msg.getData());
+    public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
+        Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
+        JSONObject serviceJson = JSON.parseObject(msg.getData());
 
-        JSONArray ipList = dom.getJSONArray("ips");
+        JSONArray ipList = serviceJson.getJSONArray("ips");
         Map<String, String> ipsMap = new HashMap<>(ipList.size());
         for (int i = 0; i < ipList.size(); i++) {
 
@@ -261,7 +261,7 @@ public class ServiceManager implements DataListener<Service> {
             ipsMap.put(strings[0], strings[1]);
         }
 
-        Service service = getService(namespaceId, domName);
+        Service service = getService(namespaceId, serviceName);
 
         if (service == null) {
             return;
@@ -274,27 +274,27 @@ public class ServiceManager implements DataListener<Service> {
             if (valid != instance.isValid()) {
                 instance.setValid(valid);
                 Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}",
-                    domName, (instance.isValid() ? "ENABLED" : "DISABLED"),
+                    serviceName, (instance.isValid() ? "ENABLED" : "DISABLED"),
                     instance.getIp(), instance.getPort(), instance.getClusterName());
             }
         }
 
-        pushService.domChanged(service.getNamespaceId(), service.getName());
+        pushService.serviceChanged(service.getNamespaceId(), service.getName());
         StringBuilder stringBuilder = new StringBuilder();
         List<Instance> allIps = service.allIPs();
         for (Instance instance : allIps) {
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", service.getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", service.getName(), stringBuilder.toString());
 
     }
 
-    public Set<String> getAllDomNames(String namespaceId) {
+    public Set<String> getAllServiceNames(String namespaceId) {
         return serviceMap.get(namespaceId).keySet();
     }
 
-    public Map<String, Set<String>> getAllDomNames() {
+    public Map<String, Set<String>> getAllServiceNames() {
 
         Map<String, Set<String>> namesMap = new HashMap<>(16);
         for (String namespaceId : serviceMap.keySet()) {
@@ -304,51 +304,51 @@ public class ServiceManager implements DataListener<Service> {
     }
 
     public List<String> getAllDomNamesList(String namespaceId) {
-        if (chooseDomMap(namespaceId) == null) {
+        if (chooseServiceMap(namespaceId) == null) {
             return new ArrayList<>();
         }
-        return new ArrayList<>(chooseDomMap(namespaceId).keySet());
+        return new ArrayList<>(chooseServiceMap(namespaceId).keySet());
     }
 
-    public Map<String, Set<Service>> getResponsibleDoms() {
+    public Map<String, Set<Service>> getResponsibleServices() {
         Map<String, Set<Service>> result = new HashMap<>(16);
         for (String namespaceId : serviceMap.keySet()) {
             result.put(namespaceId, new HashSet<>());
             for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
-                Service domain = entry.getValue();
+                Service service = entry.getValue();
                 if (distroMapper.responsible(entry.getKey())) {
-                    result.get(namespaceId).add(domain);
+                    result.get(namespaceId).add(service);
                 }
             }
         }
         return result;
     }
 
-    public int getResponsibleDomCount() {
-        int domCount = 0;
+    public int getResponsibleServiceCount() {
+        int serviceCount = 0;
         for (String namespaceId : serviceMap.keySet()) {
             for (Map.Entry<String, Service> entry : serviceMap.get(namespaceId).entrySet()) {
                 if (distroMapper.responsible(entry.getKey())) {
-                    domCount++;
+                    serviceCount++;
                 }
             }
         }
-        return domCount;
+        return serviceCount;
     }
 
-    public int getResponsibleIPCount() {
-        Map<String, Set<Service>> responsibleDoms = getResponsibleDoms();
+    public int getResponsibleInstanceCount() {
+        Map<String, Set<Service>> responsibleServices = getResponsibleServices();
         int count = 0;
-        for (String namespaceId : responsibleDoms.keySet()) {
-            for (Service domain : responsibleDoms.get(namespaceId)) {
-                count += domain.allIPs().size();
+        for (String namespaceId : responsibleServices.keySet()) {
+            for (Service service : responsibleServices.get(namespaceId)) {
+                count += service.allIPs().size();
             }
         }
 
         return count;
     }
 
-    public void easyRemoveDom(String namespaceId, String serviceName) throws Exception {
+    public void easyRemoveService(String namespaceId, String serviceName) throws Exception {
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
     }
 
@@ -374,7 +374,7 @@ public class ServiceManager implements DataListener<Service> {
             service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
-            // now validate the dom. if failed, exception will be thrown
+            // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
             service.valid();
@@ -449,9 +449,9 @@ public class ServiceManager implements DataListener<Service> {
 
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
-        Service dom = getService(namespaceId, serviceName);
+        Service service = getService(namespaceId, serviceName);
 
-        Map<String, Instance> instanceMap = substractIpAddresses(dom, ephemeral, ips);
+        Map<String, Instance> instanceMap = substractIpAddresses(service, ephemeral, ips);
 
         Instances instances = new Instances();
         instances.setInstanceMap(instanceMap);
@@ -482,9 +482,9 @@ public class ServiceManager implements DataListener<Service> {
         return null;
     }
 
-    public Map<String, Instance> updateIpAddresses(Service dom, String action, boolean ephemeral, Instance... ips) throws NacosException {
+    public Map<String, Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
-        Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(dom.getNamespaceId(), dom.getName(), ephemeral));
+        Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
         Map<String, Instance> oldInstances = new HashMap<>(16);
 
@@ -493,7 +493,7 @@ public class ServiceManager implements DataListener<Service> {
         }
 
         Map<String, Instance> instances;
-        List<Instance> currentIPs = dom.allIPs(ephemeral);
+        List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
 
         for (Instance instance : currentIPs) {
@@ -507,10 +507,10 @@ public class ServiceManager implements DataListener<Service> {
         instanceMap.putAll(instances);
 
         for (Instance instance : ips) {
-            if (!dom.getClusterMap().containsKey(instance.getClusterName())) {
+            if (!service.getClusterMap().containsKey(instance.getClusterName())) {
                 Cluster cluster = new Cluster(instance.getClusterName());
-                cluster.setDom(dom);
-                dom.getClusterMap().put(instance.getClusterName(), cluster);
+                cluster.setDom(service);
+                service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                     instance.getClusterName(), instance.toJSON());
             }
@@ -524,19 +524,19 @@ public class ServiceManager implements DataListener<Service> {
         }
 
         if (instanceMap.size() <= 0 && UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD.equals(action)) {
-            throw new IllegalArgumentException("ip list can not be empty, dom: " + dom.getName() + ", ip list: "
+            throw new IllegalArgumentException("ip list can not be empty, service: " + service.getName() + ", ip list: "
                 + JSON.toJSONString(instanceMap.values()));
         }
 
         return instanceMap;
     }
 
-    public Map<String, Instance> substractIpAddresses(Service dom, boolean ephemeral, Instance... ips) throws NacosException {
-        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
+    public Map<String, Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+        return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
     }
 
-    public Map<String, Instance> addIpAddresses(Service dom, boolean ephemeral, Instance... ips) throws NacosException {
-        return updateIpAddresses(dom, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
+    public Map<String, Instance> addIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+        return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
 
     private Map<String, Instance> setValid(Map<String, Instance> oldInstances, Map<String, Instance> map) {
@@ -550,72 +550,72 @@ public class ServiceManager implements DataListener<Service> {
         return oldInstances;
     }
 
-    public Service getService(String namespaceId, String domName) {
+    public Service getService(String namespaceId, String serviceName) {
         if (serviceMap.get(namespaceId) == null) {
             return null;
         }
-        return chooseDomMap(namespaceId).get(domName);
+        return chooseServiceMap(namespaceId).get(serviceName);
     }
 
-    public void putDomain(Service domain) {
-        if (!serviceMap.containsKey(domain.getNamespaceId())) {
-            serviceMap.put(domain.getNamespaceId(), new ConcurrentHashMap<>(16));
+    public void putService(Service service) {
+        if (!serviceMap.containsKey(service.getNamespaceId())) {
+            serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
         }
-        serviceMap.get(domain.getNamespaceId()).put(domain.getName(), domain);
+        serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
 
 
-    public List<Service> searchDomains(String namespaceId, String regex) {
+    public List<Service> searchServices(String namespaceId, String regex) {
         List<Service> result = new ArrayList<>();
-        for (Map.Entry<String, Service> entry : chooseDomMap(namespaceId).entrySet()) {
-            Service dom = entry.getValue();
-            String key = dom.getName() + ":" + ArrayUtils.toString(dom.getOwners());
+        for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
+            Service service = entry.getValue();
+            String key = service.getName() + ":" + ArrayUtils.toString(service.getOwners());
             if (key.matches(regex)) {
-                result.add(dom);
+                result.add(service);
             }
         }
 
         return result;
     }
 
-    public int getDomCount() {
-        int domCount = 0;
+    public int getServiceCount() {
+        int serviceCount = 0;
         for (String namespaceId : serviceMap.keySet()) {
-            domCount += serviceMap.get(namespaceId).size();
+            serviceCount += serviceMap.get(namespaceId).size();
         }
-        return domCount;
+        return serviceCount;
     }
 
     public int getInstanceCount() {
         int total = 0;
         for (String namespaceId : serviceMap.keySet()) {
-            for (Service domain : serviceMap.get(namespaceId).values()) {
-                total += domain.allIPs().size();
+            for (Service service : serviceMap.get(namespaceId).values()) {
+                total += service.allIPs().size();
             }
         }
         return total;
     }
 
-    public Map<String, Service> getDomMap(String namespaceId) {
+    public Map<String, Service> getServiceMap(String namespaceId) {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedDom(String namespaceId, int startPage, int pageSize, String keyword, List<Service> domainList) {
+    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, List<Service> serviceList) {
 
         List<Service> matchList;
 
-        if (chooseDomMap(namespaceId) == null) {
+        if (chooseServiceMap(namespaceId) == null) {
             return 0;
         }
 
         if (StringUtils.isNotBlank(keyword)) {
-            matchList = searchDomains(namespaceId, ".*" + keyword + ".*");
+            matchList = searchServices(namespaceId, ".*" + keyword + ".*");
         } else {
-            matchList = new ArrayList<Service>(chooseDomMap(namespaceId).values());
+            matchList = new ArrayList<Service>(chooseServiceMap(namespaceId).values());
         }
 
         if (pageSize >= matchList.size()) {
-            domainList.addAll(matchList);
+            serviceList.addAll(matchList);
             return matchList.size();
         }
 
@@ -624,9 +624,9 @@ public class ServiceManager implements DataListener<Service> {
                 continue;
             }
 
-            domainList.add(matchList.get(i));
+            serviceList.add(matchList.get(i));
 
-            if (domainList.size() >= pageSize) {
+            if (serviceList.size() >= pageSize) {
                 break;
             }
         }
@@ -634,61 +634,61 @@ public class ServiceManager implements DataListener<Service> {
         return matchList.size();
     }
 
-    public static class DomainChecksum {
+    public static class ServiceChecksum {
 
         public String namespaceId;
-        public Map<String, String> domName2Checksum = new HashMap<String, String>();
+        public Map<String, String> serviceName2Checksum = new HashMap<String, String>();
 
-        public DomainChecksum() {
+        public ServiceChecksum() {
             this.namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
         }
 
-        public DomainChecksum(String namespaceId) {
+        public ServiceChecksum(String namespaceId) {
             this.namespaceId = namespaceId;
         }
 
-        public void addItem(String domName, String checksum) {
-            if (StringUtils.isEmpty(domName) || StringUtils.isEmpty(checksum)) {
-                Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] domName or checksum is empty,domName: {}, checksum: {}",
-                    domName, checksum);
+        public void addItem(String serviceName, String checksum) {
+            if (StringUtils.isEmpty(serviceName) || StringUtils.isEmpty(checksum)) {
+                Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] serviceName or checksum is empty,serviceName: {}, checksum: {}",
+                    serviceName, checksum);
                 return;
             }
 
-            domName2Checksum.put(domName, checksum);
+            serviceName2Checksum.put(serviceName, checksum);
         }
     }
 
-    private class DomainReporter implements Runnable {
+    private class ServiceReporter implements Runnable {
 
         @Override
         public void run() {
             try {
 
-                Map<String, Set<String>> allDomainNames = getAllDomNames();
+                Map<String, Set<String>> allServiceNames = getAllServiceNames();
 
-                if (allDomainNames.size() <= 0) {
+                if (allServiceNames.size() <= 0) {
                     //ignore
                     return;
                 }
 
-                for (String namespaceId : allDomainNames.keySet()) {
+                for (String namespaceId : allServiceNames.keySet()) {
 
-                    DomainChecksum checksum = new DomainChecksum(namespaceId);
+                    ServiceChecksum checksum = new ServiceChecksum(namespaceId);
 
-                    for (String domName : allDomainNames.get(namespaceId)) {
-                        if (!distroMapper.responsible(domName)) {
+                    for (String serviceName : allServiceNames.get(namespaceId)) {
+                        if (!distroMapper.responsible(serviceName)) {
                             continue;
                         }
 
-                        Service domain = getService(namespaceId, domName);
+                        Service service = getService(namespaceId, serviceName);
 
-                        if (domain == null) {
+                        if (service == null) {
                             continue;
                         }
 
-                        domain.recalculateChecksum();
+                        service.recalculateChecksum();
 
-                        checksum.addItem(domName, domain.getChecksum());
+                        checksum.addItem(serviceName, service.getChecksum());
                     }
 
                     Message msg = new Message();
@@ -709,7 +709,7 @@ public class ServiceManager implements DataListener<Service> {
                     }
                 }
             } catch (Exception e) {
-                Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending domain status", e);
+                Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending service status", e);
             } finally {
                 UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getDomStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
@@ -718,8 +718,8 @@ public class ServiceManager implements DataListener<Service> {
 
     public void wakeUp(String key) {
 
-        Lock lock = dom2LockMap.get(key);
-        Condition condition = dom2ConditionMap.get(key);
+        Lock lock = service2LockMap.get(key);
+        Condition condition = service2ConditionMap.get(key);
 
         try {
             lock.lock();
@@ -732,23 +732,23 @@ public class ServiceManager implements DataListener<Service> {
 
     public Lock addLockIfAbsent(String key) {
 
-        if (dom2LockMap.containsKey(key)) {
-            return dom2LockMap.get(key);
+        if (service2LockMap.containsKey(key)) {
+            return service2LockMap.get(key);
         }
         Lock lock = new ReentrantLock();
-        dom2LockMap.put(key, lock);
+        service2LockMap.put(key, lock);
         return lock;
     }
 
     public Condition addCondtion(String key) {
-        Condition condition = dom2LockMap.get(key).newCondition();
-        dom2ConditionMap.put(key, condition);
+        Condition condition = service2LockMap.get(key).newCondition();
+        service2ConditionMap.put(key, condition);
         return condition;
     }
 
-    private static class DomainKey {
+    private static class ServiceKey {
         private String namespaceId;
-        private String domName;
+        private String serviceName;
         private String serverIP;
 
         public String getChecksum() {
@@ -759,8 +759,8 @@ public class ServiceManager implements DataListener<Service> {
             return serverIP;
         }
 
-        public String getDomName() {
-            return domName;
+        public String getServiceName() {
+            return serviceName;
         }
 
         public String getNamespaceId() {
@@ -769,9 +769,9 @@ public class ServiceManager implements DataListener<Service> {
 
         private String checksum;
 
-        public DomainKey(String namespaceId, String domName, String serverIP, String checksum) {
+        public ServiceKey(String namespaceId, String serviceName, String serverIP, String checksum) {
             this.namespaceId = namespaceId;
-            this.domName = domName;
+            this.serviceName = serviceName;
             this.serverIP = serverIP;
             this.checksum = checksum;
         }

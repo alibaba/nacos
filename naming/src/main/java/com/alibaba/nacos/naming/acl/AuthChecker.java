@@ -56,6 +56,11 @@ public class AuthChecker {
             return;
         }
 
+        agent = req.getHeader("User-Agent");
+        if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
+            return;
+        }
+
         throw new IllegalAccessException("illegal access,agent= " + agent + ", token=" + token);
     }
 

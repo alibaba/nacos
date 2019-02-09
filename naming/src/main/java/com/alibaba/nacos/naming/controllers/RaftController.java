@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.*;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -43,7 +42,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -186,7 +184,7 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         JSONObject result = new JSONObject();
-        result.put("doms", domainsManager.getDomCount());
+        result.put("doms", domainsManager.getServiceCount());
         result.put("peers", raftCore.getPeers());
 
         return result;

@@ -64,7 +64,7 @@ public class CatalogController {
         String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
         List<Service> doms = new ArrayList<>();
-        int total = serviceManager.getPagedDom(namespaceId, page - 1, pageSize, keyword, doms);
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, doms);
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("serviceList", Collections.emptyList());
@@ -183,7 +183,7 @@ public class CatalogController {
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 
         serviceManager
-            .getDomMap(namespaceId)
+            .getServiceMap(namespaceId)
             .forEach(
                 (serviceName, service) -> {
 
@@ -237,7 +237,7 @@ public class CatalogController {
         String ip = WebUtils.required(request, "ip");
 
         Set<String> doms = new HashSet<String>();
-        Map<String, Set<String>> serviceNameMap = serviceManager.getAllDomNames();
+        Map<String, Set<String>> serviceNameMap = serviceManager.getAllServiceNames();
 
         for (String namespaceId : serviceNameMap.keySet()) {
             for (String serviceName : serviceNameMap.get(namespaceId)) {

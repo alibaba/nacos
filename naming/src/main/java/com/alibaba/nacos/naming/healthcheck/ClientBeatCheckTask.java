@@ -74,7 +74,7 @@ public class ClientBeatCheckTask implements Runnable {
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(),
                                 UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, instance.getLastBeat());
-                            getPushService().domChanged(domain.getNamespaceId(), domain.getName());
+                            getPushService().serviceChanged(domain.getNamespaceId(), domain.getName());
                         }
                     }
                 }

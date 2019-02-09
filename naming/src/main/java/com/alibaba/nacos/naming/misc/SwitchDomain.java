@@ -93,6 +93,8 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     public boolean enableAuthentication = false;
 
+    public String overriddenServerStatus = null;
+
     public boolean isEnableAuthentication() {
         return enableAuthentication;
     }
@@ -150,26 +152,6 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
 
     public void update(SwitchDomain dom) {
-
-    }
-
-    @Override
-    public boolean interests(String key) {
-        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
-    }
-
-    @Override
-    public boolean matchUnlistenKey(String key) {
-        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
-    }
-
-    @Override
-    public void onChange(String key, SwitchDomain domain) throws Exception {
-        update(domain);
-    }
-
-    @Override
-    public void onDelete(String key) throws Exception {
 
     }
 
@@ -371,8 +353,36 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
         this.pushCVersion = pushCVersion;
     }
 
+    public String getOverriddenServerStatus() {
+        return overriddenServerStatus;
+    }
+
+    public void setOverriddenServerStatus(String overriddenServerStatus) {
+        this.overriddenServerStatus = overriddenServerStatus;
+    }
+
     public void replace(SwitchDomain newSwitchDomain) {
         // TODO
+    }
+
+    @Override
+    public boolean interests(String key) {
+        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
+    }
+
+    @Override
+    public boolean matchUnlistenKey(String key) {
+        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
+    }
+
+    @Override
+    public void onChange(String key, SwitchDomain domain) throws Exception {
+        update(domain);
+    }
+
+    @Override
+    public void onDelete(String key) throws Exception {
+
     }
 
     public interface HealthParams {

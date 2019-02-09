@@ -33,11 +33,18 @@ public class PartitionConfig {
     @Value("${nacos.naming.partition.batchSyncKeyCount}")
     private int batchSyncKeyCount = 1000;
 
+    @Value("${nacos.naming.partition.initDataRatio}")
+    private float initDataRatio = 0.9F;
+
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
 
     public int getBatchSyncKeyCount() {
         return batchSyncKeyCount;
+    }
+
+    public float getInitDataRatio() {
+        return initDataRatio;
     }
 }

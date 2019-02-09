@@ -115,7 +115,7 @@ public class ServiceController {
             throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
         }
 
-        serviceManager.easyRemoveDom(namespaceId, serviceName);
+        serviceManager.easyRemoveService(namespaceId, serviceName);
 
         return "ok";
     }
@@ -257,7 +257,7 @@ public class ServiceController {
 
         Map<String, Set<String>> doms = new HashMap<>(16);
 
-        Map<String, Set<String>> domMap = serviceManager.getAllDomNames();
+        Map<String, Set<String>> domMap = serviceManager.getAllServiceNames();
 
         for (String namespaceId : domMap.keySet()) {
             doms.put(namespaceId, new HashSet<>());
@@ -285,7 +285,7 @@ public class ServiceController {
         String expr = WebUtils.required(request, "expr");
 
         List<Service> doms
-            = serviceManager.searchDomains(namespaceId, ".*" + expr + ".*");
+            = serviceManager.searchServices(namespaceId, ".*" + expr + ".*");
 
         if (CollectionUtils.isEmpty(doms)) {
             result.put("doms", Collections.emptyList());
@@ -313,13 +313,13 @@ public class ServiceController {
         }
 
         try {
-            ServiceManager.DomainChecksum checksums = JSON.parseObject(domsStatusString, ServiceManager.DomainChecksum.class);
+            ServiceManager.ServiceChecksum checksums = JSON.parseObject(domsStatusString, ServiceManager.ServiceChecksum.class);
             if (checksums == null) {
                 Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
                 return "fail";
             }
 
-            for (Map.Entry<String, String> entry : checksums.domName2Checksum.entrySet()) {
+            for (Map.Entry<String, String> entry : checksums.serviceName2Checksum.entrySet()) {
                 if (entry == null || StringUtils.isEmpty(entry.getKey()) || StringUtils.isEmpty(entry.getValue())) {
                     continue;
                 }
@@ -338,7 +338,7 @@ public class ServiceController {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
                             dom, serverIP, checksum, domain.getChecksum());
                     }
-                    serviceManager.addUpdatedDom2Queue(checksums.namespaceId, dom, serverIP, checksum);
+                    serviceManager.addUpdatedService2Queue(checksums.namespaceId, dom, serverIP, checksum);
                 }
             }
         } catch (Exception e) {

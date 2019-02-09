@@ -63,8 +63,8 @@ public class SwitchManager {
         try {
             lock.lock();
 
-            Datum datum = (Datum) consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
-            SwitchDomain switchDomain = null;
+            Datum datum = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
+            SwitchDomain switchDomain;
 
             if (datum != null) {
                 switchDomain = JSON.parseObject((String) datum.value, SwitchDomain.class);
@@ -139,7 +139,6 @@ public class SwitchManager {
 
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -167,7 +166,6 @@ public class SwitchManager {
 
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -182,7 +180,6 @@ public class SwitchManager {
                 switchDomain.setPushCacheMillis(cacheMillis);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -198,7 +195,6 @@ public class SwitchManager {
                 switchDomain.setDefaultCacheMillis(cacheMillis);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -219,7 +215,6 @@ public class SwitchManager {
                 switchDomain.setDistroEnabled(enabled);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -230,7 +225,6 @@ public class SwitchManager {
                 switchDomain.setHealthCheckEnabled(enabled);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -245,7 +239,6 @@ public class SwitchManager {
                 switchDomain.setDomStatusSynchronizationPeriodMillis(millis);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -260,7 +253,6 @@ public class SwitchManager {
                 switchDomain.setServerStatusSynchronizationPeriodMillis(millis);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -271,7 +263,6 @@ public class SwitchManager {
                 switchDomain.setCheckTimes(times);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -282,7 +273,6 @@ public class SwitchManager {
                 switchDomain.setDisableAddIP(disableAddIP);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -293,7 +283,6 @@ public class SwitchManager {
                 switchDomain.setEnableCache(enableCache);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -304,7 +293,6 @@ public class SwitchManager {
                 switchDomain.setSendBeatOnly(sendBeatOnly);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
                 }
                 return;
             }
@@ -338,22 +326,31 @@ public class SwitchManager {
                     switchDomain.setLimitedUrlMap(limitedUrlMap);
                     if (!debug) {
                         consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                        ;
                     }
                     return;
                 }
             }
 
             if (entry.equals(SwitchEntry.ENABLE_STANDALONE)) {
-                String enable = value;
+                String enabled = value;
 
-                if (!StringUtils.isNotEmpty(enable)) {
-                    switchDomain.setEnableStandalone(Boolean.parseBoolean(enable));
+                if (!StringUtils.isNotEmpty(enabled)) {
+                    switchDomain.setEnableStandalone(Boolean.parseBoolean(enabled));
                 }
 
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                    ;
+                }
+
+                return;
+            }
+
+            if (entry.equals(SwitchEntry.OVERRIDDEN_SERVER_STATUS)) {
+                String status = value;
+                switchDomain.setOverriddenServerStatus(status);
+
+                if (!debug) {
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
                 }
 
                 return;
