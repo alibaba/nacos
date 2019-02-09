@@ -107,6 +107,8 @@ public class RaftCore {
 
     public volatile Notifier notifier = new Notifier();
 
+    private boolean initialized = false;
+
     @PostConstruct
     public void init() throws Exception {
 
@@ -128,6 +130,8 @@ public class RaftCore {
             }
             Thread.sleep(1000L);
         }
+
+        initialized = true;
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
@@ -866,6 +870,10 @@ public class RaftCore {
             notifier.addTask(deleted, ApplyAction.DELETE);
             Loggers.RAFT.info("datum deleted, key: {}", key);
         }
+    }
+
+    public boolean isInitialized() {
+        return initialized;
     }
 
     public class Notifier implements Runnable {
