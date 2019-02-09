@@ -103,7 +103,7 @@ public class PerformanceLoggerThread {
 
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectmetrics() {
-        int domCount = serviceManager.getDomCount();
+        int domCount = serviceManager.getServiceCount();
         MetricsMonitor.getDomCountMonitor().set(domCount);
 
         int ipCount = serviceManager.getInstanceCount();
@@ -132,7 +132,7 @@ public class PerformanceLoggerThread {
         @Override
         public void run() {
             try {
-                int domCount = serviceManager.getDomCount();
+                int domCount = serviceManager.getServiceCount();
                 int ipCount = serviceManager.getInstanceCount();
                 long maxPushMaxCost = getMaxPushCost();
                 long maxPushCost = getMaxPushCost();

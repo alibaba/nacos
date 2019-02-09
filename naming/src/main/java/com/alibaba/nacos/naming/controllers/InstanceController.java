@@ -123,6 +123,9 @@ public class InstanceController {
 
         String dom = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String agent = request.getHeader("Client-Version");
+        if (StringUtils.isBlank(agent)) {
+            agent = request.getHeader("User-Agent");
+        }
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));

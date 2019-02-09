@@ -62,7 +62,7 @@ public class HealthController {
     @RequestMapping("/server")
     public JSONObject server(HttpServletRequest request) {
         JSONObject result = new JSONObject();
-        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getDomCount()
+        result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
             + ", local port:" + RunningConfig.getServerPort());
         return result;
     }
@@ -109,7 +109,7 @@ public class HealthController {
                         Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
                             + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
                             + ", dom: " + dom + ", msg: update thought HealthController api");
-                        pushService.domChanged(namespaceId, service.getName());
+                        pushService.serviceChanged(namespaceId, service.getName());
                         break;
                     }
                 }

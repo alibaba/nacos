@@ -21,15 +21,15 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 /**
- * Using simplified Raft protocol to maintain the consistency status of Nacos cluster.
+ * Use simplified Raft protocol to maintain the consistency status of Nacos cluster.
  *
  * @author nkorange
  * @since 1.0.0
  */
-@Component
+@Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
 
     @Autowired
@@ -78,6 +78,11 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     @Override
     public String getResponsibleServer(String key) {
         return null;
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return true;
     }
 
     public void onPut(Datum datum, RaftPeer source) throws NacosException {

@@ -28,9 +28,13 @@ import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
+
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
 
 /**
  * @author nacos
@@ -77,22 +81,15 @@ public class UtilsAndCommons {
 
     public static final String SWITCH_DOMAIN_NAME = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
 
-    static public final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
+    public static final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
 
-    static public final String UNKNOWN_SITE = "unknown";
-
-    static public final String UNKNOWN_HOST = "unknown";
+    public static final String UNKNOWN_SITE = "unknown";
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
     public static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
     public static final int RAFT_PUBLISH_TIMEOUT = 5000;
-
-    static public final String RAFT_DOM_PRE = "meta.";
-    static public final String RAFT_IPLIST_PRE = "iplist.";
-    static public final String RAFT_TAG_DOM_PRE = "tag.meta";
-    static public final String RAFT_TAG_IPLIST_PRE = "tag.iplist.";
 
     public static final String SERVER_VERSION = NACOS_SERVER_HEADER + ":" + NACOS_VERSION;
 
@@ -120,11 +117,9 @@ public class UtilsAndCommons {
 
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
-    public static final String INSTANCE_LIST_PERSISTED_PROPERTY_KEY = "nacos.instanceListPersisted";
-
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
-    public static final boolean INSTANCE_LIST_PERSISTED = Boolean.getBoolean(INSTANCE_LIST_PERSISTED_PROPERTY_KEY);
+    public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
 
     public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
 
@@ -135,6 +130,7 @@ public class UtilsAndCommons {
     public static final Executor RAFT_PUBLISH_EXECUTOR;
 
     static {
+
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
             .put(AbstractHealthChecker.class, JsonAdapter.getInstance());

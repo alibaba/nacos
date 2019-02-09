@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
+import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
@@ -29,11 +30,16 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static org.apache.commons.lang3.CharEncoding.UTF_8;
 
 /**
  * Data replicator
@@ -49,6 +55,9 @@ public class DataSyncer implements ServerChangeListener {
     private DataStore dataStore;
 
     @Autowired
+    private PartitionConfig partitionConfig;
+
+    @Autowired
     private Serializer serializer;
 
     @Autowired
@@ -60,6 +69,8 @@ public class DataSyncer implements ServerChangeListener {
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
 
     private List<Server> servers;
+
+    private boolean initialized = false;
 
     @PostConstruct
     public void init() {
@@ -144,23 +155,51 @@ public class DataSyncer implements ServerChangeListener {
         @Override
         public void run() {
 
-            Map<String, Long> keyTimestamps = new HashMap<>(64);
-            for (String key : dataStore.keys()) {
-                if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
-                    continue;
+            try {
+
+                File metaFile = new File(UtilsAndCommons.DATA_BASE_DIR + File.separator + "ephemeral.properties");
+                if (initialized) {
+                    // write the current instance count to disk:
+                    IoUtils.writeStringToFile(metaFile, "instanceCount=" + dataStore.keys().size(), "UTF-8");
+                } else {
+                    // check if most of the data are loaded:
+                    List<String> lines = IoUtils.readLines(new InputStreamReader(new FileInputStream(metaFile), UTF_8));
+                    if (lines == null || lines.isEmpty()) {
+                        initialized = true;
+                    } else {
+                        int desiredInstanceCount = Integer.parseInt(lines.get(0).split("=")[1]);
+                        if (desiredInstanceCount * partitionConfig.getInitDataRatio() < dataStore.keys().size()) {
+                            initialized = true;
+                        }
+                    }
                 }
-                keyTimestamps.put(key, dataStore.get(key).timestamp.get());
+
+            } catch (Exception e) {
+                Loggers.EPHEMERAL.error("operate on meta file failed.", e);
             }
 
-            if (keyTimestamps.isEmpty()) {
-                return;
-            }
-
-            for (Server member : servers) {
-                if (NetUtils.localServer().equals(member.getKey())) {
-                    continue;
+            try {
+                // send local timestamps to other servers:
+                Map<String, Long> keyTimestamps = new HashMap<>(64);
+                for (String key : dataStore.keys()) {
+                    if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
+                        continue;
+                    }
+                    keyTimestamps.put(key, dataStore.get(key).timestamp.get());
                 }
-                NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
+
+                if (keyTimestamps.isEmpty()) {
+                    return;
+                }
+
+                for (Server member : servers) {
+                    if (NetUtils.localServer().equals(member.getKey())) {
+                        continue;
+                    }
+                    NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
+                }
+            } catch (Exception e) {
+                Loggers.EPHEMERAL.error("timed sync task failed.", e);
             }
         }
     }
@@ -171,6 +210,10 @@ public class DataSyncer implements ServerChangeListener {
 
     public String buildKey(String key, String targetServer) {
         return key + UtilsAndCommons.CACHE_KEY_SPLITER + targetServer;
+    }
+
+    public boolean isInitialized() {
+        return initialized;
     }
 
     @Override

@@ -101,6 +101,7 @@ public class NamingProxy {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
 
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
+                "User-Agent", UtilAndComs.VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch",
                 "Connection", "Keep-Alive",
                 "RequestId", UuidUtils.generateUuid());
@@ -301,6 +302,7 @@ public class NamingProxy {
         long end = 0;
 
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
+            "User-Agent", UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
             "RequestId", UuidUtils.generateUuid());

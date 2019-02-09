@@ -46,7 +46,7 @@ public class DomainsManagerTest extends BaseTest {
 
     @Test
     public void easyRemoveDom() throws Exception {
-        domainsManager.easyRemoveDom(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1");
+        domainsManager.easyRemoveService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1");
     }
 
     @Test
@@ -54,9 +54,9 @@ public class DomainsManagerTest extends BaseTest {
         Service domain = new Service();
         domain.setName("nacos.test.1");
 
-        domainsManager.chooseDomMap(UtilsAndCommons.DEFAULT_NAMESPACE_ID).put("nacos.test.1", domain);
+        domainsManager.chooseServiceMap(UtilsAndCommons.DEFAULT_NAMESPACE_ID).put("nacos.test.1", domain);
 
-        List<Service> list = domainsManager.searchDomains(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.*");
+        List<Service> list = domainsManager.searchServices(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());

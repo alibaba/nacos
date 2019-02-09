@@ -93,4 +93,11 @@ public interface ConsistencyService {
      * @return responsible server for the data
      */
     String getResponsibleServer(String key);
+
+    /**
+     * Tell the status of this consistency service
+     *
+     * @return true if available
+     */
+    boolean isAvailable();
 }

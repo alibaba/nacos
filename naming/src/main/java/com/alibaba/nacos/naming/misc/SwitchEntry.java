@@ -63,4 +63,7 @@ public class SwitchEntry {
     public static final String ACTION_OVERVIEW = "overview";
 
     public static final String PARAM_JSON = "json";
+
+    public static final String READ_ENABLED = "readEnabled";
+    public static final String OVERRIDDEN_SERVER_STATUS = "overriddenServerStatus";
 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.util.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -61,6 +62,9 @@ public class OperatorController {
 
     @Autowired
     private ServerListManager serverListManager;
+
+    @Autowired
+    private ServerStatusManager serverStatusManager;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -131,16 +135,17 @@ public class OperatorController {
 
         JSONObject result = new JSONObject();
 
-        int domCount = serviceManager.getDomCount();
+        int domCount = serviceManager.getServiceCount();
         int ipCount = serviceManager.getInstanceCount();
 
-        int responsibleDomCount = serviceManager.getResponsibleDomCount();
-        int responsibleIPCount = serviceManager.getResponsibleIPCount();
+        int responsibleDomCount = serviceManager.getResponsibleServiceCount();
+        int responsibleIPCount = serviceManager.getResponsibleInstanceCount();
 
-        result.put("domCount", domCount);
-        result.put("ipCount", ipCount);
-        result.put("responsibleDomCount", responsibleDomCount);
-        result.put("responsibleIPCount", responsibleIPCount);
+        result.put("status", serverStatusManager.getServerStatus().name());
+        result.put("serviceCount", domCount);
+        result.put("instanceCount", ipCount);
+        result.put("responsibleServiceCount", responsibleDomCount);
+        result.put("responsibleInstanceCount", responsibleIPCount);
         result.put("cpu", SystemUtils.getCPU());
         result.put("load", SystemUtils.getLoad());
         result.put("mem", SystemUtils.getMem());

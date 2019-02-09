@@ -37,6 +37,8 @@ public class GlobalExecutor {
 
     private static final long PARTITION_DATA_TIMED_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
+    private static final long SERVER_STATUS_UPDATE_PERIOD = TimeUnit.SECONDS.toMillis(5);
+
     private static ScheduledExecutorService executorService =
         new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
@@ -122,12 +124,16 @@ public class GlobalExecutor {
         SERVER_STATUS_EXECUTOR.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
+    public static void registerServerStatusUpdater(Runnable runnable) {
+        executorService.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
+    }
+
     public static void registerHeartbeat(Runnable runnable) {
         executorService.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
 
-    public static void schedule(Runnable runnable, long delay) {
-        executorService.scheduleAtFixedRate(runnable, 0, delay, TimeUnit.MILLISECONDS);
+    public static void schedule(Runnable runnable, long period) {
+        executorService.scheduleAtFixedRate(runnable, 0, period, TimeUnit.MILLISECONDS);
     }
 
     public static void notifyServerListChange(Runnable runnable) {

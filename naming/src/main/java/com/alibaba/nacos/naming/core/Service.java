@@ -213,7 +213,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
 
         setLastModifiedMillis(System.currentTimeMillis());
-        getPushService().domChanged(namespaceId, getName());
+        getPushService().serviceChanged(namespaceId, getName());
         StringBuilder stringBuilder = new StringBuilder();
 
         for (Instance instance : allIPs()) {

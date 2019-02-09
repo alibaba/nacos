@@ -145,7 +145,7 @@ public class HealthCheckCommon {
                         Service vDom = cluster.getDom();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
 
-                        pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
+                        pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
@@ -184,7 +184,7 @@ public class HealthCheckCommon {
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
-                        pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
+                        pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
 
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                             cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
@@ -218,7 +218,7 @@ public class HealthCheckCommon {
                     Service vDom = cluster.getDom();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());
 
-                    pushService.domChanged(vDom.getNamespaceId(), vDom.getName());
+                    pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
                     addResult(new HealthCheckResult(vDom.getName(), ip));
 
                     Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",

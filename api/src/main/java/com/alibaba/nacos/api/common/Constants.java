@@ -22,8 +22,6 @@ package com.alibaba.nacos.api.common;
  */
 public class Constants {
 
-    public static final String CLIENT_VERSION_HEADER = "Client-Version";
-
     public static final String CLIENT_VERSION = "3.0.0";
 
     public static int DATA_IN_BODY_VERSION = 204;

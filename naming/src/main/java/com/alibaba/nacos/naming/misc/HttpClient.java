@@ -106,6 +106,7 @@ public class HttpClient {
             conn.setRequestMethod(method);
 
             conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
             setHeaders(conn, headers, encoding);
             conn.connect();
 
@@ -419,6 +420,7 @@ public class HttpClient {
                 + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
         conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
+        conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
     }
 
     public static String encodingParams(Map<String, String> params, String encoding)
