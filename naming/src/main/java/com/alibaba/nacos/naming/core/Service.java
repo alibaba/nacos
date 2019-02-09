@@ -169,6 +169,21 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         // ignore
     }
 
+    public int healthyInstanceCount() {
+
+        int healthyCount = 0;
+        for (Instance instance : allIPs()) {
+            if (instance.isHealthy()) {
+                healthyCount++;
+            }
+        }
+        return healthyCount;
+    }
+
+    public boolean meetProtectThreshold() {
+        return (healthyInstanceCount() * 1.0 / allIPs().size()) < getProtectThreshold();
+    }
+
     public void updateIPs(Collection<Instance> ips, boolean ephemeral) {
         // TODO prevent most of the instances from removed
 

@@ -36,10 +36,10 @@ import java.util.List;
  */
 public class ClientBeatCheckTask implements Runnable {
 
-    private Service domain;
+    private Service service;
 
-    public ClientBeatCheckTask(Service domain) {
-        this.domain = domain;
+    public ClientBeatCheckTask(Service service) {
+        this.service = service;
     }
 
 
@@ -54,17 +54,17 @@ public class ClientBeatCheckTask implements Runnable {
     }
 
     public String taskKey() {
-        return domain.getName();
+        return service.getName();
     }
 
     @Override
     public void run() {
         try {
-            if (!getDistroMapper().responsible(domain.getName())) {
+            if (!getDistroMapper().responsible(service.getName())) {
                 return;
             }
 
-            List<Instance> instances = domain.allIPs(true);
+            List<Instance> instances = service.allIPs(true);
 
             for (Instance instance : instances) {
                 if (System.currentTimeMillis() - instance.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {
@@ -74,14 +74,22 @@ public class ClientBeatCheckTask implements Runnable {
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(),
                                 UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, instance.getLastBeat());
-                            getPushService().serviceChanged(domain.getNamespaceId(), domain.getName());
+                            getPushService().serviceChanged(service.getNamespaceId(), service.getName());
                         }
                     }
                 }
 
-                if (System.currentTimeMillis() - instance.getLastBeat() > domain.getIpDeleteTimeout()) {
-                    // delete ip
-                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] dom: {}, ip: {}", domain.getName(), JSON.toJSONString(instance));
+                if (System.currentTimeMillis() - instance.getLastBeat() > service.getIpDeleteTimeout()) {
+
+                    // protect threshold met:
+                    if (service.meetProtectThreshold()) {
+                        Loggers.SRV_LOG.info("protect threshold met, service: {}, ip: {}, healthy: {}, total: {}",
+                            service.getName(), JSON.toJSONString(instance), service.healthyInstanceCount(), service.allIPs().size());
+                        return;
+                    }
+
+                    // delete instance
+                    Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
                     deleteIP(instance);
                 }
             }
@@ -97,8 +105,8 @@ public class ClientBeatCheckTask implements Runnable {
             request.appendParam("ip", instance.getIp())
                 .appendParam("port", String.valueOf(instance.getPort()))
                 .appendParam("clusterName", instance.getClusterName())
-                .appendParam("serviceName", domain.getName())
-                .appendParam("namespaceId", domain.getNamespaceId());
+                .appendParam("serviceName", service.getName())
+                .appendParam("namespaceId", service.getNamespaceId());
 
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
