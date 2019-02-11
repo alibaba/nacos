@@ -36,6 +36,9 @@ public class PartitionConfig {
     @Value("${nacos.naming.partition.initDataRatio}")
     private float initDataRatio = 0.9F;
 
+    @Value("${nacos.naming.partition.syncRetryDelay}")
+    private long syncRetryDelay = 5000L;
+
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
@@ -46,5 +49,9 @@ public class PartitionConfig {
 
     public float getInitDataRatio() {
         return initDataRatio;
+    }
+
+    public long getSyncRetryDelay() {
+        return syncRetryDelay;
     }
 }
