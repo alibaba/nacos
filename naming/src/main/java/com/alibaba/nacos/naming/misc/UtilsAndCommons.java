@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
 
 /**
  * @author nacos
@@ -118,6 +117,8 @@ public class UtilsAndCommons {
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
     public static final String DEFAULT_NAMESPACE_ID = "public";
+
+    public static final String DEFAULT_GROUP_NAME = "DEFAULT_GROUP";
 
     public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
 

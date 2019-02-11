@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;

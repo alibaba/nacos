@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Naming Service
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public interface NamingService {
 

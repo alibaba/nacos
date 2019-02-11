@@ -100,35 +100,35 @@ public class AuthFilter implements Filter {
 
     private Class<?> mapClass(String path) throws NacosException {
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)) {
             return InstanceController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)) {
             return ServiceController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
             return ClusterController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT)) {
             return OperatorController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)) {
             return CatalogController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)) {
             return HealthController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
             return RaftController.class;
         }
 
-        if (path.contains(UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)) {
+        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)) {
             return PartitionController.class;
         }
 

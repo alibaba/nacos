@@ -15,10 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author nacos
@@ -103,6 +100,20 @@ public class GlobalExecutor {
         }
     });
 
+    /**
+     * thread pool that processes getting service detail from other server asynchronously
+     */
+    private static ExecutorService serviceUpdateExecutor
+        = Executors.newFixedThreadPool(2, new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.naming.service.update.http.handler");
+            t.setDaemon(true);
+            return t;
+        }
+    });
+
     public static void submitDataSync(Runnable runnable) {
         dataSyncExecutor.submit(runnable);
     }
@@ -146,5 +157,9 @@ public class GlobalExecutor {
 
     public static void submit(Runnable runnable) {
         executorService.submit(runnable);
+    }
+
+    public static void sumbitServiceUpdate(Runnable runnable) {
+        serviceUpdateExecutor.execute(runnable);
     }
 }

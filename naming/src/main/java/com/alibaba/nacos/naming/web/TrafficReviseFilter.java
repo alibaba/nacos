@@ -16,8 +16,10 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.util.HttpMethod;
+import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,8 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * Filter incoming traffic to refuse or revise unexpected requests
@@ -38,11 +42,32 @@ public class TrafficReviseFilter implements Filter {
     @Autowired
     private ServerStatusManager serverStatusManager;
 
+    @Autowired
+    private SwitchDomain switchDomain;
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
+
+        // in AP mode, service and cluster cannot be edited:
+        try {
+            String path = new URI(req.getRequestURI()).getPath();
+            if (ServerMode.AP.name().equals(switchDomain.getServerMode()) && !HttpMethod.GET.equals(req.getMethod())) {
+                if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
+                    || path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
+                    resp.getWriter().write("server in AP mode, request: " + req.getMethod() + " " + path + " not permitted");
+                    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    return;
+                }
+            }
+
+        } catch (URISyntaxException e) {
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                "Server parse url failed," + UtilsAndCommons.getAllExceptionMsg(e));
+            return;
+        }
 
         // if server is UP:
         if (serverStatusManager.getServerStatus() == ServerStatus.UP) {

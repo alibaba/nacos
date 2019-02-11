@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -37,12 +36,15 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.Condition;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * Core manager storing all services in Nacos
+ *
  * @author nkorange
  */
 @Component
@@ -54,20 +56,11 @@ public class ServiceManager implements DataListener<Service> {
      */
     private Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
 
-    private LinkedBlockingDeque<ServiceKey> toBeUpdatedDomsQueue = new LinkedBlockingDeque<>(1024 * 1024);
+    private LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
 
     private Synchronizer synchronizer = new DomainStatusSynchronizer();
 
-    /**
-     * thread pool core size
-     */
-    private final static int DOMAIN_UPDATE_EXECUTOR_NUM = 2;
-
     private final Lock lock = new ReentrantLock();
-
-    private Map<String, Condition> service2ConditionMap = new ConcurrentHashMap<>();
-
-    private Map<String, Lock> service2LockMap = new ConcurrentHashMap<>();
 
     @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
@@ -84,29 +77,12 @@ public class ServiceManager implements DataListener<Service> {
     @Autowired
     private PushService pushService;
 
-    @Autowired
-    private Serializer serializer;
-
-    /**
-     * thread pool that processes getting service detail from other server asynchronously
-     */
-    private ExecutorService serviceUpdateExecutor
-        = Executors.newFixedThreadPool(DOMAIN_UPDATE_EXECUTOR_NUM, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.naming.service.update.http.handler");
-            t.setDaemon(true);
-            return t;
-        }
-    });
-
     @PostConstruct
     public void init() {
 
         UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
-        UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedDomainProcessor());
+        UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedServiceProcessor());
 
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
@@ -123,10 +99,10 @@ public class ServiceManager implements DataListener<Service> {
     public void addUpdatedService2Queue(String namespaceId, String serviceName, String serverIP, String checksum) {
         lock.lock();
         try {
-            toBeUpdatedDomsQueue.offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
+            toBeUpdatedServicesQueue.offer(new ServiceKey(namespaceId, serviceName, serverIP, checksum), 5, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
-            toBeUpdatedDomsQueue.poll();
-            toBeUpdatedDomsQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
+            toBeUpdatedServicesQueue.poll();
+            toBeUpdatedServicesQueue.add(new ServiceKey(namespaceId, serviceName, serverIP, checksum));
             Loggers.SRV_LOG.error("[DOMAIN-STATUS] Failed to add service to be updatd to queue.", e);
         } finally {
             lock.unlock();
@@ -162,16 +138,12 @@ public class ServiceManager implements DataListener<Service> {
             if (oldDom != null) {
                 oldDom.update(service);
             } else {
-
-                addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
                 putService(service);
                 service.init();
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
                 Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
             }
-            wakeUp(UtilsAndCommons.assembleFullServiceName(service.getNamespaceId(), service.getName()));
-
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[NACOS-SERVICE] error while processing service update", e);
         }
@@ -189,23 +161,20 @@ public class ServiceManager implements DataListener<Service> {
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
             consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), service);
-            Loggers.SRV_LOG.info("[DEAD-DOM] {}", service.toJSON());
+            Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJSON());
         }
     }
 
-    private class UpdatedDomainProcessor implements Runnable {
+    private class UpdatedServiceProcessor implements Runnable {
         //get changed service from other server asynchronously
         @Override
         public void run() {
-            String serviceName = null;
-            String serverIP = null;
+            ServiceKey serviceKey = null;
 
             try {
                 while (true) {
-                    ServiceKey serviceKey = null;
-
                     try {
-                        serviceKey = toBeUpdatedDomsQueue.take();
+                        serviceKey = toBeUpdatedServicesQueue.take();
                     } catch (Exception e) {
                         Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while taking item from LinkedBlockingDeque.");
                     }
@@ -213,14 +182,10 @@ public class ServiceManager implements DataListener<Service> {
                     if (serviceKey == null) {
                         continue;
                     }
-
-                    serviceName = serviceKey.getServiceName();
-                    serverIP = serviceKey.getServerIP();
-
-                    serviceUpdateExecutor.execute(new ServiceUpdater(serviceKey.getNamespaceId(), serviceName, serverIP));
+                    GlobalExecutor.sumbitServiceUpdate(new ServiceUpdater(serviceKey));
                 }
             } catch (Exception e) {
-                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update service: {} from {}, error: {}", serviceName, serverIP, e);
+                Loggers.EVT_LOG.error("[UPDATE-DOMAIN] Exception while update service: {}", serviceKey, e);
             }
         }
     }
@@ -231,10 +196,10 @@ public class ServiceManager implements DataListener<Service> {
         String serviceName;
         String serverIP;
 
-        public ServiceUpdater(String namespaceId, String serviceName, String serverIP) {
-            this.namespaceId = namespaceId;
-            this.serviceName = serviceName;
-            this.serverIP = serverIP;
+        public ServiceUpdater(ServiceKey serviceKey) {
+            this.namespaceId = serviceKey.getNamespaceId();
+            this.serviceName = serviceKey.getServiceName();
+            this.serverIP = serviceKey.getServerIP();
         }
 
         @Override
@@ -357,7 +322,7 @@ public class ServiceManager implements DataListener<Service> {
     }
 
     /**
-     * Register an instance to a service.
+     * Register an instance to a service in AP mode.
      * <p>
      * This method creates service or cluster silently if they don't exist.
      *
@@ -400,28 +365,9 @@ public class ServiceManager implements DataListener<Service> {
             serviceUpdated = true;
         }
 
+        // only local memory is updated:
         if (serviceUpdated) {
-            Lock lock = addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-            Condition condition = addCondtion(UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
-
-            final Service finalService = service;
-            GlobalExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        addOrReplaceService(finalService);
-                    } catch (Exception e) {
-                        Loggers.SRV_LOG.error("register or update service failed, service: {}", finalService, e);
-                    }
-                }
-            });
-
-            try {
-                lock.lock();
-                condition.await(5000, TimeUnit.MILLISECONDS);
-            } finally {
-                lock.unlock();
-            }
+            putService(service);
         }
 
         if (service.allIPs().contains(instance)) {
@@ -436,6 +382,11 @@ public class ServiceManager implements DataListener<Service> {
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
         Service service = getService(namespaceId, serviceName);
+
+        if (service == null) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "service not found, namespace: " + namespaceId + ", service: " + serviceName);
+        }
 
         Map<String, Instance> instanceMap = addIpAddresses(service, ephemeral, ips);
 
@@ -563,7 +514,6 @@ public class ServiceManager implements DataListener<Service> {
         }
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
-
 
     public List<Service> searchServices(String namespaceId, String regex) {
         List<Service> result = new ArrayList<>();
@@ -716,40 +666,11 @@ public class ServiceManager implements DataListener<Service> {
         }
     }
 
-    public void wakeUp(String key) {
-
-        Lock lock = service2LockMap.get(key);
-        Condition condition = service2ConditionMap.get(key);
-
-        try {
-            lock.lock();
-            condition.signalAll();
-        } catch (Exception ignore) {
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public Lock addLockIfAbsent(String key) {
-
-        if (service2LockMap.containsKey(key)) {
-            return service2LockMap.get(key);
-        }
-        Lock lock = new ReentrantLock();
-        service2LockMap.put(key, lock);
-        return lock;
-    }
-
-    public Condition addCondtion(String key) {
-        Condition condition = service2LockMap.get(key).newCondition();
-        service2ConditionMap.put(key, condition);
-        return condition;
-    }
-
     private static class ServiceKey {
         private String namespaceId;
         private String serviceName;
         private String serverIP;
+        private String checksum;
 
         public String getChecksum() {
             return checksum;
@@ -767,13 +688,16 @@ public class ServiceManager implements DataListener<Service> {
             return namespaceId;
         }
 
-        private String checksum;
-
         public ServiceKey(String namespaceId, String serviceName, String serverIP, String checksum) {
             this.namespaceId = namespaceId;
             this.serviceName = serviceName;
             this.serverIP = serverIP;
             this.checksum = checksum;
+        }
+
+        @Override
+        public String toString() {
+            return JSON.toJSONString(this);
         }
     }
 }

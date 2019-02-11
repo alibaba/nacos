@@ -19,9 +19,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Service
+ * Service of Nacos
+ * <p>
+ * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
+ * which contains a list of instances.
+ * <p>
+ * Typically we put some unique properties between instances to service level.
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public class Service {
 
@@ -43,7 +48,7 @@ public class Service {
     private String app;
 
     /**
-     * Service group which is meant to classify services into different sets.
+     * Service group to classify services into different sets.
      */
     private String group;
 

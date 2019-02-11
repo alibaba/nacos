@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -52,9 +51,6 @@ public class ServiceController {
 
     @Autowired
     protected ServiceManager serviceManager;
-
-    @Autowired
-    private SwitchDomain switchDomain;
 
     @Autowired
     private DistroMapper distroMapper;

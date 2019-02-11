@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 /**
  * Naming Factory
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public class NamingFactory {
 
