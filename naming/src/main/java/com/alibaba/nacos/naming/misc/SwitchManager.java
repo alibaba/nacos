@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import org.apache.commons.lang3.StringUtils;
@@ -348,6 +349,17 @@ public class SwitchManager {
             if (entry.equals(SwitchEntry.OVERRIDDEN_SERVER_STATUS)) {
                 String status = value;
                 switchDomain.setOverriddenServerStatus(status);
+
+                if (!debug) {
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                }
+
+                return;
+            }
+
+            if (entry.equals(SwitchEntry.SERVER_MODE)) {
+                String mode = value;
+                switchDomain.setServerMode(ServerMode.valueOf(mode).name());
 
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));

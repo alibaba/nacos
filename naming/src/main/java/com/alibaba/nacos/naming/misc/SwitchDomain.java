@@ -93,7 +93,9 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     public boolean enableAuthentication = false;
 
-    public String overriddenServerStatus = null;
+    private String overriddenServerStatus = null;
+
+    private String serverMode = "MIXED";
 
     public boolean isEnableAuthentication() {
         return enableAuthentication;
@@ -359,6 +361,14 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     public void setOverriddenServerStatus(String overriddenServerStatus) {
         this.overriddenServerStatus = overriddenServerStatus;
+    }
+
+    public String getServerMode() {
+        return serverMode;
+    }
+
+    public void setServerMode(String serverMode) {
+        this.serverMode = serverMode;
     }
 
     public void replace(SwitchDomain newSwitchDomain) {

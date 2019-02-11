@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * ServiceInfo
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public class ServiceInfo {
 

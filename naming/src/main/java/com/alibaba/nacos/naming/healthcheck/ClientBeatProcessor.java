@@ -18,7 +18,9 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.core.*;
+import com.alibaba.nacos.naming.core.Cluster;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;

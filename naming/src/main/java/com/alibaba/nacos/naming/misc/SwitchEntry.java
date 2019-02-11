@@ -66,4 +66,5 @@ public class SwitchEntry {
 
     public static final String READ_ENABLED = "readEnabled";
     public static final String OVERRIDDEN_SERVER_STATUS = "overriddenServerStatus";
+    public static final String SERVER_MODE = "serverMode";
 }

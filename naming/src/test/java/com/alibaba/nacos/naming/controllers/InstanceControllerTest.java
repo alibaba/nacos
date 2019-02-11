@@ -43,7 +43,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author nkorange
@@ -86,10 +85,6 @@ public class InstanceControllerTest extends BaseTest {
         domain.updateIPs(ipList, false);
 
         Mockito.when(domainsManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(domain);
-
-        Mockito.when(domainsManager.addLockIfAbsent(
-            UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")))
-            .thenReturn(new ReentrantLock());
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.put("/naming/instance")

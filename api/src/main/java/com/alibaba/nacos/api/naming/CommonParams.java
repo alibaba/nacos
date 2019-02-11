@@ -29,4 +29,6 @@ public class CommonParams {
 
     public static final String NAMESPACE_ID = "namespaceId";
 
+    public static final String GROUP_NAME = "groupName";
+
 }

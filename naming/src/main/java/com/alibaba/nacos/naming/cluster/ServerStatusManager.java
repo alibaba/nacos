@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 
 /**
  * Detect and control the working status of local server
@@ -33,15 +34,13 @@ import javax.annotation.PostConstruct;
 @Service
 public class ServerStatusManager {
 
-    @Autowired
+    @Resource(name = "consistencyDelegate")
     private ConsistencyService consistencyService;
 
     @Autowired
     private SwitchDomain switchDomain;
 
     private ServerStatus serverStatus = ServerStatus.STARTING;
-
-    private boolean serverStatusLocked = false;
 
     @PostConstruct
     public void init() {

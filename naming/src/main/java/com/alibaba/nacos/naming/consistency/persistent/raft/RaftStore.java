@@ -49,14 +49,9 @@ public class RaftStore {
 
     private Properties meta = new Properties();
 
-    private String metaFileName;
+    private String metaFileName = UtilsAndCommons.DATA_BASE_DIR + File.separator + "meta.properties";
 
-    private String cacheDir;
-
-    public RaftStore() {
-        metaFileName = UtilsAndCommons.DATA_BASE_DIR + File.separator + "meta.properties";
-        cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
-    }
+    private String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
 
     public synchronized ConcurrentHashMap<String, Datum<?>> loadDatums(RaftCore.Notifier notifier) throws Exception {
 
@@ -116,7 +111,7 @@ public class RaftStore {
         return null;
     }
 
-    public synchronized static Datum readDatum(File file, String namespaceId) throws IOException {
+    public synchronized Datum readDatum(File file, String namespaceId) throws IOException {
 
         ByteBuffer buffer;
         FileChannel fc = null;

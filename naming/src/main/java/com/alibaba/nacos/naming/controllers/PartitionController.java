@@ -16,14 +16,11 @@
 package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
-import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -37,7 +34,6 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

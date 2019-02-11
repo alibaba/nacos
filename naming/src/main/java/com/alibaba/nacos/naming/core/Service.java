@@ -40,12 +40,12 @@ import java.security.MessageDigest;
 import java.util.*;
 
 /**
- * Service of Nacos
+ * Service of Nacos server side
  * <p>
  * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
  * which contains a list of instances.
  * <p>
- * Typically we put some common properties between instances to service level.
+ * This class inherits from Service in API module and stores some fields that do not expose to client.
  *
  * @author nkorange
  */

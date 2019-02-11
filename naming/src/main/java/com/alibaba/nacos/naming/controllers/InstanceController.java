@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -90,7 +91,7 @@ public class InstanceController {
 
     @RequestMapping(value = "/instance", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
-        return regService(request);
+        return registerInstance(request);
     }
 
     @RequestMapping(value = "/instance", method = RequestMethod.DELETE)
@@ -112,7 +113,7 @@ public class InstanceController {
 
     @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
-        return regService(request);
+        return registerInstance(request);
     }
 
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
@@ -184,6 +185,16 @@ public class InstanceController {
 
     @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
     public JSONObject beat(HttpServletRequest request) throws Exception {
+
+        JSONObject result = new JSONObject();
+
+        result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
+
+        // ignore client beat in CP mode:
+        if (ServerMode.CP.name().equals(switchDomain.getServerMode())) {
+            return result;
+        }
+
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String beat = WebUtils.required(request, "beat");
@@ -218,7 +229,13 @@ public class InstanceController {
             instance.setClusterName(clusterName);
             instance.setServiceName(serviceName);
             instance.setInstanceId(instance.generateInstanceId());
-            serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
+            instance.setEphemeral(clientBeat.isEphemeral());
+
+            if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+                serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
+            } else {
+                serviceManager.addInstance(namespaceId, serviceName, clusterName, true, instance);
+            }
         }
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -251,10 +268,6 @@ public class InstanceController {
         } else {
             service.processClientBeat(clientBeat);
         }
-
-        JSONObject result = new JSONObject();
-
-        result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
 
         return result;
     }
@@ -295,7 +308,7 @@ public class InstanceController {
         return result;
     }
 
-    private String regService(HttpServletRequest request) throws Exception {
+    private String registerInstance(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
@@ -325,7 +338,9 @@ public class InstanceController {
         String weight = WebUtils.optional(request, "weight", "1");
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
-        boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral", "true"));
+        // If server running in CP mode, we set this flag to false:
+        boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
+            String.valueOf(!ServerMode.CP.name().equals(switchDomain.getServerMode()))));
 
         Instance instance = new Instance();
         instance.setPort(Integer.parseInt(port));
