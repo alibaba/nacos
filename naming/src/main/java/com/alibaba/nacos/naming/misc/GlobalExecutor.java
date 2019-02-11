@@ -114,8 +114,8 @@ public class GlobalExecutor {
         }
     });
 
-    public static void submitDataSync(Runnable runnable) {
-        dataSyncExecutor.submit(runnable);
+    public static void submitDataSync(Runnable runnable, long delay) {
+        dataSyncExecutor.schedule(runnable, delay, TimeUnit.MILLISECONDS);
     }
 
     public static void schedulePartitionDataTimedSync(Runnable runnable) {

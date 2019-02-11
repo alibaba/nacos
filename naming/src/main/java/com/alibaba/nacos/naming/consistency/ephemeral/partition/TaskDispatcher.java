@@ -102,7 +102,7 @@ public class TaskDispatcher {
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getKey());
-                            dataSyncer.submit(syncTask);
+                            dataSyncer.submit(syncTask, 0);
                         }
                         lastDispatchTime = System.currentTimeMillis();
                         dataSize = 0;

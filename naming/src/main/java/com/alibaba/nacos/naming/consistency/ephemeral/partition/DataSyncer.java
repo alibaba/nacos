@@ -32,6 +32,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -78,7 +79,7 @@ public class DataSyncer implements ServerChangeListener {
         startTimedSync();
     }
 
-    public void submit(SyncTask task) {
+    public void submit(SyncTask task, long delay) {
 
         // If it's a new task:
         if (task.getRetryCount() == 0) {
@@ -109,7 +110,9 @@ public class DataSyncer implements ServerChangeListener {
 
                     List<String> keys = task.getKeys();
 
-                    Loggers.EPHEMERAL.info("sync keys: {}", keys);
+                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                        Loggers.EPHEMERAL.debug("sync keys: {}", keys);
+                    }
 
                     Map<String, Datum<?>> datumMap = dataStore.batchGet(keys);
 
@@ -131,7 +134,7 @@ public class DataSyncer implements ServerChangeListener {
                         syncTask.setRetryCount(task.getRetryCount() + 1);
                         syncTask.setLastExecuteTime(timestamp);
                         syncTask.setTargetServer(task.getTargetServer());
-                        submit(syncTask);
+                        retrySync(syncTask);
                     } else {
                         // clear all flags of this task:
                         for (String key : task.getKeys()) {
@@ -140,10 +143,24 @@ public class DataSyncer implements ServerChangeListener {
                     }
 
                 } catch (Exception e) {
-                    Loggers.SRV_LOG.error("sync data failed.", e);
+                    Loggers.EPHEMERAL.error("sync data failed.", e);
                 }
             }
-        });
+        }, delay);
+    }
+
+    public void retrySync(SyncTask syncTask) {
+
+        Server server = new Server();
+        server.setIp(syncTask.getTargetServer().split(":")[0]);
+        server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
+        if (!servers.contains(server)) {
+            // if server is no longer in healthy server list, ignore this task:
+            return;
+        }
+
+        // TODO may choose other retry policy.
+        submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
 
     public void startTimedSync() {
@@ -174,6 +191,9 @@ public class DataSyncer implements ServerChangeListener {
                     }
                 }
 
+            } catch (IOException ioe) {
+                initialized = true;
+                Loggers.EPHEMERAL.error("operate on meta file failed.", ioe);
             } catch (Exception e) {
                 Loggers.EPHEMERAL.error("operate on meta file failed.", e);
             }
