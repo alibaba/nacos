@@ -228,12 +228,13 @@ public class NamingProxy {
     public boolean serverHealthy() {
 
         try {
-            reqAPI(UtilAndComs.NACOS_URL_BASE + "/operator/metrics", new HashMap<String, String>(2));
+            String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/operator/metrics", new HashMap<String, String>(2));
+            JSONObject json = JSON.parseObject(result);
+            String serverStatus = json.getString("status");
+            return "UP".equals(serverStatus);
         } catch (Exception e) {
             return false;
         }
-
-        return true;
     }
 
     public ListView<String> getServiceList(int pageNo, int pageSize) throws NacosException {

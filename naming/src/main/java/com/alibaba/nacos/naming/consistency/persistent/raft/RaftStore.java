@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
@@ -123,6 +124,11 @@ public class RaftStore {
             String json = new String(buffer.array(), "UTF-8");
             if (StringUtils.isBlank(json)) {
                 return null;
+            }
+
+            if (KeyBuilder.matchSwitchKey(file.getName())) {
+                return JSON.parseObject(json, new TypeReference<Datum<SwitchDomain>>() {
+                });
             }
 
             if (KeyBuilder.matchServiceMetaKey(file.getName())) {

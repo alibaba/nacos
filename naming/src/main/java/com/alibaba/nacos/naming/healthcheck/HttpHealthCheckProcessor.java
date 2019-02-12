@@ -107,7 +107,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
                 if (!ip.markChecking()) {
                     SRV_LOG.warn("http check started before last one finished, dom: {}:{}:{}",
-                        task.getCluster().getDom().getName(), task.getCluster().getName(), ip.getIp());
+                        task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
 
                     healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getHttpHealthParams());
                     continue;

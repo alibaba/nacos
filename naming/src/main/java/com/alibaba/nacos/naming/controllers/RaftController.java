@@ -32,6 +32,7 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.NeedAuth;
 import org.apache.commons.io.IOUtils;
@@ -139,6 +140,11 @@ public class RaftController {
             return "ok";
         }
 
+        if (KeyBuilder.matchSwitchKey(key)) {
+            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), SwitchDomain.class));
+            return "ok";
+        }
+
         if (KeyBuilder.matchServiceMetaKey(key)) {
             raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Service.class));
             return "ok";
@@ -214,6 +220,15 @@ public class RaftController {
             instancesDatum.timestamp.set(datum.timestamp.get());
             instancesDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Instances.class);
             raftConsistencyService.onPut(instancesDatum, source);
+            return "ok";
+        }
+
+        if (KeyBuilder.matchSwitchKey(datum.key)) {
+            Datum<SwitchDomain> switchDomainDatum = new Datum<>();
+            switchDomainDatum.key = datum.key;
+            switchDomainDatum.timestamp.set(datum.timestamp.get());
+            switchDomainDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), SwitchDomain.class);
+            raftConsistencyService.onPut(switchDomainDatum, source);
             return "ok";
         }
 

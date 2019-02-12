@@ -69,22 +69,22 @@ public class HealthCheckTask implements Runnable {
     public void run() {
 
         try {
-            if (distroMapper.responsible(cluster.getDom().getName()) &&
-                switchDomain.isHealthCheckEnabled(cluster.getDom().getName())) {
+            if (distroMapper.responsible(cluster.getService().getName()) &&
+                switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
                 healthCheckProcessor.process(this);
-                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getDom().getName());
+                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
             }
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}",
-                cluster.getDom().getName(), cluster.getName(), e);
+                cluster.getService().getName(), cluster.getName(), e);
         } finally {
             if (!cancelled) {
                 HealthCheckReactor.scheduleCheck(this);
 
                 // worst == 0 means never checked
                 if (this.getCheckRTWorst() > 0
-                    && switchDomain.isHealthCheckEnabled(cluster.getDom().getName())
-                    && distroMapper.responsible(cluster.getDom().getName())) {
+                    && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
+                    && distroMapper.responsible(cluster.getService().getName())) {
                     // TLog doesn't support float so we must convert it into long
                     long diff = ((this.getCheckRTLast() - this.getCheckRTLastLast()) * 10000)
                         / this.getCheckRTLastLast();
@@ -93,7 +93,7 @@ public class HealthCheckTask implements Runnable {
 
                     Cluster cluster = this.getCluster();
                     Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                        cluster.getDom().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                        cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
                         this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
                         this.getCheckRTLast(), diff);
                 }

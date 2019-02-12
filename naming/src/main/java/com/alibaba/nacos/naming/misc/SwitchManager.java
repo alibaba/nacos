@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since 1.0.0
  */
 @Component
-public class SwitchManager {
+public class SwitchManager implements DataListener<SwitchDomain> {
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -53,13 +54,13 @@ public class SwitchManager {
     public void init() {
 
         try {
-            consistencyService.listen(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+            consistencyService.listen(UtilsAndCommons.getSwitchDomainKey(), this);
         } catch (NacosException e) {
             Loggers.SRV_LOG.error("listen switch domain failed.", e);
         }
     }
 
-    public void update(String entry, String value, boolean debug) throws NacosException {
+    public void update(String entry, String value, boolean debug) throws Exception {
 
         try {
             lock.lock();
@@ -68,10 +69,9 @@ public class SwitchManager {
             SwitchDomain switchDomain;
 
             if (datum != null) {
-                switchDomain = JSON.parseObject((String) datum.value, SwitchDomain.class);
+                switchDomain = (SwitchDomain) datum.value;
             } else {
-                Loggers.SRV_LOG.warn("switch domain is null");
-                throw new NacosException(NacosException.SERVER_ERROR, "switch datum is null!");
+                switchDomain = this.switchDomain.clone();
             }
 
             if (SwitchEntry.BATCH.equals(entry)) {
@@ -98,9 +98,9 @@ public class SwitchManager {
                     throw new IllegalArgumentException("malformed factor");
                 }
 
-                switchDomain.replace(dom);
+                update(dom);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(dom));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), dom);
                 }
 
                 return;
@@ -117,20 +117,8 @@ public class SwitchManager {
                 switchDomain.setDistroThreshold(threshold);
 
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
-                return;
-            }
-
-
-            if (entry.equals(SwitchEntry.ENABLE_ALL_DOM_NAME_CACHE)) {
-                Boolean enable = Boolean.parseBoolean(value);
-                switchDomain.setAllDomNameCache(enable);
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                }
-
                 return;
             }
 
@@ -139,7 +127,7 @@ public class SwitchManager {
                 switchDomain.setClientBeatInterval(clientBeatInterval);
 
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -166,7 +154,7 @@ public class SwitchManager {
                 }
 
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -178,9 +166,9 @@ public class SwitchManager {
                     throw new IllegalArgumentException("min cache time for http or tcp is too small(<10000)");
                 }
 
-                switchDomain.setPushCacheMillis(cacheMillis);
+                switchDomain.setDefaultPushCacheMillis(cacheMillis);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -195,7 +183,7 @@ public class SwitchManager {
 
                 switchDomain.setDefaultCacheMillis(cacheMillis);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -205,7 +193,7 @@ public class SwitchManager {
 
                 switchDomain.setMasters(masters);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -215,7 +203,7 @@ public class SwitchManager {
 
                 switchDomain.setDistroEnabled(enabled);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -225,7 +213,7 @@ public class SwitchManager {
 
                 switchDomain.setHealthCheckEnabled(enabled);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -239,7 +227,7 @@ public class SwitchManager {
 
                 switchDomain.setDomStatusSynchronizationPeriodMillis(millis);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -253,7 +241,7 @@ public class SwitchManager {
 
                 switchDomain.setServerStatusSynchronizationPeriodMillis(millis);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -263,7 +251,7 @@ public class SwitchManager {
 
                 switchDomain.setCheckTimes(times);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -273,17 +261,7 @@ public class SwitchManager {
 
                 switchDomain.setDisableAddIP(disableAddIP);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
-                }
-                return;
-            }
-
-            if (entry.equals(SwitchEntry.ENABLE_CACHE)) {
-                boolean enableCache = Boolean.parseBoolean(value);
-
-                switchDomain.setEnableCache(enableCache);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -293,7 +271,7 @@ public class SwitchManager {
 
                 switchDomain.setSendBeatOnly(sendBeatOnly);
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
                 return;
             }
@@ -326,7 +304,7 @@ public class SwitchManager {
 
                     switchDomain.setLimitedUrlMap(limitedUrlMap);
                     if (!debug) {
-                        consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                        consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                     }
                     return;
                 }
@@ -340,7 +318,7 @@ public class SwitchManager {
                 }
 
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
 
                 return;
@@ -351,7 +329,7 @@ public class SwitchManager {
                 switchDomain.setOverriddenServerStatus(status);
 
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
 
                 return;
@@ -362,7 +340,7 @@ public class SwitchManager {
                 switchDomain.setServerMode(ServerMode.valueOf(mode).name());
 
                 if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), JSON.toJSONString(switchDomain));
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
 
                 return;
@@ -376,6 +354,56 @@ public class SwitchManager {
     }
 
     public void update(SwitchDomain newSwitchDomain) {
+        switchDomain.setMasters(newSwitchDomain.getMasters());
+        switchDomain.setAdWeightMap(newSwitchDomain.getAdWeightMap());
+        switchDomain.setDefaultPushCacheMillis(newSwitchDomain.getDefaultPushCacheMillis());
+        switchDomain.setClientBeatInterval(newSwitchDomain.getClientBeatInterval());
+        switchDomain.setDefaultCacheMillis(newSwitchDomain.getDefaultCacheMillis());
+        switchDomain.setDistroThreshold(newSwitchDomain.getDistroThreshold());
+        switchDomain.setHealthCheckEnabled(newSwitchDomain.isHealthCheckEnabled());
+        switchDomain.setDistroEnabled(newSwitchDomain.isDistroEnabled());
+        switchDomain.setEnableStandalone(newSwitchDomain.isEnableStandalone());
+        switchDomain.setCheckTimes(newSwitchDomain.getCheckTimes());
+        switchDomain.setHttpHealthParams(newSwitchDomain.getHttpHealthParams());
+        switchDomain.setTcpHealthParams(newSwitchDomain.getTcpHealthParams());
+        switchDomain.setMysqlHealthParams(newSwitchDomain.getMysqlHealthParams());
+        switchDomain.setIncrementalList(newSwitchDomain.getIncrementalList());
+        switchDomain.setServerStatusSynchronizationPeriodMillis(newSwitchDomain.getServerStatusSynchronizationPeriodMillis());
+        switchDomain.setDomStatusSynchronizationPeriodMillis(newSwitchDomain.getDomStatusSynchronizationPeriodMillis());
+        switchDomain.setDisableAddIP(newSwitchDomain.isDisableAddIP());
+        switchDomain.setSendBeatOnly(newSwitchDomain.isSendBeatOnly());
+        switchDomain.setLimitedUrlMap(newSwitchDomain.getLimitedUrlMap());
+        switchDomain.setDistroServerExpiredMillis(newSwitchDomain.getDistroServerExpiredMillis());
+        switchDomain.setPushGoVersion(newSwitchDomain.getPushGoVersion());
+        switchDomain.setPushJavaVersion(newSwitchDomain.getPushJavaVersion());
+        switchDomain.setPushPythonVersion(newSwitchDomain.getPushPythonVersion());
+        switchDomain.setPushCVersion(newSwitchDomain.getPushCVersion());
+        switchDomain.setEnableAuthentication(newSwitchDomain.isEnableAuthentication());
+        switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
+        switchDomain.setServerMode(newSwitchDomain.getServerMode());
+    }
+
+    public SwitchDomain getSwitchDomain() {
+        return switchDomain;
+    }
+
+    @Override
+    public boolean interests(String key) {
+        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
+    }
+
+    @Override
+    public boolean matchUnlistenKey(String key) {
+        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
+    }
+
+    @Override
+    public void onChange(String key, SwitchDomain domain) throws Exception {
+        update(domain);
+    }
+
+    @Override
+    public void onDelete(String key) throws Exception {
 
     }
 }

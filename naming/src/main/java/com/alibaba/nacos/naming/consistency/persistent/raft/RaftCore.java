@@ -917,20 +917,22 @@ public class RaftCore {
 
                     int count = 0;
 
-                    if (KeyBuilder.matchServiceMetaKey(datum.key) &&
-                        listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+                    if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
 
-                        for (DataListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
-                            try {
-                                if (action == ApplyAction.CHANGE) {
-                                    listener.onChange(datum.key, getDatum(datum.key).value);
-                                }
+                        if (KeyBuilder.matchServiceMetaKey(datum.key) && !KeyBuilder.matchSwitchKey(datum.key)) {
 
-                                if (action == ApplyAction.DELETE) {
-                                    listener.onDelete(datum.key);
+                            for (DataListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+                                try {
+                                    if (action == ApplyAction.CHANGE) {
+                                        listener.onChange(datum.key, getDatum(datum.key).value);
+                                    }
+
+                                    if (action == ApplyAction.DELETE) {
+                                        listener.onDelete(datum.key);
+                                    }
+                                } catch (Throwable e) {
+                                    Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {} {}", datum.key, e);
                                 }
-                            } catch (Throwable e) {
-                                Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {} {}", datum.key, e);
                             }
                         }
                     }

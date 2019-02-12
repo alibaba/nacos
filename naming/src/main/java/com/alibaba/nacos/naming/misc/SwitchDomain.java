@@ -15,8 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.fastjson.JSON;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -26,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements DataListener<SwitchDomain> {
+public class SwitchDomain implements Cloneable {
 
     public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
@@ -44,10 +43,6 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     public String token = UtilsAndCommons.SUPER_TOKEN;
 
-    public Map<String, Long> cacheMillisMap = new HashMap<String, Long>();
-
-    public Map<String, Long> pushCacheMillisMap = new HashMap<String, Long>();
-
     public boolean healthCheckEnabled = true;
 
     public boolean distroEnabled = true;
@@ -64,15 +59,11 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
 
     private List<String> incrementalList = new ArrayList<>();
 
-    private boolean allDomNameCache = true;
-
     public long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
 
     public long domStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
 
     public boolean disableAddIP = false;
-
-    public boolean enableCache = true;
 
     public boolean sendBeatOnly = false;
 
@@ -123,10 +114,6 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
         this.clientBeatInterval = clientBeatInterval;
     }
 
-    public boolean isEnableCache() {
-        return enableCache;
-    }
-
     public boolean isEnableStandalone() {
         return enableStandalone;
     }
@@ -153,7 +140,7 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
     }
 
 
-    public void update(SwitchDomain dom) {
+    public void update(SwitchDomain domain) {
 
     }
 
@@ -161,12 +148,8 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
         return incrementalList;
     }
 
-    public boolean isAllDomNameCache() {
-        return allDomNameCache;
-    }
-
-    public void setAllDomNameCache(boolean enable) {
-        allDomNameCache = enable;
+    public void setIncrementalList(List<String> incrementalList) {
+        this.incrementalList = incrementalList;
     }
 
     public List<String> getMasters() {
@@ -214,17 +197,7 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
     }
 
     public long getPushCacheMillis(String dom) {
-        if (pushCacheMillisMap == null
-            || !pushCacheMillisMap.containsKey(dom)) {
-            return defaultPushCacheMillis;
-        }
-
-        return pushCacheMillisMap.get(dom);
-    }
-
-    @JSONField(serialize = false)
-    public void setPushCacheMillis(Long cacheMillis) {
-        defaultPushCacheMillis = cacheMillis;
+        return defaultPushCacheMillis;
     }
 
     public boolean isHealthCheckEnabled() {
@@ -303,10 +276,6 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
         this.disableAddIP = disableAddIP;
     }
 
-    public void setEnableCache(boolean enableCache) {
-        this.enableCache = enableCache;
-    }
-
     public Map<String, Integer> getLimitedUrlMap() {
         return limitedUrlMap;
     }
@@ -371,28 +340,14 @@ public class SwitchDomain implements DataListener<SwitchDomain> {
         this.serverMode = serverMode;
     }
 
-    public void replace(SwitchDomain newSwitchDomain) {
-        // TODO
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 
     @Override
-    public boolean interests(String key) {
-        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
-    }
-
-    @Override
-    public boolean matchUnlistenKey(String key) {
-        return key.contains(UtilsAndCommons.SWITCH_DOMAIN_NAME);
-    }
-
-    @Override
-    public void onChange(String key, SwitchDomain domain) throws Exception {
-        update(domain);
-    }
-
-    @Override
-    public void onDelete(String key) throws Exception {
-
+    protected SwitchDomain clone() throws CloneNotSupportedException {
+        return (SwitchDomain) super.clone();
     }
 
     public interface HealthParams {

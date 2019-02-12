@@ -57,7 +57,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private Set<Instance> ephemeralInstances = new HashSet<>();
 
     @JSONField(serialize = false)
-    private Service dom;
+    private Service service;
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
@@ -104,12 +104,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return checkTask;
     }
 
-    public Service getDom() {
-        return dom;
+    public Service getService() {
+        return service;
     }
 
-    public void setDom(Service dom) {
-        this.dom = dom;
+    public void setService(Service service) {
+        this.service = service;
     }
 
     @Override
@@ -118,7 +118,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         Cluster cluster = new Cluster();
 
         cluster.setHealthChecker(getHealthChecker().clone());
-        cluster.setDom(getDom());
+        cluster.setService(getService());
         cluster.persistentInstances = new HashSet<Instance>();
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
@@ -150,12 +150,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 if (ip.isValid() != oldIP.isValid()) {
                     // ip validation status updated
                     Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
-                        getDom().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
+                        getService().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
                 }
 
                 if (ip.getWeight() != oldIP.getWeight()) {
                     // ip validation status updated
-                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getDom().getName(), oldIP.toString(), ip.toString());
+                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getService().getName(), oldIP.toString(), ip.toString());
                 }
             }
         }
@@ -163,7 +163,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         List<Instance> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
-                getDom().getName(), getName(), newIPs.size(), newIPs.toString());
+                getService().getName(), getName(), newIPs.size(), newIPs.toString());
 
             for (Instance ip : newIPs) {
                 HealthCheckStatus.reset(ip);
@@ -174,7 +174,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         if (deadIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}",
-                getDom().getName(), getName(), deadIPs.size(), deadIPs.toString());
+                getService().getName(), getName(), deadIPs.size(), deadIPs.toString());
 
             for (Instance ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
@@ -281,37 +281,37 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         if (!getHealthChecker().equals(cluster.getHealthChecker())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
+                cluster.getService().getName(), cluster.getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
             setHealthChecker(cluster.getHealthChecker());
         }
 
         if (defCkport != cluster.getDefCkport()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), defCkport, cluster.getDefCkport());
+                cluster.getService().getName(), cluster.getName(), defCkport, cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
 
         if (defIPPort != cluster.getDefIPPort()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), defIPPort, cluster.getDefIPPort());
+                cluster.getService().getName(), cluster.getName(), defIPPort, cluster.getDefIPPort());
             defIPPort = cluster.getDefIPPort();
         }
 
         if (!StringUtils.equals(submask, cluster.getSubmask())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, submask: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), submask, cluster.getSubmask());
+                cluster.getService().getName(), cluster.getName(), submask, cluster.getSubmask());
             submask = cluster.getSubmask();
         }
 
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());
+                cluster.getService().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
 
         if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
+                cluster.getService().getName(), cluster.getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
             setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
 

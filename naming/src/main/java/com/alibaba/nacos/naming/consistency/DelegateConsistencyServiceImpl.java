@@ -42,47 +42,27 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Override
     public void put(String key, Object value) throws NacosException {
-        if (KeyBuilder.matchEphemeralKey(key)) {
-            ephemeralConsistencyService.put(key, value);
-        } else {
-            persistentConsistencyService.put(key, value);
-        }
+        mapConsistencyService(key).put(key, value);
     }
 
     @Override
     public void remove(String key) throws NacosException {
-        if (KeyBuilder.matchEphemeralKey(key)) {
-            ephemeralConsistencyService.remove(key);
-        } else {
-            persistentConsistencyService.remove(key);
-        }
+        mapConsistencyService(key).remove(key);
     }
 
     @Override
     public Datum get(String key) throws NacosException {
-        if (KeyBuilder.matchEphemeralKey(key)) {
-            return ephemeralConsistencyService.get(key);
-        } else {
-            return persistentConsistencyService.get(key);
-        }
+        return mapConsistencyService(key).get(key);
     }
 
     @Override
     public void listen(String key, DataListener listener) throws NacosException {
-        if (KeyBuilder.matchEphemeralKey(key)) {
-            ephemeralConsistencyService.listen(key, listener);
-        } else {
-            persistentConsistencyService.listen(key, listener);
-        }
+        mapConsistencyService(key).listen(key, listener);
     }
 
     @Override
     public void unlisten(String key, DataListener listener) throws NacosException {
-        if (KeyBuilder.matchEphemeralKey(key)) {
-            ephemeralConsistencyService.unlisten(key, listener);
-        } else {
-            persistentConsistencyService.unlisten(key, listener);
-        }
+        mapConsistencyService(key).unlisten(key, listener);
     }
 
     @Override
@@ -98,5 +78,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     @Override
     public boolean isAvailable() {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
+    }
+
+    private ConsistencyService mapConsistencyService(String key) {
+        return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }
 }

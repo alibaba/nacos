@@ -510,7 +510,7 @@
         <appender-ref ref="async-naming-raft"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.ephemeral" additivity="false">
-        <level value="INFO"/>
+        <level value="DEBUG"/>
         <appender-ref ref="async-naming-ephemeral"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.event" additivity="false">
