@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NetUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -99,6 +100,9 @@ public class TaskDispatcher {
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
                         for (Server member : dataSyncer.getServers()) {
+                            if (NetUtils.localServer().equals(member.getKey())) {
+                                continue;
+                            }
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getKey());

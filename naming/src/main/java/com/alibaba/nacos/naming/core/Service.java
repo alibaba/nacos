@@ -73,6 +73,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     private volatile String checksum;
 
+    /**
+     * TODO set customized push expire time:
+     */
+    private long pushCacheMillis = 0L;
+
     private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
 
     public Service() {
@@ -184,7 +189,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return (healthyInstanceCount() * 1.0 / allIPs().size()) < getProtectThreshold();
     }
 
-    public void updateIPs(Collection<Instance> ips, boolean ephemeral) {
+    public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
         // TODO prevent most of the instances from removed
 
         Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
@@ -192,32 +197,34 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipMap.put(clusterName, new ArrayList<>());
         }
 
-        for (Instance ip : ips) {
+        for (Instance instance : instances) {
             try {
-                if (ip == null) {
+                if (instance == null) {
                     Loggers.SRV_LOG.error("[NACOS-DOM] received malformed ip: null");
                     continue;
                 }
 
-                if (StringUtils.isEmpty(ip.getClusterName())) {
-                    ip.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+                if (StringUtils.isEmpty(instance.getClusterName())) {
+                    instance.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
 
-                // put wild ip into DEFAULT cluster
-                if (!clusterMap.containsKey(ip.getClusterName())) {
-                    Loggers.SRV_LOG.warn("cluster of IP not found: {}", ip);
-                    continue;
+                if (!clusterMap.containsKey(instance.getClusterName())) {
+                    Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                        instance.getClusterName(), instance.toJSON());
+                    Cluster cluster = new Cluster(instance.getClusterName());
+                    cluster.setService(this);
+                    getClusterMap().put(instance.getClusterName(), cluster);
                 }
 
-                List<Instance> clusterIPs = ipMap.get(ip.getClusterName());
+                List<Instance> clusterIPs = ipMap.get(instance.getClusterName());
                 if (clusterIPs == null) {
                     clusterIPs = new LinkedList<>();
-                    ipMap.put(ip.getClusterName(), clusterIPs);
+                    ipMap.put(instance.getClusterName(), clusterIPs);
                 }
 
-                clusterIPs.add(ip);
+                clusterIPs.add(instance);
             } catch (Exception e) {
-                Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + ip, e);
+                Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + instance, e);
             }
         }
 
@@ -244,7 +251,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
-            entry.getValue().setDom(this);
+            entry.getValue().setService(this);
             entry.getValue().init();
         }
     }
@@ -465,10 +472,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             Cluster oldCluster = clusterMap.get(cluster.getName());
             if (oldCluster != null) {
                 oldCluster.update(cluster);
-                oldCluster.setDom(this);
+                oldCluster.setService(this);
             } else {
                 cluster.init();
-                cluster.setDom(this);
+                cluster.setService(this);
                 clusterMap.put(cluster.getName(), cluster);
             }
         }

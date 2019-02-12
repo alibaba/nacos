@@ -74,7 +74,7 @@ public class InstanceControllerTest extends BaseTest {
 
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setDom(domain);
+        cluster.setService(domain);
         domain.addCluster(cluster);
 
         Instance instance = new Instance();
@@ -118,7 +118,7 @@ public class InstanceControllerTest extends BaseTest {
 
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setDom(domain);
+        cluster.setService(domain);
         domain.addCluster(cluster);
 
         Instance instance = new Instance();

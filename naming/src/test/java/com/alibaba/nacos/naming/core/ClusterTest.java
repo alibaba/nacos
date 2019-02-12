@@ -38,7 +38,7 @@ public class ClusterTest {
 
         cluster = new Cluster();
         cluster.setName("nacos-cluster-1");
-        cluster.setDom(domain);
+        cluster.setService(domain);
         cluster.setDefCkport(80);
         cluster.setDefIPPort(8080);
     }
@@ -59,7 +59,7 @@ public class ClusterTest {
         Service domain = new Service();
         domain.setName("nacos.domain.2");
 
-        newCluster.setDom(domain);
+        newCluster.setService(domain);
 
         cluster.update(newCluster);
 

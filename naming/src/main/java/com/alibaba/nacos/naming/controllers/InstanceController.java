@@ -231,11 +231,7 @@ public class InstanceController {
             instance.setInstanceId(instance.generateInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
-            if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
-                serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
-            } else {
-                serviceManager.addInstance(namespaceId, serviceName, clusterName, true, instance);
-            }
+            serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
         }
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -324,6 +320,16 @@ public class InstanceController {
         instance.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+        }
+
+        if ((ServerMode.AP.name().equals(switchDomain.getServerMode()) && !instance.isEphemeral())) {
+            throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
+                + " in " + switchDomain.getServerMode() + " mode.");
+        }
+
+        if ((ServerMode.CP.name().equals(switchDomain.getServerMode()) && instance.isEphemeral())) {
+            throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
+                + " in " + switchDomain.getServerMode() + " mode.");
         }
 
         serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);

@@ -38,7 +38,7 @@ public class DomainTest {
         domain.setName("nacos.domain.1");
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setDom(domain);
+        cluster.setService(domain);
         domain.addCluster(cluster);
     }
 
@@ -50,7 +50,7 @@ public class DomainTest {
         newDomain.setProtectThreshold(0.7f);
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setDom(newDomain);
+        cluster.setService(newDomain);
         newDomain.addCluster(cluster);
 
         domain.update(newDomain);

@@ -208,17 +208,6 @@ public class UtilsAndCommons {
         return strBuilder.toString();
     }
 
-
-    public static String getIPListStoreKey(Service dom) {
-        return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getNamespaceId() +
-            UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
-    }
-
-    public static String getDomStoreKey(Service dom) {
-        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + dom.getNamespaceId() +
-            UtilsAndCommons.SERVICE_GROUP_CONNECTOR + dom.getName();
-    }
-
     public static String getSwitchDomainKey() {
         return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }

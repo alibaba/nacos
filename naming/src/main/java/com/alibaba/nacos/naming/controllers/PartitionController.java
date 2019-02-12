@@ -17,13 +17,16 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,6 +55,12 @@ public class PartitionController {
     @Autowired
     private PartitionConsistencyServiceImpl consistencyService;
 
+    @Autowired
+    private ServiceManager serviceManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
     @RequestMapping("/onSync")
     public String onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -67,6 +76,12 @@ public class PartitionController {
 
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
+                String namespaceId = KeyBuilder.getNamespace(entry.getKey());
+                String serviceName = KeyBuilder.getServiceName(entry.getKey());
+                if (!serviceManager.containService(namespaceId, serviceName)
+                    && ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+                    serviceManager.createEmptyService(namespaceId, serviceName);
+                }
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
         }
@@ -77,7 +92,18 @@ public class PartitionController {
     public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        Map<String, Long> dataMap = serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, Long>>(){});
+        Map<String, Long> dataMap = serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, Long>>() {
+        });
+
+        for (String key : dataMap.keySet()) {
+            String namespaceId = KeyBuilder.getNamespace(key);
+            String serviceName = KeyBuilder.getServiceName(key);
+            if (!serviceManager.containService(namespaceId, serviceName)
+                && ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+                serviceManager.createEmptyService(namespaceId, serviceName);
+            }
+        }
+
         consistencyService.onReceiveTimestamps(dataMap, source);
         return "ok";
     }

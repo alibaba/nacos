@@ -142,24 +142,24 @@ public class HealthCheckCommon {
                         ip.setValid(true);
                         ip.setMockValid(true);
 
-                        Service vDom = cluster.getDom();
+                        Service vDom = cluster.getService();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
 
                         pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         if (!ip.isMockValid()) {
                             ip.setMockValid(true);
                             Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                                cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                                cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                         }
                     }
                 } else {
                     Loggers.EVT_LOG.info("dom: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
-                        cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getOKCount(), msg);
+                        cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getOKCount(), msg);
                 }
             }
         } catch (Throwable t) {
@@ -180,22 +180,22 @@ public class HealthCheckCommon {
                         ip.setValid(false);
                         ip.setMockValid(false);
 
-                        Service vDom = cluster.getDom();
+                        Service vDom = cluster.getService();
                         vDom.setLastModifiedMillis(System.currentTimeMillis());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
                         pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
 
                         Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 } else {
                     Loggers.EVT_LOG.info("dom: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
-                        cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getFailCount(), msg);
+                        cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getFailCount(), msg);
                 }
             }
         } catch (Throwable t) {
@@ -215,19 +215,19 @@ public class HealthCheckCommon {
                     ip.setValid(false);
                     ip.setMockValid(false);
 
-                    Service vDom = cluster.getDom();
+                    Service vDom = cluster.getService();
                     vDom.setLastModifiedMillis(System.currentTimeMillis());
 
                     pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
                     addResult(new HealthCheckResult(vDom.getName(), ip));
 
                     Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
-                        cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                        cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                 } else {
                     if (ip.isMockValid()) {
                         ip.setMockValid(false);
                         Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
-                            cluster.getDom().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
+                            cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 }

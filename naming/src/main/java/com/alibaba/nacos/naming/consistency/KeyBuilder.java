@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency;
 
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -55,6 +56,10 @@ public class KeyBuilder {
         return SERVICE_META_KEY_PREFIX + namespaceId + KEY_CONNECTOR + serviceName;
     }
 
+    public static String getSwitchDomainKey() {
+        return SERVICE_META_KEY_PREFIX + UtilsAndCommons.SWITCH_DOMAIN_NAME;
+    }
+
     public static boolean matchEphemeralInstanceListKey(String key) {
         return key.startsWith(INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX);
     }
@@ -65,6 +70,10 @@ public class KeyBuilder {
 
     public static boolean matchServiceMetaKey(String key) {
         return key.startsWith(SERVICE_META_KEY_PREFIX) || key.startsWith(BRIEF_SERVICE_META_KEY_PREFIX);
+    }
+
+    public static boolean matchSwitchKey(String key) {
+        return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }
 
     public static boolean matchServiceName(String key, String namespaceId, String serviceName) {

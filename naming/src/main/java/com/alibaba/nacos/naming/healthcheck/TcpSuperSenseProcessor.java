@@ -111,7 +111,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
-        Service service = task.getCluster().getDom();
+        Service service = task.getCluster().getService();
 
         for (Instance ip : ips) {
 
@@ -124,7 +124,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
             if (!ip.markChecking()) {
                 SRV_LOG.warn("tcp check started before last one finished, dom: "
-                    + task.getCluster().getDom().getName() + ":"
+                    + task.getCluster().getService().getName() + ":"
                     + task.getCluster().getName() + ":"
                     + ip.getIp() + ":"
                     + ip.getPort());
@@ -292,7 +292,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
         @Override
         public String toString() {
-            return task.getCluster().getDom().getName() + ":"
+            return task.getCluster().getService().getName() + ":"
                 + task.getCluster().getName() + ":"
                 + ip.getIp() + ":"
                 + ip.getPort();

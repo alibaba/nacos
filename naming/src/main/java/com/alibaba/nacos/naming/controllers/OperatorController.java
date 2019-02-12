@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
@@ -113,8 +112,8 @@ public class OperatorController {
     }
 
     @RequestMapping("/switches")
-    public JSONObject switches(HttpServletRequest request) {
-        return JSON.parseObject(switchDomain.toString());
+    public SwitchDomain switches(HttpServletRequest request) {
+        return switchDomain;
     }
 
     @NeedAuth

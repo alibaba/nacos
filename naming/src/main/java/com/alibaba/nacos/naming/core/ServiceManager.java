@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.DataListener;
@@ -321,6 +322,23 @@ public class ServiceManager implements DataListener<Service> {
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
     }
 
+    public void createEmptyService(String namespaceId, String serviceName) throws NacosException {
+        Service service = getService(namespaceId, serviceName);
+        if (service == null) {
+            service = new Service();
+            service.setName(serviceName);
+            service.setNamespaceId(namespaceId);
+            // now validate the service. if failed, exception will be thrown
+            service.setLastModifiedMillis(System.currentTimeMillis());
+            service.recalculateChecksum();
+            service.valid();
+            putService(service);
+            service.init();
+            consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
+            consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
+        }
+    }
+
     /**
      * Register an instance to a service in AP mode.
      * <p>
@@ -333,41 +351,15 @@ public class ServiceManager implements DataListener<Service> {
      */
     public void registerInstance(String namespaceId, String serviceName, String clusterName, Instance instance) throws Exception {
 
+        if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+            createEmptyService(namespaceId, serviceName);
+        }
+
         Service service = getService(namespaceId, serviceName);
-        boolean serviceUpdated = false;
+
         if (service == null) {
-            service = new Service();
-            service.setName(serviceName);
-            service.setNamespaceId(namespaceId);
-            // now validate the service. if failed, exception will be thrown
-            service.setLastModifiedMillis(System.currentTimeMillis());
-            service.recalculateChecksum();
-            service.valid();
-            serviceUpdated = true;
-        }
-
-        if (!service.getClusterMap().containsKey(instance.getClusterName())) {
-
-            Cluster cluster = new Cluster();
-            cluster.setName(instance.getClusterName());
-            cluster.setDom(service);
-            cluster.init();
-
-            if (service.getClusterMap().containsKey(cluster.getName())) {
-                service.getClusterMap().get(cluster.getName()).update(cluster);
-            } else {
-                service.getClusterMap().put(cluster.getName(), cluster);
-            }
-
-            service.setLastModifiedMillis(System.currentTimeMillis());
-            service.recalculateChecksum();
-            service.valid();
-            serviceUpdated = true;
-        }
-
-        // only local memory is updated:
-        if (serviceUpdated) {
-            putService(service);
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
         if (service.allIPs().contains(instance)) {
@@ -382,11 +374,6 @@ public class ServiceManager implements DataListener<Service> {
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
         Service service = getService(namespaceId, serviceName);
-
-        if (service == null) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                "service not found, namespace: " + namespaceId + ", service: " + serviceName);
-        }
 
         Map<String, Instance> instanceMap = addIpAddresses(service, ephemeral, ips);
 
@@ -460,7 +447,7 @@ public class ServiceManager implements DataListener<Service> {
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
                 Cluster cluster = new Cluster(instance.getClusterName());
-                cluster.setDom(service);
+                cluster.setService(service);
                 service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                     instance.getClusterName(), instance.toJSON());
@@ -506,6 +493,10 @@ public class ServiceManager implements DataListener<Service> {
             return null;
         }
         return chooseServiceMap(namespaceId).get(serviceName);
+    }
+
+    public boolean containService(String namespaceId, String serviceName) {
+        return getService(namespaceId, serviceName) != null;
     }
 
     public void putService(Service service) {
