@@ -117,6 +117,10 @@ public class KeyBuilder {
 
     public static String getNamespace(String key) {
 
+        if (matchSwitchKey(key)) {
+            return StringUtils.EMPTY;
+        }
+
         if (matchServiceMetaKey(key)) {
             return key.split(KEY_CONNECTOR)[0].substring(SERVICE_META_KEY_PREFIX.length());
         }
