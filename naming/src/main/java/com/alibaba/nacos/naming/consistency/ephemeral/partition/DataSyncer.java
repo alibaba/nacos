@@ -177,7 +177,7 @@ public class DataSyncer implements ServerChangeListener {
                 File metaFile = new File(UtilsAndCommons.DATA_BASE_DIR + File.separator + "ephemeral.properties");
                 if (initialized) {
                     // write the current instance count to disk:
-                    IoUtils.writeStringToFile(metaFile, "instanceCount=" + dataStore.keys().size(), "UTF-8");
+                    IoUtils.writeStringToFile(metaFile, "instanceCount=" + dataStore.getInstanceCount(), "UTF-8");
                 } else {
                     // check if most of the data are loaded:
                     List<String> lines = IoUtils.readLines(new InputStreamReader(new FileInputStream(metaFile), UTF_8));

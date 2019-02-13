@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.core.Instances;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -64,5 +65,17 @@ public class DataStore {
             map.put(key, dataMap.get(key));
         }
         return map;
+    }
+
+    public int getInstanceCount() {
+        int count = 0;
+        for (Map.Entry<String, Datum<?>> entry : dataMap.entrySet()) {
+            try {
+                Datum<Instances> instancesDatum = (Datum<Instances>) entry.getValue();
+                count += instancesDatum.value.getInstanceMap().size();
+            } catch (Exception ignore) {
+            }
+        }
+        return count;
     }
 }

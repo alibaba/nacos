@@ -140,7 +140,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
             ResultSet resultSet = null;
 
             try {
-                ;
+
                 Cluster cluster = task.getCluster();
                 String key = cluster.getService().getName() + ":" + cluster.getName() + ":" + ip.getIp() + ":" + ip.getPort();
                 Connection connection = CONNECTION_POOL.get(key);
