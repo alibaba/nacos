@@ -22,56 +22,56 @@ package com.alibaba.nacos.client.identify;
  */
 public class Credentials implements SpasCredential {
 
-	private volatile String accessKey;
+    private volatile String accessKey;
 
-	private volatile String secretKey;
+    private volatile String secretKey;
 
-	private volatile String tenantId;
+    private volatile String tenantId;
 
-	public Credentials(String accessKey, String secretKey, String tenantId) {
-		this.accessKey = accessKey;
-		this.secretKey = secretKey;
-		this.tenantId = tenantId;
-	}
+    public Credentials(String accessKey, String secretKey, String tenantId) {
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
+        this.tenantId = tenantId;
+    }
 
-	public Credentials() {
-		this(null, null, null);
-	}
+    public Credentials() {
+        this(null, null, null);
+    }
 
-	public String getAccessKey() {
-		return accessKey;
-	}
+    public String getAccessKey() {
+        return accessKey;
+    }
 
-	public void setAccessKey(String accessKey) {
-		this.accessKey = accessKey;
-	}
+    public void setAccessKey(String accessKey) {
+        this.accessKey = accessKey;
+    }
 
-	public String getSecretKey() {
-		return secretKey;
-	}
+    public String getSecretKey() {
+        return secretKey;
+    }
 
-	public void setSecretKey(String secretKey) {
-		this.secretKey = secretKey;
-	}
+    public void setSecretKey(String secretKey) {
+        this.secretKey = secretKey;
+    }
 
-	public String getTenantId() {
-		return tenantId;
-	}
+    public String getTenantId() {
+        return tenantId;
+    }
 
-	public void setTenantId(String tenantId) {
-		this.tenantId = tenantId;
-	}
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 
-	public boolean valid() {
-		return accessKey != null && !accessKey.isEmpty() && secretKey != null
-				&& !secretKey.isEmpty();
-	}
+    public boolean valid() {
+        return accessKey != null && !accessKey.isEmpty() && secretKey != null
+            && !secretKey.isEmpty();
+    }
 
-	public boolean identical(Credentials other) {
-		return this == other || (other != null
-				&& (accessKey == null && other.accessKey == null
-						|| accessKey != null && accessKey.equals(other.accessKey))
-				&& (secretKey == null && other.secretKey == null
-						|| secretKey != null && secretKey.equals(other.secretKey)));
-	}
+    public boolean identical(Credentials other) {
+        return this == other || (other != null
+            && (accessKey == null && other.accessKey == null
+            || accessKey != null && accessKey.equals(other.accessKey))
+            && (secretKey == null && other.secretKey == null
+            || secretKey != null && secretKey.equals(other.secretKey)));
+    }
 }
