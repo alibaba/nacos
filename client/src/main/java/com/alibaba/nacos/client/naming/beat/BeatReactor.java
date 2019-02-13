@@ -57,20 +57,21 @@ public class BeatReactor {
         executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
     }
 
-    public void addBeatInfo(String dom, BeatInfo beatInfo) {
+    public void addBeatInfo(String serviceName, String groupName, BeatInfo beatInfo) {
         LogUtils.LOG.info("BEAT", "adding beat: {} to beat map.", beatInfo);
-        dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        dom2Beat.put(buildKey(serviceName, groupName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    public void removeBeatInfo(String dom, String ip, int port) {
-        LogUtils.LOG.info("BEAT", "removing beat: {}:{}:{} from beat map.", dom, ip, port);
-        dom2Beat.remove(buildKey(dom, ip, port));
+    public void removeBeatInfo(String serviceName, String groupName, String ip, int port) {
+        LogUtils.LOG.info("BEAT", "removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
+        dom2Beat.remove(buildKey(serviceName, groupName, ip, port));
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    public String buildKey(String dom, String ip, int port) {
-        return dom + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
+    public String buildKey(String serviceName, String groupName, String ip, int port) {
+        return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER + groupName + Constants.NAMING_INSTANCE_ID_SPLITTER
+            + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
 
     class BeatProcessor implements Runnable {
