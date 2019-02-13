@@ -119,11 +119,9 @@ public class Constants {
     public static final int NAMING_INSTANCE_ID_SEG_COUNT = 4;
     public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
 
-    public static final String NAMING_DEFAULT_CLUSTER_NAME = "DEFAULT";
+    public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
-    public static final String REQUEST_PARAM_DEFAULT_NAMESPACE_ID = "public";
-    public static final String REQUEST_PARAM_GROUP = "group";
-    public static final String REQUEST_PARAM_DEFAULT_GROUP = "DEFAULT_GROUP";
+    public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final int WRITE_REDIRECT_CODE = 307;
 }

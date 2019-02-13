@@ -158,21 +158,22 @@ public class NamingProxy {
         }
     }
 
-    public void registerService(String serviceName, Instance instance) throws NacosException {
+    public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
 
         LogUtils.LOG.info("REGISTER-SERVICE", "{} registering service {} with instance: {}",
             namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.GROUP_NAME, groupName);
+        params.put(CommonParams.CLUSTER_NAME, instance.getClusterName());
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
         params.put("enable", String.valueOf(instance.isEnabled()));
         params.put("healthy", String.valueOf(instance.isHealthy()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
-        params.put("serviceName", serviceName);
-        params.put("clusterName", instance.getClusterName());
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
