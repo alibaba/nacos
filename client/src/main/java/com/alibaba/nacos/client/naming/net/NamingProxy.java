@@ -316,7 +316,7 @@ public class NamingProxy {
         end = System.currentTimeMillis();
 
         MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(result.code))
-            .record(end - start, TimeUnit.MILLISECONDS);
+            .observe(end - start);
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content;
@@ -382,3 +382,4 @@ public class NamingProxy {
         return namespaceId;
     }
 }
+
