@@ -29,9 +29,6 @@ import java.util.Map;
  * @author nkorange
  */
 public class Service {
-
-    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
-
     /**
      * service name
      */
