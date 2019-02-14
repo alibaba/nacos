@@ -49,7 +49,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private String app;
 
     public static final Pattern IP_PATTERN
-            = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
+        = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
 
     public static final String SPLITER = "_";
 
@@ -193,6 +193,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
+
+        if (!ip.validate()) {
+            throw new IllegalArgumentException("malfomed ip config: " + json);
+        }
+
         return ip;
     }
 
@@ -295,6 +300,20 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     public String generateInstanceId() {
         return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
+    }
+
+    public boolean validate() {
+
+        Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
+            return false;
+        }
+
+        return true;
     }
 
     @Override
