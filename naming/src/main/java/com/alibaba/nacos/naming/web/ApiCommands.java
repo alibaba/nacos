@@ -68,6 +68,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
 
@@ -922,7 +923,7 @@ public class ApiCommands {
 
         final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
         updateIpPublish(proxyParams, countDownLatch, action);
-        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
+        if (!STANDALONE_MODE && !countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
             Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
             throw new IllegalArgumentException("data publish failed, key=" + key);
         }
