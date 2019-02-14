@@ -33,11 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
     private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
-
-    /**
-     * in fact this is CIDR(Classless Inter-Domain Routing). for naming it 'submask' it has historical reasons
-     */
-    private String submask = "0.0.0.0/0";
     /**
      * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
      */
@@ -318,18 +313,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         metadata = cluster.getMetadata();
     }
 
-    public String getSyncKey() {
-        return "";
-    }
-
-    public String getSubmask() {
-        return submask;
-    }
-
-    public void setSubmask(String submask) {
-        this.submask = submask;
-    }
-
     public String getSitegroup() {
         return sitegroup;
     }
@@ -345,17 +328,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     public void validate() {
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
             throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
-        }
-
-        String[] cidrGroups = submask.split("\\|");
-        for (String cidrGroup : cidrGroups) {
-            String[] cidrs = cidrGroup.split(",");
-
-            for (String cidr : cidrs) {
-                if (!cidr.matches(UtilsAndCommons.CIDR_REGEX)) {
-                    throw new IllegalArgumentException("malformed submask: " + submask + " for cluster: " + getName());
-                }
-            }
         }
     }
 }
