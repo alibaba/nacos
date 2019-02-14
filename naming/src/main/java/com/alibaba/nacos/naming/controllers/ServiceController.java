@@ -272,8 +272,8 @@ public class ServiceController {
         return result;
     }
 
-    @RequestMapping("/searchDom")
-    public JSONObject searchDom(HttpServletRequest request) {
+    @RequestMapping("/names")
+    public JSONObject searchService(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -301,7 +301,7 @@ public class ServiceController {
     @RequestMapping("/serviceStatus")
     public String serviceStatus(HttpServletRequest request) {
         //format: dom1@@checksum@@@dom2@@checksum
-        String domsStatusString = WebUtils.required(request, "domsStatus");
+        String statuses = WebUtils.required(request, "statuses");
         String serverIP = WebUtils.optional(request, "clientIP", "");
 
         if (!serverListManager.contains(serverIP)) {
@@ -309,7 +309,7 @@ public class ServiceController {
         }
 
         try {
-            ServiceManager.ServiceChecksum checksums = JSON.parseObject(domsStatusString, ServiceManager.ServiceChecksum.class);
+            ServiceManager.ServiceChecksum checksums = JSON.parseObject(statuses, ServiceManager.ServiceChecksum.class);
             if (checksums == null) {
                 Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: null");
                 return "fail";
@@ -338,7 +338,7 @@ public class ServiceController {
                 }
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: " + domsStatusString, e);
+            Loggers.SRV_LOG.warn("[DOMAIN-STATUS] receive malformed data: " + statuses, e);
         }
 
         return "ok";
