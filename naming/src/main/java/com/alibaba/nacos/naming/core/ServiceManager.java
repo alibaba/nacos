@@ -59,7 +59,7 @@ public class ServiceManager implements DataListener<Service> {
 
     private LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
 
-    private Synchronizer synchronizer = new DomainStatusSynchronizer();
+    private Synchronizer synchronizer = new ServiceStatusSynchronizer();
 
     private final Lock lock = new ReentrantLock();
 

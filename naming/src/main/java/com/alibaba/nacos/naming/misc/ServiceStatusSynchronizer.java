@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * @author nacos
  */
-public class DomainStatusSynchronizer implements Synchronizer {
+public class ServiceStatusSynchronizer implements Synchronizer {
     @Override
     public void send(final String serverIP, Message msg) {
         if(serverIP == null) {
@@ -36,7 +36,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
 
         Map<String,String> params = new HashMap<String, String>(10);
 
-        params.put("domsStatus", msg.getData());
+        params.put("statuses", msg.getData());
         params.put("clientIP", NetUtils.localServer());
 
 
