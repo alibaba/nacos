@@ -79,7 +79,7 @@ public class InstanceController {
                     client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
                     false, StringUtils.EMPTY, StringUtils.EMPTY, false);
             } catch (Exception e) {
-                Loggers.SRV_LOG.warn("PUSH-SERVICE: dom is not modified", e);
+                Loggers.SRV_LOG.warn("PUSH-SERVICE: service is not modified", e);
             }
 
             // overdrive the cache millis to push mode
@@ -122,7 +122,7 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
 
-        String dom = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String agent = request.getHeader("Client-Version");
         if (StringUtils.isBlank(agent)) {
             agent = request.getHeader("User-Agent");
@@ -139,7 +139,7 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, dom, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 
     @RequestMapping(value = "/instance", method = RequestMethod.GET)
@@ -152,17 +152,17 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
 
-        Service domain = serviceManager.getService(namespaceId, serviceName);
-        if (domain == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "no dom " + serviceName + " found!");
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
         }
 
         List<String> clusters = new ArrayList<>();
         clusters.add(cluster);
 
-        List<Instance> ips = domain.allIPs(clusters);
+        List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
-            throw new IllegalStateException("no ips found for cluster " + cluster + " in dom " + serviceName);
+            throw new IllegalStateException("no ips found for cluster " + cluster + " in service " + serviceName);
         }
 
         for (Instance instance : ips) {
@@ -202,10 +202,7 @@ public class InstanceController {
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String serviceName = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
-        if (StringUtils.isBlank(serviceName)) {
-            serviceName = WebUtils.required(request, "dom");
-        }
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         String clusterName = clientBeat.getCluster();
 
@@ -274,24 +271,24 @@ public class InstanceController {
 
         String key = WebUtils.required(request, "key");
 
-        String domName;
+        String serviceName;
         String namespaceId;
 
         if (key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
             namespaceId = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
-            domName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+            serviceName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
         } else {
             namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
-            domName = key;
+            serviceName = key;
         }
 
-        Service dom = serviceManager.getService(namespaceId, domName);
+        Service service = serviceManager.getService(namespaceId, serviceName);
 
-        if (dom == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "dom: " + domName + " not found.");
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "service: " + serviceName + " not found.");
         }
 
-        List<Instance> ips = dom.allIPs();
+        List<Instance> ips = service.allIPs();
 
         JSONObject result = new JSONObject();
         JSONArray ipArray = new JSONArray();
@@ -359,37 +356,37 @@ public class InstanceController {
         return instance;
     }
 
-    public void checkIfDisabled(Service domObj) throws Exception {
-        if (!domObj.getEnabled()) {
-            throw new Exception("domain is disabled now.");
+    public void checkIfDisabled(Service service) throws Exception {
+        if (!service.getEnabled()) {
+            throw new Exception("service is disabled now.");
         }
     }
 
-    public JSONObject doSrvIPXT(String namespaceId, String dom, String agent, String clusters, String clientIP, int udpPort,
+    public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         JSONObject result = new JSONObject();
-        Service domObj = serviceManager.getService(namespaceId, dom);
+        Service service = serviceManager.getService(namespaceId, serviceName);
 
-        if (domObj == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "dom not found: " + dom);
+        if (service == null) {
+            throw new NacosException(NacosException.NOT_FOUND, "service not found: " + serviceName);
         }
 
-        checkIfDisabled(domObj);
+        checkIfDisabled(service);
 
         long cacheMillis = switchDomain.getDefaultCacheMillis();
 
         // now try to enable the push
         try {
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
-                pushService.addClient(namespaceId, dom,
+                pushService.addClient(namespaceId, serviceName,
                     clusters,
                     agent,
                     new InetSocketAddress(clientIP, udpPort),
                     pushDataSource,
                     tid,
                     app);
-                cacheMillis = switchDomain.getPushCacheMillis(dom);
+                cacheMillis = switchDomain.getPushCacheMillis(serviceName);
             }
         } catch (Exception e) {
             Loggers.SRV_LOG.error("[NACOS-API] failed to added push client", e);
@@ -398,28 +395,29 @@ public class InstanceController {
 
         List<Instance> srvedIPs;
 
-        srvedIPs = domObj.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
+        srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
-        if (domObj.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
-            srvedIPs = domObj.getSelector().select(clientIP, srvedIPs);
+        if (service.getSelector() != null && StringUtils.isNotBlank(clientIP)) {
+            srvedIPs = service.getSelector().select(clientIP, srvedIPs);
         }
 
         if (CollectionUtils.isEmpty(srvedIPs)) {
 
             if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + dom);
+                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
             }
 
             result.put("hosts", new JSONArray());
-            result.put("dom", dom);
+            result.put("dom", serviceName);
+            result.put("name", serviceName);
             result.put("cacheMillis", cacheMillis);
             result.put("lastRefTime", System.currentTimeMillis());
-            result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
+            result.put("checksum", service.getChecksum() + System.currentTimeMillis());
             result.put("useSpecifiedURL", false);
             result.put("clusters", clusters);
             result.put("env", env);
-            result.put("metadata", domObj.getMetadata());
+            result.put("metadata", service.getMetadata());
             return result;
         }
 
@@ -435,11 +433,11 @@ public class InstanceController {
             result.put("reachProtectThreshold", false);
         }
 
-        double threshold = domObj.getProtectThreshold();
+        double threshold = service.getProtectThreshold();
 
         if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
-            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, dom: {}", dom);
+            Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
             if (isCheck) {
                 result.put("reachProtectThreshold", true);
             }
@@ -449,7 +447,7 @@ public class InstanceController {
         }
 
         if (isCheck) {
-            result.put("protectThreshold", domObj.getProtectThreshold());
+            result.put("protectThreshold", service.getProtectThreshold());
             result.put("reachLocalSiteCallThreshold", false);
 
             return new JSONObject();
@@ -485,14 +483,15 @@ public class InstanceController {
 
         result.put("hosts", hosts);
 
-        result.put("dom", dom);
+        result.put("dom", serviceName);
+        result.put("name", serviceName);
         result.put("cacheMillis", cacheMillis);
         result.put("lastRefTime", System.currentTimeMillis());
-        result.put("checksum", domObj.getChecksum() + System.currentTimeMillis());
+        result.put("checksum", service.getChecksum() + System.currentTimeMillis());
         result.put("useSpecifiedURL", false);
         result.put("clusters", clusters);
         result.put("env", env);
-        result.put("metadata", domObj.getMetadata());
+        result.put("metadata", service.getMetadata());
         return result;
     }
 }

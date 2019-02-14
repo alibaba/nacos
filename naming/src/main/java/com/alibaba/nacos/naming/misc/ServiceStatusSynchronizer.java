@@ -78,11 +78,11 @@ public class ServiceStatusSynchronizer implements Synchronizer {
 
         String result;
         try {
-            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync dom status from: {}, dom: {}", serverIP, key);
+            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
             result = NamingProxy.reqAPI(RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/" + "listWithHealthStatus", params, serverIP);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get domain status from " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);
             return null;
         }
 

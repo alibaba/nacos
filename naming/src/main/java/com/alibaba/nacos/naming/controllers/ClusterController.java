@@ -44,7 +44,7 @@ import javax.servlet.http.HttpServletRequest;
 public class ClusterController {
 
     @Autowired
-    protected ServiceManager domainsManager;
+    protected ServiceManager serviceManager;
 
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
@@ -58,12 +58,12 @@ public class ClusterController {
         String checkPort = WebUtils.required(request, "checkPort");
         String useInstancePort4Check = WebUtils.required(request, "useInstancePort4Check");
 
-        Service domain = domainsManager.getService(namespaceId, serviceName);
-        if (domain == null) {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
         }
 
-        Cluster cluster = domain.getClusterMap().get(clusterName);
+        Cluster cluster = service.getClusterMap().get(clusterName);
         if (cluster == null) {
             Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName, serviceName);
             cluster = new Cluster();
@@ -93,13 +93,13 @@ public class ClusterController {
         cluster.setHealthChecker(abstractHealthChecker);
         cluster.setMetadata(UtilsAndCommons.parseMetadata(metadata));
 
-        domain.getClusterMap().put(clusterName, cluster);
+        service.getClusterMap().put(clusterName, cluster);
 
-        domain.setLastModifiedMillis(System.currentTimeMillis());
-        domain.recalculateChecksum();
-        domain.valid();
+        service.setLastModifiedMillis(System.currentTimeMillis());
+        service.recalculateChecksum();
+        service.valid();
 
-        domainsManager.addOrReplaceService(domain);
+        serviceManager.addOrReplaceService(service);
 
         return "ok";
     }

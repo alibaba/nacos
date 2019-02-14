@@ -106,7 +106,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                 }
 
                 if (!ip.markChecking()) {
-                    SRV_LOG.warn("mysql check started before last one finished, dom: {}:{}:{}",
+                    SRV_LOG.warn("mysql check started before last one finished, service: {}:{}:{}",
                         task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
 
                     healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());

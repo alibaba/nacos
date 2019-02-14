@@ -103,8 +103,8 @@ public class PerformanceLoggerThread {
 
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectmetrics() {
-        int domCount = serviceManager.getServiceCount();
-        MetricsMonitor.getDomCountMonitor().set(domCount);
+        int serviceCount = serviceManager.getServiceCount();
+        MetricsMonitor.getDomCountMonitor().set(serviceCount);
 
         int ipCount = serviceManager.getInstanceCount();
         MetricsMonitor.getIpCountMonitor().set(ipCount);
@@ -132,13 +132,13 @@ public class PerformanceLoggerThread {
         @Override
         public void run() {
             try {
-                int domCount = serviceManager.getServiceCount();
+                int serviceCount = serviceManager.getServiceCount();
                 int ipCount = serviceManager.getInstanceCount();
                 long maxPushMaxCost = getMaxPushCost();
                 long maxPushCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
 
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
+                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }

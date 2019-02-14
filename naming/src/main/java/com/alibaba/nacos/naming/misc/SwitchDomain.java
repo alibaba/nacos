@@ -61,7 +61,7 @@ public class SwitchDomain implements Cloneable {
 
     public long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
 
-    public long domStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
+    public long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
 
     public boolean disableAddIP = false;
 
@@ -196,7 +196,7 @@ public class SwitchDomain implements Cloneable {
         this.distroThreshold = distroThreshold;
     }
 
-    public long getPushCacheMillis(String dom) {
+    public long getPushCacheMillis(String serviceName) {
         return defaultPushCacheMillis;
     }
 
@@ -208,8 +208,8 @@ public class SwitchDomain implements Cloneable {
         this.healthCheckEnabled = healthCheckEnabled;
     }
 
-    public boolean isHealthCheckEnabled(String dom) {
-        return healthCheckEnabled || getHealthCheckWhiteList().contains(dom);
+    public boolean isHealthCheckEnabled(String serviceName) {
+        return healthCheckEnabled || getHealthCheckWhiteList().contains(serviceName);
     }
 
     public boolean isDistroEnabled() {
@@ -260,12 +260,12 @@ public class SwitchDomain implements Cloneable {
         this.serverStatusSynchronizationPeriodMillis = serverStatusSynchronizationPeriodMillis;
     }
 
-    public long getDomStatusSynchronizationPeriodMillis() {
-        return domStatusSynchronizationPeriodMillis;
+    public long getServiceStatusSynchronizationPeriodMillis() {
+        return serviceStatusSynchronizationPeriodMillis;
     }
 
-    public void setDomStatusSynchronizationPeriodMillis(long domStatusSynchronizationPeriodMillis) {
-        this.domStatusSynchronizationPeriodMillis = domStatusSynchronizationPeriodMillis;
+    public void setServiceStatusSynchronizationPeriodMillis(long serviceStatusSynchronizationPeriodMillis) {
+        this.serviceStatusSynchronizationPeriodMillis = serviceStatusSynchronizationPeriodMillis;
     }
 
     public boolean isDisableAddIP() {
