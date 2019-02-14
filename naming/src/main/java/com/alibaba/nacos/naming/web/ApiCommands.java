@@ -534,6 +534,10 @@ public class ApiCommands {
         ipAddress.setClusterName(cluster);
         ipAddress.setEnabled(enabled);
 
+        if (!ipAddress.validate()) {
+            throw new IllegalArgumentException("malfomed ip config: " + ipAddress);
+        }
+
         return ipAddress;
     }
 
@@ -716,17 +720,6 @@ public class ApiCommands {
             }
 
             cluster.setDefIPPort(Integer.parseInt(defIPPort));
-        }
-
-        String submask = WebUtils.optional(request, "submask", StringUtils.EMPTY);
-        if (!StringUtils.isEmpty(submask)) {
-            Cluster cluster
-                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
-            if (cluster == null) {
-                throw new IllegalStateException("cluster not found");
-            }
-
-            cluster.setSubmask(submask);
         }
 
         String ipPort4Check = WebUtils.optional(request, "ipPort4Check", StringUtils.EMPTY);
@@ -2081,10 +2074,6 @@ public class ApiCommands {
                 cluster.setHealthChecker(config);
             }
             cluster.setSitegroup(siteGroup);
-
-            if (!StringUtils.isEmpty(submask)) {
-                cluster.setSubmask(submask);
-            }
         }
         cluster.setDom(domObj);
         cluster.init();
@@ -2417,7 +2406,6 @@ public class ApiCommands {
             clusterPac.put("defCkport", cluster.getDefCkport());
             clusterPac.put("defIPPort", cluster.getDefIPPort());
             clusterPac.put("useIPPort4Check", cluster.isUseIPPort4Check());
-            clusterPac.put("submask", cluster.getSubmask());
             clusterPac.put("sitegroup", cluster.getSitegroup());
             clusterPac.put("metadatas", cluster.getMetadata());
 
