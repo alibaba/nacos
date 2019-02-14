@@ -292,12 +292,6 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             defIPPort = cluster.getDefIPPort();
         }
 
-        if (!StringUtils.equals(submask, cluster.getSubmask())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, submask: {} -> {}",
-                cluster.getService().getName(), cluster.getName(), submask, cluster.getSubmask());
-            submask = cluster.getSubmask();
-        }
-
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
                 cluster.getService().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());

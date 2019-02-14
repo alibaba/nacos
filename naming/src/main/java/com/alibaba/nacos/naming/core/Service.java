@@ -51,6 +51,8 @@ import java.util.*;
  */
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<Instances> {
 
+    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
+
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
 
@@ -498,23 +500,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void valid() {
-        Map<String, List<String>> map = new HashMap<>(clusterMap.size());
-        if (!name.matches(DOMAIN_NAME_SYNTAX)) {
-            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + name);
+        if (!getName().matches(SERVICE_NAME_SYNTAX)) {
+            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
         }
         for (Cluster cluster : clusterMap.values()) {
-            if (StringUtils.isEmpty(cluster.getSyncKey())) {
-                continue;
-            }
-            List<String> list = map.get(cluster.getSyncKey());
-            if (list == null) {
-                list = new ArrayList<>();
-                map.put(cluster.getSyncKey(), list);
-            }
-
-            list.add(cluster.getName());
             cluster.validate();
-            cluster.valid();
         }
     }
 }

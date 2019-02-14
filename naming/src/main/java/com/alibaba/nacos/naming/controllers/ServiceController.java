@@ -261,7 +261,7 @@ public class ServiceController {
             }
         }
 
-        Map<String, Set<String>> serviceNameMap = new HashMap<>();
+        Map<String, Set<String>> serviceNameMap = new HashMap<>(16);
         for (String namespace : services.keySet()) {
             serviceNameMap.put(namespace, new HashSet<>());
             for (Service service : services.get(namespace)) {
