@@ -59,25 +59,25 @@ public class CatalogController {
         int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
         String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
-        List<Service> doms = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, doms);
+        List<Service> services = new ArrayList<>();
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, services);
 
-        if (CollectionUtils.isEmpty(doms)) {
+        if (CollectionUtils.isEmpty(services)) {
             result.put("serviceList", Collections.emptyList());
             result.put("count", 0);
             return result;
         }
 
-        JSONArray domArray = new JSONArray();
-        for (Service dom : doms) {
+        JSONArray serviceJsonArray = new JSONArray();
+        for (Service service : services) {
             ServiceView serviceView = new ServiceView();
-            serviceView.setName(dom.getName());
-            serviceView.setClusterCount(dom.getClusterMap().size());
-            serviceView.setIpCount(dom.allIPs().size());
+            serviceView.setName(service.getName());
+            serviceView.setClusterCount(service.getClusterMap().size());
+            serviceView.setIpCount(service.allIPs().size());
 
             // FIXME should be optimized:
             int validCount = 0;
-            for (Instance instance : dom.allIPs()) {
+            for (Instance instance : service.allIPs()) {
                 if (instance.isValid()) {
                     validCount++;
                 }
@@ -85,10 +85,10 @@ public class CatalogController {
 
             serviceView.setHealthyInstanceCount(validCount);
 
-            domArray.add(serviceView);
+            serviceJsonArray.add(serviceView);
         }
 
-        result.put("serviceList", domArray);
+        result.put("serviceList", serviceJsonArray);
         result.put("count", total);
 
         return result;
@@ -100,18 +100,18 @@ public class CatalogController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, "serviceName");
-        Service domain = serviceManager.getService(namespaceId, serviceName);
-        if (domain == null) {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
         ServiceDetailView detailView = new ServiceDetailView();
 
-        detailView.setService(domain);
+        detailView.setService(service);
 
         List<Cluster> clusters = new ArrayList<>();
 
-        for (com.alibaba.nacos.naming.core.Cluster cluster : domain.getClusterMap().values()) {
+        for (com.alibaba.nacos.naming.core.Cluster cluster : service.getClusterMap().values()) {
             Cluster clusterView = new Cluster();
             clusterView.setName(cluster.getName());
             clusterView.setHealthChecker(cluster.getHealthChecker());
@@ -138,16 +138,16 @@ public class CatalogController {
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
 
-        Service domain = serviceManager.getService(namespaceId, serviceName);
-        if (domain == null) {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
-        if (!domain.getClusterMap().containsKey(clusterName)) {
+        if (!service.getClusterMap().containsKey(clusterName)) {
             throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
 
-        List<Instance> instances = domain.getClusterMap().get(clusterName).allIPs();
+        List<Instance> instances = service.getClusterMap().get(clusterName).allIPs();
 
         int start = (page - 1) * pageSize;
         int end = page * pageSize;
@@ -197,22 +197,22 @@ public class CatalogController {
 
     }
 
-    @RequestMapping("/rt4Dom")
-    public JSONObject rt4Dom(HttpServletRequest request) {
+    @RequestMapping("/rt4Service")
+    public JSONObject rt4Service(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String dom = WebUtils.required(request, "dom");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
-        Service domObj = serviceManager.getService(namespaceId, dom);
-        if (domObj == null) {
-            throw new IllegalArgumentException("request dom doesn't exist");
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new IllegalArgumentException("request service doesn't exist");
         }
 
         JSONObject result = new JSONObject();
 
         JSONArray clusters = new JSONArray();
-        for (Map.Entry<String, com.alibaba.nacos.naming.core.Cluster> entry : domObj.getClusterMap().entrySet()) {
+        for (Map.Entry<String, com.alibaba.nacos.naming.core.Cluster> entry : service.getClusterMap().entrySet()) {
             JSONObject packet = new JSONObject();
             HealthCheckTask task = entry.getValue().getHealthCheckTask();
 
@@ -228,11 +228,11 @@ public class CatalogController {
         return result;
     }
 
-    @RequestMapping("/getDomsByIP")
-    public JSONObject getDomsByIP(HttpServletRequest request) {
+    @RequestMapping("/getServicesByIP")
+    public JSONObject getServicesByIP(HttpServletRequest request) {
         String ip = WebUtils.required(request, "ip");
 
-        Set<String> doms = new HashSet<String>();
+        Set<String> serviceNames = new HashSet<>();
         Map<String, Set<String>> serviceNameMap = serviceManager.getAllServiceNames();
 
         for (String namespaceId : serviceNameMap.keySet()) {
@@ -242,11 +242,11 @@ public class CatalogController {
                 for (Instance instance : instances) {
                     if (ip.contains(":")) {
                         if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), ip)) {
-                            doms.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
+                            serviceNames.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
                         }
                     } else {
                         if (StringUtils.equals(instance.getIp(), ip)) {
-                            doms.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
+                            serviceNames.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
                         }
                     }
                 }
@@ -255,7 +255,7 @@ public class CatalogController {
 
         JSONObject result = new JSONObject();
 
-        result.put("doms", doms);
+        result.put("doms", serviceNames);
 
         return result;
     }

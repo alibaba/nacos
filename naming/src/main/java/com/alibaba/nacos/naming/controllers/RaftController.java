@@ -62,7 +62,7 @@ public class RaftController {
     private RaftConsistencyServiceImpl raftConsistencyService;
 
     @Autowired
-    private ServiceManager domainsManager;
+    private ServiceManager serviceManager;
 
     @Autowired
     private RaftCore raftCore;
@@ -192,7 +192,7 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         JSONObject result = new JSONObject();
-        result.put("doms", domainsManager.getServiceCount());
+        result.put("services", serviceManager.getServiceCount());
         result.put("peers", raftCore.getPeers());
 
         return result;

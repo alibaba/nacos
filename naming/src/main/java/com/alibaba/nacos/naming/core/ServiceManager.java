@@ -269,7 +269,11 @@ public class ServiceManager implements DataListener<Service> {
         return namesMap;
     }
 
-    public List<String> getAllDomNamesList(String namespaceId) {
+    public Set<String> getAllNamespaces() {
+        return serviceMap.keySet();
+    }
+
+    public List<String> getAllServiceNameList(String namespaceId) {
         if (chooseServiceMap(namespaceId) == null) {
             return new ArrayList<>();
         }
@@ -652,7 +656,7 @@ public class ServiceManager implements DataListener<Service> {
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending service status", e);
             } finally {
-                UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getDomStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
+                UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
         }
     }

@@ -29,7 +29,6 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,7 +84,7 @@ public class ServiceController {
         service.setSelector(parseSelector(selector));
         service.setNamespaceId(namespaceId);
 
-        // now valid the dom. if failed, exception will be thrown
+        // now valid the service. if failed, exception will be thrown
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
         service.valid();
@@ -158,9 +157,9 @@ public class ServiceController {
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        List<String> doms = serviceManager.getAllDomNamesList(namespaceId);
+        List<String> serviceNameList = serviceManager.getAllServiceNameList(namespaceId);
 
-        if (doms == null || doms.isEmpty()) {
+        if (serviceNameList == null || serviceNameList.isEmpty()) {
             throw new NacosException(NacosException.INVALID_PARAM, "No service exist in " + namespaceId);
         }
 
@@ -181,10 +180,10 @@ public class ServiceController {
                     String[] factors = terms[0].split("\\.");
                     switch (factors[0]) {
                         case "INSTANCE":
-                            doms = filterInstanceMetadata(namespaceId, doms, factors[factors.length - 1], terms[1].replace("'", ""));
+                            serviceNameList = filterInstanceMetadata(namespaceId, serviceNameList, factors[factors.length - 1], terms[1].replace("'", ""));
                             break;
                         case "SERVICE":
-                            doms = filterServiceMetadata(namespaceId, doms, factors[factors.length - 1], terms[1].replace("'", ""));
+                            serviceNameList = filterServiceMetadata(namespaceId, serviceNameList, factors[factors.length - 1], terms[1].replace("'", ""));
                             break;
                         default:
                             break;
@@ -202,14 +201,14 @@ public class ServiceController {
             start = 0;
         }
 
-        if (end > doms.size()) {
-            end = doms.size();
+        if (end > serviceNameList.size()) {
+            end = serviceNameList.size();
         }
 
         JSONObject result = new JSONObject();
 
-        result.put("doms", doms.subList(start, end));
-        result.put("count", doms.size());
+        result.put("doms", serviceNameList.subList(start, end));
+        result.put("count", serviceNameList.size());
 
         return result;
 
@@ -225,82 +224,64 @@ public class ServiceController {
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
-        Service domain = serviceManager.getService(namespaceId, serviceName);
-        if (domain == null) {
+        Service service = serviceManager.getService(namespaceId, serviceName);
+        if (service == null) {
             throw new NacosException(NacosException.INVALID_PARAM, "service " + serviceName + " not found!");
         }
 
-        domain.setProtectThreshold(protectThreshold);
+        service.setProtectThreshold(protectThreshold);
 
         Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
-        domain.setMetadata(metadataMap);
+        service.setMetadata(metadataMap);
 
-        domain.setSelector(parseSelector(selector));
+        service.setSelector(parseSelector(selector));
 
-        domain.setLastModifiedMillis(System.currentTimeMillis());
-        domain.recalculateChecksum();
-        domain.valid();
+        service.setLastModifiedMillis(System.currentTimeMillis());
+        service.recalculateChecksum();
+        service.valid();
 
-        serviceManager.addOrReplaceService(domain);
+        serviceManager.addOrReplaceService(service);
 
         return "ok";
     }
 
-    @RequestMapping("/allDomNames")
-    public JSONObject allDomNames(HttpServletRequest request) throws Exception {
+    @RequestMapping("/names")
+    public JSONObject searchService(HttpServletRequest request) {
 
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, StringUtils.EMPTY);
+        String expr = WebUtils.optional(request, "expr", StringUtils.EMPTY);
         boolean responsibleOnly = Boolean.parseBoolean(WebUtils.optional(request, "responsibleOnly", "false"));
 
-        Map<String, Set<String>> doms = new HashMap<>(16);
+        Map<String, List<Service>> services = new HashMap<>(16);
+        if (StringUtils.isNotBlank(namespaceId)) {
+            services.put(namespaceId, serviceManager.searchServices(namespaceId, ".*" + expr + ".*"));
+        } else {
+            for (String namespace : serviceManager.getAllNamespaces()) {
+                services.put(namespace, serviceManager.searchServices(namespace, ".*" + expr + ".*"));
+            }
+        }
 
-        Map<String, Set<String>> domMap = serviceManager.getAllServiceNames();
-
-        for (String namespaceId : domMap.keySet()) {
-            doms.put(namespaceId, new HashSet<>());
-            for (String dom : domMap.get(namespaceId)) {
-                if (distroMapper.responsible(dom) || !responsibleOnly) {
-                    doms.get(namespaceId).add(dom);
+        Map<String, Set<String>> serviceNameMap = new HashMap<>();
+        for (String namespace : services.keySet()) {
+            serviceNameMap.put(namespace, new HashSet<>());
+            for (Service service : services.get(namespace)) {
+                if (distroMapper.responsible(service.getName()) || !responsibleOnly) {
+                    serviceNameMap.get(namespace).add(service.getName());
                 }
             }
         }
 
         JSONObject result = new JSONObject();
 
-        result.put("doms", doms);
-        result.put("count", doms.size());
-
-        return result;
-    }
-
-    @RequestMapping("/names")
-    public JSONObject searchService(HttpServletRequest request) {
-
-        JSONObject result = new JSONObject();
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String expr = WebUtils.required(request, "expr");
-
-        List<Service> doms
-            = serviceManager.searchServices(namespaceId, ".*" + expr + ".*");
-
-        if (CollectionUtils.isEmpty(doms)) {
-            result.put("doms", Collections.emptyList());
-            return result;
-        }
-
-        JSONArray domArray = new JSONArray();
-        for (Service dom : doms) {
-            domArray.add(dom.getName());
-        }
-
-        result.put("doms", domArray);
+        result.put("services", serviceNameMap);
+        result.put("count", services.size());
 
         return result;
     }
 
     @RequestMapping("/serviceStatus")
     public String serviceStatus(HttpServletRequest request) {
-        //format: dom1@@checksum@@@dom2@@checksum
+        //format: service1@@checksum@@@service2@@checksum
         String statuses = WebUtils.required(request, "statuses");
         String serverIP = WebUtils.optional(request, "clientIP", "");
 
@@ -319,22 +300,22 @@ public class ServiceController {
                 if (entry == null || StringUtils.isEmpty(entry.getKey()) || StringUtils.isEmpty(entry.getValue())) {
                     continue;
                 }
-                String dom = entry.getKey();
+                String serviceName = entry.getKey();
                 String checksum = entry.getValue();
-                Service domain = serviceManager.getService(checksums.namespaceId, dom);
+                Service service = serviceManager.getService(checksums.namespaceId, serviceName);
 
-                if (domain == null) {
+                if (service == null) {
                     continue;
                 }
 
-                domain.recalculateChecksum();
+                service.recalculateChecksum();
 
-                if (!checksum.equals(domain.getChecksum())) {
+                if (!checksum.equals(service.getChecksum())) {
                     if (Loggers.SRV_LOG.isDebugEnabled()) {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
-                            dom, serverIP, checksum, domain.getChecksum());
+                            serviceName, serverIP, checksum, service.getChecksum());
                     }
-                    serviceManager.addUpdatedService2Queue(checksums.namespaceId, dom, serverIP, checksum);
+                    serviceManager.addUpdatedService2Queue(checksums.namespaceId, serviceName, serverIP, checksum);
                 }
             }
         } catch (Exception e) {
@@ -349,7 +330,7 @@ public class ServiceController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {

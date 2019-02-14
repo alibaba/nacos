@@ -83,13 +83,13 @@ public class DistroMapper implements ServerChangeListener {
         return target >= index && target <= lastIndex;
     }
 
-    public String mapSrv(String dom) {
+    public String mapSrv(String serviceName) {
         if (CollectionUtils.isEmpty(healthyList) || !switchDomain.distroEnabled) {
             return NetUtils.localServer();
         }
 
         try {
-            return healthyList.get(distroHash(dom) % healthyList.size());
+            return healthyList.get(distroHash(serviceName) % healthyList.size());
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + NetUtils.localServer(), e);
 
@@ -97,8 +97,8 @@ public class DistroMapper implements ServerChangeListener {
         }
     }
 
-    public int distroHash(String dom) {
-        return Math.abs(dom.hashCode() % Integer.MAX_VALUE);
+    public int distroHash(String serviceName) {
+        return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
     }
 
     @Override

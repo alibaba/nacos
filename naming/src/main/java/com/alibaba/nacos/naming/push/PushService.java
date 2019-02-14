@@ -129,7 +129,7 @@ public class PushService {
     }
 
     public void addClient(String namespaceId,
-                                 String dom,
+                                 String serviceName,
                                  String clusters,
                                  String agent,
                                  InetSocketAddress socketAddr,
@@ -138,7 +138,7 @@ public class PushService {
                                  String app) {
 
         PushClient client = new PushService.PushClient(namespaceId,
-                dom,
+                serviceName,
                 clusters,
                 agent,
                 socketAddr,
@@ -213,8 +213,8 @@ public class PushService {
         return null;
     }
 
-    public static String getPushCacheKey(String dom, String clientIP, String agent) {
-        return dom + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
+    public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
+        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
     }
 
     public void serviceChanged(final String namespaceId, final String serviceName) {

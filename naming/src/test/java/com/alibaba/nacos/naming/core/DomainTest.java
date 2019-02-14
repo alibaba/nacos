@@ -30,32 +30,32 @@ import java.util.Map;
  */
 public class DomainTest {
 
-    private Service domain;
+    private Service service;
 
     @Before
     public void before() {
-        domain = new Service();
-        domain.setName("nacos.domain.1");
+        service = new Service();
+        service.setName("nacos.service.1");
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setService(domain);
-        domain.addCluster(cluster);
+        cluster.setService(service);
+        service.addCluster(cluster);
     }
 
     @Test
     public void updateDomain() {
 
         Service newDomain = new Service();
-        newDomain.setName("nacos.domain.1");
+        newDomain.setName("nacos.service.1");
         newDomain.setProtectThreshold(0.7f);
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         cluster.setService(newDomain);
         newDomain.addCluster(cluster);
 
-        domain.update(newDomain);
+        service.update(newDomain);
 
-        Assert.assertEquals(0.7f, domain.getProtectThreshold(), 0.0001f);
+        Assert.assertEquals(0.7f, service.getProtectThreshold(), 0.0001f);
     }
 
     @Test
@@ -63,9 +63,9 @@ public class DomainTest {
         Cluster cluster = new Cluster();
         cluster.setName("nacos-cluster-1");
 
-        domain.addCluster(cluster);
+        service.addCluster(cluster);
 
-        Map<String, Cluster> clusterMap = domain.getClusterMap();
+        Map<String, Cluster> clusterMap = service.getClusterMap();
         Assert.assertNotNull(clusterMap);
         Assert.assertEquals(2, clusterMap.size());
         Assert.assertTrue(clusterMap.containsKey("nacos-cluster-1"));
@@ -90,9 +90,9 @@ public class DomainTest {
 
         instances.setInstanceMap(instanceMap);
 
-        domain.onChange("iplist", instances);
+        service.onChange("iplist", instances);
 
-        List<Instance> ips = domain.allIPs();
+        List<Instance> ips = service.allIPs();
 
         Assert.assertNotNull(ips);
         Assert.assertEquals(1, ips.size());
