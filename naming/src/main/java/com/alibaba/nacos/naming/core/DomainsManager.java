@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.raft.Datum;
@@ -315,7 +316,7 @@ public class DomainsManager {
         try {
 
             if (!dom.getEnableClientBeat()) {
-                getDom2LockMap().get(domName).lock();
+                getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, domName)).lock();
             }
 
             Datum datum1 = RaftCore.getDatum(UtilsAndCommons.getIPListStoreKey(dom));
@@ -389,7 +390,7 @@ public class DomainsManager {
             RaftCore.onPublish(datum, peer, increaseTerm);
         } finally {
             if (!dom.getEnableClientBeat()) {
-                getDom2LockMap().get(domName).unlock();
+                getDom2LockMap().get(UtilsAndCommons.assembleFullServiceName(namespaceId, domName)).unlock();
             }
         }
 
@@ -509,6 +510,10 @@ public class DomainsManager {
 
         public String namespaceId;
         public Map<String, String> domName2Checksum = new HashMap<String, String>();
+
+        public DomainChecksum() {
+            this.namespaceId = Constants.REQUEST_PARAM_DEFAULT_NAMESPACE_ID;
+        }
 
         public DomainChecksum(String namespaceId) {
             this.namespaceId = namespaceId;
