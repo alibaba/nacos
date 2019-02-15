@@ -22,6 +22,10 @@ package com.alibaba.nacos.api;
  */
 public class PropertyKeyConst {
 
+    public final static String SERVER_PORT = "serverPort";
+
+    public final static String WEB_CONTEXT = "webContext";
+
     public final static String ENDPOINT = "endpoint";
 
     public final static String NAMESPACE = "namespace";
