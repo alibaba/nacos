@@ -35,9 +35,15 @@ import java.util.zip.GZIPInputStream;
  */
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
-    public static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
-    private static final boolean ENABLE_HTTPS = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+    public static final int TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
+    public static final int CON_TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    private static final boolean ENABLE_HTTPS = Boolean
+        .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+
+    private static final String POST = "POST";
+    private static final String PUT = "PUT";
 
     static {
         // limit max redirection
@@ -53,11 +59,13 @@ public class HttpClient {
 
     }
 
-    public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
+    public static HttpResult httpGet(String url, List<String> headers,
+                                     Map<String, String> paramValues, String encoding) {
         return request(url, headers, paramValues, encoding, "GET");
     }
 
-    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String encoding, String method) {
+    public static HttpResult request(String url, List<String> headers,
+                                     Map<String, String> paramValues, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -65,27 +73,38 @@ public class HttpClient {
 
             conn = (HttpURLConnection) new URL(url).openConnection();
 
+            setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
             conn.setReadTimeout(TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
-            setHeaders(conn, headers, encoding);
+            conn.setDoOutput(true);
+            if (POST.equals(method) || PUT.equals(method)) {
+                // fix: apache http nio framework must set some content to request body
+                byte[] b = encodedContent.getBytes();
+                conn.setRequestProperty("Content-Length", String.valueOf(b.length));
+                conn.getOutputStream().write(b, 0, b.length);
+                conn.getOutputStream().flush();
+                conn.getOutputStream().close();
+            }
             conn.connect();
             LogUtils.LOG.debug("Request from server: " + url);
             return getResult(conn);
         } catch (Exception e) {
             try {
                 if (conn != null) {
-                    LogUtils.LOG.warn("failed to request " + conn.getURL() + " from "
-                            + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
+                    LogUtils.LOG.warn(
+                        "failed to request " + conn.getURL() + " from " + InetAddress
+                            .getByName(conn.getURL().getHost()).getHostAddress());
                 }
             } catch (Exception e1) {
                 LogUtils.LOG.error("NA", "failed to request ", e1);
-                //ignore
+                // ignore
             }
 
             LogUtils.LOG.error("NA", "failed to request ", e);
 
-            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
+            return new HttpResult(500, e.toString(),
+                Collections.<String, String>emptyMap());
         } finally {
             if (conn != null) {
                 conn.disconnect();
@@ -98,13 +117,14 @@ public class HttpClient {
 
         InputStream inputStream;
         if (HttpURLConnection.HTTP_OK == respCode
-                || HttpURLConnection.HTTP_NOT_MODIFIED == respCode) {
+            || HttpURLConnection.HTTP_NOT_MODIFIED == respCode) {
             inputStream = conn.getInputStream();
         } else {
             inputStream = conn.getErrorStream();
         }
 
-        Map<String, String> respHeaders = new HashMap<String, String>(conn.getHeaderFields().size());
+        Map<String, String> respHeaders = new HashMap<String, String>(
+            conn.getHeaderFields().size());
         for (Map.Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
             respHeaders.put(entry.getKey(), entry.getValue().get(0));
         }
@@ -115,7 +135,8 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)),
+            respHeaders);
     }
 
     private static String getCharset(HttpURLConnection conn) {
@@ -141,26 +162,26 @@ public class HttpClient {
         return charset;
     }
 
-    private static void setHeaders(HttpURLConnection conn, List<String> headers, String encoding) {
+    private static void setHeaders(HttpURLConnection conn, List<String> headers,
+                                   String encoding) {
         if (null != headers) {
             for (Iterator<String> iter = headers.iterator(); iter.hasNext(); ) {
                 conn.addRequestProperty(iter.next(), iter.next());
             }
         }
 
-        conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
-                + encoding);
+        conn.addRequestProperty("Content-Type",
+            "application/x-www-form-urlencoded;charset=" + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
     }
 
     private static String encodingParams(Map<String, String> params, String encoding)
-            throws UnsupportedEncodingException {
-        StringBuilder sb = new StringBuilder();
-        if (null == params || params.isEmpty()) {
+        throws UnsupportedEncodingException {
+        if (null == params) {
             return null;
         }
-
         params.put("encoding", encoding);
+        StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, String> entry : params.entrySet()) {
             if (StringUtils.isEmpty(entry.getValue())) {
@@ -172,6 +193,9 @@ public class HttpClient {
             sb.append("&");
         }
 
+        if (sb.length() > 0) {
+            sb = sb.deleteCharAt(sb.length() - 1);
+        }
         return sb.toString();
     }
 
