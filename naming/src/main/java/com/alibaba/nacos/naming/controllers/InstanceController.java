@@ -305,10 +305,9 @@ public class InstanceController {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
 
         Instance instance = getIPAddress(request);
         instance.setApp(app);
