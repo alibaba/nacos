@@ -33,6 +33,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,6 +65,7 @@ public class RaftCommands {
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
 
         JSONObject json = JSON.parseObject(value);
         JSONObject beat = JSON.parseObject(json.getString("beat"));
@@ -112,6 +114,7 @@ public class RaftCommands {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
         RaftCore.doSignalPublish(json.getString("key"), json.getString("value"), json.getBooleanValue("locked"));
@@ -138,6 +141,7 @@ public class RaftCommands {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
         String keysString = WebUtils.required(request, "keys");
+        keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
 
@@ -174,6 +178,7 @@ public class RaftCommands {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
 
         RaftCore.onPublish(jsonObject, jsonObject.getBoolean("increaseTerm"));
@@ -191,6 +196,7 @@ public class RaftCommands {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         String value = Arrays.asList(entity).toArray(new String[1])[0];
+        value = URLDecoder.decode(value, "UTF-8");
         RaftCore.onDelete(JSON.parseObject(value));
         return "ok";
     }

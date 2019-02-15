@@ -101,6 +101,7 @@ public class HttpSimpleClient {
     static public HttpResult httpPost(String url, List<String> headers, List<String> paramValues,
                                       String encoding, long readTimeoutMs, boolean isSSL) throws IOException {
         String encodedContent = encodingParams(paramValues, encoding);
+        encodedContent = (null == encodedContent) ? "" : encodedContent;
         if (Limiter.isLimit(MD5.getInstance().getMD5String(
             new StringBuilder(url).append(encodedContent).toString()))) {
             return new HttpResult(NacosException.CLIENT_OVER_THRESHOLD,
