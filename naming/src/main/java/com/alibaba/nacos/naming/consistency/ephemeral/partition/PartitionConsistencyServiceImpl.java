@@ -89,7 +89,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
             Datum<Instances> datum = new Datum<>();
             datum.value = (Instances) value;
             datum.key = key;
-            datum.timestamp.set(System.currentTimeMillis());
+            datum.timestamp.incrementAndGet();
             dataStore.put(key, datum);
         }
 

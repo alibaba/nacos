@@ -200,15 +200,17 @@ public class DataSyncer implements ServerChangeListener {
 
             try {
                 // send local timestamps to other servers:
-                Map<String, Long> keyTimestamps = new HashMap<>(64);
+                Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
                     if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
                         continue;
                     }
-                    keyTimestamps.put(key, dataStore.get(key).timestamp.get());
+
+
+                    keyChecksums.put(key, dataStore.get(key).timestamp.get());
                 }
 
-                if (keyTimestamps.isEmpty()) {
+                if (keyChecksums.isEmpty()) {
                     return;
                 }
 
@@ -216,7 +218,7 @@ public class DataSyncer implements ServerChangeListener {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
-                    NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
+                    NamingProxy.syncTimestamps(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
                 Loggers.EPHEMERAL.error("timed sync task failed.", e);

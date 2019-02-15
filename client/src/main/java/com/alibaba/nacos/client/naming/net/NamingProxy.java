@@ -165,14 +165,14 @@ public class NamingProxy {
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.CLUSTER_NAME, instance.getClusterName());
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
         params.put("enable", String.valueOf(instance.isEnabled()));
         params.put("healthy", String.valueOf(instance.isHealthy()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
-        params.put("serviceName", serviceName);
-        params.put("clusterName", instance.getClusterName());
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
@@ -187,8 +187,8 @@ public class NamingProxy {
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put("ip", ip);
         params.put("port", String.valueOf(port));
-        params.put("serviceName", serviceName);
-        params.put("cluster", cluster);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.CLUSTER_NAME, cluster);
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
     }
@@ -197,7 +197,7 @@ public class NamingProxy {
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
-        params.put("serviceName", serviceName);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put("clusters", clusters);
         params.put("udpPort", String.valueOf(udpPort));
         params.put("clientIP", NetUtils.localIP());
@@ -212,7 +212,7 @@ public class NamingProxy {
             Map<String, String> params = new HashMap<String, String>(4);
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(CommonParams.NAMESPACE_ID, namespaceId);
-            params.put("serviceName", beatInfo.getServiceName());
+            params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, HttpMethod.PUT);
             JSONObject jsonObject = JSON.parseObject(result);
 
@@ -333,7 +333,7 @@ public class NamingProxy {
         // TODO make a maximum count try:
         if (Constants.WRITE_REDIRECT_CODE == result.code) {
             LogUtils.LOG.info("redirect to " + result.content);
-            callServer(api, params, result.content, method);
+            return callServer(api, params, result.content, method);
         }
 
         LogUtils.LOG.error("CALL-SERVER", "failed to req API:" + HttpClient.getPrefix() + curServer
