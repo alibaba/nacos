@@ -68,6 +68,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
 
@@ -175,9 +176,19 @@ public class ApiCommands {
     @RequestMapping("/ip4Dom2")
     public JSONObject ip4Dom2(HttpServletRequest request) throws NacosException {
 
-        String namespaceId = WebUtils.optional(request, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String domName = WebUtils.required(request, "dom");
+        String key = WebUtils.required(request, "dom");
+
+        String domName;
+
+        String namespaceId;
+
+        if (key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
+            namespaceId = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
+            domName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+        } else {
+            namespaceId = UtilsAndCommons.getDefaultNamespaceId();
+            domName = key;
+        }
 
         VirtualClusterDomain dom = (VirtualClusterDomain) domainsManager.getDomain(namespaceId, domName);
 
@@ -523,6 +534,10 @@ public class ApiCommands {
         ipAddress.setClusterName(cluster);
         ipAddress.setEnabled(enabled);
 
+        if (!ipAddress.validate()) {
+            throw new IllegalArgumentException("malfomed ip config: " + ipAddress);
+        }
+
         return ipAddress;
     }
 
@@ -705,17 +720,6 @@ public class ApiCommands {
             }
 
             cluster.setDefIPPort(Integer.parseInt(defIPPort));
-        }
-
-        String submask = WebUtils.optional(request, "submask", StringUtils.EMPTY);
-        if (!StringUtils.isEmpty(submask)) {
-            Cluster cluster
-                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
-            if (cluster == null) {
-                throw new IllegalStateException("cluster not found");
-            }
-
-            cluster.setSubmask(submask);
         }
 
         String ipPort4Check = WebUtils.optional(request, "ipPort4Check", StringUtils.EMPTY);
@@ -912,7 +916,7 @@ public class ApiCommands {
 
         final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
         updateIpPublish(proxyParams, countDownLatch, action);
-        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
+        if (!STANDALONE_MODE && !countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
             Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
             throw new IllegalArgumentException("data publish failed, key=" + key);
         }
@@ -2070,10 +2074,6 @@ public class ApiCommands {
                 cluster.setHealthChecker(config);
             }
             cluster.setSitegroup(siteGroup);
-
-            if (!StringUtils.isEmpty(submask)) {
-                cluster.setSubmask(submask);
-            }
         }
         cluster.setDom(domObj);
         cluster.init();
@@ -2406,7 +2406,6 @@ public class ApiCommands {
             clusterPac.put("defCkport", cluster.getDefCkport());
             clusterPac.put("defIPPort", cluster.getDefIPPort());
             clusterPac.put("useIPPort4Check", cluster.isUseIPPort4Check());
-            clusterPac.put("submask", cluster.getSubmask());
             clusterPac.put("sitegroup", cluster.getSitegroup());
             clusterPac.put("metadatas", cluster.getMetadata());
 
