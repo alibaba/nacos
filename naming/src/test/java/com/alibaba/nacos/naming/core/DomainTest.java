@@ -82,13 +82,7 @@ public class DomainTest {
 
         Instances instances = new Instances();
 
-        Map<String, Instance> instanceMap = new HashMap<>();
-
-        for (Instance instance1 : list) {
-            instanceMap.put(instance1.getDatumKey(), instance1);
-        }
-
-        instances.setInstanceMap(instanceMap);
+        instances.setInstanceList(list);
 
         service.onChange("iplist", instances);
 

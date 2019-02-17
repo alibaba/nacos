@@ -34,13 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class DataStore {
 
-    private Map<String, Datum<?>> dataMap = new ConcurrentHashMap<>(1024);
+    private Map<String, Datum> dataMap = new ConcurrentHashMap<>(1024);
 
-    public void put(String key, Datum<?> value) {
+    public void put(String key, Datum value) {
         dataMap.put(key, value);
     }
 
-    public Datum<?> remove(String key) {
+    public Datum remove(String key) {
         return dataMap.remove(key);
     }
 
@@ -48,7 +48,7 @@ public class DataStore {
         return dataMap.keySet();
     }
 
-    public Datum<?> get(String key) {
+    public Datum get(String key) {
         return dataMap.get(key);
     }
 
@@ -56,8 +56,8 @@ public class DataStore {
         return dataMap.containsKey(key);
     }
 
-    public Map<String, Datum<?>> batchGet(List<String> keys) {
-        Map<String, Datum<?>> map = new HashMap<>(128);
+    public Map<String, Datum> batchGet(List<String> keys) {
+        Map<String, Datum> map = new HashMap<>(128);
         for (String key : keys) {
             if (!dataMap.containsKey(key)) {
                 continue;
@@ -69,10 +69,12 @@ public class DataStore {
 
     public int getInstanceCount() {
         int count = 0;
-        for (Map.Entry<String, Datum<?>> entry : dataMap.entrySet()) {
+        for (Map.Entry<String, Datum> entry : dataMap.entrySet()) {
             try {
-                Datum<Instances> instancesDatum = (Datum<Instances>) entry.getValue();
-                count += instancesDatum.value.getInstanceMap().size();
+                Datum instancesDatum = entry.getValue();
+                if (instancesDatum.value instanceof Instances) {
+                    count += ((Instances) instancesDatum.value).getInstanceList().size();
+                }
             } catch (Exception ignore) {
             }
         }

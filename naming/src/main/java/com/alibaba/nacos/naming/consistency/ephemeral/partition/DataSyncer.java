@@ -114,7 +114,7 @@ public class DataSyncer implements ServerChangeListener {
                         Loggers.EPHEMERAL.debug("sync keys: {}", keys);
                     }
 
-                    Map<String, Datum<?>> datumMap = dataStore.batchGet(keys);
+                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
 
                     if (datumMap == null || datumMap.isEmpty()) {
                         // clear all flags of this task:
@@ -206,8 +206,7 @@ public class DataSyncer implements ServerChangeListener {
                         continue;
                     }
 
-
-                    keyChecksums.put(key, dataStore.get(key).timestamp.get());
+                    keyChecksums.put(key, dataStore.get(key).value.getChecksum());
                 }
 
                 if (keyChecksums.isEmpty()) {

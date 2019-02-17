@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.pojo.Record;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
@@ -91,7 +92,7 @@ public class RaftCore {
 
     private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
 
-    private volatile ConcurrentMap<String, Datum<?>> datums = new ConcurrentHashMap<>();
+    private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<>();
 
     @Autowired
     private RaftPeerSet peers;
@@ -146,7 +147,7 @@ public class RaftCore {
         return listeners;
     }
 
-    public <T> void signalPublish(String key, T value) throws Exception {
+    public void signalPublish(String key, Record value) throws Exception {
 
         if (!isLeader()) {
             JSONObject params = new JSONObject();
@@ -162,7 +163,7 @@ public class RaftCore {
         try {
             OPERATE_LOCK.lock();
             long start = System.currentTimeMillis();
-            final Datum<T> datum = new Datum<>();
+            final Datum datum = new Datum();
             datum.key = key;
             datum.value = value;
             if (getDatum(key) == null) {
@@ -265,7 +266,7 @@ public class RaftCore {
         }
     }
 
-    public <T> void onPublish(Datum<T> datum, RaftPeer source) throws Exception {
+    public void onPublish(Datum datum, RaftPeer source) throws Exception {
         RaftPeer local = peers.local();
         if (datum.value == null) {
             Loggers.RAFT.warn("received empty datum");
@@ -600,7 +601,7 @@ public class RaftCore {
 
         Map<String, Integer> receivedKeysMap = new HashMap<String, Integer>(datums.size());
 
-        for (Map.Entry<String, Datum<?>> entry : datums.entrySet()) {
+        for (Map.Entry<String, Datum> entry : datums.entrySet()) {
             receivedKeysMap.put(entry.getKey(), 0);
         }
 

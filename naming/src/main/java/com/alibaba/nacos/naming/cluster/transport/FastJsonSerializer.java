@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
 import java.io.UnsupportedEncodingException;
@@ -61,19 +62,19 @@ public class FastJsonSerializer implements Serializer {
     }
 
     @Override
-    public <T> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
+    public <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
         try {
             String dataString = new String(data, "UTF-8");
-            Map<String, Datum<JSONObject>> dataMap = JSON.parseObject(dataString, new TypeReference<Map<String, Datum<JSONObject>>>() {
+            Map<String, JSONObject> dataMap = JSON.parseObject(dataString, new TypeReference<Map<String, JSONObject>>() {
             });
 
             Map<String, Datum<T>> resultMap = new HashMap<>(dataMap.size());
-            for (Map.Entry<String, Datum<JSONObject>> entry : dataMap.entrySet()) {
+            for (Map.Entry<String, JSONObject> entry : dataMap.entrySet()) {
 
                 Datum<T> datum = new Datum<>();
-                datum.timestamp.set(entry.getValue().timestamp.get());
-                datum.key = entry.getValue().key;
-                datum.value = JSON.parseObject(entry.getValue().value.toJSONString(), clazz);
+                datum.timestamp.set(entry.getValue().getLongValue("timestamp"));
+                datum.key = entry.getValue().getString("key");
+                datum.value = JSON.parseObject(entry.getValue().getJSONObject("value").toJSONString(), clazz);
                 resultMap.put(entry.getKey(), datum);
             }
 

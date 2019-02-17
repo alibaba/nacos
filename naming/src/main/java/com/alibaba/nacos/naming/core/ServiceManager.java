@@ -379,10 +379,10 @@ public class ServiceManager implements DataListener<Service> {
 
         Service service = getService(namespaceId, serviceName);
 
-        Map<String, Instance> instanceMap = addIpAddresses(service, ephemeral, ips);
+        List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
 
         Instances instances = new Instances();
-        instances.setInstanceMap(instanceMap);
+        instances.setInstanceList(instanceList);
 
         consistencyService.put(key, instances);
     }
@@ -393,10 +393,10 @@ public class ServiceManager implements DataListener<Service> {
 
         Service service = getService(namespaceId, serviceName);
 
-        Map<String, Instance> instanceMap = substractIpAddresses(service, ephemeral, ips);
+        List<Instance> instanceList = substractIpAddresses(service, ephemeral, ips);
 
         Instances instances = new Instances();
-        instances.setInstanceMap(instanceMap);
+        instances.setInstanceList(instanceList);
 
         consistencyService.put(key, instances);
     }
@@ -424,29 +424,24 @@ public class ServiceManager implements DataListener<Service> {
         return null;
     }
 
-    public Map<String, Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
+    public List<Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
-        Map<String, Instance> oldInstances = new HashMap<>(16);
-
-        if (datum != null) {
-            oldInstances = ((Instances) datum.value).getInstanceMap();
-        }
-
-        Map<String, Instance> instances;
+        Map<String, Instance> oldInstanceMap = new HashMap<>(16);
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
 
         for (Instance instance : currentIPs) {
             map.put(instance.toIPAddr(), instance);
         }
-
-        instances = setValid(oldInstances, map);
+        if (datum != null) {
+            oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
+        }
 
         // use HashMap for deep copy:
-        HashMap<String, Instance> instanceMap = new HashMap<>(instances.size());
-        instanceMap.putAll(instances);
+        HashMap<String, Instance> instanceMap = new HashMap<>(oldInstanceMap.size());
+        instanceMap.putAll(oldInstanceMap);
 
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
@@ -470,26 +465,29 @@ public class ServiceManager implements DataListener<Service> {
                 + JSON.toJSONString(instanceMap.values()));
         }
 
-        return instanceMap;
+        return new ArrayList<>(instanceMap.values());
     }
 
-    public Map<String, Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+    public List<Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
     }
 
-    public Map<String, Instance> addIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+    public List<Instance> addIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
 
-    private Map<String, Instance> setValid(Map<String, Instance> oldInstances, Map<String, Instance> map) {
-        for (Instance instance : oldInstances.values()) {
+    private Map<String, Instance> setValid(List<Instance> oldInstances, Map<String, Instance> map) {
+
+        Map<String, Instance> instanceMap = new HashMap<>(oldInstances.size());
+        for (Instance instance : oldInstances) {
             Instance instance1 = map.get(instance.toIPAddr());
             if (instance1 != null) {
                 instance.setValid(instance1.isValid());
                 instance.setLastBeat(instance1.getLastBeat());
             }
+            instanceMap.put(instance.getDatumKey(), instance);
         }
-        return oldInstances;
+        return instanceMap;
     }
 
     public Service getService(String namespaceId, String serviceName) {

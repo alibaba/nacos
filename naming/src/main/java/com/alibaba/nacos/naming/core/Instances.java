@@ -16,26 +16,72 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Record;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.Map;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.List;
 
 /**
+ * Package of instance list
+ *
  * @author nkorange
+ * @since 1.0.0
  */
-public class Instances {
+public class Instances implements Record {
 
-    private Map<String, Instance> instanceMap;
+    private String checksum;
 
-    public Map<String, Instance> getInstanceMap() {
-        return instanceMap;
+    private long lastCalculateTime = 0L;
+
+    private List<Instance> instanceList;
+
+    public List<Instance> getInstanceList() {
+        return instanceList;
     }
 
-    public void setInstanceMap(Map<String, Instance> instanceMap) {
-        this.instanceMap = instanceMap;
+    public void setInstanceList(List<Instance> instanceList) {
+        this.instanceList = instanceList;
     }
 
     @Override
     public String toString() {
         return JSON.toJSONString(this);
+    }
+
+    @Override
+    public String getChecksum() {
+        if (StringUtils.isBlank(checksum) ||
+            (System.currentTimeMillis() - lastCalculateTime) > 5000L) {
+            recalculateChecksum();
+        }
+        return checksum;
+    }
+
+    private void recalculateChecksum() {
+        StringBuilder sb = new StringBuilder();
+        Collections.sort(instanceList);
+        for (Instance ip : instanceList) {
+            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
+                + ip.isValid() + "_" + ip.getClusterName();
+            sb.append(string);
+            sb.append(",");
+        }
+        MessageDigest md5;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+            checksum =
+                new BigInteger(1, md5.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
+        } catch (NoSuchAlgorithmException e) {
+            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
+            checksum = RandomStringUtils.randomAscii(32);
+        }
+        lastCalculateTime = System.currentTimeMillis();
     }
 }
