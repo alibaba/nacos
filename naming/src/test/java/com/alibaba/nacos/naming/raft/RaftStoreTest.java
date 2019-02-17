@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.raft;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
+import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -38,7 +39,7 @@ public class RaftStoreTest {
 
         Datum datum = new Datum();
         datum.key = "1.2.3.4";
-        datum.value = "value1";
+        datum.value = new Instances();
 
         raftStore.write(datum);
 

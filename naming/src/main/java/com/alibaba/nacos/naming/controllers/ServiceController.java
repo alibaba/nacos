@@ -159,8 +159,12 @@ public class ServiceController {
 
         List<String> serviceNameList = serviceManager.getAllServiceNameList(namespaceId);
 
+        JSONObject result = new JSONObject();
+
         if (serviceNameList == null || serviceNameList.isEmpty()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "No service exist in " + namespaceId);
+            result.put("doms", new ArrayList<String>(1));
+            result.put("count", 0);
+            return result;
         }
 
         if (StringUtils.isNotBlank(selectorString)) {
@@ -204,8 +208,6 @@ public class ServiceController {
         if (end > serviceNameList.size()) {
             end = serviceNameList.size();
         }
-
-        JSONObject result = new JSONObject();
 
         result.put("doms", serviceNameList.subList(start, end));
         result.put("count", serviceNameList.size());

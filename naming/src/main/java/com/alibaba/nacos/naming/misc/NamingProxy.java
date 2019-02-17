@@ -36,7 +36,7 @@ public class NamingProxy {
 
     private static final String TIMESTAMP_SYNC_URL = "/partition/syncTimestamps";
 
-    public static void syncTimestamps(Map<String, Long> timestamps, String server) {
+    public static void syncTimestamps(Map<String, String> timestamps, String server) {
 
         try {
             Map<String, String> headers = new HashMap<>(128);

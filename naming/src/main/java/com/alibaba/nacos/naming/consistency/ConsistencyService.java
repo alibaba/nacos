@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.pojo.Record;
 
 /**
  * Consistence service for all implementations to derive.
@@ -39,7 +40,7 @@ public interface ConsistencyService {
      * @throws NacosException
      * @see
      */
-    void put(String key, Object value) throws NacosException;
+    void put(String key, Record value) throws NacosException;
 
     /**
      * Remove a data from Nacos cluster

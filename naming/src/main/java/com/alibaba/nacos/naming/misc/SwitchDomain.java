@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @author nacos
  */
 @Component
-public class SwitchDomain implements Cloneable {
+public class SwitchDomain implements Record, Cloneable {
 
     public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
@@ -35,9 +36,9 @@ public class SwitchDomain implements Cloneable {
 
     public long defaultPushCacheMillis = TimeUnit.SECONDS.toMillis(10);
 
-    private long clientBeatInterval = 5 * 1000;
+    private long clientBeatInterval = TimeUnit.SECONDS.toMillis(5);
 
-    public long defaultCacheMillis = 10000L;
+    public long defaultCacheMillis = TimeUnit.SECONDS.toMillis(3);
 
     public float distroThreshold = 0.7F;
 
@@ -72,7 +73,7 @@ public class SwitchDomain implements Cloneable {
     /**
      * The server is regarded as expired if its two reporting interval is lagger than this variable.
      */
-    public long distroServerExpiredMillis = 30000;
+    public long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(30);
 
     /**
      * since which version, push can be enabled
@@ -348,6 +349,11 @@ public class SwitchDomain implements Cloneable {
     @Override
     protected SwitchDomain clone() throws CloneNotSupportedException {
         return (SwitchDomain) super.clone();
+    }
+
+    @Override
+    public String getChecksum() {
+        return null;
     }
 
     public interface HealthParams {

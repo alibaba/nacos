@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -49,7 +50,7 @@ import java.util.*;
  *
  * @author nkorange
  */
-public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<Instances> {
+public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, DataListener<Instances> {
 
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
@@ -155,7 +156,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        for (Instance ip : value.getInstanceMap().values()) {
+        for (Instance ip : value.getInstanceList()) {
 
             if (ip.getWeight() > 10000.0D) {
                 ip.setWeight(10000.0D);
@@ -166,7 +167,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             }
         }
 
-        updateIPs(value.getInstanceMap().values(), KeyBuilder.matchEphemeralInstanceListKey(key));
+        updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
         recalculateChecksum();
     }
@@ -442,7 +443,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             Loggers.SRV_LOG.debug("service to json: " + getServiceString());
         }
 
-        if (!CollectionUtils.isEmpty(ips)) {
+        if (CollectionUtils.isNotEmpty(ips)) {
             Collections.sort(ips);
         }
 

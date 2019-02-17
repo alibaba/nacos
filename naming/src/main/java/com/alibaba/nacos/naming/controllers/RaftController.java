@@ -207,38 +207,23 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-//        String value = Arrays.asList(entity).toArray(new String[1])[0];
         String value = URLDecoder.decode(entity, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
+        String key = "key";
 
         RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
-        Datum<JSONObject> datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<JSONObject>>(){});
+        JSONObject datumJson = jsonObject.getJSONObject("datum");
 
-        if (KeyBuilder.matchInstanceListKey(datum.key)) {
-            Datum<Instances> instancesDatum = new Datum<>();
-            instancesDatum.key = datum.key;
-            instancesDatum.timestamp.set(datum.timestamp.get());
-            instancesDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Instances.class);
-            raftConsistencyService.onPut(instancesDatum, source);
-            return "ok";
-        }
-
-        if (KeyBuilder.matchSwitchKey(datum.key)) {
-            Datum<SwitchDomain> switchDomainDatum = new Datum<>();
-            switchDomainDatum.key = datum.key;
-            switchDomainDatum.timestamp.set(datum.timestamp.get());
-            switchDomainDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), SwitchDomain.class);
-            raftConsistencyService.onPut(switchDomainDatum, source);
-            return "ok";
-        }
-
-        if (KeyBuilder.matchServiceMetaKey(datum.key)) {
-            Datum<Service> serviceDatum = new Datum<>();
-            serviceDatum.key = datum.key;
-            serviceDatum.timestamp.set(datum.timestamp.get());
-            serviceDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Service.class);
-            raftConsistencyService.onPut(serviceDatum, source);
-            return "ok";
+        Datum datum = null;
+        if (KeyBuilder.matchInstanceListKey(datumJson.getString(key))) {
+            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Instances>>() {
+            });
+        } else if (KeyBuilder.matchSwitchKey(datumJson.getString(key))) {
+            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<SwitchDomain>>() {
+            });
+        } else if (KeyBuilder.matchServiceMetaKey(datumJson.getString(key))) {
+            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Service>>() {
+            });
         }
 
         raftConsistencyService.onPut(datum, source);
@@ -282,7 +267,7 @@ public class RaftController {
 
         JSONArray listenerArray = new JSONArray();
         for (String key : listeners.keySet()) {
-                listenerArray.add(key);
+            listenerArray.add(key);
         }
         result.put("listeners", listenerArray);
 

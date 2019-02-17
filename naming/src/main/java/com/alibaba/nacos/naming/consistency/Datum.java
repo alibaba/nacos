@@ -15,12 +15,14 @@
  */
 package com.alibaba.nacos.naming.consistency;
 
+import com.alibaba.nacos.naming.pojo.Record;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author nacos
  */
-public class Datum<T> {
+public class Datum<T extends Record> {
 
     public String key;
 

@@ -16,11 +16,11 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -36,9 +36,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,9 +51,9 @@ public class RaftStore {
 
     private String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
 
-    public synchronized ConcurrentHashMap<String, Datum<?>> loadDatums(RaftCore.Notifier notifier) throws Exception {
+    public synchronized ConcurrentHashMap<String, Datum> loadDatums(RaftCore.Notifier notifier) throws Exception {
 
-        ConcurrentHashMap<String, Datum<?>> datums = new ConcurrentHashMap<>(32);
+        ConcurrentHashMap<String, Datum> datums = new ConcurrentHashMap<>(32);
         Datum datum;
         long start = System.currentTimeMillis();
         for (File cache : listCaches()) {
@@ -136,34 +133,19 @@ public class RaftStore {
                     return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
                     });
                 } catch (Exception e) {
-                    Datum<String> datum = JSON.parseObject(json, new TypeReference<Datum<String>>() {
-                    });
+                    JSONObject jsonObject = JSON.parseObject(json);
+
                     Datum<Service> serviceDatum = new Datum<>();
-                    serviceDatum.timestamp.set(datum.timestamp.get());
-                    serviceDatum.key = datum.key;
-                    serviceDatum.value = JSON.parseObject(datum.value, Service.class);
+                    serviceDatum.timestamp.set(jsonObject.getLongValue("timestamp"));
+                    serviceDatum.key = jsonObject.getString("key");
+                    serviceDatum.value = JSON.parseObject(jsonObject.getString("value"), Service.class);
                     return serviceDatum;
                 }
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {
-
-                Datum<List<Instance>> datum = JSON.parseObject(json, new TypeReference<Datum<List<Instance>>>() {
+                return JSON.parseObject(json, new TypeReference<Datum<Instances>>() {
                 });
-                Datum<Instances> instancesDatum = new Datum<>();
-                instancesDatum.key = datum.key;
-                instancesDatum.timestamp.set(datum.timestamp.get());
-
-                Instances instances = new Instances();
-                instances.setInstanceMap(new HashMap<>(16));
-                for (Instance instance : datum.value) {
-                    // make every instance not ephemeral:
-                    instance.setEphemeral(false);
-                    instances.getInstanceMap().put(instance.getDatumKey(), instance);
-                }
-                instancesDatum.value = instances;
-                return instancesDatum;
-
             }
 
             return JSON.parseObject(json, Datum.class);
@@ -199,15 +181,7 @@ public class RaftStore {
         FileChannel fc = null;
         ByteBuffer data;
 
-        if (KeyBuilder.matchInstanceListKey(datum.key)) {
-            Datum<Collection<Instance>> listDatum = new Datum<>();
-            listDatum.key = datum.key;
-            listDatum.value = ((Instances) datum.value).getInstanceMap().values();
-            listDatum.timestamp.set(datum.timestamp.get());
-            data = ByteBuffer.wrap(JSON.toJSONString(listDatum).getBytes("UTF-8"));
-        } else {
-            data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
-        }
+        data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
 
         try {
             fc = new FileOutputStream(cacheFile, false).getChannel();
