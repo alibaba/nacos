@@ -19,10 +19,12 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
+import org.springframework.jmx.export.UnableToRegisterMBeanException;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -82,7 +84,15 @@ public class DistroFilter implements Filter {
             return;
         }
 
-        filterChain.doFilter(req, resp);
+        String groupName = req.getParameter(CommonParams.GROUP_NAME);
+        if (StringUtils.isBlank(groupName)) {
+            groupName = UtilsAndCommons.DEFAULT_GROUP_NAME;
+        }
+
+        OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
+        requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceName);
+
+        filterChain.doFilter(requestWrapper, resp);
     }
 
     @Override

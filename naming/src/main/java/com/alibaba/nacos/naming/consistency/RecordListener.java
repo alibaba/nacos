@@ -22,7 +22,7 @@ import com.alibaba.nacos.naming.pojo.Record;
  *
  * @author nacos
  */
-public interface DataListener<T extends Record> {
+public interface RecordListener<T extends Record> {
 
     /**
      * Determine if the listener was registered with this key

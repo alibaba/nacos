@@ -17,7 +17,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
@@ -66,7 +66,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     @Autowired
     private Serializer serializer;
 
-    private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
+    private volatile Map<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
 
     @Override
     public void put(String key, Record value) throws NacosException {
@@ -97,7 +97,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         if (!listeners.containsKey(key)) {
             return;
         }
-        for (DataListener listener : listeners.get(key)) {
+        for (RecordListener listener : listeners.get(key)) {
             try {
                 listener.onChange(key, value);
             } catch (Exception e) {
@@ -113,7 +113,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         if (!listeners.containsKey(key)) {
             return;
         }
-        for (DataListener listener : listeners.get(key)) {
+        for (RecordListener listener : listeners.get(key)) {
             try {
                 listener.onDelete(key);
             } catch (Exception e) {
@@ -172,7 +172,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
                     if (!listeners.containsKey(entry.getKey())) {
                         return;
                     }
-                    for (DataListener listener : listeners.get(entry.getKey())) {
+                    for (RecordListener listener : listeners.get(entry.getKey())) {
                         try {
                             listener.onChange(entry.getKey(), entry.getValue().value);
                         } catch (Exception e) {
@@ -188,7 +188,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     }
 
     @Override
-    public void listen(String key, DataListener listener) throws NacosException {
+    public void listen(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {
             listeners.put(key, new ArrayList<>());
         }
@@ -196,12 +196,12 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     }
 
     @Override
-    public void unlisten(String key, DataListener listener) throws NacosException {
+    public void unlisten(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {
             return;
         }
-        for (DataListener dataListener : listeners.get(key)) {
-            if (dataListener.equals(listener)) {
+        for (RecordListener recordListener : listeners.get(key)) {
+            if (recordListener.equals(listener)) {
                 listeners.get(key).remove(listener);
                 break;
             }

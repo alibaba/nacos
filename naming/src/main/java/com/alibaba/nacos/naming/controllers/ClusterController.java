@@ -51,8 +51,8 @@ public class ClusterController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String clusterName = WebUtils.required(request, "clusterName");
-        String serviceName = WebUtils.required(request, "serviceName");
+        String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String healthChecker = WebUtils.required(request, "healthChecker");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String checkPort = WebUtils.required(request, "checkPort");

@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -62,12 +62,12 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
 
     @Override
-    public void listen(String key, DataListener listener) throws NacosException {
+    public void listen(String key, RecordListener listener) throws NacosException {
         raftCore.listen(key, listener);
     }
 
     @Override
-    public void unlisten(String key, DataListener listener) throws NacosException {
+    public void unlisten(String key, RecordListener listener) throws NacosException {
         raftCore.unlisten(key, listener);
     }
 
