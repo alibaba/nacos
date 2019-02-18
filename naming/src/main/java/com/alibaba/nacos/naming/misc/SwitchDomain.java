@@ -28,64 +28,64 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class SwitchDomain implements Record, Cloneable {
 
-    public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
+    private String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
-    public List<String> masters;
+    private List<String> masters;
 
-    public Map<String, Integer> adWeightMap = new HashMap<String, Integer>();
+    private Map<String, Integer> adWeightMap = new HashMap<String, Integer>();
 
-    public long defaultPushCacheMillis = TimeUnit.SECONDS.toMillis(10);
+    private long defaultPushCacheMillis = TimeUnit.SECONDS.toMillis(10);
 
     private long clientBeatInterval = TimeUnit.SECONDS.toMillis(5);
 
-    public long defaultCacheMillis = TimeUnit.SECONDS.toMillis(3);
+    private long defaultCacheMillis = TimeUnit.SECONDS.toMillis(3);
 
-    public float distroThreshold = 0.7F;
+    private float distroThreshold = 0.7F;
 
-    public String token = UtilsAndCommons.SUPER_TOKEN;
+    private String token = UtilsAndCommons.SUPER_TOKEN;
 
-    public boolean healthCheckEnabled = true;
+    private boolean healthCheckEnabled = true;
 
-    public boolean distroEnabled = true;
+    private boolean distroEnabled = true;
 
-    public boolean enableStandalone = true;
+    private boolean enableStandalone = true;
 
-    public boolean pushEnabled = true;
+    private boolean pushEnabled = true;
 
-    public int checkTimes = 3;
+    private int checkTimes = 3;
 
-    public HttpHealthParams httpHealthParams = new HttpHealthParams();
+    private HttpHealthParams httpHealthParams = new HttpHealthParams();
 
-    public TcpHealthParams tcpHealthParams = new TcpHealthParams();
+    private TcpHealthParams tcpHealthParams = new TcpHealthParams();
 
-    public MysqlHealthParams mysqlHealthParams = new MysqlHealthParams();
+    private MysqlHealthParams mysqlHealthParams = new MysqlHealthParams();
 
     private List<String> incrementalList = new ArrayList<>();
 
-    public long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
+    private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
 
-    public long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
+    private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
 
-    public boolean disableAddIP = false;
+    private boolean disableAddIP = false;
 
-    public boolean sendBeatOnly = false;
+    private boolean sendBeatOnly = false;
 
-    public Map<String, Integer> limitedUrlMap = new HashMap<>();
+    private Map<String, Integer> limitedUrlMap = new HashMap<>();
 
     /**
      * The server is regarded as expired if its two reporting interval is lagger than this variable.
      */
-    public long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(30);
+    private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(30);
 
     /**
      * since which version, push can be enabled
      */
-    public String pushGoVersion = "0.1.0";
-    public String pushJavaVersion = "0.1.0";
-    public String pushPythonVersion = "0.4.3";
-    public String pushCVersion = "1.0.12";
+    private String pushGoVersion = "0.1.0";
+    private String pushJavaVersion = "0.1.0";
+    private String pushPythonVersion = "0.4.3";
+    private String pushCVersion = "1.0.12";
 
-    public boolean enableAuthentication = false;
+    private boolean enableAuthentication = false;
 
     private String overriddenServerStatus = null;
 
@@ -363,7 +363,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     @Override
     public String getChecksum() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public interface HealthParams {

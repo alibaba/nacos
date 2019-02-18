@@ -84,7 +84,7 @@ public class DistroMapper implements ServerChangeListener {
     }
 
     public String mapSrv(String serviceName) {
-        if (CollectionUtils.isEmpty(healthyList) || !switchDomain.distroEnabled) {
+        if (CollectionUtils.isEmpty(healthyList) || !switchDomain.isDistroEnabled()) {
             return NetUtils.localServer();
         }
 

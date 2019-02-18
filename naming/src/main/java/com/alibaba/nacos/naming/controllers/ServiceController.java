@@ -133,6 +133,7 @@ public class ServiceController {
         res.put("protectThreshold", service.getProtectThreshold());
         res.put("metadata", service.getMetadata());
         res.put("selector", service.getSelector());
+        res.put("group", service.getGroup());
 
         JSONArray clusters = new JSONArray();
         for (Cluster cluster : service.getClusterMap().values()) {
