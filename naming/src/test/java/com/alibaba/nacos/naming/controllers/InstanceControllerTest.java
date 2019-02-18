@@ -69,22 +69,22 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void registerInstance() throws Exception {
 
-        Service domain = new Service();
-        domain.setName("nacos.test.1");
+        Service service = new Service();
+        service.setName("nacos.test.1");
 
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setService(domain);
-        domain.addCluster(cluster);
+        cluster.setService(service);
+        service.addCluster(cluster);
 
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(9999);
         List<Instance> ipList = new ArrayList<Instance>();
         ipList.add(instance);
-        domain.updateIPs(ipList, false);
+        service.updateIPs(ipList, false);
 
-        Mockito.when(domainsManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(domain);
+        Mockito.when(serviceManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.put("/naming/instance")
@@ -113,13 +113,13 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void getInstances() throws Exception {
 
-        Service domain = new Service();
-        domain.setName("nacos.test.1");
+        Service service = new Service();
+        service.setName("nacos.test.1");
 
         Cluster cluster = new Cluster();
         cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setService(domain);
-        domain.addCluster(cluster);
+        cluster.setService(service);
+        service.addCluster(cluster);
 
         Instance instance = new Instance();
         instance.setIp("10.10.10.10");
@@ -127,9 +127,9 @@ public class InstanceControllerTest extends BaseTest {
         instance.setWeight(2.0);
         List<Instance> ipList = new ArrayList<Instance>();
         ipList.add(instance);
-        domain.updateIPs(ipList, false);
+        service.updateIPs(ipList, false);
 
-        Mockito.when(domainsManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(domain);
+        Mockito.when(serviceManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.get("/v1/ns/instances")
@@ -139,7 +139,7 @@ public class InstanceControllerTest extends BaseTest {
         String actualValue = response.getContentAsString();
         JSONObject result = JSON.parseObject(actualValue);
 
-        Assert.assertEquals("nacos.test.1", result.getString("dom"));
+        Assert.assertEquals("nacos.test.1", result.getString("serviceName"));
         JSONArray hosts = result.getJSONArray("hosts");
         Assert.assertTrue(hosts != null);
         Assert.assertNotNull(hosts);

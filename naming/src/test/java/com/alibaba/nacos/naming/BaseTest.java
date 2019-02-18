@@ -31,7 +31,7 @@ import org.mockito.MockitoAnnotations;
 public class BaseTest {
 
     @Mock
-    public ServiceManager domainsManager;
+    public ServiceManager serviceManager;
 
     @Mock
     public RaftPeerSet peerSet;

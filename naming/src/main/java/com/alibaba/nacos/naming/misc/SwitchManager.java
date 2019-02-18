@@ -56,7 +56,7 @@ public class SwitchManager implements DataListener<SwitchDomain> {
         try {
             consistencyService.listen(UtilsAndCommons.getSwitchDomainKey(), this);
         } catch (NacosException e) {
-            Loggers.SRV_LOG.error("listen switch domain failed.", e);
+            Loggers.SRV_LOG.error("listen switch service failed.", e);
         }
     }
 
@@ -218,14 +218,24 @@ public class SwitchManager implements DataListener<SwitchDomain> {
                 return;
             }
 
-            if (entry.equals(SwitchEntry.DOM_STATUS_SYNC_PERIOD)) {
+            if (entry.equals(SwitchEntry.PUSH_ENABLED)) {
+                boolean enabled = Boolean.parseBoolean(value);
+
+                switchDomain.setPushEnabled(enabled);
+                if (!debug) {
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+                }
+                return;
+            }
+
+            if (entry.equals(SwitchEntry.SERVICE_STATUS_SYNC_PERIOD)) {
                 Long millis = Long.parseLong(value);
 
                 if (millis < SwitchEntry.MIN_DOM_SYNC_TIME_MIILIS) {
-                    throw new IllegalArgumentException("domStatusSynchronizationPeriodMillis is too small(<5000)");
+                    throw new IllegalArgumentException("serviceStatusSynchronizationPeriodMillis is too small(<5000)");
                 }
 
-                switchDomain.setDomStatusSynchronizationPeriodMillis(millis);
+                switchDomain.setServiceStatusSynchronizationPeriodMillis(millis);
                 if (!debug) {
                     consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
                 }
@@ -362,6 +372,7 @@ public class SwitchManager implements DataListener<SwitchDomain> {
         switchDomain.setDistroThreshold(newSwitchDomain.getDistroThreshold());
         switchDomain.setHealthCheckEnabled(newSwitchDomain.isHealthCheckEnabled());
         switchDomain.setDistroEnabled(newSwitchDomain.isDistroEnabled());
+        switchDomain.setPushEnabled(newSwitchDomain.isPushEnabled());
         switchDomain.setEnableStandalone(newSwitchDomain.isEnableStandalone());
         switchDomain.setCheckTimes(newSwitchDomain.getCheckTimes());
         switchDomain.setHttpHealthParams(newSwitchDomain.getHttpHealthParams());
@@ -369,7 +380,7 @@ public class SwitchManager implements DataListener<SwitchDomain> {
         switchDomain.setMysqlHealthParams(newSwitchDomain.getMysqlHealthParams());
         switchDomain.setIncrementalList(newSwitchDomain.getIncrementalList());
         switchDomain.setServerStatusSynchronizationPeriodMillis(newSwitchDomain.getServerStatusSynchronizationPeriodMillis());
-        switchDomain.setDomStatusSynchronizationPeriodMillis(newSwitchDomain.getDomStatusSynchronizationPeriodMillis());
+        switchDomain.setServiceStatusSynchronizationPeriodMillis(newSwitchDomain.getServiceStatusSynchronizationPeriodMillis());
         switchDomain.setDisableAddIP(newSwitchDomain.isDisableAddIP());
         switchDomain.setSendBeatOnly(newSwitchDomain.isSendBeatOnly());
         switchDomain.setLimitedUrlMap(newSwitchDomain.getLimitedUrlMap());

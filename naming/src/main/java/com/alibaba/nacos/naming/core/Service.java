@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -49,7 +50,9 @@ import java.util.*;
  *
  * @author nkorange
  */
-public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements DataListener<Instances> {
+public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, DataListener<Instances> {
+
+    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
@@ -153,7 +156,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        for (Instance ip : value.getInstanceMap().values()) {
+        for (Instance ip : value.getInstanceList()) {
 
             if (ip.getWeight() > 10000.0D) {
                 ip.setWeight(10000.0D);
@@ -164,7 +167,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             }
         }
 
-        updateIPs(value.getInstanceMap().values(), KeyBuilder.matchEphemeralInstanceListKey(key));
+        updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
         recalculateChecksum();
     }
@@ -242,7 +245,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] dom: {}, ips: {}", getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", getName(), stringBuilder.toString());
 
     }
 
@@ -286,7 +289,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster + ", dom:" + getName());
+                throw new IllegalArgumentException("can not find cluster: " + cluster + ", service:" + getName());
             }
 
             allIPs.addAll(clusterObj.allIPs());
@@ -308,13 +311,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     @JSONField(serialize = false)
-    public String getDomString() {
-        Map<Object, Object> domain = new HashMap<Object, Object>(10);
-        Service vDom = this;
+    public String getServiceString() {
+        Map<Object, Object> serviceObject = new HashMap<Object, Object>(10);
+        Service service = this;
 
-        domain.put("name", vDom.getName());
+        serviceObject.put("name", service.getName());
 
-        List<Instance> ips = vDom.allIPs();
+        List<Instance> ips = service.allIPs();
         int invalidIPCount = 0;
         int ipCount = 0;
         for (Instance ip : ips) {
@@ -325,17 +328,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipCount++;
         }
 
-        domain.put("ipCount", ipCount);
-        domain.put("invalidIPCount", invalidIPCount);
+        serviceObject.put("ipCount", ipCount);
+        serviceObject.put("invalidIPCount", invalidIPCount);
 
-        domain.put("owners", vDom.getOwners());
-        domain.put("token", vDom.getToken());
+        serviceObject.put("owners", service.getOwners());
+        serviceObject.put("token", service.getToken());
 
-        domain.put("protectThreshold", vDom.getProtectThreshold());
+        serviceObject.put("protectThreshold", service.getProtectThreshold());
 
         List<Object> clustersList = new ArrayList<Object>();
 
-        for (Map.Entry<String, Cluster> entry : vDom.getClusterMap().entrySet()) {
+        for (Map.Entry<String, Cluster> entry : service.getClusterMap().entrySet()) {
             Cluster cluster = entry.getValue();
 
             Map<Object, Object> clusters = new HashMap<Object, Object>(10);
@@ -344,15 +347,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             clusters.put("defCkport", cluster.getDefCkport());
             clusters.put("defIPPort", cluster.getDefIPPort());
             clusters.put("useIPPort4Check", cluster.isUseIPPort4Check());
-            clusters.put("submask", cluster.getSubmask());
             clusters.put("sitegroup", cluster.getSitegroup());
 
             clustersList.add(clusters);
         }
 
-        domain.put("clusters", clustersList);
+        serviceObject.put("clusters", clustersList);
 
-        return JSON.toJSONString(domain);
+        return JSON.toJSONString(serviceObject);
     }
 
     public String getToken() {
@@ -390,27 +392,27 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     public void update(Service vDom) {
 
         if (!StringUtils.equals(token, vDom.getToken())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, token: {} -> {}", getName(), token, vDom.getToken());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] service: {}, token: {} -> {}", getName(), token, vDom.getToken());
             token = vDom.getToken();
         }
 
         if (!ListUtils.isEqualList(owners, vDom.getOwners())) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, owners: {} -> {}", getName(), owners, vDom.getOwners());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] service: {}, owners: {} -> {}", getName(), owners, vDom.getOwners());
             owners = vDom.getOwners();
         }
 
         if (getProtectThreshold() != vDom.getProtectThreshold()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, protectThreshold: {} -> {}", getName(), getProtectThreshold(), vDom.getProtectThreshold());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] service: {}, protectThreshold: {} -> {}", getName(), getProtectThreshold(), vDom.getProtectThreshold());
             setProtectThreshold(vDom.getProtectThreshold());
         }
 
         if (resetWeight != vDom.getResetWeight().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, resetWeight: {} -> {}", getName(), resetWeight, vDom.getResetWeight());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] service: {}, resetWeight: {} -> {}", getName(), resetWeight, vDom.getResetWeight());
             resetWeight = vDom.getResetWeight();
         }
 
         if (enabled != vDom.getEnabled().booleanValue()) {
-            Loggers.SRV_LOG.info("[DOM-UPDATE] dom: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
+            Loggers.SRV_LOG.info("[DOM-UPDATE] service: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
 
@@ -435,11 +437,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         List<Instance> ips = allIPs();
 
         StringBuilder ipsString = new StringBuilder();
-        ipsString.append(getDomString());
+        ipsString.append(getServiceString());
 
-        Loggers.SRV_LOG.debug("dom to json: " + getDomString());
+        if (Loggers.SRV_LOG.isDebugEnabled()) {
+            Loggers.SRV_LOG.debug("service to json: " + getServiceString());
+        }
 
-        if (!CollectionUtils.isEmpty(ips)) {
+        if (CollectionUtils.isNotEmpty(ips)) {
             Collections.sort(ips);
         }
 
@@ -497,28 +501,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void valid() {
-        Map<String, List<String>> map = new HashMap<>(clusterMap.size());
-        for (Cluster cluster : clusterMap.values()) {
-            if (StringUtils.isEmpty(cluster.getSyncKey())) {
-                continue;
-            }
-            List<String> list = map.get(cluster.getSyncKey());
-            if (list == null) {
-                list = new ArrayList<>();
-                map.put(cluster.getSyncKey(), list);
-            }
-
-            list.add(cluster.getName());
-            cluster.validate();
+        if (!getName().matches(SERVICE_NAME_SYNTAX)) {
+            throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
         }
-
-        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-            List<String> list = entry.getValue();
-            if (list.size() > 1) {
-                String msg = "clusters' config can not be the same: " + list;
-                Loggers.SRV_LOG.warn(msg);
-                throw new IllegalArgumentException(msg);
-            }
+        for (Cluster cluster : clusterMap.values()) {
+            cluster.validate();
         }
     }
 }

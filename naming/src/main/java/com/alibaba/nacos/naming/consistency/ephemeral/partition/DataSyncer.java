@@ -88,6 +88,9 @@ public class DataSyncer implements ServerChangeListener {
                 String key = iterator.next();
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
+                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                        Loggers.EPHEMERAL.debug("sync already in process, key: {}", key);
+                    }
                     iterator.remove();
                 }
             }
@@ -114,7 +117,7 @@ public class DataSyncer implements ServerChangeListener {
                         Loggers.EPHEMERAL.debug("sync keys: {}", keys);
                     }
 
-                    Map<String, Datum<?>> datumMap = dataStore.batchGet(keys);
+                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
 
                     if (datumMap == null || datumMap.isEmpty()) {
                         // clear all flags of this task:
@@ -177,7 +180,7 @@ public class DataSyncer implements ServerChangeListener {
                 File metaFile = new File(UtilsAndCommons.DATA_BASE_DIR + File.separator + "ephemeral.properties");
                 if (initialized) {
                     // write the current instance count to disk:
-                    IoUtils.writeStringToFile(metaFile, "instanceCount=" + dataStore.keys().size(), "UTF-8");
+                    IoUtils.writeStringToFile(metaFile, "instanceCount=" + dataStore.getInstanceCount(), "UTF-8");
                 } else {
                     // check if most of the data are loaded:
                     List<String> lines = IoUtils.readLines(new InputStreamReader(new FileInputStream(metaFile), UTF_8));
@@ -200,23 +203,28 @@ public class DataSyncer implements ServerChangeListener {
 
             try {
                 // send local timestamps to other servers:
-                Map<String, Long> keyTimestamps = new HashMap<>(64);
+                Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
                     if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
                         continue;
                     }
-                    keyTimestamps.put(key, dataStore.get(key).timestamp.get());
+
+                    keyChecksums.put(key, dataStore.get(key).value.getChecksum());
                 }
 
-                if (keyTimestamps.isEmpty()) {
+                if (keyChecksums.isEmpty()) {
                     return;
+                }
+
+                if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                    Loggers.EPHEMERAL.debug("sync checksums: {}", keyChecksums);
                 }
 
                 for (Server member : servers) {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
-                    NamingProxy.syncTimestamps(keyTimestamps, member.getKey());
+                    NamingProxy.syncTimestamps(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
                 Loggers.EPHEMERAL.error("timed sync task failed.", e);

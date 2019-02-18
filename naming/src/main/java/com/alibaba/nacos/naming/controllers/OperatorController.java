@@ -134,14 +134,14 @@ public class OperatorController {
 
         JSONObject result = new JSONObject();
 
-        int domCount = serviceManager.getServiceCount();
+        int serviceCount = serviceManager.getServiceCount();
         int ipCount = serviceManager.getInstanceCount();
 
         int responsibleDomCount = serviceManager.getResponsibleServiceCount();
         int responsibleIPCount = serviceManager.getResponsibleInstanceCount();
 
         result.put("status", serverStatusManager.getServerStatus().name());
-        result.put("serviceCount", domCount);
+        result.put("serviceCount", serviceCount);
         result.put("instanceCount", ipCount);
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIPCount);
@@ -160,7 +160,7 @@ public class OperatorController {
         Service service = serviceManager.getService(namespaceId, dom);
 
         if (service == null) {
-            throw new IllegalArgumentException("dom not found");
+            throw new IllegalArgumentException("service not found");
         }
 
         JSONObject result = new JSONObject();
@@ -187,7 +187,7 @@ public class OperatorController {
         Service service = serviceManager.getService(namespaceId, dom);
 
         if (service == null) {
-            throw new IllegalArgumentException("dom not found");
+            throw new IllegalArgumentException("service not found");
         }
 
         JSONObject result = new JSONObject();

@@ -148,17 +148,17 @@ public class HealthCheckCommon {
                         pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
                         addResult(new HealthCheckResult(vDom.getName(), ip));
 
-                        Loggers.EVT_LOG.info("dom: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
+                        Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
                             cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
                         if (!ip.isMockValid()) {
                             ip.setMockValid(true);
-                            Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
+                            Loggers.EVT_LOG.info("serviceName: {} {PROBE} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
                                 cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                         }
                     }
                 } else {
-                    Loggers.EVT_LOG.info("dom: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
+                    Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
                         cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getOKCount(), msg);
                 }
             }
@@ -186,15 +186,15 @@ public class HealthCheckCommon {
 
                         pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
 
-                        Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
+                        Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                             cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     } else {
-                        Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
+                        Loggers.EVT_LOG.info("serviceName: {} {PROBE} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
                             cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
                 } else {
-                    Loggers.EVT_LOG.info("dom: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
+                    Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
                         cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), ip.getFailCount(), msg);
                 }
             }
@@ -221,12 +221,12 @@ public class HealthCheckCommon {
                     pushService.serviceChanged(vDom.getNamespaceId(), vDom.getName());
                     addResult(new HealthCheckResult(vDom.getName(), ip));
 
-                    Loggers.EVT_LOG.info("dom: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
+                    Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
                         cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                 } else {
                     if (ip.isMockValid()) {
                         ip.setMockValid(false);
-                        Loggers.EVT_LOG.info("dom: {} {PROBE} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
+                        Loggers.EVT_LOG.info("serviceName: {} {PROBE} {IP-DISABLED} invalid-now: {}:{}@{}, region: {}, msg: {}",
                             cluster.getService().getName(), ip.getIp(), ip.getPort(), cluster.getName(), UtilsAndCommons.LOCALHOST_SITE, msg);
                     }
 
@@ -242,7 +242,7 @@ public class HealthCheckCommon {
 
     private void addResult(HealthCheckResult result) {
 
-        if (!switchDomain.getIncrementalList().contains(result.getDom())) {
+        if (!switchDomain.getIncrementalList().contains(result.getServiceName())) {
             return;
         }
 
@@ -252,20 +252,20 @@ public class HealthCheckCommon {
     }
 
     static class HealthCheckResult {
-        private String dom;
+        private String serviceName;
         private Instance instance;
 
-        public HealthCheckResult(String dom, Instance instance) {
-            this.dom = dom;
+        public HealthCheckResult(String serviceName, Instance instance) {
+            this.serviceName = serviceName;
             this.instance = instance;
         }
 
-        public String getDom() {
-            return dom;
+        public String getServiceName() {
+            return serviceName;
         }
 
-        public void setDom(String dom) {
-            this.dom = dom;
+        public void setServiceName(String serviceName) {
+            this.serviceName = serviceName;
         }
 
         public Instance getInstance() {

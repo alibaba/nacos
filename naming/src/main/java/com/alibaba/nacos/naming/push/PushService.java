@@ -129,7 +129,7 @@ public class PushService {
     }
 
     public void addClient(String namespaceId,
-                                 String dom,
+                                 String serviceName,
                                  String clusters,
                                  String agent,
                                  InetSocketAddress socketAddr,
@@ -138,7 +138,7 @@ public class PushService {
                                  String app) {
 
         PushClient client = new PushService.PushClient(namespaceId,
-                dom,
+                serviceName,
                 clusters,
                 agent,
                 socketAddr,
@@ -213,8 +213,8 @@ public class PushService {
         return null;
     }
 
-    public static String getPushCacheKey(String dom, String clientIP, String agent) {
-        return dom + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
+    public static String getPushCacheKey(String serviceName, String clientIP, String agent) {
+        return serviceName + UtilsAndCommons.CACHE_KEY_SPLITER + agent;
     }
 
     public void serviceChanged(final String namespaceId, final String serviceName) {
@@ -285,6 +285,11 @@ public class PushService {
     }
 
     public boolean canEnablePush(String agent) {
+
+        if (!switchDomain.isPushEnabled()) {
+            return false;
+        }
+
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (ClientInfo.ClientType.JAVA == clientInfo.type
@@ -524,6 +529,7 @@ public class PushService {
         if (ackEntry.getRetryTimes() > MAX_RETRY_TIMES) {
             Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.retryTimes, ackEntry.key);
             ackMap.remove(ackEntry.key);
+            udpSendTimeMap.remove(ackEntry.key);
             failedPush += 1;
             return ackEntry;
         }
@@ -548,6 +554,7 @@ public class PushService {
             Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}",
                 ackEntry.data, ackEntry.origin.getAddress().getHostAddress(), e);
             ackMap.remove(ackEntry.key);
+            udpSendTimeMap.remove(ackEntry.key);
             failedPush += 1;
 
             return null;
