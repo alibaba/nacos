@@ -50,6 +50,8 @@ public class SwitchDomain implements Record, Cloneable {
 
     public boolean enableStandalone = true;
 
+    public boolean pushEnabled = true;
+
     public int checkTimes = 3;
 
     public HttpHealthParams httpHealthParams = new HttpHealthParams();
@@ -219,6 +221,14 @@ public class SwitchDomain implements Record, Cloneable {
 
     public void setDistroEnabled(boolean distroEnabled) {
         this.distroEnabled = distroEnabled;
+    }
+
+    public boolean isPushEnabled() {
+        return pushEnabled;
+    }
+
+    public void setPushEnabled(boolean pushEnabled) {
+        this.pushEnabled = pushEnabled;
     }
 
     public int getCheckTimes() {

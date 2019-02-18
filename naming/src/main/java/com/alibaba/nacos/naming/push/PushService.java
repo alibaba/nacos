@@ -285,6 +285,11 @@ public class PushService {
     }
 
     public boolean canEnablePush(String agent) {
+
+        if (!switchDomain.isPushEnabled()) {
+            return false;
+        }
+
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (ClientInfo.ClientType.JAVA == clientInfo.type

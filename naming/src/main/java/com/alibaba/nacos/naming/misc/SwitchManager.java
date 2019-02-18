@@ -218,6 +218,16 @@ public class SwitchManager implements DataListener<SwitchDomain> {
                 return;
             }
 
+            if (entry.equals(SwitchEntry.PUSH_ENABLED)) {
+                boolean enabled = Boolean.parseBoolean(value);
+
+                switchDomain.setPushEnabled(enabled);
+                if (!debug) {
+                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+                }
+                return;
+            }
+
             if (entry.equals(SwitchEntry.SERVICE_STATUS_SYNC_PERIOD)) {
                 Long millis = Long.parseLong(value);
 
@@ -362,6 +372,7 @@ public class SwitchManager implements DataListener<SwitchDomain> {
         switchDomain.setDistroThreshold(newSwitchDomain.getDistroThreshold());
         switchDomain.setHealthCheckEnabled(newSwitchDomain.isHealthCheckEnabled());
         switchDomain.setDistroEnabled(newSwitchDomain.isDistroEnabled());
+        switchDomain.setPushEnabled(newSwitchDomain.isPushEnabled());
         switchDomain.setEnableStandalone(newSwitchDomain.isEnableStandalone());
         switchDomain.setCheckTimes(newSwitchDomain.getCheckTimes());
         switchDomain.setHttpHealthParams(newSwitchDomain.getHttpHealthParams());
