@@ -19,7 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @since 1.0.0
  */
 @Component
-public class SwitchManager implements DataListener<SwitchDomain> {
+public class SwitchManager implements RecordListener<SwitchDomain> {
 
     @Autowired
     private SwitchDomain switchDomain;

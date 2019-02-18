@@ -71,7 +71,8 @@ public class CatalogController {
         JSONArray serviceJsonArray = new JSONArray();
         for (Service service : services) {
             ServiceView serviceView = new ServiceView();
-            serviceView.setName(service.getName());
+            serviceView.setName(UtilsAndCommons.getServiceName(service.getName()));
+            serviceView.setGroupName(UtilsAndCommons.getGroupName(service.getName()));
             serviceView.setClusterCount(service.getClusterMap().size());
             serviceView.setIpCount(service.allIPs().size());
 
@@ -99,7 +100,7 @@ public class CatalogController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
@@ -133,8 +134,8 @@ public class CatalogController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, "serviceName");
-        String clusterName = WebUtils.required(request, "clusterName");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
 
@@ -184,7 +185,8 @@ public class CatalogController {
                 (serviceName, service) -> {
 
                     ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                    serviceDetailInfo.setServiceName(serviceName);
+                    serviceDetailInfo.setServiceName(UtilsAndCommons.getServiceName(serviceName));
+                    serviceDetailInfo.setGroupName(UtilsAndCommons.getGroupName(serviceName));
                     serviceDetailInfo.setMetadata(service.getMetadata());
 
                     Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
@@ -242,11 +244,11 @@ public class CatalogController {
                 for (Instance instance : instances) {
                     if (ip.contains(":")) {
                         if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), ip)) {
-                            serviceNames.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
+                            serviceNames.add(namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + service.getName());
                         }
                     } else {
                         if (StringUtils.equals(instance.getIp(), ip)) {
-                            serviceNames.add(namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + service.getName());
+                            serviceNames.add(namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + service.getName());
                         }
                     }
                 }

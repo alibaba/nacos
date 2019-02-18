@@ -188,7 +188,8 @@ public class DataSyncer implements ServerChangeListener {
                         initialized = true;
                     } else {
                         int desiredInstanceCount = Integer.parseInt(lines.get(0).split("=")[1]);
-                        if (desiredInstanceCount * partitionConfig.getInitDataRatio() < dataStore.keys().size()) {
+                        if (desiredInstanceCount <= 0 ||
+                            desiredInstanceCount * partitionConfig.getInitDataRatio() < dataStore.keys().size()) {
                             initialized = true;
                         }
                     }

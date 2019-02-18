@@ -23,9 +23,9 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -50,7 +50,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 @DependsOn("nacosApplicationContext")
-public class ServiceManager implements DataListener<Service> {
+public class ServiceManager implements RecordListener<Service> {
 
     /**
      * Map<namespace, Map<group::serviceName, Service>>
@@ -332,6 +332,7 @@ public class ServiceManager implements DataListener<Service> {
             service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
+            service.setGroupName(UtilsAndCommons.DEFAULT_GROUP_NAME);
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();

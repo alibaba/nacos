@@ -66,7 +66,7 @@ public interface ConsistencyService {
      * @param listener callback of data change
      * @throws NacosException
      */
-    void listen(String key, DataListener listener) throws NacosException;
+    void listen(String key, RecordListener listener) throws NacosException;
 
     /**
      * Cancel listening of a data
@@ -75,7 +75,7 @@ public interface ConsistencyService {
      * @param listener callback of data change
      * @throws NacosException
      */
-    void unlisten(String key, DataListener listener) throws NacosException;
+    void unlisten(String key, RecordListener listener) throws NacosException;
 
     /**
      * Is the local server responsible for a data.

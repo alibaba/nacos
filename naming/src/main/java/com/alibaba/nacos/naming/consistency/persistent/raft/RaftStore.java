@@ -129,18 +129,30 @@ public class RaftStore {
             }
 
             if (KeyBuilder.matchServiceMetaKey(file.getName())) {
+
+                Datum<Service> serviceDatum;
+
                 try {
-                    return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
+                    serviceDatum = JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Service>>() {
                     });
                 } catch (Exception e) {
                     JSONObject jsonObject = JSON.parseObject(json);
 
-                    Datum<Service> serviceDatum = new Datum<>();
+                    serviceDatum = new Datum<>();
                     serviceDatum.timestamp.set(jsonObject.getLongValue("timestamp"));
                     serviceDatum.key = jsonObject.getString("key");
                     serviceDatum.value = JSON.parseObject(jsonObject.getString("value"), Service.class);
-                    return serviceDatum;
                 }
+
+                if (StringUtils.isBlank(serviceDatum.value.getGroupName())) {
+                    serviceDatum.value.setGroupName(UtilsAndCommons.DEFAULT_GROUP_NAME);
+                }
+                if (!serviceDatum.value.getName().contains(UtilsAndCommons.GROUP_SERVICE_CONNECTOR)) {
+                    serviceDatum.value.setName(UtilsAndCommons.DEFAULT_GROUP_NAME
+                        + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceDatum.value.getName());
+                }
+
+                return serviceDatum;
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {

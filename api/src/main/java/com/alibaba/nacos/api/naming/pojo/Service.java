@@ -42,12 +42,12 @@ public class Service {
     /**
      * application name of this service
      */
-    private String app;
+    private String appName;
 
     /**
      * Service group to classify services into different sets.
      */
-    private String group;
+    private String groupName;
 
     private Map<String, String> metadata = new HashMap<String, String>();
 
@@ -74,20 +74,20 @@ public class Service {
         this.protectThreshold = protectThreshold;
     }
 
-    public String getApp() {
-        return app;
+    public String getAppName() {
+        return appName;
     }
 
-    public void setApp(String app) {
-        this.app = app;
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 
-    public String getGroup() {
-        return group;
+    public String getGroupName() {
+        return groupName;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public Map<String, String> getMetadata() {

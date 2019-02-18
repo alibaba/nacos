@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
@@ -50,9 +50,9 @@ import java.util.*;
  *
  * @author nkorange
  */
-public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, DataListener<Instances> {
+public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
 
-    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z\\.:_-]+";
+    private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
 
     @JSONField(serialize = false)
     private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();

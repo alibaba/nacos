@@ -23,6 +23,7 @@ import com.alibaba.fastjson.JSON;
 public class ServiceView {
 
     private String name;
+    private String groupName;
     private int clusterCount;
     private int ipCount;
     private int healthyInstanceCount;
@@ -33,6 +34,14 @@ public class ServiceView {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public int getClusterCount() {

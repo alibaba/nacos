@@ -21,7 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftConsistencyServiceImpl;
@@ -263,7 +263,7 @@ public class RaftController {
     public JSONObject getAllListeners(HttpServletRequest request, HttpServletResponse response) {
 
         JSONObject result = new JSONObject();
-        Map<String, List<DataListener>> listeners = raftCore.getListeners();
+        Map<String, List<RecordListener>> listeners = raftCore.getListeners();
 
         JSONArray listenerArray = new JSONArray();
         for (String key : listeners.keySet()) {

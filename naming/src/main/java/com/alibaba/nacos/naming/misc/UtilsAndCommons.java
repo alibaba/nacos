@@ -21,7 +21,6 @@ import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -110,7 +109,9 @@ public class UtilsAndCommons {
 
     public static final String API_DOM = "/api/dom";
 
-    public static final String SERVICE_GROUP_CONNECTOR = "##";
+    public static final String NAMESPACE_SERVICE_CONNECTOR = "##";
+
+    public static final String GROUP_SERVICE_CONNECTOR = "@@";
 
     public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
 
@@ -239,11 +240,21 @@ public class UtilsAndCommons {
         return metadataMap;
     }
 
-    public static String getDefaultNamespaceId() {
-        return "public";
+    public static String assembleFullServiceName(String namespaceId, String serviceName) {
+        return namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + serviceName;
     }
 
-    public static String assembleFullServiceName(String namespaceId, String serviceName) {
-        return namespaceId + UtilsAndCommons.SERVICE_GROUP_CONNECTOR + serviceName;
+    public static String getServiceName(String serviceNameWithGroup) {
+        if (!serviceNameWithGroup.contains(GROUP_SERVICE_CONNECTOR)) {
+            return serviceNameWithGroup;
+        }
+        return serviceNameWithGroup.split(GROUP_SERVICE_CONNECTOR)[1];
+    }
+
+    public static String getGroupName(String serviceNameWithGroup) {
+        if (!serviceNameWithGroup.contains(GROUP_SERVICE_CONNECTOR)) {
+            return DEFAULT_GROUP_NAME;
+        }
+        return serviceNameWithGroup.split(GROUP_SERVICE_CONNECTOR)[0];
     }
 }

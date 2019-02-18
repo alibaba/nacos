@@ -363,7 +363,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     @Override
     public String getChecksum() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     public interface HealthParams {

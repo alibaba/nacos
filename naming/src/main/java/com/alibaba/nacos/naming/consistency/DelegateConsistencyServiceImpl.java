@@ -57,12 +57,12 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
 
     @Override
-    public void listen(String key, DataListener listener) throws NacosException {
+    public void listen(String key, RecordListener listener) throws NacosException {
         mapConsistencyService(key).listen(key, listener);
     }
 
     @Override
-    public void unlisten(String key, DataListener listener) throws NacosException {
+    public void unlisten(String key, RecordListener listener) throws NacosException {
         mapConsistencyService(key).unlisten(key, listener);
     }
 

@@ -84,7 +84,7 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "DEFAULT_GROUP", "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
@@ -121,7 +121,7 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "DEFAULT_GROUP", "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
@@ -153,7 +153,7 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "DEFAULT_GROUP", "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
 
@@ -165,7 +165,7 @@ public class AutoDeregisterInstance_ITCase {
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
 
-        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName, beatInfo);
+        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName, "DEFAULT_GROUP", beatInfo);
         verifyInstanceList(instances, 2, serviceName);
 
         instances = naming.getAllInstances(serviceName);
@@ -196,7 +196,7 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "DEFAULT_GROUP", "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
 
@@ -210,7 +210,7 @@ public class AutoDeregisterInstance_ITCase {
         beatInfo.setCluster("c1");
 
 
-        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName, beatInfo);
+        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName, "DEFAULT_GROUP", beatInfo);
         //TimeUnit.SECONDS.sleep(15);
         verifyInstanceList(instances, 2, serviceName);
 

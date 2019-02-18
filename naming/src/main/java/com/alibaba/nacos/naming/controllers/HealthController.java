@@ -72,11 +72,12 @@ public class HealthController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
         boolean valid = Boolean.valueOf(WebUtils.required(request, "valid"));
-        String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME
+            , UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
         if (!distroMapper.responsible(serviceName)) {
             String server = distroMapper.mapSrv(serviceName);

@@ -21,7 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.DataListener;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.Instances;
@@ -90,7 +90,7 @@ public class RaftCore {
 
     public static final int PUBLISH_TERM_INCREASE_COUNT = 100;
 
-    private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
+    private volatile Map<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
 
     private volatile ConcurrentMap<String, Datum> datums = new ConcurrentHashMap<>();
 
@@ -143,7 +143,7 @@ public class RaftCore {
             GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
 
-    public Map<String, List<DataListener>> getListeners() {
+    public Map<String, List<RecordListener>> getListeners() {
         return listeners;
     }
 
@@ -751,9 +751,9 @@ public class RaftCore {
         return local;
     }
 
-    public void listen(String key, DataListener listener) {
+    public void listen(String key, RecordListener listener) {
 
-        List<DataListener> listenerList = listeners.get(key);
+        List<RecordListener> listenerList = listeners.get(key);
         if (listenerList != null && listenerList.contains(listener)) {
             return;
         }
@@ -781,13 +781,13 @@ public class RaftCore {
         }
     }
 
-    public void unlisten(String key, DataListener listener) {
+    public void unlisten(String key, RecordListener listener) {
 
         if (!listeners.containsKey(key)) {
             return;
         }
 
-        for (DataListener dl : listeners.get(key)) {
+        for (RecordListener dl : listeners.get(key)) {
             // TODO maybe use equal:
             if (dl == listener) {
                 listeners.get(key).remove(listener);
@@ -922,7 +922,7 @@ public class RaftCore {
 
                         if (KeyBuilder.matchServiceMetaKey(datum.key) && !KeyBuilder.matchSwitchKey(datum.key)) {
 
-                            for (DataListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
+                            for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                                 try {
                                     if (action == ApplyAction.CHANGE) {
                                         listener.onChange(datum.key, getDatum(datum.key).value);
@@ -942,7 +942,7 @@ public class RaftCore {
                         continue;
                     }
 
-                    for (DataListener listener : listeners.get(datum.key)) {
+                    for (RecordListener listener : listeners.get(datum.key)) {
 
                         count++;
 

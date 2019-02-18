@@ -62,8 +62,8 @@ public class ServiceController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+
 
         if (serviceManager.getService(namespaceId, serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
@@ -83,6 +83,7 @@ public class ServiceController {
         service.setMetadata(metadataMap);
         service.setSelector(parseSelector(selector));
         service.setNamespaceId(namespaceId);
+
 
         // now valid the service. if failed, exception will be thrown
         service.setLastModifiedMillis(System.currentTimeMillis());
@@ -128,12 +129,12 @@ public class ServiceController {
         }
 
         JSONObject res = new JSONObject();
-        res.put("name", serviceName);
+        res.put("name", UtilsAndCommons.getServiceName(serviceName));
         res.put("namespaceId", service.getNamespaceId());
         res.put("protectThreshold", service.getProtectThreshold());
         res.put("metadata", service.getMetadata());
         res.put("selector", service.getSelector());
-        res.put("group", service.getGroup());
+        res.put("groupName", UtilsAndCommons.getGroupName(serviceName));
 
         JSONArray clusters = new JSONArray();
         for (Cluster cluster : service.getClusterMap().values()) {
@@ -236,9 +237,7 @@ public class ServiceController {
 
         Map<String, String> metadataMap = UtilsAndCommons.parseMetadata(metadata);
         service.setMetadata(metadataMap);
-
         service.setSelector(parseSelector(selector));
-
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
         service.valid();
@@ -269,7 +268,7 @@ public class ServiceController {
             serviceNameMap.put(namespace, new HashSet<>());
             for (Service service : services.get(namespace)) {
                 if (distroMapper.responsible(service.getName()) || !responsibleOnly) {
-                    serviceNameMap.get(namespace).add(service.getName());
+                    serviceNameMap.get(namespace).add(UtilsAndCommons.getServiceName(service.getName()));
                 }
             }
         }
@@ -349,34 +348,34 @@ public class ServiceController {
         return result;
     }
 
-    private List<String> filterInstanceMetadata(String namespaceId, List<String> serivces, String key, String value) {
+    private List<String> filterInstanceMetadata(String namespaceId, List<String> serviceNames, String key, String value) {
 
-        List<String> filteredServices = new ArrayList<>();
-        for (String service : serivces) {
-            Service serviceObj = serviceManager.getService(namespaceId, service);
-            if (serviceObj == null) {
+        List<String> filteredServiceNames = new ArrayList<>();
+        for (String serviceName : serviceNames) {
+            Service service = serviceManager.getService(namespaceId, serviceName);
+            if (service == null) {
                 continue;
             }
-            for (Instance address : serviceObj.allIPs()) {
+            for (Instance address : service.allIPs()) {
                 if (address.getMetadata() != null && value.equals(address.getMetadata().get(key))) {
-                    filteredServices.add(service);
+                    filteredServiceNames.add(serviceName);
                     break;
                 }
             }
         }
-        return filteredServices;
+        return filteredServiceNames;
     }
 
-    private List<String> filterServiceMetadata(String namespaceId, List<String> serivces, String key, String value) {
+    private List<String> filterServiceMetadata(String namespaceId, List<String> serviceNames, String key, String value) {
 
         List<String> filteredServices = new ArrayList<>();
-        for (String service : serivces) {
-            Service serviceObj = serviceManager.getService(namespaceId, service);
-            if (serviceObj == null) {
+        for (String serviceName : serviceNames) {
+            Service service = serviceManager.getService(namespaceId, serviceName);
+            if (service == null) {
                 continue;
             }
-            if (value.equals(serviceObj.getMetadata().get(key))) {
-                filteredServices.add(service);
+            if (value.equals(service.getMetadata().get(key))) {
+                filteredServices.add(serviceName);
             }
 
         }

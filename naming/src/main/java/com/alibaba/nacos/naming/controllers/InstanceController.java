@@ -274,9 +274,9 @@ public class InstanceController {
         String serviceName;
         String namespaceId;
 
-        if (key.contains(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)) {
-            namespaceId = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[0];
-            serviceName = key.split(UtilsAndCommons.SERVICE_GROUP_CONNECTOR)[1];
+        if (key.contains(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)) {
+            namespaceId = key.split(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)[0];
+            serviceName = key.split(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)[1];
         } else {
             namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
             serviceName = key;
