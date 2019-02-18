@@ -529,6 +529,7 @@ public class PushService {
         if (ackEntry.getRetryTimes() > MAX_RETRY_TIMES) {
             Loggers.PUSH.warn("max re-push times reached, retry times {}, key: {}", ackEntry.retryTimes, ackEntry.key);
             ackMap.remove(ackEntry.key);
+            udpSendTimeMap.remove(ackEntry.key);
             failedPush += 1;
             return ackEntry;
         }
@@ -553,6 +554,7 @@ public class PushService {
             Loggers.PUSH.error("[NACOS-PUSH] failed to push data: {} to client: {}, error: {}",
                 ackEntry.data, ackEntry.origin.getAddress().getHostAddress(), e);
             ackMap.remove(ackEntry.key);
+            udpSendTimeMap.remove(ackEntry.key);
             failedPush += 1;
 
             return null;
