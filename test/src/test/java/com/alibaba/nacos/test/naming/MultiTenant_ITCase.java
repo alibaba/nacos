@@ -44,19 +44,16 @@ public class MultiTenant_ITCase {
 
     @Before
     public void init() throws Exception {
-//        naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-        naming = NamingFactory.createNamingService("11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848");
+        naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-1");
-//        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
-        properties.put(PropertyKeyConst.SERVER_ADDR, "11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         naming1 = NamingFactory.createNamingService(properties);
 
 
         properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-2");
-//        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
-        properties.put(PropertyKeyConst.SERVER_ADDR, "11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
         naming2 = NamingFactory.createNamingService(properties);
     }
 
