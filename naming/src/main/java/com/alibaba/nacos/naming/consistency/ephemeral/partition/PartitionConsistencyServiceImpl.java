@@ -140,6 +140,11 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         }
 
         for (String key : dataStore.keys()) {
+
+            if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
+                continue;
+            }
+
             if (!timestamps.containsKey(key)) {
                 toRemoveKeys.add(key);
             }

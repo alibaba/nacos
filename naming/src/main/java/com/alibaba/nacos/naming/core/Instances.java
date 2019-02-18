@@ -19,7 +19,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -36,7 +35,7 @@ import java.util.List;
  */
 public class Instances implements Record {
 
-    private String checksum;
+    private String cachedChecksum;
 
     private long lastCalculateTime = 0L;
 
@@ -57,11 +56,12 @@ public class Instances implements Record {
 
     @Override
     public String getChecksum() {
-        if (StringUtils.isBlank(checksum) ||
-            (System.currentTimeMillis() - lastCalculateTime) > 5000L) {
-            recalculateChecksum();
-        }
-        return checksum;
+        recalculateChecksum();
+        return cachedChecksum;
+    }
+
+    public String getCachedChecksum() {
+        return cachedChecksum;
     }
 
     private void recalculateChecksum() {
@@ -76,11 +76,11 @@ public class Instances implements Record {
         MessageDigest md5;
         try {
             md5 = MessageDigest.getInstance("MD5");
-            checksum =
+            cachedChecksum =
                 new BigInteger(1, md5.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
         } catch (NoSuchAlgorithmException e) {
             Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
-            checksum = RandomStringUtils.randomAscii(32);
+            cachedChecksum = RandomStringUtils.randomAscii(32);
         }
         lastCalculateTime = System.currentTimeMillis();
     }

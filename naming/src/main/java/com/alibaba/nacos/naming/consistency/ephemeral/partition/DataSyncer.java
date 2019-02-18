@@ -88,6 +88,9 @@ public class DataSyncer implements ServerChangeListener {
                 String key = iterator.next();
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
+                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                        Loggers.EPHEMERAL.debug("sync already in process, key: {}", key);
+                    }
                     iterator.remove();
                 }
             }
@@ -211,6 +214,10 @@ public class DataSyncer implements ServerChangeListener {
 
                 if (keyChecksums.isEmpty()) {
                     return;
+                }
+
+                if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                    Loggers.EPHEMERAL.debug("sync checksums: {}", keyChecksums);
                 }
 
                 for (Server member : servers) {
