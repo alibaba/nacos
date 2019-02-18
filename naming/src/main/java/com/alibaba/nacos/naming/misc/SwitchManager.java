@@ -78,22 +78,22 @@ public class SwitchManager implements DataListener<SwitchDomain> {
                 //batch update
                 SwitchDomain dom = JSON.parseObject(value, SwitchDomain.class);
                 dom.setEnableStandalone(switchDomain.isEnableStandalone());
-                if (dom.httpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
-                    || dom.tcpHealthParams.getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
+                if (dom.getHttpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN
+                    || dom.getTcpHealthParams().getMin() < SwitchDomain.HttpHealthParams.MIN_MIN) {
 
                     throw new IllegalArgumentException("min check time for http or tcp is too small(<500)");
                 }
 
-                if (dom.httpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
-                    || dom.tcpHealthParams.getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
+                if (dom.getHttpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX
+                    || dom.getTcpHealthParams().getMax() < SwitchDomain.HttpHealthParams.MIN_MAX) {
 
                     throw new IllegalArgumentException("max check time for http or tcp is too small(<3000)");
                 }
 
-                if (dom.httpHealthParams.getFactor() < 0
-                    || dom.httpHealthParams.getFactor() > 1
-                    || dom.tcpHealthParams.getFactor() < 0
-                    || dom.tcpHealthParams.getFactor() > 1) {
+                if (dom.getHttpHealthParams().getFactor() < 0
+                    || dom.getHttpHealthParams().getFactor() > 1
+                    || dom.getTcpHealthParams().getFactor() < 0
+                    || dom.getTcpHealthParams().getFactor() > 1) {
 
                     throw new IllegalArgumentException("malformed factor");
                 }

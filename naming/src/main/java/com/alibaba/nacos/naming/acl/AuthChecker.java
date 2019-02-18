@@ -116,7 +116,7 @@ public class AuthChecker {
         }
 
         if (!service.getOwners().contains(authInfo.getOperator())
-            && !switchDomain.masters.contains(authInfo.getOperator())) {
+            && !switchDomain.getMasters().contains(authInfo.getOperator())) {
             throw new AccessControlException("dom already exists and you're not among the owners");
         }
     }
