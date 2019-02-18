@@ -47,13 +47,11 @@ public class MetricsHttpAgent implements HttpAgent {
         try {
             result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
+            throw e;
+        } finally {
             timer.observeDuration();
             timer.close();
-            throw e;
         }
-
-        timer.observeDuration();
-        timer.close();
 
         return result;
     }
@@ -65,13 +63,11 @@ public class MetricsHttpAgent implements HttpAgent {
         try {
             result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
+            throw e;
+        } finally {
             timer.observeDuration();
             timer.close();
-            throw e;
         }
-
-        timer.observeDuration();
-        timer.close();
 
         return result;
     }
@@ -83,13 +79,12 @@ public class MetricsHttpAgent implements HttpAgent {
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
+
+            throw e;
+        } finally {
             timer.observeDuration();
             timer.close();
-            throw e;
         }
-
-        timer.observeDuration();
-        timer.close();
 
         return result;
     }
