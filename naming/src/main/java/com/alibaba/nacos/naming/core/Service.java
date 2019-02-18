@@ -193,8 +193,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
-        // TODO prevent most of the instances from removed
-
         Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
         for (String clusterName : clusterMap.keySet()) {
             ipMap.put(clusterName, new ArrayList<>());
