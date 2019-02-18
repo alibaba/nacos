@@ -106,7 +106,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
                 }
 
                 if (!ip.markChecking()) {
-                    SRV_LOG.warn("mysql check started before last one finished, dom: {}:{}:{}",
+                    SRV_LOG.warn("mysql check started before last one finished, service: {}:{}:{}",
                         task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
 
                     healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());
@@ -140,7 +140,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
             ResultSet resultSet = null;
 
             try {
-                ;
+
                 Cluster cluster = task.getCluster();
                 String key = cluster.getService().getName() + ":" + cluster.getName() + ":" + ip.getIp() + ":" + ip.getPort();
                 Connection connection = CONNECTION_POOL.get(key);

@@ -33,12 +33,12 @@ public class ClusterTest {
     @Before
     public void before() {
 
-        Service domain = new Service();
-        domain.setName("nacos.domain.1");
+        Service service = new Service();
+        service.setName("nacos.service.1");
 
         cluster = new Cluster();
         cluster.setName("nacos-cluster-1");
-        cluster.setService(domain);
+        cluster.setService(service);
         cluster.setDefCkport(80);
         cluster.setDefIPPort(8080);
     }
@@ -56,10 +56,10 @@ public class ClusterTest {
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
         newCluster.setHealthChecker(healthCheckConfig);
 
-        Service domain = new Service();
-        domain.setName("nacos.domain.2");
+        Service service = new Service();
+        service.setName("nacos.service.2");
 
-        newCluster.setService(domain);
+        newCluster.setService(service);
 
         cluster.update(newCluster);
 

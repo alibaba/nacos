@@ -68,20 +68,20 @@ public class AuthChecker {
 
         String namespaceId = WebUtils.optional(req, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String dom = WebUtils.optional(req, "name", "");
-        if (StringUtils.isEmpty(dom)) {
-            dom = WebUtils.optional(req, "dom", "");
+        String serviceName = WebUtils.optional(req, "name", "");
+        if (StringUtils.isEmpty(serviceName)) {
+            serviceName = WebUtils.optional(req, "serviceName", "");
         }
 
-        if (StringUtils.isEmpty(dom)) {
-            dom = WebUtils.optional(req, "tag", "");
+        if (StringUtils.isEmpty(serviceName)) {
+            serviceName = WebUtils.optional(req, "tag", "");
         }
 
-        Service domObj = serviceManager.getService(namespaceId, dom);
+        Service service = serviceManager.getService(namespaceId, serviceName);
 
-        if (domObj == null) {
+        if (service == null) {
             if (!req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {
-                throw new IllegalStateException("auth failed, dom does not exist: " + dom);
+                throw new IllegalStateException("auth failed, service does not exist: " + serviceName);
             }
         }
 
@@ -89,11 +89,11 @@ public class AuthChecker {
         String auth = req.getParameter("auth");
         String userName = req.getParameter("userName");
         if (StringUtils.isEmpty(auth) && StringUtils.isEmpty(token)) {
-            throw new IllegalArgumentException("provide 'authInfo' or 'token' to access this dom");
+            throw new IllegalArgumentException("provide 'authInfo' or 'token' to access this service");
         }
 
         // try valid token
-        if ((domObj != null && StringUtils.equals(domObj.getToken(), token))) {
+        if ((service != null && StringUtils.equals(service.getToken(), token))) {
             return;
         }
 
@@ -115,7 +115,7 @@ public class AuthChecker {
             throw new AccessControlException("un-registered SDK app");
         }
 
-        if (!domObj.getOwners().contains(authInfo.getOperator())
+        if (!service.getOwners().contains(authInfo.getOperator())
             && !switchDomain.masters.contains(authInfo.getOperator())) {
             throw new AccessControlException("dom already exists and you're not among the owners");
         }

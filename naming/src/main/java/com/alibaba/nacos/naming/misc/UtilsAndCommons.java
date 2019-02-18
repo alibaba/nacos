@@ -155,7 +155,7 @@ public class UtilsAndCommons {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("nacos.naming.domains.worker");
+                t.setName("nacos.naming.service.worker");
                 t.setDaemon(true);
                 return t;
             }
@@ -166,7 +166,7 @@ public class UtilsAndCommons {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("nacos.naming.domains.update.processor");
+                t.setName("nacos.naming.service.update.processor");
                 t.setDaemon(true);
                 return t;
             }

@@ -72,15 +72,15 @@ public class HealthController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             UtilsAndCommons.DEFAULT_NAMESPACE_ID);
-        String dom = WebUtils.required(request, "serviceName");
+        String serviceName = WebUtils.required(request, "serviceName");
         String ip = WebUtils.required(request, "ip");
         int port = Integer.parseInt(WebUtils.required(request, "port"));
         boolean valid = Boolean.valueOf(WebUtils.required(request, "valid"));
         String clusterName = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
 
-        if (!distroMapper.responsible(dom)) {
-            String server = distroMapper.mapSrv(dom);
-            Loggers.EVT_LOG.info("I'm not responsible for " + dom + ", proxy it to " + server);
+        if (!distroMapper.responsible(serviceName)) {
+            String server = distroMapper.mapSrv(serviceName);
+            Loggers.EVT_LOG.info("I'm not responsible for " + serviceName + ", proxy it to " + server);
             Map<String, String> proxyParams = new HashMap<>(16);
             for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
                 String key = entry.getKey();
@@ -97,10 +97,10 @@ public class HealthController {
             HttpClient.HttpResult httpResult = HttpClient.httpPost(url, null, proxyParams);
 
             if (httpResult.code != HttpURLConnection.HTTP_OK) {
-                throw new IllegalArgumentException("failed to proxy health update to " + server + ", dom: " + dom);
+                throw new IllegalArgumentException("failed to proxy health update to " + server + ", service: " + serviceName);
             }
         } else {
-            Service service = serviceManager.getService(namespaceId, dom);
+            Service service = serviceManager.getService(namespaceId, serviceName);
             // Only health check "none" need update health status with api
             if (HealthCheckType.NONE.name().equals(service.getClusterMap().get(clusterName).getHealthChecker().getType())) {
                 for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
@@ -108,13 +108,13 @@ public class HealthController {
                         instance.setValid(valid);
                         Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
                             + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
-                            + ", dom: " + dom + ", msg: update thought HealthController api");
+                            + ", service: " + serviceName + ", msg: update thought HealthController api");
                         pushService.serviceChanged(namespaceId, service.getName());
                         break;
                     }
                 }
             } else {
-                throw new IllegalArgumentException("health check mode 'client' and 'server' are not supported  , dom: " + dom);
+                throw new IllegalArgumentException("health check mode 'client' and 'server' are not supported, service: " + serviceName);
             }
         }
         return "ok";

@@ -92,7 +92,8 @@ public class PartitionController {
     public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        Map<String, Long> dataMap = serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, Long>>() {
+        Map<String, String> dataMap =
+            serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
         });
 
         for (String key : dataMap.keySet()) {
@@ -112,7 +113,7 @@ public class PartitionController {
     public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String keys = WebUtils.required(request, "keys");
         String keySplitter = ",";
-        Map<String, Datum<?>> datumMap = new HashMap<>(64);
+        Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {
             datumMap.put(key, consistencyService.get(key));
         }

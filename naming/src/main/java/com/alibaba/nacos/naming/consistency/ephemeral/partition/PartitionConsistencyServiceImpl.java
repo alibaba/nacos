@@ -25,6 +25,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +69,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     private volatile Map<String, List<DataListener>> listeners = new ConcurrentHashMap<>();
 
     @Override
-    public void put(String key, Object value) throws NacosException {
+    public void put(String key, Record value) throws NacosException {
         onPut(key, value);
         taskDispatcher.addTask(key);
     }
@@ -79,17 +80,17 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     }
 
     @Override
-    public Datum<?> get(String key) throws NacosException {
+    public Datum get(String key) throws NacosException {
         return dataStore.get(key);
     }
 
-    public void onPut(String key, Object value) {
+    public void onPut(String key, Record value) {
 
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
             Datum<Instances> datum = new Datum<>();
             datum.value = (Instances) value;
             datum.key = key;
-            datum.timestamp.set(System.currentTimeMillis());
+            datum.timestamp.incrementAndGet();
             dataStore.put(key, datum);
         }
 
@@ -121,22 +122,29 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         }
     }
 
-    public void onReceiveTimestamps(Map<String, Long> timestamps, String server) {
+    public void onReceiveTimestamps(Map<String, String> timestamps, String server) {
 
         List<String> toUpdateKeys = new ArrayList<>();
         List<String> toRemoveKeys = new ArrayList<>();
-        for (Map.Entry<String, Long> entry : timestamps.entrySet()) {
+        for (Map.Entry<String, String> entry : timestamps.entrySet()) {
             if (isResponsible(entry.getKey())) {
                 // this key should not be sent from remote server:
                 Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
                 continue;
             }
-            if (!dataStore.contains(entry.getKey()) || dataStore.get(entry.getKey()).timestamp.get() < entry.getValue()) {
+            if (!dataStore.contains(entry.getKey()) ||
+                dataStore.get(entry.getKey()).value == null ||
+                !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
                 toUpdateKeys.add(entry.getKey());
             }
         }
 
         for (String key : dataStore.keys()) {
+
+            if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
+                continue;
+            }
+
             if (!timestamps.containsKey(key)) {
                 toRemoveKeys.add(key);
             }

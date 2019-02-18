@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.cluster.transport;
 
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.pojo.Record;
 
 import java.util.Map;
 
@@ -65,5 +66,5 @@ public interface Serializer {
      * @param clazz target type
      * @return deserialized data map
      */
-    <T> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz);
+    <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz);
 }

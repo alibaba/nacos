@@ -21,7 +21,7 @@ package com.alibaba.nacos.naming.healthcheck;
 public interface HealthCheckProcessor {
 
     /**
-     * Run check task for domain
+     * Run check task for service
      *
      * @param task check task
      */

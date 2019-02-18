@@ -15,12 +15,14 @@
  */
 package com.alibaba.nacos.naming.consistency;
 
+import com.alibaba.nacos.naming.pojo.Record;
+
 /**
  * Data listener public interface
  *
  * @author nacos
  */
-public interface DataListener<T> {
+public interface DataListener<T extends Record> {
 
     /**
      * Determine if the listener was registered with this key

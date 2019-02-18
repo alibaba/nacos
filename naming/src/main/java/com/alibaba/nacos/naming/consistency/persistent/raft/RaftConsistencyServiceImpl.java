@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.consistency.DataListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     private RaftCore raftCore;
 
     @Override
-    public void put(String key, Object value) throws NacosException {
+    public void put(String key, Record value) throws NacosException {
         try {
             raftCore.signalPublish(key, value);
         } catch (Exception e) {

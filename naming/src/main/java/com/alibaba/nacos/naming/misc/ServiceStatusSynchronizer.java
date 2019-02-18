@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * @author nacos
  */
-public class DomainStatusSynchronizer implements Synchronizer {
+public class ServiceStatusSynchronizer implements Synchronizer {
     @Override
     public void send(final String serverIP, Message msg) {
         if(serverIP == null) {
@@ -36,7 +36,7 @@ public class DomainStatusSynchronizer implements Synchronizer {
 
         Map<String,String> params = new HashMap<String, String>(10);
 
-        params.put("domsStatus", msg.getData());
+        params.put("statuses", msg.getData());
         params.put("clientIP", NetUtils.localServer());
 
 
@@ -78,11 +78,11 @@ public class DomainStatusSynchronizer implements Synchronizer {
 
         String result;
         try {
-            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync dom status from: {}, dom: {}", serverIP, key);
+            Loggers.SRV_LOG.info("[STATUS-SYNCHRONIZE] sync service status from: {}, service: {}", serverIP, key);
             result = NamingProxy.reqAPI(RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/" + "listWithHealthStatus", params, serverIP);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get domain status from " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] Failed to get service status from " + serverIP, e);
             return null;
         }
 

@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.core.Instances;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -33,13 +34,13 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class DataStore {
 
-    private Map<String, Datum<?>> dataMap = new ConcurrentHashMap<>(1024);
+    private Map<String, Datum> dataMap = new ConcurrentHashMap<>(1024);
 
-    public void put(String key, Datum<?> value) {
+    public void put(String key, Datum value) {
         dataMap.put(key, value);
     }
 
-    public Datum<?> remove(String key) {
+    public Datum remove(String key) {
         return dataMap.remove(key);
     }
 
@@ -47,7 +48,7 @@ public class DataStore {
         return dataMap.keySet();
     }
 
-    public Datum<?> get(String key) {
+    public Datum get(String key) {
         return dataMap.get(key);
     }
 
@@ -55,8 +56,8 @@ public class DataStore {
         return dataMap.containsKey(key);
     }
 
-    public Map<String, Datum<?>> batchGet(List<String> keys) {
-        Map<String, Datum<?>> map = new HashMap<>(128);
+    public Map<String, Datum> batchGet(List<String> keys) {
+        Map<String, Datum> map = new HashMap<>(128);
         for (String key : keys) {
             if (!dataMap.containsKey(key)) {
                 continue;
@@ -64,5 +65,19 @@ public class DataStore {
             map.put(key, dataMap.get(key));
         }
         return map;
+    }
+
+    public int getInstanceCount() {
+        int count = 0;
+        for (Map.Entry<String, Datum> entry : dataMap.entrySet()) {
+            try {
+                Datum instancesDatum = entry.getValue();
+                if (instancesDatum.value instanceof Instances) {
+                    count += ((Instances) instancesDatum.value).getInstanceList().size();
+                }
+            } catch (Exception ignore) {
+            }
+        }
+        return count;
     }
 }

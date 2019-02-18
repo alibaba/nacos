@@ -36,27 +36,25 @@ import java.util.List;
 @WebAppConfiguration
 public class DomainsManagerTest extends BaseTest {
 
-    private ServiceManager domainsManager;
-
     @Before
     public void before() {
         super.before();
-        domainsManager = new ServiceManager();
+        serviceManager = new ServiceManager();
     }
 
     @Test
     public void easyRemoveDom() throws Exception {
-        domainsManager.easyRemoveService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1");
+        serviceManager.easyRemoveService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1");
     }
 
     @Test
     public void searchDom() throws Exception {
-        Service domain = new Service();
-        domain.setName("nacos.test.1");
+        Service service = new Service();
+        service.setName("nacos.test.1");
 
-        domainsManager.chooseServiceMap(UtilsAndCommons.DEFAULT_NAMESPACE_ID).put("nacos.test.1", domain);
+        serviceManager.chooseServiceMap(UtilsAndCommons.DEFAULT_NAMESPACE_ID).put("nacos.test.1", service);
 
-        List<Service> list = domainsManager.searchServices(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.*");
+        List<Service> list = serviceManager.searchServices(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());

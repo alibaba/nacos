@@ -123,7 +123,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             }
 
             if (!ip.markChecking()) {
-                SRV_LOG.warn("tcp check started before last one finished, dom: "
+                SRV_LOG.warn("tcp check started before last one finished, service: "
                     + task.getCluster().getService().getName() + ":"
                     + task.getCluster().getName() + ":"
                     + ip.getIp() + ":"
@@ -194,7 +194,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             SocketChannel channel = (SocketChannel) key.channel();
             try {
                 if (!beat.isValid()) {
-                    //invalid beat means this server is no longer responsible for the current dom
+                    //invalid beat means this server is no longer responsible for the current service
                     key.cancel();
                     key.channel().close();
 

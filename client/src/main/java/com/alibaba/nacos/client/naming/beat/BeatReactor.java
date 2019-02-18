@@ -31,7 +31,7 @@ public class BeatReactor {
 
     private ScheduledExecutorService executorService;
 
-    private long clientBeatInterval = 5 * 1000;
+    private volatile long clientBeatInterval = 5 * 1000;
 
     private NamingProxy serverProxy;
 
@@ -54,7 +54,7 @@ public class BeatReactor {
             }
         });
 
-        executorService.scheduleAtFixedRate(new BeatProcessor(), 0, clientBeatInterval, TimeUnit.MILLISECONDS);
+        executorService.schedule(new BeatProcessor(), 0, TimeUnit.MILLISECONDS);
     }
 
     public void addBeatInfo(String serviceName, String groupName, BeatInfo beatInfo) {
@@ -89,6 +89,8 @@ public class BeatReactor {
                 }
             } catch (Exception e) {
                 LogUtils.LOG.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
+            } finally {
+                executorService.schedule(this, clientBeatInterval, TimeUnit.MILLISECONDS);
             }
         }
     }
