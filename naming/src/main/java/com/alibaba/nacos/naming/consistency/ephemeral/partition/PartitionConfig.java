@@ -39,6 +39,9 @@ public class PartitionConfig {
     @Value("${nacos.naming.partition.syncRetryDelay}")
     private long syncRetryDelay = 5000L;
 
+    @Value("${nacos.naming.partition.taskDispatchThreadCount}")
+    private int taskDispatchThreadCount = Runtime.getRuntime().availableProcessors();
+
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
@@ -53,5 +56,9 @@ public class PartitionConfig {
 
     public long getSyncRetryDelay() {
         return syncRetryDelay;
+    }
+
+    public int getTaskDispatchThreadCount() {
+        return taskDispatchThreadCount;
     }
 }

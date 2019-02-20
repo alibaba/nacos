@@ -25,8 +25,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 /**
  * Data sync task dispatcher
@@ -37,28 +36,29 @@ import java.util.concurrent.LinkedBlockingQueue;
 @Component
 public class TaskDispatcher {
 
-    private List<BlockingQueue<String>> taskList = new ArrayList<>();
-
     @Autowired
     private PartitionConfig partitionConfig;
 
     @Autowired
     private DataSyncer dataSyncer;
 
+    private List<TaskScheduler> taskSchedulerList = new ArrayList<>();
+
     @PostConstruct
     public void init() {
-        for (int i = 0; i < Runtime.getRuntime().availableProcessors(); i++) {
-            taskList.add(new LinkedBlockingQueue<>(128 * 1024));
-            GlobalExecutor.submitTaskDispatch(new TaskScheduler(i));
+        for (int i = 0; i < partitionConfig.getTaskDispatchThreadCount(); i++) {
+            TaskScheduler taskScheduler = new TaskScheduler(i);
+            taskSchedulerList.add(taskScheduler);
+            GlobalExecutor.submitTaskDispatch(taskScheduler);
         }
     }
 
     public int mapTask(String key) {
-        return Math.abs(key.hashCode() % Integer.MAX_VALUE) % Runtime.getRuntime().availableProcessors();
+        return Math.abs(key.hashCode()) % partitionConfig.getTaskDispatchThreadCount();
     }
 
     public void addTask(String key) {
-        taskList.get(mapTask(key)).add(key);
+        taskSchedulerList.get(mapTask(key)).addTask(key);
     }
 
     public class TaskScheduler implements Runnable {
@@ -69,8 +69,14 @@ public class TaskDispatcher {
 
         private long lastDispatchTime = 0L;
 
+        private BlockingQueue<String> queue = new LinkedBlockingQueue<>(128 * 1024);
+
         public TaskScheduler(int index) {
             this.index = index;
+        }
+
+        public void addTask(String key) {
+            queue.offer(key);
         }
 
         public int getIndex() {
@@ -85,7 +91,8 @@ public class TaskDispatcher {
 
                 try {
 
-                    String key = taskList.get(index).take();
+                    String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
+                        TimeUnit.MILLISECONDS);
 
                     if (dataSize == 0) {
                         keys = new ArrayList<>();

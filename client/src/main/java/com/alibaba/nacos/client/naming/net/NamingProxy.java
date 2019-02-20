@@ -173,6 +173,7 @@ public class NamingProxy {
         params.put("weight", String.valueOf(instance.getWeight()));
         params.put("enable", String.valueOf(instance.isEnabled()));
         params.put("healthy", String.valueOf(instance.isHealthy()));
+        params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
