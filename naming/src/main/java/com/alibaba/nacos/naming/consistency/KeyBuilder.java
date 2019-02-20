@@ -26,7 +26,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class KeyBuilder {
 
-    public static final String KEY_CONNECTOR = "##";
+    public static final String NAMESPACE_KEY_CONNECTOR = "##";
+
     private static final String EPHEMERAL_KEY_PREFIX = "ephemeral.";
 
     public static final String SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta.";
@@ -38,12 +39,12 @@ public class KeyBuilder {
     public static final String BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist.";
 
     private static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
-        return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + KEY_CONNECTOR
+        return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
             + serviceName;
     }
 
     private static String buildPersistentInstanceListKey(String namespaceId, String serviceName) {
-        return INSTANCE_LIST_KEY_PREFIX + namespaceId + KEY_CONNECTOR
+        return INSTANCE_LIST_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
             + serviceName;
     }
 
@@ -53,7 +54,7 @@ public class KeyBuilder {
     }
 
     public static String buildServiceMetaKey(String namespaceId, String serviceName) {
-        return SERVICE_META_KEY_PREFIX + namespaceId + KEY_CONNECTOR + serviceName;
+        return SERVICE_META_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
 
     public static String getSwitchDomainKey() {
@@ -77,7 +78,7 @@ public class KeyBuilder {
     }
 
     public static boolean matchServiceName(String key, String namespaceId, String serviceName) {
-        return key.endsWith(namespaceId + KEY_CONNECTOR + serviceName);
+        return key.endsWith(namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName);
     }
 
     public static boolean matchServiceMetaKey(String key, String namespaceId, String serviceName) {
@@ -122,21 +123,21 @@ public class KeyBuilder {
         }
 
         if (matchServiceMetaKey(key)) {
-            return key.split(KEY_CONNECTOR)[0].substring(SERVICE_META_KEY_PREFIX.length());
+            return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(SERVICE_META_KEY_PREFIX.length());
         }
 
         if (matchEphemeralInstanceListKey(key)) {
-            return key.split(KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length() + EPHEMERAL_KEY_PREFIX.length());
+            return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length() + EPHEMERAL_KEY_PREFIX.length());
         }
 
         if (matchInstanceListKey(key)) {
-            return key.split(KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length());
+            return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length());
         }
 
         return StringUtils.EMPTY;
     }
 
     public static String getServiceName(String key) {
-        return key.split(KEY_CONNECTOR)[1];
+        return key.split(NAMESPACE_KEY_CONNECTOR)[1];
     }
 }
