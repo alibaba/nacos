@@ -130,7 +130,8 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
             if (isResponsible(entry.getKey())) {
                 // this key should not be sent from remote server:
                 Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
-                continue;
+                // abort the procedure:
+                return;
             }
             if (!dataStore.contains(entry.getKey()) ||
                 dataStore.get(entry.getKey()).value == null ||

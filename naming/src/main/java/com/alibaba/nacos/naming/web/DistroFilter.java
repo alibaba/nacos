@@ -24,12 +24,12 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
-import org.springframework.jmx.export.UnableToRegisterMBeanException;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -67,32 +67,44 @@ public class DistroFilter implements Filter {
             }
         }
 
-        String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+        try {
 
-        if (StringUtils.isNoneBlank(serviceName) && !HttpMethod.GET.name().equals(req.getMethod())
-            && !distroMapper.responsible(serviceName)) {
+            String path = new URI(req.getRequestURI()).getPath();
 
-            String url = "http://" + distroMapper.mapSrv(serviceName) +
-                req.getRequestURI() + "?" + req.getQueryString();
-            try {
-                resp.setCharacterEncoding("utf-8");
-                resp.getWriter().write(distroMapper.mapSrv(serviceName));
-                resp.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
-            } catch (Exception ignore) {
-                Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
+            String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+
+            boolean isMethodWrite =
+                (HttpMethod.POST.name().equals(req.getMethod()) || HttpMethod.DELETE.name().equals(req.getMethod()));
+
+            boolean isUrlInstance =
+                path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT);
+
+            if (isUrlInstance && isMethodWrite && !distroMapper.responsible(serviceName)) {
+
+                String url = "http://" + distroMapper.mapSrv(serviceName) +
+                    req.getRequestURI() + "?" + req.getQueryString();
+                try {
+                    resp.setCharacterEncoding("utf-8");
+                    resp.getWriter().write(distroMapper.mapSrv(serviceName));
+                    resp.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
+                } catch (Exception ignore) {
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
+                }
+                return;
             }
-            return;
+
+            String groupName = req.getParameter(CommonParams.GROUP_NAME);
+            if (StringUtils.isBlank(groupName)) {
+                groupName = UtilsAndCommons.DEFAULT_GROUP_NAME;
+            }
+
+            OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
+            requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceName);
+            filterChain.doFilter(requestWrapper, resp);
+        } catch (Exception e) {
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
         }
-
-        String groupName = req.getParameter(CommonParams.GROUP_NAME);
-        if (StringUtils.isBlank(groupName)) {
-            groupName = UtilsAndCommons.DEFAULT_GROUP_NAME;
-        }
-
-        OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
-        requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceName);
-
-        filterChain.doFilter(requestWrapper, resp);
     }
 
     @Override
