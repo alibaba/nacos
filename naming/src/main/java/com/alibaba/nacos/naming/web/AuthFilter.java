@@ -44,8 +44,8 @@ public class AuthFilter implements Filter {
     @Autowired
     private SwitchDomain switchDomain;
 
-    private static ConcurrentMap<String, Method> methodCache = new
-            ConcurrentHashMap<String, Method>();
+    @Autowired
+    private FilterBase filterBase;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -61,13 +61,10 @@ public class AuthFilter implements Filter {
 
         try {
             String path = new URI(req.getRequestURI()).getPath();
-            String target = getMethodName(path);
-
-            Method method = methodCache.get(target);
+            Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
-                method = mapClass(path).getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
-                methodCache.put(target, method);
+                throw new NoSuchMethodException();
             }
 
             if (method.isAnnotationPresent(NeedAuth.class) && !switchDomain.isEnableAuthentication()) {
@@ -96,53 +93,5 @@ public class AuthFilter implements Filter {
     @Override
     public void destroy() {
 
-    }
-
-    private Class<?> mapClass(String path) throws NacosException {
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)) {
-            return InstanceController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)) {
-            return ServiceController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
-            return ClusterController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT)) {
-            return OperatorController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)) {
-            return CatalogController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)) {
-            return HealthController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-            return RaftController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)) {
-            return PartitionController.class;
-        }
-
-        throw new NacosException(NacosException.NOT_FOUND, "no matched controller found!");
-
-    }
-
-    static protected String getMethodName(String path) throws Exception {
-        String target = path.substring(path.lastIndexOf("/") + 1).trim();
-
-        if (StringUtils.isEmpty(target)) {
-            throw new IllegalArgumentException("URL target required");
-        }
-
-        return target;
     }
 }

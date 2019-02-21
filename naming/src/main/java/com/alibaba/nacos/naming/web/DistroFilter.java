@@ -23,13 +23,14 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
+import java.security.AccessControlException;
 import java.util.Map;
 
 /**
@@ -43,6 +44,9 @@ public class DistroFilter implements Filter {
     @Autowired
     private SwitchDomain switchDomain;
 
+    @Autowired
+    private FilterBase filterBase;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -54,6 +58,7 @@ public class DistroFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
+        // request limit:
         String urlString = req.getRequestURI() + "?" + req.getQueryString();
         Map<String, Integer> limitedUrlMap = switchDomain.getLimitedUrlMap();
 
@@ -68,19 +73,15 @@ public class DistroFilter implements Filter {
         }
 
         try {
-
             String path = new URI(req.getRequestURI()).getPath();
-
             String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            Method method = filterBase.getMethod(req.getMethod(), path);
 
-            boolean isMethodWrite =
-                (HttpMethod.POST.name().equals(req.getMethod()) || HttpMethod.DELETE.name().equals(req.getMethod()));
+            if (method == null) {
+                throw new NoSuchMethodException(req.getMethod() + " " + path);
+            }
 
-            boolean isUrlInstance =
-                path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT);
-
-            if (isUrlInstance && isMethodWrite && !distroMapper.responsible(serviceName)) {
-
+            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(serviceName)) {
                 String url = "http://" + distroMapper.mapSrv(serviceName) +
                     req.getRequestURI() + "?" + req.getQueryString();
                 try {
@@ -101,10 +102,18 @@ public class DistroFilter implements Filter {
             OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceName);
             filterChain.doFilter(requestWrapper, resp);
+        } catch (AccessControlException e) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + UtilsAndCommons.getAllExceptionMsg(e));
+            return;
+        } catch (NoSuchMethodException e) {
+            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "no such api: " + e.getMessage());
+            return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                 "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
+            return;
         }
+
     }
 
     @Override
