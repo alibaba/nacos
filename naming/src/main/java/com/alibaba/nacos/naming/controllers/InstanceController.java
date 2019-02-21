@@ -252,7 +252,7 @@ public class InstanceController {
             }
 
             String url = "http://" + server + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/clientBeat";
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/clientBeat";
             HttpClient.HttpResult httpResult = HttpClient.httpGet(url, null, proxyParams);
 
             if (httpResult.code != HttpURLConnection.HTTP_OK) {

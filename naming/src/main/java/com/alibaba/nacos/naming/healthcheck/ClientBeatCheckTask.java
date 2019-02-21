@@ -100,6 +100,7 @@ public class ClientBeatCheckTask implements Runnable {
     }
 
     private void deleteIP(Instance instance) {
+        // TODO async delete
         try {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
             request.appendParam("ip", instance.getIp())
