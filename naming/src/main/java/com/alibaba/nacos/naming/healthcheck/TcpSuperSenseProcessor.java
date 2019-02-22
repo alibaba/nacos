@@ -202,13 +202,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                     return;
                 }
 
-                if (key.isHealthy() && key.isConnectable()) {
+                if (key.isValid() && key.isConnectable()) {
                     //connected
                     channel.finishConnect();
                     beat.finishCheck(true, false, System.currentTimeMillis() - beat.getTask().getStartTime(), "tcp:ok+");
                 }
 
-                if (key.isHealthy() && key.isReadable()) {
+                if (key.isValid() && key.isReadable()) {
                     //disconnected
                     ByteBuffer buffer = ByteBuffer.allocate(128);
                     if (channel.read(buffer) == -1) {
@@ -332,7 +332,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
         @Override
         public void run() {
-            if (key != null && key.isHealthy()) {
+            if (key != null && key.isValid()) {
                 SocketChannel channel = (SocketChannel) key.channel();
                 Beat beat = (Beat) key.attachment();
 
@@ -378,7 +378,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                 Cluster cluster = beat.getTask().getCluster();
 
                 BeatKey beatKey = keyMap.get(beat.toString());
-                if (beatKey != null && beatKey.key.isHealthy()) {
+                if (beatKey != null && beatKey.key.isValid()) {
                     if (System.currentTimeMillis() - beatKey.birthTime < TCP_KEEP_ALIVE_MILLIS) {
                         instance.setBeingChecked(false);
                         return null;

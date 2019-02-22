@@ -138,7 +138,6 @@ public class NamingProxy {
 
             result = HttpClient.httpGet("http://" + curServer + api, headers, params);
 
-
             if (HttpURLConnection.HTTP_OK == result.code) {
                 return result.content;
             }
