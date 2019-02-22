@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.util;
+package com.alibaba.nacos.core.utils;
 
 /**
  * Nacos common constants
@@ -27,4 +27,9 @@ public interface Constants {
      * Spring Profile : "standalone"
      */
     String STANDALONE_SPRING_PROFILE = "standalone";
+    String USE_ONLY_SITE_INTERFACES = "nacos.inetutils.use-only-site-local-interfaces";
+    String PREFERRED_NETWORKS = "nacos.inetutils.preferred-networks";
+    String IGNORED_INTERFACES = "nacos.inetutils.ignored-interfaces";
+    String IP_ADDRESS = "nacos.inetutils.ip-address";
+    String PREFER_HOSTNAME_OVER_IP = "nacos.inetutils.prefer-hostname-over-ip";
 }

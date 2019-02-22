@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common;
+package com.alibaba.nacos.core.util;
 
-import com.alibaba.nacos.common.util.SystemUtils;
+
+import com.alibaba.nacos.core.utils.SystemUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
