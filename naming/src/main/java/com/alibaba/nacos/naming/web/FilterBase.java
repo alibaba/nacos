@@ -58,6 +58,9 @@ public class FilterBase {
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
         String classPath = requestMapping.value()[0];
         for (Method method : clazz.getMethods()) {
+            if (!method.isAnnotationPresent(RequestMapping.class)) {
+                continue;
+            }
             requestMapping = method.getAnnotation(RequestMapping.class);
             RequestMethod[] requestMethods = requestMapping.method();
             if (requestMethods.length == 0) {

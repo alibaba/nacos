@@ -82,6 +82,8 @@ public class DistroFilter implements Filter {
             }
 
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(serviceName)) {
+
+                // TODO proxy request:
                 String url = "http://" + distroMapper.mapSrv(serviceName) +
                     req.getRequestURI() + "?" + req.getQueryString();
                 try {

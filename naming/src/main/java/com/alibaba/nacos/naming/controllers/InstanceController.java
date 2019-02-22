@@ -93,7 +93,12 @@ public class InstanceController {
     @CanDistro
     @RequestMapping(value = "/instance", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
-        return registerInstance(request);
+
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+
+        serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
+        return "ok";
     }
 
     @CanDistro
@@ -116,7 +121,11 @@ public class InstanceController {
 
     @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
-        return registerInstance(request);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+
+        serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
+        return "ok";
     }
 
     @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
@@ -232,7 +241,7 @@ public class InstanceController {
             instance.setInstanceId(instance.generateInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
-            serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
+            serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -305,11 +314,9 @@ public class InstanceController {
         return result;
     }
 
-    private String registerInstance(HttpServletRequest request) throws Exception {
+    private Instance parseInstance(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID);
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
 
@@ -332,9 +339,7 @@ public class InstanceController {
                 + " in " + switchDomain.getServerMode() + " mode.");
         }
 
-        serviceManager.registerInstance(namespaceId, serviceName, clusterName, instance);
-
-        return "ok";
+        return instance;
     }
 
     private Instance getIPAddress(HttpServletRequest request) {

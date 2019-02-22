@@ -354,7 +354,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @param instance    instance to register
      * @throws Exception any error occurred in the process
      */
-    public void registerInstance(String namespaceId, String serviceName, String clusterName, Instance instance) throws Exception {
+    public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
         if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
             createEmptyService(namespaceId, serviceName);
@@ -371,10 +371,26 @@ public class ServiceManager implements RecordListener<Service> {
             throw new NacosException(NacosException.INVALID_PARAM, "instance already exist: " + instance);
         }
 
-        addInstance(namespaceId, serviceName, clusterName, instance.isEphemeral(), instance);
+        addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
-    public void addInstance(String namespaceId, String serviceName, String clusterName, boolean ephemeral, Instance... ips) throws NacosException {
+    public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+
+        Service service = getService(namespaceId, serviceName);
+
+        if (service == null) {
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "service not found, namespace: " + namespaceId + ", service: " + serviceName);
+        }
+
+        if (!service.allIPs().contains(instance)) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance not exist: " + instance);
+        }
+
+        addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
+    }
+
+    public void addInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
 
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
