@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -82,7 +82,7 @@ public class NamingProxy {
             }
         }
 
-        String serverPort = System.getProperties().getProperty(PropertyKeyConst.SERVER_PORT);
+        String serverPort = System.getProperties().getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
         if (StringUtils.isNotEmpty(serverPort)) {
             this.serverPort = Integer.valueOf(serverPort.trim());
         }
@@ -116,9 +116,11 @@ public class NamingProxy {
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
 
+            String nacosNamingMode = System.getProperty(SystemPropertyKeyConst.NACOS_NAMING_REQUEST_MODULE, "Naming");
+
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch", "Connection", "Keep-Alive",
-                "RequestId", UuidUtils.generateUuid());
+                "RequestId", UuidUtils.generateUuid(), "Request-Module", nacosNamingMode);
 
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null,
                 UtilAndComs.ENCODING);
