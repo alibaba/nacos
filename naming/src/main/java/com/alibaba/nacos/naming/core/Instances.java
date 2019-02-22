@@ -69,7 +69,7 @@ public class Instances implements Record {
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                + ip.isValid() + "_" + ip.getClusterName();
+                + ip.isHealthy() + "_" + ip.getClusterName();
             sb.append(string);
             sb.append(",");
         }

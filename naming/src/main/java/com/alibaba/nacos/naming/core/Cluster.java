@@ -139,13 +139,13 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 // because the checker has the most precise result
                 // Only when ip is not marked, don't we update the health status of IP:
                 if (!ip.isMarked()) {
-                    ip.setValid(oldIP.isValid());
+                    ip.setHealthy(oldIP.isHealthy());
                 }
 
-                if (ip.isValid() != oldIP.isValid()) {
+                if (ip.isHealthy() != oldIP.isHealthy()) {
                     // ip validation status updated
                     Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
-                        getService().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
+                        getService().getName(), (ip.isHealthy() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
                 }
 
                 if (ip.getWeight() != oldIP.getWeight()) {

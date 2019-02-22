@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Thread to update ephemeral instance triggered by client beat
+ *
  * @author nkorange
  */
 public class ClientBeatProcessor implements Runnable {
@@ -57,13 +59,12 @@ public class ClientBeatProcessor implements Runnable {
         this.service = service;
     }
 
-    public String getType() {
-        return "CLIENT_BEAT";
-    }
-
-    public void process() {
+    @Override
+    public void run() {
         Service service = this.service;
-        Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: {}", rsInfo.toString());
+        if (Loggers.EVT_LOG.isDebugEnabled()) {
+            Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: {}", rsInfo.toString());
+        }
 
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
@@ -73,11 +74,13 @@ public class ClientBeatProcessor implements Runnable {
 
         for (Instance instance : instances) {
             if (instance.getIp().equals(ip) && instance.getPort() == port) {
-                Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
+                if (Loggers.EVT_LOG.isDebugEnabled()) {
+                    Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo.toString());
+                }
                 instance.setLastBeat(System.currentTimeMillis());
                 if (!instance.isMarked()) {
-                    if (!instance.isValid()) {
-                        instance.setValid(true);
+                    if (!instance.isHealthy()) {
+                        instance.setHealthy(true);
                         Loggers.EVT_LOG.info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
                             cluster.getService().getName(), ip, port, cluster.getName(), UtilsAndCommons.LOCALHOST_SITE);
                         getPushService().serviceChanged(service.getNamespaceId(), this.service.getName());
@@ -85,10 +88,5 @@ public class ClientBeatProcessor implements Runnable {
                 }
             }
         }
-    }
-
-    @Override
-    public void run() {
-        process();
     }
 }

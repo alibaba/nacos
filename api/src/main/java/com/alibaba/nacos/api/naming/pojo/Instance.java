@@ -51,7 +51,6 @@ public class Instance {
     /**
      * instance health status
      */
-    @JSONField(name = "valid")
     private boolean healthy = true;
 
     /**

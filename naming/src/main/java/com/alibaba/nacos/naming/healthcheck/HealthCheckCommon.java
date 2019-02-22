@@ -136,10 +136,10 @@ public class HealthCheckCommon {
         Cluster cluster = task.getCluster();
 
         try {
-            if (!ip.isValid() || !ip.isMockValid()) {
+            if (!ip.isHealthy() || !ip.isMockValid()) {
                 if (ip.getOKCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (distroMapper.responsible(cluster, ip)) {
-                        ip.setValid(true);
+                        ip.setHealthy(true);
                         ip.setMockValid(true);
 
                         Service vDom = cluster.getService();
@@ -174,10 +174,10 @@ public class HealthCheckCommon {
         Cluster cluster = task.getCluster();
 
         try {
-            if (ip.isValid() || ip.isMockValid()) {
+            if (ip.isHealthy() || ip.isMockValid()) {
                 if (ip.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
                     if (distroMapper.responsible(cluster, ip)) {
-                        ip.setValid(false);
+                        ip.setHealthy(false);
                         ip.setMockValid(false);
 
                         Service vDom = cluster.getService();
@@ -210,9 +210,9 @@ public class HealthCheckCommon {
     public void checkFailNow(Instance ip, HealthCheckTask task, String msg) {
         Cluster cluster = task.getCluster();
         try {
-            if (ip.isValid() || ip.isMockValid()) {
+            if (ip.isHealthy() || ip.isMockValid()) {
                 if (distroMapper.responsible(cluster, ip)) {
-                    ip.setValid(false);
+                    ip.setHealthy(false);
                     ip.setMockValid(false);
 
                     Service vDom = cluster.getService();

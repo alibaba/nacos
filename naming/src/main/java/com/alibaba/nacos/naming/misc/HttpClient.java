@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.common.util.HttpMethod;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -120,37 +121,42 @@ public class HttpClient {
         }
     }
 
-    public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
-
-        HttpURLConnection conn = null;
-        try {
-            String encodedContent = encodingParams(paramValues, encoding);
-            url += (null == encodedContent) ? "" : ("?" + encodedContent);
-
-            conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
-            conn.setReadTimeout(TIME_OUT_MILLIS);
-            conn.setRequestMethod("GET");
-            setHeaders(conn, headers, encoding);
-            conn.connect();
-
-            return getResult(conn);
-        } catch (Exception e) {
-            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
+    public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+        asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.GET);
     }
 
-    public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+        asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.POST);
+    }
+
+    public static void asyncHttpDelete(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+        asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.DELETE);
+    }
+
+    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler, String method) throws Exception {
         if (!MapUtils.isEmpty(paramValues)) {
             String encodedContent = encodingParams(paramValues, "UTF-8");
             url += (null == encodedContent) ? "" : ("?" + encodedContent);
         }
 
-        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareGet(url);
+        AsyncHttpClient.BoundRequestBuilder builder;
+
+        switch (method) {
+            case HttpMethod.GET:
+                builder = asyncHttpClient.prepareGet(url);
+                break;
+            case HttpMethod.POST:
+                builder = asyncHttpClient.preparePost(url);
+                break;
+            case HttpMethod.PUT:
+                builder = asyncHttpClient.preparePut(url);
+                break;
+            case HttpMethod.DELETE:
+                builder = asyncHttpClient.prepareDelete(url);
+                break;
+            default:
+                throw new RuntimeException("not supported method:" + method);
+        }
 
         if (!CollectionUtils.isEmpty(headers)) {
             for (String header : headers) {
@@ -168,26 +174,7 @@ public class HttpClient {
     }
 
     public static void asyncHttpPostLarge(String url, List<String> headers, String content, AsyncCompletionHandler handler) throws Exception {
-        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePost(url);
-
-        if (!CollectionUtils.isEmpty(headers)) {
-            for (String header : headers) {
-                builder.setHeader(header.split("=")[0], header.split("=")[1]);
-            }
-        }
-
-        builder.setBody(content.getBytes("UTF-8"));
-
-        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
-        builder.setHeader("Accept-Charset", "UTF-8");
-        builder.setHeader("Accept-Encoding", "gzip");
-        builder.setHeader("Content-Encoding", "gzip");
-
-        if (handler != null) {
-            builder.execute(handler);
-        } else {
-            builder.execute();
-        }
+        asyncHttpPostLarge(url, headers, content.getBytes(), handler);
     }
 
     public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
@@ -213,33 +200,6 @@ public class HttpClient {
         }
     }
 
-    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
-        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePost(url);
-
-        if (!CollectionUtils.isEmpty(headers)) {
-            for (String header : headers) {
-                builder.setHeader(header.split("=")[0], header.split("=")[1]);
-            }
-        }
-
-        if (!MapUtils.isEmpty(paramValues)) {
-            FluentStringsMap params = new FluentStringsMap();
-            for (Map.Entry<String, String> entry : paramValues.entrySet()) {
-                params.put(entry.getKey(), Collections.singletonList(entry.getValue()));
-            }
-
-            builder.setParameters(params);
-        }
-
-        builder.setHeader("Accept-Charset", "UTF-8");
-
-        if (handler != null) {
-            builder.execute(handler);
-        } else {
-            builder.execute();
-        }
-    }
-
     public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues) {
         return httpPost(url, headers, paramValues, "UTF-8");
     }
@@ -257,7 +217,6 @@ public class HttpClient {
             for (Map.Entry<String, String> entry : paramValues.entrySet()) {
                 nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
             }
-
 
             httpost.setEntity(new UrlEncodedFormEntity(nvps, encoding));
             HttpResponse response = postClient.execute(httpost);

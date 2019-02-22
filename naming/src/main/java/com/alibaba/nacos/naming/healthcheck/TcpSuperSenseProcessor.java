@@ -193,7 +193,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             Beat beat = (Beat) key.attachment();
             SocketChannel channel = (SocketChannel) key.channel();
             try {
-                if (!beat.isValid()) {
+                if (!beat.isHealthy()) {
                     //invalid beat means this server is no longer responsible for the current service
                     key.cancel();
                     key.channel().close();
@@ -202,13 +202,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                     return;
                 }
 
-                if (key.isValid() && key.isConnectable()) {
+                if (key.isHealthy() && key.isConnectable()) {
                     //connected
                     channel.finishConnect();
                     beat.finishCheck(true, false, System.currentTimeMillis() - beat.getTask().getStartTime(), "tcp:ok+");
                 }
 
-                if (key.isValid() && key.isReadable()) {
+                if (key.isHealthy() && key.isReadable()) {
                     //disconnected
                     ByteBuffer buffer = ByteBuffer.allocate(128);
                     if (channel.read(buffer) == -1) {
@@ -261,7 +261,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             return task;
         }
 
-        public boolean isValid() {
+        public boolean isHealthy() {
             return System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(30L);
         }
 
@@ -332,7 +332,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
         @Override
         public void run() {
-            if (key != null && key.isValid()) {
+            if (key != null && key.isHealthy()) {
                 SocketChannel channel = (SocketChannel) key.channel();
                 Beat beat = (Beat) key.attachment();
 
@@ -378,7 +378,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                 Cluster cluster = beat.getTask().getCluster();
 
                 BeatKey beatKey = keyMap.get(beat.toString());
-                if (beatKey != null && beatKey.key.isValid()) {
+                if (beatKey != null && beatKey.key.isHealthy()) {
                     if (System.currentTimeMillis() - beatKey.birthTime < TCP_KEEP_ALIVE_MILLIS) {
                         instance.setBeingChecked(false);
                         return null;

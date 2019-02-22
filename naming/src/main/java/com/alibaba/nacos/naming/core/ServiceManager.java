@@ -237,10 +237,10 @@ public class ServiceManager implements RecordListener<Service> {
         for (Instance instance : instances) {
 
             Boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIPAddr()));
-            if (valid != instance.isValid()) {
-                instance.setValid(valid);
+            if (valid != instance.isHealthy()) {
+                instance.setHealthy(valid);
                 Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}",
-                    serviceName, (instance.isValid() ? "ENABLED" : "DISABLED"),
+                    serviceName, (instance.isHealthy() ? "ENABLED" : "DISABLED"),
                     instance.getIp(), instance.getPort(), instance.getClusterName());
             }
         }
@@ -249,7 +249,7 @@ public class ServiceManager implements RecordListener<Service> {
         StringBuilder stringBuilder = new StringBuilder();
         List<Instance> allIps = service.allIPs();
         for (Instance instance : allIps) {
-            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
+            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
         Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", service.getName(), stringBuilder.toString());
@@ -483,7 +483,7 @@ public class ServiceManager implements RecordListener<Service> {
         for (Instance instance : oldInstances) {
             Instance instance1 = map.get(instance.toIPAddr());
             if (instance1 != null) {
-                instance.setValid(instance1.isValid());
+                instance.setHealthy(instance1.isHealthy());
                 instance.setLastBeat(instance1.getLastBeat());
             }
             instanceMap.put(instance.getDatumKey(), instance);
