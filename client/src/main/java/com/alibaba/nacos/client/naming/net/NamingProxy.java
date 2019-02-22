@@ -116,7 +116,7 @@ public class NamingProxy {
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
 
-            String nacosNamingMode = System.getProperty(SystemPropertyKeyConst.NACOS_NAMING_MODE, "Naming");
+            String nacosNamingMode = System.getProperty(SystemPropertyKeyConst.NACOS_NAMING_REQUEST_MODULE, "Naming");
 
             List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch", "Connection", "Keep-Alive",
