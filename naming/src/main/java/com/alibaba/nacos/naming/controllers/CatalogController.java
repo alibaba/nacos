@@ -79,7 +79,7 @@ public class CatalogController {
             // FIXME should be optimized:
             int validCount = 0;
             for (Instance instance : service.allIPs()) {
-                if (instance.isValid()) {
+                if (instance.isHealthy()) {
                     validCount++;
                 }
             }
@@ -297,7 +297,7 @@ public class CatalogController {
             ipAddressInfo.setIp(ipAddress.getIp());
             ipAddressInfo.setPort(ipAddress.getPort());
             ipAddressInfo.setMetadata(ipAddress.getMetadata());
-            ipAddressInfo.setValid(ipAddress.isValid());
+            ipAddressInfo.setValid(ipAddress.isHealthy());
             ipAddressInfo.setWeight(ipAddress.getWeight());
             ipAddressInfo.setEnabled(ipAddress.isEnabled());
             ipAddressInfos.add(ipAddressInfo);

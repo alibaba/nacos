@@ -27,11 +27,15 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.Response;
 
 import java.net.HttpURLConnection;
 import java.util.List;
 
 /**
+ * Check and update statues of ephemeral instances, remove them if they have been expired.
+ *
  * @author nkorange
  */
 public class ClientBeatCheckTask implements Runnable {
@@ -66,11 +70,12 @@ public class ClientBeatCheckTask implements Runnable {
 
             List<Instance> instances = service.allIPs(true);
 
+            // first set health status of instances:
             for (Instance instance : instances) {
                 if (System.currentTimeMillis() - instance.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {
                     if (!instance.isMarked()) {
-                        if (instance.isValid()) {
-                            instance.setValid(false);
+                        if (instance.isHealthy()) {
+                            instance.setHealthy(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(),
                                 UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, instance.getLastBeat());
@@ -78,7 +83,10 @@ public class ClientBeatCheckTask implements Runnable {
                         }
                     }
                 }
+            }
 
+            // then remove obsolete instances:
+            for (Instance instance : instances) {
                 if (System.currentTimeMillis() - instance.getLastBeat() > service.getIpDeleteTimeout()) {
 
                     // protect threshold met:
@@ -93,6 +101,7 @@ public class ClientBeatCheckTask implements Runnable {
                     deleteIP(instance);
                 }
             }
+
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         }
@@ -100,7 +109,7 @@ public class ClientBeatCheckTask implements Runnable {
     }
 
     private void deleteIP(Instance instance) {
-        // TODO async delete
+
         try {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
             request.appendParam("ip", instance.getIp())
@@ -111,11 +120,19 @@ public class ClientBeatCheckTask implements Runnable {
 
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
-            HttpClient.HttpResult result = HttpClient.httpDelete(url, null, null);
-            if (result.code != HttpURLConnection.HTTP_OK) {
-                Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
-                    instance.toJSON(), result.content, result.code);
-            }
+
+            // delete instance asynchronously:
+            HttpClient.asyncHttpDelete(url, null, null, new AsyncCompletionHandler() {
+                @Override
+                public Object onCompleted(Response response) throws Exception {
+                    if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
+                        Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, caused {}, resp code: {}",
+                            instance.toJSON(), response.getResponseBody(), response.getStatusCode());
+                    }
+                    return null;
+                }
+            });
+
         } catch (Exception e) {
             Loggers.SRV_LOG.error("[IP-DEAD] failed to delete ip automatically, ip: {}, error: {}", instance.toJSON(), e);
         }

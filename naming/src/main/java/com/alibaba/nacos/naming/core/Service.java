@@ -189,7 +189,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public boolean meetProtectThreshold() {
-        return (healthyInstanceCount() * 1.0 / allIPs().size()) < getProtectThreshold();
+        return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
@@ -240,7 +240,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         StringBuilder stringBuilder = new StringBuilder();
 
         for (Instance instance : allIPs()) {
-            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isValid()).append(",");
+            stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
         Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", getName(), stringBuilder.toString());
@@ -319,7 +319,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         int invalidIPCount = 0;
         int ipCount = 0;
         for (Instance ip : ips) {
-            if (!ip.isValid()) {
+            if (!ip.isHealthy()) {
                 invalidIPCount++;
             }
 
@@ -447,7 +447,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         for (Instance ip : ips) {
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
-                + ip.isValid() + "_" + ip.getClusterName();
+                + ip.isHealthy() + "_" + ip.getClusterName();
             ipsString.append(string);
             ipsString.append(",");
         }

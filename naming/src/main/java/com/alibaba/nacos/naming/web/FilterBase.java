@@ -1,9 +1,21 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.naming.controllers.*;
-import com.alibaba.nacos.naming.exception.NacosException;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -14,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
+ * Basic methods for filter to use
+ *
  * @author nkorange
  * @since 1.0.0
  */
@@ -54,58 +68,5 @@ public class FilterBase {
                 methodCache.put(requestMethods[0].name() + "-->" + classPath + methodPath, method);
             }
         }
-    }
-
-
-    public Class<?> mapClass(String path) throws NacosException {
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)) {
-            return InstanceController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)) {
-            return ServiceController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
-            return ClusterController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT)) {
-            return OperatorController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT)) {
-            return CatalogController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)) {
-            return HealthController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-            return RaftController.class;
-        }
-
-        if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_PARTITION_CONTEXT)) {
-            return PartitionController.class;
-        }
-
-        throw new NacosException(NacosException.NOT_FOUND, "no matched controller found!");
-
-    }
-
-    public String getMethodName(String path) throws Exception {
-        String target = path.substring(path.lastIndexOf("/") + 1).trim();
-
-        if (StringUtils.isEmpty(target)) {
-            throw new IllegalArgumentException("URL target required");
-        }
-
-        return target;
-    }
-
-    public ConcurrentMap<String, Method> getMethodCache() {
-        return methodCache;
     }
 }

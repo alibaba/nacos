@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
+import com.alibaba.nacos.naming.web.CanDistro;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -89,11 +90,13 @@ public class InstanceController {
         }
     };
 
+    @CanDistro
     @RequestMapping(value = "/instance", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
         return registerInstance(request);
     }
 
+    @CanDistro
     @RequestMapping(value = "/instance", method = RequestMethod.DELETE)
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
@@ -173,7 +176,7 @@ public class InstanceController {
                 result.put("port", port);
                 result.put("clusterName", cluster);
                 result.put("weight", instance.getWeight());
-                result.put("healthy", instance.isValid());
+                result.put("healthy", instance.isHealthy());
                 result.put("metadata", instance.getMetadata());
                 result.put("instanceId", instance.generateInstanceId());
                 return result;
@@ -183,6 +186,7 @@ public class InstanceController {
         throw new IllegalStateException("no matched ip found!");
     }
 
+    @CanDistro
     @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
     public JSONObject beat(HttpServletRequest request) throws Exception {
 
@@ -294,7 +298,7 @@ public class InstanceController {
         JSONArray ipArray = new JSONArray();
 
         for (Instance ip : ips) {
-            ipArray.add(ip.toIPAddr() + "_" + ip.isValid());
+            ipArray.add(ip.toIPAddr() + "_" + ip.isHealthy());
         }
 
         result.put("ips", ipArray);
@@ -339,6 +343,7 @@ public class InstanceController {
         String port = WebUtils.required(request, "port");
         String weight = WebUtils.optional(request, "weight", "1");
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
         // If server running in CP mode, we set this flag to false:
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
@@ -349,6 +354,7 @@ public class InstanceController {
         instance.setIp(ip);
         instance.setWeight(Double.parseDouble(weight));
         instance.setClusterName(cluster);
+        instance.setHealthy(healthy);
         instance.setEnabled(enabled);
         instance.setEphemeral(ephemeral);
 
@@ -425,7 +431,7 @@ public class InstanceController {
         ipMap.put(Boolean.FALSE, new ArrayList<>());
 
         for (Instance ip : srvedIPs) {
-            ipMap.get(ip.isValid()).add(ip);
+            ipMap.get(ip.isHealthy()).add(ip);
         }
 
         if (isCheck) {
@@ -466,7 +472,8 @@ public class InstanceController {
 
                 ipObj.put("ip", instance.getIp());
                 ipObj.put("port", instance.getPort());
-                ipObj.put("valid", entry.getKey());
+                ipObj.put("valid", entry.getKey()); // deprecated since nacos 1.0.0
+                ipObj.put("healthy", entry.getKey());
                 ipObj.put("marked", instance.isMarked());
                 ipObj.put("instanceId", instance.getInstanceId());
                 ipObj.put("metadata", instance.getMetadata());

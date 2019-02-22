@@ -134,7 +134,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             // determine 'valid':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
                     Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
-                instance.setValid(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
+                instance.setHealthy(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
 
             // determine 'cluster':
@@ -266,14 +266,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         HealthCheckStatus.get(this).checkRT = checkRT;
     }
 
-    public synchronized void setValid(boolean valid) {
-        setHealthy(valid);
-    }
-
-    public boolean isValid() {
-        return isHealthy();
-    }
-
     public boolean isMarked() {
         return marked;
     }
@@ -319,7 +311,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     @Override
     public int compareTo(Object o) {
         if (!(o instanceof Instance)) {
-            Loggers.SRV_LOG.error("[IPADDRESS-COMPARE] Object is not an instance of IPAdress, object: {}", o.getClass());
+            Loggers.SRV_LOG.error("[INSTANCE-COMPARE] Object is not an instance of IPAdress, object: {}", o.getClass());
             throw new IllegalArgumentException("Object is not an instance of IPAdress,object: " + o.getClass());
         }
 

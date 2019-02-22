@@ -106,7 +106,7 @@ public class HealthController {
             if (HealthCheckType.NONE.name().equals(service.getClusterMap().get(clusterName).getHealthChecker().getType())) {
                 for (Instance instance : service.allIPs(Lists.newArrayList(clusterName))) {
                     if (instance.getIp().equals(ip) && instance.getPort() == port) {
-                        instance.setValid(valid);
+                        instance.setHealthy(valid);
                         Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
                             + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
                             + ", service: " + serviceName + ", msg: update thought HealthController api");
