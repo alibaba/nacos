@@ -27,5 +27,5 @@ public interface SystemPropertyKeyConst {
 
     String NAMING_WEB_CONTEXT = "nacos.naming.web.context";
 
-    String NACOS_NAMING_MODE = "nacos.naming.mode";
+    String NACOS_NAMING_REQUEST_MODULE = "nacos.naming.request.module";
 }
