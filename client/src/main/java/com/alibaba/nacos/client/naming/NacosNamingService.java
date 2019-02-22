@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -154,7 +155,7 @@ public class NacosNamingService implements NamingService {
 
     private void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
-        String webContext = System.getProperties().getProperty(PropertyKeyConst.WEB_CONTEXT);
+        String webContext = System.getProperties().getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
         if (StringUtils.isNotEmpty(webContext)) {
             UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
                 : "/" + webContext;
