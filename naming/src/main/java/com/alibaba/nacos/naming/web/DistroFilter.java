@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -31,12 +32,15 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author nacos
  */
 public class DistroFilter implements Filter {
+
+    private static final int PROXY_CONNECT_TIMEOUT = 2000;
+    private static final int PROXY_READ_TIMEOUT = 2000;
 
     @Autowired
     private DistroMapper distroMapper;
@@ -81,21 +85,31 @@ public class DistroFilter implements Filter {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
 
+            // proxy request to other server if necessary:
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(serviceName)) {
 
-                // TODO proxy request:
-                String url = "http://" + distroMapper.mapSrv(serviceName) +
-                    req.getRequestURI() + "?" + req.getQueryString();
+                List<String> headerList = new ArrayList<>(16);
+                Enumeration<String> headers = req.getHeaderNames();
+                while (headers.hasMoreElements()) {
+                    String headerName = headers.nextElement();
+                    headerList.add(headerName);
+                    headerList.add(req.getHeader(headerName));
+                }
+                HttpClient.HttpResult result =
+                    HttpClient.request(distroMapper.mapSrv(serviceName) + urlString, headerList, new HashMap<>(2)
+                        , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
+
                 try {
-                    resp.setCharacterEncoding("utf-8");
-                    resp.getWriter().write(distroMapper.mapSrv(serviceName));
-                    resp.setStatus(HttpServletResponse.SC_TEMPORARY_REDIRECT);
+                    resp.setCharacterEncoding("UTF-8");
+                    resp.getWriter().write(result.content);
+                    resp.setStatus(result.code);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + url);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(serviceName) + urlString);
                 }
                 return;
             }
 
+            // user groupName@@serviceName as new service name:
             String groupName = req.getParameter(CommonParams.GROUP_NAME);
             if (StringUtils.isBlank(groupName)) {
                 groupName = UtilsAndCommons.DEFAULT_GROUP_NAME;
