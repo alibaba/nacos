@@ -498,7 +498,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         clusterMap.put(cluster.getName(), cluster);
     }
 
-    public void valid() {
+    public void validate() {
         if (!getName().matches(SERVICE_NAME_SYNTAX)) {
             throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
         }

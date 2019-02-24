@@ -336,7 +336,7 @@ public class ServiceManager implements RecordListener<Service> {
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
-            service.valid();
+            service.validate();
             putService(service);
             service.init();
             consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);

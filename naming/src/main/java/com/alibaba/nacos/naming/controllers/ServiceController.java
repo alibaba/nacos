@@ -88,7 +88,7 @@ public class ServiceController {
         // now valid the service. if failed, exception will be thrown
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
-        service.valid();
+        service.validate();
 
         serviceManager.addOrReplaceService(service);
 
@@ -240,7 +240,7 @@ public class ServiceController {
         service.setSelector(parseSelector(selector));
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
-        service.valid();
+        service.validate();
 
         serviceManager.addOrReplaceService(service);
 
