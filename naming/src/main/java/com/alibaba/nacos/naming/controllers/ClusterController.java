@@ -97,7 +97,7 @@ public class ClusterController {
 
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
-        service.valid();
+        service.validate();
 
         serviceManager.addOrReplaceService(service);
 
