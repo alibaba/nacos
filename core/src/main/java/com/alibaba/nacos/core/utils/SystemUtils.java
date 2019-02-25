@@ -45,12 +45,6 @@ public class SystemUtils {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
 
     /**
-     * Flag to say that, when guessing a hostname, the hostname of the server should be used in preference to the IP
-     * address reported by the OS.
-     */
-    public static boolean PREFER_HOSTNAME_OVER_IP = Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME);
-
-    /**
      * Standalone mode or not
      */
     public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
