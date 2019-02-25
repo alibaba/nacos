@@ -38,9 +38,12 @@ public interface Constants {
      */
     String PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME = "nacos.preferHostnameOverIp";
 
+    String NACOS_SERVER_IP = "nacos.server.ip";
+
     String USE_ONLY_SITE_INTERFACES = "nacos.inetutils.use-only-site-local-interfaces";
     String PREFERRED_NETWORKS = "nacos.inetutils.preferred-networks";
     String IGNORED_INTERFACES = "nacos.inetutils.ignored-interfaces";
     String IP_ADDRESS = "nacos.inetutils.ip-address";
     String PREFER_HOSTNAME_OVER_IP = "nacos.inetutils.prefer-hostname-over-ip";
+    String SYSTEM_PREFER_HOSTNAME_OVER_IP = "nacos.preferHostnameOverIp";
 }
