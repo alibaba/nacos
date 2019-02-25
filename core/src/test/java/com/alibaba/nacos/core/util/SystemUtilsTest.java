@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Random;
 
+import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
+
 /**
  * {@link SystemUtils} Test
  *
@@ -52,12 +55,12 @@ public class SystemUtilsTest {
         System.out.printf("System property \"%s\" = %s \n", "nacos.standalone", standaloneMode);
 
         if ("true".equalsIgnoreCase(System.getProperty("nacos.standalone"))) {
-            Assert.assertTrue(SystemUtils.STANDALONE_MODE);
+            Assert.assertTrue(Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME));
         } else {
-            Assert.assertFalse(SystemUtils.STANDALONE_MODE);
+            Assert.assertFalse(Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME));
         }
 
-        Assert.assertEquals(standaloneMode, SystemUtils.STANDALONE_MODE);
+        Assert.assertEquals(standaloneMode, Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME));
 
     }
 
@@ -67,12 +70,12 @@ public class SystemUtilsTest {
         System.out.printf("System property \"%s\" = %s \n", "nacos.preferrHostnameOverIp", preferHostMode);
 
         if ("true".equalsIgnoreCase(System.getProperty("nacos.preferHostnameOverIp"))) {
-            Assert.assertTrue(SystemUtils.PREFER_HOSTNAME_OVER_IP);
+            Assert.assertTrue(Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME));
         } else {
-            Assert.assertFalse(SystemUtils.PREFER_HOSTNAME_OVER_IP);
+            Assert.assertFalse(Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME));
         }
 
-        Assert.assertEquals(preferHostMode, SystemUtils.PREFER_HOSTNAME_OVER_IP);
+        Assert.assertEquals(preferHostMode, Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME));
 
     }
 
