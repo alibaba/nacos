@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
 import static org.apache.commons.lang3.CharEncoding.UTF_8;
 
 /**
@@ -43,24 +45,15 @@ public class SystemUtils {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
 
     /**
-     * The System property name of  Standalone mode
-     */
-    public static final String STANDALONE_MODE_PROPERTY_NAME = "nacos.standalone";
-
-    /**
-     * The System property name of prefer hostname over ip
-     */
-    public static final String PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME = "nacos.preferHostnameOverIp";
-    /**
      * Flag to say that, when guessing a hostname, the hostname of the server should be used in preference to the IP
      * address reported by the OS.
      */
-    public static final boolean PREFER_HOSTNAME_OVER_IP = Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME);
+    public static boolean PREFER_HOSTNAME_OVER_IP = Boolean.getBoolean(PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME);
 
     /**
      * Standalone mode or not
      */
-    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+    public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean)ManagementFactory
         .getOperatingSystemMXBean();
