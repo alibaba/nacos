@@ -17,11 +17,11 @@
 package com.alibaba.nacos.core.utils;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.net.URI;
-import java.net.URL;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -31,18 +31,21 @@ import java.util.Properties;
  */
 public class PropertyUtil {
     private static Properties properties = new Properties();
+    private static final Logger log = LoggerFactory.getLogger(PropertyUtil.class);
 
     static {
         try {
-            URL configURL = PropertyUtil.class
-                .getResource("/application.properties");
-            if (configURL != null) {
-                URI configURI = configURL.toURI();
-                File file = new File(configURI);
-                properties = new Properties();
-                properties.load(new FileInputStream(file));
+            InputStream inputStream = null;
+            String baseDir = System.getProperty("nacos.home");
+            if (!StringUtils.isBlank(baseDir)) {
+                inputStream = new FileInputStream(baseDir + "/conf/application.properties");
+            } else {
+                inputStream = PropertyUtil.class
+                    .getResourceAsStream("/application.properties");
             }
+            properties.load(inputStream);
         } catch (Exception e) {
+            log.error("read property file error:" + e);
         }
     }
 
