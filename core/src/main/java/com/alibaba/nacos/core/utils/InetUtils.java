@@ -63,7 +63,7 @@ public class InetUtils {
             ignoredInterfaces.add(ignored);
         }
 
-        String nacosIp = System.getProperty("nacos.server.ip");
+        String nacosIp = System.getProperty(NACOS_SERVER_IP);
         if (StringUtils.isBlank(nacosIp)) {
             nacosIp = PropertyUtil.getProperty(IP_ADDRESS);
         }
@@ -75,7 +75,7 @@ public class InetUtils {
         selfIp = nacosIp;
 
         if (StringUtils.isBlank(selfIp)) {
-            preferHostnameOverIp = Boolean.getBoolean("nacos.preferHostnameOverIp");
+            preferHostnameOverIp = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
 
             if (!preferHostnameOverIp) {
                 preferHostnameOverIp = Boolean.parseBoolean(PREFER_HOSTNAME_OVER_IP);
