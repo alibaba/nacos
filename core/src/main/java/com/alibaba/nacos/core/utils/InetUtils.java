@@ -75,10 +75,10 @@ public class InetUtils {
         selfIp = nacosIp;
 
         if (StringUtils.isBlank(selfIp)) {
-            preferHostnameOverIp = Boolean.valueOf(System.getProperty("nacos.preferHostnameOverIp"));
+            preferHostnameOverIp = Boolean.parseBoolean(System.getProperty("nacos.preferHostnameOverIp"));
 
             if (!preferHostnameOverIp) {
-                preferHostnameOverIp = Boolean.valueOf(PropertyUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
+                preferHostnameOverIp = Boolean.parseBoolean(PropertyUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
             }
 
             if (preferHostnameOverIp) {
