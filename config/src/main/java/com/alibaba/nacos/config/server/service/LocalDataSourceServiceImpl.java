@@ -40,9 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * local data source
