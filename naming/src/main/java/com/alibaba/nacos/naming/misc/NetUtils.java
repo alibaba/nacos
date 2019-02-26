@@ -15,13 +15,10 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.lang3.StringUtils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-import static com.alibaba.nacos.common.util.SystemUtils.PREFER_HOSTNAME_OVER_IP;
 
 /**
  * @author nacos
@@ -31,24 +28,12 @@ public class NetUtils {
     private static String serverAddress = null;
 
     public static String localServer() {
-        try {
-            if (StringUtils.isNotBlank(serverAddress)) {
-                return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-            }
-
-            InetAddress inetAddress = InetAddress.getLocalHost();
-            serverAddress = inetAddress.getHostAddress();
-            if (PREFER_HOSTNAME_OVER_IP) {
-                if (inetAddress.getHostName().equals(inetAddress.getCanonicalHostName())) {
-                    serverAddress = inetAddress.getHostName();
-                } else {
-                    serverAddress = inetAddress.getCanonicalHostName();
-                }
-            }
+        if (StringUtils.isNotBlank(serverAddress)) {
             return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
-        } catch (UnknownHostException e) {
-            return "resolve_failed";
         }
+
+        serverAddress = InetUtils.getSelfIp();
+        return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
     }
 
     public static String num2ip(int ip) {

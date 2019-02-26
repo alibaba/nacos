@@ -31,8 +31,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Properties;
 
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME_KEY;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
 
 /**
  * @author nacos
