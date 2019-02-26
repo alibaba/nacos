@@ -31,10 +31,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 
 /**
  * Logging starting message {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution

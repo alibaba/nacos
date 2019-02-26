@@ -38,7 +38,7 @@ import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
