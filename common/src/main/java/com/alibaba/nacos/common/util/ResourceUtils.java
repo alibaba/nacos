@@ -13,11 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.utils;
+package com.alibaba.nacos.common.util;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
@@ -29,6 +33,8 @@ import java.util.Properties;
  */
 public class ResourceUtils {
 
+    private static final String CLASSPATH_PREFIX = "classpath:";
+
     /**
      * Returns the URL of the resource on the classpath
      *
@@ -37,8 +43,24 @@ public class ResourceUtils {
      * @throws IOException If the resource cannot be found or read
      */
     public static URL getResourceURL(String resource) throws IOException {
-        ClassLoader loader = ResourceUtils.class.getClassLoader();
-        return getResourceURL(loader, resource);
+        if (resource.startsWith(CLASSPATH_PREFIX)) {
+            String path = resource.substring(CLASSPATH_PREFIX.length());
+
+            ClassLoader classLoader = ResourceUtils.class.getClassLoader();
+
+            URL url = (classLoader != null ? classLoader.getResource(path) : ClassLoader.getSystemResource(path));
+            if (url == null) {
+                throw new FileNotFoundException("Resource [" + resource + "] does not exist");
+            }
+
+            return url;
+        }
+
+        try {
+            return new URL(resource);
+        } catch (MalformedURLException ex) {
+            return new File(resource).toURI().toURL();
+        }
     }
 
     /**
@@ -119,9 +141,7 @@ public class ResourceUtils {
      */
     public static Properties getResourceAsProperties(ClassLoader loader, String resource) throws IOException {
         Properties props = new Properties();
-        InputStream in = null;
-        String propfile = resource;
-        in = getResourceAsStream(loader, propfile);
+        InputStream in = getResourceAsStream(loader, resource);
         props.load(in);
         in.close();
         return props;
@@ -134,8 +154,8 @@ public class ResourceUtils {
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static InputStreamReader getResourceAsReader(String resource) throws IOException {
-        return new InputStreamReader(getResourceAsStream(resource), Constants.ENCODE);
+    public static InputStreamReader getResourceAsReader(String resource, String charsetName) throws IOException {
+        return new InputStreamReader(getResourceAsStream(resource), charsetName);
     }
 
     /**
@@ -146,8 +166,9 @@ public class ResourceUtils {
      * @return The resource
      * @throws IOException If the resource cannot be found or read
      */
-    public static Reader getResourceAsReader(ClassLoader loader, String resource) throws IOException {
-        return new InputStreamReader(getResourceAsStream(loader, resource), Constants.ENCODE);
+    public static Reader getResourceAsReader(ClassLoader loader, String resource, String charsetName)
+        throws IOException {
+        return new InputStreamReader(getResourceAsStream(loader, resource), charsetName);
     }
 
     /**
@@ -159,6 +180,16 @@ public class ResourceUtils {
      */
     public static File getResourceAsFile(String resource) throws IOException {
         return new File(getResourceURL(resource).getFile());
+    }
+
+    /**
+     * Returns a resource on the classpath as a File object
+     *
+     * @param url The resource url to find
+     * @return The resource
+     */
+    public static File getResourceAsFile(URL url) {
+        return new File(url.getFile());
     }
 
     /**
