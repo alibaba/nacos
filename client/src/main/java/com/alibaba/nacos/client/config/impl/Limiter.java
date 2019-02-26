@@ -15,15 +15,15 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.RateLimiter;
+import org.slf4j.Logger;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Limiter
@@ -32,7 +32,8 @@ import com.google.common.util.concurrent.RateLimiter;
  */
 public class Limiter {
 
-    static final public Logger log = LogUtils.logger(Limiter.class);
+    private static final Logger LOGGER = LogUtils.logger(Limiter.class);
+
     private static int CAPACITY_SIZE = 1000;
     private static int LIMIT_TIME = 1000;
     private static Cache<String, RateLimiter> cache = CacheBuilder.newBuilder()
@@ -49,9 +50,9 @@ public class Limiter {
             String limitTimeStr = System
                 .getProperty("limitTime", String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
-            log.info("limitTime:{}", limit);
+            LOGGER.info("limitTime:{}", limit);
         } catch (Exception e) {
-            log.error("Nacos-xxx", "init limitTime fail", e);
+            LOGGER.error("init limitTime fail", e);
         }
     }
 
@@ -65,10 +66,10 @@ public class Limiter {
                 }
             });
         } catch (ExecutionException e) {
-            log.error("Nacos-XXX", "create limit fail", e);
+            LOGGER.error("create limit fail", e);
         }
         if (rateLimiter != null && !rateLimiter.tryAcquire(LIMIT_TIME, TimeUnit.MILLISECONDS)) {
-            log.error("Nacos-XXX", "access_key_id:{} limited", accessKeyID);
+            LOGGER.error("access_key_id:{} limited", accessKeyID);
             return true;
         }
         return false;
