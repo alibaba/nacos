@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.PostConstruct;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  * health service
