@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import org.slf4j.Logger;
+
 import java.util.List;
 import java.util.Map;
-
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
 
 /**
  * env util.
@@ -28,7 +27,7 @@ import com.alibaba.nacos.client.logger.Logger;
  */
 public class EnvUtil {
 
-    final static public Logger log = LogUtils.logger(EnvUtil.class);
+    final static public Logger LOGGER = LogUtils.logger(EnvUtil.class);
 
     public static void setSelfEnv(Map<String, List<String>> headers) {
         if (headers != null) {
@@ -36,13 +35,13 @@ public class EnvUtil {
             if (amorayTagTmp == null) {
                 if (selfAmorayTag != null) {
                     selfAmorayTag = null;
-                    log.warn("selfAmoryTag:null");
+                    LOGGER.warn("selfAmoryTag:null");
                 }
             } else {
                 String amorayTagTmpStr = listToString(amorayTagTmp);
                 if (!amorayTagTmpStr.equals(selfAmorayTag)) {
                     selfAmorayTag = amorayTagTmpStr;
-                    log.warn("selfAmoryTag:{}", selfAmorayTag);
+                    LOGGER.warn("selfAmoryTag:{}", selfAmorayTag);
                 }
             }
 
@@ -50,26 +49,26 @@ public class EnvUtil {
             if (vipserverTagTmp == null) {
                 if (selfVipserverTag != null) {
                     selfVipserverTag = null;
-                    log.warn("selfVipserverTag:null");
+                    LOGGER.warn("selfVipserverTag:null");
                 }
             } else {
                 String vipserverTagTmpStr = listToString(vipserverTagTmp);
                 if (!vipserverTagTmpStr.equals(selfVipserverTag)) {
                     selfVipserverTag = vipserverTagTmpStr;
-                    log.warn("selfVipserverTag:{}", selfVipserverTag);
+                    LOGGER.warn("selfVipserverTag:{}", selfVipserverTag);
                 }
             }
             List<String> locationTagTmp = headers.get(LOCATION_TAG);
             if (locationTagTmp == null) {
                 if (selfLocationTag != null) {
                     selfLocationTag = null;
-                    log.warn("selfLocationTag:null");
+                    LOGGER.warn("selfLocationTag:null");
                 }
             } else {
                 String locationTagTmpStr = listToString(locationTagTmp);
                 if (!locationTagTmpStr.equals(selfLocationTag)) {
                     selfLocationTag = locationTagTmpStr;
-                    log.warn("selfLocationTag:{}", selfLocationTag);
+                    LOGGER.warn("selfLocationTag:{}", selfLocationTag);
                 }
             }
         }
