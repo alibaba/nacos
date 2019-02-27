@@ -52,12 +52,14 @@ if [ -z "$JAVA_HOME" ]; then
 fi
 
 export MODE="cluster"
-while getopts ":m:" opt
+export FUNCTION_MODE="all"
+while getopts ":m:f:" opt
 do
     case $opt in
         m)
-        MODE=$OPTARG
-        ;;
+            MODE=$OPTARG;;
+        f)
+            FUNCTION_MODE=$OPTARG;;
         ?)
         echo "Unknown parameter"
         exit 1;;
@@ -82,6 +84,13 @@ else
     JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
 
 fi
+
+if [[ "${FUNCTION_MODE}" == "config" ]]; then
+    JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=config"
+elif [[ "${FUNCTION_MODE}" == "naming" ]]; then
+    JAVA_OPT="${JAVA_OPT} -Dnacos.functionMode=naming"
+fi
+
 
 JAVA_MAJOR_VERSION=$($JAVA -version 2>&1 | sed -E -n 's/.* version "([0-9]*).*$/\1/p')
 if [[ "$JAVA_MAJOR_VERSION" -ge "9" ]] ; then
