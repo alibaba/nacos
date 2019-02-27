@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.util.SystemUtils;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.*;
+import static com.alibaba.nacos.core.utils.SystemUtils.*;
 
 /**
  * @author nacos

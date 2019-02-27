@@ -15,7 +15,8 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import com.alibaba.nacos.client.logger.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -71,13 +72,13 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        log.error("read {} fail;retryed time:{}",
+                        LOGGER.error("read {} fail;retryed time:{}",
                             file.getName(), i);
                         throw new IOException("read " + file.getAbsolutePath()
                             + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
-                    log.warn("read {} conflict;retry time:{}", file.getName(),
+                    LOGGER.warn("read {} conflict;retry time:{}", file.getName(),
                         i);
                 }
             } while (null == rlock);
@@ -143,13 +144,13 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        log.error("write {} fail;retryed time:{}",
+                        LOGGER.error("write {} fail;retryed time:{}",
                             file.getName(), i);
                         throw new IOException("write " + file.getAbsolutePath()
                             + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
-                    log.warn("write {} conflict;retry time:{}", file.getName(),
+                    LOGGER.warn("write {} conflict;retry time:{}", file.getName(),
                         i);
                 }
             } while (null == lock);
@@ -168,7 +169,7 @@ public class ConcurrentDiskUtil {
                     lock.release();
                     lock = null;
                 } catch (IOException e) {
-                    log.warn("close wrong", e);
+                    LOGGER.warn("close wrong", e);
                 }
             }
             if (channel != null) {
@@ -176,7 +177,7 @@ public class ConcurrentDiskUtil {
                     channel.close();
                     channel = null;
                 } catch (IOException e) {
-                    log.warn("close wrong", e);
+                    LOGGER.warn("close wrong", e);
                 }
             }
             if (raf != null) {
@@ -184,7 +185,7 @@ public class ConcurrentDiskUtil {
                     raf.close();
                     raf = null;
                 } catch (IOException e) {
-                    log.warn("close wrong", e);
+                    LOGGER.warn("close wrong", e);
                 }
             }
 
@@ -215,11 +216,11 @@ public class ConcurrentDiskUtil {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
-            log.warn("sleep wrong", e);
+            LOGGER.warn("sleep wrong", e);
         }
     }
 
-    static final public Logger log = LogUtils.logger(ConcurrentDiskUtil.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
     static final int RETRY_COUNT = 10;
     /**
      * ms

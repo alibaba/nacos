@@ -34,7 +34,7 @@ import javax.annotation.PostConstruct;
 import java.sql.*;
 import java.util.List;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
