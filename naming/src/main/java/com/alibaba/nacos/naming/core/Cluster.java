@@ -173,12 +173,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 if (responsible(ip)) {
                     // do not update the ip validation status of updated ips
                     // because the checker has the most precise result
-
-                    // Only when ip is not marked, don't we update the health status of IP:
-                    if (!ip.isMarked()) {
-                        ip.setValid(oldIP.isValid());
+                    if (((VirtualClusterDomain)dom).getEnableHealthCheck() || ((VirtualClusterDomain)dom).getEnableClientBeat()) {
+                        // Only when ip is not marked, don't we update the health status of IP:
+                        if (!ip.isMarked()) {
+                            ip.setValid(oldIP.isValid());
+                        }
                     }
-
                 } else {
                     if (ip.isValid() != oldIP.isValid()) {
                         // ip validation status updated
