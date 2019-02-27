@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
  * @author nkorange
  */
@@ -34,7 +36,7 @@ public class IoUtils {
             return (null == encoding) ? toString(new InputStreamReader(input, "UTF-8"))
                 : toString(new InputStreamReader(input, encoding));
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "read input failed.", e);
+            NAMING_LOGGER.error("NA", "read input failed.", e);
             return StringUtils.EMPTY;
         }
     }

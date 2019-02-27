@@ -477,7 +477,8 @@ public class InstanceController {
 
                 ipObj.put("ip", instance.getIp());
                 ipObj.put("port", instance.getPort());
-                ipObj.put("valid", entry.getKey()); // deprecated since nacos 1.0.0
+                // deprecated since nacos 1.0.0:
+                ipObj.put("valid", entry.getKey());
                 ipObj.put("healthy", entry.getKey());
                 ipObj.put("marked", instance.isMarked());
                 ipObj.put("instanceId", instance.getInstanceId());
