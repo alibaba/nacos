@@ -26,8 +26,7 @@ import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
-import com.alibaba.nacos.client.logger.Logger;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -70,12 +69,12 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        log.error("NA", "read " + file.getName() + " fail;retryed time: " + i, e);
+                        NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
                         throw new IOException("read " + file.getAbsolutePath()
                             + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
-                    log.warn("read " + file.getName() + " conflict;retry time: " + i);
+                    NAMING_LOGGER.warn("read " + file.getName() + " conflict;retry time: " + i);
                 }
             } while (null == rlock);
             int fileSize = (int)fcin.size();
@@ -138,12 +137,12 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        log.error("NA", "write " + file.getName() + " fail;retryed time: " + i);
+                        NAMING_LOGGER.error("[NA] write {} fail;retryed time:{}", file.getName(), i);
                         throw new IOException("write " + file.getAbsolutePath()
                             + " conflict", e);
                     }
                     sleep(SLEEP_BASETIME * i);
-                    log.warn("write " + file.getName() + " conflict;retry time: " + i);
+                    NAMING_LOGGER.warn("write " + file.getName() + " conflict;retry time: " + i);
                 }
             } while (null == lock);
 
@@ -161,7 +160,7 @@ public class ConcurrentDiskUtil {
                     lock.release();
                     lock = null;
                 } catch (IOException e) {
-                    log.warn("close wrong", e);
+                    NAMING_LOGGER.warn("close wrong", e);
                 }
             }
             if (channel != null) {
@@ -169,7 +168,7 @@ public class ConcurrentDiskUtil {
                     channel.close();
                     channel = null;
                 } catch (IOException e) {
-                    log.warn("close wrong", e);
+                    NAMING_LOGGER.warn("close wrong", e);
                 }
             }
             if (raf != null) {
@@ -177,7 +176,7 @@ public class ConcurrentDiskUtil {
                     raf.close();
                     raf = null;
                 } catch (IOException e) {
-                    log.warn("close wrong", e);
+                    NAMING_LOGGER.warn("close wrong", e);
                 }
             }
 
@@ -208,11 +207,10 @@ public class ConcurrentDiskUtil {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
-            log.warn("sleep wrong", e);
+            NAMING_LOGGER.warn("sleep wrong", e);
         }
     }
 
-    static final public Logger log = LogUtils.LOG;
     static final int RETRY_COUNT = 10;
     static final int SLEEP_BASETIME = 10;
 }
