@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.common.util.SystemUtils;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
@@ -30,7 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.common.util.SystemUtils.*;
+import static com.alibaba.nacos.core.utils.SystemUtils.*;
 
 /**
  * The manager to globally refresh and operate server list.

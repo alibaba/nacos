@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.common.util.SystemUtils;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;

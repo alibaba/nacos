@@ -32,7 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author nacos
