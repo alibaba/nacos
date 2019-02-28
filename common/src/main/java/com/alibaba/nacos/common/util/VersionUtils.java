@@ -11,7 +11,7 @@ public class VersionUtils {
 
     public static String VERSION;
     /**获取当前version*/
-    public static final String VERSION_DEFAULT = "${pom.version}";
+    public static final String VERSION_DEFAULT = "${project.version}";
 
 
     static{
