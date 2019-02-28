@@ -45,5 +45,5 @@ public enum ServerStatus {
     /**
      * only read operation is permitted.
      */
-    READY_ONLY
+    READ_ONLY
 }
