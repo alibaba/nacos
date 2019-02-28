@@ -24,10 +24,8 @@ import { HashRouter, Route, Switch, Redirect } from 'react-router-dom';
 import { ConfigProvider, Loading } from '@alifd/next';
 
 import './lib';
-import _menu from './menu';
 
 import Layout from './layouts/MainLayout';
-import CookieHelp from './utils/cookie';
 import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
 
 import Login from './pages/Login';
@@ -114,7 +112,7 @@ class App extends React.Component {
       <HashRouter>
         <Switch>
           <Route path="/login" component={Login} />
-          <Layout navList={_menu.data}>
+          <Layout>
             {MENU.map(item => (
               <Route key={item.path} {...item} />
             ))}
