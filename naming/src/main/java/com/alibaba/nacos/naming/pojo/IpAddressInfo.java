@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class IpAddressInfo implements Serializable {
 
-    private boolean             valid;
+    private boolean            valid;
 
     private Map<String, String> metadata;
 
@@ -34,7 +34,7 @@ public class IpAddressInfo implements Serializable {
 
     private Double              weight;
 
-    private boolean             enabled;
+    private boolean            enabled;
 
     public boolean isEnabled() {
         return enabled;
