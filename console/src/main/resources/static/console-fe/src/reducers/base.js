@@ -21,7 +21,7 @@ const initialState = {
 };
 
 const getState = () => dispatch =>
-  request.get('v1/console/server/state').then(res =>
+  request.get('v1/console/server/state').then(res => {
     dispatch({
       type: GET_STATE,
       data: {
@@ -29,8 +29,8 @@ const getState = () => dispatch =>
         standaloneMode: res.standalone_mode,
         functionMode: res.function_mode,
       },
-    })
-  );
+    });
+  });
 
 export default (state = initialState, action) => {
   switch (action.type) {
