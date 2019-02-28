@@ -117,7 +117,7 @@ public class OperatorController {
     }
 
     @NeedAuth
-    @RequestMapping("/updateSwitch")
+    @RequestMapping(value = "/switches", method = RequestMethod.PUT)
     public String updateSwitch(HttpServletRequest request) throws Exception {
         Boolean debug = Boolean.parseBoolean(WebUtils.optional(request, "debug", "false"));
         String entry = WebUtils.required(request, "entry");

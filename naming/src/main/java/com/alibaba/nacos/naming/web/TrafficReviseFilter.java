@@ -92,8 +92,8 @@ public class TrafficReviseFilter implements Filter {
             return;
         }
 
-        // read operation should be let pass in READY_ONLY status:
-        if (serverStatusManager.getServerStatus() == ServerStatus.READY_ONLY && HttpMethod.GET.equals(req.getMethod())) {
+        // read operation should be let pass in READ_ONLY status:
+        if (serverStatusManager.getServerStatus() == ServerStatus.READ_ONLY && HttpMethod.GET.equals(req.getMethod())) {
             filterChain.doFilter(req, resp);
             return;
         }
