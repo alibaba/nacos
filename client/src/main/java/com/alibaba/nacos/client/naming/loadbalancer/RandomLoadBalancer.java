@@ -28,8 +28,8 @@ import java.util.List;
  */
 public class RandomLoadBalancer extends BaseLoadBalancer {
 
-    public RandomLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, EventDispatcher eventDispatcher, Boolean enableListener) {
-        super(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+    public RandomLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, Boolean enableListener) {
+        super(serviceName, clusters, hostReactor, enableListener);
     }
 
     /**

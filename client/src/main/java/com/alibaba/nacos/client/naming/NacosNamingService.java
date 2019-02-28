@@ -253,10 +253,123 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) {
-        return Balancer.RandomByWeight.selectHost(
-            hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
+    public Instance selectOneHealthyInstance(String serviceName, boolean subscribe) throws NacosException {
+        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), subscribe);
     }
+
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException {
+        return selectOneHealthyInstance(serviceName, clusters, true);
+    }
+
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe)
+        throws NacosException {
+
+        if (subscribe) {
+            return Balancer.RandomByWeight.selectHost(
+                hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
+        } else {
+            return Balancer.RandomByWeight.selectHost(
+                hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ",")));
+        }
+    }
+
+    /**
+     * add
+     */
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName  name of service
+     * @param balancerEnum Nacos default-implement load-balancer
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, LoadBalancerEnum balancerEnum) throws NacosException {
+        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), balancerEnum);
+    }
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName  name of service
+     * @param clusters     a list of clusters should the instance belongs to
+     * @param balancerEnum Nacos default-implement load-balancer
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum) throws NacosException {
+        return selectOneHealthyInstance(serviceName, clusters, balancerEnum, true);
+    }
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName  name of service
+     * @param clusters     a list of clusters should the instance belongs to
+     * @param balancerEnum Nacos default-implement load-balancer
+     * @param subscribe    Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum, boolean subscribe) throws NacosException {
+        return LoadBalancerManager
+            .toLoadBalancer(serviceName, clusters, balancerEnum, hostReactor, subscribe)
+            .choose();
+    }
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName  name of service
+     * @param loadBalancer User-define-implement load-balancer {@link ServiceInfo , Instance}
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer) throws NacosException {
+        return selectOneHealthyInstance(serviceName, loadBalancer, true);
+    }
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName  name of service
+     * @param loadBalancer User-define-implement load-balancer {@link ServiceInfo , Instance}
+     * @param subscribe    Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, boolean subscribe) throws NacosException {
+        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), loadBalancer, subscribe);
+    }
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName  name of service
+     * @param clusters     a list of clusters should the instance belongs to
+     * @param loadBalancer User-define-implement load-balancer {@link ServiceInfo , Instance}
+     * @param subscribe    Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, boolean subscribe) throws NacosException {
+        return LoadBalancerManager
+            .wrapLoadBalancer(serviceName, clusters, hostReactor, loadBalancer, subscribe)
+            .choose();
+    }
+
+    /**
+     * add
+     */
 
     @Override
     public void subscribe(String service, EventListener listener) {

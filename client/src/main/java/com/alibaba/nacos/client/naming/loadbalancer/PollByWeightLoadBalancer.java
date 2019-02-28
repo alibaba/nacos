@@ -28,8 +28,8 @@ import java.util.List;
  */
 public class PollByWeightLoadBalancer extends BaseLoadBalancer {
 
-    public PollByWeightLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, EventDispatcher eventDispatcher, Boolean enableListener) {
-        super(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+    public PollByWeightLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, Boolean enableListener) {
+        super(serviceName, clusters, hostReactor, enableListener);
     }
 
     @Override

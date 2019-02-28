@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.naming.loadbalancer;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.loadbalancer.LoadBalancer;
@@ -45,22 +46,22 @@ public abstract class BaseLoadBalancer implements LoadBalancer {
 
     private final HostReactor hostReactor;
 
-    private final EventDispatcher eventDispatcher;
-
     protected BaseLoadBalancer(String serviceName,
                                List<String> clusters,
                                final HostReactor hostReactor,
-                               final EventDispatcher eventDispatcher,
-                               Boolean disableLisener) {
-        if(disableLisener){
-            this.serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","), true);
+                               boolean subscribe) {
+        if(!subscribe){
+            try {
+                this.serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
+            } catch (NacosException e) {
+                e.printStackTrace();
+            }
         }else{
             this.serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
         }
         //The key can be used to cache Load-Balancer Bean
         this.key = serviceName + ServiceInfo.SPLITER + clusters.toString();
         this.hostReactor = hostReactor;
-        this.eventDispatcher = eventDispatcher;
     }
 
     public Instance choose(){
@@ -79,5 +80,6 @@ public abstract class BaseLoadBalancer implements LoadBalancer {
      *                       including the service name, current service list, etc.
      * @return One instance
      */
+    @Override
     public abstract Instance doChoose(final ServiceInfo serviceInfo);
 }

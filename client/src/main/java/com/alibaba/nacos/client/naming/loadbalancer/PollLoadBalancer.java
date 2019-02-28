@@ -30,8 +30,8 @@ import java.util.List;
  */
 public class PollLoadBalancer extends BaseLoadBalancer {
 
-    public PollLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, EventDispatcher eventDispatcher, Boolean enableListener) {
-        super(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+    public PollLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, Boolean enableListener) {
+        super(serviceName, clusters, hostReactor, enableListener);
     }
 
     @Override

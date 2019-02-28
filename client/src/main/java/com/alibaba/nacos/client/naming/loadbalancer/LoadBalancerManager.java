@@ -40,42 +40,43 @@ public class LoadBalancerManager {
         new ConcurrentHashMap<String, BaseLoadBalancer>();
 
     public static BaseLoadBalancer toLoadBalancer(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum,
-                                                  final HostReactor hostReactor, final EventDispatcher eventDispatcher, Boolean disableListener) throws NacosException {
+                                                  final HostReactor hostReactor, boolean subscribe) throws NacosException {
         String key = serviceName + ServiceInfo.SPLITER + clusters.toString() + ServiceInfo.SPLITER + balancerEnum;
         BaseLoadBalancer loadBalancer = LOAD_BALANCER_CACHE.get(key);
         if(loadBalancer == null){
-            if(balancerEnum == RANDOM){
-                loadBalancer = new RandomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
-
-            }else if(balancerEnum == RANDOM_BY_WEIGHT){
-                loadBalancer = new RandomByWeightLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
-
-            }else if(balancerEnum == POLL){
-                loadBalancer = new PollLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
-
-            }else if(balancerEnum == POLL_BY_WEIGHT){
-                loadBalancer = new PollByWeightLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
-
-            }else if(balancerEnum == IP_HASH){
-                loadBalancer = new IpHashLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, disableListener);
-            }else{
-                throw new NacosException(NacosException.INVALID_PARAM,
+            switch (balancerEnum){
+                case RANDOM:
+                    loadBalancer = new RandomLoadBalancer(serviceName, clusters, hostReactor, subscribe);
+                    break;
+                case RANDOM_BY_WEIGHT:
+                    loadBalancer = new RandomByWeightLoadBalancer(serviceName, clusters, hostReactor, subscribe);
+                    break;
+                case POLL:
+                    loadBalancer = new PollLoadBalancer(serviceName, clusters, hostReactor, subscribe);
+                    break;
+                case POLL_BY_WEIGHT:
+                    loadBalancer = new PollByWeightLoadBalancer(serviceName, clusters, hostReactor, subscribe);
+                    break;
+                case IP_HASH:
+                    loadBalancer = new IpHashLoadBalancer(serviceName, clusters, hostReactor, subscribe);
+                    break;
+                default: throw new NacosException(NacosException.INVALID_PARAM,
                     "This strategy {" + balancerEnum.getDescription() + "} is not currently supported");
             }
-            LOAD_BALANCER_CACHE.put(loadBalancer.getKey() + balancerEnum, loadBalancer);
+            LOAD_BALANCER_CACHE.put(loadBalancer.getKey() + ServiceInfo.SPLITER + balancerEnum, loadBalancer);
         }
         return loadBalancer;
 
     }
 
     public static BaseLoadBalancer wrapLoadBalancer(String serviceName, List<String> clusters,
-                                                    final HostReactor hostReactor, final EventDispatcher eventDispatcher,
-                                                    LoadBalancer loadBalancer, Boolean disableListener){
+                                                    final HostReactor hostReactor,
+                                                    LoadBalancer loadBalancer, boolean subscribe){
         String key = serviceName + ServiceInfo.SPLITER + clusters.toString() + ServiceInfo.SPLITER + CUSTOM_LOAD_BALANCER_NAME;
         BaseLoadBalancer baseLoadBalancer = LOAD_BALANCER_CACHE.get(key);
         if(baseLoadBalancer == null){
-            baseLoadBalancer = new CustomLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, disableListener);
-            LOAD_BALANCER_CACHE.put(baseLoadBalancer.getKey() + CUSTOM_LOAD_BALANCER_NAME ,baseLoadBalancer);
+            baseLoadBalancer = new CustomLoadBalancer(serviceName, clusters, hostReactor, loadBalancer, subscribe);
+            LOAD_BALANCER_CACHE.put(baseLoadBalancer.getKey() + ServiceInfo.SPLITER + CUSTOM_LOAD_BALANCER_NAME ,baseLoadBalancer);
         }
 
         return baseLoadBalancer;

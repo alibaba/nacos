@@ -135,6 +135,17 @@ public interface NamingService {
     List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException;
 
     /**
+     * Get qualified instances of service
+     *
+     * @param serviceName name of service
+     * @param healthy     a flag to indicate returning healthy or unhealthy instances
+     * @param subscribe   if subscribe the service
+     * @return A qualified list of instance
+     * @throws NacosException
+     */
+    List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException;
+
+    /**
      * get qualified instances within specified clusters of service
      *
      * @param serviceName name of service
@@ -196,6 +207,81 @@ public interface NamingService {
      * @throws NacosException
      */
     Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws NacosException;
+
+    /**
+     * add
+     */
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param balancerEnum  Nacos default-implement load-balancer
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, LoadBalancerEnum balancerEnum) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param clusters      a list of clusters should the instance belongs to
+     * @param balancerEnum  Nacos default-implement load-balancer
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName     name of service
+     * @param clusters        a list of clusters should the instance belongs to
+     * @param balancerEnum    Nacos default-implement load-balancer
+     * @param subscribe  Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum, boolean subscribe) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer) throws NacosException;
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @param subscribe     Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, boolean subscribe) throws NacosException;
+
+
+    /**
+     * Select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName    name of service
+     * @param clusters       a list of clusters should the instance belongs to
+     * @param loadBalancer   User-define-implement load-balancer {@link ServiceInfo,Instance}
+     * @param subscribe      Boolean Value that determine if disable the Listener
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, boolean subscribe) throws NacosException;
+
+    /**
+     * add end
+     */
 
     /**
      * Subscribe service to receive events of instances alteration

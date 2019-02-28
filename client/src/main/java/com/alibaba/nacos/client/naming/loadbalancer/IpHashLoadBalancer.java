@@ -31,10 +31,11 @@ import java.util.List;
  */
 public class IpHashLoadBalancer extends BaseLoadBalancer {
 
-    public IpHashLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, EventDispatcher eventDispatcher, Boolean enableListener) {
-        super(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+    public IpHashLoadBalancer(String serviceName, List<String> clusters, HostReactor hostReactor, Boolean enableListener) {
+        super(serviceName, clusters, hostReactor, enableListener);
     }
 
+    @Override
     public Instance doChoose(final ServiceInfo serviceInfo) {
         return doChoose0(serviceInfo.getHosts());
     }

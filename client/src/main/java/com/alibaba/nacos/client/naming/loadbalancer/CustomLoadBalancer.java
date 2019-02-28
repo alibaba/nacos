@@ -35,10 +35,9 @@ public class CustomLoadBalancer extends BaseLoadBalancer {
     public CustomLoadBalancer(String serviceName,
                               List<String> clusters,
                               HostReactor hostReactor,
-                              EventDispatcher eventDispatcher,
                               LoadBalancer loadBalancer,
-                              Boolean enableListener) {
-        super(serviceName, clusters, hostReactor, eventDispatcher, enableListener);
+                              boolean subscribe) {
+        super(serviceName, clusters, hostReactor, subscribe);
         this.loadBalancer = loadBalancer;
     }
 
