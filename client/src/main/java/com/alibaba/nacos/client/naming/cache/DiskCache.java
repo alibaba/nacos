@@ -67,7 +67,7 @@ public class DiskCache {
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(), Charset.defaultCharset().toString());
 
         } catch (Throwable e) {
-            NAMING_LOGGER.error("NA", "failed to write cache for dom:" + dom.getName(), e);
+            NAMING_LOGGER.error("[NA] failed to write cache for dom:" + dom.getName(), e);
         }
     }
 
@@ -119,11 +119,11 @@ public class DiskCache {
                                     ips.add(JSON.parseObject(json, Instance.class));
                                 }
                             } catch (Throwable e) {
-                                NAMING_LOGGER.error("NA", "error while parsing cache file: " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cache file: " + json, e);
                             }
                         }
                     } catch (Exception e) {
-                        NAMING_LOGGER.error("NA", "failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {
@@ -143,7 +143,7 @@ public class DiskCache {
 
             }
         } catch (Throwable e) {
-            NAMING_LOGGER.error("NA", "failed to read cache file", e);
+            NAMING_LOGGER.error("[NA] failed to read cache file", e);
         }
 
         return domMap;
