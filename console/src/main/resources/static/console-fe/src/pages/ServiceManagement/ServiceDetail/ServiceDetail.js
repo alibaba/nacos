@@ -91,6 +91,11 @@ class ServiceDetail extends React.Component {
     const { locale = {} } = this.props;
     const { serviceName, loading, service = {}, clusters } = this.state;
     const { metadata = {}, selector = {} } = service;
+    const healthCheckMap = {
+      server: locale.healthCheckPatternService,
+      client: locale.healthCheckPatternClient,
+      none: locale.healthCheckPatternNone,
+    };
     const metadataText = Object.keys(metadata)
       .map(key => `${key}=${metadata[key]}`)
       .join(',');
@@ -134,7 +139,7 @@ class ServiceDetail extends React.Component {
               <Input value={service.protectThreshold} readOnly />
             </FormItem>
             <FormItem label={`${locale.healthCheckPattern}:`}>
-              <Input value={service.healthCheckMode} readOnly />
+              <Input value={healthCheckMap[service.healthCheckMode]} readOnly />
             </FormItem>
             <FormItem label={`${locale.metadata}:`}>
               <Input value={metadataText} readOnly />

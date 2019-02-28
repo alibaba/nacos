@@ -109,6 +109,9 @@ const I18N_CONF = {
     protectThreshold: '保护阈值',
     serviceName: '服务名',
     editService: '编辑服务',
+    healthCheckPatternService: '服务端',
+    healthCheckPatternClient: '客户端',
+    healthCheckPatternNone: '禁止',
   },
   EditServiceDialog: {
     createService: '创建服务',
