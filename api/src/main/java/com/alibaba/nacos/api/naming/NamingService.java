@@ -146,7 +146,7 @@ public interface NamingService {
      * @throws NacosException
      */
     List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy, boolean subscribe) throws NacosException;
-    
+
     /**
      * Select one healthy instance of service using predefined load balance strategy
      *
