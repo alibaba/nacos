@@ -16,6 +16,7 @@ import { request } from '../../globalLib';
 import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 
 import './index.scss';
+import PropTypes from 'prop-types';
 
 const FormItem = Form.Item;
 
@@ -27,6 +28,11 @@ const formItemLayout = {
 @ConfigProvider.config
 class NewNameSpace extends React.Component {
   static displayName = 'NewNameSpace';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    getNameSpaces: PropTypes.func,
+  };
 
   constructor(props) {
     super(props);
@@ -207,7 +213,7 @@ class NewNameSpace extends React.Component {
                     rules: [
                       {
                         required: true,
-                        message: locale.namespacenotnull,
+                        message: locale.namespacedescnotnull,
                       },
                       { validator: this.validateChart.bind(this) },
                     ],

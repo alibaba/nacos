@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   Button,
   Field,
@@ -38,6 +39,11 @@ const { Column } = Table;
 @ConfigProvider.config
 class ServiceList extends React.Component {
   static displayName = 'ServiceList';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -119,6 +125,12 @@ class ServiceList extends React.Component {
     });
   }
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+    });
+
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
   render() {
@@ -134,7 +146,7 @@ class ServiceList extends React.Component {
       detail,
       deleteAction,
     } = locale;
-    const { keyword } = this.state;
+    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -148,7 +160,18 @@ class ServiceList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup left={serviceList} namespaceCallBack={this.getQueryLater} />
+          <div style={{ marginTop: -15 }}>
+            <RegionGroup
+              setNowNameSpace={this.setNowNameSpace}
+              namespaceCallBack={this.getQueryLater}
+            />
+          </div>
+          <h3 className="page-title">
+            <span className="title-item">{serviceList}</span>
+            <span className="title-item">|</span>
+            <span className="title-item">{nowNamespaceName}</span>
+            <span className="title-item">{nowNamespaceId}</span>
+          </h3>
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>

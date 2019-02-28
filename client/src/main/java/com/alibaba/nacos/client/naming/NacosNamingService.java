@@ -35,10 +35,10 @@ import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.loadbalancer.LoadBalancerManager;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -85,13 +85,6 @@ public class NacosNamingService implements NamingService {
             logName = "naming.log";
         }
 
-        String logLevel = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_LEVEL);
-        if (StringUtils.isEmpty(logLevel)) {
-            logLevel = "INFO";
-        }
-
-        LogUtils.setLogLevel(logLevel);
-
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
@@ -105,7 +98,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, false);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
     }
 
     public NacosNamingService(Properties properties) {
@@ -135,10 +128,17 @@ public class NacosNamingService implements NamingService {
                 properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
 
+        int clientBeatThreadCount = NumberUtils.toInt(
+            properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
+            UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+
+        int pollingThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
+            UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, loadCacheAtStart);
+        beatReactor = new BeatReactor(serverProxy, clientBeatThreadCount);
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, loadCacheAtStart, pollingThreadCount);
 
     }
 
@@ -162,7 +162,7 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, Instance instance) throws NacosException {
 
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
         beatInfo.setCluster(instance.getClusterName());
@@ -192,10 +192,25 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, boolean subscribe) throws NacosException {
+        return getAllInstances(serviceName, new ArrayList<String>(), subscribe);
+    }
 
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-            StringUtils.EMPTY, false);
+    @Override
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
+        return getAllInstances(serviceName, clusters, true);
+    }
+
+    @Override
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe)
+        throws NacosException {
+
+        ServiceInfo serviceInfo;
+        if (subscribe) {
+            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
+        } else {
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
+        }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<Instance>();
@@ -204,141 +219,43 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstances(String serviceName, boolean healthyOnly) throws NacosException {
-        return selectInstances(serviceName, new ArrayList<String>(), healthyOnly);
+    public List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException {
+        return selectInstances(serviceName, new ArrayList<String>(), healthy);
+    }
+
+    @Override
+    public List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe)
+        throws NacosException {
+        return selectInstances(serviceName, new ArrayList<String>(), healthy, subscribe);
     }
 
     @Override
     public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy)
         throws NacosException {
-
-        ServiceInfo serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","),
-            StringUtils.EMPTY, false);
-        List<Instance> list;
-        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<Instance>();
-        }
-
-        Iterator<Instance> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            Instance instance = iterator.next();
-            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-                iterator.remove();
-            }
-        }
-
-        return list;
+        return selectInstances(serviceName, clusters, healthy, true);
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName) throws NacosException{
+    public List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy,
+                                          boolean subscribe) throws NacosException {
+        ServiceInfo serviceInfo;
+        if (subscribe) {
+            serviceInfo = hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ","));
+        } else {
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(serviceName, StringUtils.join(clusters, ","));
+        }
+        return selectInstances(serviceInfo, healthy);
+    }
+
+    @Override
+    public Instance selectOneHealthyInstance(String serviceName) throws NacosException {
         return selectOneHealthyInstance(serviceName, new ArrayList<String>());
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) throws NacosException{
-        return selectOneHealthyInstance(serviceName, clusters, LoadBalancerEnum.RANDOM_BY_WEIGHT, Boolean.FALSE);
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     * default use RANDOM_BY_WEIGHT load-balancer
-     * @param serviceName      name of service
-     * @param clusters         a list of clusters should the instance belongs to
-     * @param disableListener  Boolean Value that determine if disable the Listener
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, Boolean disableListener) throws NacosException{
-        return selectOneHealthyInstance(serviceName, clusters, LoadBalancerEnum.RANDOM_BY_WEIGHT, disableListener);
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName  name of service
-     * @param balancerEnum Nacos default-implement load-balancer
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, LoadBalancerEnum balancerEnum) throws NacosException {
-        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), balancerEnum);
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName  name of service
-     * @param clusters     a list of clusters should the instance belongs to
-     * @param balancerEnum Nacos default-implement load-balancer
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum) throws NacosException {
-        return selectOneHealthyInstance(serviceName, clusters, balancerEnum, Boolean.FALSE);
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName  name of service
-     * @param clusters     a list of clusters should the instance belongs to
-     * @param balancerEnum Nacos default-implement load-balancer
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum, Boolean disableListener) throws NacosException {
-        return LoadBalancerManager.
-            toLoadBalancer(serviceName, clusters, balancerEnum, hostReactor, eventDispatcher, disableListener)
-            .choose();
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     * default enable the listener
-     * @param serviceName  name of service
-     * @param loadBalancer User-define-implement load-balancer {@link ServiceInfo , Instance}
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer) throws NacosException {
-        return selectOneHealthyInstance(serviceName, loadBalancer, Boolean.TRUE);
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName   name of service
-     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param disableListener Boolean Value that determine if enable the Listener
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, Boolean disableListener) throws NacosException {
-        return selectOneHealthyInstance(serviceName, new ArrayList<String>(), loadBalancer, disableListener);
-    }
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName    name of service
-     * @param clusters       a list of clusters should the instance belongs to
-     * @param loadBalancer   User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param disableListener Boolean Value that determine if disable the Listener
-     * @return qualified instance
-     * @throws NacosException
-     */
-    @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, Boolean disableListener) throws NacosException {
-        return LoadBalancerManager
-            .wrapLoadBalancer(serviceName, clusters, hostReactor, eventDispatcher, loadBalancer, disableListener)
-            .choose();
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters) {
+        return Balancer.RandomByWeight.selectHost(
+            hostReactor.getServiceInfo(serviceName, StringUtils.join(clusters, ",")));
     }
 
     @Override
@@ -369,18 +286,36 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector)
+        throws NacosException {
         return serverProxy.getServiceList(pageNo, pageSize, selector);
     }
 
     @Override
     public List<ServiceInfo> getSubscribeServices() {
-        return new ArrayList<ServiceInfo>(hostReactor.getServiceInfoMap().values());
+        return eventDispatcher.getSubscribeServices();
     }
 
     @Override
     public String getServerStatus() {
         return serverProxy.serverHealthy() ? "UP" : "DOWN";
+    }
+
+    private List<Instance> selectInstances(ServiceInfo serviceInfo, boolean healthy) {
+        List<Instance> list;
+        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
+            return new ArrayList<Instance>();
+        }
+
+        Iterator<Instance> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            Instance instance = iterator.next();
+            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
+                iterator.remove();
+            }
+        }
+
+        return list;
     }
 
     public BeatReactor getBeatReactor() {

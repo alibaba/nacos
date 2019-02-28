@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -47,9 +48,9 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
@@ -377,6 +378,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     serverListUnhealth.add(serverIp);
                 }
                 defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
+                MetricsMonitor.getUnhealthException().increment();
             }
         }
 
@@ -391,6 +393,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     serverListUnhealth.add(serverIp);
                 }
                 defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
+                MetricsMonitor.getUnhealthException().increment();
             }
         }
     }

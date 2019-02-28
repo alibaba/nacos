@@ -94,7 +94,17 @@ public interface NamingService {
     List<Instance> getAllInstances(String serviceName) throws NacosException;
 
     /**
-     * get all instances within specified clusters of a service
+     * Get all instances of a service
+     *
+     * @param serviceName name of service
+     * @param subscribe   if subscribe the service
+     * @return A list of instance
+     * @throws NacosException
+     */
+    List<Instance> getAllInstances(String serviceName, boolean subscribe) throws NacosException;
+
+    /**
+     * Get all instances within specified clusters of a service
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -103,7 +113,18 @@ public interface NamingService {
      */
     List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException;
 
-        /**
+    /**
+     * Get all instances within specified clusters of a service
+     *
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param subscribe   if subscribe the service
+     * @return A list of qualified instance
+     * @throws NacosException
+     */
+    List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException;
+
+    /**
      * Get qualified instances of service
      *
      * @param serviceName name of service
@@ -114,18 +135,7 @@ public interface NamingService {
     List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException;
 
     /**
-     * Get qualified instances of service
-     *
-     * @param serviceName name of service
-     * @param healthy     a flag to indicate returning healthy or unhealthy instances
-     * @param subscribe   if subscribe the service
-     * @return A qualified list of instance
-     * @throws NacosException
-     */
-    List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException;
-
-    /**
-     * Get qualified instances within specified clusters of service
+     * get qualified instances within specified clusters of service
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -157,6 +167,16 @@ public interface NamingService {
     Instance selectOneHealthyInstance(String serviceName) throws NacosException;
 
     /**
+     * select one healthy instance of service using predefined load balance strategy
+     *
+     * @param serviceName name of service
+     * @param subscribe   if subscribe the service
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstance(String serviceName, boolean subscribe) throws NacosException;
+
+    /**
      * Select one healthy instance of service using predefined load balance strategy
      *
      * @param serviceName name of service
@@ -169,84 +189,16 @@ public interface NamingService {
     /**
      * Select one healthy instance of service using predefined load balance strategy
      *
-     * @param serviceName      name of service
-     * @param clusters         a list of clusters should the instance belongs to
-     * @param disableListener  Boolean Value that determine if disable the Listener
+     * @param serviceName name of service
+     * @param clusters    a list of clusters should the instance belongs to
+     * @param subscribe   if subscribe the service
      * @return qualified instance
      * @throws NacosException
      */
-    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, Boolean disableListener) throws NacosException;
+    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws NacosException;
 
     /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName   name of service
-     * @param balancerEnum  Nacos default-implement load-balancer
-     * @return qualified instance
-     * @throws NacosException
-     */
-    Instance selectOneHealthyInstance(String serviceName, LoadBalancerEnum balancerEnum) throws NacosException;
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName   name of service
-     * @param clusters      a list of clusters should the instance belongs to
-     * @param balancerEnum  Nacos default-implement load-balancer
-     * @return qualified instance
-     * @throws NacosException
-     */
-    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum) throws NacosException;
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName     name of service
-     * @param clusters        a list of clusters should the instance belongs to
-     * @param balancerEnum    Nacos default-implement load-balancer
-     * @param enableListener  Boolean Value that determine if disable the Listener
-     * @return qualified instance
-     * @throws NacosException
-     */
-    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancerEnum balancerEnum, Boolean enableListener) throws NacosException;
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName   name of service
-     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @return qualified instance
-     * @throws NacosException
-     */
-    Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer) throws NacosException;
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName   name of service
-     * @param loadBalancer  User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param enableListener Boolean Value that determine if disable the Listener
-     * @return qualified instance
-     * @throws NacosException
-     */
-    Instance selectOneHealthyInstance(String serviceName, LoadBalancer loadBalancer, Boolean enableListener) throws NacosException;
-
-
-    /**
-     * Select one healthy instance of service using predefined load balance strategy
-     *
-     * @param serviceName    name of service
-     * @param clusters       a list of clusters should the instance belongs to
-     * @param loadBalancer   User-define-implement load-balancer {@link ServiceInfo,Instance}
-     * @param enableListener Boolean Value that determine if disable the Listener
-     * @return qualified instance
-     * @throws NacosException
-     */
-    Instance selectOneHealthyInstance(String serviceName, List<String> clusters, LoadBalancer loadBalancer, Boolean enableListener) throws NacosException;
-
-
-    /**
-     * subscribe service to receive events of instances alteration
+     * Subscribe service to receive events of instances alteration
      *
      * @param serviceName name of service
      * @param listener    event listener
@@ -301,6 +253,7 @@ public interface NamingService {
      * @param selector selector to filter the resource
      * @return list of service names
      * @throws NacosException
+     * @since 0.7.0
      */
     ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
 

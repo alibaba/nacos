@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @since 0.7.0
  */
 @SpringBootApplication
 public class CmdbApp {

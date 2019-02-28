@@ -35,11 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
     private static final String CLUSTER_NAME_SYNTAX = "[0-9a-zA-Z-]+";
-
-    /**
-     * in fact this is CIDR(Classless Inter-Domain Routing). for naming it 'submask' it has historical reasons
-     */
-    private String submask = "0.0.0.0/0";
     /**
      * a addition for same site routing, can group multiple sites into a region, like Hangzhou, Shanghai, etc.
      */
@@ -178,33 +173,31 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 if (responsible(ip)) {
                     // do not update the ip validation status of updated ips
                     // because the checker has the most precise result
-
-                    // Only when ip is not marked, don't we update the health status of IP:
-                    if (!ip.isMarked()) {
-                        ip.setValid(oldIP.isValid());
+                    if (((VirtualClusterDomain)dom).getEnableHealthCheck() || ((VirtualClusterDomain)dom).getEnableClientBeat()) {
+                        // Only when ip is not marked, don't we update the health status of IP:
+                        if (!ip.isMarked()) {
+                            ip.setValid(oldIP.isValid());
+                        }
                     }
-
                 } else {
                     if (ip.isValid() != oldIP.isValid()) {
                         // ip validation status updated
-                        Loggers.EVT_LOG.info("{" + getDom().getName() + "} {SYNC} " +
-                                "{IP-" + (ip.isValid() ? "ENABLED" : "DISABLED") + "} " + ip.getIp()
-                                + ":" + ip.getPort() + "@" + getName());
+                        Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
+                            getDom().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
                     }
                 }
 
                 if (ip.getWeight() != oldIP.getWeight()) {
                     // ip validation status updated
-                    Loggers.EVT_LOG.info("{" + getDom().getName() + "} {SYNC} " +
-                            "{IP-UPDATED} " + oldIP.toString() + "->" + ip.toString());
+                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getDom().getName(), oldIP.toString(), ip.toString());
                 }
             }
         }
 
         List<IpAddress> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
-            Loggers.EVT_LOG.info("{" + getDom().getName() + "} {SYNC} {IP-NEW} cluster: " + getName()
-                    + ", new ips(" + newIPs.size() + "): " + newIPs.toString());
+            Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
+                getDom().getName(), getName(), newIPs.size(), newIPs.toString());
 
             for (IpAddress ip : newIPs) {
                 HealthCheckStatus.reset(ip);
@@ -214,8 +207,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         List<IpAddress> deadIPs = subtract(oldIPMap.values(), ips);
 
         if (deadIPs.size() > 0) {
-            Loggers.EVT_LOG.info("{" + getDom().getName() + "} {SYNC} {IP-DEAD} cluster: " + getName()
-                    + ", dead ips(" + deadIPs.size() + "): " + deadIPs.toString());
+            Loggers.EVT_LOG.info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}",
+                getDom().getName(), getName(), deadIPs.size(), deadIPs.toString());
 
             for (IpAddress ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
@@ -333,48 +326,36 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     public void update(Cluster cluster) {
 
         if (!healthChecker.equals(cluster.getHealthChecker())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", healthChecker: " + healthChecker.toString() + " -> " + cluster.getHealthChecker().toString());
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
+                cluster.getDom().getName(), cluster.getName(), healthChecker.toString(), cluster.getHealthChecker().toString());
             healthChecker = cluster.getHealthChecker();
         }
 
         if (defCkport != cluster.getDefCkport()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", defCkport: " + defCkport + " -> " + cluster.getDefCkport());
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
+                cluster.getDom().getName(), cluster.getName(), defCkport, cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
 
         if (defIPPort != cluster.getDefIPPort()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", defIPPort: " + defIPPort + " -> " + cluster.getDefIPPort());
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
+                cluster.getDom().getName(), cluster.getName(), defIPPort, cluster.getDefIPPort());
             defIPPort = cluster.getDefIPPort();
         }
 
-        if (!StringUtils.equals(submask, cluster.getSubmask())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", submask: " + submask + " -> " + cluster.getSubmask());
-            submask = cluster.getSubmask();
-        }
-
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", sitegroup: " + sitegroup + " -> " + cluster.getSitegroup());
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
+                cluster.getDom().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
 
         if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] " + cluster.getDom().getName() + ":" + cluster.getName() + ", useIPPort4Check: " + isUseIPPort4Check() + " -> " + cluster.isUseIPPort4Check());
+            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}",
+                cluster.getDom().getName(), cluster.getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
             setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
 
         metadata = cluster.getMetadata();
-    }
-
-    public String getSyncKey() {
-        return "";
-    }
-
-    public String getSubmask() {
-        return submask;
-    }
-
-    public void setSubmask(String submask) {
-        this.submask = submask;
     }
 
     public String getSitegroup() {
@@ -387,25 +368,14 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     public boolean responsible(IpAddress ip) {
         return Switch.isHealthCheckEnabled(dom.getName())
-                && !getHealthCheckTask().isCancelled()
-                && DistroMapper.responsible(getDom().getName())
-                && ipContains.containsKey(ip.toIPAddr());
+            && !getHealthCheckTask().isCancelled()
+            && DistroMapper.responsible(getDom().getName())
+            && ipContains.containsKey(ip.toIPAddr());
     }
 
     public void valid() {
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
             throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
-        }
-
-        String[] cidrGroups = submask.split("\\|");
-        for (String cidrGroup : cidrGroups) {
-            String[] cidrs = cidrGroup.split(",");
-
-            for (String cidr : cidrs) {
-                if (!cidr.matches(UtilsAndCommons.CIDR_REGEX)) {
-                    throw new IllegalArgumentException("malformed submask: " + submask + " for cluster: " + getName());
-                }
-            }
         }
     }
 }

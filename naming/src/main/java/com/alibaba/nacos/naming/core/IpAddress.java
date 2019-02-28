@@ -50,7 +50,7 @@ public class IpAddress extends Instance implements Comparable {
     private String app;
 
     public static final Pattern IP_PATTERN
-            = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
+        = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
 
     public static final String SPLITER = "_";
 
@@ -134,13 +134,13 @@ public class IpAddress extends Instance implements Comparable {
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'valid':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                    Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
+                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
                 ipAddress.setValid(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
 
             // determine 'cluster':
             if (!Boolean.TRUE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1]) &&
-                    !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
+                !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
                 ipAddress.setClusterName(ipAddressAttributes[ipAddressAttributes.length - 1]);
             }
         }
@@ -150,7 +150,7 @@ public class IpAddress extends Instance implements Comparable {
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'marked':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                    Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
+                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
                 ipAddress.setMarked(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
         }
@@ -194,6 +194,11 @@ public class IpAddress extends Instance implements Comparable {
         } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
+
+        if (!ip.validate()) {
+            throw new IllegalArgumentException("malfomed ip config: " + json);
+        }
+
         return ip;
     }
 
@@ -298,10 +303,24 @@ public class IpAddress extends Instance implements Comparable {
         return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
     }
 
+    public boolean validate() {
+
+        Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
+            return false;
+        }
+
+        return true;
+    }
+
     @Override
     public int compareTo(Object o) {
         if (!(o instanceof IpAddress)) {
-            Loggers.SRV_LOG.error("IPADDRESS-COMPARE", "Object is not an instance of IPAdress,object: " + o.getClass());
+            Loggers.SRV_LOG.error("[IPADDRESS-COMPARE] Object is not an instance of IPAdress, object: {}", o.getClass());
             throw new IllegalArgumentException("Object is not an instance of IPAdress,object: " + o.getClass());
         }
 

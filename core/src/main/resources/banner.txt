@@ -1,8 +1,8 @@
 
          ,--.
        ,--.'|
-   ,--,:  : |                                           Nacos 0.7.0
-,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode
+   ,--,:  : |                                           Nacos ${application.version}
+,`--.'`|  ' :                       ,---.               Running in ${nacos.mode} mode, ${nacos.function.mode} function modules
 |   :  :  | |                      '   ,'\   .--.--.    Port: ${server.port}
 :   |   \ | :  ,--.--.     ,---.  /   /   | /  /    '   Pid: ${pid}
 |   : '  '; | /       \   /     \.   ; ,. :|  :  /`./   Console: http://${nacos.local.ip}:${server.port}/nacos/index.html
