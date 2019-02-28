@@ -23,22 +23,31 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
-import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.config.utils.TenantUtil;
-import com.alibaba.nacos.client.logger.Logger;
-import com.alibaba.nacos.client.logger.support.LoggerHelper;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -51,7 +60,7 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  */
 public class ClientWorker {
 
-    final static public Logger log = LogUtils.logger(ClientWorker.class);
+    private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
 
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
         group = null2defaultGroup(group);
@@ -101,7 +110,7 @@ public class ClientWorker {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        log.info(agent.getName(), "[unsubscribe] {}", groupKey);
+        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
@@ -114,7 +123,7 @@ public class ClientWorker {
             copy.remove(groupKey);
             cacheMap.set(copy);
         }
-        log.info(agent.getName(), "[unsubscribe] {}", groupKey);
+        LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
@@ -147,7 +156,7 @@ public class ClientWorker {
             cacheMap.set(copy);
         }
 
-        log.info(agent.getName(), "[subscribe] {}", key);
+        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
@@ -177,7 +186,7 @@ public class ClientWorker {
             copy.put(key, cache);
             cacheMap.set(copy);
         }
-        log.info(agent.getName(), "[subscribe] {}", key);
+        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
 
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
 
@@ -211,9 +220,10 @@ public class ClientWorker {
             }
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
-            log.error(agent.getName(), "NACOS-XXXX",
-                "[sub-server] get server config exception, dataId={}, group={}, tenant={}, msg={}", dataId, group,
-                tenant, e.toString());
+            String message = String.format(
+                "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
+                dataId, group, tenant);
+            LOGGER.error(message, e);
             throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
         }
 
@@ -225,20 +235,20 @@ public class ClientWorker {
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
                 return null;
             case HttpURLConnection.HTTP_CONFLICT: {
-                log.error(agent.getName(), "NACOS-XXXX",
-                    "[sub-server-error] get server config being modified concurrently, dataId={}, group={}, tenant={}",
-                    dataId, group, tenant);
+                LOGGER.error(
+                    "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                        + "tenant={}", agent.getName(), dataId, group, tenant);
                 throw new NacosException(NacosException.CONFLICT,
                     "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
             case HttpURLConnection.HTTP_FORBIDDEN: {
-                log.error(agent.getName(), "NACOS-XXXX", "[sub-server-error] no right, dataId={}, group={}, tenant={}",
-                    dataId, group, tenant);
+                LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(), dataId,
+                    group, tenant);
                 throw new NacosException(result.code, result.content);
             }
             default: {
-                log.error(agent.getName(), "NACOS-XXXX", "[sub-server-error]  dataId={}, group={}, tenant={}, code={}",
-                    dataId, group, tenant, result.code);
+                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(), dataId,
+                    group, tenant, result.code);
                 throw new NacosException(result.code,
                     "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
@@ -259,17 +269,16 @@ public class ClientWorker {
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
 
-            log.warn(agent.getName(),
-                "[failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
+                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
 
         // 有 -> 没有。不通知业务监听器，从server拿到配置后通知。
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
-            log.warn(agent.getName(), "[failover-change] failover file deleted. dataId={}, group={}, tenant={}", dataId,
-                group, tenant);
+            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
+                dataId, group, tenant);
             return;
         }
 
@@ -281,9 +290,8 @@ public class ClientWorker {
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
-            log.warn(agent.getName(),
-                "[failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
+                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
     }
@@ -363,17 +371,11 @@ public class ClientWorker {
                 return parseUpdateDataIdResponse(result.content);
             } else {
                 setHealthServer(false);
-                if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR) {
-                    log.error("NACOS-0007", LoggerHelper.getErrorCodeStr("Nacos", "Nacos-0007", "环境问题",
-                        "[check-update] get changed dataId error"));
-                }
-                log.error(agent.getName(), "NACOS-XXXX", "[check-update] get changed dataId error, code={}",
-                    result.code);
+                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", agent.getName(), result.code);
             }
         } catch (IOException e) {
             setHealthServer(false);
-            log.error(agent.getName(), "NACOS-XXXX", "[check-update] get changed dataId exception, msg={}",
-                e.toString());
+            LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
         }
         return Collections.emptyList();
     }
@@ -389,7 +391,7 @@ public class ClientWorker {
         try {
             response = URLDecoder.decode(response, "UTF-8");
         } catch (Exception e) {
-            log.error(agent.getName(), "NACOS-XXXX", "[polling-resp] decode modifiedDataIdsString error", e);
+            LOGGER.error("[" + agent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
         }
 
         List<String> updateList = new LinkedList<String>();
@@ -401,15 +403,14 @@ public class ClientWorker {
                 String group = keyArr[1];
                 if (keyArr.length == 2) {
                     updateList.add(GroupKey.getKey(dataId, group));
-                    log.info(agent.getName(), "[polling-resp] config changed. dataId={}, group={}", dataId, group);
+                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId, group);
                 } else if (keyArr.length == 3) {
                     String tenant = keyArr[2];
                     updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
-                    log.info(agent.getName(), "[polling-resp] config changed. dataId={}, group={}, tenant={}", dataId,
-                        group, tenant);
+                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
+                        dataId, group, tenant);
                 } else {
-                    log.error(agent.getName(), "NACOS-XXXX", "[polling-resp] invalid dataIdAndGroup error",
-                        dataIdAndGroup);
+                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(), dataIdAndGroup);
                 }
             }
         }
@@ -446,7 +447,7 @@ public class ClientWorker {
                 try {
                     checkConfigInfo();
                 } catch (Throwable e) {
-                    log.error(agent.getName(), "NACOS-XXXX", "[sub-check] rotate check error", e);
+                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
                 }
             }
         }, 1L, 10L, TimeUnit.MILLISECONDS);
@@ -472,7 +473,7 @@ public class ClientWorker {
                                 cacheData.checkListenerMd5();
                             }
                         } catch (Exception e) {
-                            log.error("NACOS-CLIENT", "get local config info error", e);
+                            LOGGER.error("get local config info error", e);
                         }
                     }
                 }
@@ -493,12 +494,14 @@ public class ClientWorker {
                         String content = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                         cache.setContent(content);
-                        log.info(agent.getName(), "[data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
-                            dataId, group, tenant, cache.getMd5(), ContentUtils.truncateContent(content));
+                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
+                            agent.getName(), dataId, group, tenant, cache.getMd5(),
+                            ContentUtils.truncateContent(content));
                     } catch (NacosException ioe) {
-                        log.error(agent.getName(), "NACOS-XXXX",
-                            "[get-update] get changed config exception. dataId={}, group={}, tenant={}, msg={}",
-                            dataId, group, tenant, ioe.toString());
+                        String message = String.format(
+                            "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
+                            agent.getName(), dataId, group, tenant);
+                        LOGGER.error(message, ioe);
                     }
                 }
                 for (CacheData cacheData : cacheDatas) {
@@ -510,7 +513,7 @@ public class ClientWorker {
                 }
                 inInitializingCacheList.clear();
             } catch (Throwable e) {
-                log.error("500", "longPolling error", e);
+                LOGGER.error("longPolling error", e);
             } finally {
                 executorService.execute(this);
             }

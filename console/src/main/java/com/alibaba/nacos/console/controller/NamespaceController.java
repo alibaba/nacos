@@ -15,19 +15,6 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.config.server.model.TenantInfo;
@@ -35,6 +22,18 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.utils.StringUtils;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * namespace service
@@ -89,8 +88,7 @@ public class NamespaceController {
                                          @RequestParam("namespaceId") String namespaceId) {
         // TODO 获取用kp
         if (StringUtils.isBlank(namespaceId)) {
-            int configCount = persistService.configInfoCount();
-            NamespaceAllInfo namespaceTmp = new NamespaceAllInfo(namespaceId, "Public", 200, configCount, 0,
+            NamespaceAllInfo namespaceTmp = new NamespaceAllInfo(namespaceId, "Public", 200, persistService.configInfoCount(""), 0,
                 "Public Namespace");
             return namespaceTmp;
         } else {

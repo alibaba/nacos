@@ -23,16 +23,14 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
-import com.alibaba.nacos.client.logger.Logger;
-import com.alibaba.nacos.client.logger.support.LoggerHelper;
-import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.JSONUtils;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import org.codehaus.jackson.annotate.JsonProperty;
 import org.codehaus.jackson.type.TypeReference;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -43,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Server Agent
@@ -52,7 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ServerHttpAgent implements HttpAgent {
 
-    final static public Logger log = LogUtils.logger(ServerHttpAgent.class);
+    private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -82,28 +79,24 @@ public class ServerHttpAgent implements HttpAgent {
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
-                    log.error("NACOS ConnectException", "currentServerAddr:{}. httpCode:",
-                        new Object[] {serverListMgr.getCurrentServerAddr(), result.code});
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
+                        serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
                     return result;
                 }
             } catch (ConnectException ce) {
-                log.error("NACOS ConnectException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS ConnectException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (SocketTimeoutException stoe) {
-                log.error("NACOS  SocketTimeoutException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (IOException ioe) {
-                log.error("NACOS  IOException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
             }
         } while (System.currentTimeMillis() <= endTime);
 
-        log.error("NACOS-0002",
-            LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
+        LOGGER.error("no available server");
         throw new ConnectException("no available server");
     }
 
@@ -124,29 +117,26 @@ public class ServerHttpAgent implements HttpAgent {
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
-                    log.error("NACOS ConnectException", "currentServerAddr:{}. httpCode:",
-                        new Object[] {serverListMgr.getCurrentServerAddr(), result.code});
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
+                        serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
                     return result;
                 }
             } catch (ConnectException ce) {
-                log.error("NACOS ConnectException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS ConnectException] currentServerAddr: {}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (SocketTimeoutException stoe) {
-                log.error("NACOS  SocketTimeoutException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS SocketTimeoutException]", "currentServerAddr: {}",
+                    serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (IOException ioe) {
-                log.error("NACOS  IOException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
             }
 
         } while (System.currentTimeMillis() <= endTime);
 
-        log.error("NACOS-0002",
-            LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
+        LOGGER.error("no available server");
         throw new ConnectException("no available server");
     }
 
@@ -167,29 +157,25 @@ public class ServerHttpAgent implements HttpAgent {
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
-                    log.error("NACOS ConnectException", "currentServerAddr:{}. httpCode:",
-                        new Object[] {serverListMgr.getCurrentServerAddr(), result.code});
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
+                        serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
                     return result;
                 }
             } catch (ConnectException ce) {
-                log.error("NACOS ConnectException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS ConnectException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (SocketTimeoutException stoe) {
-                log.error("NACOS  SocketTimeoutException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (IOException ioe) {
-                log.error("NACOS  IOException", "currentServerAddr:{}",
-                    new Object[] {serverListMgr.getCurrentServerAddr()});
+                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
             }
 
         } while (System.currentTimeMillis() <= endTime);
 
-        log.error("NACOS-0002",
-            LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0002", "环境问题", "no available server"));
+        LOGGER.error("no available server");
         throw new ConnectException("no available server");
     }
 
@@ -290,7 +276,7 @@ public class ServerHttpAgent implements HttpAgent {
         STSCredential stsCredentialTmp = (STSCredential)JSONUtils.deserializeObject(stsResponse,
             new TypeReference<STSCredential>() {});
         sTSCredential = stsCredentialTmp;
-        log.info("getSTSCredential", "code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}", sTSCredential.getCode(),
+        LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}", sTSCredential.getCode(),
             sTSCredential.getAccessKeyId(), sTSCredential.getLastUpdated(), sTSCredential.getExpiration());
         return sTSCredential;
     }
@@ -317,7 +303,7 @@ public class ServerHttpAgent implements HttpAgent {
                 response = IOUtils.toString(conn.getErrorStream(), Constants.ENCODE);
             }
         } catch (IOException e) {
-            log.error("500", "can not get security credentials", e);
+            LOGGER.error("can not get security credentials", e);
             throw e;
         } finally {
             if (null != conn) {
@@ -327,8 +313,8 @@ public class ServerHttpAgent implements HttpAgent {
         if (HttpURLConnection.HTTP_OK == respCode) {
             return response;
         }
-        log.error(respCode + "", "can not get security credentials, securityCredentialsUrl:{}, response:{}",
-            new Object[] {securityCredentialsUrl, response});
+        LOGGER.error("can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
+            securityCredentialsUrl, respCode, response);
         throw new IOException(
             "can not get security credentials, responseCode: " + respCode + ", response: " + response);
     }
