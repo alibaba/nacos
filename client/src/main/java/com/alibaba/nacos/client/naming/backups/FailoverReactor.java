@@ -84,7 +84,7 @@ public class FailoverReactor {
                         new DiskFileWriter().run();
                     }
                 } catch (Throwable e) {
-                    NAMING_LOGGER.error("NA", "failed to backup file on startup.", e);
+                    NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
                 }
 
             }
@@ -137,7 +137,7 @@ public class FailoverReactor {
                 }
 
             } catch (Throwable e) {
-                NAMING_LOGGER.error("NA", "failed to read failover switch.", e);
+                NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
             }
         }
     }
@@ -182,12 +182,12 @@ public class FailoverReactor {
                             try {
                                 dom = JSON.parseObject(json, ServiceInfo.class);
                             } catch (Exception e) {
-                                NAMING_LOGGER.error("NA", "error while parsing cached dom : " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
                         }
 
                     } catch (Exception e) {
-                        NAMING_LOGGER.error("NA", "failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {
@@ -202,7 +202,7 @@ public class FailoverReactor {
                     }
                 }
             } catch (Exception e) {
-                NAMING_LOGGER.error("NA", "failed to read cache file", e);
+                NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
 
             if (domMap.size() > 0) {
