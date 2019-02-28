@@ -21,16 +21,27 @@ const initialState = {
 };
 
 const getState = () => dispatch =>
-  request.get('v1/console/server/state').then(res => {
-    dispatch({
-      type: GET_STATE,
-      data: {
-        version: res.version,
-        standaloneMode: res.standalone_mode,
-        functionMode: res.function_mode,
-      },
+  request
+    .get('v1/console/server/state')
+    .then(res => {
+      dispatch({
+        type: GET_STATE,
+        data: {
+          version: res.version,
+          standaloneMode: res.standalone_mode,
+          functionMode: res.function_mode,
+        },
+      });
+    })
+    .catch(() => {
+      dispatch({
+        type: GET_STATE,
+        data: {
+          version: null,
+          functionMode: null,
+        },
+      });
     });
-  });
 
 export default (state = initialState, action) => {
   switch (action.type) {
