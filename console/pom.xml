@@ -121,6 +121,13 @@
                     <exclude>static/console-fe/.vscode/**</exclude>
                 </excludes>
             </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>nacos-version.txt</include>
+                </includes>
+            </resource>
         </resources>
     </build>
 </project>
