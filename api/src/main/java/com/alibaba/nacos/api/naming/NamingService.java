@@ -103,8 +103,8 @@ public interface NamingService {
      */
     List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException;
 
-    /**
-     * get qualified instances of service
+        /**
+     * Get qualified instances of service
      *
      * @param serviceName name of service
      * @param healthy     a flag to indicate returning healthy or unhealthy instances
@@ -114,7 +114,18 @@ public interface NamingService {
     List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException;
 
     /**
-     * get qualified instances within specified clusters of service
+     * Get qualified instances of service
+     *
+     * @param serviceName name of service
+     * @param healthy     a flag to indicate returning healthy or unhealthy instances
+     * @param subscribe   if subscribe the service
+     * @return A qualified list of instance
+     * @throws NacosException
+     */
+    List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException;
+
+    /**
+     * Get qualified instances within specified clusters of service
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -124,6 +135,18 @@ public interface NamingService {
      */
     List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy) throws NacosException;
 
+    /**
+     * Get qualified instances within specified clusters of service
+     *
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param healthy     a flag to indicate returning healthy or unhealthy instances
+     * @param subscribe   if subscribe the service
+     * @return A qualified list of instance
+     * @throws NacosException
+     */
+    List<Instance> selectInstances(String serviceName, List<String> clusters, boolean healthy, boolean subscribe) throws NacosException;
+    
     /**
      * Select one healthy instance of service using predefined load balance strategy
      *
