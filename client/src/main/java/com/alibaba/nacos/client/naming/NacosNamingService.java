@@ -31,7 +31,6 @@ import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import org.apache.commons.lang3.BooleanUtils;
@@ -82,13 +81,6 @@ public class NacosNamingService implements NamingService {
             logName = "naming.log";
         }
 
-        String logLevel = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_LEVEL);
-        if (StringUtils.isEmpty(logLevel)) {
-            logLevel = "INFO";
-        }
-
-        LogUtils.setLogLevel(logLevel);
-
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
@@ -132,7 +124,8 @@ public class NacosNamingService implements NamingService {
                 properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
 
-        int clientBeatThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
+        int clientBeatThreadCount = NumberUtils.toInt(
+            properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
             UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
 
         int pollingThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
@@ -205,7 +198,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe)
+        throws NacosException {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
@@ -226,7 +220,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe) throws NacosException {
+    public List<Instance> selectInstances(String serviceName, boolean healthy, boolean subscribe)
+        throws NacosException {
         return selectInstances(serviceName, new ArrayList<String>(), healthy, subscribe);
     }
 
@@ -264,7 +259,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe)
+        throws NacosException {
 
         if (subscribe) {
             return Balancer.RandomByWeight.selectHost(
@@ -303,7 +299,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector)
+        throws NacosException {
         return serverProxy.getServiceList(pageNo, pageSize, selector);
     }
 

@@ -158,7 +158,10 @@ public class ServiceController {
         List<String> doms = domainsManager.getAllDomNamesList(namespaceId);
 
         if (doms == null || doms.isEmpty()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "No service exist in " + namespaceId);
+            JSONObject result = new JSONObject();
+            result.put("doms", new ArrayList<>());
+            result.put("count", 0);
+            return result;
         }
 
         if (StringUtils.isNotBlank(selectorString)) {

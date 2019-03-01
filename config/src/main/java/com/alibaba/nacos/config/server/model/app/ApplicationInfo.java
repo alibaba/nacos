@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.config.server.model.app;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  * app info

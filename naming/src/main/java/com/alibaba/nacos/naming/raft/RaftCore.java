@@ -41,7 +41,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.GZIPOutputStream;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
@@ -268,7 +268,7 @@ public class RaftCore {
 
             }
 
-            if (!latch.await(UtilsAndCommons.RAFT_PUBLISH_TIMEOUT, TimeUnit.MILLISECONDS)) {
+            if (!STANDALONE_MODE && !latch.await(UtilsAndCommons.RAFT_PUBLISH_TIMEOUT, TimeUnit.MILLISECONDS)) {
                 // only majority servers return success can we consider this update success
                 Loggers.RAFT.info("data publish failed, caused failed to notify majority, key={}", key);
                 throw new IllegalStateException("data publish failed, caused failed to notify majority, key=" + key);
