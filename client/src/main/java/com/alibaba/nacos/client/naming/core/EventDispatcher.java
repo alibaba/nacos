@@ -20,13 +20,14 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
@@ -57,7 +58,7 @@ public class EventDispatcher {
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
 
-        LogUtils.LOG.info("LISTENER", "adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
+        NAMING_LOGGER.info("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
 
@@ -71,7 +72,7 @@ public class EventDispatcher {
 
     public void removeListener(String serviceName, String clusters, EventListener listener) {
 
-        LogUtils.LOG.info("LISTENER", "removing " + serviceName + " with " + clusters + " from listener map");
+        NAMING_LOGGER.info("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
 
         List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters));
         if (observers != null) {
@@ -129,7 +130,7 @@ public class EventDispatcher {
                     }
 
                 } catch (Exception e) {
-                    LogUtils.LOG.error("NA", "notify error for service: "
+                    NAMING_LOGGER.error("[NA] notify error for service: "
                         + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
                 }
             }

@@ -21,7 +21,6 @@ import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
@@ -31,6 +30,8 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.*;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -83,7 +84,7 @@ public class FailoverReactor {
                         new DiskFileWriter().run();
                     }
                 } catch (Throwable e) {
-                    LogUtils.LOG.error("NA", "failed to backup file on startup.", e);
+                    NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
                 }
 
             }
@@ -106,7 +107,7 @@ public class FailoverReactor {
                 File switchFile = new File(failoverDir + UtilAndComs.FAILOVER_SWITCH);
                 if (!switchFile.exists()) {
                     switchParams.put("failover-mode", "false");
-                    LogUtils.LOG.debug("failover switch is not found, " + switchFile.getName());
+                    NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
                     return;
                 }
 
@@ -123,11 +124,11 @@ public class FailoverReactor {
                             String line1 = line.trim();
                             if ("1".equals(line1)) {
                                 switchParams.put("failover-mode", "true");
-                                LogUtils.LOG.info("failover-mode is on");
+                                NAMING_LOGGER.info("failover-mode is on");
                                 new FailoverFileReader().run();
                             } else if ("0".equals(line1)) {
                                 switchParams.put("failover-mode", "false");
-                                LogUtils.LOG.info("failover-mode is off");
+                                NAMING_LOGGER.info("failover-mode is off");
                             }
                         }
                     } else {
@@ -136,7 +137,7 @@ public class FailoverReactor {
                 }
 
             } catch (Throwable e) {
-                LogUtils.LOG.error("NA", "failed to read failover switch.", e);
+                NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
             }
         }
     }
@@ -181,12 +182,12 @@ public class FailoverReactor {
                             try {
                                 dom = JSON.parseObject(json, ServiceInfo.class);
                             } catch (Exception e) {
-                                LogUtils.LOG.error("NA", "error while parsing cached dom : " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
                         }
 
                     } catch (Exception e) {
-                        LogUtils.LOG.error("NA", "failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {
@@ -201,7 +202,7 @@ public class FailoverReactor {
                     }
                 }
             } catch (Exception e) {
-                LogUtils.LOG.error("NA", "failed to read cache file", e);
+                NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
 
             if (domMap.size() > 0) {

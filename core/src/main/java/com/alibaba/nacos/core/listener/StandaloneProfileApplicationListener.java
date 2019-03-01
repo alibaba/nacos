@@ -25,9 +25,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.util.Arrays;
 
-import static com.alibaba.nacos.common.util.Constants.STANDALONE_SPRING_PROFILE;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Standalone {@link Profile} {@link ApplicationListener} for {@link ApplicationEnvironmentPreparedEvent}

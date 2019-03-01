@@ -15,14 +15,8 @@
  */
 package com.alibaba.nacos.client.monitor;
 
-import io.micrometer.core.instrument.ImmutableTag;
-import io.micrometer.core.instrument.Metrics;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Timer;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
+import io.prometheus.client.Gauge;
+import io.prometheus.client.Histogram;
 
 /**
  * Metrics Monitor
@@ -30,52 +24,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Nacos
  */
 public class MetricsMonitor {
-    private static AtomicInteger serviceInfoMapSize = new AtomicInteger();
-    private static AtomicInteger dom2BeatSize = new AtomicInteger();
-    private static AtomicInteger listenConfigCount = new AtomicInteger();
+    private static Gauge nacosMonitor = Gauge.build()
+        .name("nacos_monitor").labelNames("module", "name")
+        .help("nacos_monitor").register();
 
-    static {
-        List<Tag> tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "naming"));
-        tags.add(new ImmutableTag("name", "subServiceCount"));
-        Metrics.gauge("nacos_monitor", tags, serviceInfoMapSize);
+    private static Histogram nacosClientRequestHistogram = Histogram.build().labelNames("module", "method", "url", "code")
+        .name("nacos_client_request").help("nacos_client_request")
+        .register();
 
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "naming"));
-        tags.add(new ImmutableTag("name", "pubServiceCount"));
-        Metrics.gauge("nacos_monitor", tags, dom2BeatSize);
 
-        tags = new ArrayList<Tag>();
-        tags.add(new ImmutableTag("module", "config"));
-        tags.add(new ImmutableTag("name", "listenConfigCount"));
-        Metrics.gauge("nacos_monitor", tags, listenConfigCount);
+    public static Gauge.Child getServiceInfoMapSizeMonitor() {
+        return nacosMonitor.labels("naming", "serviceInfoMapSize");
     }
 
-    public static AtomicInteger getServiceInfoMapSizeMonitor() {
-        return serviceInfoMapSize;
+    public static Gauge.Child getDom2BeatSizeMonitor() {
+        return nacosMonitor.labels("naming", "dom2BeatSize");
     }
 
-    public static AtomicInteger getDom2BeatSizeMonitor() {
-        return dom2BeatSize;
+    public static Gauge.Child getListenConfigCountMonitor() {
+        return nacosMonitor.labels("naming", "listenConfigCount");
     }
 
-    public static AtomicInteger getListenConfigCountMonitor() {
-        return listenConfigCount;
+    public static Histogram.Timer getConfigRequestMonitor(String method, String url, String code) {
+        return nacosClientRequestHistogram.labels("config", method, url, code).startTimer();
     }
 
-    public static Timer getConfigRequestMonitor(String method, String url, String code) {
-        return Metrics.timer("nacos_client_request",
-            "module", "config",
-            "method", method,
-            "url", url,
-            "code", code);
-    }
-
-    public static Timer getNamingRequestMonitor(String method, String url, String code) {
-        return Metrics.timer("nacos_client_request",
-            "module", "naming",
-            "method", method,
-            "url", url,
-            "code", code);
+    public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
+        return nacosClientRequestHistogram.labels("naming", method, url, code);
     }
 }
+

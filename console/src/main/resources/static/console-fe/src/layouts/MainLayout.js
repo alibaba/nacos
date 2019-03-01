@@ -17,36 +17,48 @@ import PropTypes from 'prop-types';
 import { ConfigProvider, Icon } from '@alifd/next';
 import Header from './Header';
 import $ from 'jquery';
-import { setParams } from '../globalLib';
 import { connect } from 'react-redux';
+import { setParams } from '../globalLib';
+import { getState } from '../reducers/base';
+import _menu from '../menu';
 
 import './index.scss';
 
 @withRouter
-@connect(state => ({ ...state.locale }))
+@connect(
+  state => ({ ...state.locale, ...state.base }),
+  { getState }
+)
 @ConfigProvider.config
 class MainLayout extends React.Component {
   static displayName = 'MainLayout';
 
   static propTypes = {
-    navList: PropTypes.array,
     history: PropTypes.object,
     location: PropTypes.object,
     locale: PropTypes.object,
     children: PropTypes.any,
+    version: PropTypes.any,
+    functionMode: PropTypes.any,
+    getState: PropTypes.func,
   };
 
   constructor(props) {
     super(props);
-    this.initNav = this.props.navList;
     this.deepNav = [];
     this.oneLevelNavArr = {}; // 平行导航map
     this.state = {
+      navList: [..._menu.data],
       leftBarClose: false,
       showLink: null,
       navRow: [],
       noChild: false,
     };
+  }
+
+  componentDidMount() {
+    this.props.getState();
+    this.refreshNav();
   }
 
   goBack() {
@@ -232,6 +244,7 @@ class MainLayout extends React.Component {
           const hiddenClass = item.isExtend ? '' : 'hidden';
           return (
             <li
+              style={{ display: item.enable ? 'block' : 'none' }}
               key={`${item.serviceName}`}
               data-spm-click={`gostr=/aliyun;locaid=${item.serviceName}`}
               id={`${item.serviceName}`}
@@ -256,7 +269,7 @@ class MainLayout extends React.Component {
               onClick={this.navTo.bind(this, `/${item.serviceName}`)}
             >
               <a
-                href={'javascript:;'}
+                href="javascript:;"
                 id={`${item.serviceName}`}
                 onClick={this.activeNav.bind(this, `nav${index}`)}
               >
@@ -297,13 +310,12 @@ class MainLayout extends React.Component {
   }
 
   renderNav() {
+    const { navList } = this.state;
     this.nacosLeftBarDom = document.getElementById('viewFramework-product-navbar');
     this.nacosBodyDom = document.getElementById('viewFramework-product-body');
     this.nacosToggleIconDom = document.getElementById('viewFramework-product-navbar-collapse');
     this.nacosOutDom = document.getElementById('page-header-mask');
-    // let parentNav = this.initNav[0] || [];
     const defaultNav = '/configurationManagement';
-    // let childrenNav = parentNav.children || [];
     this.props.history.listen(location => {
       if (this.preSimplePath && this.preSimplePath !== '/') {
         if (location.pathname.indexOf(this.preSimplePath) !== -1) {
@@ -366,7 +378,7 @@ class MainLayout extends React.Component {
       } else {
         this.setState({
           showLink: null,
-          navRow: <ul>{this.nacosLoopNav(this.initNav)}</ul>,
+          navRow: <ul>{this.nacosLoopNav(navList)}</ul>,
         });
         setTimeout(() => {
           const navid = navName;
@@ -376,17 +388,38 @@ class MainLayout extends React.Component {
     });
   }
 
+  refreshNav() {
+    const { navList } = this.state;
+    const { functionMode } = this.props;
+    this.setState(
+      {
+        navList: navList.map(item => {
+          if (
+            item.serviceName === 'configurationManagementVirtual' &&
+            (functionMode === null || functionMode === 'config')
+          ) {
+            item.enable = true;
+          }
+          if (
+            item.serviceName === 'serviceManagementVirtual' &&
+            (functionMode === null || functionMode === 'naming')
+          ) {
+            item.enable = true;
+          }
+          return item;
+        }),
+      },
+      () => this.setState({ navRow: this.nacosGetNav(navList) }, () => this.renderNav())
+    );
+  }
+
   componentWillReceiveProps() {
-    setTimeout(() => {
-      const nav = this.props.navList || [];
-      const navRow = this.nacosGetNav(nav);
-      this.setState({ navRow }, () => this.renderNav());
-    });
+    setTimeout(() => this.refreshNav());
   }
 
   render() {
-    const { locale = {} } = this.props;
-    const { nacosVersion, nacosName, doesNotExist } = locale;
+    const { locale = {}, version } = this.props;
+    const { nacosName, doesNotExist } = locale;
     const { showLink, navRow, leftBarClose, noChild } = this.state;
     return (
       <div className="viewFramework-product" style={{ top: 66 }}>
@@ -405,9 +438,13 @@ class MainLayout extends React.Component {
                     {showLink}
                   </div>
                 ) : (
-                  <div style={{ textIndent: 0 }} className={'product-nav-title'} title={nacosName}>
+                  <div
+                    style={{ textIndent: 0, display: !version ? 'none' : 'block' }}
+                    className={'product-nav-title'}
+                    title={nacosName}
+                  >
                     <span>{nacosName}</span>
-                    <span style={{ marginLeft: 5 }}>{nacosVersion}</span>
+                    <span style={{ marginLeft: 5 }}>{version}</span>
                   </div>
                 )}
                 <div
