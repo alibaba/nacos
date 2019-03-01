@@ -16,9 +16,9 @@
 package com.alibaba.nacos.client.config.listener.impl;
 
 import com.alibaba.nacos.api.config.listener.AbstractListener;
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -31,7 +31,8 @@ import java.util.Properties;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class PropertiesListener extends AbstractListener {
-    final static public Logger log = LogUtils.logger(PropertiesListener.class);
+
+    private static final Logger LOGGER = LogUtils.logger(PropertiesListener.class);
 
     @Override
     public void receiveConfigInfo(String configInfo) {
@@ -44,7 +45,7 @@ public abstract class PropertiesListener extends AbstractListener {
             properties.load(new StringReader(configInfo));
             innerReceive(properties);
         } catch (IOException e) {
-            log.error("NACOS-XXXX", "load properties error：" + configInfo, e);
+            LOGGER.error("load properties error：" + configInfo, e);
         }
 
     }
