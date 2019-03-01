@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.core.listener;
 
+import com.alibaba.nacos.core.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -31,10 +32,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.core.utils.SystemUtils.FUNCTION_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 
 /**
  * Logging starting message {@link SpringApplicationRunListener} before {@link EventPublishingRunListener} execution
@@ -46,7 +48,9 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
 
     private static final Logger LOGGER = LoggerFactory.getLogger(StartingSpringApplicationRunListener.class);
 
-    private static final String MODE_PROPERTY_KEY = "nacos.mode";
+    private static final String MODE_PROPERTY_KEY_STAND_MODE = "nacos.mode";
+
+    private static final String MODE_PROPERTY_KEY_FUNCTION_MODE = "nacos.function.mode";
 
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
 
@@ -66,10 +70,18 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         if (STANDALONE_MODE) {
-            System.setProperty(MODE_PROPERTY_KEY, "stand alone");
+            System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "stand alone");
         } else {
-            System.setProperty(MODE_PROPERTY_KEY, "cluster");
+            System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, "cluster");
         }
+        if (FUNCTION_MODE == null) {
+           System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, "All");
+        } else if(SystemUtils.FUNCTION_MODE_CONFIG.equals(FUNCTION_MODE)){
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, SystemUtils.FUNCTION_MODE_CONFIG);
+        } else if(SystemUtils.FUNCTION_MODE_NAMING.equals(FUNCTION_MODE)) {
+            System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, SystemUtils.FUNCTION_MODE_NAMING);
+        }
+
 
         System.setProperty(LOCAL_IP_PROPERTY_KEY, LOCAL_IP);
     }
@@ -96,7 +108,7 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
 
         logFilePath();
 
-        LOGGER.info("Nacos started successfully in {} mode.", System.getProperty(MODE_PROPERTY_KEY));
+        LOGGER.info("Nacos started successfully in {} mode.", System.getProperty(MODE_PROPERTY_KEY_STAND_MODE));
     }
 
     @Override

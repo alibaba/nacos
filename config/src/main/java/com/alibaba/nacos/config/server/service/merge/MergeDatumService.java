@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  * 数据聚合服务。

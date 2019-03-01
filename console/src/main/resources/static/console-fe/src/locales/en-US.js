@@ -31,7 +31,6 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
-    nacosVersion: '0.8.0',
     doesNotExist: 'The page you visit does not exist',
     configurationManagementVirtual: 'ConfigManagement',
     configurationManagement: 'Configurations',
@@ -110,6 +109,9 @@ const I18N_CONF = {
     protectThreshold: 'Protect Threshold',
     serviceName: 'Service Name',
     editService: 'Edit Service',
+    healthCheckPatternService: 'Service',
+    healthCheckPatternClient: 'Client',
+    healthCheckPatternNone: 'None',
   },
   EditServiceDialog: {
     createService: 'Create Service',

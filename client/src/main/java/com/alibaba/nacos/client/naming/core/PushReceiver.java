@@ -17,7 +17,6 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 
 import java.net.DatagramPacket;
@@ -26,6 +25,8 @@ import java.nio.charset.Charset;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
@@ -57,7 +58,7 @@ public class PushReceiver implements Runnable {
 
             executorService.execute(this);
         } catch (Exception e) {
-            LogUtils.LOG.error("NA", "init udp socket failed", e);
+            NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
     }
 
@@ -72,7 +73,7 @@ public class PushReceiver implements Runnable {
                 udpSocket.receive(packet);
 
                 String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
-                LogUtils.LOG.info("received push data: " + json + " from " + packet.getAddress().toString());
+                NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
 
                 PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
                 String ack;
@@ -100,7 +101,7 @@ public class PushReceiver implements Runnable {
                 udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
                     ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
             } catch (Exception e) {
-                LogUtils.LOG.error("NA", "error while receiving push data", e);
+                NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
         }
     }
