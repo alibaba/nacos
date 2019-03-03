@@ -16,19 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.core.utils.InetUtils;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -43,10 +31,19 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Base data source
@@ -56,7 +53,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
-    private static final Logger log = LoggerFactory.getLogger(InetUtils.class);    private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+    private static final Logger log = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
+    private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
     private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static String JDBC_DRIVER_NAME;
 
