@@ -92,7 +92,7 @@ public class HttpClient {
             try {
                 if (conn != null) {
                     NAMING_LOGGER.warn("failed to request " + conn.getURL() + " from "
-                            + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
+                        + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
                 }
             } catch (Exception e1) {
                 NAMING_LOGGER.error("[NA] failed to request ", e1);
@@ -114,7 +114,7 @@ public class HttpClient {
 
         InputStream inputStream;
         if (HttpURLConnection.HTTP_OK == respCode
-                || HttpURLConnection.HTTP_NOT_MODIFIED == respCode) {
+            || HttpURLConnection.HTTP_NOT_MODIFIED == respCode) {
             inputStream = conn.getInputStream();
         } else {
             inputStream = conn.getErrorStream();
@@ -165,12 +165,12 @@ public class HttpClient {
         }
 
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
-                + encoding);
+            + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
     }
 
     private static String encodingParams(Map<String, String> params, String encoding)
-            throws UnsupportedEncodingException {
+        throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
             return null;
         }
