@@ -14,6 +14,7 @@
 module.exports = {
   data: [
     {
+      enable: false,
       isExtend: true,
       name: '配置管理',
       title: '配置管理',
@@ -164,6 +165,7 @@ module.exports = {
       ],
     },
     {
+      enable: false,
       isExtend: true,
       name: '服务管理',
       title: '服务管理',
@@ -210,6 +212,7 @@ module.exports = {
       ],
     },
     {
+      enable: true,
       isExtend: false,
       name: '命名空间',
       title: '命名空间',

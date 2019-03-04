@@ -27,13 +27,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.alibaba.nacos.core.utils.Constants.PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.FUNCTION_MODE_PROPERTY_NAME;
 import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
 import static org.apache.commons.lang3.CharEncoding.UTF_8;
 
@@ -48,6 +46,19 @@ public class SystemUtils {
      * Standalone mode or not
      */
     public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+
+    public static final String STANDALONE_MODE_ALONE = "standalone";
+    public static final String STANDALONE_MODE_CLUSTER = "cluster";
+
+    /**
+     * server
+     */
+    public static String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
+
+    public static final String FUNCTION_MODE_CONFIG = "config";
+    public static final String FUNCTION_MODE_NAMING = "naming";
+
+
 
     private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean)ManagementFactory
         .getOperatingSystemMXBean();
