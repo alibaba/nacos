@@ -15,19 +15,15 @@
  */
 package com.alibaba.nacos.client.identify;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.StringUtils;
+import org.slf4j.Logger;
+
+import java.io.*;
 import java.net.URL;
 import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
-import com.alibaba.nacos.client.utils.StringUtils;
 
 /**
  * Credential Watcher
@@ -95,14 +91,14 @@ public class CredentialWatcher {
         SpasLogger.info("[{}] {} is stopped", appName, this.getClass().getSimpleName());
     }
 
-	private void loadCredential(boolean init) {
-		boolean logWarn = init;
-		if (propertyPath == null) {
-			URL url = ClassLoader.getSystemResource(Constants.PROPERTIES_FILENAME);
-			if (url != null) {
-				propertyPath = url.getPath();
-			}
-			if (propertyPath == null || propertyPath.isEmpty()) {
+    private void loadCredential(boolean init) {
+        boolean logWarn = init;
+        if (propertyPath == null) {
+            URL url = ClassLoader.getSystemResource(Constants.PROPERTIES_FILENAME);
+            if (url != null) {
+                propertyPath = url.getPath();
+            }
+            if (propertyPath == null || propertyPath.isEmpty()) {
 
                 String value = System.getProperty("spas.identity");
                 if (StringUtils.isNotEmpty(value)) {
@@ -143,6 +139,7 @@ public class CredentialWatcher {
 
         String accessKey = null;
         String secretKey = null;
+        String tenantId = null;
         if (propertiesIS == null) {
             propertyPath = null;
             accessKey = System.getenv(Constants.ENV_ACCESS_KEY);
@@ -175,30 +172,29 @@ public class CredentialWatcher {
                 SpasLogger.info(appName, "Load credential file " + propertyPath);
             }
 
-			if (!Constants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
-				if (properties.containsKey(Constants.ACCESS_KEY)) {
-					accessKey = properties.getProperty(Constants.ACCESS_KEY);
-				}
-				if (properties.containsKey(Constants.SECRET_KEY)) {
-					secretKey = properties.getProperty(Constants.SECRET_KEY);
-				}
-				if (properties.containsKey(Constants.TENANT_ID)) {
-					tenantId = properties.getProperty(Constants.TENANT_ID);
-				}
-			}
-			else {
-				if (properties.containsKey(Constants.DOCKER_ACCESS_KEY)) {
-					accessKey = properties.getProperty(Constants.DOCKER_ACCESS_KEY);
-				}
-				if (properties.containsKey(Constants.DOCKER_SECRET_KEY)) {
-					secretKey = properties.getProperty(Constants.DOCKER_SECRET_KEY);
-				}
+            if (!Constants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
+                if (properties.containsKey(Constants.ACCESS_KEY)) {
+                    accessKey = properties.getProperty(Constants.ACCESS_KEY);
+                }
+                if (properties.containsKey(Constants.SECRET_KEY)) {
+                    secretKey = properties.getProperty(Constants.SECRET_KEY);
+                }
+                if (properties.containsKey(Constants.TENANT_ID)) {
+                    tenantId = properties.getProperty(Constants.TENANT_ID);
+                }
+            } else {
+                if (properties.containsKey(Constants.DOCKER_ACCESS_KEY)) {
+                    accessKey = properties.getProperty(Constants.DOCKER_ACCESS_KEY);
+                }
+                if (properties.containsKey(Constants.DOCKER_SECRET_KEY)) {
+                    secretKey = properties.getProperty(Constants.DOCKER_SECRET_KEY);
+                }
 
-				if (properties.containsKey(Constants.DOCKER_TENANT_ID)) {
-					tenantId = properties.getProperty(Constants.DOCKER_TENANT_ID);
-				}
-			}
-		}
+                if (properties.containsKey(Constants.DOCKER_TENANT_ID)) {
+                    tenantId = properties.getProperty(Constants.DOCKER_TENANT_ID);
+                }
+            }
+        }
 
         if (accessKey != null) {
             accessKey = accessKey.trim();
@@ -207,7 +203,11 @@ public class CredentialWatcher {
             secretKey = secretKey.trim();
         }
 
-        Credentials credential = new Credentials(accessKey, secretKey);
+        if (tenantId != null) {
+            tenantId = tenantId.trim();
+        }
+
+        Credentials credential = new Credentials(accessKey, secretKey, tenantId);
         if (!credential.valid()) {
             SpasLogger.warn("1", "Credential file missing required property" + appName + "Credential file missing "
                 + Constants.ACCESS_KEY + " or " + Constants.SECRET_KEY);

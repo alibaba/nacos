@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -24,6 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.client.identify.CredentialService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
@@ -31,9 +33,10 @@ import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -41,13 +44,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
-
     /**
      * Each Naming instance should have different namespace.
      */
@@ -69,88 +72,181 @@ public class NacosNamingService implements NamingService {
 
     private NamingProxy serverProxy;
 
-    private void init() {
+    public NacosNamingService(String serverList) {
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
 
-        namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
+        init(properties);
+    }
 
-        if (StringUtils.isEmpty(namespace)) {
-            namespace = UtilAndComs.DEFAULT_NAMESPACE_ID;
+    public NacosNamingService(Properties properties) {
+
+        init(properties);
+    }
+
+    private void init(Properties properties) {
+
+        serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+
+        initNamespace(properties);
+        initEndpoint(properties);
+        initWebRootContext();
+        initCacheDir();
+        initLogName(properties);
+
+        eventDispatcher = new EventDispatcher();
+        serverProxy = new NamingProxy(namespace, endpoint, serverList);
+        serverProxy.setProperties(properties);
+        beatReactor = new BeatReactor(serverProxy, clientBeatThreadCount(properties));
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), pollingThreadCount(properties));
+    }
+
+    private int clientBeatThreadCount(Properties properties) {
+        if (properties == null) {
+
+            return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
         }
 
+        int clientBeatThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
+            UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
+
+        return clientBeatThreadCount;
+    }
+
+    private int pollingThreadCount(Properties properties) {
+        if (properties == null) {
+
+            return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
+        }
+
+        int pollingThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
+            UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+
+        return pollingThreadCount;
+    }
+
+    private boolean isLoadCacheAtStart(Properties properties) {
+        boolean loadCacheAtStart = false;
+        if (properties != null && StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
+            loadCacheAtStart = BooleanUtils.toBoolean(
+                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
+        }
+
+        return loadCacheAtStart;
+    }
+
+    private void initLogName(Properties properties) {
         logName = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
         if (StringUtils.isEmpty(logName)) {
-            logName = "naming.log";
-        }
 
+            if (properties != null && StringUtils.isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
+                logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
+            } else {
+                logName = "naming.log";
+            }
+        }
+    }
+
+    private void initCacheDir() {
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
     }
 
-    public NacosNamingService(String serverList) {
+    private void initEndpoint(Properties properties) {
+        if (properties == null) {
 
-        this.serverList = serverList;
-        init();
-        eventDispatcher = new EventDispatcher();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        beatReactor = new BeatReactor(serverProxy);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir);
+            return;
+        }
+
+        String endpointUrl = TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENDPOINT), new Callable<String>() {
+            @Override
+            public String call() {
+                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            }
+        });
+
+        if (StringUtils.isEmpty(endpointUrl)) {
+            return;
+        }
+
+        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENDPOINT_PORT), new Callable<String>() {
+            @Override
+            public String call() {
+
+                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+            }
+        });
+        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
+            @Override
+            public String call() {
+                return "8080";
+            }
+        });
+
+        endpoint = endpointUrl + ":" + endpointPort;
     }
 
-    public NacosNamingService(Properties properties) {
+    private void initNamespace(Properties properties) {
+        String tmpNamespace = null;
 
-        init();
-
-        serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-
-        if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMESPACE))) {
-            namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        if (properties != null) {
+            tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
 
-        if (StringUtils.isNotEmpty(properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME))) {
-            logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
-        }
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+            @Override
+            public String call() {
+                String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
+                LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
+                return namespace;
+            }
+        });
 
-        if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.ENDPOINT))) {
-            endpoint = properties.getProperty(PropertyKeyConst.ENDPOINT) + ":" +
-                properties.getProperty("address.server.port", "8080");
-        }
 
-        initWebRootContext();
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+            @Override
+            public String call() {
+                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
+                return namespace;
+            }
+        });
 
-        cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+            @Override
+            public String call() {
+                String namespace = CredentialService.getInstance().getCredential().getTenantId();
+                LogUtils.NAMING_LOGGER.info("initializer namespace from Credential Module " + namespace);
+                return namespace;
+            }
+        });
 
-        boolean loadCacheAtStart = false;
-        if (StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
-            loadCacheAtStart = BooleanUtils.toBoolean(
-                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
-        }
-
-        int clientBeatThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
-            UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
-
-        int pollingThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
-            UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
-
-        eventDispatcher = new EventDispatcher();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        beatReactor = new BeatReactor(serverProxy, clientBeatThreadCount);
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir,
-            loadCacheAtStart, pollingThreadCount);
-
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+            @Override
+            public String call() {
+                return UtilAndComs.DEFAULT_NAMESPACE_ID;
+            }
+        });
+        namespace = tmpNamespace;
     }
 
     private void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
-        String webContext = System.getProperties().getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
+        String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
+        boolean isSetting = false;
         if (StringUtils.isNotEmpty(webContext)) {
             UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
                 : "/" + webContext;
+
+            isSetting = true;
         }
 
-        UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
-        UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
+        if (isSetting) {
+            UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
+            UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
+        }
     }
 
     @Override
@@ -213,7 +309,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
+    public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe) throws
+        NacosException {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
@@ -272,7 +369,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws NacosException {
+    public Instance selectOneHealthyInstance(String serviceName, List<String> clusters, boolean subscribe) throws
+        NacosException {
 
         if (subscribe) {
             return Balancer.RandomByWeight.selectHost(
@@ -311,7 +409,8 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
+    public ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws
+        NacosException {
         return serverProxy.getServiceList(pageNo, pageSize, selector);
     }
 

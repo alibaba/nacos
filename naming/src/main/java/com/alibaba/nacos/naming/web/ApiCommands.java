@@ -526,6 +526,7 @@ public class ApiCommands {
             cluster = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
 
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(Integer.parseInt(port));
@@ -533,6 +534,7 @@ public class ApiCommands {
         ipAddress.setWeight(Double.parseDouble(weight));
         ipAddress.setClusterName(cluster);
         ipAddress.setEnabled(enabled);
+        ipAddress.setValid(healthy);
 
         if (!ipAddress.validate()) {
             throw new IllegalArgumentException("malfomed ip config: " + ipAddress);
