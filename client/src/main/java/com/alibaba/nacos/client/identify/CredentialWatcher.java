@@ -109,12 +109,13 @@ public class CredentialWatcher {
                         : appName);
                 } else {
                     if (logWarn) {
-                        SpasLogger.info(appName, "Defined credential file: -D" + "spas.identity" + "=" + propertyPath);
+                        SpasLogger.info("[{}] Defined credential file: -Dspas.identity={}", appName, propertyPath);
                     }
                 }
             } else {
                 if (logWarn) {
-                    SpasLogger.info(appName, "Load credential file from classpath: " + Constants.PROPERTIES_FILENAME);
+                    SpasLogger.info("[{}] Load credential file from classpath: {}", appName,
+                        Constants.PROPERTIES_FILENAME);
                 }
             }
         }
@@ -155,7 +156,7 @@ public class CredentialWatcher {
             try {
                 properties.load(propertiesIS);
             } catch (IOException e) {
-                SpasLogger.error("26", "Unable to load credential file, appName:" + appName
+                SpasLogger.error("[26] Unable to load credential file, appName:" + appName
                     + "Unable to load credential file " + propertyPath, e);
                 propertyPath = null;
                 return;
@@ -163,13 +164,13 @@ public class CredentialWatcher {
                 try {
                     propertiesIS.close();
                 } catch (IOException e) {
-                    SpasLogger.error("27", "Unable to close credential file, appName:" + appName
+                    SpasLogger.error("[27] Unable to close credential file, appName:" + appName
                         + "Unable to close credential file " + propertyPath, e);
                 }
             }
 
             if (logWarn) {
-                SpasLogger.info(appName, "Load credential file " + propertyPath);
+                SpasLogger.info("[{}] Load credential file {}", appName, propertyPath);
             }
 
             if (!Constants.DOCKER_CREDENTIAL_PATH.equals(propertyPath)) {
@@ -209,8 +210,8 @@ public class CredentialWatcher {
 
         Credentials credential = new Credentials(accessKey, secretKey, tenantId);
         if (!credential.valid()) {
-            SpasLogger.warn("1", "Credential file missing required property" + appName + "Credential file missing "
-                + Constants.ACCESS_KEY + " or " + Constants.SECRET_KEY);
+            SpasLogger.warn("[1] Credential file missing required property {} Credential file missing {} or {}",
+                appName, Constants.ACCESS_KEY, Constants.SECRET_KEY);
             propertyPath = null;
             // return;
         }
