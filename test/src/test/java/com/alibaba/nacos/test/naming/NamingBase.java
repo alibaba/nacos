@@ -15,14 +15,15 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.net.HttpClient;
+import org.apache.http.HttpStatus;
+import org.junit.Assert;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.Service;
 
 /**
  * @author nkorange
@@ -153,5 +154,16 @@ public class NamingBase {
             }
         }
         return true;
+    }
+
+    public static void setServerStatusUp(int localPort) {
+        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=UP";
+        List<String> headers = new ArrayList<String>();
+        headers.add("User-Agent");
+        headers.add("Nacos-Server");
+        HttpClient.HttpResult result =
+            HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");
+
+        Assert.assertEquals(HttpStatus.SC_OK, result.code);
     }
 }
