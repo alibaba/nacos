@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.HttpClient;
@@ -112,11 +113,13 @@ public class DistroFilter implements Filter {
             // user groupName@@serviceName as new service name:
             String groupName = req.getParameter(CommonParams.GROUP_NAME);
             if (StringUtils.isBlank(groupName)) {
-                groupName = UtilsAndCommons.DEFAULT_GROUP_NAME;
+                groupName = Constants.DEFAULT_GROUP;
             }
 
             OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
-            requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceName);
+            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+                requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + Constants.SERVICE_INFO_SPLITER + serviceName);
+            }
             filterChain.doFilter(requestWrapper, resp);
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + UtilsAndCommons.getAllExceptionMsg(e));

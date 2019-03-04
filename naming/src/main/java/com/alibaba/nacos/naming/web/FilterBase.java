@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.controllers.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,7 +51,7 @@ public class FilterBase {
     }
 
     public Method getMethod(String httpMethod, String path) {
-        String key = httpMethod + "-->" + path;
+        String key = httpMethod + "-->" + path.replace("/nacos", "");
         return methodCache.get(key);
     }
 

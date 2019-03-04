@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -52,7 +53,7 @@ public class CatalogController {
     public JSONObject serviceList(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         JSONObject result = new JSONObject();
 
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
@@ -99,7 +100,7 @@ public class CatalogController {
     public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -133,7 +134,7 @@ public class CatalogController {
     public JSONObject instanceList(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
         int page = Integer.parseInt(WebUtils.required(request, "startPg"));
@@ -176,7 +177,7 @@ public class CatalogController {
     public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 
         serviceManager
@@ -203,7 +204,7 @@ public class CatalogController {
     public JSONObject rt4Service(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);

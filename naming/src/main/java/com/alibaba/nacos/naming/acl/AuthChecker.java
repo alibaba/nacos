@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.acl;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Service;
@@ -67,7 +68,7 @@ public class AuthChecker {
     public void doAuth(Map<String, String[]> params, HttpServletRequest req) throws Exception {
 
         String namespaceId = WebUtils.optional(req, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.optional(req, "name", "");
         if (StringUtils.isEmpty(serviceName)) {
             serviceName = WebUtils.optional(req, "serviceName", "");

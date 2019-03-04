@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -61,7 +62,7 @@ public class ServiceController {
     public String create(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
 
@@ -99,7 +100,7 @@ public class ServiceController {
     public String remove(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -120,7 +121,7 @@ public class ServiceController {
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -156,7 +157,8 @@ public class ServiceController {
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
         int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
+        String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
         String selectorString = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
         List<String> serviceNameList = serviceManager.getAllServiceNameList(namespaceId);
@@ -167,6 +169,15 @@ public class ServiceController {
             result.put("doms", new ArrayList<String>(1));
             result.put("count", 0);
             return result;
+        }
+
+        Iterator<String> iterator = serviceNameList.iterator();
+
+        while (iterator.hasNext()) {
+            String serviceName = iterator.next();
+            if (!serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER)) {
+                iterator.remove();
+            }
         }
 
         if (StringUtils.isNotBlank(selectorString)) {
@@ -211,6 +222,10 @@ public class ServiceController {
             end = serviceNameList.size();
         }
 
+        for (int i = start; i < end; i++) {
+            serviceNameList.add(i, serviceNameList.get(i).replace(groupName + Constants.SERVICE_INFO_SPLITER, ""));
+        }
+
         result.put("doms", serviceNameList.subList(start, end));
         result.put("count", serviceNameList.size());
 
@@ -222,7 +237,7 @@ public class ServiceController {
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
@@ -331,7 +346,7 @@ public class ServiceController {
     public JSONObject checksum(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service service = serviceManager.getService(namespaceId, serviceName);
 

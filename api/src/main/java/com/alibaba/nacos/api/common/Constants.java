@@ -124,4 +124,6 @@ public class Constants {
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final int WRITE_REDIRECT_CODE = 307;
+
+    public static final String SERVICE_INFO_SPLITER = "@@";
 }

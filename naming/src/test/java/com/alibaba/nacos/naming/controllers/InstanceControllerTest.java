@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
@@ -84,7 +85,7 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         service.updateIPs(ipList, false);
 
-        Mockito.when(serviceManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(service);
+        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.put("/naming/instance")
@@ -129,7 +130,7 @@ public class InstanceControllerTest extends BaseTest {
         ipList.add(instance);
         service.updateIPs(ipList, false);
 
-        Mockito.when(serviceManager.getService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(service);
+        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.1")).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
                 MockMvcRequestBuilders.get("/v1/ns/instances")

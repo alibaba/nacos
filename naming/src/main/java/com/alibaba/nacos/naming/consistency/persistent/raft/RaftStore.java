@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -145,11 +146,11 @@ public class RaftStore {
                 }
 
                 if (StringUtils.isBlank(serviceDatum.value.getGroupName())) {
-                    serviceDatum.value.setGroupName(UtilsAndCommons.DEFAULT_GROUP_NAME);
+                    serviceDatum.value.setGroupName(Constants.DEFAULT_GROUP);
                 }
-                if (!serviceDatum.value.getName().contains(UtilsAndCommons.GROUP_SERVICE_CONNECTOR)) {
-                    serviceDatum.value.setName(UtilsAndCommons.DEFAULT_GROUP_NAME
-                        + UtilsAndCommons.GROUP_SERVICE_CONNECTOR + serviceDatum.value.getName());
+                if (!serviceDatum.value.getName().contains(Constants.SERVICE_INFO_SPLITER)) {
+                    serviceDatum.value.setName(Constants.DEFAULT_GROUP
+                        + Constants.SERVICE_INFO_SPLITER + serviceDatum.value.getName());
                 }
 
                 return serviceDatum;

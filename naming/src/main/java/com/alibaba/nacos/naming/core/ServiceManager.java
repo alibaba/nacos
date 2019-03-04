@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerMode;
@@ -112,12 +113,12 @@ public class ServiceManager implements RecordListener<Service> {
 
     @Override
     public boolean interests(String key) {
-        return KeyBuilder.matchServiceMetaKey(key);
+        return KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key);
     }
 
     @Override
     public boolean matchUnlistenKey(String key) {
-        return KeyBuilder.matchServiceMetaKey(key);
+        return KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key);
     }
 
     @Override
@@ -129,7 +130,7 @@ public class ServiceManager implements RecordListener<Service> {
             }
 
             if (StringUtils.isBlank(service.getNamespaceId())) {
-                service.setNamespaceId(UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+                service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
             }
 
             Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, service);
@@ -332,7 +333,7 @@ public class ServiceManager implements RecordListener<Service> {
             service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
-            service.setGroupName(UtilsAndCommons.DEFAULT_GROUP_NAME);
+            service.setGroupName(Constants.DEFAULT_GROUP);
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
@@ -600,7 +601,7 @@ public class ServiceManager implements RecordListener<Service> {
         public Map<String, String> serviceName2Checksum = new HashMap<String, String>();
 
         public ServiceChecksum() {
-            this.namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
+            this.namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         }
 
         public ServiceChecksum(String namespaceId) {

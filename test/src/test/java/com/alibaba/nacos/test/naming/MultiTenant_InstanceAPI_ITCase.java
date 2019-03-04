@@ -61,10 +61,21 @@ public class MultiTenant_InstanceAPI_ITCase {
 
     @Before
     public void init() throws Exception {
+
+        NamingBase.prepareServer(port);
+
         String url = String.format("http://localhost:%d/", port);
         this.base = new URL(url);
 
         naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
+        }
 
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, "namespace-1");
@@ -221,10 +232,10 @@ public class MultiTenant_InstanceAPI_ITCase {
                 .appendParam("serviceName", serviceName)
                 .appendParam("ip", "33.33.33.33")
                 .appendParam("port", "8888")
-                .appendParam("namespaceId", "namespace-1") //新增
                 .done(),
             String.class,
             HttpMethod.PUT);
+        System.out.println(response.getBody());
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         response = request("/nacos/v1/ns/instance/list",
@@ -235,7 +246,7 @@ public class MultiTenant_InstanceAPI_ITCase {
             String.class);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(2, json.getJSONArray("hosts").size());
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
 
         //namespace-2个数
         response = request("/nacos/v1/ns/instance/list",
