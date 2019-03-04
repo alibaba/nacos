@@ -33,6 +33,11 @@ public interface Constants {
      */
     String STANDALONE_MODE_PROPERTY_NAME = "nacos.standalone";
 
+        /**
+     * The System property name of  Function mode
+     */
+    String FUNCTION_MODE_PROPERTY_NAME = "nacos.functionMode";
+
     /**
      * The System property name of prefer hostname over ip
      */

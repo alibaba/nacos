@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.naming;
+package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.client.identify.Base64;
 
@@ -56,11 +56,11 @@ public class SignUtil {
         }
     }
 
-    public static enum SigningAlgorithm {
+    public enum SigningAlgorithm {
         // Hmac SHA1 algorithm
         HmacSHA1;
 
-        private SigningAlgorithm() {
+        SigningAlgorithm() {
         }
     }
 }

@@ -241,8 +241,7 @@ public class HostReactor {
                     try {
                         serviceObj.wait(updateHoldInterval);
                     } catch (InterruptedException e) {
-                        NAMING_LOGGER.error("[getServiceInfo]",
-                            "serviceName:" + serviceName + ", clusters:" + clusters, e);
+                        NAMING_LOGGER.error("[getServiceInfo] serviceName:" + serviceName + ", clusters:" + clusters, e);
                     }
                 }
             }
@@ -278,7 +277,7 @@ public class HostReactor {
                 processServiceJSON(result);
             }
         } catch (Exception e) {
-            NAMING_LOGGER.error("NA", "failed to update serviceName: " + serviceName, e);
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         } finally {
             if (oldService != null) {
                 synchronized (oldService) {
@@ -292,7 +291,7 @@ public class HostReactor {
         try {
             serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
         } catch (Exception e) {
-            NAMING_LOGGER.error("NA", "failed to update serviceName: " + serviceName, e);
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         }
     }
 
@@ -330,7 +329,7 @@ public class HostReactor {
 
                 lastRefTime = serviceObj.getLastRefTime();
             } catch (Throwable e) {
-                NAMING_LOGGER.warn("NA", "failed to update serviceName: " + serviceName, e);
+                NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             }
 
         }

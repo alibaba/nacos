@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -26,31 +27,19 @@ import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
-import com.alibaba.nacos.client.identify.CredentialService;
+import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.SignUtil;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.NetUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.naming.utils.*;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -77,15 +66,12 @@ public class NamingProxy {
 
     private long vipSrvRefInterMillis = TimeUnit.SECONDS.toMillis(30);
 
-    private CredentialService credentialService = CredentialService.getInstance();
-
-    private ScheduledExecutorService executorService;
+    private Properties properties;
 
     public NamingProxy(String namespaceId, String endpoint, String serverList) {
 
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
-
         if (StringUtils.isNotEmpty(serverList)) {
             this.serverList = Arrays.asList(serverList.split(","));
             if (this.serverList.size() == 1) {
@@ -93,12 +79,15 @@ public class NamingProxy {
             }
         }
 
-        String serverPort = System.getProperties().getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
-        if (StringUtils.isNotEmpty(serverPort)) {
-            this.serverPort = Integer.valueOf(serverPort.trim());
+        initRefreshSrvIfNeed();
+    }
+
+    private void initRefreshSrvIfNeed() {
+        if (StringUtils.isEmpty(endpoint)) {
+            return;
         }
 
-        executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -118,26 +107,17 @@ public class NamingProxy {
         refreshSrvIfNeed();
     }
 
-    public void setServerPort(int serverPort) {
-        this.serverPort = serverPort;
-    }
-
     public List<String> getServerListFromEndpoint() {
 
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
 
-            String nacosNamingMode = System.getProperty(SystemPropertyKeyConst.NACOS_NAMING_REQUEST_MODULE, "Naming");
+            List<String> headers = builderHeaders();
 
-            List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-                "Accept-Encoding", "gzip,deflate,sdch", "Connection", "Keep-Alive",
-                "RequestId", UuidUtils.generateUuid(), "Request-Module", nacosNamingMode);
-
-            HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null,
-                UtilAndComs.ENCODING);
+            HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
             if (HttpURLConnection.HTTP_OK != result.code) {
-                throw new IOException("Error while requesting: " + urlString
-                    + "'. Server returned: " + result.code);
+                throw new IOException("Error while requesting: " + urlString + "'. Server returned: "
+                    + result.code);
             }
 
             String content = result.content;
@@ -206,41 +186,10 @@ public class NamingProxy {
 
     }
 
-    private void checkTenant(Map<String, String> params) {
-        String tenantId = credentialService.getCredential().getTenantId();
-        if (tenantId == null || tenantId.trim().length() == 0) {
-            return;
-        }
+    public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
 
-        try {
-            String tenantApp = System.getProperty("project.name");
-            String tenantAk = credentialService.getCredential().getAccessKey();
-            String tenantSK = credentialService.getCredential().getSecretKey();
-            String signData = getSignData(params);
-            String signature = SignUtil.sign(signData, tenantSK);
-            params.put("signature", signature);
-            params.put("data", signData);
-            params.put("ak", tenantAk);
-            params.put("app", tenantApp);
-            params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, tenantId);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static String getSignData(Map<String, String> params) {
-        String data = "";
-        return params.containsKey("dom")
-            ? System.currentTimeMillis() + "@@" + (String) params.get("dom")
-            : String.valueOf(System.currentTimeMillis());
-    }
-
-    public void deregisterService(String serviceName, String ip, int port, String cluster)
-        throws NacosException {
-
-        NAMING_LOGGER.info("DEREGISTER-SERVICE",
-            "{} deregistering service {} with instance: {}:{}@{}", namespaceId,
-            serviceName, ip, port, cluster);
+        NAMING_LOGGER.info("DEREGISTER-SERVICE", "{} deregistering service {} with instance: {}:{}@{}",
+            namespaceId, serviceName, ip, port, cluster);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
@@ -252,7 +201,8 @@ public class NamingProxy {
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
     }
 
-    public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly) throws NacosException {
+    public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)
+        throws NacosException {
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
@@ -311,7 +261,7 @@ public class NamingProxy {
                 case none:
                     break;
                 case label:
-                    ExpressionSelector expressionSelector = (ExpressionSelector)selector;
+                    ExpressionSelector expressionSelector = (ExpressionSelector) selector;
                     params.put("selector", JSON.toJSONString(expressionSelector));
                     break;
                 default:
@@ -331,7 +281,6 @@ public class NamingProxy {
     }
 
     public String reqAPI(String api, Map<String, String> params) throws NacosException {
-
 
         List<String> snapshot = serversFromEndpoint;
         if (!CollectionUtils.isEmpty(serverList)) {
@@ -359,16 +308,14 @@ public class NamingProxy {
         throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
+        checkSignature(params);
 
-        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-            "Accept-Encoding", "gzip,deflate,sdch",
-            "Connection", "Keep-Alive",
-            "RequestId", UuidUtils.generateUuid());
+        List<String> headers = builderHeaders();
 
         String url;
 
         if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
-            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + DEFAULT_SERVER_PORT;
+            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
         }
 
         url = HttpClient.getPrefix() + curServer + api;
@@ -403,7 +350,6 @@ public class NamingProxy {
     public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) {
 
         params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, getNamespaceId());
-        checkTenant(params);
 
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
             throw new IllegalArgumentException("no server available");
@@ -440,7 +386,86 @@ public class NamingProxy {
 
     }
 
+    private void checkSignature(Map<String, String> params) {
+        String ak = getAccessKey();
+        String sk = getSecretKey();
+        if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
+            return;
+        }
+
+        try {
+            String app = System.getProperty("project.name");
+            String signData = getSignData(params.get("serviceName"));
+            String signature = SignUtil.sign(signData, sk);
+            params.put("signature", signature);
+            params.put("data", signData);
+            params.put("ak", ak);
+            params.put("app", app);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<String> builderHeaders() {
+        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
+            "Accept-Encoding", "gzip,deflate,sdch",
+            "Connection", "Keep-Alive",
+            "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
+        return headers;
+    }
+
+    private static String getSignData(String serviceName) {
+        return StringUtils.isNotEmpty(serviceName)
+            ? System.currentTimeMillis() + "@@" + serviceName
+            : String.valueOf(System.currentTimeMillis());
+    }
+
+    public String getAccessKey() {
+        if (properties == null) {
+
+            return SpasAdapter.getAk();
+        }
+
+        return TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ACCESS_KEY), new Callable<String>() {
+
+            @Override
+            public String call() {
+                return SpasAdapter.getAk();
+            }
+        });
+    }
+
+    public String getSecretKey() {
+        if (properties == null) {
+
+            return SpasAdapter.getSk();
+        }
+
+        return TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SECRET_KEY), new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return SpasAdapter.getSk();
+            }
+        });
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+        setServerPort(DEFAULT_SERVER_PORT);
+    }
+
     public String getNamespaceId() {
         return namespaceId;
     }
+
+    public void setServerPort(int serverPort) {
+        this.serverPort = serverPort;
+
+        String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
+        if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
+            this.serverPort = Integer.parseInt(sp);
+        }
+    }
+
 }
+
