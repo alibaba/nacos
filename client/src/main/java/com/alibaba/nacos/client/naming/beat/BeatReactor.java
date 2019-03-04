@@ -59,13 +59,13 @@ public class BeatReactor {
     }
 
     public void addBeatInfo(String dom, String groupName, BeatInfo beatInfo) {
-        NAMING_LOGGER.info("BEAT", "adding beat: {} to beat map.", beatInfo);
+        NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
         dom2Beat.put(buildKey(dom, groupName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
     public void removeBeatInfo(String dom, String groupName, String ip, int port) {
-        NAMING_LOGGER.info("BEAT", "removing beat: {}:{}:{} from beat map.", dom, ip, port);
+        NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", dom, ip, port);
         dom2Beat.remove(buildKey(dom, groupName, ip, port));
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
@@ -89,7 +89,7 @@ public class BeatReactor {
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
                 }
             } catch (Exception e) {
-                NAMING_LOGGER.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
+                NAMING_LOGGER.error("[CLIENT-BEAT] Exception while scheduling beat.", e);
             } finally {
                 executorService.schedule(this, clientBeatInterval, TimeUnit.MILLISECONDS);
             }

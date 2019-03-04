@@ -81,11 +81,11 @@ public class HttpClient {
                             + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
                 }
             } catch (Exception e1) {
-                NAMING_LOGGER.error("NA", "failed to request ", e1);
+                NAMING_LOGGER.error("[NA] failed to request ", e1);
                 //ignore
             }
 
-            NAMING_LOGGER.error("NA", "failed to request ", e);
+            NAMING_LOGGER.error("[NA] failed to request ", e);
 
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {

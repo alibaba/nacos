@@ -58,7 +58,7 @@ public class PushReceiver implements Runnable {
 
             executorService.execute(this);
         } catch (Exception e) {
-            NAMING_LOGGER.error("NA", "init udp socket failed", e);
+            NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
     }
 
@@ -101,7 +101,7 @@ public class PushReceiver implements Runnable {
                 udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
                     ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
             } catch (Exception e) {
-                NAMING_LOGGER.error("NA", "error while receiving push data", e);
+                NAMING_LOGGER.error("[NA] error while receiving push data", e);
             }
         }
     }
