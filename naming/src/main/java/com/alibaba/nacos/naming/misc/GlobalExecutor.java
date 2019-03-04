@@ -159,7 +159,7 @@ public class GlobalExecutor {
         executorService.submit(runnable);
     }
 
-    public static void sumbitServiceUpdate(Runnable runnable) {
+    public static void submitServiceUpdate(Runnable runnable) {
         serviceUpdateExecutor.execute(runnable);
     }
 }
