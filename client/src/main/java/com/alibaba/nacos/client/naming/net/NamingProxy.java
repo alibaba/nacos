@@ -229,7 +229,7 @@ public class NamingProxy {
                 return jsonObject.getLong("clientBeatInterval");
             }
         } catch (Exception e) {
-            NAMING_LOGGER.error("CLIENT-BEAT", "failed to send beat: " + JSON.toJSONString(beatInfo), e);
+            NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: " + JSON.toJSONString(beatInfo), e);
         }
         return 0L;
     }
