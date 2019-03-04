@@ -251,16 +251,17 @@ public class NamingProxy {
         }
     }
 
-    public ListView<String> getServiceList(int pageNo, int pageSize) throws NacosException {
-        return getServiceList(pageNo, pageSize, null);
+    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName) throws NacosException {
+        return getServiceList(pageNo, pageSize, groupName, null);
     }
 
-    public ListView<String> getServiceList(int pageNo, int pageSize, AbstractSelector selector) throws NacosException {
+    public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector) throws NacosException {
 
         Map<String, String> params = new HashMap<String, String>(4);
         params.put("pageNo", String.valueOf(pageNo));
         params.put("pageSize", String.valueOf(pageSize));
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.GROUP_NAME, groupName);
 
         if (selector != null) {
             switch (SelectorType.valueOf(selector.getType())) {

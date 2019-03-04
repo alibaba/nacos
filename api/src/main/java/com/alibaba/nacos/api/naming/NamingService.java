@@ -418,7 +418,7 @@ public interface NamingService {
     void subscribe(String serviceName, String groupName, EventListener listener) throws NacosException;
 
     /**
-     * subscribe service to receive events of instances alteration
+     * Subscribe service to receive events of instances alteration
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -428,7 +428,7 @@ public interface NamingService {
     void subscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
 
     /**
-     * subscribe service to receive events of instances alteration
+     * Subscribe service to receive events of instances alteration
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -439,7 +439,7 @@ public interface NamingService {
     void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException;
 
     /**
-     * unsubscribe event listener of service
+     * Unsubscribe event listener of service
      *
      * @param serviceName name of service
      * @param listener    event listener
@@ -458,7 +458,7 @@ public interface NamingService {
     void unsubscribe(String serviceName, String groupName, EventListener listener) throws NacosException;
 
     /**
-     * unsubscribe event listener of service
+     * Unsubscribe event listener of service
      *
      * @param serviceName name of service
      * @param clusters    list of cluster
@@ -468,7 +468,7 @@ public interface NamingService {
     void unsubscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException;
 
     /**
-     * unsubscribe event listener of service
+     * Unsubscribe event listener of service
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -479,7 +479,7 @@ public interface NamingService {
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException;
 
     /**
-     * get all service names from server
+     * Get all service names from server
      *
      * @param pageNo   page index
      * @param pageSize page size
@@ -489,7 +489,18 @@ public interface NamingService {
     ListView<String> getServicesOfServer(int pageNo, int pageSize) throws NacosException;
 
     /**
-     * Get all subscribed services of current client
+     * Get all service names from server
+     *
+     * @param pageNo    page index
+     * @param pageSize  page size
+     * @param groupName group name
+     * @return list of service names
+     * @throws NacosException
+     */
+    ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName) throws NacosException;
+
+    /**
+     * Get all service names from server with selector
      *
      * @param pageNo   page index
      * @param pageSize page size
@@ -499,6 +510,18 @@ public interface NamingService {
      * @since 0.7.0
      */
     ListView<String> getServicesOfServer(int pageNo, int pageSize, AbstractSelector selector) throws NacosException;
+
+    /**
+     * Get all service names from server with selector
+     *
+     * @param pageNo    page index
+     * @param pageSize  page size
+     * @param groupName group name
+     * @param selector  selector to filter the resource
+     * @return list of service names
+     * @throws NacosException
+     */
+    ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector) throws NacosException;
 
     /**
      * Get all subscribed services of current client

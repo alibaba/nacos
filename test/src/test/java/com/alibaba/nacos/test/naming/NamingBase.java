@@ -156,12 +156,22 @@ public class NamingBase {
         return true;
     }
 
-    public static void setServerStatusUp(int localPort) {
+    public static void prepareServer(int localPort) {
         String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=UP";
         List<String> headers = new ArrayList<String>();
         headers.add("User-Agent");
         headers.add("Nacos-Server");
         HttpClient.HttpResult result =
+            HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");
+
+        Assert.assertEquals(HttpStatus.SC_OK, result.code);
+
+
+        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=serverMode&value=AP";
+        headers = new ArrayList<String>();
+        headers.add("User-Agent");
+        headers.add("Nacos-Server");
+        result =
             HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");
 
         Assert.assertEquals(HttpStatus.SC_OK, result.code);

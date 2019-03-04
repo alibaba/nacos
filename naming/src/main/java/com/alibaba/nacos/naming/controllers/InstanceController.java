@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
@@ -95,7 +96,7 @@ public class InstanceController {
     public String register(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
         serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
@@ -106,7 +107,7 @@ public class InstanceController {
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -119,10 +120,10 @@ public class InstanceController {
         return "ok";
     }
 
-    @RequestMapping(value = {"/instance/update", "instance"}, method = RequestMethod.PUT)
+    @RequestMapping(value = "/instance", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
         serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
@@ -132,7 +133,7 @@ public class InstanceController {
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String agent = request.getHeader("Client-Version");
@@ -158,7 +159,7 @@ public class InstanceController {
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
@@ -209,7 +210,7 @@ public class InstanceController {
         }
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
         if (StringUtils.isBlank(clientBeat.getCluster())) {
@@ -291,7 +292,7 @@ public class InstanceController {
             namespaceId = key.split(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)[0];
             serviceName = key.split(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)[1];
         } else {
-            namespaceId = UtilsAndCommons.DEFAULT_NAMESPACE_ID;
+            namespaceId = Constants.DEFAULT_NAMESPACE_ID;
             serviceName = key;
         }
 

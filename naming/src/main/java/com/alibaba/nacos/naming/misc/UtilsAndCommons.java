@@ -20,6 +20,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
@@ -111,15 +112,9 @@ public class UtilsAndCommons {
 
     public static final String NAMESPACE_SERVICE_CONNECTOR = "##";
 
-    public static final String GROUP_SERVICE_CONNECTOR = "@@";
-
     public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
 
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
-
-    public static final String DEFAULT_NAMESPACE_ID = "public";
-
-    public static final String DEFAULT_GROUP_NAME = "DEFAULT_GROUP";
 
     public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
 
@@ -245,16 +240,16 @@ public class UtilsAndCommons {
     }
 
     public static String getServiceName(String serviceNameWithGroup) {
-        if (!serviceNameWithGroup.contains(GROUP_SERVICE_CONNECTOR)) {
+        if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
             return serviceNameWithGroup;
         }
-        return serviceNameWithGroup.split(GROUP_SERVICE_CONNECTOR)[1];
+        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
     }
 
     public static String getGroupName(String serviceNameWithGroup) {
-        if (!serviceNameWithGroup.contains(GROUP_SERVICE_CONNECTOR)) {
-            return DEFAULT_GROUP_NAME;
+        if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
+            return Constants.DEFAULT_GROUP;
         }
-        return serviceNameWithGroup.split(GROUP_SERVICE_CONNECTOR)[0];
+        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[0];
     }
 }

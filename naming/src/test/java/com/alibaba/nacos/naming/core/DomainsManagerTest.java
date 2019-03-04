@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
@@ -44,7 +45,7 @@ public class DomainsManagerTest extends BaseTest {
 
     @Test
     public void easyRemoveDom() throws Exception {
-        serviceManager.easyRemoveService(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.1");
+        serviceManager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.1");
     }
 
     @Test
@@ -52,9 +53,9 @@ public class DomainsManagerTest extends BaseTest {
         Service service = new Service();
         service.setName("nacos.test.1");
 
-        serviceManager.chooseServiceMap(UtilsAndCommons.DEFAULT_NAMESPACE_ID).put("nacos.test.1", service);
+        serviceManager.chooseServiceMap(Constants.DEFAULT_NAMESPACE_ID).put("nacos.test.1", service);
 
-        List<Service> list = serviceManager.searchServices(UtilsAndCommons.DEFAULT_NAMESPACE_ID, "nacos.test.*");
+        List<Service> list = serviceManager.searchServices(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());

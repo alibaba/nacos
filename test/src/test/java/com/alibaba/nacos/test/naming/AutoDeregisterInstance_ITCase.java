@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -55,10 +56,19 @@ public class AutoDeregisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
+
+        NamingBase.prepareServer(port);
+
         if (naming == null) {
-            //TimeUnit.SECONDS.sleep(10);
-//            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-            naming = NamingFactory.createNamingService("11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848");
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -84,7 +94,7 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "DEFAULT_GROUP", "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, Constants.DEFAULT_GROUP, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);

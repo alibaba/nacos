@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -154,7 +155,7 @@ public class OperatorController {
     @RequestMapping("/getResponsibleServer4Dom")
     public JSONObject getResponsibleServer4Dom(HttpServletRequest request) {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "dom");
         Service service = serviceManager.getService(namespaceId, dom);
 
@@ -181,7 +182,7 @@ public class OperatorController {
     @RequestMapping("/responsible")
     public JSONObject responsible(HttpServletRequest request) {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            UtilsAndCommons.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_NAMESPACE_ID);
         String dom = WebUtils.required(request, "dom");
         Service service = serviceManager.getService(namespaceId, dom);
 

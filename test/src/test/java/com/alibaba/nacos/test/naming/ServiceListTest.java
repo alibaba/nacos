@@ -57,8 +57,16 @@ public class ServiceListTest {
 
     @Before
     public void init() throws Exception {
+        NamingBase.prepareServer(port);
         if (naming == null) {
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 

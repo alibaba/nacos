@@ -508,7 +508,7 @@ public class RestAPI_ITCase {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/reCalculateCheckSum4Dom",
                 Params.newParams()
-                        .appendParam(CommonParams.NAMESPACE_ID, UtilsAndCommons.DEFAULT_NAMESPACE_ID)
+                        .appendParam(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);

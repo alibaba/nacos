@@ -98,7 +98,7 @@ public class TrafficReviseFilter implements Filter {
             return;
         }
 
-        resp.getWriter().write("service is " + serverStatusManager.getServerStatus().name() + " now, please try again later!");
+        resp.getWriter().write("server is " + serverStatusManager.getServerStatus().name() + " now, please try again later!");
         resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
     }
 }
