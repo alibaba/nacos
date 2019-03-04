@@ -156,7 +156,7 @@ public class NamingProxy {
             }
 
             if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
-                NAMING_LOGGER.info("SERVER-LIST", "server list is updated: " + list);
+                NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
             }
 
             serversFromEndpoint = list;
@@ -168,7 +168,7 @@ public class NamingProxy {
 
     public void registerService(String serviceName, Instance instance) throws NacosException {
 
-        NAMING_LOGGER.info("REGISTER-SERVICE", "{} registering service {} with instance: {}",
+        NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
             namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
@@ -188,7 +188,7 @@ public class NamingProxy {
 
     public void deregisterService(String serviceName, String ip, int port, String cluster) throws NacosException {
 
-        NAMING_LOGGER.info("DEREGISTER-SERVICE", "{} deregistering service {} with instance: {}:{}@{}",
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}:{}@{}",
             namespaceId, serviceName, ip, port, cluster);
 
         final Map<String, String> params = new HashMap<String, String>(8);
@@ -217,7 +217,7 @@ public class NamingProxy {
 
     public long sendBeat(BeatInfo beatInfo) {
         try {
-            NAMING_LOGGER.info("BEAT", "{} sending beat to server: {}", namespaceId, beatInfo.toString());
+            NAMING_LOGGER.info("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
             Map<String, String> params = new HashMap<String, String>(4);
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(Constants.REQUEST_PARAM_NAMESPACE_ID, namespaceId);
@@ -334,7 +334,7 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
-        NAMING_LOGGER.error("CALL-SERVER", "failed to req API:" + HttpClient.getPrefix() + curServer
+        NAMING_LOGGER.error("[CALL-SERVER] failed to req API:" + HttpClient.getPrefix() + curServer
             + api + ". code:"
             + result.code + " msg: " + result.content);
 
@@ -365,7 +365,7 @@ public class NamingProxy {
                 try {
                     return callServer(api, params, server, method);
                 } catch (Exception e) {
-                    NAMING_LOGGER.error("NA", "req api:" + api + " failed, server(" + server, e);
+                    NAMING_LOGGER.error("[NA] req api:" + api + " failed, server(" + server, e);
                 }
 
                 index = (index + 1) % servers.size();
@@ -378,7 +378,7 @@ public class NamingProxy {
             try {
                 return callServer(api, params, nacosDomain);
             } catch (Exception e) {
-                NAMING_LOGGER.error("NA", "req api:" + api + " failed, server(" + nacosDomain, e);
+                NAMING_LOGGER.error("[NA] req api:" + api + " failed, server(" + nacosDomain, e);
             }
         }
 
