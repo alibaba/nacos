@@ -31,7 +31,7 @@ import java.util.TimerTask;
  * @author Nacos
  */
 public class CredentialWatcher {
-    static final public Logger SpasLogger = LogUtils.logger(CredentialWatcher.class);
+    private static final Logger SpasLogger = LogUtils.logger(CredentialWatcher.class);
     private static final long REFRESH_INTERVAL = 10 * 1000;
 
     private CredentialService serviceInstance;
@@ -147,7 +147,7 @@ public class CredentialWatcher {
             secretKey = System.getenv(Constants.ENV_SECRET_KEY);
             if (accessKey == null && secretKey == null) {
                 if (logWarn) {
-                    SpasLogger.info(appName, "No credential found");
+                    SpasLogger.info("{} No credential found", appName);
                 }
                 return;
             }
