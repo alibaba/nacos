@@ -31,7 +31,6 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
-    nacosVersion: '0.8.0',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
@@ -110,6 +109,9 @@ const I18N_CONF = {
     protectThreshold: '保护阈值',
     serviceName: '服务名',
     editService: '编辑服务',
+    healthCheckPatternService: '服务端',
+    healthCheckPatternClient: '客户端',
+    healthCheckPatternNone: '禁止',
   },
   EditServiceDialog: {
     createService: '创建服务',

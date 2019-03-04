@@ -23,7 +23,7 @@ import com.alibaba.nacos.common.util.ResourceUtils;
 import org.slf4j.impl.StaticLoggerBinder;
 
 /**
- * Support for Logback version 0.9.19 or higher
+ * Support for Logback version 1.0.8 or higher
  *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @since 0.9.0

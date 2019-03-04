@@ -1,3 +1,19 @@
+## 0.9.0(Feb 28, 2019)
+
+* [#840] Nacos server adds startup mode to distinguish between config and naming.
+* [#762] Register instance returns failed when the health check mode is 'server' in standalone mode.
+* [#473] Nacos Cluster Mode kubernate Startup nacos.log error Log.
+* [#240] Log strong dependence problem.
+* [#824] getServicesOfServer throws exception if service list is empty.
+* [#802] Nacos server multi-boot mode support.
+* [#800] Nacos's client-to-server addressing mode document introduction.
+* [#768] The interval at which the heartbeat is sent in BeatReactor is not controlled by the server return value.
+* [#759] why instance can't auto-delete.
+* [#756] Format of instance and service should be validated.
+* [#720] Memory leak in PushService.
+* [#653] IoUtils under nacos-common-0.2.1-RC1.jar lacks "" judgment on encoding.
+* [#588] Client compatible to jdk1.6.
+
 ## 0.8.0(Jan 22, 2019) PRE-GA
 
 * [#162] Support open metrics and prometheus
