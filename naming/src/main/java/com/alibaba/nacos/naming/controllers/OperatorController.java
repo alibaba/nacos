@@ -128,7 +128,6 @@ public class OperatorController {
         return "ok";
     }
 
-
     @RequestMapping(value = "/metrics", method = RequestMethod.GET)
     public JSONObject metrics(HttpServletRequest request) {
 

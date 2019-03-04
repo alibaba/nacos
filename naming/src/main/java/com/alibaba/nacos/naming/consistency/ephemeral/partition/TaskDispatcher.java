@@ -94,6 +94,10 @@ public class TaskDispatcher {
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
+                    if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
+                        continue;
+                    }
+
                     if (dataSize == 0) {
                         keys = new ArrayList<>();
                     }
