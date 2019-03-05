@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 /**
  * Filter incoming traffic to refuse or revise unexpected requests
@@ -50,6 +51,20 @@ public class TrafficReviseFilter implements Filter {
 
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
+
+        // request limit if exist:
+        String urlString = req.getRequestURI() + "?" + req.getQueryString();
+        Map<String, Integer> limitedUrlMap = switchDomain.getLimitedUrlMap();
+
+        if (limitedUrlMap != null && limitedUrlMap.size() > 0) {
+            for (Map.Entry<String, Integer> entry : limitedUrlMap.entrySet()) {
+                String limitedUrl = entry.getKey();
+                if (StringUtils.startsWith(urlString, limitedUrl)) {
+                    resp.setStatus(entry.getValue());
+                    return;
+                }
+            }
+        }
 
         // in AP mode, service and cluster cannot be edited:
         try {
