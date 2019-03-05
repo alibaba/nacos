@@ -327,6 +327,36 @@ public class MultiTenant_ITCase {
     }
 
     /**
+     * @TCDescription : 多租户多group订阅服务
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_subscribe() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        naming1.subscribe(serviceName, TEST_GROUP_1, new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                instances = ((NamingEvent) event).getInstances();
+            }
+        });
+
+        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"33.33.33.33", TEST_PORT, "c1");
+
+        while (instances.size() == 0) {
+            TimeUnit.SECONDS.sleep(1L);
+        }
+        TimeUnit.SECONDS.sleep(2L);
+        Assert.assertEquals(1, instances.size());
+
+        TimeUnit.SECONDS.sleep(2L);
+        Assert.assertTrue(verifyInstanceList(instances, naming1.getAllInstances(serviceName, TEST_GROUP_1)));
+    }
+
+    /**
      * @TCDescription : 多租户取消订阅服务
      * @TestStep :
      * @ExpectResult :
@@ -346,6 +376,74 @@ public class MultiTenant_ITCase {
         naming1.subscribe(serviceName, listener);
         naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
         naming2.registerInstance(serviceName, "33.33.33.33", TEST_PORT, "c1");
+
+        while (instances.size() == 0) {
+            TimeUnit.SECONDS.sleep(1L);
+        }
+        Assert.assertEquals(serviceName, naming1.getSubscribeServices().get(0).getName());
+        Assert.assertEquals(0, naming2.getSubscribeServices().size());
+
+        naming1.unsubscribe(serviceName, listener);
+
+        TimeUnit.SECONDS.sleep(5L);
+        Assert.assertEquals(0, naming1.getSubscribeServices().size());
+        Assert.assertEquals(0, naming2.getSubscribeServices().size());
+    }
+
+    /**
+     * @TCDescription : 多租户,多group下, 没有对应的group订阅，取消订阅服务
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_nosubscribe_unSubscribe() throws Exception {
+
+        String serviceName = randomDomainName();
+        EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println(((NamingEvent)event).getServiceName());
+                instances = ((NamingEvent)event).getInstances();
+            }
+        };
+
+        naming1.subscribe(serviceName, TEST_GROUP_1, listener);
+        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_2,"33.33.33.33", TEST_PORT, "c1");
+
+        while (instances.size() == 0) {
+            TimeUnit.SECONDS.sleep(1L);
+        }
+        Assert.assertEquals(serviceName, naming1.getSubscribeServices().get(0).getName());
+        Assert.assertEquals(0, naming2.getSubscribeServices().size());
+
+        naming1.unsubscribe(serviceName, listener);
+
+        TimeUnit.SECONDS.sleep(5L);
+        Assert.assertEquals(0, naming1.getSubscribeServices().size());
+        Assert.assertEquals(0, naming2.getSubscribeServices().size());
+    }
+
+    /**
+     * @TCDescription : 多租户,多group下, 没有对应的group订阅，取消订阅服务
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_unSubscribe() throws Exception {
+
+        String serviceName = randomDomainName();
+        EventListener listener = new EventListener() {
+            @Override
+            public void onEvent(Event event) {
+                System.out.println(((NamingEvent)event).getServiceName());
+                instances = ((NamingEvent)event).getInstances();
+            }
+        };
+
+        naming1.subscribe(serviceName, TEST_GROUP_1, listener);
+        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_2,"33.33.33.33", TEST_PORT, "c1");
 
         while (instances.size() == 0) {
             TimeUnit.SECONDS.sleep(1L);
