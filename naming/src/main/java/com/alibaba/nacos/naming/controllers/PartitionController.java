@@ -32,6 +32,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -61,8 +62,8 @@ public class PartitionController {
     @Autowired
     private SwitchDomain switchDomain;
 
-    @RequestMapping("/onSync")
-    public String onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @RequestMapping(value = "/datum", method = RequestMethod.PUT)
+    public String onSyncDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
@@ -88,7 +89,7 @@ public class PartitionController {
         return "ok";
     }
 
-    @RequestMapping("/syncTimestamps")
+    @RequestMapping(value = "/timestamps", method = RequestMethod.PUT)
     public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
@@ -109,7 +110,7 @@ public class PartitionController {
         return "ok";
     }
 
-    @RequestMapping("/get")
+    @RequestMapping(value = "/datum", method = RequestMethod.GET)
     public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String keys = WebUtils.required(request, "keys");
         String keySplitter = ",";
