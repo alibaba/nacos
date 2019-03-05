@@ -44,6 +44,10 @@ public class NamingBase {
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
     public static final String TEST_SERVER_STATUS = "UP";
 
+    public static final String TEST_GROUP = "group";
+    public static final String TEST_GROUP_1 = "group1";
+    public static final String TEST_GROUP_2 = "group2";
+
     static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
 
     public static final int TEST_PORT = 8080;

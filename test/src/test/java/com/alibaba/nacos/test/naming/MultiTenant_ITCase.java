@@ -7,6 +7,7 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.Event;
@@ -44,7 +45,7 @@ public class MultiTenant_ITCase {
 
     @Before
     public void init() throws Exception {
-
+        Thread.sleep(6000L);
         NamingBase.prepareServer(port);
 
         naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
@@ -102,6 +103,38 @@ public class MultiTenant_ITCase {
     }
 
     /**
+     * @TCDescription : 多Group注册实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_multiGroup_registerInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+
+        naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
+
+        naming.registerInstance(serviceName, "33.33.33.33", 8888);
+        naming.registerInstance(serviceName, "44.44.44.44", 8888);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        List<Instance> instances = naming1.getAllInstances(serviceName);
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
+        Assert.assertEquals(80, instances.get(0).getPort());
+
+        instances = naming2.getAllInstances(serviceName);
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("22.22.22.22", instances.get(0).getIp());
+        Assert.assertEquals(80, instances.get(0).getPort());
+
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(2, instances.size());
+    }
+
+    /**
      * @TCDescription : 多租户注册IP，port相同的实例
      * @TestStep :
      * @ExpectResult :
@@ -109,7 +142,6 @@ public class MultiTenant_ITCase {
     @Test
     public void multipleTenant_equalIP() throws Exception {
         String serviceName = randomDomainName();
-        System.out.println(serviceName);
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
 
         naming2.registerInstance(serviceName, "11.11.11.11", 80);
@@ -166,6 +198,64 @@ public class MultiTenant_ITCase {
     }
 
     /**
+     * @TCDescription : 多租户,多Group注册IP，port相同的实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_equalIP() throws Exception {
+        String serviceName = randomDomainName();
+        System.out.println(serviceName);
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+
+        naming2.registerInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
+
+        naming.registerInstance(serviceName, Constants.DEFAULT_GROUP,"11.11.11.11", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        List<Instance> instances = naming1.getAllInstances(serviceName);
+
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
+        Assert.assertEquals(80, instances.get(0).getPort());
+
+        instances = naming2.getAllInstances(serviceName);
+
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
+        Assert.assertEquals(80, instances.get(0).getPort());
+
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(1, instances.size());
+    }
+
+    /**
+     * @TCDescription : 多租户,多Group注册IP，port相同的实例, 通过group获取实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_getInstances() throws Exception {
+        String serviceName = randomDomainName();
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.22", 80);
+        naming1.registerInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
+
+        naming.registerInstance(serviceName, Constants.DEFAULT_GROUP,"11.11.11.33", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        List<Instance> instances = naming1.getAllInstances(serviceName);
+
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
+        Assert.assertEquals(80, instances.get(0).getPort());
+
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(1, instances.size());
+    }
+
+    /**
      * @TCDescription : 多租户同服务获取实例
      * @TestStep :
      * @ExpectResult :
@@ -182,6 +272,28 @@ public class MultiTenant_ITCase {
         naming2.registerInstance(serviceName, "33.33.33.33", TEST_PORT, "c1");
         TimeUnit.SECONDS.sleep(5L);
         ListView<String> listView1 = naming1.getServicesOfServer(1, 20);
+        Assert.assertEquals(listView.getCount(), listView1.getCount());
+    }
+
+    /**
+     * @TCDescription : 多租户, 多group，同服务获取实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_getServicesOfServer() throws Exception {
+
+        String serviceName = randomDomainName();
+        naming1.registerInstance(serviceName, "11.11.11.11", TEST_GROUP_1, TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, "22.22.22.22", TEST_GROUP_2, TEST_PORT, "c1");
+        TimeUnit.SECONDS.sleep(5L);
+
+        ListView<String> listView = naming1.getServicesOfServer(1, 20);
+        Assert.assertEquals(0, listView.getCount());
+
+        naming2.registerInstance(serviceName, "33.33.33.33", TEST_PORT, "c1");
+        TimeUnit.SECONDS.sleep(5L);
+        ListView<String> listView1 = naming1.getServicesOfServer(1, 20, TEST_GROUP_1);
         Assert.assertEquals(listView.getCount(), listView1.getCount());
     }
 
