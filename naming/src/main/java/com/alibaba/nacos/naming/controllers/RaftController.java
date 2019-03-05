@@ -39,6 +39,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -68,7 +69,7 @@ public class RaftController {
     private RaftCore raftCore;
 
     @NeedAuth
-    @RequestMapping("/vote")
+    @RequestMapping(value = "/vote", method = RequestMethod.POST)
     public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         RaftPeer peer = raftCore.receivedVote(
@@ -78,7 +79,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/beat")
+    @RequestMapping(value = "/beat", method = RequestMethod.POST)
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
@@ -123,7 +124,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/publish")
+    @RequestMapping(value = "/publish", method = RequestMethod.POST)
     public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -154,7 +155,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/delete")
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -199,7 +200,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/onPublish")
+    @RequestMapping(value = "/onPublish", method = RequestMethod.POST)
     public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -231,7 +232,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/onDelete")
+    @RequestMapping(value = "/onDelete", method = RequestMethod.POST)
     public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
