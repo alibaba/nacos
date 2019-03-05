@@ -29,7 +29,7 @@ public class NamingConfig {
     public FilterRegistrationBean distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
-        registration.addUrlPatterns("/*");
+        registration.addUrlPatterns("/v1/ns/*");
         registration.setName("distroFilter");
         registration.setOrder(6);
 
@@ -40,7 +40,7 @@ public class NamingConfig {
     public FilterRegistrationBean trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(trafficReviseFilter());
-        registration.addUrlPatterns("/*");
+        registration.addUrlPatterns("/v1/ns/*");
         registration.setName("trafficReviseFilter");
         registration.setOrder(1);
 
