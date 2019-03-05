@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -55,6 +56,7 @@ public class Instances implements Record {
     }
 
     @Override
+    @JSONField(serialize = false)
     public String getChecksum() {
         recalculateChecksum();
         return cachedChecksum;
