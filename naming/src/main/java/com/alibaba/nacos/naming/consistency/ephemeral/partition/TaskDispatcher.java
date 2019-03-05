@@ -19,6 +19,7 @@ import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -94,7 +95,8 @@ public class TaskDispatcher {
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
-                    if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
+                    if (StringUtils.isBlank(key) || dataSyncer.getServers() == null ||
+                        dataSyncer.getServers().isEmpty()) {
                         continue;
                     }
 
