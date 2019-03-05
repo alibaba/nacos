@@ -36,12 +36,12 @@ public class HealthCheckStatus {
     private static ConcurrentMap<String, HealthCheckStatus> statusMap =
             new ConcurrentHashMap<String, HealthCheckStatus>();
 
-    public static void reset(Instance ip) {
-        statusMap.put(buildKey(ip), new HealthCheckStatus());
+    public static void reset(Instance instance) {
+        statusMap.put(buildKey(instance), new HealthCheckStatus());
     }
 
-    public static HealthCheckStatus get(Instance ip) {
-        String key = buildKey(ip);
+    public static HealthCheckStatus get(Instance instance) {
+        String key = buildKey(instance);
 
         if (!statusMap.containsKey(key)) {
             statusMap.putIfAbsent(key, new HealthCheckStatus());
@@ -50,23 +50,23 @@ public class HealthCheckStatus {
         return statusMap.get(key);
     }
 
-    public static void remv(Instance ip) {
-        statusMap.remove(buildKey(ip));
+    public static void remv(Instance instance) {
+        statusMap.remove(buildKey(instance));
     }
 
-    private static String buildKey(Instance ip) {
+    private static String buildKey(Instance instance) {
         try {
 
-            String clusterName = ip.getClusterName();
-            String serviceName = ip.getServiceName();
-            String datumKey = ip.getDatumKey();
+            String clusterName = instance.getClusterName();
+            String serviceName = instance.getServiceName();
+            String datumKey = instance.getDatumKey();
             return serviceName + ":"
                     + clusterName + ":"
                     + datumKey;
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: {}", ip.toJSON(), e);
+            Loggers.SRV_LOG.error("[BUILD-KEY] Exception while set rt, ip {}, error: {}", instance.toJSON(), e);
         }
 
-        return ip.getDefaultKey();
+        return instance.getDefaultKey();
     }
 }
