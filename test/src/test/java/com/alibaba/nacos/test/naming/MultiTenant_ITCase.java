@@ -16,6 +16,7 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.selector.Selector;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -121,17 +122,18 @@ public class MultiTenant_ITCase {
         TimeUnit.SECONDS.sleep(5L);
 
         List<Instance> instances = naming1.getAllInstances(serviceName);
-        Assert.assertEquals(1, instances.size());
-        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
-        Assert.assertEquals(80, instances.get(0).getPort());
+        Assert.assertEquals(0, instances.size());
 
-        instances = naming2.getAllInstances(serviceName);
+        instances = naming2.getAllInstances(serviceName, TEST_GROUP_2);
         Assert.assertEquals(1, instances.size());
         Assert.assertEquals("22.22.22.22", instances.get(0).getIp());
         Assert.assertEquals(80, instances.get(0).getPort());
 
         instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(2, instances.size());
+
+        naming1.deregisterInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+        naming1.deregisterInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
     }
 
     /**
@@ -216,11 +218,9 @@ public class MultiTenant_ITCase {
 
         List<Instance> instances = naming1.getAllInstances(serviceName);
 
-        Assert.assertEquals(1, instances.size());
-        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
-        Assert.assertEquals(80, instances.get(0).getPort());
+        Assert.assertEquals(0, instances.size());
 
-        instances = naming2.getAllInstances(serviceName);
+        instances = naming2.getAllInstances(serviceName, TEST_GROUP_2);
 
         Assert.assertEquals(1, instances.size());
         Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
@@ -239,19 +239,20 @@ public class MultiTenant_ITCase {
     public void multipleTenant_group_getInstances() throws Exception {
         String serviceName = randomDomainName();
         System.out.println(serviceName);
-        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.22", 80);
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
         naming1.registerInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
 
-        naming.registerInstance(serviceName, Constants.DEFAULT_GROUP,"11.11.11.33", 80);
+        naming.registerInstance(serviceName, Constants.DEFAULT_GROUP,"11.11.11.11", 80);
 
         TimeUnit.SECONDS.sleep(5L);
-
-        List<Instance> instances = naming1.getAllInstances(serviceName);
+        List<Instance> instances = naming1.getAllInstances(serviceName, TEST_GROUP);
 
         Assert.assertEquals(0, instances.size());
 
         instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(1, instances.size());
+        naming1.deregisterInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+        naming1.deregisterInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
     }
 
     /**
@@ -353,6 +354,9 @@ public class MultiTenant_ITCase {
 
         TimeUnit.SECONDS.sleep(2L);
         Assert.assertTrue(verifyInstanceList(instances, naming1.getAllInstances(serviceName, TEST_GROUP_1)));
+
+        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.deregisterInstance(serviceName, TEST_GROUP_1,"33.33.33.33", TEST_PORT, "c1");
     }
 
     /**
@@ -410,21 +414,23 @@ public class MultiTenant_ITCase {
         naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
         naming1.registerInstance(serviceName, TEST_GROUP_2,"33.33.33.33", TEST_PORT, "c1");
 
-        while (instances.size() == 0) {
-            TimeUnit.SECONDS.sleep(1L);
-        }
+        TimeUnit.SECONDS.sleep(3L);
         Assert.assertEquals(serviceName, naming1.getSubscribeServices().get(0).getName());
         Assert.assertEquals(0, naming2.getSubscribeServices().size());
 
-        naming1.unsubscribe(serviceName, listener);
+        naming1.unsubscribe(serviceName, listener);    //取消订阅服务，没有订阅group
+        TimeUnit.SECONDS.sleep(3L);
+        Assert.assertEquals(1, naming1.getSubscribeServices().size());
 
-        TimeUnit.SECONDS.sleep(5L);
+        naming1.unsubscribe(serviceName, TEST_GROUP_1, listener);   //取消订阅服务，有订阅group
+        TimeUnit.SECONDS.sleep(3L);
         Assert.assertEquals(0, naming1.getSubscribeServices().size());
+
         Assert.assertEquals(0, naming2.getSubscribeServices().size());
     }
 
     /**
-     * @TCDescription : 多租户,多group下, 没有对应的group订阅，取消订阅服务
+     * @TCDescription : 多租户,多group下, 多个group订阅，查看服务的个数
      * @TestStep :
      * @ExpectResult :
      */
@@ -440,21 +446,27 @@ public class MultiTenant_ITCase {
             }
         };
 
+        naming1.subscribe(serviceName, Constants.DEFAULT_GROUP, listener);
+        naming1.subscribe(serviceName, TEST_GROUP_2, listener);
         naming1.subscribe(serviceName, TEST_GROUP_1, listener);
+
         naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
         naming1.registerInstance(serviceName, TEST_GROUP_2,"33.33.33.33", TEST_PORT, "c1");
 
         while (instances.size() == 0) {
             TimeUnit.SECONDS.sleep(1L);
         }
+        TimeUnit.SECONDS.sleep(2L);
         Assert.assertEquals(serviceName, naming1.getSubscribeServices().get(0).getName());
-        Assert.assertEquals(0, naming2.getSubscribeServices().size());
+        Assert.assertEquals(3, naming1.getSubscribeServices().size());
 
         naming1.unsubscribe(serviceName, listener);
+        naming1.unsubscribe(serviceName, TEST_GROUP_2, listener);
+        TimeUnit.SECONDS.sleep(3L);
+        Assert.assertEquals(1, naming1.getSubscribeServices().size());
+        Assert.assertEquals(TEST_GROUP_1, naming1.getSubscribeServices().get(0).getGroupName());
 
-        TimeUnit.SECONDS.sleep(5L);
-        Assert.assertEquals(0, naming1.getSubscribeServices().size());
-        Assert.assertEquals(0, naming2.getSubscribeServices().size());
+        naming1.unsubscribe(serviceName, TEST_GROUP_1, listener);
     }
 
     /**
@@ -494,6 +506,57 @@ public class MultiTenant_ITCase {
         Assert.assertEquals(1, naming2.getAllInstances(serviceName).size());
     }
 
+
+    /**
+     * @TCDescription : 多租户, 多group，删除group不存在的实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_deregisterInstance() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, "22.22.22.22", TEST_PORT, "c2");
+
+        List<Instance> instances = naming1.getAllInstances(serviceName);
+        verifyInstanceListForNaming(naming1, 2, serviceName);
+
+        Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
+
+        naming1.deregisterInstance(serviceName, TEST_GROUP_2,"22.22.22.22", TEST_PORT, "c1");
+        TimeUnit.SECONDS.sleep(12);
+
+        Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
+    }
+
+    /**
+     * @TCDescription : 多租户, 多group，删除clusterName不存在的实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_cluster_deregisterInstance() throws Exception {
+
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, "22.22.22.22", TEST_PORT, "c2");
+
+        List<Instance> instances = naming1.getAllInstances(serviceName);
+        verifyInstanceListForNaming(naming1, 2, serviceName);
+
+        Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
+
+        naming1.deregisterInstance(serviceName, "22.22.22.22", TEST_PORT);
+        TimeUnit.SECONDS.sleep(3L);
+        Assert.assertEquals(2, naming1.getAllInstances(serviceName).size());
+
+        naming1.deregisterInstance(serviceName, "11.11.11.11", TEST_PORT, "c1");
+        naming1.deregisterInstance(serviceName, "22.22.22.22", TEST_PORT, "c2");
+    }
+
     /**
      * @TCDescription : 多租户下，选择一个健康的实例
      * @TestStep :
@@ -520,6 +583,58 @@ public class MultiTenant_ITCase {
         TimeUnit.SECONDS.sleep(12);
         instance = naming1.selectOneHealthyInstance(serviceName);
         Assert.assertEquals("22.22.22.22", instance.getIp());
+    }
+
+    /**
+     * @TCDescription : 多租户下，多group下，选择一个健康的实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_selectOneHealthyInstance() throws Exception {
+
+        String serviceName = randomDomainName();
+        naming1.registerInstance(serviceName, TEST_GROUP, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"22.22.22.22", TEST_PORT, "c2");
+        naming1.registerInstance(serviceName, TEST_GROUP_2,"33.33.33.33", TEST_PORT, "c3");
+
+        List<Instance> instances = naming1.getAllInstances(serviceName, TEST_GROUP);
+        verifyInstanceListForNaming(naming1, 0, serviceName);
+
+        Assert.assertEquals(0, naming1.getAllInstances(serviceName).size());   //defalut group
+
+        Instance instance = naming1.selectOneHealthyInstance(serviceName, TEST_GROUP, Arrays.asList("c1"));
+        Assert.assertEquals("11.11.11.11", instance.getIp());
+
+        instance = naming1.selectOneHealthyInstance(serviceName, TEST_GROUP_1);
+        Assert.assertEquals("22.22.22.22", instance.getIp());
+
+        naming1.deregisterInstance(serviceName, TEST_GROUP, "11.11.11.11", TEST_PORT, "c1");
+        naming1.deregisterInstance(serviceName, TEST_GROUP_1,"22.22.22.22", TEST_PORT, "c2");
+        naming1.deregisterInstance(serviceName, TEST_GROUP_2,"33.33.33.33", TEST_PORT, "c3");
+
+    }
+
+    /**
+     * @TCDescription : 多租户下，多group下，选择group不存在，一个健康的实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test(expected = IllegalStateException.class)
+    public void multipleTenant_noGroup_selectOneHealthyInstance() throws Exception {
+
+        String serviceName = randomDomainName();
+        naming1.registerInstance(serviceName, TEST_GROUP, "11.11.11.11", TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"22.22.22.22", TEST_PORT, "c2");
+
+        List<Instance> instances = naming1.getAllInstances(serviceName, TEST_GROUP);
+        verifyInstanceListForNaming(naming1, 0, serviceName);
+
+        Instance instance = naming1.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
+
+        naming1.deregisterInstance(serviceName, TEST_GROUP, "11.11.11.11", TEST_PORT, "c1");
+        naming1.deregisterInstance(serviceName, TEST_GROUP_1,"22.22.22.22", TEST_PORT, "c2");
+
     }
 
     private void verifyInstanceListForNaming(NamingService naming, int size, String serviceName) throws Exception {
