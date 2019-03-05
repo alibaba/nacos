@@ -60,7 +60,7 @@ public class AutoDeregisterInstance_ITCase {
         NamingBase.prepareServer(port);
 
         if (naming == null) {
-            naming = NamingFactory.createNamingService("127.0.0.1:" + port);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
 
         while (true) {
@@ -220,10 +220,11 @@ public class AutoDeregisterInstance_ITCase {
 
         Assert.assertEquals(1, instances.size());
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setServiceName(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName);
+        beatInfo.setServiceName(serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
         beatInfo.setCluster("c1");
+
 
         namingServiceImpl.getBeatReactor().
             addBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, beatInfo);
@@ -232,9 +233,7 @@ public class AutoDeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-//        Thread.sleep(10000000000L);
-
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(instances.size(), 2);
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
         Assert.assertEquals(1, instances.size());
