@@ -218,9 +218,9 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     @JSONField(serialize = false)
     public String getDatumKey() {
         if (getPort() > 0) {
-            return getIp() + ":" + getPort() + ":" + UtilsAndCommons.LOCALHOST_SITE;
+            return getIp() + ":" + getPort() + ":" + UtilsAndCommons.LOCALHOST_SITE + ":" + getClusterName();
         } else {
-            return getIp() + ":" + UtilsAndCommons.LOCALHOST_SITE;
+            return getIp() + ":" + UtilsAndCommons.LOCALHOST_SITE + ":" + getClusterName();
         }
     }
 
