@@ -31,11 +31,11 @@ import java.util.*;
  */
 public class NamingProxy {
 
-    private static final String DATA_ON_SYNC_URL = "/partition/onSync";
+    private static final String DATA_ON_SYNC_URL = "/partition/datum";
 
-    private static final String DATA_GET_URL = "/partition/get";
+    private static final String DATA_GET_URL = "/partition/datum";
 
-    private static final String TIMESTAMP_SYNC_URL = "/partition/syncTimestamps";
+    private static final String TIMESTAMP_SYNC_URL = "/partition/timestamps";
 
     public static void syncTimestamps(Map<String, String> timestamps, String server) {
 

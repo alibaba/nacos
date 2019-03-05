@@ -296,7 +296,7 @@ public class ServiceController {
         return result;
     }
 
-    @RequestMapping("/serviceStatus")
+    @RequestMapping(value = "/status", method = RequestMethod.POST)
     public String serviceStatus(HttpServletRequest request) {
         //format: service1@@checksum@@@service2@@checksum
         String statuses = WebUtils.required(request, "statuses");

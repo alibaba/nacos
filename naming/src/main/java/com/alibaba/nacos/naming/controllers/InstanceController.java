@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
@@ -29,7 +28,6 @@ import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
-import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -45,7 +43,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.util.*;
 
@@ -251,30 +248,7 @@ public class InstanceController {
             throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
         }
 
-        if (!distroMapper.responsible(serviceName)) {
-            String server = distroMapper.mapSrv(serviceName);
-            Loggers.EVT_LOG.info("I'm not responsible for {}, proxy it to {}", serviceName, server);
-            Map<String, String> proxyParams = new HashMap<>(16);
-            for (Map.Entry<String, String[]> entry : request.getParameterMap().entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue()[0];
-                proxyParams.put(key, value);
-            }
-
-            if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-                server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
-            }
-
-            String url = "http://" + server + RunningConfig.getContextPath()
-                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/clientBeat";
-            HttpClient.HttpResult httpResult = HttpClient.httpGet(url, null, proxyParams);
-
-            if (httpResult.code != HttpURLConnection.HTTP_OK) {
-                throw new IllegalArgumentException("failed to proxy client beat to" + server + ", beat: " + beat);
-            }
-        } else {
-            service.processClientBeat(clientBeat);
-        }
+        service.processClientBeat(clientBeat);
 
         return result;
     }
