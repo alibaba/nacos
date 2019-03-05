@@ -174,7 +174,8 @@ public class ServerListManager {
         return TemplateUtils.stringBlankAndThenExecute(endpointTmp, new Callable<String>() {
             @Override
             public String call() {
-                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+                String endpointUrl = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+                return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
             }
         });
     }
