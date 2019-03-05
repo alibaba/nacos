@@ -73,17 +73,25 @@ public class NacosConfigService implements ConfigService {
         } else {
             encode = encodeTmp.trim();
         }
-        String namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        if (StringUtils.isBlank(namespaceTmp)) {
-            namespace = TenantUtil.getUserTenant();
-            properties.put(PropertyKeyConst.NAMESPACE, namespace);
-        } else {
-            namespace = namespaceTmp;
-            properties.put(PropertyKeyConst.NAMESPACE, namespace);
-        }
+        initNamespace(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
         worker = new ClientWorker(agent, configFilterChainManager);
+    }
+
+    private void initNamespace(Properties properties) {
+        String namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = TenantUtil.getUserTenant();
+        }
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+        }
+
+        namespace = namespaceTmp;
+        properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
 
     @Override
