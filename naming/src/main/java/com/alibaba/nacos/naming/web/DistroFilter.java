@@ -63,19 +63,7 @@ public class DistroFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        // request limit:
         String urlString = req.getRequestURI() + "?" + req.getQueryString();
-        Map<String, Integer> limitedUrlMap = switchDomain.getLimitedUrlMap();
-
-        if (limitedUrlMap != null && limitedUrlMap.size() > 0) {
-            for (Map.Entry<String, Integer> entry : limitedUrlMap.entrySet()) {
-                String limitedUrl = entry.getKey();
-                if (StringUtils.startsWith(urlString, limitedUrl)) {
-                    resp.setStatus(entry.getValue());
-                    return;
-                }
-            }
-        }
 
         try {
             String path = new URI(req.getRequestURI()).getPath();
@@ -86,13 +74,12 @@ public class DistroFilter implements Filter {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
 
-
             String groupName = req.getParameter(CommonParams.GROUP_NAME);
             if (StringUtils.isBlank(groupName)) {
                 groupName = Constants.DEFAULT_GROUP;
             }
 
-            // user groupName@@serviceName as new service name:
+            // use groupName@@serviceName as new service name:
             String groupedServiceName = serviceName;
             if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
