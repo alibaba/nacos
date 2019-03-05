@@ -97,11 +97,11 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
-        beatReactor = new BeatReactor(serverProxy, clientBeatThreadCount(properties));
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), pollingThreadCount(properties));
+        beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
 
-    private int clientBeatThreadCount(Properties properties) {
+    private int initClientBeatThreadCount(Properties properties) {
         if (properties == null) {
 
             return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
@@ -113,7 +113,7 @@ public class NacosNamingService implements NamingService {
         return clientBeatThreadCount;
     }
 
-    private int pollingThreadCount(Properties properties) {
+    private int initPollingThreadCount(Properties properties) {
         if (properties == null) {
 
             return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
@@ -234,19 +234,17 @@ public class NacosNamingService implements NamingService {
 
     private void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
-        String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
-        boolean isSetting = false;
-        if (StringUtils.isNotEmpty(webContext)) {
-            UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
-                : "/" + webContext;
+        final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
+        TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
+            @Override
+            public void run() {
+                UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
+                    : "/" + webContext;
 
-            isSetting = true;
-        }
-
-        if (isSetting) {
-            UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
-            UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
-        }
+                UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
+                UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
+            }
+        });
     }
 
     @Override

@@ -23,6 +23,18 @@ import java.util.concurrent.Callable;
  */
 public class TemplateUtils {
 
+    public static final void stringNotEmptyAndThenExecute(String source, Runnable runnable) {
+
+        if (StringUtils.isNotEmpty(source)) {
+
+            try {
+                runnable.run();
+            } catch (Exception e) {
+                LogUtils.NAMING_LOGGER.error("string empty and then execute cause an exception.", e);
+            }
+        }
+    }
+
     public static final String stringEmptyAndThenExecute(String source, Callable<String> callable) {
 
         if (StringUtils.isEmpty(source)) {
