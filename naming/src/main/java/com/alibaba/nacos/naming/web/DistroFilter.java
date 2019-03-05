@@ -86,8 +86,20 @@ public class DistroFilter implements Filter {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
 
+
+            String groupName = req.getParameter(CommonParams.GROUP_NAME);
+            if (StringUtils.isBlank(groupName)) {
+                groupName = Constants.DEFAULT_GROUP;
+            }
+
+            // user groupName@@serviceName as new service name:
+            String groupedServiceName = serviceName;
+            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+                groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+            }
+
             // proxy request to other server if necessary:
-            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(serviceName)) {
+            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
 
                 List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
@@ -97,7 +109,7 @@ public class DistroFilter implements Filter {
                     headerList.add(req.getHeader(headerName));
                 }
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + distroMapper.mapSrv(serviceName) + urlString, headerList, new HashMap<>(2)
+                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList, new HashMap<>(2)
                         , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
 
                 try {
@@ -105,21 +117,13 @@ public class DistroFilter implements Filter {
                     resp.getWriter().write(result.content);
                     resp.setStatus(result.code);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(serviceName) + urlString);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName) + urlString);
                 }
                 return;
             }
 
-            // user groupName@@serviceName as new service name:
-            String groupName = req.getParameter(CommonParams.GROUP_NAME);
-            if (StringUtils.isBlank(groupName)) {
-                groupName = Constants.DEFAULT_GROUP;
-            }
-
             OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
-            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
-                requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupName + Constants.SERVICE_INFO_SPLITER + serviceName);
-            }
+            requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
             filterChain.doFilter(requestWrapper, resp);
         } catch (AccessControlException e) {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + UtilsAndCommons.getAllExceptionMsg(e));
