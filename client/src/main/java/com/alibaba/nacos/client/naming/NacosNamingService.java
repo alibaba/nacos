@@ -174,7 +174,7 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setServiceName(serviceName);
+        beatInfo.setServiceName(groupName + Constants.SERVICE_INFO_SPLITER + serviceName);
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
         beatInfo.setCluster(instance.getClusterName());
@@ -182,9 +182,9 @@ public class NacosNamingService implements NamingService {
         beatInfo.setMetadata(instance.getMetadata());
         beatInfo.setScheduled(false);
 
-        beatReactor.addBeatInfo(serviceName, groupName, beatInfo);
+        beatReactor.addBeatInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, beatInfo);
 
-        serverProxy.registerService(serviceName, groupName, instance);
+        serverProxy.registerService(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, groupName, instance);
     }
 
     @Override
@@ -204,8 +204,8 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
-        beatReactor.removeBeatInfo(serviceName, groupName, ip, port);
-        serverProxy.deregisterService(serviceName, ip, port, clusterName);
+        beatReactor.removeBeatInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, ip, port);
+        serverProxy.deregisterService(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, ip, port, clusterName);
     }
 
     @Override
