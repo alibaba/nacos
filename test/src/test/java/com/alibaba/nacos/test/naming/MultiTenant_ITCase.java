@@ -238,6 +238,7 @@ public class MultiTenant_ITCase {
     @Test
     public void multipleTenant_group_getInstances() throws Exception {
         String serviceName = randomDomainName();
+        System.out.println(serviceName);
         naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.22", 80);
         naming1.registerInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
 
@@ -247,9 +248,7 @@ public class MultiTenant_ITCase {
 
         List<Instance> instances = naming1.getAllInstances(serviceName);
 
-        Assert.assertEquals(1, instances.size());
-        Assert.assertEquals("11.11.11.11", instances.get(0).getIp());
-        Assert.assertEquals(80, instances.get(0).getPort());
+        Assert.assertEquals(0, instances.size());
 
         instances = naming.getAllInstances(serviceName);
         Assert.assertEquals(1, instances.size());

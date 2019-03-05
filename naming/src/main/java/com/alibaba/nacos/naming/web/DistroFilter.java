@@ -97,7 +97,7 @@ public class DistroFilter implements Filter {
                     headerList.add(req.getHeader(headerName));
                 }
                 HttpClient.HttpResult result =
-                    HttpClient.request(distroMapper.mapSrv(serviceName) + urlString, headerList, new HashMap<>(2)
+                    HttpClient.request("http://" + distroMapper.mapSrv(serviceName) + urlString, headerList, new HashMap<>(2)
                         , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
 
                 try {
