@@ -100,8 +100,6 @@ public class ServiceListTest {
         });
 
         serviceInfoList = naming.getSubscribeServices();
-
-        System.out.println("dfdfdfd = " + serviceInfoList);
         Assert.assertEquals(count + 1, serviceInfoList.size());
     }
 
