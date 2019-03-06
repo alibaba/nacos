@@ -72,16 +72,6 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
 
     @Override
-    public boolean isResponsible(String key) {
-        return false;
-    }
-
-    @Override
-    public String getResponsibleServer(String key) {
-        return null;
-    }
-
-    @Override
     public boolean isAvailable() {
         return raftCore.isInitialized();
     }

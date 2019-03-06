@@ -80,4 +80,8 @@ public class DataStore {
         }
         return count;
     }
+
+    public Map<String, Datum> getDataMap() {
+        return dataMap;
+    }
 }
