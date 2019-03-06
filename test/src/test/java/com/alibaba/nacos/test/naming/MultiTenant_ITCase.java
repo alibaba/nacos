@@ -207,7 +207,6 @@ public class MultiTenant_ITCase {
     @Test
     public void multipleTenant_group_equalIP() throws Exception {
         String serviceName = randomDomainName();
-        System.out.println(serviceName);
         naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
 
         naming2.registerInstance(serviceName, TEST_GROUP_2,"11.11.11.11", 80);
@@ -284,17 +283,18 @@ public class MultiTenant_ITCase {
     public void multipleTenant_group_getServicesOfServer() throws Exception {
 
         String serviceName = randomDomainName();
-        naming1.registerInstance(serviceName, "11.11.11.11", TEST_GROUP_1, TEST_PORT, "c1");
-        naming1.registerInstance(serviceName, "22.22.22.22", TEST_GROUP_2, TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11",  TEST_PORT, "c1");
+        naming1.registerInstance(serviceName, TEST_GROUP_2, "22.22.22.22",  TEST_PORT, "c1");
         TimeUnit.SECONDS.sleep(5L);
 
-        ListView<String> listView = naming1.getServicesOfServer(1, 20);
-        Assert.assertEquals(0, listView.getCount());
+        //服务不会删除，实例会注销
+        ListView<String> listView = naming1.getServicesOfServer(1, 20, TEST_GROUP_1);
 
         naming2.registerInstance(serviceName, "33.33.33.33", TEST_PORT, "c1");
         TimeUnit.SECONDS.sleep(5L);
         ListView<String> listView1 = naming1.getServicesOfServer(1, 20, TEST_GROUP_1);
         Assert.assertEquals(listView.getCount(), listView1.getCount());
+        Assert.assertNotEquals(0, listView1.getCount());
     }
 
     /**
