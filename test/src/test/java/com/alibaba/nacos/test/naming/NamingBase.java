@@ -35,6 +35,7 @@ public class NamingBase {
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
     public static final String TEST_PORT_4_DOM_1 = "8080";
     public static final String TEST_PORT2_4_DOM_1 = "8888";
+    public static final String TEST_PORT3_4_DOM_1 = "80";
     public static final String TEST_TOKEN_4_DOM_1 = "abc";
     public static final String TEST_NEW_CLUSTER_4_DOM_1 = "TEST1";
 

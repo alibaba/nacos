@@ -131,6 +131,50 @@ public class MultiTenant_InstanceAPI_ITCase {
     }
 
     /**
+     * @TCDescription : 多租户, 多group下, 注册IP，listInstance接口
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_listInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+
+        naming1.registerInstance(serviceName,"22.22.22.22", 80);
+
+        naming.registerInstance(serviceName, TEST_GROUP_1,"33.33.33.33", 8888);
+        naming.registerInstance(serviceName, TEST_GROUP_2,"44.44.44.44", 8888);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        String url = "/nacos/v1/ns/instance/list";
+        ResponseEntity<String> response = request(url,
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("namespaceId", "namespace-1")
+                .appendParam("groupName", TEST_GROUP_1)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+
+        Assert.assertEquals("11.11.11.11", json.getJSONArray("hosts").getJSONObject(0).getString("ip"));
+
+        response = request(url,
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_1)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        json = JSON.parseObject(response.getBody());
+
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
+        Assert.assertEquals("33.33.33.33", json.getJSONArray("hosts").getJSONObject(0).getString("ip"));
+    }
+
+    /**
      * @TCDescription : 多租户注册IP，getInstance接口
      * @TestStep :
      * @ExpectResult :
@@ -143,7 +187,7 @@ public class MultiTenant_InstanceAPI_ITCase {
 
         naming2.registerInstance(serviceName, "22.22.22.22", 80);
 
-        naming.registerInstance(serviceName, "33.33.33.33", 8888);
+        naming.registerInstance(serviceName, "33.33.33.33", 8888, "c1");
         naming.registerInstance(serviceName, "44.44.44.44", 8888);
 
         TimeUnit.SECONDS.sleep(5L);
@@ -161,17 +205,60 @@ public class MultiTenant_InstanceAPI_ITCase {
         response = request("/nacos/v1/ns/instance/list",
             Params.newParams()
                 .appendParam("serviceName", serviceName)
-                .appendParam("ip", "33.33.33.33")
-                .appendParam("port", "8888")
+                .appendParam("clusters", "c1")
+                .appendParam("healthyOnly", "true")
                 .done(),
             String.class);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(2, json.getJSONArray("hosts").size());
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
+        Assert.assertEquals("33.33.33.33", json.getJSONArray("hosts").getJSONObject(0).getString("ip"));
     }
 
     /**
-     * @TCDescription : 多租户注册IP，deleteInstance接口
+     * @TCDescription : 多租户注册IP，getInstance接口
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_getInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", 80);
+
+        naming2.registerInstance(serviceName, "22.22.22.22", 80);
+
+        naming.registerInstance(serviceName, "33.33.33.33", 8888, "c1");
+        naming.registerInstance(serviceName, "44.44.44.44", 8888, "c2");
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_1)
+                .appendParam("ip", "33.33.33.33")   //不存在的IP，隔离验证
+                .appendParam("port", "8888")
+                .appendParam("namespaceId", "namespace-2")
+                .done(),
+            String.class);
+        Assert.assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+
+        response = request("/nacos/v1/ns/instance/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("clusters", "c2")
+                .appendParam("healthyOnly", "true")
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
+        Assert.assertEquals("44.44.44.44", json.getJSONArray("hosts").getJSONObject(0).getString("ip"));
+    }
+
+    /**
+     * @TCDescription : 多租户注册IP，deleteInstance接口，删除namespace-1中没有的IP
      * @TestStep :
      * @ExpectResult :
      */
@@ -210,6 +297,45 @@ public class MultiTenant_InstanceAPI_ITCase {
     }
 
     /**
+     * @TCDescription : 多租户注册IP，group下，deleteInstance接口，正常删除IP
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_deleteInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
+
+        naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("namespaceId", "namespace-2") //删除namespace-1中没有的IP
+                .appendParam("groupName", TEST_GROUP_2)
+                .appendParam("ip", "22.22.22.22")
+                .appendParam("port", TEST_PORT3_4_DOM_1)
+                .done(),
+            String.class,
+            HttpMethod.DELETE);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName) //获取naming中的实例
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("groupName", TEST_GROUP_2)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(0, json.getJSONArray("hosts").size());
+    }
+
+    /**
      * @TCDescription : 多租户注册IP，putInstance接口
      * @TestStep :
      * @ExpectResult :
@@ -235,7 +361,6 @@ public class MultiTenant_InstanceAPI_ITCase {
                 .done(),
             String.class,
             HttpMethod.PUT);
-        System.out.println(response.getBody());
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
         response = request("/nacos/v1/ns/instance/list",
@@ -259,6 +384,46 @@ public class MultiTenant_InstanceAPI_ITCase {
         json = JSON.parseObject(response.getBody());
         System.out.println(json);
         Assert.assertEquals(1, json.getJSONArray("hosts").size());
+    }
+
+    /**
+     * @TCDescription : 多租户, 多group下，注册IP，putInstance接口, 更新实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_putInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", 80);
+        naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_2)
+                .appendParam("ip", "22.22.22.22")
+                .appendParam("port", "80")
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("weight", "8.0")
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName) //获取naming中的实例
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("groupName", TEST_GROUP_2)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
+        Assert.assertEquals("8.0", json.getJSONArray("hosts").getJSONObject(0).getString("weight"));
     }
 
     /**
@@ -309,8 +474,44 @@ public class MultiTenant_InstanceAPI_ITCase {
             String.class);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         json = JSON.parseObject(response.getBody());
-        System.out.println(json);
         Assert.assertEquals(1, json.getJSONArray("hosts").size());
+    }
+
+    /**
+     * @TCDescription : 多租户,多group下，注册IP，注册一个没有的实例接口
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_updateInstance_notExsitInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", 80);
+        naming2.registerInstance(serviceName, "22.22.22.22", 80);
+        TimeUnit.SECONDS.sleep(5L);
+
+        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("ip", "33.33.33.33")
+                .appendParam("port", "8888")
+                .appendParam("namespaceId", "namespace-1") //新增
+                .appendParam("groupName", TEST_GROUP_1)
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName) //获取naming中的实例
+                .appendParam("namespaceId", "namespace-1")
+                .appendParam("groupName", TEST_GROUP_1)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals("33.33.33.33", json.getJSONArray("hosts").getJSONObject(0).getString("ip"));
     }
 
     /**
