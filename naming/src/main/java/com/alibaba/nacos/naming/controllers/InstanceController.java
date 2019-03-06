@@ -402,7 +402,7 @@ public class InstanceController {
             result.put("name", serviceName);
             result.put("cacheMillis", cacheMillis);
             result.put("lastRefTime", System.currentTimeMillis());
-            result.put("checksum", service.getChecksum() + System.currentTimeMillis());
+            result.put("checksum", service.getChecksum());
             result.put("useSpecifiedURL", false);
             result.put("clusters", clusters);
             result.put("env", env);
