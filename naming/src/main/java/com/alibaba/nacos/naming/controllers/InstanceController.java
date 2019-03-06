@@ -304,6 +304,10 @@ public class InstanceController {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
+        if (!instance.validate()) {
+            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
+        }
+
         if ((ServerMode.AP.name().equals(switchDomain.getServerMode()) && !instance.isEphemeral())) {
             throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
                 + " in " + switchDomain.getServerMode() + " mode.");
