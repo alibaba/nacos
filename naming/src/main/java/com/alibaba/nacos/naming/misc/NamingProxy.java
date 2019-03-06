@@ -35,9 +35,11 @@ public class NamingProxy {
 
     private static final String DATA_GET_URL = "/partition/datum";
 
-    private static final String TIMESTAMP_SYNC_URL = "/partition/timestamps";
+    private static final String ALL_DATA_GET_URL = "/partition/datums";
 
-    public static void syncTimestamps(Map<String, String> timestamps, String server) {
+    private static final String TIMESTAMP_SYNC_URL = "/partition/checksum";
+
+    public static void syncChecksums(Map<String, String> checksumMap, String server) {
 
         try {
             Map<String, String> headers = new HashMap<>(128);
@@ -48,7 +50,7 @@ public class NamingProxy {
 
             HttpClient.asyncHttpPutLarge("http://" + server + RunningConfig.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(),
-                headers, JSON.toJSONBytes(timestamps),
+                headers, JSON.toJSONBytes(checksumMap),
                 new AsyncCompletionHandler() {
                     @Override
                     public Object onCompleted(Response response) throws Exception {
@@ -89,6 +91,23 @@ public class NamingProxy {
             + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
             + result.code + " msg: " + result.content);
     }
+
+    public static byte[] getAllData(String server) throws Exception {
+
+        Map<String, String> params = new HashMap<>(8);
+        HttpClient.HttpResult result = HttpClient.httpGet("http://" + server + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL, new ArrayList<>(), params);
+
+        if (HttpURLConnection.HTTP_OK == result.code) {
+            return result.content.getBytes();
+        }
+
+        throw new IOException("failed to req API: " + "http://" + server
+            + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
+            + result.code + " msg: " + result.content);
+    }
+
 
     public static boolean syncData(byte[] data, String curServer) throws Exception {
         try {

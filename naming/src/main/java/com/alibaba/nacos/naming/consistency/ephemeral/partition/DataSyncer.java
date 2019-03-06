@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
-import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
@@ -30,17 +29,11 @@ import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.apache.commons.lang3.CharEncoding.UTF_8;
 
 /**
  * Data replicator
@@ -70,8 +63,6 @@ public class DataSyncer implements ServerChangeListener {
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
 
     private List<Server> servers;
-
-    private boolean initialized = false;
 
     @PostConstruct
     public void init() {
@@ -176,33 +167,6 @@ public class DataSyncer implements ServerChangeListener {
         public void run() {
 
             try {
-
-                File metaFile = new File(UtilsAndCommons.DATA_BASE_DIR + File.separator + "ephemeral.properties");
-                if (initialized) {
-                    // write the current instance count to disk:
-                    IoUtils.writeStringToFile(metaFile, "instanceCount=" + dataStore.getInstanceCount(), "UTF-8");
-                } else {
-                    // check if most of the data are loaded:
-                    List<String> lines = IoUtils.readLines(new InputStreamReader(new FileInputStream(metaFile), UTF_8));
-                    if (lines == null || lines.isEmpty()) {
-                        initialized = true;
-                    } else {
-                        int desiredInstanceCount = Integer.parseInt(lines.get(0).split("=")[1]);
-                        if (desiredInstanceCount <= 0 ||
-                            desiredInstanceCount * partitionConfig.getInitDataRatio() < dataStore.keys().size()) {
-                            initialized = true;
-                        }
-                    }
-                }
-
-            } catch (IOException ioe) {
-                initialized = true;
-                Loggers.EPHEMERAL.error("operate on meta file failed.", ioe);
-            } catch (Exception e) {
-                Loggers.EPHEMERAL.error("operate on meta file failed.", e);
-            }
-
-            try {
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
@@ -225,7 +189,7 @@ public class DataSyncer implements ServerChangeListener {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
-                    NamingProxy.syncTimestamps(keyChecksums, member.getKey());
+                    NamingProxy.syncChecksums(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
                 Loggers.EPHEMERAL.error("timed sync task failed.", e);
@@ -239,10 +203,6 @@ public class DataSyncer implements ServerChangeListener {
 
     public String buildKey(String key, String targetServer) {
         return key + UtilsAndCommons.CACHE_KEY_SPLITER + targetServer;
-    }
-
-    public boolean isInitialized() {
-        return initialized;
     }
 
     @Override

@@ -15,20 +15,28 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.partition;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.utils.SystemUtils;
+import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.naming.cluster.ServerMode;
+import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author nkorange
  * @since 1.0.0
  */
-@Service("partitionConsistencyService")
+@org.springframework.stereotype.Service("partitionConsistencyService")
 public class PartitionConsistencyServiceImpl implements EphemeralConsistencyService {
 
     @Autowired
@@ -66,7 +74,45 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     @Autowired
     private Serializer serializer;
 
+    @Autowired
+    private ServerListManager serverListManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    private boolean initialized = false;
+
     private volatile Map<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
+
+    @PostConstruct
+    public void init() throws Exception {
+
+        if (SystemUtils.STANDALONE_MODE) {
+            initialized = true;
+            return;
+        }
+        while (serverListManager.getHealthyServers().isEmpty()) {
+            Thread.sleep(1000L);
+            Loggers.EPHEMERAL.info("waiting server list init...");
+        }
+
+        for (Server server : serverListManager.getHealthyServers()) {
+            if (NetUtils.localServer().equals(server.getKey())) {
+                continue;
+            }
+            // try sync data from remote server:
+            if (syncAllDataFromRemote(server)) {
+                initialized = true;
+                break;
+            }
+        }
+
+        if (!initialized) {
+            // init failed, exit:
+            throw new RuntimeException("init local server failed! Abort.");
+        }
+
+    }
 
     @Override
     public void put(String key, Record value) throws NacosException {
@@ -122,12 +168,12 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
         }
     }
 
-    public void onReceiveTimestamps(Map<String, String> timestamps, String server) {
+    public void onReceiveChecksums(Map<String, String> checksumMap, String server) {
 
         List<String> toUpdateKeys = new ArrayList<>();
         List<String> toRemoveKeys = new ArrayList<>();
-        for (Map.Entry<String, String> entry : timestamps.entrySet()) {
-            if (isResponsible(entry.getKey())) {
+        for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
+            if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
                 // this key should not be sent from remote server:
                 Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
                 // abort the procedure:
@@ -146,7 +192,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
                 continue;
             }
 
-            if (!timestamps.containsKey(key)) {
+            if (!checksumMap.containsKey(key)) {
                 toRemoveKeys.add(key);
             }
         }
@@ -163,29 +209,69 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
 
         try {
             byte[] result = NamingProxy.getData(toUpdateKeys, server);
-            if (result.length > 0) {
-                Map<String, Datum<Instances>> datumMap =
-                    serializer.deserializeMap(result, Instances.class);
-
-                for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
-                    dataStore.put(entry.getKey(), entry.getValue());
-
-                    if (!listeners.containsKey(entry.getKey())) {
-                        return;
-                    }
-                    for (RecordListener listener : listeners.get(entry.getKey())) {
-                        try {
-                            listener.onChange(entry.getKey(), entry.getValue().value);
-                        } catch (Exception e) {
-                            Loggers.EPHEMERAL.error("notify " + listener + ", key: " + entry.getKey() + " failed.", e);
-                        }
-                    }
-                }
-            }
+            processData(result);
         } catch (Exception e) {
             Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
         }
 
+    }
+
+    public boolean syncAllDataFromRemote(Server server) {
+
+        try {
+            byte[] data = NamingProxy.getAllData(server.getKey());
+            processData(data);
+            return true;
+        } catch (Exception e) {
+            Loggers.EPHEMERAL.error("sync full data from " + server + " failed!");
+            return false;
+        }
+    }
+
+    public void processData(byte[] data) throws Exception {
+        if (data.length > 0) {
+            Map<String, Datum<Instances>> datumMap =
+                serializer.deserializeMap(data, Instances.class);
+
+
+            for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
+                dataStore.put(entry.getKey(), entry.getValue());
+
+                if (!listeners.containsKey(entry.getKey())) {
+                    // pretty sure the service not exist:
+                    if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+                        // create empty service
+                        Service service = new Service();
+                        String serviceName = KeyBuilder.getServiceName(entry.getKey());
+                        String namespaceId = KeyBuilder.getNamespace(entry.getKey());
+                        service.setName(serviceName);
+                        service.setNamespaceId(namespaceId);
+                        service.setGroupName(Constants.DEFAULT_GROUP);
+                        // now validate the service. if failed, exception will be thrown
+                        service.setLastModifiedMillis(System.currentTimeMillis());
+                        service.recalculateChecksum();
+                        listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).get(0)
+                            .onChange(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName), service);
+                    }
+                }
+            }
+
+            for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
+                dataStore.put(entry.getKey(), entry.getValue());
+
+                if (!listeners.containsKey(entry.getKey())) {
+                    Loggers.EPHEMERAL.warn("listener not found: {}", entry.getKey());
+                    continue;
+                }
+                for (RecordListener listener : listeners.get(entry.getKey())) {
+                    try {
+                        listener.onChange(entry.getKey(), entry.getValue().value);
+                    } catch (Exception e) {
+                        Loggers.EPHEMERAL.error("notify " + listener + ", key: " + entry.getKey() + " failed.", e);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -210,17 +296,7 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
     }
 
     @Override
-    public boolean isResponsible(String key) {
-        return distroMapper.responsible(KeyBuilder.getServiceName(key));
-    }
-
-    @Override
-    public String getResponsibleServer(String key) {
-        return distroMapper.mapSrv(KeyBuilder.getServiceName(key));
-    }
-
-    @Override
     public boolean isAvailable() {
-        return dataSyncer.isInitialized();
+        return initialized;
     }
 }
