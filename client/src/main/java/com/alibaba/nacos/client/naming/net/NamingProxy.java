@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -28,23 +27,14 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.NetUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -268,7 +258,7 @@ public class NamingProxy {
                 case none:
                     break;
                 case label:
-                    ExpressionSelector expressionSelector = (ExpressionSelector)selector;
+                    ExpressionSelector expressionSelector = (ExpressionSelector) selector;
                     params.put("selector", JSON.toJSONString(expressionSelector));
                     break;
                 default:
@@ -344,10 +334,6 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
-        NAMING_LOGGER.error("[CALL-SERVER] failed to req API:" + HttpClient.getPrefix() + curServer
-            + api + ". code:"
-            + result.code + " msg: " + result.content);
-
         throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer
             + api + ". code:"
             + result.code + " msg: " + result.content);
@@ -374,8 +360,10 @@ public class NamingProxy {
                 String server = servers.get(index);
                 try {
                     return callServer(api, params, server, method);
+                } catch (NacosException e) {
+                    NAMING_LOGGER.error("request {} failed.", server, e);
                 } catch (Exception e) {
-                    NAMING_LOGGER.error("[NA] req api:" + api + " failed, server(" + server, e);
+                    NAMING_LOGGER.error("request {} failed.", server, e);
                 }
 
                 index = (index + 1) % servers.size();
