@@ -30,7 +30,7 @@ public class BeatInfo {
     private String serviceName;
     private String cluster;
     private Map<String, String> metadata;
-    private boolean scheduled;
+    private volatile boolean scheduled;
 
     @Override
     public String toString() {
