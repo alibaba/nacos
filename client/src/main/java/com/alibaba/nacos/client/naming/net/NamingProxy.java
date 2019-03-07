@@ -41,10 +41,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -116,12 +113,6 @@ public class NamingProxy {
 
         try {
             String urlString = "http://" + endpoint + "/nacos/serverlist";
-
-            List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-                "User-Agent", UtilAndComs.VERSION,
-                "Accept-Encoding", "gzip,deflate,sdch",
-                "Connection", "Keep-Alive",
-                "RequestId", UuidUtils.generateUuid());
             List<String> headers = builderHeaders();
 
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
@@ -323,12 +314,6 @@ public class NamingProxy {
         long start = System.currentTimeMillis();
         long end = 0;
         checkSignature(params);
-
-        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-            "User-Agent", UtilAndComs.VERSION,
-            "Accept-Encoding", "gzip,deflate,sdch",
-            "Connection", "Keep-Alive",
-            "RequestId", UuidUtils.generateUuid());
         List<String> headers = builderHeaders();
 
         String url;
@@ -425,6 +410,7 @@ public class NamingProxy {
 
     public List<String> builderHeaders() {
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
+            "User-Agent", UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
             "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
