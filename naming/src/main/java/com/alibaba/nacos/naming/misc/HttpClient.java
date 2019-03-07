@@ -200,6 +200,29 @@ public class HttpClient {
         }
     }
 
+    public static void asyncHttpDeleteLarge(String url, List<String> headers, String content, AsyncCompletionHandler handler) throws Exception {
+        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareDelete(url);
+
+        if (!CollectionUtils.isEmpty(headers)) {
+            for (String header : headers) {
+                builder.setHeader(header.split("=")[0], header.split("=")[1]);
+            }
+        }
+
+        builder.setBody(content.getBytes());
+
+        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
+        builder.setHeader("Accept-Charset", "UTF-8");
+        builder.setHeader("Accept-Encoding", "gzip");
+        builder.setHeader("Content-Encoding", "gzip");
+
+        if (handler != null) {
+            builder.execute(handler);
+        } else {
+            builder.execute();
+        }
+    }
+
     public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues) {
         return httpPost(url, headers, paramValues, "UTF-8");
     }

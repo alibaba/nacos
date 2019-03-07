@@ -96,7 +96,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/getPeer")
+    @RequestMapping(value = "/peer", method = RequestMethod.GET)
     public JSONObject getPeer(HttpServletRequest request, HttpServletResponse response) {
         List<RaftPeer> peers = raftCore.getPeers();
         RaftPeer peer = null;
@@ -116,7 +116,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/reloadDatum")
+    @RequestMapping(value = "/datum/reload", method = RequestMethod.PUT)
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String key = WebUtils.required(request, "key");
         raftCore.loadDatum(key);
@@ -124,7 +124,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping(value = "/publish", method = RequestMethod.POST)
+    @RequestMapping(value = "/datum", method = RequestMethod.POST)
     public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -155,7 +155,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    @RequestMapping(value = "/datum", method = RequestMethod.DELETE)
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -166,7 +166,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping("/get")
+    @RequestMapping(value = "/datum", method = RequestMethod.GET)
     public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -185,7 +185,7 @@ public class RaftController {
         return JSON.toJSONString(datums);
     }
 
-    @RequestMapping("/state")
+    @RequestMapping(value = "/state", method = RequestMethod.GET)
     public JSONObject state(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -200,7 +200,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping(value = "/onPublish", method = RequestMethod.POST)
+    @RequestMapping(value = "/datum/commit", method = RequestMethod.POST)
     public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -232,7 +232,7 @@ public class RaftController {
     }
 
     @NeedAuth
-    @RequestMapping(value = "/onDelete", method = RequestMethod.POST)
+    @RequestMapping(value = "/datum/commit", method = RequestMethod.DELETE)
     public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
@@ -252,7 +252,7 @@ public class RaftController {
         return "ok";
     }
 
-    @RequestMapping("/getLeader")
+    @RequestMapping(value = "/leader", method = RequestMethod.GET)
     public JSONObject getLeader(HttpServletRequest request, HttpServletResponse response) {
 
         JSONObject result = new JSONObject();
@@ -260,7 +260,7 @@ public class RaftController {
         return result;
     }
 
-    @RequestMapping("/getAllListeners")
+    @RequestMapping(value = "/listeners", method = RequestMethod.GET)
     public JSONObject getAllListeners(HttpServletRequest request, HttpServletResponse response) {
 
         JSONObject result = new JSONObject();
