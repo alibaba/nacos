@@ -16,10 +16,12 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,9 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
     @Autowired
     private RaftCore raftCore;
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     @Override
     public void put(String key, Record value) throws NacosException {
@@ -73,7 +78,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
     @Override
     public boolean isAvailable() {
-        return raftCore.isInitialized();
+        return raftCore.isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
 
     public void onPut(Datum datum, RaftPeer source) throws NacosException {

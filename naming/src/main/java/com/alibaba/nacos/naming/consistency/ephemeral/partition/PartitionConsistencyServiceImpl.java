@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerMode;
+import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -29,10 +30,7 @@ import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyServic
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NamingProxy;
-import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -86,7 +84,19 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
 
     @PostConstruct
     public void init() throws Exception {
+        GlobalExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    load();
+                } catch (Exception e) {
+                    Loggers.EPHEMERAL.error("load data failed.", e);
+                }
+            }
+        });
+    }
 
+    public void load() throws Exception {
         if (SystemUtils.STANDALONE_MODE) {
             initialized = true;
             return;
@@ -103,15 +113,9 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
             // try sync data from remote server:
             if (syncAllDataFromRemote(server)) {
                 initialized = true;
-                break;
+                return;
             }
         }
-
-        if (!initialized) {
-            // init failed, exit:
-            throw new RuntimeException("init local server failed! Abort.");
-        }
-
     }
 
     @Override
@@ -297,6 +301,6 @@ public class PartitionConsistencyServiceImpl implements EphemeralConsistencyServ
 
     @Override
     public boolean isAvailable() {
-        return initialized;
+        return initialized || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
     }
 }
