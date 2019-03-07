@@ -126,4 +126,6 @@ public class Constants {
     public static final int WRITE_REDIRECT_CODE = 307;
 
     public static final String SERVICE_INFO_SPLITER = "@@";
+
+    public static final String NULL_STRING = "null";
 }

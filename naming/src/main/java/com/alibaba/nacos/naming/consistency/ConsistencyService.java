@@ -78,24 +78,6 @@ public interface ConsistencyService {
     void unlisten(String key, RecordListener listener) throws NacosException;
 
     /**
-     * Is the local server responsible for a data.
-     * <p>
-     * Any write operation to a data in a server not responsible for the data is refused.
-     *
-     * @param key key of data
-     * @return true if the local server is responsible for the data
-     */
-    boolean isResponsible(String key);
-
-    /**
-     * Get the responsible server for a data
-     *
-     * @param key key of data
-     * @return responsible server for the data
-     */
-    String getResponsibleServer(String key);
-
-    /**
      * Tell the status of this consistency service
      *
      * @return true if available

@@ -88,14 +88,6 @@ public class ClientBeatCheckTask implements Runnable {
             // then remove obsolete instances:
             for (Instance instance : instances) {
                 if (System.currentTimeMillis() - instance.getLastBeat() > service.getIpDeleteTimeout()) {
-
-                    // protect threshold met:
-                    if (service.meetProtectThreshold()) {
-                        Loggers.SRV_LOG.info("protect threshold met, service: {}, ip: {}, healthy: {}, total: {}",
-                            service.getName(), JSON.toJSONString(instance), service.healthyInstanceCount(), service.allIPs().size());
-                        return;
-                    }
-
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
                     deleteIP(instance);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.partition;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.core.Instances;
@@ -79,5 +79,9 @@ public class DataStore {
             }
         }
         return count;
+    }
+
+    public Map<String, Datum> getDataMap() {
+        return dataMap;
     }
 }

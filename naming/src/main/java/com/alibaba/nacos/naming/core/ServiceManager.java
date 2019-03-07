@@ -561,7 +561,7 @@ public class ServiceManager implements RecordListener<Service> {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, List<Service> serviceList) {
+    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList) {
 
         List<Service> matchList;
 
@@ -572,7 +572,34 @@ public class ServiceManager implements RecordListener<Service> {
         if (StringUtils.isNotBlank(keyword)) {
             matchList = searchServices(namespaceId, ".*" + keyword + ".*");
         } else {
-            matchList = new ArrayList<Service>(chooseServiceMap(namespaceId).values());
+            matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
+        }
+
+        if (StringUtils.isNotBlank(containedInstance)) {
+
+            boolean contained;
+            for (int i = 0; i < matchList.size(); i++) {
+                Service service = matchList.get(i);
+                contained = false;
+                List<Instance> instances = service.allIPs();
+                for (Instance instance : instances) {
+                    if (containedInstance.contains(":")) {
+                        if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), containedInstance)) {
+                            contained = true;
+                            break;
+                        }
+                    } else {
+                        if (StringUtils.equals(instance.getIp(), containedInstance)) {
+                            contained = true;
+                            break;
+                        }
+                    }
+                }
+                if (!contained) {
+                    matchList.remove(i);
+                    i--;
+                }
+            }
         }
 
         if (pageSize >= matchList.size()) {

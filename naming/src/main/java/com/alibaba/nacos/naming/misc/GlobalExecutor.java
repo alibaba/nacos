@@ -56,7 +56,7 @@ public class GlobalExecutor {
                 Thread t = new Thread(r);
 
                 t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.partition.task.dispatcher");
+                t.setName("com.alibaba.nacos.naming.distro.task.dispatcher");
 
                 return t;
             }
@@ -70,7 +70,7 @@ public class GlobalExecutor {
                 Thread t = new Thread(r);
 
                 t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.partition.data.syncer");
+                t.setName("com.alibaba.nacos.naming.distro.data.syncer");
 
                 return t;
             }

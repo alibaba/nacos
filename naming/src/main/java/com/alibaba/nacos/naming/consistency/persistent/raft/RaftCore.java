@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -62,17 +63,17 @@ public class RaftCore {
 
     public static final String API_BEAT = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/beat";
 
-    public static final String API_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/publish";
+    public static final String API_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum";
 
-    public static final String API_DEL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/delete";
+    public static final String API_DEL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum";
 
-    public static final String API_GET = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/get";
+    public static final String API_GET = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum";
 
-    public static final String API_ON_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/onPublish";
+    public static final String API_ON_PUB = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum/commit";
 
-    public static final String API_ON_DEL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/onDelete";
+    public static final String API_ON_DEL = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/datum/commit";
 
-    public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/getPeer";
+    public static final String API_GET_PEER = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/peer";
 
     private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
@@ -228,8 +229,7 @@ public class RaftCore {
             if (!isLeader()) {
                 Map<String, String> params = new HashMap<>(1);
                 params.put("key", URLEncoder.encode(key, "UTF-8"));
-
-                raftProxy.proxyGET(getLeader().ip, API_DEL, params);
+                raftProxy.proxy(getLeader().ip, API_DEL, params, HttpMethod.DELETE);
                 return;
             }
 
@@ -244,7 +244,7 @@ public class RaftCore {
 
             for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildURL(server, API_ON_DEL);
-                HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(json)
+                HttpClient.asyncHttpDeleteLarge(url, null, JSON.toJSONString(json)
                     , new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {

@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.NeedAuth;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.autoconfigure.metrics.MetricsProperties;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -72,7 +73,7 @@ public class OperatorController {
     @Autowired
     private DistroMapper distroMapper;
 
-    @RequestMapping("/pushState")
+    @RequestMapping("/push/state")
     public JSONObject pushState(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
@@ -112,7 +113,7 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping("/switches")
+    @RequestMapping(value = "/switches", method = RequestMethod.GET)
     public SwitchDomain switches(HttpServletRequest request) {
         return switchDomain;
     }
@@ -152,12 +153,12 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping("/getResponsibleServer4Dom")
-    public JSONObject getResponsibleServer4Dom(HttpServletRequest request) {
+    @RequestMapping(value = "/distro/server", method = RequestMethod.GET)
+    public JSONObject getResponsibleServer4Service(HttpServletRequest request) {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
-        String dom = WebUtils.required(request, "dom");
-        Service service = serviceManager.getService(namespaceId, dom);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
             throw new IllegalArgumentException("service not found");
@@ -165,39 +166,12 @@ public class OperatorController {
 
         JSONObject result = new JSONObject();
 
-        result.put("responsibleServer", distroMapper.mapSrv(dom));
+        result.put("responsibleServer", distroMapper.mapSrv(serviceName));
 
         return result;
     }
 
-    @RequestMapping("/getHealthyServerList")
-    public JSONObject getHealthyServerList(HttpServletRequest request) {
-
-        JSONObject result = new JSONObject();
-        result.put("healthyList", distroMapper.getHealthyList());
-
-        return result;
-    }
-
-    @RequestMapping("/responsible")
-    public JSONObject responsible(HttpServletRequest request) {
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String dom = WebUtils.required(request, "dom");
-        Service service = serviceManager.getService(namespaceId, dom);
-
-        if (service == null) {
-            throw new IllegalArgumentException("service not found");
-        }
-
-        JSONObject result = new JSONObject();
-
-        result.put("responsible", distroMapper.responsible(dom));
-
-        return result;
-    }
-
-    @RequestMapping("/distroStatus")
+    @RequestMapping(value = "/distro/status", method = RequestMethod.GET)
     public JSONObject distroStatus(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
@@ -216,7 +190,21 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping("/serverStatus")
+    @RequestMapping(value = "/servers", method = RequestMethod.GET)
+    public JSONObject getHealthyServerList(HttpServletRequest request) {
+
+        boolean healthy = Boolean.parseBoolean(WebUtils.optional(request, "healthy", "false"));
+        JSONObject result = new JSONObject();
+        if (healthy) {
+            result.put("servers", serverListManager.getHealthyServers());
+        } else {
+            result.put("servers", serverListManager.getServers());
+        }
+
+        return result;
+    }
+
+    @RequestMapping("/server/status")
     public String serverStatus(HttpServletRequest request) {
         String serverStatus = WebUtils.required(request, "serverStatus");
         serverListManager.onReceiveServerStatus(serverStatus);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.partition;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,19 +27,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class PartitionConfig {
 
-    @Value("${nacos.naming.partition.taskDispatchPeriod}")
+    @Value("${nacos.naming.distro.taskDispatchPeriod}")
     private int taskDispatchPeriod = 2000;
 
-    @Value("${nacos.naming.partition.batchSyncKeyCount}")
+    @Value("${nacos.naming.distro.batchSyncKeyCount}")
     private int batchSyncKeyCount = 1000;
 
-    @Value("${nacos.naming.partition.initDataRatio}")
+    @Value("${nacos.naming.distro.initDataRatio}")
     private float initDataRatio = 0.9F;
 
-    @Value("${nacos.naming.partition.syncRetryDelay}")
+    @Value("${nacos.naming.distro.syncRetryDelay}")
     private long syncRetryDelay = 5000L;
 
-    @Value("${nacos.naming.partition.taskDispatchThreadCount}")
+    @Value("${nacos.naming.distro.taskDispatchThreadCount}")
     private int taskDispatchThreadCount = Runtime.getRuntime().availableProcessors();
 
     public int getTaskDispatchPeriod() {

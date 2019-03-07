@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -99,38 +100,20 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     throw new IllegalArgumentException("malformed factor");
                 }
 
-                update(dom);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), dom);
-                }
-
-                return;
+                switchDomain = dom;
             }
 
             if (entry.equals(SwitchEntry.DISTRO_THRESHOLD)) {
                 Float threshold = Float.parseFloat(value);
-
                 if (threshold <= 0) {
                     throw new IllegalArgumentException("distroThreshold can not be zero or negative: " + threshold);
                 }
-
-
                 switchDomain.setDistroThreshold(threshold);
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.CLIENT_BEAT_INTERVAL)) {
                 long clientBeatInterval = Long.parseLong(value);
                 switchDomain.setClientBeatInterval(clientBeatInterval);
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.PUSH_VERSION)) {
@@ -153,11 +136,6 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 } else {
                     throw new IllegalArgumentException("unsupported client type: " + type);
                 }
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.PUSH_CACHE_MILLIS)) {
@@ -168,10 +146,6 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 }
 
                 switchDomain.setDefaultPushCacheMillis(cacheMillis);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             // extremely careful while modifying this, cause it will affect all clients without pushing enabled
@@ -183,50 +157,26 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 }
 
                 switchDomain.setDefaultCacheMillis(cacheMillis);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.MASTERS)) {
                 List<String> masters = Arrays.asList(value.split(","));
-
                 switchDomain.setMasters(masters);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.DISTRO)) {
                 boolean enabled = Boolean.parseBoolean(value);
-
                 switchDomain.setDistroEnabled(enabled);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.CHECK)) {
                 boolean enabled = Boolean.parseBoolean(value);
-
                 switchDomain.setHealthCheckEnabled(enabled);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.PUSH_ENABLED)) {
                 boolean enabled = Boolean.parseBoolean(value);
-
                 switchDomain.setPushEnabled(enabled);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.SERVICE_STATUS_SYNC_PERIOD)) {
@@ -237,10 +187,6 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 }
 
                 switchDomain.setServiceStatusSynchronizationPeriodMillis(millis);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.SERVER_STATUS_SYNC_PERIOD)) {
@@ -251,40 +197,24 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 }
 
                 switchDomain.setServerStatusSynchronizationPeriodMillis(millis);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.HEALTH_CHECK_TIMES)) {
                 Integer times = Integer.parseInt(value);
 
                 switchDomain.setCheckTimes(times);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.DISABLE_ADD_IP)) {
                 boolean disableAddIP = Boolean.parseBoolean(value);
 
                 switchDomain.setDisableAddIP(disableAddIP);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.SEND_BEAT_ONLY)) {
                 boolean sendBeatOnly = Boolean.parseBoolean(value);
 
                 switchDomain.setSendBeatOnly(sendBeatOnly);
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-                return;
             }
 
             if (entry.equals(SwitchEntry.LIMITED_URL_MAP)) {
@@ -314,10 +244,6 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                     }
 
                     switchDomain.setLimitedUrlMap(limitedUrlMap);
-                    if (!debug) {
-                        consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                    }
-                    return;
                 }
             }
 
@@ -327,37 +253,27 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 if (!StringUtils.isNotEmpty(enabled)) {
                     switchDomain.setEnableStandalone(Boolean.parseBoolean(enabled));
                 }
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-
-                return;
             }
 
             if (entry.equals(SwitchEntry.OVERRIDDEN_SERVER_STATUS)) {
                 String status = value;
-                switchDomain.setOverriddenServerStatus(status);
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+                if (Constants.NULL_STRING.equals(status)) {
+                    status = StringUtils.EMPTY;
                 }
-
-                return;
+                switchDomain.setOverriddenServerStatus(status);
             }
 
             if (entry.equals(SwitchEntry.SERVER_MODE)) {
                 String mode = value;
                 switchDomain.setServerMode(ServerMode.valueOf(mode).name());
-
-                if (!debug) {
-                    consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
-                }
-
-                return;
             }
 
-            throw new IllegalArgumentException("update entry not found: " + entry);
+            if (debug) {
+                update(switchDomain);
+            } else {
+                consistencyService.put(UtilsAndCommons.getSwitchDomainKey(), switchDomain);
+            }
+
         } finally {
             lock.unlock();
         }
