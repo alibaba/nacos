@@ -26,15 +26,21 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.composite.CompositeConfiguration;
+import org.apache.logging.log4j.core.lookup.Interpolator;
+import org.apache.logging.log4j.core.lookup.StrSubstitutor;
+import org.apache.logging.log4j.util.PropertiesUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.apache.logging.log4j.core.config.ConfigurationFactory.CONFIGURATION_FILE_PROPERTY;
 
 /**
  * Support for Log4j version 2.7 or higher
@@ -52,6 +58,8 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
 
     private static final String JSON_PARSER_CLASS_NAME = "com.fasterxml.jackson.databind.ObjectMapper";
 
+    private final StrSubstitutor strSubstitutor = new StrSubstitutor(new Interpolator());
+
     private Set<String> locationList = new HashSet<String>();
 
     public Log4J2NacosLogging() {
@@ -63,9 +71,13 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
 
     @Override
     public void loadConfiguration() {
-        String config = findConfig(getCurrentlySupportedConfigLocations());
-        if (config != null) {
-            locationList.add(config);
+        if (locationList.isEmpty()) {
+            return;
+        }
+
+        List<String> configList = findConfig(getCurrentlySupportedConfigLocations());
+        if (configList != null) {
+            locationList.addAll(configList);
         }
 
         final List<AbstractConfiguration> configurations = new ArrayList<AbstractConfiguration>();
@@ -112,22 +124,35 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
         List<String> supportedConfigLocations = new ArrayList<String>();
 
         if (ClassUtils.isPresent(YAML_PARSER_CLASS_NAME)) {
-            Collections.addAll(supportedConfigLocations, "log4j2.yaml", "log4j2.yml");
+            Collections.addAll(supportedConfigLocations, "log4j2.yaml", "log4j2.yml", "log4j2-test.yaml",
+                "log4j2-test.yml");
         }
 
         if (ClassUtils.isPresent(JSON_PARSER_CLASS_NAME)) {
-            Collections.addAll(supportedConfigLocations, "log4j2.json", "log4j2.jsn");
+            Collections.addAll(supportedConfigLocations, "log4j2.json", "log4j2.jsn", "log4j2-test.json",
+                "log4j2-test.jsn");
         }
+
         supportedConfigLocations.add("log4j2.xml");
+        supportedConfigLocations.add("log4j2-test.xml");
 
         return supportedConfigLocations.toArray(new String[supportedConfigLocations.size()]);
     }
 
-    private String findConfig(String[] locations) {
+    private List<String> findConfig(String[] locations) {
+        final String configLocationStr = this.strSubstitutor.replace(PropertiesUtil.getProperties()
+            .getStringProperty(CONFIGURATION_FILE_PROPERTY));
+
+        if (configLocationStr != null) {
+            return Arrays.asList(configLocationStr.split(","));
+        }
+
         for (String location : locations) {
             ClassLoader defaultClassLoader = ClassUtils.getDefaultClassLoader();
             if (defaultClassLoader != null && defaultClassLoader.getResource(location) != null) {
-                return "classpath:" + location;
+                List<String> list = new ArrayList<String>();
+                list.add("classpath:" + location);
+                return list;
             }
         }
         return null;
