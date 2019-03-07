@@ -172,7 +172,7 @@ public class RaftPeerSet implements ServerChangeListener {
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);
-                    HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {
+                    HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {

@@ -62,7 +62,7 @@ public class UtilsAndCommons {
 
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
 
-    public static final String NACOS_NAMING_PARTITION_CONTEXT = "/partition";
+    public static final String NACOS_NAMING_PARTITION_CONTEXT = "/distro";
 
     public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
 

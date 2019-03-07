@@ -18,13 +18,12 @@ package com.alibaba.nacos.naming.consistency;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Publish execution delegate
+ * Consistency delegate
  *
  * @author nkorange
  * @since 1.0.0
@@ -34,9 +33,6 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
     private PersistentConsistencyService persistentConsistencyService;
-
-    @Autowired
-    private DistroMapper distroMapper;
 
     @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
@@ -58,22 +54,20 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
+
+        // this special key is listened by both:
+        if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
+            persistentConsistencyService.listen(key, listener);
+            ephemeralConsistencyService.listen(key, listener);
+            return;
+        }
+
         mapConsistencyService(key).listen(key, listener);
     }
 
     @Override
     public void unlisten(String key, RecordListener listener) throws NacosException {
         mapConsistencyService(key).unlisten(key, listener);
-    }
-
-    @Override
-    public boolean isResponsible(String key) {
-        return distroMapper.responsible(KeyBuilder.getServiceName(key));
-    }
-
-    @Override
-    public String getResponsibleServer(String key) {
-        return distroMapper.mapSrv(KeyBuilder.getServiceName(key));
     }
 
     @Override

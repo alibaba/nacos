@@ -21,7 +21,8 @@ import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -47,14 +48,17 @@ import java.util.Map;
  * @since 1.0.0
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition")
-public class PartitionController {
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
+public class DistroController {
 
     @Autowired
     private Serializer serializer;
 
     @Autowired
-    private PartitionConsistencyServiceImpl consistencyService;
+    private DistroConsistencyServiceImpl consistencyService;
+
+    @Autowired
+    private DataStore dataStore;
 
     @Autowired
     private ServiceManager serviceManager;
@@ -89,24 +93,14 @@ public class PartitionController {
         return "ok";
     }
 
-    @RequestMapping(value = "/timestamps", method = RequestMethod.PUT)
-    public String syncTimestamps(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
+    public String syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         Map<String, String> dataMap =
             serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
         });
-
-        for (String key : dataMap.keySet()) {
-            String namespaceId = KeyBuilder.getNamespace(key);
-            String serviceName = KeyBuilder.getServiceName(key);
-            if (!serviceManager.containService(namespaceId, serviceName)
-                && ServerMode.AP.name().equals(switchDomain.getServerMode())) {
-                serviceManager.createEmptyService(namespaceId, serviceName);
-            }
-        }
-
-        consistencyService.onReceiveTimestamps(dataMap, source);
+        consistencyService.onReceiveChecksums(dataMap, source);
         return "ok";
     }
 
@@ -119,5 +113,10 @@ public class PartitionController {
             datumMap.put(key, consistencyService.get(key));
         }
         response.getWriter().write(new String(serializer.serialize(datumMap), "UTF-8"));
+    }
+
+    @RequestMapping(value = "/datums", method = RequestMethod.GET)
+    public void getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), "UTF-8"));
     }
 }
