@@ -173,8 +173,6 @@ public class HttpClient {
 
     private static String encodingParams(Map<String, String> params, String encoding)
         throws UnsupportedEncodingException {
-        StringBuilder sb = new StringBuilder();
-        throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
             return null;
         }
