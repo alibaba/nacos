@@ -52,7 +52,7 @@ import java.util.*;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT)
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
 public class InstanceController {
 
     @Autowired
@@ -89,7 +89,7 @@ public class InstanceController {
     };
 
     @CanDistro
-    @RequestMapping(value = "/instance", method = RequestMethod.POST)
+    @RequestMapping(value = "", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -100,7 +100,7 @@ public class InstanceController {
     }
 
     @CanDistro
-    @RequestMapping(value = "/instance", method = RequestMethod.DELETE)
+    @RequestMapping(value = "", method = RequestMethod.DELETE)
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -117,7 +117,7 @@ public class InstanceController {
         return "ok";
     }
 
-    @RequestMapping(value = "/instance", method = RequestMethod.PUT)
+    @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -126,7 +126,7 @@ public class InstanceController {
         return "ok";
     }
 
-    @RequestMapping(value = {"/instances", "/instance/list"}, method = RequestMethod.GET)
+    @RequestMapping(value = "/list", method = RequestMethod.GET)
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -152,7 +152,7 @@ public class InstanceController {
         return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 
-    @RequestMapping(value = "/instance", method = RequestMethod.GET)
+    @RequestMapping(value = "", method = RequestMethod.GET)
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -194,7 +194,7 @@ public class InstanceController {
     }
 
     @CanDistro
-    @RequestMapping(value = "/instance/beat", method = RequestMethod.PUT)
+    @RequestMapping(value = "/beat", method = RequestMethod.PUT)
     public JSONObject beat(HttpServletRequest request) throws Exception {
 
         JSONObject result = new JSONObject();
@@ -254,7 +254,7 @@ public class InstanceController {
     }
 
 
-    @RequestMapping("/instance/listWithHealthStatus")
+    @RequestMapping("/statuses")
     public JSONObject listWithHealthStatus(HttpServletRequest request) throws NacosException {
 
         String key = WebUtils.required(request, "key");

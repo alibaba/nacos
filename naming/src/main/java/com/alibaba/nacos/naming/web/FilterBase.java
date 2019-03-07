@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.controllers.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -46,7 +45,7 @@ public class FilterBase {
         initClassMethod(CatalogController.class);
         initClassMethod(HealthController.class);
         initClassMethod(RaftController.class);
-        initClassMethod(PartitionController.class);
+        initClassMethod(DistroController.class);
         initClassMethod(OperatorController.class);
     }
 

@@ -15,9 +15,11 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 
 import java.net.HttpURLConnection;
@@ -37,6 +39,32 @@ public class RaftProxy {
         String url = "http://" + server + RunningConfig.getContextPath() + api;
 
         HttpClient.HttpResult result =  HttpClient.httpGet(url, null, params);
+        if (result.code != HttpURLConnection.HTTP_OK) {
+            throw new IllegalStateException("leader failed, caused by: " + result.content);
+        }
+    }
+
+    public void proxy(String server, String api, Map<String, String> params, HttpMethod method) throws Exception {
+        // do proxy
+        if (!server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+            server = server + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+        }
+        String url = "http://" + server + RunningConfig.getContextPath() + api;
+        HttpClient.HttpResult result;
+        switch (method) {
+            case GET:
+                result =  HttpClient.httpGet(url, null, params);
+                break;
+            case POST:
+                result = HttpClient.httpPost(url, null, params);
+                break;
+            case DELETE:
+                result =  HttpClient.httpDelete(url, null, params);
+                break;
+            default:
+                throw new RuntimeException("unsupported method:" + method);
+        }
+
         if (result.code != HttpURLConnection.HTTP_OK) {
             throw new IllegalStateException("leader failed, caused by: " + result.content);
         }

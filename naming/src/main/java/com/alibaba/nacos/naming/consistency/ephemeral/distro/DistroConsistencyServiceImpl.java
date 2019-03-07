@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.partition;
+package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -43,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A consistency protocol algorithm called <b>Partition</b>
  * <p>
- * Use a partition algorithm to divide data into many blocks. Each Nacos server node takes
+ * Use a distro algorithm to divide data into many blocks. Each Nacos server node takes
  * responsibility for exactly one block of data. Each block of data is generated, removed
  * and synchronized by its responsible server. So every Nacos server only handles writings
  * for a subset of the total service data.
@@ -54,8 +54,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author nkorange
  * @since 1.0.0
  */
-@org.springframework.stereotype.Service("partitionConsistencyService")
-public class PartitionConsistencyServiceImpl implements EphemeralConsistencyService {
+@org.springframework.stereotype.Service("distroConsistencyService")
+public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
 
     @Autowired
     private DistroMapper distroMapper;

@@ -21,8 +21,8 @@ import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.ephemeral.partition.DataStore;
-import com.alibaba.nacos.naming.consistency.ephemeral.partition.PartitionConsistencyServiceImpl;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
@@ -48,14 +48,14 @@ import java.util.Map;
  * @since 1.0.0
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/partition")
-public class PartitionController {
+@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/distro")
+public class DistroController {
 
     @Autowired
     private Serializer serializer;
 
     @Autowired
-    private PartitionConsistencyServiceImpl consistencyService;
+    private DistroConsistencyServiceImpl consistencyService;
 
     @Autowired
     private DataStore dataStore;

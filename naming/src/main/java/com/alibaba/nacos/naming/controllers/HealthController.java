@@ -68,7 +68,7 @@ public class HealthController {
         return result;
     }
 
-    @RequestMapping(value = "", method = RequestMethod.PUT)
+    @RequestMapping(value = {"", "/instance"}, method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,

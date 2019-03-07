@@ -32,6 +32,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,54 +50,7 @@ public class CatalogController {
     @Autowired
     protected ServiceManager serviceManager;
 
-    @RequestMapping(value = "/serviceList")
-    public JSONObject serviceList(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        JSONObject result = new JSONObject();
-
-        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
-
-        List<Service> services = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, services);
-
-        if (CollectionUtils.isEmpty(services)) {
-            result.put("serviceList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
-        }
-
-        JSONArray serviceJsonArray = new JSONArray();
-        for (Service service : services) {
-            ServiceView serviceView = new ServiceView();
-            serviceView.setName(UtilsAndCommons.getServiceName(service.getName()));
-            serviceView.setGroupName(UtilsAndCommons.getGroupName(service.getName()));
-            serviceView.setClusterCount(service.getClusterMap().size());
-            serviceView.setIpCount(service.allIPs().size());
-
-            // FIXME should be optimized:
-            int validCount = 0;
-            for (Instance instance : service.allIPs()) {
-                if (instance.isHealthy()) {
-                    validCount++;
-                }
-            }
-
-            serviceView.setHealthyInstanceCount(validCount);
-
-            serviceJsonArray.add(serviceView);
-        }
-
-        result.put("serviceList", serviceJsonArray);
-        result.put("count", total);
-
-        return result;
-    }
-
-    @RequestMapping(value = "/serviceDetail")
+    @RequestMapping(value = "/service")
     public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -130,15 +84,15 @@ public class CatalogController {
         return detailView;
     }
 
-    @RequestMapping(value = "/instanceList")
+    @RequestMapping(value = "/instances")
     public JSONObject instanceList(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
-        int page = Integer.parseInt(WebUtils.required(request, "startPg"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pgSize"));
+        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -174,37 +128,43 @@ public class CatalogController {
     }
 
     @RequestMapping(value = "/services", method = RequestMethod.GET)
-    public List<ServiceDetailInfo> listDetail(HttpServletRequest request) {
+    public Object listDetail(HttpServletRequest request) throws Exception {
 
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
+        boolean withInstances = Boolean.parseBoolean(WebUtils.optional(request, "withInstances", "true"));
 
-        serviceManager
-            .getServiceMap(namespaceId)
-            .forEach(
-                (serviceName, service) -> {
+        if (withInstances) {
+            String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+                Constants.DEFAULT_NAMESPACE_ID);
+            List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
 
-                    ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                    serviceDetailInfo.setServiceName(UtilsAndCommons.getServiceName(serviceName));
-                    serviceDetailInfo.setGroupName(UtilsAndCommons.getGroupName(serviceName));
-                    serviceDetailInfo.setMetadata(service.getMetadata());
+            serviceManager
+                .getServiceMap(namespaceId)
+                .forEach(
+                    (serviceName, service) -> {
 
-                    Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
-                    serviceDetailInfo.setClusterMap(clusterInfoMap);
+                        ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+                        serviceDetailInfo.setServiceName(UtilsAndCommons.getServiceName(serviceName));
+                        serviceDetailInfo.setGroupName(UtilsAndCommons.getGroupName(serviceName));
+                        serviceDetailInfo.setMetadata(service.getMetadata());
 
-                    serviceDetailInfoList.add(serviceDetailInfo);
-                });
+                        Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
+                        serviceDetailInfo.setClusterMap(clusterInfoMap);
 
-        return serviceDetailInfoList;
+                        serviceDetailInfoList.add(serviceDetailInfo);
+                    });
 
+            return serviceDetailInfoList;
+        } else {
+            return serviceList(request);
+        }
     }
 
-    @RequestMapping("/rt4Service")
+    @RequestMapping("/rt/service")
     public JSONObject rt4Service(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
+
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -227,38 +187,6 @@ public class CatalogController {
             clusters.add(packet);
         }
         result.put("clusters", clusters);
-
-        return result;
-    }
-
-    @RequestMapping("/getServicesByIP")
-    public JSONObject getServicesByIP(HttpServletRequest request) {
-        String ip = WebUtils.required(request, "ip");
-
-        Set<String> serviceNames = new HashSet<>();
-        Map<String, Set<String>> serviceNameMap = serviceManager.getAllServiceNames();
-
-        for (String namespaceId : serviceNameMap.keySet()) {
-            for (String serviceName : serviceNameMap.get(namespaceId)) {
-                Service service = serviceManager.getService(namespaceId, serviceName);
-                List<Instance> instances = service.allIPs();
-                for (Instance instance : instances) {
-                    if (ip.contains(":")) {
-                        if (StringUtils.equals(instance.getIp() + ":" + instance.getPort(), ip)) {
-                            serviceNames.add(namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + service.getName());
-                        }
-                    } else {
-                        if (StringUtils.equals(instance.getIp(), ip)) {
-                            serviceNames.add(namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + service.getName());
-                        }
-                    }
-                }
-            }
-        }
-
-        JSONObject result = new JSONObject();
-
-        result.put("doms", serviceNames);
 
         return result;
     }
@@ -305,6 +233,54 @@ public class CatalogController {
 
         });
         return ipAddressInfos;
+    }
+
+    private JSONObject serviceList(HttpServletRequest request) throws Exception {
+
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        JSONObject result = new JSONObject();
+
+        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
+        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
+        String containedInstance = WebUtils.required(request, "instance");
+
+        List<Service> services = new ArrayList<>();
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services);
+
+        if (CollectionUtils.isEmpty(services)) {
+            result.put("serviceList", Collections.emptyList());
+            result.put("count", 0);
+            return result;
+        }
+
+        JSONArray serviceJsonArray = new JSONArray();
+        for (Service service : services) {
+            ServiceView serviceView = new ServiceView();
+            serviceView.setName(UtilsAndCommons.getServiceName(service.getName()));
+            serviceView.setGroupName(UtilsAndCommons.getGroupName(service.getName()));
+            serviceView.setClusterCount(service.getClusterMap().size());
+            serviceView.setIpCount(service.allIPs().size());
+
+            // FIXME should be optimized:
+            int validCount = 0;
+            for (Instance instance : service.allIPs()) {
+                if (instance.isHealthy()) {
+                    validCount++;
+                }
+
+            }
+
+            serviceView.setHealthyInstanceCount(validCount);
+
+            serviceJsonArray.add(serviceView);
+        }
+
+        result.put("serviceList", serviceJsonArray);
+        result.put("count", total);
+
+        return result;
     }
 
 }

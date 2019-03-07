@@ -31,13 +31,13 @@ import java.util.*;
  */
 public class NamingProxy {
 
-    private static final String DATA_ON_SYNC_URL = "/partition/datum";
+    private static final String DATA_ON_SYNC_URL = "/distro/datum";
 
-    private static final String DATA_GET_URL = "/partition/datum";
+    private static final String DATA_GET_URL = "/distro/datum";
 
-    private static final String ALL_DATA_GET_URL = "/partition/datums";
+    private static final String ALL_DATA_GET_URL = "/distro/datums";
 
-    private static final String TIMESTAMP_SYNC_URL = "/partition/checksum";
+    private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
 
     public static void syncChecksums(Map<String, String> checksumMap, String server) {
 
