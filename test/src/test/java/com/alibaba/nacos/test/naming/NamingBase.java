@@ -49,6 +49,9 @@ public class NamingBase {
     public static final String TEST_GROUP_1 = "group1";
     public static final String TEST_GROUP_2 = "group2";
 
+    public static final String TEST_NAMESPACE_1 = "namespace-1";
+    public static final String TEST_NAMESPACE_2 = "namespace-2";
+
     static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
 
     public static final int TEST_PORT = 8080;
@@ -162,7 +165,11 @@ public class NamingBase {
     }
 
     public static void prepareServer(int localPort) {
-        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=UP";
+        prepareServer(localPort, "UP", "AP");
+    }
+
+    public static void prepareServer(int localPort, String status, String mode) {
+        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
         List<String> headers = new ArrayList<String>();
         headers.add("User-Agent");
         headers.add("Nacos-Server");
@@ -172,7 +179,7 @@ public class NamingBase {
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
 
 
-        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=serverMode&value=AP";
+        url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=serverMode&value=" + mode;
         headers = new ArrayList<String>();
         headers.add("User-Agent");
         headers.add("Nacos-Server");
