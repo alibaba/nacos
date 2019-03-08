@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -38,7 +39,7 @@ import java.util.concurrent.*;
 public class TaskDispatcher {
 
     @Autowired
-    private PartitionConfig partitionConfig;
+    private GlobalConfig partitionConfig;
 
     @Autowired
     private DataSyncer dataSyncer;
