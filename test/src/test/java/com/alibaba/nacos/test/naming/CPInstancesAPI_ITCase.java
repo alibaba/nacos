@@ -16,6 +16,7 @@
 package com.alibaba.nacos.test.naming;
 
 import java.net.URL;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,7 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.naming.NamingApp;
 
 import org.junit.After;
@@ -192,7 +194,7 @@ public class CPInstancesAPI_ITCase {
     }
 
     /**
-     * @TCDescription : 根据serviceName修改服务，并获取服务信息
+     * @TCDescription : 根据serviceName修改服务，并通过HTTP接口获取服务信息
      * @TestStep :
      * @ExpectResult :
      */
@@ -205,7 +207,7 @@ public class CPInstancesAPI_ITCase {
             Params.newParams()
                 .appendParam("serviceName", serviceName)
                 .appendParam("namespaceId", TEST_NAMESPACE_1)
-                .appendParam("protectThreshold", "9.0")
+                .appendParam("protectThreshold", "0.5")
                 .done(),
             String.class,
             HttpMethod.PUT);
@@ -224,7 +226,26 @@ public class CPInstancesAPI_ITCase {
 
         JSONObject json = JSON.parseObject(response.getBody());
         Assert.assertEquals(serviceName, json.getString("name"));
-        Assert.assertEquals("9.0", json.getString("protectThreshold"));
+        Assert.assertEquals("0.5", json.getString("protectThreshold"));
+
+        namingServiceDelete(serviceName, TEST_NAMESPACE_1);
+    }
+
+    /**
+     * @TCDescription : 根据serviceName修改服务，并通过接口获取服务信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void getService_1() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ListView<String> listView = naming1.getServicesOfServer(1, 20);
+
+        namingServiceCreate(serviceName, TEST_NAMESPACE_1);
+        TimeUnit.SECONDS.sleep(5L);
+
+        ListView<String> listView1 = naming1.getServicesOfServer(1, 20);
+        Assert.assertEquals(listView.getCount()+1, listView1.getCount());
 
         namingServiceDelete(serviceName, TEST_NAMESPACE_1);
     }
@@ -280,6 +301,31 @@ public class CPInstancesAPI_ITCase {
         Assert.assertEquals(1, json.getJSONArray("hosts").size());
 
         instanceDeregister(serviceName, Constants.DEFAULT_NAMESPACE_ID, "33.33.33.33", TEST_PORT2_4_DOM_1);
+
+        namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
+    }
+
+    /**
+     * @TCDescription : 根据serviceName创建服务，注册持久化实例, 查询实例，注销实例，删除服务
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void registerInstance_query() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID);
+
+        instanceRegister(serviceName, Constants.DEFAULT_NAMESPACE_ID, "33.33.33.33", TEST_PORT2_4_DOM_1);
+
+        List<Instance> instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals("33.33.33.33", instances.get(0).getIp());
+
+        instanceDeregister(serviceName, Constants.DEFAULT_NAMESPACE_ID, "33.33.33.33", TEST_PORT2_4_DOM_1);
+
+        TimeUnit.SECONDS.sleep(3L);
+        instances = naming.getAllInstances(serviceName);
+        Assert.assertEquals(0, instances.size());
 
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
     }
