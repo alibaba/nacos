@@ -78,6 +78,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Autowired
     private SwitchDomain switchDomain;
 
+    @Autowired
+    private GlobalConfig globalConfig;
+
     private boolean initialized = false;
 
     private volatile Map<String, List<RecordListener>> listeners = new ConcurrentHashMap<>();
@@ -101,7 +104,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             initialized = true;
             return;
         }
-        while (serverListManager.getHealthyServers().isEmpty()) {
+        // size = 1 means only myself in the list, we need at least one another server alive:
+        while (serverListManager.getHealthyServers().size() <= 1) {
             Thread.sleep(1000L);
             Loggers.EPHEMERAL.info("waiting server list init...");
         }
@@ -109,6 +113,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         for (Server server : serverListManager.getHealthyServers()) {
             if (NetUtils.localServer().equals(server.getKey())) {
                 continue;
+            }
+            if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                Loggers.EPHEMERAL.debug("sync from " + server);
             }
             // try sync data from remote server:
             if (syncAllDataFromRemote(server)) {
@@ -227,7 +234,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             processData(data);
             return true;
         } catch (Exception e) {
-            Loggers.EPHEMERAL.error("sync full data from " + server + " failed!");
+            Loggers.EPHEMERAL.error("sync full data from " + server + " failed!", e);
             return false;
         }
     }
@@ -301,6 +308,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Override
     public boolean isAvailable() {
-        return initialized || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
+        return isInitialized() || ServerStatus.UP.name().equals(switchDomain.getOverriddenServerStatus());
+    }
+
+    public boolean isInitialized() {
+        return initialized || !globalConfig.isDataWarmup();
     }
 }

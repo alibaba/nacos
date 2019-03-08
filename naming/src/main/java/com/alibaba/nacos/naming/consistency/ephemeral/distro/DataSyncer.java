@@ -49,7 +49,7 @@ public class DataSyncer implements ServerChangeListener {
     private DataStore dataStore;
 
     @Autowired
-    private PartitionConfig partitionConfig;
+    private GlobalConfig partitionConfig;
 
     @Autowired
     private Serializer serializer;

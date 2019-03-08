@@ -151,7 +151,7 @@ public class CPInstancesAPI_ITCase {
         instance.setPort(80);
         naming1.registerInstance(serviceName, TEST_GROUP_1, instance);
         naming1.deregisterInstance(serviceName, TEST_GROUP_1, "11.11.11.11", 80, "c1");
-        
+
         namingServiceDelete(serviceName, TEST_NAMESPACE_1, TEST_GROUP_1);
     }
 
@@ -358,7 +358,7 @@ public class CPInstancesAPI_ITCase {
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
             Params.newParams()
                 .appendParam("serviceName", serviceName)
-                .appendParam("protectThreshold", "3")
+                .appendParam("protectThreshold", "0.3")
                 .appendParam("namespaceId", namespace)
                 .appendParam("groupName", groupName)
                 .done(),

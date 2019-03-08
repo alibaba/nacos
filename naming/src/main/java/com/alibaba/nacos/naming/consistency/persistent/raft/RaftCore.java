@@ -102,6 +102,9 @@ public class RaftCore {
     private SwitchDomain switchDomain;
 
     @Autowired
+    private GlobalConfig globalConfig;
+
+    @Autowired
     private RaftProxy raftProxy;
 
     @Autowired
@@ -874,7 +877,7 @@ public class RaftCore {
     }
 
     public boolean isInitialized() {
-        return initialized;
+        return initialized || !globalConfig.isDataWarmup();
     }
 
     public class Notifier implements Runnable {

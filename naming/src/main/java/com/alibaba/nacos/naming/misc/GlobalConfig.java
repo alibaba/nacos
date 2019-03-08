@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.distro;
+package com.alibaba.nacos.naming.misc;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * @since 1.0.0
  */
 @Component
-public class PartitionConfig {
+public class GlobalConfig {
 
     @Value("${nacos.naming.distro.taskDispatchPeriod}")
     private int taskDispatchPeriod = 2000;
@@ -33,14 +33,14 @@ public class PartitionConfig {
     @Value("${nacos.naming.distro.batchSyncKeyCount}")
     private int batchSyncKeyCount = 1000;
 
-    @Value("${nacos.naming.distro.initDataRatio}")
-    private float initDataRatio = 0.9F;
-
     @Value("${nacos.naming.distro.syncRetryDelay}")
     private long syncRetryDelay = 5000L;
 
     @Value("${nacos.naming.distro.taskDispatchThreadCount}")
     private int taskDispatchThreadCount = Runtime.getRuntime().availableProcessors();
+
+    @Value("${nacos.naming.data.warmup}")
+    private boolean dataWarmup = false;
 
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
@@ -50,15 +50,15 @@ public class PartitionConfig {
         return batchSyncKeyCount;
     }
 
-    public float getInitDataRatio() {
-        return initDataRatio;
-    }
-
     public long getSyncRetryDelay() {
         return syncRetryDelay;
     }
 
     public int getTaskDispatchThreadCount() {
         return taskDispatchThreadCount;
+    }
+
+    public boolean isDataWarmup() {
+        return dataWarmup;
     }
 }

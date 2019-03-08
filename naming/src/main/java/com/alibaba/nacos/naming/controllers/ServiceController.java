@@ -223,7 +223,7 @@ public class ServiceController {
         }
 
         for (int i = start; i < end; i++) {
-            serviceNameList.add(i, serviceNameList.get(i).replace(groupName + Constants.SERVICE_INFO_SPLITER, ""));
+            serviceNameList.set(i, serviceNameList.get(i).replace(groupName + Constants.SERVICE_INFO_SPLITER, ""));
         }
 
         result.put("doms", serviceNameList.subList(start, end));

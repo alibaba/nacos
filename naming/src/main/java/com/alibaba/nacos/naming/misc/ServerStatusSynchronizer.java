@@ -40,11 +40,11 @@ public class ServerStatusSynchronizer implements Synchronizer {
         params.put("serverStatus", msg.getData());
 
         String url = "http://" + serverIP + ":" + RunningConfig.getServerPort()
-            + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/serverStatus";
+            + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
 
         if (serverIP.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             url = "http://" + serverIP + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
-                + "/operator/serverStatus";
+                + "/operator/server/status";
         }
 
         try {
