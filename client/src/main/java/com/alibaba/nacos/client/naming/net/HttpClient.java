@@ -69,7 +69,7 @@ public class HttpClient {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
-            url += (null == encodedContent) ? "" : ("?" + encodedContent);
+            url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
             conn = (HttpURLConnection) new URL(url).openConnection();
 
@@ -174,7 +174,7 @@ public class HttpClient {
     private static String encodingParams(Map<String, String> params, String encoding)
         throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
-            return null;
+            return "";
         }
 
         params.put("encoding", encoding);
