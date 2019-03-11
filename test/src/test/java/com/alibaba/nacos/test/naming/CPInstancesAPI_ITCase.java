@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.text.View;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -258,6 +260,7 @@ public class CPInstancesAPI_ITCase {
     @Test
     public void listService() throws Exception {
         String serviceName = NamingBase.randomDomainName();
+        ListView<String> listView = naming.getServicesOfServer(1, 50);
         namingServiceCreate(serviceName, Constants.DEFAULT_NAMESPACE_ID);
 
         //get service
@@ -273,7 +276,7 @@ public class CPInstancesAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
         int count = json.getIntValue("count");
-        Assert.assertEquals(1, count);
+        Assert.assertEquals(listView.getCount()+1, count);
 
         namingServiceDelete(serviceName, Constants.DEFAULT_NAMESPACE_ID);
     }
