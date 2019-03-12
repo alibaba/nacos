@@ -1,4 +1,4 @@
-# Except this file !.gitignore 
+# Except this file !.gitignore
 .classpath
 .project
 .settings
@@ -13,3 +13,5 @@ target
 node_modules
 test/derby.log
 derby.log
+
+*~
