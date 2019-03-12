@@ -16,9 +16,13 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.config.utils.*;
-import com.alibaba.nacos.client.logger.Logger;
+import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
+import com.alibaba.nacos.client.config.utils.IOUtils;
+import com.alibaba.nacos.client.config.utils.JVMUtil;
+import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +36,7 @@ import java.io.InputStream;
  */
 public class LocalConfigInfoProcessor {
 
-    final static public Logger log = LogUtils.logger(LocalConfigInfoProcessor.class);
+    private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
 
     static public String getFailover(String serverName, String dataId, String group, String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
@@ -43,7 +47,7 @@ public class LocalConfigInfoProcessor {
         try {
             return readFile(localPath);
         } catch (IOException ioe) {
-            log.error(serverName, "NACOS-XXXX", "get failover error, " + localPath + ioe.toString());
+            LOGGER.error("[" + serverName + "] get failover error, " + localPath, ioe);
             return null;
         }
     }
@@ -63,7 +67,7 @@ public class LocalConfigInfoProcessor {
         try {
             return readFile(file);
         } catch (IOException ioe) {
-            log.error(name, "NACOS-XXXX", "get snapshot error, " + file + ", " + ioe.toString());
+            LOGGER.error("[" + name + "]+get snapshot error, " + file, ioe);
             return null;
         }
     }
@@ -100,7 +104,7 @@ public class LocalConfigInfoProcessor {
             try {
                 IOUtils.delete(file);
             } catch (IOException ioe) {
-                log.error(envName, "NACOS-XXXX", "delete snapshot error, " + file + ", " + ioe.toString());
+                LOGGER.error("[" + envName + "] delete snapshot error, " + file, ioe);
             }
         } else {
             try {
@@ -108,7 +112,7 @@ public class LocalConfigInfoProcessor {
                 if (!parentFile.exists()) {
                     boolean isMdOk = parentFile.mkdirs();
                     if (!isMdOk) {
-                        log.error(envName, "NACOS-XXXX", "save snapshot error");
+                        LOGGER.error("[{}] save snapshot error", envName);
                     }
                 }
 
@@ -119,7 +123,7 @@ public class LocalConfigInfoProcessor {
                     IOUtils.writeStringToFile(file, config, Constants.ENCODE);
                 }
             } catch (IOException ioe) {
-                log.error(envName, "NACOS-XXXX", "save snapshot error, " + file + ", " + ioe.toString());
+                LOGGER.error("[" + envName + "] save snapshot error, " + file, ioe);
             }
         }
     }
@@ -140,7 +144,7 @@ public class LocalConfigInfoProcessor {
                 }
             }
         } catch (IOException ioe) {
-            log.error("NACOS-XXXX", "clean all snapshot error, " + ioe.toString(), ioe);
+            LOGGER.error("clean all snapshot error, " + ioe.toString(), ioe);
         }
     }
 
@@ -149,9 +153,9 @@ public class LocalConfigInfoProcessor {
         tmp = new File(tmp, "snapshot");
         try {
             IOUtils.cleanDirectory(tmp);
-            log.info("success delete " + envName + "-snapshot");
+            LOGGER.info("success delete " + envName + "-snapshot");
         } catch (IOException e) {
-            log.info("fail delete " + envName + "-snapshot, " + e.toString());
+            LOGGER.info("fail delete " + envName + "-snapshot, " + e.toString());
             e.printStackTrace();
         }
     }
@@ -188,7 +192,7 @@ public class LocalConfigInfoProcessor {
             + "nacos" + File.separator + "config";
         LOCAL_SNAPSHOT_PATH = System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator
             + "nacos" + File.separator + "config";
-        log.warn("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
+        LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
 
 }

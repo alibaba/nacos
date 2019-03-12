@@ -48,9 +48,9 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 

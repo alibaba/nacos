@@ -29,7 +29,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import static com.alibaba.nacos.common.util.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * 磁盘操作工具类。
