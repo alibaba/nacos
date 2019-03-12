@@ -22,7 +22,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.common.util.Md5Utils;
-import com.alibaba.nacos.common.util.SystemUtils;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.*;
@@ -68,8 +68,9 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
-import static com.alibaba.nacos.common.util.SystemUtils.writeClusterConf;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
+import static com.alibaba.nacos.core.utils.SystemUtils.writeClusterConf;
 
 /**
  * Old API entry
@@ -525,6 +526,7 @@ public class ApiCommands {
             cluster = WebUtils.optional(request, "clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
 
         IpAddress ipAddress = new IpAddress();
         ipAddress.setPort(Integer.parseInt(port));
@@ -532,6 +534,11 @@ public class ApiCommands {
         ipAddress.setWeight(Double.parseDouble(weight));
         ipAddress.setClusterName(cluster);
         ipAddress.setEnabled(enabled);
+        ipAddress.setValid(healthy);
+
+        if (!ipAddress.validate()) {
+            throw new IllegalArgumentException("malfomed ip config: " + ipAddress);
+        }
 
         return ipAddress;
     }
@@ -715,17 +722,6 @@ public class ApiCommands {
             }
 
             cluster.setDefIPPort(Integer.parseInt(defIPPort));
-        }
-
-        String submask = WebUtils.optional(request, "submask", StringUtils.EMPTY);
-        if (!StringUtils.isEmpty(submask)) {
-            Cluster cluster
-                = dom.getClusterMap().get(WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME));
-            if (cluster == null) {
-                throw new IllegalStateException("cluster not found");
-            }
-
-            cluster.setSubmask(submask);
         }
 
         String ipPort4Check = WebUtils.optional(request, "ipPort4Check", StringUtils.EMPTY);
@@ -922,7 +918,7 @@ public class ApiCommands {
 
         final CountDownLatch countDownLatch = new CountDownLatch(RaftCore.getPeerSet().majorityCount());
         updateIpPublish(proxyParams, countDownLatch, action);
-        if (!countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
+        if (!STANDALONE_MODE && !countDownLatch.await(UtilsAndCommons.MAX_PUBLISH_WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS)) {
             Loggers.RAFT.info("data publish failed, key=" + key, ",notify timeout.");
             throw new IllegalArgumentException("data publish failed, key=" + key);
         }
@@ -2080,10 +2076,6 @@ public class ApiCommands {
                 cluster.setHealthChecker(config);
             }
             cluster.setSitegroup(siteGroup);
-
-            if (!StringUtils.isEmpty(submask)) {
-                cluster.setSubmask(submask);
-            }
         }
         cluster.setDom(domObj);
         cluster.init();
@@ -2416,7 +2408,6 @@ public class ApiCommands {
             clusterPac.put("defCkport", cluster.getDefCkport());
             clusterPac.put("defIPPort", cluster.getDefIPPort());
             clusterPac.put("useIPPort4Check", cluster.isUseIPPort4Check());
-            clusterPac.put("submask", cluster.getSubmask());
             clusterPac.put("sitegroup", cluster.getSitegroup());
             clusterPac.put("metadatas", cluster.getMetadata());
 

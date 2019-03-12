@@ -15,7 +15,6 @@ import fusionEnUS from '@alifd/next/lib/locale/en-us';
 import fusionZhCN from '@alifd/next/lib/locale/zh-cn';
 import I18N from '../locales';
 import { LANGUAGE_KEY, LANGUAGE_SWITCH } from '../constants';
-import CookieHelp from '../utils/cookie';
 
 const enUS = Object.assign({}, fusionEnUS, I18N.enUS);
 const zhCN = Object.assign({}, fusionZhCN, I18N.zhCN);

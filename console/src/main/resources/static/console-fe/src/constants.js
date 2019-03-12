@@ -18,3 +18,5 @@ export const LANGUAGE_SWITCH = 'LANGUAGE_SWITCH';
 // export const SUCCESS_RESULT_CODE = 'SUCCESS';
 
 export const REDUX_DEVTOOLS = '__REDUX_DEVTOOLS_EXTENSION__';
+
+export const GET_STATE = 'GET_STATE';

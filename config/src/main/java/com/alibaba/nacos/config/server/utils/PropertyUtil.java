@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * properties utils

@@ -394,7 +394,6 @@ public class VirtualClusterDomain implements Domain, RaftListener {
             clusters.put("defCkport", cluster.getDefCkport());
             clusters.put("defIPPort", cluster.getDefIPPort());
             clusters.put("useIPPort4Check", cluster.isUseIPPort4Check());
-            clusters.put("submask", cluster.getSubmask());
             clusters.put("sitegroup", cluster.getSitegroup());
 
             clustersList.add(clusters);
@@ -605,29 +604,8 @@ public class VirtualClusterDomain implements Domain, RaftListener {
         if (!name.matches(DOMAIN_NAME_SYNTAX)) {
             throw new IllegalArgumentException("dom name can only have these characters: 0-9a-zA-Z-._:, current: " + name);
         }
-
-        Map<String, List<String>> map = new HashMap<>(clusterMap.size());
         for (Cluster cluster : clusterMap.values()) {
-            if (StringUtils.isEmpty(cluster.getSyncKey())) {
-                continue;
-            }
-            List<String> list = map.get(cluster.getSyncKey());
-            if (list == null) {
-                list = new ArrayList<>();
-                map.put(cluster.getSyncKey(), list);
-            }
-
-            list.add(cluster.getName());
             cluster.valid();
-        }
-
-        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
-            List<String> list = entry.getValue();
-            if (list.size() > 1) {
-                String msg = "clusters' config can not be the same: " + list;
-                Loggers.SRV_LOG.warn(msg);
-                throw new IllegalArgumentException(msg);
-            }
         }
     }
 }

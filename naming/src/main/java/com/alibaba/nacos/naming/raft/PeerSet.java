@@ -28,7 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.net.HttpURLConnection;
 import java.util.*;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * @author nacos
