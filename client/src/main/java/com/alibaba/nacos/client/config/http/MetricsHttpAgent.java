@@ -18,10 +18,10 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import io.prometheus.client.Histogram;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * MetricsHttpAgent
@@ -42,57 +42,49 @@ public class MetricsHttpAgent implements HttpAgent {
 
     @Override
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
-        long start = System.currentTimeMillis();
-        long end = 0;
+        Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("GET", path, "NA");
         HttpResult result = null;
         try {
             result = httpAgent.httpGet(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
-            end = System.currentTimeMillis();
-            MetricsMonitor.getConfigRequestMonitor("GET", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
             throw e;
+        } finally {
+            timer.observeDuration();
+            timer.close();
         }
-
-        end = System.currentTimeMillis();
-        MetricsMonitor.getConfigRequestMonitor("GET", path, String.valueOf(result.code)).record(end - start, TimeUnit.MILLISECONDS);
 
         return result;
     }
 
     @Override
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
-        long start = System.currentTimeMillis();
-        long end = 0;
+        Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("POST", path, "NA");
         HttpResult result = null;
         try {
             result = httpAgent.httpPost(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
-            end = System.currentTimeMillis();
-            MetricsMonitor.getConfigRequestMonitor("POST", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
             throw e;
+        } finally {
+            timer.observeDuration();
+            timer.close();
         }
-
-        end = System.currentTimeMillis();
-        MetricsMonitor.getConfigRequestMonitor("POST", path, String.valueOf(result.code)).record(end - start, TimeUnit.MILLISECONDS);
 
         return result;
     }
 
     @Override
     public HttpResult httpDelete(String path, List<String> headers, List<String> paramValues, String encoding, long readTimeoutMs) throws IOException {
-        long start = System.currentTimeMillis();
-        long end = 0;
+        Histogram.Timer timer = MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA");
         HttpResult result = null;
         try {
             result = httpAgent.httpDelete(path, headers, paramValues, encoding, readTimeoutMs);
         } catch (IOException e) {
-            end = System.currentTimeMillis();
-            MetricsMonitor.getConfigRequestMonitor("DELETE", path, "NA").record(end - start, TimeUnit.MILLISECONDS);
-            throw e;
-        }
 
-        end = System.currentTimeMillis();
-        MetricsMonitor.getConfigRequestMonitor("DELETE", path, String.valueOf(result.code)).record(end - start, TimeUnit.MILLISECONDS);
+            throw e;
+        } finally {
+            timer.observeDuration();
+            timer.close();
+        }
 
         return result;
     }
@@ -117,3 +109,4 @@ public class MetricsHttpAgent implements HttpAgent {
         return httpAgent.getEncode();
     }
 }
+

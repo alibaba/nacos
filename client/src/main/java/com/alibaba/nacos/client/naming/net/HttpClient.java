@@ -16,7 +16,6 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.google.common.net.HttpHeaders;
 
@@ -29,6 +28,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
+
+import static com.alibaba.nacos.client.utils.LogUtils.*;
 
 /**
  * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
@@ -70,20 +71,20 @@ public class HttpClient {
             conn.setRequestMethod(method);
             setHeaders(conn, headers, encoding);
             conn.connect();
-            LogUtils.LOG.debug("Request from server: " + url);
+            NAMING_LOGGER.debug("Request from server: " + url);
             return getResult(conn);
         } catch (Exception e) {
             try {
                 if (conn != null) {
-                    LogUtils.LOG.warn("failed to request " + conn.getURL() + " from "
+                    NAMING_LOGGER.warn("failed to request " + conn.getURL() + " from "
                             + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
                 }
             } catch (Exception e1) {
-                LogUtils.LOG.error("NA", "failed to request ", e1);
+                NAMING_LOGGER.error("[NA] failed to request ", e1);
                 //ignore
             }
 
-            LogUtils.LOG.error("NA", "failed to request ", e);
+            NAMING_LOGGER.error("[NA] failed to request ", e);
 
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {

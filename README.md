@@ -40,9 +40,9 @@ It is super easy to get started with your first project.
 
 You can download the package from the  [latest stable release](https://github.com/alibaba/nacos/releases).  
 
-Take release nacos-server-0.8.0.zip for example.
+Take release nacos-server-0.9.0.zip for example.
 ```
-unzip nacos-server-0.8.0.zip
+unzip nacos-server-0.9.0.zip
 cd nacos/bin 
 ``` 
 
@@ -120,7 +120,7 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![美菜](https://www.meicai.cn/assets/images/new-img/logo.png)
 ![松格科技](http://songe.so/images/logo.gif)
 ![平行云](https://img.alicdn.com/tfs/TB1OigyDyLaK1RjSZFxXXamPFXa-168-70.png)
-![甘肃紫光](http://www.gsunis.net/V2/image/logo.jpg)
+![甘肃紫光](https://img.alicdn.com/tfs/TB1gJ4vIhTpK1RjSZR0XXbEwXXa-462-60.jpg)
 ![海云天](http://www.seaskylight.com/cn/uploadfiles/image/logo.png)
 ![集萃智能](http://www.iimt.org.cn/pic/logosy.png)
 ![Acmedcare+](https://img.alicdn.com/tfs/TB1DZWSEzDpK1RjSZFrXXa78VXa-240-62.png)
@@ -144,6 +144,7 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![知氏教育](https://www.chyeth.com/622e88980a5d091eaa6449f82d48ca43.png) 
 ![中化信息](http://www.sinochem.com/Portals/0/xinlogo.png)
 ![海格管家](https://img.alicdn.com/tfs/TB1FNq4EwHqK1RjSZFgXXa7JXXa-232-232.jpg)
+![Nepxion](https://avatars0.githubusercontent.com/u/16344119?s=200&v=4)
 ![东莞最佳拍档](https://img.alicdn.com/tfs/TB11ugsDzTpK1RjSZKPXXa3UpXa-300-300.png)
 ![chigua](https://img.alicdn.com/tfs/TB1aUe5EpzqK1RjSZSgXXcpAVXa-248-124.png)
 ![宅无限](https://img.alicdn.com/tfs/TB1H9O5EAvoK1RjSZFNXXcxMVXa-221-221.jpg)

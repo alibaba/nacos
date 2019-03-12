@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.8.0</version>
+        <version>0.9.0</version>
     </parent>
     <artifactId>nacos-console</artifactId>
     <!--<packaging>war</packaging>-->
@@ -114,5 +114,20 @@
                 </executions>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>static/console-fe/.vscode/**</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>nacos-version.txt</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>
