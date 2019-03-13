@@ -167,7 +167,7 @@ public class NacosNamingService implements NamingService {
             }
         });
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrl)) {
+        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrl)) {
             return;
         }
 
