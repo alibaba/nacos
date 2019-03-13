@@ -66,7 +66,7 @@ class ServiceDetail extends React.Component {
   getServiceDetail() {
     const { serviceName } = this.state;
     request({
-      url: `nacos/v1/ns/catalog/service?serviceName=${serviceName}`,
+      url: `v1/ns/catalog/service?serviceName=${serviceName}`,
       beforeSend: () => this.openLoading(),
       success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
       complete: () => this.closeLoading(),
