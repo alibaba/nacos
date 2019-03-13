@@ -15,7 +15,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Message, ConfigProvider } from '@alifd/next';
-import { DIALOG_FORM_LAYOUT } from './constant';
+import { DIALOG_FORM_LAYOUT, METADATA_ENTER, METADATA_SEPARATOR } from './constant';
+import MonacoEditor from 'components/MonacoEditor';
+import { replaceEnter, processMetaData } from 'utils/nacosutil';
 
 @ConfigProvider.config
 class EditInstanceDialog extends React.Component {
@@ -43,9 +45,7 @@ class EditInstanceDialog extends React.Component {
     let editInstance = _editInstance;
     const { metadata = {} } = editInstance;
     if (Object.keys(metadata).length) {
-      editInstance.metadataText = Object.keys(metadata)
-        .map(k => `${k}=${metadata[k]}`)
-        .join(',');
+      editInstance.metadataText = processMetaData(METADATA_ENTER)(metadata);
     }
     this.setState({ editInstance, editInstanceDialogVisible: true });
   }
@@ -60,7 +60,15 @@ class EditInstanceDialog extends React.Component {
     request({
       method: 'PUT',
       url: 'v1/ns/instance',
-      data: { serviceName, clusterName, ip, port, weight, enable: enabled, metadata: metadataText },
+      data: {
+        serviceName,
+        clusterName,
+        ip,
+        port,
+        weight,
+        enable: enabled,
+        metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
+      },
       dataType: 'text',
       beforeSend: () => openLoading(),
       success: res => {
@@ -89,6 +97,7 @@ class EditInstanceDialog extends React.Component {
       <Dialog
         className="instance-edit-dialog"
         title={locale.updateInstance}
+        style={{ width: 600 }}
         visible={editInstanceDialogVisible}
         onOk={() => this.onConfirm()}
         onCancel={() => this.hide()}
@@ -115,8 +124,10 @@ class EditInstanceDialog extends React.Component {
             />
           </Form.Item>
           <Form.Item label={`${locale.metadata}:`}>
-            <Input
-              className="in-text"
+            <MonacoEditor
+              language={'properties'}
+              width={'100%'}
+              height={200}
               value={editInstance.metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />

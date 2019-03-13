@@ -15,7 +15,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Select, Message, ConfigProvider } from '@alifd/next';
-import { DIALOG_FORM_LAYOUT } from './constant';
+import { DIALOG_FORM_LAYOUT, METADATA_SEPARATOR, METADATA_ENTER } from './constant';
+import MonacoEditor from 'components/MonacoEditor';
+import { replaceEnter, processMetaData } from 'utils/nacosutil';
 
 @ConfigProvider.config
 class EditClusterDialog extends React.Component {
@@ -40,9 +42,7 @@ class EditClusterDialog extends React.Component {
   show(_editCluster) {
     let editCluster = _editCluster;
     const { metadata = {} } = editCluster;
-    editCluster.metadataText = Object.keys(metadata)
-      .map(k => `${k}=${metadata[k]}`)
-      .join(',');
+    editCluster.metadataText = processMetaData(METADATA_ENTER)(metadata);
     this.setState({
       editCluster,
       editClusterDialogVisible: true,
@@ -69,7 +69,7 @@ class EditClusterDialog extends React.Component {
       data: {
         serviceName,
         clusterName: name,
-        metadata: metadataText,
+        metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
         checkPort: defaultCheckPort,
         useInstancePort4Check: useIPPort4Check,
         healthChecker: JSON.stringify(healthChecker),
@@ -113,6 +113,7 @@ class EditClusterDialog extends React.Component {
     return (
       <Dialog
         className="cluster-edit-dialog"
+        style={{ width: 600 }}
         title={updateCluster}
         visible={editClusterDialogVisible}
         onOk={() => this.onConfirm()}
@@ -172,8 +173,10 @@ class EditClusterDialog extends React.Component {
             </div>
           ) : null}
           <Form.Item label={`${locale.metadata}:`}>
-            <Input
-              className="in-text"
+            <MonacoEditor
+              language={'properties'}
+              width={'100%'}
+              height={200}
               value={metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
