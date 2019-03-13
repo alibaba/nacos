@@ -74,10 +74,15 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword } = this.state;
-    const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`];
+    const { currentPage, pageSize, keyword, withInstances = false } = this.state;
+    const parameter = [
+      `withInstances=${withInstances}`,
+      `pageNo=${currentPage}`,
+      `pageSize=${pageSize}`,
+      `keyword=${keyword}`,
+    ];
     request({
-      url: `v1/ns/catalog/serviceList?${parameter.join('&')}`,
+      url: `v1/ns/catalog/services?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
@@ -155,7 +160,7 @@ class ServiceList extends React.Component {
       <div className="main-container service-management">
         <Loading
           shape="flower"
-          style={{ position: 'relative' }}
+          style={{ position: 'relative', width: '100%' }}
           visible={this.state.loading}
           tip="Loading..."
           color="#333"
@@ -204,8 +209,6 @@ class ServiceList extends React.Component {
             <Col span="24" style={{ padding: 0 }}>
               <Table
                 dataSource={this.state.dataSource}
-                fixedHeader
-                maxBodyHeight={530}
                 locale={{ empty: pubNoData }}
                 getRowProps={row => this.rowColor(row)}
               >
