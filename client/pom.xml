@@ -26,7 +26,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-client ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/alibaba/nacos</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
