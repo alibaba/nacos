@@ -15,7 +15,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Select, Message, ConfigProvider } from '@alifd/next';
-import { DIALOG_FORM_LAYOUT } from './constant';
+import { DIALOG_FORM_LAYOUT, METADATA_SEPARATOR, METADATA_ENTER } from './constant';
+import MonacoEditor from 'components/MonacoEditor';
+import { replaceEnter, processMetaData } from 'utils/nacosutil';
 
 @ConfigProvider.config
 class EditServiceDialog extends React.Component {
@@ -42,9 +44,7 @@ class EditServiceDialog extends React.Component {
     let editService = _editService;
     const { metadata = {}, name } = editService;
     if (Object.keys(metadata).length) {
-      editService.metadataText = Object.keys(metadata)
-        .map(k => `${k}=${metadata[k]}`)
-        .join(',');
+      editService.metadataText = processMetaData(METADATA_ENTER)(metadata);
     }
     this.setState({ editService, editServiceDialogVisible: true, isCreate: !name });
   }
@@ -77,16 +77,15 @@ class EditServiceDialog extends React.Component {
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, healthCheckMode, metadataText, selector } = editService;
-    if (!this.validator({ name, protectThreshold, healthCheckMode })) return;
+    const { name, protectThreshold, healthCheckMode, metadataText = '', selector } = editService;
+    if (!this.validator({ name, protectThreshold })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
       url: 'v1/ns/service',
       data: {
         serviceName: name,
         protectThreshold,
-        healthCheckMode,
-        metadata: metadataText,
+        metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
         selector: JSON.stringify(selector),
       },
       dataType: 'text',
@@ -172,7 +171,7 @@ class EditServiceDialog extends React.Component {
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item
+          {/* <Form.Item
             required
             {...formItemLayout}
             label={`${locale.healthCheckPattern}:`}
@@ -187,9 +186,12 @@ class EditServiceDialog extends React.Component {
               <Select.Option value="client">{locale.healthCheckPatternClient}</Select.Option>
               <Select.Option value="none">{locale.healthCheckPatternNone}</Select.Option>
             </Select>
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
-            <Input.TextArea
+            <MonacoEditor
+              language={'properties'}
+              width={'100%'}
+              height={200}
               value={metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
