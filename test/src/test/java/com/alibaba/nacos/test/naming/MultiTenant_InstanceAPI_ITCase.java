@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.Event;
@@ -17,6 +18,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.naming.NamingApp;
 
 import org.junit.Assert;
@@ -273,8 +275,12 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming.registerInstance(serviceName, "33.33.33.33", 8888);
         naming.registerInstance(serviceName, "44.44.44.44", 8888);
 
-        TimeUnit.SECONDS.sleep(5L);
-
+        TimeUnit.SECONDS.sleep(3L);
+        //AP下，通过HTTP删除实例前必须删除心跳
+        NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
+        namingServiceImpl.getBeatReactor().
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "33.33.33.33", 8888);
+        TimeUnit.SECONDS.sleep(3L);
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
             Params.newParams()
                 .appendParam("serviceName", serviceName)
@@ -310,6 +316,11 @@ public class MultiTenant_InstanceAPI_ITCase {
         naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
 
         TimeUnit.SECONDS.sleep(5L);
+
+        //AP下，通过HTTP删除实例前必须删除心跳
+        NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
+        namingServiceImpl.getBeatReactor().
+            removeBeatInfo(TEST_GROUP_2 + Constants.SERVICE_INFO_SPLITER + serviceName, "22.22.22.22", 80);
 
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
             Params.newParams()
