@@ -56,12 +56,12 @@ class InstanceTable extends React.Component {
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
-      url: 'v1/ns/catalog/instanceList',
+      url: 'v1/ns/catalog/instances',
       data: {
         serviceName,
         clusterName,
-        pgSize: pageSize,
-        startPg: pageNum,
+        pageSize,
+        pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
       success: instance => this.setState({ instance }),
