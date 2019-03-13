@@ -57,8 +57,6 @@ import java.util.Set;
  */
 public class LabelSelector extends ExpressionSelector implements Selector {
 
-    private CmdbReader cmdbReader;
-
     /**
      * The labels relevant to this the selector.
      *
@@ -93,9 +91,11 @@ public class LabelSelector extends ExpressionSelector implements Selector {
 
     public LabelSelector() {
         setType(SelectorType.label.name());
-        cmdbReader = SpringContext.getAppContext().getBean(CmdbReader.class);
     }
 
+    private CmdbReader getCmdbReader() {
+        return SpringContext.getAppContext().getBean(CmdbReader.class);
+    }
 
     public static Set<String> parseExpression(String expression) throws NacosException {
         return ExpressionInterpreter.parseExpression(expression);
@@ -115,11 +115,11 @@ public class LabelSelector extends ExpressionSelector implements Selector {
             boolean matched = true;
             for (String labelName : getLabels()) {
 
-                String consumerLabelValue = cmdbReader.queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName);
+                String consumerLabelValue = getCmdbReader().queryLabel(consumer, PreservedEntityTypes.ip.name(), labelName);
 
                 if (StringUtils.isNotBlank(consumerLabelValue) &&
                         !StringUtils.equals(consumerLabelValue,
-                                cmdbReader.queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
+                            getCmdbReader().queryLabel(instance.getIp(), PreservedEntityTypes.ip.name(), labelName))) {
                     matched = false;
                     break;
                 }

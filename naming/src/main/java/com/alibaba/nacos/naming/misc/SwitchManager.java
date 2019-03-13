@@ -20,9 +20,9 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.Datum;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -70,7 +70,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             Datum datum = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
             SwitchDomain switchDomain;
 
-            if (datum != null) {
+            if (datum != null && datum.value != null) {
                 switchDomain = (SwitchDomain) datum.value;
             } else {
                 switchDomain = this.switchDomain.clone();

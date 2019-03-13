@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.URLDecoder;
 import java.util.*;
 
 /**
@@ -397,13 +398,13 @@ public class ServiceController {
         return filteredServices;
     }
 
-    private Selector parseSelector(String selectorJsonString) throws NacosException {
+    private Selector parseSelector(String selectorJsonString) throws Exception {
 
         if (StringUtils.isBlank(selectorJsonString)) {
             return new NoneSelector();
         }
 
-        JSONObject selectorJson = JSON.parseObject(selectorJsonString);
+        JSONObject selectorJson = JSON.parseObject(URLDecoder.decode(selectorJsonString, "UTF-8"));
         switch (SelectorType.valueOf(selectorJson.getString("type"))) {
             case none:
                 return new NoneSelector();

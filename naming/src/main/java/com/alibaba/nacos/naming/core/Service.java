@@ -473,8 +473,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (Cluster cluster : clusters) {
             Cluster oldCluster = clusterMap.get(cluster.getName());
             if (oldCluster != null) {
-                oldCluster.update(cluster);
                 oldCluster.setService(this);
+                oldCluster.update(cluster);
             } else {
                 cluster.init();
                 cluster.setService(this);
