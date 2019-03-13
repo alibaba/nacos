@@ -27,7 +27,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Data sync task dispatcher
@@ -96,8 +98,7 @@ public class TaskDispatcher {
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
-                    if (StringUtils.isBlank(key) || dataSyncer.getServers() == null ||
-                        dataSyncer.getServers().isEmpty()) {
+                    if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
                         continue;
                     }
 
@@ -105,7 +106,7 @@ public class TaskDispatcher {
                         keys = new ArrayList<>();
                     }
 
-                    if (dataSize < partitionConfig.getBatchSyncKeyCount()) {
+                    if (StringUtils.isNotBlank(key)) {
                         keys.add(key);
                         dataSize++;
                     }
