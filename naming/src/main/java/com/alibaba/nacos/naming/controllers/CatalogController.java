@@ -27,18 +27,23 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.pojo.*;
+import com.alibaba.nacos.naming.pojo.ClusterInfo;
+import com.alibaba.nacos.naming.pojo.IpAddressInfo;
+import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
+import com.alibaba.nacos.naming.pojo.ServiceView;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author nkorange
@@ -51,35 +56,42 @@ public class CatalogController {
     protected ServiceManager serviceManager;
 
     @RequestMapping(value = "/service")
-    public ServiceDetailView serviceDetail(HttpServletRequest request) throws Exception {
+    public JSONObject serviceDetail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
+        com.alibaba.nacos.naming.core.Service detailedService = serviceManager.getService(namespaceId, serviceName);
+        if (detailedService == null) {
             throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
         }
 
-        ServiceDetailView detailView = new ServiceDetailView();
+        JSONObject detailView = new JSONObject();
 
-        detailView.setService(service);
+        JSONObject serviceObject = new JSONObject();
+        serviceObject.put("name", UtilsAndCommons.getServiceName(serviceName));
+        serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
+        serviceObject.put("groupName", UtilsAndCommons.getGroupName(serviceName));
+        serviceObject.put("selector", detailedService.getSelector());
+        serviceObject.put("metadata", detailedService.getMetadata());
+
+        detailView.put("service", serviceObject);
 
         List<Cluster> clusters = new ArrayList<>();
 
-        for (com.alibaba.nacos.naming.core.Cluster cluster : service.getClusterMap().values()) {
+        for (Cluster cluster : detailedService.getClusterMap().values()) {
             Cluster clusterView = new Cluster();
             clusterView.setName(cluster.getName());
             clusterView.setHealthChecker(cluster.getHealthChecker());
             clusterView.setMetadata(cluster.getMetadata());
             clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
-            clusterView.setDefaultPort(cluster.getDefIPPort());
-            clusterView.setDefaultCheckPort(cluster.getDefCkport());
+            clusterView.setDefaultPort(cluster.getDefaultPort());
+            clusterView.setDefaultCheckPort(cluster.getDefaultCheckPort());
             clusterView.setServiceName(serviceName);
             clusters.add(clusterView);
         }
 
-        detailView.setClusters(clusters);
+        detailView.put("clusters", clusters);
 
         return detailView;
     }
@@ -244,7 +256,7 @@ public class CatalogController {
         int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
         String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
-        String containedInstance = WebUtils.required(request, "instance");
+        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
 
         List<Service> services = new ArrayList<>();
         int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services);
