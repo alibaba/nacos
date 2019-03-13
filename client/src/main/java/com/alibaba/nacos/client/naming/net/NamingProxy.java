@@ -20,7 +20,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -31,7 +30,6 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.util.HttpMethod;
@@ -355,6 +353,8 @@ public class NamingProxy {
             throw new IllegalArgumentException("no server available");
         }
 
+        Exception exception = new Exception();
+
         if (servers != null && !servers.isEmpty()) {
 
             Random random = new Random(System.currentTimeMillis());
@@ -365,26 +365,31 @@ public class NamingProxy {
                 try {
                     return callServer(api, params, server, method);
                 } catch (NacosException e) {
+                    exception = e;
                     NAMING_LOGGER.error("request {} failed.", server, e);
                 } catch (Exception e) {
+                    exception = e;
                     NAMING_LOGGER.error("request {} failed.", server, e);
                 }
 
                 index = (index + 1) % servers.size();
             }
 
-            throw new IllegalStateException("failed to req API:" + api + " after all servers(" + servers + ") tried");
+            throw new IllegalStateException("failed to req API:" + api + " after all servers(" + servers + ") tried: "
+                + exception.getMessage());
         }
 
         for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
             try {
                 return callServer(api, params, nacosDomain);
             } catch (Exception e) {
+                exception = e;
                 NAMING_LOGGER.error("[NA] req api:" + api + " failed, server(" + nacosDomain, e);
             }
         }
 
-        throw new IllegalStateException("failed to req API:/api/" + api + " after all servers(" + servers + ") tried");
+        throw new IllegalStateException("failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
+            + exception.getMessage());
 
     }
 
