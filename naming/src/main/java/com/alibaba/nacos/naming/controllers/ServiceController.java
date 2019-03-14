@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
@@ -131,12 +132,12 @@ public class ServiceController {
         }
 
         JSONObject res = new JSONObject();
-        res.put("name", UtilsAndCommons.getServiceName(serviceName));
+        res.put("name", NamingUtils.getServiceName(serviceName));
         res.put("namespaceId", service.getNamespaceId());
         res.put("protectThreshold", service.getProtectThreshold());
         res.put("metadata", service.getMetadata());
         res.put("selector", service.getSelector());
-        res.put("groupName", UtilsAndCommons.getGroupName(serviceName));
+        res.put("groupName", NamingUtils.getGroupName(serviceName));
 
         JSONArray clusters = new JSONArray();
         for (Cluster cluster : service.getClusterMap().values()) {
@@ -284,7 +285,7 @@ public class ServiceController {
             serviceNameMap.put(namespace, new HashSet<>());
             for (Service service : services.get(namespace)) {
                 if (distroMapper.responsible(service.getName()) || !responsibleOnly) {
-                    serviceNameMap.get(namespace).add(UtilsAndCommons.getServiceName(service.getName()));
+                    serviceNameMap.get(namespace).add(NamingUtils.getServiceName(service.getName()));
                 }
             }
         }
