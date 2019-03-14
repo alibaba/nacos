@@ -14,7 +14,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '@/globalLib';
-import { Input, Button, Card, ConfigProvider, Form, Loading } from '@alifd/next';
+import { Input, Button, Card, ConfigProvider, Form, Loading, Message } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
@@ -69,6 +69,7 @@ class ServiceDetail extends React.Component {
       url: `v1/ns/catalog/service?serviceName=${serviceName}`,
       beforeSend: () => this.openLoading(),
       success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -93,11 +94,6 @@ class ServiceDetail extends React.Component {
     const { locale = {} } = this.props;
     const { serviceName, loading, service = {}, clusters } = this.state;
     const { metadata = {}, selector = {} } = service;
-    const healthCheckMap = {
-      server: locale.healthCheckPatternService,
-      client: locale.healthCheckPatternClient,
-      none: locale.healthCheckPatternNone,
-    };
     const metadataText = processMetaData(METADATA_ENTER)(metadata);
     return (
       <div className="main-container service-detail">
@@ -135,12 +131,12 @@ class ServiceDetail extends React.Component {
             <FormItem label={`${locale.serviceName}:`}>
               <Input value={service.name} readOnly />
             </FormItem>
+            <FormItem label={`${locale.groupName}:`}>
+              <Input value={service.groupName} readOnly />
+            </FormItem>
             <FormItem label={`${locale.protectThreshold}:`}>
               <Input value={service.protectThreshold} readOnly />
             </FormItem>
-            {/* <FormItem label={`${locale.healthCheckPattern}:`}>
-              <Input value={healthCheckMap[service.healthCheckMode]} readOnly />
-            </FormItem> */}
             <FormItem label={`${locale.metadata}:`}>
               <MonacoEditor
                 language={'properties'}
