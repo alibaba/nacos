@@ -9,7 +9,6 @@
     "eslint": "eslint --ext .js src/",
     "eslint-fix": "eslint  --ext .js --fix src/"
   },
-  "private": true,
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
