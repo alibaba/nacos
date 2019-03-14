@@ -45,6 +45,7 @@ class ServiceDetail extends React.Component {
     this.editClusterDialog = React.createRef();
     this.state = {
       serviceName: getParameter(props.location.search, 'name'),
+      groupName: getParameter(props.location.search, 'groupName'),
       loading: false,
       currentPage: 1,
       clusters: [],
@@ -64,9 +65,9 @@ class ServiceDetail extends React.Component {
   }
 
   getServiceDetail() {
-    const { serviceName } = this.state;
+    const { serviceName, groupName } = this.state;
     request({
-      url: `v1/ns/catalog/service?serviceName=${serviceName}`,
+      url: `v1/ns/catalog/service?serviceName=${serviceName}&groupName=${groupName}`,
       beforeSend: () => this.openLoading(),
       success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
       error: e => Message.error(e.responseText || 'error'),

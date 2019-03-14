@@ -231,7 +231,9 @@ class ServiceList extends React.Component {
                       <Button
                         type="normal"
                         onClick={() =>
-                          this.props.history.push(`/serviceDetail?name=${record.name}`)
+                          this.props.history.push(
+                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`
+                          )
                         }
                       >
                         {detail}
