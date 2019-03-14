@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -31,12 +32,14 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -444,6 +447,8 @@ public class InstanceController {
 
         JSONArray hosts = new JSONArray();
 
+        ClientInfo clientInfo = new ClientInfo(agent);
+
         for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
             List<Instance> ips = entry.getValue();
 
@@ -465,7 +470,13 @@ public class InstanceController {
                 ipObj.put("enabled", instance.isEnabled());
                 ipObj.put("weight", instance.getWeight());
                 ipObj.put("clusterName", instance.getClusterName());
-                ipObj.put("serviceName", instance.getServiceName());
+                if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+                    clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                    ipObj.put("serviceName", instance.getServiceName());
+                } else {
+                    ipObj.put("serviceName", NamingUtils.getServiceName(instance.getServiceName()));
+                }
+
                 ipObj.put("ephemeral", instance.isEphemeral());
                 hosts.add(ipObj);
 
@@ -473,12 +484,16 @@ public class InstanceController {
         }
 
         result.put("hosts", hosts);
-
-        result.put("dom", serviceName);
+        if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+            result.put("dom", serviceName);
+        } else {
+            result.put("dom", NamingUtils.getServiceName(serviceName));
+        }
         result.put("name", serviceName);
         result.put("cacheMillis", cacheMillis);
         result.put("lastRefTime", System.currentTimeMillis());
-        result.put("checksum", service.getChecksum() + System.currentTimeMillis());
+        result.put("checksum", service.getChecksum());
         result.put("useSpecifiedURL", false);
         result.put("clusters", clusters);
         result.put("env", env);

@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -69,9 +70,9 @@ public class CatalogController {
         JSONObject detailView = new JSONObject();
 
         JSONObject serviceObject = new JSONObject();
-        serviceObject.put("name", UtilsAndCommons.getServiceName(serviceName));
+        serviceObject.put("name", NamingUtils.getServiceName(serviceName));
         serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
-        serviceObject.put("groupName", UtilsAndCommons.getGroupName(serviceName));
+        serviceObject.put("groupName", NamingUtils.getGroupName(serviceName));
         serviceObject.put("selector", detailedService.getSelector());
         serviceObject.put("metadata", detailedService.getMetadata());
 
@@ -155,8 +156,8 @@ public class CatalogController {
                     (serviceName, service) -> {
 
                         ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                        serviceDetailInfo.setServiceName(UtilsAndCommons.getServiceName(serviceName));
-                        serviceDetailInfo.setGroupName(UtilsAndCommons.getGroupName(serviceName));
+                        serviceDetailInfo.setServiceName(NamingUtils.getServiceName(serviceName));
+                        serviceDetailInfo.setGroupName(NamingUtils.getGroupName(serviceName));
                         serviceDetailInfo.setMetadata(service.getMetadata());
 
                         Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
@@ -270,8 +271,8 @@ public class CatalogController {
         JSONArray serviceJsonArray = new JSONArray();
         for (Service service : services) {
             ServiceView serviceView = new ServiceView();
-            serviceView.setName(UtilsAndCommons.getServiceName(service.getName()));
-            serviceView.setGroupName(UtilsAndCommons.getGroupName(service.getName()));
+            serviceView.setName(NamingUtils.getServiceName(service.getName()));
+            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
             serviceView.setClusterCount(service.getClusterMap().size());
             serviceView.setIpCount(service.allIPs().size());
 

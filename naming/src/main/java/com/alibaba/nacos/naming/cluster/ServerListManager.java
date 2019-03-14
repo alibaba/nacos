@@ -261,7 +261,7 @@ public class ServerListManager {
         if (autoDisabledHealthCheck
             && curRatio > switchDomain.getDistroThreshold()
             && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("[VIPSRV-DISTRO] distro threshold restored and " +
+            Loggers.SRV_LOG.info("[NACOS-DISTRO] distro threshold restored and " +
                 "stable now, enable health check. current ratio: {}", curRatio);
 
             switchDomain.setHealthCheckEnabled(true);
@@ -273,7 +273,7 @@ public class ServerListManager {
         if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
             // for every change disable healthy check for some while
             if (switchDomain.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("[VIPSRV-DISTRO] healthy server list changed, " +
+                Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
                     "disable health check for {} ms from now on", STABLE_PERIOD);
 
                 switchDomain.setHealthCheckEnabled(false);
@@ -300,7 +300,6 @@ public class ServerListManager {
 
         }
     }
-
 
     public Set<String> getLiveSites() {
         return liveSites;

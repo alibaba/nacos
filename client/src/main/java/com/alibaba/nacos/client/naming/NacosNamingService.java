@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.identify.CredentialService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
@@ -283,7 +284,7 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setServiceName(groupName + Constants.SERVICE_INFO_SPLITER + serviceName);
+        beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
         beatInfo.setIp(instance.getIp());
         beatInfo.setPort(instance.getPort());
         beatInfo.setCluster(instance.getClusterName());
@@ -291,9 +292,9 @@ public class NacosNamingService implements NamingService {
         beatInfo.setMetadata(instance.getMetadata());
         beatInfo.setScheduled(false);
 
-        beatReactor.addBeatInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, beatInfo);
+        beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
 
-        serverProxy.registerService(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, groupName, instance);
+        serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
     @Override
@@ -313,8 +314,8 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
-        beatReactor.removeBeatInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, ip, port);
-        serverProxy.deregisterService(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, ip, port, clusterName);
+        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), ip, port);
+        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), ip, port, clusterName);
     }
 
     @Override
@@ -358,9 +359,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -412,9 +413,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -460,10 +461,10 @@ public class NacosNamingService implements NamingService {
 
         if (subscribe) {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         } else {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfoDirectlyFromServer(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         }
     }
 
@@ -484,7 +485,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(groupName + Constants.SERVICE_INFO_SPLITER + serviceName,
+        eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
             StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
     }
 
@@ -505,7 +506,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.removeListener(groupName + Constants.SERVICE_INFO_SPLITER + serviceName, StringUtils.join(clusters, ","), listener);
+        eventDispatcher.removeListener(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","), listener);
     }
 
     @Override

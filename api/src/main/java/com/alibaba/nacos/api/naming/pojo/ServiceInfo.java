@@ -35,7 +35,6 @@ public class ServiceInfo {
     private String jsonFromServer = EMPTY;
     public static final String SPLITER = "@@";
 
-    @JSONField(name = "dom")
     private String name;
 
     private String groupName;

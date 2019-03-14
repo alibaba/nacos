@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -38,9 +39,9 @@ import java.util.*;
  * Old API entry
  *
  * @author nkorange
- * @deprecated
  */
 @RestController
+@Deprecated
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api")
 public class ApiController extends InstanceController {
 
@@ -60,13 +61,14 @@ public class ApiController extends InstanceController {
         String dnsfVersion = "1.0.1";
         String agent = request.getHeader("Client-Version");
         ClientInfo clientInfo = new ClientInfo(agent);
-        if (clientInfo.type == ClientInfo.ClientType.DNS && clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
+        if (clientInfo.type == ClientInfo.ClientType.DNS &&
+            clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
 
             List<String> doms = new ArrayList<String>();
             Set<String> domSet = null;
 
-            if (domMap.containsKey(CommonParams.NAMESPACE_ID)) {
-                domSet = domMap.get(CommonParams.NAMESPACE_ID);
+            if (domMap.containsKey(Constants.DEFAULT_NAMESPACE_ID)) {
+                domSet = domMap.get(Constants.DEFAULT_NAMESPACE_ID);
             }
 
             if (CollectionUtils.isEmpty(domSet)) {
@@ -77,7 +79,7 @@ public class ApiController extends InstanceController {
 
             for (String dom : domSet) {
                 if (distroMapper.responsible(dom) || !responsibleOnly) {
-                    doms.add(dom);
+                    doms.add(NamingUtils.getServiceName(dom));
                 }
             }
 
@@ -92,7 +94,7 @@ public class ApiController extends InstanceController {
             doms.put(namespaceId, new HashSet<>());
             for (String dom : domMap.get(namespaceId)) {
                 if (distroMapper.responsible(dom) || !responsibleOnly) {
-                    doms.get(namespaceId).add(dom);
+                    doms.get(namespaceId).add(NamingUtils.getServiceName(dom));
                 }
             }
             count += doms.get(namespaceId).size();
@@ -102,6 +104,12 @@ public class ApiController extends InstanceController {
         result.put("count", count);
 
         return result;
+    }
+
+    @RequestMapping("/hello")
+    @ResponseBody
+    public String hello(HttpServletRequest request) throws Exception {
+        return "ok";
     }
 
     @RequestMapping("/srvIPXT")
@@ -126,6 +134,7 @@ public class ApiController extends InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, dom, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP),
+            agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 }

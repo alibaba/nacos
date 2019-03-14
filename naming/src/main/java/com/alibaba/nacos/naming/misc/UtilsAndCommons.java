@@ -238,18 +238,4 @@ public class UtilsAndCommons {
     public static String assembleFullServiceName(String namespaceId, String serviceName) {
         return namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + serviceName;
     }
-
-    public static String getServiceName(String serviceNameWithGroup) {
-        if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
-            return serviceNameWithGroup;
-        }
-        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
-    }
-
-    public static String getGroupName(String serviceNameWithGroup) {
-        if (!serviceNameWithGroup.contains(Constants.SERVICE_INFO_SPLITER)) {
-            return Constants.DEFAULT_GROUP;
-        }
-        return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[0];
-    }
 }
