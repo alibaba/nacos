@@ -16,7 +16,9 @@
 package com.alibaba.nacos.naming.misc;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * All switch entries for naming.
+ *
+ * @author nkorange
  */
 public class SwitchEntry {
 
@@ -38,8 +40,9 @@ public class SwitchEntry {
     public static final String MASTERS = "masters";
     public static final String DISTRO = "distro";
     public static final String CHECK = "check";
+    public static final String PUSH_ENABLED = "pushEnabled";
     public static final String DEFAULT_HEALTH_CHECK_MODE = "defaultHealthCheckMode";
-    public static final String DOM_STATUS_SYNC_PERIOD = "domStatusSynchronizationPeriodMillis";
+    public static final String SERVICE_STATUS_SYNC_PERIOD = "serviceStatusSynchronizationPeriodMillis";
     public static final String SERVER_STATUS_SYNC_PERIOD = "serverStatusSynchronizationPeriodMillis";
     public static final String HEALTH_CHECK_TIMES = "healthCheckTimes";
     public static final String DISABLE_ADD_IP = "disableAddIP";
@@ -61,4 +64,8 @@ public class SwitchEntry {
     public static final String ACTION_OVERVIEW = "overview";
 
     public static final String PARAM_JSON = "json";
+
+    public static final String READ_ENABLED = "readEnabled";
+    public static final String OVERRIDDEN_SERVER_STATUS = "overriddenServerStatus";
+    public static final String SERVER_MODE = "serverMode";
 }

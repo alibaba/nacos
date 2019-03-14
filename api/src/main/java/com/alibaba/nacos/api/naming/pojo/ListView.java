@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * ListView
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public class ListView<T> {
 

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.naming.net;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.google.common.net.HttpHeaders;
@@ -32,7 +33,7 @@ import java.util.zip.GZIPInputStream;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class HttpClient {
 
@@ -68,7 +69,7 @@ public class HttpClient {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
-            url += (null == encodedContent) ? "" : ("?" + encodedContent);
+            url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
             conn = (HttpURLConnection) new URL(url).openConnection();
 
@@ -114,7 +115,8 @@ public class HttpClient {
 
         InputStream inputStream;
         if (HttpURLConnection.HTTP_OK == respCode
-            || HttpURLConnection.HTTP_NOT_MODIFIED == respCode) {
+            || HttpURLConnection.HTTP_NOT_MODIFIED == respCode
+            || Constants.WRITE_REDIRECT_CODE == respCode) {
             inputStream = conn.getInputStream();
         } else {
             inputStream = conn.getErrorStream();
@@ -172,7 +174,7 @@ public class HttpClient {
     private static String encodingParams(Map<String, String> params, String encoding)
         throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
-            return null;
+            return "";
         }
 
         params.put("encoding", encoding);

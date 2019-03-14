@@ -16,10 +16,11 @@
 package com.alibaba.nacos.naming.acl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.DomainsManager;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,13 +32,16 @@ import java.security.AccessControlException;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @Component
 public class AuthChecker {
 
     @Autowired
-    private DomainsManager domainsManager;
+    private ServiceManager serviceManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
 
     static private String[] APP_WHITE_LIST = {};
     static private String[] TOKEN_WHITE_LIST = {"traffic-scheduling@midware"};
@@ -53,34 +57,32 @@ public class AuthChecker {
             return;
         }
 
+        agent = req.getHeader("User-Agent");
+        if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
+            return;
+        }
+
         throw new IllegalAccessException("illegal access,agent= " + agent + ", token=" + token);
     }
 
     public void doAuth(Map<String, String[]> params, HttpServletRequest req) throws Exception {
 
-        String namespaceId = WebUtils.optional(req, Constants.REQUEST_PARAM_NAMESPACE_ID,
-            UtilsAndCommons.getDefaultNamespaceId());
-        String dom = WebUtils.optional(req, "name", "");
-        if (StringUtils.isEmpty(dom)) {
-            dom = WebUtils.optional(req, "dom", "");
+        String namespaceId = WebUtils.optional(req, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.optional(req, "name", "");
+        if (StringUtils.isEmpty(serviceName)) {
+            serviceName = WebUtils.optional(req, "serviceName", "");
         }
 
-        if (StringUtils.isEmpty(dom)) {
-            dom = WebUtils.optional(req, "tag", "");
+        if (StringUtils.isEmpty(serviceName)) {
+            serviceName = WebUtils.optional(req, "tag", "");
         }
 
-        Domain domObj;
-        if (req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_UPDATE_SWITCH) ||
-                req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {
-            // we consider switch is a kind of special domain
-            domObj = Switch.getDom();
-        } else {
-            domObj = domainsManager.getDomain(namespaceId, dom);
-        }
+        Service service = serviceManager.getService(namespaceId, serviceName);
 
-        if (domObj == null) {
+        if (service == null) {
             if (!req.getRequestURI().equals(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_SET_ALL_WEIGHTS)) {
-                throw new IllegalStateException("auth failed, dom does not exist: " + dom);
+                throw new IllegalStateException("auth failed, service does not exist: " + serviceName);
             }
         }
 
@@ -88,11 +90,11 @@ public class AuthChecker {
         String auth = req.getParameter("auth");
         String userName = req.getParameter("userName");
         if (StringUtils.isEmpty(auth) && StringUtils.isEmpty(token)) {
-            throw new IllegalArgumentException("provide 'authInfo' or 'token' to access this dom");
+            throw new IllegalArgumentException("provide 'authInfo' or 'token' to access this service");
         }
 
         // try valid token
-        if ((domObj != null && StringUtils.equals(domObj.getToken(), token))) {
+        if ((service != null && StringUtils.equals(service.getToken(), token))) {
             return;
         }
 
@@ -114,8 +116,8 @@ public class AuthChecker {
             throw new AccessControlException("un-registered SDK app");
         }
 
-        if (!domObj.getOwners().contains(authInfo.getOperator())
-                && !Switch.getMasters().contains(authInfo.getOperator())) {
+        if (!service.getOwners().contains(authInfo.getOperator())
+            && !switchDomain.getMasters().contains(authInfo.getOperator())) {
             throw new AccessControlException("dom already exists and you're not among the owners");
         }
     }
