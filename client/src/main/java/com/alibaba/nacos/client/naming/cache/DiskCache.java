@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -42,7 +43,6 @@ public class DiskCache {
 
         try {
             makeSureCacheDirExists(dir);
-
 
 
             File file = new File(dir, dom.getKeyEncoded());
@@ -93,8 +93,8 @@ public class DiskCache {
 
                 String fileName = URLDecoder.decode(file.getName(), "UTF-8");
 
-                if (!(fileName.endsWith(ServiceInfo.SPLITER + "meta") || fileName.endsWith(
-                    ServiceInfo.SPLITER + "special-url"))) {
+                if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName.endsWith(
+                    Constants.SERVICE_INFO_SPLITER + "special-url"))) {
                     ServiceInfo dom = new ServiceInfo(fileName);
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);

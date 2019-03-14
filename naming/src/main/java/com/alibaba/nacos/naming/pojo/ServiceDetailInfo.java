@@ -24,11 +24,13 @@ import java.util.Map;
  */
 public class ServiceDetailInfo implements Serializable {
 
-    private String                   serviceName;
+    private String serviceName;
+
+    private String groupName;
 
     private Map<String, ClusterInfo> clusterMap;
 
-    private Map<String, String>      metadata;
+    private Map<String, String> metadata;
 
     /**
      * Getter method for property <tt>serviceName</tt>.
@@ -46,6 +48,14 @@ public class ServiceDetailInfo implements Serializable {
      */
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     /**

@@ -19,20 +19,17 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import javax.servlet.Filter;
-
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
-
 @Configuration
 public class NamingConfig {
 
     @Bean
     public FilterRegistrationBean distroFilterRegistration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
+        FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
-        registration.addUrlPatterns("/*");
+        registration.addUrlPatterns("/v1/ns/*");
         registration.setName("distroFilter");
         registration.setOrder(6);
 
@@ -40,8 +37,19 @@ public class NamingConfig {
     }
 
     @Bean
+    public FilterRegistrationBean trafficReviseFilterRegistration() {
+        FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(trafficReviseFilter());
+        registration.addUrlPatterns("/v1/ns/*");
+        registration.setName("trafficReviseFilter");
+        registration.setOrder(1);
+
+        return registration;
+    }
+
+    @Bean
     public FilterRegistrationBean authFilterRegistration() {
-        FilterRegistrationBean registration = new FilterRegistrationBean();
+        FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
 
         registration.setFilter(authFilter());
         registration.addUrlPatterns("/api/*", "/raft/*");
@@ -52,12 +60,17 @@ public class NamingConfig {
     }
 
     @Bean
-    public Filter distroFilter() {
+    public DistroFilter distroFilter() {
         return new DistroFilter();
     }
 
     @Bean
-    public Filter authFilter() {
+    public TrafficReviseFilter trafficReviseFilter() {
+        return new TrafficReviseFilter();
+    }
+
+    @Bean
+    public AuthFilter authFilter() {
         return new AuthFilter();
     }
 
