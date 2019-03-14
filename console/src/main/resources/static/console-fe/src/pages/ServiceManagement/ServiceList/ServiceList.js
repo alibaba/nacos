@@ -186,6 +186,9 @@ class ServiceList extends React.Component {
                     style={{ width: 200 }}
                     value={keyword}
                     onChange={keyword => this.setState({ keyword })}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                    }
                   />
                 </FormItem>
                 <FormItem label="">
@@ -213,6 +216,7 @@ class ServiceList extends React.Component {
                 getRowProps={row => this.rowColor(row)}
               >
                 <Column title={locale.columnServiceName} dataIndex="name" />
+                <Column title={locale.groupName} dataIndex="groupName" />
                 <Column title={locale.columnClusterCount} dataIndex="clusterCount" />
                 <Column title={locale.columnIpCount} dataIndex="ipCount" />
                 <Column
