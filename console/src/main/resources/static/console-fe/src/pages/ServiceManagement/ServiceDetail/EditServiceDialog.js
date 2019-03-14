@@ -35,7 +35,7 @@ class EditServiceDialog extends React.Component {
       isCreate: false,
       editService: {},
       editServiceDialogVisible: false,
-      errors: { name: {}, protectThreshold: {}, healthCheckMode: {} },
+      errors: { name: {}, protectThreshold: {} },
     };
     this.show = this.show.bind(this);
   }
@@ -59,7 +59,6 @@ class EditServiceDialog extends React.Component {
     const helpMap = {
       name: locale.serviceNameRequired,
       protectThreshold: locale.protectThresholdRequired,
-      healthCheckMode: locale.healthCheckModeRequired,
     };
     if (field.protectThreshold === 0) {
       field.protectThreshold = '0';
@@ -77,13 +76,14 @@ class EditServiceDialog extends React.Component {
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, healthCheckMode, metadataText = '', selector } = editService;
+    const { name, protectThreshold, groupName, metadataText = '', selector } = editService;
     if (!this.validator({ name, protectThreshold })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
       url: 'v1/ns/service',
       data: {
         serviceName: name,
+        groupName: groupName || 'DEFAULT_GROUP',
         protectThreshold,
         metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
         selector: JSON.stringify(selector),
@@ -108,7 +108,7 @@ class EditServiceDialog extends React.Component {
   }
 
   onChangeCluster(changeVal) {
-    const resetKey = ['name', 'protectThreshold', 'healthCheckMode'];
+    const resetKey = ['name', 'protectThreshold'];
     const { editService = {} } = this.state;
     const errors = Object.assign({}, this.state.errors);
     resetKey.forEach(key => {
@@ -133,7 +133,7 @@ class EditServiceDialog extends React.Component {
     const {
       name,
       protectThreshold,
-      healthCheckMode,
+      groupName,
       metadataText,
       selector = { type: 'none' },
     } = editService;
@@ -171,22 +171,14 @@ class EditServiceDialog extends React.Component {
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          {/* <Form.Item
-            required
-            {...formItemLayout}
-            label={`${locale.healthCheckPattern}:`}
-            {...errors.healthCheckMode}
-          >
-            <Select
-              className="full-width"
-              defaultValue={healthCheckMode}
-              onChange={healthCheckMode => this.onChangeCluster({ healthCheckMode })}
-            >
-              <Select.Option value="server">{locale.healthCheckPatternService}</Select.Option>
-              <Select.Option value="client">{locale.healthCheckPatternClient}</Select.Option>
-              <Select.Option value="none">{locale.healthCheckPatternNone}</Select.Option>
-            </Select>
-          </Form.Item> */}
+          <Form.Item {...formItemLayout} label={`${locale.groupName}:`}>
+            <Input
+              defaultValue={groupName}
+              placeholder="DEFAULT_GROUP"
+              readOnly={!isCreate}
+              onChange={groupName => this.onChangeCluster({ groupName })}
+            />
+          </Form.Item>
           <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
             <MonacoEditor
               language={'properties'}
