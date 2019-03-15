@@ -129,6 +129,7 @@ class EditClusterDialog extends React.Component {
             >
               <Select.Option value="TCP">TCP</Select.Option>
               <Select.Option value="HTTP">HTTP</Select.Option>
+              <Select.Option value="NONE">NONE</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item label={`${checkPort}:`}>
@@ -144,34 +145,22 @@ class EditClusterDialog extends React.Component {
               onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
             />
           </Form.Item>
-          {type === 'HTTP' ? (
-            <div>
-              <div className="next-row next-form-item next-left next-medium">
-                <div className="next-col next-col-fixed-12 next-form-item-label">
-                  <label>{`${checkPath}:`}</label>
-                </div>
-                <div className="next-col next-col-12 next-form-item-control">
-                  <Input
-                    className="in-text"
-                    value={path}
-                    onChange={path => healthCheckerChange({ path })}
-                  />
-                </div>
-              </div>
-              <div className="next-row next-form-item next-left next-medium">
-                <div className="next-col next-col-fixed-12 next-form-item-label">
-                  <label>{`${checkHeaders}:`}</label>
-                </div>
-                <div className="next-col next-col-12 next-form-item-control">
-                  <Input
-                    className="in-text"
-                    value={headers}
-                    onChange={headers => healthCheckerChange({ headers })}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
+          {type === 'HTTP' && [
+            <Form.Item label={`${checkPath}:`}>
+              <Input
+                className="in-text"
+                value={path}
+                onChange={path => healthCheckerChange({ path })}
+              />
+            </Form.Item>,
+            <Form.Item label={`${checkHeaders}:`}>
+              <Input
+                className="in-text"
+                value={headers}
+                onChange={headers => healthCheckerChange({ headers })}
+              />
+            </Form.Item>,
+          ]}
           <Form.Item label={`${locale.metadata}:`}>
             <MonacoEditor
               language={'properties'}

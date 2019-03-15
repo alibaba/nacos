@@ -113,6 +113,12 @@ class InstanceTable extends React.Component {
         <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
           <Table.Column width={138} title="IP" dataIndex="ip" />
           <Table.Column width={100} title={locale.port} dataIndex="port" />
+          <Table.Column
+            width={100}
+            title={locale.ephemeral}
+            dataIndex="ephemeral"
+            cell={val => `${val}`}
+          />
           <Table.Column width={100} title={locale.weight} dataIndex="weight" />
           <Table.Column
             width={100}
