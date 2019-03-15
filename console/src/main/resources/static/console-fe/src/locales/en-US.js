@@ -134,6 +134,7 @@ const I18N_CONF = {
     editor: 'Edit',
     offline: 'Offline',
     online: 'Online',
+    ephemeral: 'Ephemeral',
   },
   EditInstanceDialog: {
     port: 'Port',
