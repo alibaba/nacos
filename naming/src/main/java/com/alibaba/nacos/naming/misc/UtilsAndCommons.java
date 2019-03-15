@@ -20,7 +20,6 @@ import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
@@ -118,9 +117,9 @@ public class UtilsAndCommons {
 
     public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
 
-    public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
+    public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
 
-    public static final ScheduledExecutorService DOMAIN_UPDATE_EXECUTOR;
+    public static final ScheduledExecutorService SERVICE_UPDATE_EXECUTOR;
 
     public static final ScheduledExecutorService INIT_CONFIG_EXECUTOR;
 
@@ -146,7 +145,7 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteMapNullValue.getMask();
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
-        DOMAIN_SYNCHRONIZATION_EXECUTOR
+        SERVICE_SYNCHRONIZATION_EXECUTOR
             = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -157,7 +156,7 @@ public class UtilsAndCommons {
             }
         });
 
-        DOMAIN_UPDATE_EXECUTOR
+        SERVICE_UPDATE_EXECUTOR
             = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {

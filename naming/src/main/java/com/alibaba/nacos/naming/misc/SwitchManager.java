@@ -182,7 +182,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
             if (entry.equals(SwitchEntry.SERVICE_STATUS_SYNC_PERIOD)) {
                 Long millis = Long.parseLong(value);
 
-                if (millis < SwitchEntry.MIN_DOM_SYNC_TIME_MIILIS) {
+                if (millis < SwitchEntry.MIN_SERVICE_SYNC_TIME_MIILIS) {
                     throw new IllegalArgumentException("serviceStatusSynchronizationPeriodMillis is too small(<5000)");
                 }
 

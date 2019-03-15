@@ -82,9 +82,9 @@ public class ServiceManager implements RecordListener<Service> {
     @PostConstruct
     public void init() {
 
-        UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
+        UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(new ServiceReporter(), 60000, TimeUnit.MILLISECONDS);
 
-        UtilsAndCommons.DOMAIN_UPDATE_EXECUTOR.submit(new UpdatedServiceProcessor());
+        UtilsAndCommons.SERVICE_UPDATE_EXECUTOR.submit(new UpdatedServiceProcessor());
 
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
@@ -699,7 +699,7 @@ public class ServiceManager implements RecordListener<Service> {
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[DOMAIN-STATUS] Exception while sending service status", e);
             } finally {
-                UtilsAndCommons.DOMAIN_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
+                UtilsAndCommons.SERVICE_SYNCHRONIZATION_EXECUTOR.schedule(this, switchDomain.getServiceStatusSynchronizationPeriodMillis(), TimeUnit.MILLISECONDS);
             }
         }
     }
