@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
@@ -98,6 +99,10 @@ public class TaskDispatcher {
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
+                    if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
+                        Loggers.EPHEMERAL.debug("got key: {}", key);
+                    }
+
                     if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
                         continue;
                     }
@@ -121,6 +126,11 @@ public class TaskDispatcher {
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getKey());
+
+                            if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
+                                Loggers.EPHEMERAL.debug("add sync task: {}", JSON.toJSONString(syncTask));
+                            }
+
                             dataSyncer.submit(syncTask, 0);
                         }
                         lastDispatchTime = System.currentTimeMillis();
