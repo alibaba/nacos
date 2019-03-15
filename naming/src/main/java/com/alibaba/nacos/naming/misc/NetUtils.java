@@ -28,12 +28,16 @@ public class NetUtils {
     private static String serverAddress = null;
 
     public static String localServer() {
+        return getLocalAddress() + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+    }
+
+    public static String getLocalAddress() {
         if (StringUtils.isNotBlank(serverAddress)) {
-            return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            return serverAddress;
         }
 
         serverAddress = InetUtils.getSelfIp();
-        return serverAddress + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+        return serverAddress;
     }
 
     public static String num2ip(int ip) {

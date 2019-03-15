@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
 
@@ -53,6 +53,10 @@ public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
 
         if (StringUtils.equals(checkType, AbstractHealthChecker.Tcp.TYPE)) {
             return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.Tcp.class);
+        }
+
+        if (StringUtils.equals(checkType, AbstractHealthChecker.None.TYPE)) {
+            return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.None.class);
         }
 
         if (StringUtils.equals(checkType, AbstractHealthChecker.Mysql.TYPE)) {

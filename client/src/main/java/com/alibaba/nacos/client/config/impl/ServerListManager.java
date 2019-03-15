@@ -20,22 +20,15 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.utils.EnvUtil;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.*;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,6 +86,8 @@ public class ServerListManager {
     public ServerListManager(String endpoint, String namespace) throws NacosException {
         isFixed = false;
         isStarted = false;
+        endpoint = initEndpoint(endpoint);
+
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
         }
@@ -158,10 +153,8 @@ public class ServerListManager {
     }
 
     private void initParam(Properties properties) {
-        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        if (!StringUtils.isBlank(endpointTmp)) {
-            endpoint = endpointTmp;
-        }
+        endpoint = initEndpoint(properties.getProperty(PropertyKeyConst.ENDPOINT));
+
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
             contentPath = contentPathTmp;
@@ -170,6 +163,21 @@ public class ServerListManager {
         if (!StringUtils.isBlank(serverListNameTmp)) {
             serverListName = serverListNameTmp;
         }
+    }
+
+    private String initEndpoint(String endpointTmp) {
+        String endpointPortTmp = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+        if (StringUtils.isNotBlank(endpointPortTmp)) {
+            endpointPort = Integer.parseInt(endpointPortTmp);
+        }
+
+        return TemplateUtils.stringBlankAndThenExecute(endpointTmp, new Callable<String>() {
+            @Override
+            public String call() {
+                String endpointUrl = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+                return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+            }
+        });
     }
 
     public synchronized void start() throws NacosException {

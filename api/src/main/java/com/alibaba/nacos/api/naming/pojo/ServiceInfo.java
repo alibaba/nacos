@@ -16,6 +16,7 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -26,7 +27,7 @@ import java.util.List;
 /**
  * ServiceInfo
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public class ServiceInfo {
 
@@ -34,8 +35,9 @@ public class ServiceInfo {
     private String jsonFromServer = EMPTY;
     public static final String SPLITER = "@@";
 
-    @JSONField(name = "dom")
     private String name;
+
+    private String groupName;
 
     private String clusters;
 
@@ -67,7 +69,7 @@ public class ServiceInfo {
         int clusterIndex = 1;
         int serviceNameIndex = 0;
 
-        String[] keys = key.split(SPLITER);
+        String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
         if (keys.length >= maxIndex) {
             this.name = keys[serviceNameIndex];
             this.clusters = keys[clusterIndex];
@@ -103,6 +105,14 @@ public class ServiceInfo {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getGroupName() {
+        return groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public void setLastRefTime(long lastRefTime) {
@@ -178,13 +188,16 @@ public class ServiceInfo {
     @JSONField(serialize = false)
     public static ServiceInfo fromKey(String key) {
         ServiceInfo serviceInfo = new ServiceInfo();
-
-        if (key.contains(SPLITER)) {
-            serviceInfo.setName(key.split(SPLITER)[0]);
-            serviceInfo.setClusters(key.split(SPLITER)[1]);
-            return serviceInfo;
+        int maxSegCount = 3;
+        String[] segs = key.split(Constants.SERVICE_INFO_SPLITER);
+        if (segs.length == maxSegCount -1) {
+            serviceInfo.setGroupName(segs[0]);
+            serviceInfo.setName(segs[1]);
+        } else if (segs.length == maxSegCount) {
+            serviceInfo.setGroupName(segs[0]);
+            serviceInfo.setName(segs[1]);
+            serviceInfo.setClusters(segs[2]);
         }
-        serviceInfo.setName(key);
         return serviceInfo;
     }
 
@@ -192,7 +205,7 @@ public class ServiceInfo {
     public static String getKey(String name, String clusters) {
 
         if (!isEmpty(clusters)) {
-            return name + SPLITER + clusters;
+            return name + Constants.SERVICE_INFO_SPLITER + clusters;
         }
 
         return name;

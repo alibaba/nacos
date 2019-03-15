@@ -16,7 +16,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.9.0</version>
+        <version>1.0.0-RC1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -26,7 +26,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-client ${project.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/alibaba/nacos</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
