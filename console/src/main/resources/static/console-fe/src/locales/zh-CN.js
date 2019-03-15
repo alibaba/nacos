@@ -134,6 +134,7 @@ const I18N_CONF = {
     editor: '编辑',
     offline: '下线',
     online: '上线',
+    ephemeral: '临时实例',
   },
   EditInstanceDialog: {
     port: '端口',
