@@ -106,6 +106,7 @@ public class ClientBeatCheckTask implements Runnable {
             NamingProxy.Request request = NamingProxy.Request.newRequest();
             request.appendParam("ip", instance.getIp())
                 .appendParam("port", String.valueOf(instance.getPort()))
+                .appendParam("ephemeral", "true")
                 .appendParam("clusterName", instance.getClusterName())
                 .appendParam("serviceName", service.getName())
                 .appendParam("namespaceId", service.getNamespaceId());
