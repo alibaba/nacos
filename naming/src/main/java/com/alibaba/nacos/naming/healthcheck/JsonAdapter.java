@@ -55,6 +55,10 @@ public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
             return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.Tcp.class);
         }
 
+        if (StringUtils.equals(checkType, AbstractHealthChecker.None.TYPE)) {
+            return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.None.class);
+        }
+
         if (StringUtils.equals(checkType, AbstractHealthChecker.Mysql.TYPE)) {
             return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.Mysql.class);
         }
