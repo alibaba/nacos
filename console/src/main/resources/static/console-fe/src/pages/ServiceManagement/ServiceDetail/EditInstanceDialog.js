@@ -56,7 +56,7 @@ class EditInstanceDialog extends React.Component {
 
   onConfirm() {
     const { serviceName, clusterName, getInstanceList, openLoading, closeLoading } = this.props;
-    const { ip, port, weight, enabled, metadataText } = this.state.editInstance;
+    const { ip, port, ephemeral, weight, enabled, metadataText } = this.state.editInstance;
     request({
       method: 'PUT',
       url: 'v1/ns/instance',
@@ -65,6 +65,7 @@ class EditInstanceDialog extends React.Component {
         clusterName,
         ip,
         port,
+        ephemeral,
         weight,
         enable: enabled,
         metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
@@ -79,6 +80,7 @@ class EditInstanceDialog extends React.Component {
         this.hide();
         getInstanceList();
       },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => closeLoading(),
     });
   }
