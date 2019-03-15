@@ -24,7 +24,6 @@
 * [#327] Inform the ACM SDK of the RAM role name and access the configuration ? ?
 * [#269] need to support service group in naming module
 
-
 ## 0.9.0(Feb 28, 2019)
 
 * [#840] Nacos server adds startup mode to distinguish between config and naming.
