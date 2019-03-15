@@ -276,31 +276,31 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         if (!getHealthChecker().equals(cluster.getHealthChecker())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                cluster.getService().getName(), cluster.getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
+                getService().getName(), getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
             setHealthChecker(cluster.getHealthChecker());
         }
 
         if (defCkport != cluster.getDefCkport()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
-                cluster.getService().getName(), cluster.getName(), defCkport, cluster.getDefCkport());
+                getService().getName(), getName(), defCkport, cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
 
         if (defIPPort != cluster.getDefIPPort()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
-                cluster.getService().getName(), cluster.getName(), defIPPort, cluster.getDefIPPort());
+                getService().getName(), getName(), defIPPort, cluster.getDefIPPort());
             defIPPort = cluster.getDefIPPort();
         }
 
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
-                cluster.getService().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());
+                getService().getName(), getName(), sitegroup, cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
 
         if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}",
-                cluster.getService().getName(), cluster.getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
+                getService().getName(), getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
             setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
 
