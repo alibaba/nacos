@@ -47,6 +47,20 @@ public abstract class AbstractHealthChecker implements Cloneable {
      */
     public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
 
+    public static class None extends AbstractHealthChecker {
+
+        public static final String TYPE = "NONE";
+
+        public None() {
+            this.setType(TYPE);
+        }
+
+        @Override
+        public AbstractHealthChecker clone() throws CloneNotSupportedException {
+            return new None();
+        }
+    }
+
     public static class Http extends AbstractHealthChecker {
         public static final String TYPE = "HTTP";
 

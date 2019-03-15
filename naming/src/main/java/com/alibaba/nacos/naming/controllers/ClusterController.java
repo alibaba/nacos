@@ -87,6 +87,9 @@ public class ClusterController {
             case AbstractHealthChecker.Mysql.TYPE:
                 abstractHealthChecker = JSON.parseObject(healthChecker, AbstractHealthChecker.Mysql.class);
                 break;
+            case AbstractHealthChecker.None.TYPE:
+                abstractHealthChecker = JSON.parseObject(healthChecker, AbstractHealthChecker.None.class);
+                break;
             default:
                 throw new NacosException(NacosException.INVALID_PARAM, "unknown health check type:" + healthChecker);
         }

@@ -133,13 +133,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'valid':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                    Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
+                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
                 instance.setHealthy(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
 
             // determine 'cluster':
             if (!Boolean.TRUE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1]) &&
-                    !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
+                !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
                 instance.setClusterName(ipAddressAttributes[ipAddressAttributes.length - 1]);
             }
         }
@@ -149,7 +149,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         if (ipAddressAttributes.length > minimumLength) {
             // determine 'marked':
             if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                    Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
+                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
                 instance.setMarked(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
             }
         }
@@ -212,7 +212,8 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         Instance other = (Instance) obj;
 
         // 0 means wild
-        return getIp().equals(other.getIp()) && (getPort() == other.getPort() || getPort() == 0);
+        return getIp().equals(other.getIp()) && (getPort() == other.getPort() || getPort() == 0)
+            && this.isEphemeral() == other.isEphemeral();
     }
 
     @JSONField(serialize = false)
