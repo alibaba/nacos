@@ -154,7 +154,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     @Override
     public void onChange(String key, Instances value) throws Exception {
 
-        Loggers.RAFT.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
+        Loggers.SRV_LOG.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
         for (Instance ip : value.getInstanceList()) {
 
