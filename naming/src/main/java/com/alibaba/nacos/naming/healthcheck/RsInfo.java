@@ -36,6 +36,7 @@ public class RsInfo {
     private String ak;
     private String cluster;
     private double weight;
+    private boolean ephemeral = true;
     private Map<String, String> metadata;
 
     public String getServiceName() {
@@ -124,6 +125,14 @@ public class RsInfo {
 
     public void setWeight(double weight) {
         this.weight = weight;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
     }
 
     public Map<String, String> getMetadata() {

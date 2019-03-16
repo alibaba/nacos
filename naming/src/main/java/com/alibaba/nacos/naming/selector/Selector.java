@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.naming.core.IpAddress;
+import com.alibaba.nacos.naming.core.Instance;
 
 import java.util.List;
 
@@ -31,9 +31,10 @@ import java.util.List;
  * Every extended selector should also register its type to class SelectorType so Nacos
  * recognizes it and can correctly create this type of selector.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @see com.alibaba.nacos.api.selector.SelectorType
  * @see SelectorJsonAdapter
+ * @since 0.7.0
  */
 public interface Selector {
 
@@ -51,5 +52,5 @@ public interface Selector {
      * @param providers candidate provider addresses
      * @return selected provider addresses
      */
-    List<IpAddress> select(String consumer, List<IpAddress> providers);
+    List<Instance> select(String consumer, List<Instance> providers);
 }

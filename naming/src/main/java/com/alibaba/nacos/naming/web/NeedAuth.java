@@ -21,5 +21,6 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Innovated By: Xuanyin.zy
  */
-public @Retention(RetentionPolicy.RUNTIME) @interface NeedAuth {
+@Retention(RetentionPolicy.RUNTIME)
+public @interface NeedAuth {
 }

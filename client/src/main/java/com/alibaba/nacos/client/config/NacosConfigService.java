@@ -34,6 +34,7 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 /**
  * Config Impl
@@ -73,17 +75,31 @@ public class NacosConfigService implements ConfigService {
         } else {
             encode = encodeTmp.trim();
         }
-        String namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        if (StringUtils.isBlank(namespaceTmp)) {
-            namespace = TenantUtil.getUserTenant();
-            properties.put(PropertyKeyConst.NAMESPACE, namespace);
-        } else {
-            namespace = namespaceTmp;
-            properties.put(PropertyKeyConst.NAMESPACE, namespace);
-        }
+        initNamespace(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
         worker = new ClientWorker(agent, configFilterChainManager);
+    }
+
+    private void initNamespace(Properties properties) {
+        String namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+
+        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+            @Override
+            public String call() {
+                return TenantUtil.getUserTenant();
+            }
+        });
+
+        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+            @Override
+            public String call() {
+                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                return StringUtils.isNotBlank(namespace) ? namespace : "";
+            }
+        });
+        namespace = namespaceTmp;
+        properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
 
     @Override

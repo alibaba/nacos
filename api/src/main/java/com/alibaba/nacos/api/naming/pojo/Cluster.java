@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * Cluster
  *
- * @author dungu.zpf
+ * @author nkorange
  */
 public class Cluster {
 

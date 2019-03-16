@@ -15,26 +15,37 @@
  */
 package com.alibaba.nacos.naming.raft;
 
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
+import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mock;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class RaftStoreTest {
+
+    @Mock
+    public RaftCore raftCore;
+
+    @Mock
+    public RaftStore raftStore;
 
     @Test
     public void wrietDatum() throws Exception {
 
         Datum datum = new Datum();
         datum.key = "1.2.3.4";
-        datum.value = "value1";
+        datum.value = new Instances();
 
-        RaftStore.write(datum);
+        raftStore.write(datum);
 
-        RaftStore.load("1.2.3.4");
+        raftCore.loadDatum("1.2.3.4");
 
-        Datum result = RaftCore.getDatum("1.2.3.4");
+        Datum result = raftCore.getDatum("1.2.3.4");
 
         Assert.assertNotNull(result);
         Assert.assertEquals("value1", result.value);

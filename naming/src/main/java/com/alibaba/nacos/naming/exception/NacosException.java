@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.exception;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class NacosException extends Exception {
 

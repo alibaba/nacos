@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class ClusterTest {
 
@@ -33,12 +33,12 @@ public class ClusterTest {
     @Before
     public void before() {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.domain.1");
+        Service service = new Service();
+        service.setName("nacos.service.1");
 
         cluster = new Cluster();
         cluster.setName("nacos-cluster-1");
-        cluster.setDom(domain);
+        cluster.setService(service);
         cluster.setDefCkport(80);
         cluster.setDefIPPort(8080);
     }
@@ -56,10 +56,10 @@ public class ClusterTest {
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
         newCluster.setHealthChecker(healthCheckConfig);
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.domain.2");
+        Service service = new Service();
+        service.setName("nacos.service.2");
 
-        newCluster.setDom(domain);
+        newCluster.setService(service);
 
         cluster.update(newCluster);
 
@@ -75,21 +75,21 @@ public class ClusterTest {
     @Test
     public void updateIps() {
 
-        IpAddress ipAddress1 = new IpAddress();
-        ipAddress1.setIp("1.1.1.1");
-        ipAddress1.setPort(1234);
+        Instance instance1 = new Instance();
+        instance1.setIp("1.1.1.1");
+        instance1.setPort(1234);
 
-        IpAddress ipAddress2 = new IpAddress();
-        ipAddress2.setIp("1.1.1.1");
-        ipAddress2.setPort(2345);
+        Instance instance2 = new Instance();
+        instance2.setIp("1.1.1.1");
+        instance2.setPort(2345);
 
-        List<IpAddress> list = new ArrayList<IpAddress>();
-        list.add(ipAddress1);
-        list.add(ipAddress2);
+        List<Instance> list = new ArrayList<Instance>();
+        list.add(instance1);
+        list.add(instance2);
 
-        cluster.updateIPs(list);
+        cluster.updateIPs(list, false);
 
-        List<IpAddress> ips = cluster.allIPs();
+        List<Instance> ips = cluster.allIPs();
         Assert.assertNotNull(ips);
         Assert.assertEquals(2, ips.size());
         Assert.assertEquals("1.1.1.1", ips.get(0).getIp());

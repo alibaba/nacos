@@ -23,20 +23,20 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @ControllerAdvice
 public class ResponseExceptionHandler {
 
     @ExceptionHandler(NacosException.class)
     private ResponseEntity<String> handleNacosException(NacosException e) {
-        Loggers.SRV_LOG.error("got exception.", e);
+        Loggers.SRV_LOG.error("got exception. {}", e.getErrorMsg(), e);
         return ResponseEntity.status(e.getErrorCode()).body(e.getMessage());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleParameterError(IllegalArgumentException ex) {
-        Loggers.SRV_LOG.error("got exception.", ex);
+        Loggers.SRV_LOG.error("got exception. {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
@@ -48,7 +48,7 @@ public class ResponseExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    private ResponseEntity<String> handleNacosException(Exception e) {
+    private ResponseEntity<String> handleException(Exception e) {
         Loggers.SRV_LOG.error("got exception.", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
     }

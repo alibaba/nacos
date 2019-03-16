@@ -17,7 +17,7 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.naming.web.ApiCommands;
+import com.alibaba.nacos.naming.controllers.OperatorController;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +54,7 @@ public class HealthControllerTest {
     private PersistService persistService;
 
     @Mock
-    private ApiCommands apiCommands;
+    private OperatorController apiCommands;
 
     private MockMvc mockmvc;
 
@@ -75,14 +75,14 @@ public class HealthControllerTest {
         String url = "/v1/console/health/readiness";
 
         Mockito.when(persistService.configInfoCount(any(String.class))).thenReturn(0);
-        Mockito.when(apiCommands.hello(any(HttpServletRequest.class))).thenReturn(new JSONObject());
+        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenReturn(new JSONObject());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(url);
         Assert.assertEquals(200, mockmvc.perform(builder).andReturn().getResponse().getStatus());
 
         // Config and Naming are not in readiness
         Mockito.when(persistService.configInfoCount(any(String.class))).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
-        Mockito.when(apiCommands.hello(any(HttpServletRequest.class))).thenThrow(
+        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
         builder = MockMvcRequestBuilders.get(url);
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
@@ -92,14 +92,14 @@ public class HealthControllerTest {
         // Config is not in readiness
         Mockito.when(persistService.configInfoCount(any(String.class))).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
-        Mockito.when(apiCommands.hello(any(HttpServletRequest.class))).thenReturn(new JSONObject());
+        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenReturn(new JSONObject());
         response = mockmvc.perform(builder).andReturn().getResponse();
         Assert.assertEquals(500, response.getStatus());
         Assert.assertEquals("Config is not in readiness", response.getContentAsString());
 
         // Naming is not in readiness
         Mockito.when(persistService.configInfoCount(any(String.class))).thenReturn(0);
-        Mockito.when(apiCommands.hello(any(HttpServletRequest.class))).thenThrow(
+        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
         builder = MockMvcRequestBuilders.get(url);
         response = mockmvc.perform(builder).andReturn().getResponse();

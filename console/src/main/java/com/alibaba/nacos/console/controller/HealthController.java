@@ -16,7 +16,7 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.naming.web.ApiCommands;
+import com.alibaba.nacos.naming.controllers.OperatorController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,10 +38,10 @@ public class HealthController {
     private static final Logger logger = LoggerFactory.getLogger(HealthController.class);
 
     private final PersistService persistService;
-    private final ApiCommands apiCommands;
+    private final OperatorController apiCommands;
 
     @Autowired
-    public HealthController(PersistService persistService, ApiCommands apiCommands) {
+    public HealthController(PersistService persistService, OperatorController apiCommands) {
         this.persistService = persistService;
         this.apiCommands = apiCommands;
     }
@@ -98,7 +98,7 @@ public class HealthController {
 
     private boolean isNamingReadiness(HttpServletRequest request) {
         try {
-            apiCommands.hello(request);
+            apiCommands.metrics(request);
             return true;
         } catch (Exception e) {
             logger.error("Naming health check fail.", e);
