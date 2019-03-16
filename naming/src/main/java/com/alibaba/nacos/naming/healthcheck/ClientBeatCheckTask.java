@@ -22,10 +22,7 @@ import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.misc.HttpClient;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NamingProxy;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
@@ -57,6 +54,10 @@ public class ClientBeatCheckTask implements Runnable {
         return SpringContext.getAppContext().getBean(DistroMapper.class);
     }
 
+    public GlobalConfig getGlobalConfig() {
+        return SpringContext.getAppContext().getBean(GlobalConfig.class);
+    }
+
     public String taskKey() {
         return service.getName();
     }
@@ -83,6 +84,10 @@ public class ClientBeatCheckTask implements Runnable {
                         }
                     }
                 }
+            }
+
+            if (!getGlobalConfig().isExpireInstance()) {
+                return;
             }
 
             // then remove obsolete instances:
