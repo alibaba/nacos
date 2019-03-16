@@ -77,7 +77,7 @@ public class UtilsAndCommons {
 
     public static final String IPADDRESS_DATA_ID_PRE = "com.alibaba.nacos.naming.iplist.";
 
-    public static final String SWITCH_DOMAIN_NAME = "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
+    public static final String SWITCH_DOMAIN_NAME = "00-00---000-NACOS_SWITCH_DOMAIN-000---00-00";
 
     public static final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
 
