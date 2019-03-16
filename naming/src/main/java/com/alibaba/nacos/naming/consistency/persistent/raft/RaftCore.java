@@ -557,7 +557,7 @@ public class RaftCore {
                         }
                     });
                 } catch (Exception e) {
-                    Loggers.RAFT.error("VIPSRV error while sending heart-beat to peer: {} {}", server, e);
+                    Loggers.RAFT.error("error while sending heart-beat to peer: {} {}", server, e);
                     MetricsMonitor.getLeaderSendBeatFailedException().increment();
                 }
             }
