@@ -23,14 +23,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class IoUtils {
 
-    static public String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input, "UTF-8"))
-            : toString(new InputStreamReader(input, encoding));
+    static public String toString(InputStream input, String encoding) {
+
+        try {
+            return (null == encoding) ? toString(new InputStreamReader(input, "UTF-8"))
+                : toString(new InputStreamReader(input, encoding));
+        } catch (Exception e) {
+            NAMING_LOGGER.error("NA", "read input failed.", e);
+            return StringUtils.EMPTY;
+        }
     }
 
     static public String toString(Reader reader) throws IOException {
@@ -78,7 +86,7 @@ public class IoUtils {
     }
 
     static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
+        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
             reader);
     }
 

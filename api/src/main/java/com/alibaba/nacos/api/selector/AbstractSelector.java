@@ -18,7 +18,7 @@ package com.alibaba.nacos.api.selector;
 /**
  * Abstract selector that only contains a type
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 0.7.0
  */
 public abstract class AbstractSelector {

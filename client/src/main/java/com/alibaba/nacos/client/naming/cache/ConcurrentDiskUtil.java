@@ -29,7 +29,7 @@ import java.nio.charset.CharsetDecoder;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class ConcurrentDiskUtil {
 

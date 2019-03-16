@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.test.naming;
 
-import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
@@ -44,7 +43,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
 
     private NamingService naming;
@@ -54,9 +53,20 @@ public class RegisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
+
+        NamingBase.prepareServer(port);
+
         if (naming == null) {
             TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -93,16 +103,14 @@ public class RegisterInstance_ITCase {
     @Test
     public void regDomTest() throws Exception {
         String serviceName = randomDomainName();
-
-        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
-
         System.out.println(serviceName);
+        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
 
         TimeUnit.SECONDS.sleep(3);
 
         List<Instance> instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);

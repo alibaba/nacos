@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.After;
@@ -43,7 +44,7 @@ import java.net.URL;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
@@ -507,7 +508,7 @@ public class RestAPI_ITCase {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/reCalculateCheckSum4Dom",
                 Params.newParams()
-                        .appendParam(Constants.REQUEST_PARAM_NAMESPACE_ID, UtilsAndCommons.getDefaultNamespaceId())
+                        .appendParam(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);
@@ -698,7 +699,7 @@ public class RestAPI_ITCase {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("ok", response.getBody());
     }
-  
+
     private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
 
         HttpHeaders headers = new HttpHeaders();

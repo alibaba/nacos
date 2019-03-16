@@ -56,9 +56,17 @@ public class SelectInstances_ITCase {
 
     @Before
     public void init() throws Exception {
+        NamingBase.prepareServer(port);
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
