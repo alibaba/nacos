@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -299,10 +301,15 @@ public class ServiceController {
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.POST)
-    public String serviceStatus(HttpServletRequest request) {
+    public String serviceStatus(HttpServletRequest request) throws IOException {
+
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String value = URLDecoder.decode(entity, "UTF-8");
+        JSONObject json = JSON.parseObject(value);
+
         //format: service1@@checksum@@@service2@@checksum
-        String statuses = WebUtils.required(request, "statuses");
-        String serverIP = WebUtils.optional(request, "clientIP", "");
+        String statuses = json.getString("statuses");
+        String serverIP = json.getString("clientIP");
 
         if (!serverListManager.contains(serverIP)) {
             throw new IllegalArgumentException("ip: " + serverIP + " is not in serverlist");
