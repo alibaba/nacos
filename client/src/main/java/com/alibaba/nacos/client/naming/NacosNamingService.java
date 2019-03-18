@@ -283,16 +283,18 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
-        BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
-        beatInfo.setIp(instance.getIp());
-        beatInfo.setPort(instance.getPort());
-        beatInfo.setCluster(instance.getClusterName());
-        beatInfo.setWeight(instance.getWeight());
-        beatInfo.setMetadata(instance.getMetadata());
-        beatInfo.setScheduled(false);
+        if (instance.isEphemeral()) {
+            BeatInfo beatInfo = new BeatInfo();
+            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
+            beatInfo.setIp(instance.getIp());
+            beatInfo.setPort(instance.getPort());
+            beatInfo.setCluster(instance.getClusterName());
+            beatInfo.setWeight(instance.getWeight());
+            beatInfo.setMetadata(instance.getMetadata());
+            beatInfo.setScheduled(false);
 
-        beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+        }
 
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
