@@ -102,6 +102,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     private volatile Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
 
+    private volatile Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
+
     @PostConstruct
     public void init() throws Exception {
         GlobalExecutor.submit(new Runnable() {
@@ -190,6 +192,14 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     public void onReceiveChecksums(Map<String, String> checksumMap, String server) {
 
+        if (syncChecksumTasks.containsKey(server)) {
+            // Already in process of this server:
+            Loggers.EPHEMERAL.warn("sync checksum task already in process with {}", server);
+            return;
+        }
+
+        syncChecksumTasks.put(server, "1");
+
         List<String> toUpdateKeys = new ArrayList<>();
         List<String> toRemoveKeys = new ArrayList<>();
         for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
@@ -234,6 +244,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
         }
 
+        // Remove this 'in process' flag:
+        syncChecksumTasks.remove(server);
     }
 
     public boolean syncAllDataFromRemote(Server server) {
@@ -261,6 +273,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     // pretty sure the service not exist:
                     if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
                         // create empty service
+                        Loggers.EPHEMERAL.info("creating service {}", entry.getKey());
                         Service service = new Service();
                         String serviceName = KeyBuilder.getServiceName(entry.getKey());
                         String namespaceId = KeyBuilder.getNamespace(entry.getKey());
@@ -277,19 +290,24 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
 
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
-                dataStore.put(entry.getKey(), entry.getValue());
 
                 if (!listeners.containsKey(entry.getKey())) {
-                    Loggers.EPHEMERAL.warn("listener not found: {}", entry.getKey());
+                    // Should not happen:
+                    Loggers.EPHEMERAL.warn("listener of {} not found.", entry.getKey());
                     continue;
                 }
-                for (RecordListener listener : listeners.get(entry.getKey())) {
-                    try {
+
+                try {
+                    for (RecordListener listener : listeners.get(entry.getKey())) {
                         listener.onChange(entry.getKey(), entry.getValue().value);
-                    } catch (Exception e) {
-                        Loggers.EPHEMERAL.error("notify " + listener + ", key: " + entry.getKey() + " failed.", e);
                     }
+                } catch (Exception e) {
+                    Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while execute listener of key: {}", entry.getKey(), e);
+                    continue;
                 }
+
+                // Update data store if listener executed successfully:
+                dataStore.put(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -384,7 +402,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                                 continue;
                             }
                         } catch (Throwable e) {
-                            Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while notifying listener of key: {} {}", datumKey, e);
+                            Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while notifying listener of key: {}", datumKey, e);
                         }
                     }
 
