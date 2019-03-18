@@ -79,6 +79,8 @@ public class ServiceManager implements RecordListener<Service> {
     @Autowired
     private PushService pushService;
 
+    private final Object putServiceLock = new Object();
+
     @PostConstruct
     public void init() {
 
@@ -330,6 +332,7 @@ public class ServiceManager implements RecordListener<Service> {
     public void createEmptyService(String namespaceId, String serviceName) throws NacosException {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
+            Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
             service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
@@ -521,7 +524,11 @@ public class ServiceManager implements RecordListener<Service> {
 
     public void putService(Service service) {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
-            serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
+            synchronized (putServiceLock) {
+                if (!serviceMap.containsKey(service.getNamespaceId())) {
+                    serviceMap.put(service.getNamespaceId(), new ConcurrentHashMap<>(16));
+                }
+            }
         }
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }

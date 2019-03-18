@@ -18,8 +18,8 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -156,14 +156,19 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         Loggers.SRV_LOG.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        for (Instance ip : value.getInstanceList()) {
+        for (Instance instance : value.getInstanceList()) {
 
-            if (ip.getWeight() > 10000.0D) {
-                ip.setWeight(10000.0D);
+            if (instance == null) {
+                // Reject this abnormal instance list:
+                throw new RuntimeException("got null instance " + key);
             }
 
-            if (ip.getWeight() < 0.01D && ip.getWeight() > 0.0D) {
-                ip.setWeight(0.01D);
+            if (instance.getWeight() > 10000.0D) {
+                instance.setWeight(10000.0D);
+            }
+
+            if (instance.getWeight() < 0.01D && instance.getWeight() > 0.0D) {
+                instance.setWeight(0.01D);
             }
         }
 

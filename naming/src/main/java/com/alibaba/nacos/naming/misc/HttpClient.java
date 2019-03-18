@@ -27,6 +27,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
@@ -313,6 +316,35 @@ public class HttpClient {
         }
     }
 
+    public static HttpResult httpGetLarge(String url, Map<String, String> headers, String content) {
+
+        try {
+            HttpClientBuilder builder = HttpClients.custom();
+            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+
+            CloseableHttpClient httpClient = builder.build();
+            HttpGetWithEntity httpGetWithEntity = new HttpGetWithEntity();
+            httpGetWithEntity.setURI(new URI(url));
+
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpGetWithEntity.setHeader(entry.getKey(), entry.getValue());
+            }
+
+            httpGetWithEntity.setEntity(new StringEntity(content, ContentType.create("application/json", "UTF-8")));
+            HttpResponse response = httpClient.execute(httpGetWithEntity);
+            HttpEntity entity = response.getEntity();
+
+            HeaderElement[] headerElements = entity.getContentType().getElements();
+            String charset = headerElements[0].getParameterByName("charset").getValue();
+
+            return new HttpResult(response.getStatusLine().getStatusCode(),
+                IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+        } catch (Exception e) {
+            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
+        }
+    }
+
     public static HttpResult httpPostLarge(String url, Map<String, String> headers, String content) {
         try {
             HttpClientBuilder builder = HttpClients.custom();
@@ -440,6 +472,16 @@ public class HttpClient {
 
         public String getHeader(String name) {
             return respHeaders.get(name);
+        }
+    }
+
+    public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
+
+        public final static String METHOD_NAME = "GET";
+
+        @Override
+        public String getMethod() {
+            return METHOD_NAME;
         }
     }
 }
