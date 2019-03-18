@@ -125,7 +125,19 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
-        serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
+        String agent = request.getHeader("Client-Version");
+        if (StringUtils.isBlank(agent)) {
+            agent = request.getHeader("User-Agent");
+        }
+
+        ClientInfo clientInfo = new ClientInfo(agent);
+
+        if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) < 0) {
+            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
+        } else {
+            serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
+        }
         return "ok";
     }
 
