@@ -107,15 +107,6 @@ public class ServiceController {
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
-        }
-
-        if (!service.allIPs().isEmpty()) {
-            throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
-        }
-
         serviceManager.easyRemoveService(namespaceId, serviceName);
 
         return "ok";

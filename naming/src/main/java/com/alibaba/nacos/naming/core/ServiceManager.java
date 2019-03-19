@@ -322,6 +322,16 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public void easyRemoveService(String namespaceId, String serviceName) throws Exception {
+
+        Service service = getService(namespaceId, serviceName);
+        if (service == null) {
+            throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
+        }
+
+        if (!service.allIPs().isEmpty()) {
+            throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
+        }
+
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
     }
 
