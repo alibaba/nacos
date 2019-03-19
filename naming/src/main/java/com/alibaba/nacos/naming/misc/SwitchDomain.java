@@ -139,9 +139,8 @@ public class SwitchDomain implements Record, Cloneable {
     // the followings are not implemented
 
     public String getName() {
-        return "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
+        return UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
-
 
     public void update(SwitchDomain domain) {
 

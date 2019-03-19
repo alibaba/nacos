@@ -112,7 +112,7 @@ public class HttpClient {
 
             return getResult(conn);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[VIPSRV] Exception while request: {}, caused: {}", url, e);
+            Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {
             if (conn != null) {
