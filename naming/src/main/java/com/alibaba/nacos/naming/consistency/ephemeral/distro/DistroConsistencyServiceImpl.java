@@ -271,7 +271,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                 if (!listeners.containsKey(entry.getKey())) {
                     // pretty sure the service not exist:
-                    if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+                    if (switchDomain.isDefaultInstanceEphemeral()) {
                         // create empty service
                         Loggers.EPHEMERAL.info("creating service {}", entry.getKey());
                         Service service = new Service();
