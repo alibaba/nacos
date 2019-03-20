@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -335,13 +334,14 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.remove(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName));
     }
 
-    public void addOrReplaceService(Service service) throws Exception {
+    public void addOrReplaceService(Service service) throws NacosException {
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
     }
 
-    public void createEmptyService(String namespaceId, String serviceName) throws NacosException {
+    public void createEmptyService(String namespaceId, String serviceName, boolean local) throws NacosException {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
+
             Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
             service = new Service();
             service.setName(serviceName);
@@ -351,10 +351,14 @@ public class ServiceManager implements RecordListener<Service> {
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
             service.validate();
-            putService(service);
-            service.init();
-            consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
-            consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
+            if (local) {
+                putService(service);
+                service.init();
+                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
+                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
+            } else {
+                addOrReplaceService(service);
+            }
         }
     }
 
@@ -370,9 +374,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
-        if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
-            createEmptyService(namespaceId, serviceName);
-        }
+        createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
         Service service = getService(namespaceId, serviceName);
 

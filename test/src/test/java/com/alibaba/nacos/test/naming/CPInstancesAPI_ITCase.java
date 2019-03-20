@@ -79,8 +79,6 @@ public class CPInstancesAPI_ITCase {
     public void setUp() throws Exception {
         String url = String.format("http://localhost:%d/", port);
         this.base = new URL(url);
-        NamingBase.prepareServer(port, "UP", "CP");
-        TimeUnit.SECONDS.sleep(5L);
 
         naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
 
