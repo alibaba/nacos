@@ -42,6 +42,9 @@ public class GlobalConfig {
     @Value("${nacos.naming.data.warmup}")
     private boolean dataWarmup = false;
 
+    @Value("${nacos.naming.expireInstance}")
+    private boolean expireInstance = true;
+
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
     }
@@ -60,5 +63,9 @@ public class GlobalConfig {
 
     public boolean isDataWarmup() {
         return dataWarmup;
+    }
+
+    public boolean isExpireInstance() {
+        return expireInstance;
     }
 }
