@@ -89,7 +89,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     private String overriddenServerStatus = null;
 
-    private String serverMode = "MIXED";
+    private String serverMode = "AP";
 
     public boolean isEnableAuthentication() {
         return enableAuthentication;
