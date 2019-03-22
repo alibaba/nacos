@@ -116,13 +116,13 @@ echo "$JAVA ${JAVA_OPT}"
 
 if [[ "${MODE}" == "standalone" ]]; then
     echo "nacos is starting"
-    $JAVA ${JAVA_OPT}
+    $JAVA ${JAVA_OPT} nacos.nacos
 else
     if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
         touch "${BASE_DIR}/logs/start.out"
     fi
 
     echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
-    nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/start.out 2>&1 &
+    nohup $JAVA ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
     echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
 fi
