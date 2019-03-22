@@ -63,7 +63,7 @@ public class RaftStore {
                     datum = readDatum(datumFile, cache.getName());
                     if (datum != null) {
                         datums.put(datum.key, datum);
-                        notifier.addTask(datum, ApplyAction.CHANGE);
+                        notifier.addTask(datum.key, ApplyAction.CHANGE);
                     }
                 }
                 continue;
