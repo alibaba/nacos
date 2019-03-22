@@ -55,9 +55,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
 
     @JSONField(serialize = false)
-    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
-
-    @JSONField(serialize = false)
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     private String token;
@@ -104,6 +101,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void processClientBeat(final RsInfo rsInfo) {
+        ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
         clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
         HealthCheckReactor.scheduleNow(clientBeatProcessor);
