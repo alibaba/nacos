@@ -66,24 +66,6 @@ public class TrafficReviseFilter implements Filter {
             }
         }
 
-        // in AP mode, service and cluster cannot be edited:
-        try {
-            String path = new URI(req.getRequestURI()).getPath();
-            if (ServerMode.AP.name().equals(switchDomain.getServerMode()) && !HttpMethod.GET.equals(req.getMethod())) {
-                if (path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_SERVICE_CONTEXT)
-                    || path.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)) {
-                    resp.getWriter().write("server in AP mode, request: " + req.getMethod() + " " + path + " not permitted");
-                    resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    return;
-                }
-            }
-
-        } catch (URISyntaxException e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                "Server parse url failed," + UtilsAndCommons.getAllExceptionMsg(e));
-            return;
-        }
-
         // if server is UP:
         if (serverStatusManager.getServerStatus() == ServerStatus.UP) {
             filterChain.doFilter(req, resp);
