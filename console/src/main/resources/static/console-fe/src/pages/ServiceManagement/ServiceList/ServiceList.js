@@ -104,7 +104,7 @@ class ServiceList extends React.Component {
     setTimeout(() => this.queryServiceList());
   };
 
-  deleteService(serviceName) {
+  deleteService(service) {
     const { locale = {} } = this.props;
     const { prompt, promptDelete } = locale;
     Dialog.confirm({
@@ -113,7 +113,7 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `v1/ns/service?serviceName=${serviceName}`,
+          url: `v1/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {
@@ -241,7 +241,7 @@ class ServiceList extends React.Component {
                       <Button
                         style={{ marginLeft: 12 }}
                         type="normal"
-                        onClick={() => this.deleteService(record.name)}
+                        onClick={() => this.deleteService(record)}
                       >
                         {deleteAction}
                       </Button>
