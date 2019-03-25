@@ -241,7 +241,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
+            getNamespaceId(), getName(), stringBuilder.toString());
 
     }
 
@@ -285,7 +286,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster + ", service:" + getName());
+                continue;
             }
 
             allIPs.addAll(clusterObj.allIPs());
