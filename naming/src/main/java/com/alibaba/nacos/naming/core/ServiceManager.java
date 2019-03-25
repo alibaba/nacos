@@ -253,7 +253,8 @@ public class ServiceManager implements RecordListener<Service> {
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", service.getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
+            service.getNamespaceId(), service.getName(), stringBuilder.toString());
 
     }
 
