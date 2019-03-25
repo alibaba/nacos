@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
+import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -116,7 +117,6 @@ public class ApiController extends InstanceController {
     @ResponseBody
     public JSONObject srvIPXT(HttpServletRequest request) throws Exception {
 
-
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
 
@@ -136,5 +136,13 @@ public class ApiController extends InstanceController {
 
         return doSrvIPXT(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP),
             agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+    }
+
+    @RequestMapping("/clientBeat")
+    public JSONObject clientBeat(HttpServletRequest request) throws Exception {
+        OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
+        requestWrapper.addParameter(CommonParams.SERVICE_NAME,
+            Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));
+        return beat(requestWrapper);
     }
 }
