@@ -55,9 +55,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
 
     @JSONField(serialize = false)
-    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
-
-    @JSONField(serialize = false)
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
 
     private String token;
@@ -104,6 +101,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void processClientBeat(final RsInfo rsInfo) {
+        ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
         clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
         HealthCheckReactor.scheduleNow(clientBeatProcessor);
@@ -248,7 +246,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
+            getNamespaceId(), getName(), stringBuilder.toString());
 
     }
 
@@ -292,7 +291,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster + ", service:" + getName());
+                continue;
             }
 
             allIPs.addAll(clusterObj.allIPs());

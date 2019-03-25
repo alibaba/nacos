@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
