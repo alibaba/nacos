@@ -353,6 +353,8 @@ public class RaftCore {
             raftStore.updateTerm(local.term.get());
         }
 
+        Loggers.RAFT.info("data removed, key={}, term={}", datum.key, local.term);
+
     }
 
     public class MasterElection implements Runnable {
