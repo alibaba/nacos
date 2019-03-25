@@ -285,7 +285,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster + ", service:" + getName());
+                continue;
             }
 
             allIPs.addAll(clusterObj.allIPs());
