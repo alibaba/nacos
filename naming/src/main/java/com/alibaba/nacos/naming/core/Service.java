@@ -241,7 +241,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
+            getNamespaceId(), getName(), stringBuilder.toString());
 
     }
 
