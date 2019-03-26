@@ -481,6 +481,7 @@ public class ServiceManager implements RecordListener<Service> {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
                 Cluster cluster = new Cluster(instance.getClusterName());
                 cluster.setService(service);
+                cluster.init();
                 service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                     instance.getClusterName(), instance.toJSON());
