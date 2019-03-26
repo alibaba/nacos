@@ -100,9 +100,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     public volatile Notifier notifier = new Notifier();
 
-    private volatile Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
+    private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
 
-    private volatile Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
+    private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
 
     @PostConstruct
     public void init() throws Exception {
@@ -200,52 +200,56 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
         syncChecksumTasks.put(server, "1");
 
-        List<String> toUpdateKeys = new ArrayList<>();
-        List<String> toRemoveKeys = new ArrayList<>();
-        for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
-            if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
-                // this key should not be sent from remote server:
-                Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
-                // abort the procedure:
+        try {
+
+            List<String> toUpdateKeys = new ArrayList<>();
+            List<String> toRemoveKeys = new ArrayList<>();
+            for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
+                if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
+                    // this key should not be sent from remote server:
+                    Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
+                    // abort the procedure:
+                    return;
+                }
+                if (!dataStore.contains(entry.getKey()) ||
+                    dataStore.get(entry.getKey()).value == null ||
+                    !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
+                    toUpdateKeys.add(entry.getKey());
+                }
+            }
+
+            for (String key : dataStore.keys()) {
+
+                if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
+                    continue;
+                }
+
+                if (!checksumMap.containsKey(key)) {
+                    toRemoveKeys.add(key);
+                }
+            }
+
+            Loggers.EPHEMERAL.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
+
+            for (String key : toRemoveKeys) {
+                onRemove(key);
+            }
+
+            if (toUpdateKeys.isEmpty()) {
                 return;
             }
-            if (!dataStore.contains(entry.getKey()) ||
-                dataStore.get(entry.getKey()).value == null ||
-                !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
-                toUpdateKeys.add(entry.getKey());
+
+            try {
+                byte[] result = NamingProxy.getData(toUpdateKeys, server);
+                processData(result);
+            } catch (Exception e) {
+                Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
             }
+        } finally {
+            // Remove this 'in process' flag:
+            syncChecksumTasks.remove(server);
         }
 
-        for (String key : dataStore.keys()) {
-
-            if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
-                continue;
-            }
-
-            if (!checksumMap.containsKey(key)) {
-                toRemoveKeys.add(key);
-            }
-        }
-
-        Loggers.EPHEMERAL.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
-
-        for (String key : toRemoveKeys) {
-            onRemove(key);
-        }
-
-        if (toUpdateKeys.isEmpty()) {
-            return;
-        }
-
-        try {
-            byte[] result = NamingProxy.getData(toUpdateKeys, server);
-            processData(result);
-        } catch (Exception e) {
-            Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
-        }
-
-        // Remove this 'in process' flag:
-        syncChecksumTasks.remove(server);
     }
 
     public boolean syncAllDataFromRemote(Server server) {

@@ -316,8 +316,18 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
-        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), ip, port);
-        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), ip, port, clusterName);
+        Instance instance = new Instance();
+        instance.setIp(ip);
+        instance.setPort(port);
+        instance.setClusterName(clusterName);
+
+        deregisterInstance(serviceName, groupName, instance);
+    }
+
+    @Override
+    public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
+        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 
     @Override
