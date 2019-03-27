@@ -32,6 +32,8 @@ public class PropertyKeyConst {
 
     public final static String SECRET_KEY = "secretKey";
 
+    public final static String RAM_ROLE_NAME = "ramRoleName";
+
     public final static String SERVER_ADDR = "serverAddr";
 
     public final static String CONTEXT_PATH = "contextPath";
