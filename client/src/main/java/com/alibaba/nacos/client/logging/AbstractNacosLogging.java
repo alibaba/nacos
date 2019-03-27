@@ -28,6 +28,16 @@ public abstract class AbstractNacosLogging {
 
     private static final String NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY = "nacos.logging.default.config.enabled";
 
+    private static final String NACOS_LOGGING_PATH_PROPERTY = "nacos.logging.path";
+
+    static {
+        String loggingPath = System.getProperty(NACOS_LOGGING_PATH_PROPERTY);
+        if (StringUtils.isBlank(loggingPath)) {
+            String userHome = System.getProperty("user.home");
+            System.setProperty(NACOS_LOGGING_PATH_PROPERTY, userHome + "/logs/nacos");
+        }
+    }
+
     protected String getLocation(String defaultLocation) {
         String location = System.getProperty(NACOS_LOGGING_CONFIG_PROPERTY);
         if (StringUtils.isBlank(location)) {

@@ -78,7 +78,7 @@ public class InetUtils {
             preferHostnameOverIp = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
 
             if (!preferHostnameOverIp) {
-                preferHostnameOverIp = Boolean.parseBoolean(PREFER_HOSTNAME_OVER_IP);
+                preferHostnameOverIp = Boolean.parseBoolean(PropertyUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
             }
 
             if (preferHostnameOverIp) {

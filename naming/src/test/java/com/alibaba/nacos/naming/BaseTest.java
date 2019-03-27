@@ -15,26 +15,29 @@
  */
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
-import com.alibaba.nacos.naming.raft.PeerSet;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import com.alibaba.nacos.naming.raft.RaftPeer;
 import org.junit.Before;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class BaseTest {
 
     @Mock
-    public DomainsManager domainsManager;
+    public ServiceManager serviceManager;
 
     @Mock
-    public PeerSet peerSet;
+    public RaftPeerSet peerSet;
+
+    @Mock
+    public RaftCore raftCore;
 
     @Before
     public void before() {
@@ -42,7 +45,7 @@ public class BaseTest {
 
         RaftPeer peer = new RaftPeer();
         peer.ip = NetUtils.localServer();
-        RaftCore.setPeerSet(peerSet);
+        raftCore.setPeerSet(peerSet);
         Mockito.when(peerSet.local()).thenReturn(peer);
         Mockito.when(peerSet.getLeader()).thenReturn(peer);
         Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);

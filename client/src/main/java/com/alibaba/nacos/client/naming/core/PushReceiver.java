@@ -77,7 +77,7 @@ public class PushReceiver implements Runnable {
 
                 PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
                 String ack;
-                if ("dom".equals(pushPacket.type)) {
+                if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
                     hostReactor.processServiceJSON(pushPacket.data);
 
                     // send ack to server

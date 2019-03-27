@@ -15,11 +15,12 @@
  */
 package com.alibaba.nacos.naming.monitor;
 
-import com.alibaba.nacos.naming.core.DomainsManager;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
-import com.alibaba.nacos.naming.raft.RaftCore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -31,16 +32,24 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.naming.raft.RaftPeer.State.FOLLOWER;
-
 /**
  * @author nacos
  */
+
 @Component
 public class PerformanceLoggerThread {
 
     @Autowired
-    private DomainsManager domainsManager;
+    private ServiceManager serviceManager;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private PushService pushService;
+
+    @Autowired
+    private RaftCore raftCore;
 
     private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override
@@ -61,7 +70,7 @@ public class PerformanceLoggerThread {
     }
 
     private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", Switch.isHealthCheckEnabled());
+        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", switchDomain.isHealthCheckEnabled());
     }
 
     class HealthCheckSwitchTask implements Runnable {
@@ -85,8 +94,8 @@ public class PerformanceLoggerThread {
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void refreshMetrics() {
-        PushService.setFailedPush(0);
-        PushService.setTotalPush(0);
+        pushService.setFailedPush(0);
+        pushService.setTotalPush(0);
         MetricsMonitor.getHttpHealthCheckMonitor().set(0);
         MetricsMonitor.getMysqlHealthCheckMonitor().set(0);
         MetricsMonitor.getTcpHealthCheckMonitor().set(0);
@@ -94,10 +103,10 @@ public class PerformanceLoggerThread {
 
     @Scheduled(cron = "0/15 * * * * ?")
     public void collectmetrics() {
-        int domCount = domainsManager.getDomCount();
-        MetricsMonitor.getDomCountMonitor().set(domCount);
+        int serviceCount = serviceManager.getServiceCount();
+        MetricsMonitor.getDomCountMonitor().set(serviceCount);
 
-        int ipCount = domainsManager.getInstanceCount();
+        int ipCount = serviceManager.getInstanceCount();
         MetricsMonitor.getIpCountMonitor().set(ipCount);
 
         long maxPushCost = getMaxPushCost();
@@ -106,12 +115,12 @@ public class PerformanceLoggerThread {
         long avgPushCost = getAvgPushCost();
         MetricsMonitor.getAvgPushCostMonitor().set(avgPushCost);
 
-        MetricsMonitor.getTotalPushMonitor().set(PushService.getTotalPush());
-        MetricsMonitor.getFailedPushMonitor().set(PushService.getFailedPushCount());
+        MetricsMonitor.getTotalPushMonitor().set(pushService.getTotalPush());
+        MetricsMonitor.getFailedPushMonitor().set(pushService.getFailedPushCount());
 
-        if (RaftCore.isLeader()) {
+        if (raftCore.isLeader()) {
             MetricsMonitor.getLeaderStatusMonitor().set(1);
-        } else if (RaftCore.getPeerSet().local().state == FOLLOWER) {
+        } else if (raftCore.getPeerSet().local().state == RaftPeer.State.FOLLOWER) {
             MetricsMonitor.getLeaderStatusMonitor().set(0);
         } else {
             MetricsMonitor.getLeaderStatusMonitor().set(2);
@@ -123,12 +132,13 @@ public class PerformanceLoggerThread {
         @Override
         public void run() {
             try {
-                int domCount = domainsManager.getDomCount();
-                int ipCount = domainsManager.getInstanceCount();
+                int serviceCount = serviceManager.getServiceCount();
+                int ipCount = serviceManager.getInstanceCount();
+                long maxPushMaxCost = getMaxPushCost();
                 long maxPushCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
 
-                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + domCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
+                Loggers.PERFORMANCE_LOG.info("PERFORMANCE:" + "|" + serviceCount + "|" + ipCount + "|" + maxPushCost + "|" + avgPushCost);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("[PERFORMANCE] Exception while print performance log.", e);
             }

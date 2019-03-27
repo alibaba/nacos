@@ -24,6 +24,8 @@ public class PropertyKeyConst {
 
     public final static String ENDPOINT = "endpoint";
 
+    public final static String ENDPOINT_PORT = "endpointPort";
+
     public final static String NAMESPACE = "namespace";
 
     public final static String ACCESS_KEY = "accessKey";
@@ -39,7 +41,17 @@ public class PropertyKeyConst {
     public final static String ENCODE = "encode";
 
     public final static String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
+
     public final static String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
+
     public final static String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
 
+    public static class SystemEnv {
+
+        public static final String ALIBABA_ALIWARE_ENDPOINT_PORT = "ALIBABA_ALIWARE_ENDPOINT_PORT";
+
+        public static final String ALIBABA_ALIWARE_NAMESPACE = "ALIBABA_ALIWARE_NAMESPACE";
+
+        public static final String ALIBABA_ALIWARE_ENDPOINT_URL = "ALIBABA_ALIWARE_ENDPOINT_URL";
+    }
 }

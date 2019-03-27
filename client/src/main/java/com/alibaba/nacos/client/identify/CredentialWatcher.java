@@ -19,11 +19,7 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 import org.slf4j.Logger;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.Properties;
 import java.util.Timer;
@@ -144,6 +140,7 @@ public class CredentialWatcher {
 
         String accessKey = null;
         String secretKey = null;
+        String tenantId = null;
         if (propertiesIS == null) {
             propertyPath = null;
             accessKey = System.getenv(Constants.ENV_ACCESS_KEY);
@@ -183,12 +180,19 @@ public class CredentialWatcher {
                 if (properties.containsKey(Constants.SECRET_KEY)) {
                     secretKey = properties.getProperty(Constants.SECRET_KEY);
                 }
+                if (properties.containsKey(Constants.TENANT_ID)) {
+                    tenantId = properties.getProperty(Constants.TENANT_ID);
+                }
             } else {
                 if (properties.containsKey(Constants.DOCKER_ACCESS_KEY)) {
                     accessKey = properties.getProperty(Constants.DOCKER_ACCESS_KEY);
                 }
                 if (properties.containsKey(Constants.DOCKER_SECRET_KEY)) {
                     secretKey = properties.getProperty(Constants.DOCKER_SECRET_KEY);
+                }
+
+                if (properties.containsKey(Constants.DOCKER_TENANT_ID)) {
+                    tenantId = properties.getProperty(Constants.DOCKER_TENANT_ID);
                 }
             }
         }
@@ -200,7 +204,11 @@ public class CredentialWatcher {
             secretKey = secretKey.trim();
         }
 
-        Credentials credential = new Credentials(accessKey, secretKey);
+        if (tenantId != null) {
+            tenantId = tenantId.trim();
+        }
+
+        Credentials credential = new Credentials(accessKey, secretKey, tenantId);
         if (!credential.valid()) {
             SpasLogger.warn("[1] Credential file missing required property {} Credential file missing {} or {}",
                 appName, Constants.ACCESS_KEY, Constants.SECRET_KEY);

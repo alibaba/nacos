@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class NamingTest {
 

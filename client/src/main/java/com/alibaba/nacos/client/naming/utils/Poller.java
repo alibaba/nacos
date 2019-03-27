@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.naming.utils;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public interface Poller<T> {
     /**
