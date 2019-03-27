@@ -1,12 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,8 +32,8 @@ import java.io.IOException;
 import static org.springframework.core.io.support.ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX;
 
 /**
- * A lowest precedence {@link EnvironmentPostProcessor} implementation to append
- * Nacos default {@link PropertySource} with lowest order in {@link Environment}
+ * A lowest precedence {@link EnvironmentPostProcessor} implementation to append Nacos default {@link PropertySource}
+ * with lowest order in {@link Environment}
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
@@ -51,7 +50,8 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
      *
      * @see ResourcePatternResolver#CLASSPATH_ALL_URL_PREFIX
      */
-    public static final String RESOURCE_LOCATION_PATTERN = CLASSPATH_ALL_URL_PREFIX + "META-INF/nacos-default.properties";
+    public static final String RESOURCE_LOCATION_PATTERN = CLASSPATH_ALL_URL_PREFIX
+        + "META-INF/nacos-default.properties";
 
     private static final String FILE_ENCODING = "UTF-8";
 
@@ -93,7 +93,8 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
         return propertySource;
     }
 
-    private void appendPropertySource(CompositePropertySource propertySource, ResourceLoader resourceLoader) throws IOException {
+    private void appendPropertySource(CompositePropertySource propertySource, ResourceLoader resourceLoader)
+        throws IOException {
         ResourcePatternResolver resourcePatternResolver = new PathMatchingResourcePatternResolver(resourceLoader);
         Resource[] resources = resourcePatternResolver.getResources(RESOURCE_LOCATION_PATTERN);
         for (Resource resource : resources) {
@@ -101,7 +102,7 @@ public class NacosDefaultPropertySourceEnvironmentPostProcessor implements Envir
             if (resource.exists()) {
                 String internalName = String.valueOf(resource.getURL());
                 propertySource.addPropertySource(new ResourcePropertySource(internalName,
-                        new EncodedResource(resource, FILE_ENCODING)));
+                    new EncodedResource(resource, FILE_ENCODING)));
             }
         }
     }

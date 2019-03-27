@@ -15,23 +15,43 @@
  */
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.security.AccessControlException;
+import java.util.*;
 
 /**
  * @author nacos
  */
 public class DistroFilter implements Filter {
+
+    private static final int PROXY_CONNECT_TIMEOUT = 2000;
+    private static final int PROXY_READ_TIMEOUT = 2000;
+
+    @Autowired
+    private DistroMapper distroMapper;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private FilterBase filterBase;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -44,68 +64,70 @@ public class DistroFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
         String urlString = req.getRequestURI() + "?" + req.getQueryString();
-        Map<String, Integer> limitedUrlMap = Switch.getLimitedUrlMap();
 
-        if (limitedUrlMap != null && limitedUrlMap.size() > 0) {
-            for (Map.Entry<String, Integer> entry : limitedUrlMap.entrySet()) {
-                String limitedUrl = entry.getKey();
-                if (StringUtils.startsWith(urlString, limitedUrl)) {
-                    resp.setStatus(entry.getValue());
-                    return;
-                }
+        try {
+            String path = new URI(req.getRequestURI()).getPath();
+            String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            Method method = filterBase.getMethod(req.getMethod(), path);
+
+            if (method == null) {
+                throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
-        }
 
-        if (!Switch.isDistroEnabled()) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
+            String groupName = req.getParameter(CommonParams.GROUP_NAME);
+            if (StringUtils.isBlank(groupName)) {
+                groupName = Constants.DEFAULT_GROUP;
+            }
 
-        if (!canDistro(urlString)) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
+            // use groupName@@serviceName as new service name:
+            String groupedServiceName = serviceName;
+            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+                groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+            }
 
-        String redirect = req.getParameter("redirect");
-        String dom = req.getParameter("domainString");
-        String targetIP = req.getParameter("targetIP");
-        if (StringUtils.isEmpty(dom)) {
-            dom = req.getParameter("dom");
-        }
+            // proxy request to other server if necessary:
+            if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
 
-        if (StringUtils.isEmpty(dom)) {
-            filterChain.doFilter(req, resp);
-            return;
-        }
+                List<String> headerList = new ArrayList<>(16);
+                Enumeration<String> headers = req.getHeaderNames();
+                while (headers.hasMoreElements()) {
+                    String headerName = headers.nextElement();
+                    headerList.add(headerName);
+                    headerList.add(req.getHeader(headerName));
+                }
+                HttpClient.HttpResult result =
+                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList, new HashMap<>(2)
+                        , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
 
-        if (StringUtils.isEmpty(redirect) && StringUtils.isEmpty(targetIP)) {
-            if (!DistroMapper.responsible(dom)) {
-
-                String url = "http://" + DistroMapper.mapSrv(dom) + ":" + req.getServerPort()
-                        + req.getRequestURI() + "?" + req.getQueryString();
                 try {
-                    resp.sendRedirect(url);
+                    resp.setCharacterEncoding("UTF-8");
+                    resp.getWriter().write(result.content);
+                    resp.setStatus(result.code);
                 } catch (Exception ignore) {
-                    Loggers.SRV_LOG.warn("DISTRO-FILTER", "request failed: " + url);
+                    Loggers.SRV_LOG.warn("[DISTRO-FILTER] request failed: " + distroMapper.mapSrv(groupedServiceName) + urlString);
                 }
+                return;
             }
+
+            OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(req);
+            requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
+            filterChain.doFilter(requestWrapper, resp);
+        } catch (AccessControlException e) {
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + UtilsAndCommons.getAllExceptionMsg(e));
+            return;
+        } catch (NoSuchMethodException e) {
+            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "no such api: " + e.getMessage());
+            return;
+        } catch (Exception e) {
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
+            return;
         }
 
-        filterChain.doFilter(req, resp);
     }
 
     @Override
     public void destroy() {
 
-    }
-
-    public boolean canDistro(String urlString) {
-
-        if (urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM_SERVE_STATUS)) {
-            return false;
-        }
-
-        return urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_IP_FOR_DOM) ||
-                urlString.startsWith(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.API_DOM);
     }
 }

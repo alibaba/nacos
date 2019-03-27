@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.4.0</version>
+        <version>1.0.0-RC2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -154,7 +154,26 @@
             <groupId>com.github.spotbugs</groupId>
             <artifactId>spotbugs-annotations</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-cmdb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-elastic</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-influx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -185,9 +204,9 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <excludes>
-                    <exclude>application.properties</exclude>
-                </excludes>
+                <!--<excludes>-->
+                    <!--<exclude>application.properties</exclude>-->
+                <!--</excludes>-->
             </resource>
         </resources>
     </build>

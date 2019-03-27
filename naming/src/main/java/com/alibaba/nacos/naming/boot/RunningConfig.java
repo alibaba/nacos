@@ -16,8 +16,9 @@
 package com.alibaba.nacos.naming.boot;
 
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.raft.RaftCore;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -26,10 +27,9 @@ import org.springframework.stereotype.Component;
 import javax.servlet.ServletContext;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
-
-@Component
+@Component("runningConfig")
 public class RunningConfig implements ApplicationListener<WebServerInitializedEvent> {
 
     private static int serverPort;
@@ -43,17 +43,11 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
 
-        Loggers.SRV_LOG.info("[SERVER-INIT] got port:" + event.getWebServer().getPort());
-        Loggers.SRV_LOG.info("[SERVER-INIT] got path:" + servletContext.getContextPath());
+        Loggers.SRV_LOG.info("[SERVER-INIT] got port: {}", event.getWebServer().getPort());
+        Loggers.SRV_LOG.info("[SERVER-INIT] got path: {}", servletContext.getContextPath());
 
         serverPort = event.getWebServer().getPort();
         contextPath = servletContext.getContextPath();
-
-        try {
-            RaftCore.init();
-        } catch (Exception e) {
-            Loggers.RAFT.error("VIPSRV-RAFT", "failed to initialize raft sub system", e);
-        }
     }
 
     public static int getServerPort() {
@@ -61,6 +55,10 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     }
 
     public static String getContextPath() {
+
+        if (StringUtils.isBlank(contextPath)) {
+            return UtilsAndCommons.NACOS_SERVER_CONTEXT;
+        }
         return contextPath;
     }
 }

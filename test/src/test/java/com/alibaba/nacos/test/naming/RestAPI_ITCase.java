@@ -18,7 +18,10 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,7 +44,7 @@ import java.net.URL;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
@@ -277,48 +280,7 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void srvAllIP() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/srvAllIP",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(), String.class);
-
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertEquals(NamingBase.TEST_DOM_1, json.getString("dom"));
-        JSONArray hosts = json.getJSONArray("hosts");
-        Assert.assertNotNull(hosts);
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(NamingBase.TEST_IP_4_DOM_1, hosts.getJSONObject(0).getString("ip"));
-        Assert.assertEquals(NamingBase.TEST_PORT_4_DOM_1, hosts.getJSONObject(0).getString("port"));
-    }
-
-    @Test
-    public void srvIPXT() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/srvIPXT",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(), String.class);
-
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertEquals(NamingBase.TEST_DOM_1, json.getString("dom"));
-        JSONArray hosts = json.getJSONArray("hosts");
-        Assert.assertNotNull(hosts);
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(NamingBase.TEST_IP_4_DOM_1, hosts.getJSONObject(0).getString("ip"));
-        Assert.assertEquals(NamingBase.TEST_PORT_4_DOM_1, hosts.getJSONObject(0).getString("port"));
-    }
-
-    @Test
     public void remvIP4Dom() throws Exception {
-
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/addIP4Dom",
                 Params.newParams()
@@ -440,17 +402,6 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void checkStatus() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/checkStatus",
-                Params.newParams().done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-    }
-
-    @Test
     public void allDomNames() throws Exception {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/allDomNames",
@@ -557,18 +508,7 @@ public class RestAPI_ITCase {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/api/reCalculateCheckSum4Dom",
                 Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-    }
-
-    @Test
-    public void getDomString4MD5() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/v1/ns/api/getDomString4MD5",
-                Params.newParams()
+                        .appendParam(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);
@@ -604,6 +544,162 @@ public class RestAPI_ITCase {
         Assert.assertTrue(json.getJSONObject("data").getJSONArray("ips").size() > 0);
     }
 
+    /**
+     * @TCDescription : 根据serviceName创建服务
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void createService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        namingServiceDelete(serviceName);
+    }
+
+    /**
+     * @TCDescription : 根据serviceName获取服务信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void getService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        //get service
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(serviceName, json.getString("name"));
+
+        namingServiceDelete(serviceName);
+    }
+
+    /**
+     * @TCDescription : 获取服务list信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void listService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        //get service
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("pageNo", "1")
+                .appendParam("pageSize", "15")
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        int count = json.getIntValue("count");
+        Assert.assertTrue(count >= 0);
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("pageNo", "1")
+                .appendParam("pageSize", "15")
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(count+1, json.getIntValue("count"));
+
+        namingServiceDelete(serviceName);
+    }
+
+    /**
+     * @TCDescription : 更新serviceName获取服务信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void updateService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        //update service
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("healthCheckMode", "server")
+                .appendParam("protectThreshold", "3")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        //get service
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        System.out.println(json);
+        Assert.assertEquals(3.0f, json.getFloatValue("protectThreshold"), 0.0f);
+
+        namingServiceDelete(serviceName);
+    }
+
+    private void namingServiceDelete(String serviceName) {
+        //delete service
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.DELETE);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+    }
+
     private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
 
         HttpHeaders headers = new HttpHeaders();
@@ -615,6 +711,19 @@ public class RestAPI_ITCase {
 
         return this.restTemplate.exchange(
                 builder.toUriString(), HttpMethod.GET, entity, clazz);
+    }
+
+    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
+            .queryParams(params);
+
+        return this.restTemplate.exchange(
+            builder.toUriString(), httpMethod, entity, clazz);
     }
 
     private void prepareData() {

@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.naming.utils;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public interface Poller<T> {
     /**

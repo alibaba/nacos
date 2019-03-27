@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.exception;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class NacosException extends Exception {
 

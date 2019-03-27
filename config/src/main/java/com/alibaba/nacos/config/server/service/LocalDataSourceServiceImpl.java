@@ -17,10 +17,12 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.StringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -38,7 +40,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * local data source
@@ -52,23 +56,20 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     private static final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
     private static final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
-    private static String appHome = System.getProperty("user.home") + File.separator + "nacos";
-    private static final String NACOS_HOME_KEY = "nacos.home";
     private static final String USER_NAME = "nacos";
     private static final String PASSWORD = "nacos";
 
     private JdbcTemplate jt;
     private TransactionTemplate tjt;
 
+    @Autowired
+    private PropertyUtil propertyUtil;
+
     @PostConstruct
     public void init() {
-        String nacosBaseDir = System.getProperty(NACOS_HOME_KEY);
-        if (!StringUtils.isBlank(nacosBaseDir)) {
-            setAppHome(nacosBaseDir);
-        }
         BasicDataSource ds = new BasicDataSource();
         ds.setDriverClassName(JDBC_DRIVER_NAME);
-        ds.setUrl("jdbc:derby:" + appHome + File.separator + DERBY_BASE_DIR + ";create=true");
+        ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
         ds.setUsername(USER_NAME);
         ds.setPassword(PASSWORD);
         ds.setInitialSize(20);
@@ -77,7 +78,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         ds.setMaxWait(10000L);
         ds.setPoolPreparedStatements(true);
         ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-                .toMillis(10L));
+            .toMillis(10L));
         ds.setTestWhileIdle(true);
 
         jt = new JdbcTemplate();
@@ -89,7 +90,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         tm.setDataSource(ds);
         tjt.setTimeout(5000);
 
-        if (STANDALONE_MODE) {
+        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
             reload();
         }
     }
@@ -127,7 +128,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     @Override
     public String getCurrentDBUrl() {
-        return "jdbc:derby:" + appHome + File.separator + DERBY_BASE_DIR + ";create=true";
+        return "jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true";
     }
 
     @Override
@@ -151,7 +152,8 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 URL url = classLoader.getResource(sqlFile);
                 sqlFileIn = url.openStream();
             } else {
-                File file = new File(System.getProperty(NACOS_HOME_KEY) + "/conf/schema.sql");
+                File file = new File(
+                    System.getProperty(NACOS_HOME_KEY) + File.separator + "conf" + File.separator + "schema.sql");
                 sqlFileIn = new FileInputStream(file);
             }
 
@@ -204,14 +206,5 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             }
         }
     }
-
-    public static String getAppHome() {
-        return appHome;
-    }
-
-    public static void setAppHome(String appHome) {
-        LocalDataSourceServiceImpl.appHome = appHome;
-    }
-
 
 }

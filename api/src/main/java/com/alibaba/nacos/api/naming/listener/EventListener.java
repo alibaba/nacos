@@ -16,14 +16,15 @@
 package com.alibaba.nacos.api.naming.listener;
 
 /**
- * event listener 
- * @author Nacos
+ * Event Listener
  *
+ * @author Nacos
  */
 public interface EventListener {
-	/**
-	 * callback event
-	 * @param event
-	 */
+    /**
+     * callback event
+     *
+     * @param event
+     */
     void onEvent(Event event);
 }
