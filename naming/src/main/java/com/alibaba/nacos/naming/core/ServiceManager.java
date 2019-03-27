@@ -156,8 +156,14 @@ public class ServiceManager implements RecordListener<Service> {
     public void onDelete(String key) throws Exception {
         String namespace = KeyBuilder.getNamespace(key);
         String name = KeyBuilder.getServiceName(key);
-        Service service = chooseServiceMap(namespace).remove(name);
+        Service service = chooseServiceMap(namespace).get(name);
         Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
+
+        // check again:
+        if (service != null && !service.allIPs().isEmpty()) {
+            Loggers.SRV_LOG.warn("service not empty, key: {}", key);
+            return;
+        }
 
         if (service != null) {
             service.destroy();
@@ -166,6 +172,8 @@ public class ServiceManager implements RecordListener<Service> {
             consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJSON());
         }
+
+        chooseServiceMap(namespace).remove(name);
     }
 
     private class UpdatedServiceProcessor implements Runnable {
