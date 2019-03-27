@@ -21,28 +21,27 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-
 /**
  * Time Service
- * @author Nacos
  *
+ * @author Nacos
  */
 public class TimerService {
 
     static public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
-            long delay, TimeUnit unit) {
+                                                            long delay, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
-    
+
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     static ScheduledExecutorService scheduledExecutor = Executors
-            .newSingleThreadScheduledExecutor(new ThreadFactory() {
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Timer");
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
-    
+        .newSingleThreadScheduledExecutor(new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.Timer");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
 }

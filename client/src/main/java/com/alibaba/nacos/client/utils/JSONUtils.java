@@ -24,28 +24,28 @@ import org.codehaus.jackson.type.TypeReference;
 
 /**
  * Json tool
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JSONUtils {
 
     static ObjectMapper mapper = new ObjectMapper();
-    
+
     static {
-    	mapper.disable(Feature.FAIL_ON_UNKNOWN_PROPERTIES);
+        mapper.disable(Feature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
-	public static String serializeObject(Object o) throws IOException {
-		return mapper.writeValueAsString(o);
-	}
+    public static String serializeObject(Object o) throws IOException {
+        return mapper.writeValueAsString(o);
+    }
 
     public static Object deserializeObject(String s, Class<?> clazz) throws IOException {
         return mapper.readValue(s, clazz);
     }
 
     public static Object deserializeObject(String s, TypeReference<?> typeReference)
-            throws IOException {
+        throws IOException {
         return mapper.readValue(s, typeReference);
     }
 

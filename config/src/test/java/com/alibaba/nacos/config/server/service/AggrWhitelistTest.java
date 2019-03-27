@@ -15,30 +15,28 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import com.alibaba.nacos.config.server.service.AggrWhitelist;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 public class AggrWhitelistTest {
 
     AggrWhitelist service;
-    
+
     @Before
     public void before() throws Exception {
         service = new AggrWhitelist();
     }
-    
+
     @Test
     public void testIsAggrDataId() {
         List<String> list = new ArrayList<String>();
@@ -46,12 +44,12 @@ public class AggrWhitelistTest {
         list.add("NS_NACOS_SUBSCRIPTION_TOPIC_*");
         list.add("com.taobao.tae.AppListOnGrid-*");
         service.compile(list);
-        
+
         assertEquals(false, service.isAggrDataId("com.abc"));
         assertEquals(false, service.isAggrDataId("com.taobao.jiuren"));
         assertEquals(false, service.isAggrDataId("com.taobao.jiurenABC"));
         assertEquals(true, service.isAggrDataId("com.taobao.jiuren.abc"));
         assertEquals(true, service.isAggrDataId("NS_NACOS_SUBSCRIPTION_TOPIC_abc"));
         assertEquals(true, service.isAggrDataId("com.taobao.tae.AppListOnGrid-abc"));
-    }	
+    }
 }

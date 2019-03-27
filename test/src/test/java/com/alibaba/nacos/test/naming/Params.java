@@ -19,7 +19,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class Params {
 

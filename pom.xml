@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.4.0</version>
+    <version>1.0.0-RC2</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.4.0</tag>
+        <tag>nacos-all-1.0.0</tag>
     </scm>
 
     <mailingLists>
@@ -226,23 +226,17 @@
                 <configuration>
 
                     <excludes>
+                        <exclude>.editorconfig</exclude>
                         <exclude>.travis.yml</exclude>
                         <exclude>CONTRIBUTING.md</exclude>
+                        <exclude>CODE_OF_CONDUCT.md</exclude>
                         <exclude>CHANGELOG.md</exclude>
                         <exclude>style/codeStyle.md</exclude>
                         <exclude>REPORTING-BUGS.md</exclude>
                         <exclude>README.md</exclude>
-                        <exclude>.github/*</exclude>
-                        <exclude>.github/ISSUE_TEMPLATE/bug_report.md</exclude>
-                        <exclude>.github/ISSUE_TEMPLATE/feature_request.md</exclude>
-                        <exclude>src/main/resources/*/*/*</exclude>
-                        <exclude>src/main/resources/*/*</exclude>
-                        <exclude>src/main/resources/*</exclude>
-                        <exclude>src/test/resources/*</exclude>
-                        <exclude>src/main/resources/static/**/*.js</exclude>
-                        <exclude>src/main/resources/**/*.svg</exclude>
-                        <exclude>src/main/resources/static/public/css/console1412.css</exclude>
-                        <exclude>src/main/resources/static/public/js/vs/editor/editor.main.css</exclude>
+                        <exclude>.github/**/*</exclude>
+                        <exclude>src/main/resources/**</exclude>
+                        <exclude>src/test/**</exclude>
                         <exclude>bin/*</exclude>
                         <exclude>conf/*</exclude>
                         <exclude>derby.log</exclude>
@@ -303,10 +297,11 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>2.20</version>
                 <configuration>
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
+                    <testFailureIgnore>true</testFailureIgnore>
                 </configuration>
             </plugin>
             <plugin>
@@ -438,7 +433,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>3.0.1</version>
+                <version>3.0.4</version>
             </plugin>
         </plugins>
     </reporting>
@@ -455,6 +450,7 @@
         <module>common</module>
         <module>distribution</module>
         <module>console</module>
+        <module>cmdb</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -475,7 +471,7 @@
                 <!-- Import dependency management from Spring Boot -->
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>2.0.5.RELEASE</version>
+                <version>2.1.1.RELEASE</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -514,6 +510,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-cmdb</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -612,13 +613,13 @@
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-core</artifactId>
-                <version>2.10.0</version>
+                <version>2.11.2</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-slf4j-impl</artifactId>
-                <version>2.10.0</version>
+                <version>2.11.2</version>
             </dependency>
 
             <!-- HTTP client libs -->
@@ -697,6 +698,24 @@
             </dependency>
 
             <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>0.10.5</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>0.10.5</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>0.10.5</version>
+                <scope>runtime</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>4.0.42.Final</version>
@@ -719,6 +738,7 @@
                 <artifactId>javatuples</artifactId>
                 <version>1.2</version>
             </dependency>
+
 
         </dependencies>
     </dependencyManagement>

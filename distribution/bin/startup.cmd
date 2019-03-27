@@ -17,23 +17,28 @@ set "JAVA=%JAVA_HOME%\bin\java.exe"
 setlocal
 
 set BASE_DIR=%~dp0
-set BASE_DIR=%BASE_DIR:~0,-1%
-for %%d in (%BASE_DIR%) do set BASE_DIR=%%~dpd
+rem added double quotation marks to avoid the issue caused by the folder names containing spaces.
+rem removed the last 5 chars(which means \bin\) to get the base DIR.
+set BASE_DIR="%BASE_DIR:~0,-5%"
 
 set DEFAULT_SEARCH_LOCATIONS="classpath:/,classpath:/config/,file:./,file:./config/"
-set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%conf/
+set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%/conf/
 
-set "JAVA_OPT=%JAVA_OPT% -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
-set "JAVA_OPT=%JAVA_OPT% -XX:+UseConcMarkSweepGC -XX:+UseCMSCompactAtFullCollection -XX:CMSInitiatingOccupancyFraction=70 -XX:+CMSParallelRemarkEnabled -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+CMSClassUnloadingEnabled -XX:SurvivorRatio=8 -XX:-UseParNewGC"
-set "JAVA_OPT=%JAVA_OPT% -verbose:gc -Xloggc:"%USERPROFILE%\rmq_srv_gc.log" -XX:+PrintGCDetails"
+
+
+if not "%2" == "cluster" (
+    set "JAVA_OPT=%JAVA_OPT% -Xms512m -Xmx512m -Xmn256m"
+    set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
+ ) else (
+    set "JAVA_OPT=%JAVA_OPT% -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
+    set "JAVA_OPT=%JAVA_OPT% -XX:-OmitStackTraceInFastThrow XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%BASE_DIR%\logs\java_heapdump.hprof"
+    set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
+ )
+
+set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-
-if not ""%2"" == "cluster" set "JAVA_OPT=%JAVA_OPT% -Dnacos.standalone=true"
-
-set "JAVA_OPT=%JAVA_OPT% -XX:-OmitStackTraceInFastThrow"
-set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
 set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
-set "JAVA_OPT=%JAVA_OPT% --spring.config.location="%CUSTOM_SEARCH_LOCATIONS%""
-set "JAVA_OPT=%JAVA_OPT% --logging.config="%BASE_DIR%/conf/nacos-logback.xml""
+set "JAVA_OPT=%JAVA_OPT% --spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
+set "JAVA_OPT=%JAVA_OPT% --logging.config=%BASE_DIR%/conf/nacos-logback.xml"
 
-call "%JAVA%" %JAVA_OPT% %*
+call "%JAVA%" %JAVA_OPT% nacos.nacos %*

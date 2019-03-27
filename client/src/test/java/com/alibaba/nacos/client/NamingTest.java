@@ -16,16 +16,21 @@
 package com.alibaba.nacos.client;
 
 import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class NamingTest {
 
@@ -33,18 +38,26 @@ public class NamingTest {
     @Ignore
     public void testServiceList() throws Exception {
 
-        NamingService namingService = NacosFactory.createNamingService("127.0.0.1:8848");
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "11.160.165.126:8848");
+        properties.put(PropertyKeyConst.NAMESPACE, "t1");
+
+        NamingService namingService = NacosFactory.createNamingService(properties);
 
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(80);
         instance.setWeight(2);
         Map<String, String> map = new HashMap<String, String>();
-        map.put("env", "prod");
+        map.put("netType", "external");
         map.put("version", "2.0");
         instance.setMetadata(map);
 
-        namingService.registerInstance("dungu.test.1", instance);
+        namingService.registerInstance("nacos.test.1", instance);
+
+//        ExpressionSelector expressionSelector = new ExpressionSelector();
+//        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+//        ListView<String> serviceList = namingService.getServicesOfServer(1, 10, expressionSelector);
 
         Thread.sleep(1000000000L);
     }

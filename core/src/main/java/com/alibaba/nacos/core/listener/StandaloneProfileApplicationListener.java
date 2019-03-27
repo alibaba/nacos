@@ -1,12 +1,11 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,9 +25,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.util.Arrays;
 
-import static com.alibaba.nacos.common.util.Constants.STANDALONE_SPRING_PROFILE;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_MODE_PROPERTY_NAME;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Standalone {@link Profile} {@link ApplicationListener} for {@link ApplicationEnvironmentPreparedEvent}
@@ -38,7 +37,7 @@ import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE_PROPERTY
  * @since 0.2.2
  */
 public class StandaloneProfileApplicationListener implements ApplicationListener<ApplicationEnvironmentPreparedEvent>,
-        PriorityOrdered {
+    PriorityOrdered {
 
     private static final Logger logger = LoggerFactory.getLogger(StandaloneProfileApplicationListener.class);
 
@@ -53,8 +52,8 @@ public class StandaloneProfileApplicationListener implements ApplicationListener
 
         if (logger.isInfoEnabled()) {
             logger.info("Spring Environment's active profiles : {} in standalone mode : {}",
-                    Arrays.asList(environment.getActiveProfiles()),
-                    STANDALONE_MODE
+                Arrays.asList(environment.getActiveProfiles()),
+                STANDALONE_MODE
             );
         }
 

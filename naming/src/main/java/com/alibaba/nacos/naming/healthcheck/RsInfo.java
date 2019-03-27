@@ -32,18 +32,19 @@ public class RsInfo {
     private double mem;
     private int port;
     private String ip;
-    private String dom;
+    private String serviceName;
     private String ak;
     private String cluster;
     private double weight;
+    private boolean ephemeral = true;
     private Map<String, String> metadata;
 
-    public String getDom() {
-        return dom;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setDom(String dom) {
-        this.dom = dom;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public String getAk() {
@@ -124,6 +125,14 @@ public class RsInfo {
 
     public void setWeight(double weight) {
         this.weight = weight;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
     }
 
     public Map<String, String> getMetadata() {

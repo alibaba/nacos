@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.acl;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class AuthInfo {
     private String operator;

@@ -17,58 +17,66 @@ package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.common.Constants;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * Instance
+ *
+ * @author nkorange
  */
 public class Instance {
 
     /**
-     * Unique ID of this instance.
+     * unique id of this instance.
      */
     private String instanceId;
 
     /**
-     * Instance ip
+     * instance ip
      */
     private String ip;
 
     /**
-     * Instance port
+     * instance port
      */
     private int port;
 
     /**
-     * Instance weight
+     * instance weight
      */
     private double weight = 1.0D;
 
     /**
-     * Instance health status
+     * instance health status
      */
-    @JSONField(name = "valid")
     private boolean healthy = true;
 
+    /**
+     * If instance is enabled to accept request
+     */
     private boolean enabled = true;
 
     /**
-     * Cluster information of instance
+     * If instance is ephemeral
+     *
+     * @since 1.0.0
      */
-    @JSONField(serialize = false)
-    private Cluster cluster = new Cluster();
+    private boolean ephemeral = true;
+
+    /**
+     * cluster information of instance
+     */
+    private String clusterName;
 
     /**
      * Service information of instance
      */
-    @JSONField(serialize = false)
-    private Service service;
+    private String serviceName;
 
     /**
-     * User extended attributes
+     * user extended attributes
      */
     private Map<String, String> metadata = new HashMap<String, String>();
 
@@ -78,14 +86,6 @@ public class Instance {
 
     public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
-    }
-
-    public String serviceName() {
-        String[] infos = instanceId.split(Constants.NAMING_INSTANCE_ID_SPLITTER);
-        if (infos.length < Constants.NAMING_INSTANCE_ID_SEG_COUNT) {
-            return null;
-        }
-        return infos[Constants.NAMING_INSTANCE_ID_SEG_COUNT - 1];
     }
 
     public String getIp() {
@@ -120,20 +120,20 @@ public class Instance {
         this.healthy = healthy;
     }
 
-    public Cluster getCluster() {
-        return cluster;
+    public String getClusterName() {
+        return clusterName;
     }
 
-    public void setCluster(Cluster cluster) {
-        this.cluster = cluster;
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
     }
 
-    public Service getService() {
-        return service;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setService(Service service) {
-        this.service = service;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public Map<String, String> getMetadata() {
@@ -154,6 +154,14 @@ public class Instance {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
     }
 
     @Override

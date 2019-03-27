@@ -19,40 +19,44 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author dungu.zpf
+ * Service of Nacos
+ * <p>
+ * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
+ * which contains a list of instances.
+ * <p>
+ * Typically we put some unique properties between instances to service level.
+ *
+ * @author nkorange
  */
 public class Service {
-
     /**
-     * Service name
+     * service name
      */
     private String name;
 
     /**
-     * Protect threshold
+     * protect threshold
      */
     private float protectThreshold = 0.0F;
 
     /**
-     * Application name of this service
+     * application name of this service
      */
-    private String app;
+    private String appName;
 
     /**
-     * Service group which is meant to classify services into different sets.
+     * Service group to classify services into different sets.
      */
-    private String group;
+    private String groupName;
 
-    /**
-     * Health check mode.
-     */
-    private String healthCheckMode;
+    private Map<String, String> metadata = new HashMap<String, String>();
+
+    public Service() {
+    }
 
     public Service(String name) {
         this.name = name;
     }
-
-    private Map<String, String> metadata = new HashMap<String, String>();
 
     public String getName() {
         return name;
@@ -60,14 +64,6 @@ public class Service {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getHealthCheckMode() {
-        return healthCheckMode;
-    }
-
-    public void setHealthCheckMode(String healthCheckMode) {
-        this.healthCheckMode = healthCheckMode;
     }
 
     public float getProtectThreshold() {
@@ -78,20 +74,20 @@ public class Service {
         this.protectThreshold = protectThreshold;
     }
 
-    public String getApp() {
-        return app;
+    public String getAppName() {
+        return appName;
     }
 
-    public void setApp(String app) {
-        this.app = app;
+    public void setAppName(String appName) {
+        this.appName = appName;
     }
 
-    public String getGroup() {
-        return group;
+    public String getGroupName() {
+        return groupName;
     }
 
-    public void setGroup(String group) {
-        this.group = group;
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
     }
 
     public Map<String, String> getMetadata() {

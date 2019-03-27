@@ -21,7 +21,6 @@ import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
@@ -32,8 +31,10 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.*;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class FailoverReactor {
 
@@ -83,7 +84,7 @@ public class FailoverReactor {
                         new DiskFileWriter().run();
                     }
                 } catch (Throwable e) {
-                    LogUtils.LOG.error("NA", "failed to backup file on startup.", e);
+                    NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
                 }
 
             }
@@ -106,7 +107,7 @@ public class FailoverReactor {
                 File switchFile = new File(failoverDir + UtilAndComs.FAILOVER_SWITCH);
                 if (!switchFile.exists()) {
                     switchParams.put("failover-mode", "false");
-                    LogUtils.LOG.debug("failover switch is not found, " + switchFile.getName());
+                    NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
                     return;
                 }
 
@@ -114,7 +115,8 @@ public class FailoverReactor {
 
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
-                    String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH, Charset.defaultCharset().toString());
+                    String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
+                        Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeperator()));
 
@@ -122,11 +124,11 @@ public class FailoverReactor {
                             String line1 = line.trim();
                             if ("1".equals(line1)) {
                                 switchParams.put("failover-mode", "true");
-                                LogUtils.LOG.info("failover-mode is on");
+                                NAMING_LOGGER.info("failover-mode is on");
                                 new FailoverFileReader().run();
                             } else if ("0".equals(line1)) {
                                 switchParams.put("failover-mode", "false");
-                                LogUtils.LOG.info("failover-mode is off");
+                                NAMING_LOGGER.info("failover-mode is off");
                             }
                         }
                     } else {
@@ -135,7 +137,7 @@ public class FailoverReactor {
                 }
 
             } catch (Throwable e) {
-                LogUtils.LOG.error("NA", "failed to read failover switch.", e);
+                NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
             }
         }
     }
@@ -171,7 +173,8 @@ public class FailoverReactor {
                     ServiceInfo dom = new ServiceInfo(file.getName());
 
                     try {
-                        String dataString = ConcurrentDiskUtil.getFileContent(file, Charset.defaultCharset().toString());
+                        String dataString = ConcurrentDiskUtil.getFileContent(file,
+                            Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
 
                         String json;
@@ -179,12 +182,12 @@ public class FailoverReactor {
                             try {
                                 dom = JSON.parseObject(json, ServiceInfo.class);
                             } catch (Exception e) {
-                                LogUtils.LOG.error("NA", "error while parsing cached dom : " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
                         }
 
                     } catch (Exception e) {
-                        LogUtils.LOG.error("NA", "failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {
@@ -199,7 +202,7 @@ public class FailoverReactor {
                     }
                 }
             } catch (Exception e) {
-                LogUtils.LOG.error("NA", "failed to read cache file", e);
+                NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
 
             if (domMap.size() > 0) {
@@ -213,10 +216,11 @@ public class FailoverReactor {
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
-                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
-                        || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
-                        || StringUtils.equals(serviceInfo.getName(), "vipclient.properties")
-                        || StringUtils.equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
+                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(
+                    serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
+                    || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")
+                    || StringUtils.equals(serviceInfo.getName(), "vipclient.properties")
+                    || StringUtils.equals(serviceInfo.getName(), "00-00---000-ALL_HOSTS-000---00-00")) {
                     continue;
                 }
 
