@@ -16,7 +16,7 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public enum HealthCheckType {
     /**
@@ -30,5 +30,9 @@ public enum HealthCheckType {
     /**
      * MySQL type
      */
-    MYSQL
+    MYSQL,
+    /**
+     * No check
+     */
+    NONE
 }

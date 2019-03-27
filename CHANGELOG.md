@@ -1,3 +1,36 @@
+## 1.0.0-RC2(Mar 22, 2019)
+* [#923] Nacos 1.0.0 compatible with nacos-client 0.6.2
+* [#938] Client beat processor task lost
+* [#946] Change default server mode to AP
+
+
+
+## 1.0.0-RC1(Mar 15, 2019)
+
+* [#870] About Nacos's namespace and tenant design
+* [#869] Client exception message is confusing
+* [#866] BeatInfo scheduled property may have the memory visibility issue
+* [#865] checksum value is not correct
+* [#839] Refactor API URLs 
+* [#811] ApiCommands.updateIpPublish countDownLatch timeout issue
+* [#809] Instance field 'valid' should be deprecated and replaced by 'healthy'
+* [#803] Nacos front-end function regression plan and landing
+* [#801] Nacos uses nignx as a best practice article for current limiting.
+* [#757] The word 'domain' should be replaced by 'service'
+* [#745] Support server running mode in CP, AP or mixed
+* [#744] The exact status of server should be stored and controlled
+* [#725] Will the nacos registry be how to do multi-environment deployment?
+* [#677] Support ephemeral instances and persistent instances
+* [#651] Remove old API entry 'APICommands'
+* [#650] Refactor server list management to make it irrelevant to consistency protocol
+* [#634] Add global push enable switch and data query enable switch
+* [#629] Server data needs warm up before open traffic
+* [#502] Registering ephemeral instance as well as persistent instances
+* [#501] Health check mode confict when building muilt clusters whit nacos sync + nacos
+* [#479] Metadata should be displayed and edited using standard property syntax
+* [#327] Inform the ACM SDK of the RAM role name and access the configuration ? ?
+* [#269] need to support service group in naming module
+
 ## 0.9.0(Feb 28, 2019)
 
 * [#840] Nacos server adds startup mode to distinguish between config and naming.

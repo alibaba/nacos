@@ -34,7 +34,7 @@ public class MetricsMonitor {
     private static AtomicInteger mysqlHealthCheck = new AtomicInteger();
     private static AtomicInteger httpHealthCheck = new AtomicInteger();
     private static AtomicInteger tcpHealthCheck = new AtomicInteger();
-    private static AtomicInteger domCount = new AtomicInteger();
+    private static AtomicInteger serviceCount = new AtomicInteger();
     private static AtomicInteger ipCount = new AtomicInteger();
     private static AtomicLong maxPushCost = new AtomicLong();
     private static AtomicLong avgPushCost = new AtomicLong();
@@ -60,8 +60,8 @@ public class MetricsMonitor {
 
         tags = new ArrayList<Tag>();
         tags.add(new ImmutableTag("module", "naming"));
-        tags.add(new ImmutableTag("name", "domCount"));
-        Metrics.gauge("nacos_monitor", tags, domCount);
+        tags.add(new ImmutableTag("name", "serviceCount"));
+        Metrics.gauge("nacos_monitor", tags, serviceCount);
 
         tags = new ArrayList<Tag>();
         tags.add(new ImmutableTag("module", "naming"));
@@ -107,7 +107,7 @@ public class MetricsMonitor {
     }
 
     public static AtomicInteger getDomCountMonitor() {
-        return domCount;
+        return serviceCount;
     }
 
     public static AtomicInteger getIpCountMonitor() {
