@@ -292,7 +292,7 @@ public class ServiceController {
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.POST)
-    public String serviceStatus(HttpServletRequest request) throws IOException {
+    public String serviceStatus(HttpServletRequest request) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
@@ -303,7 +303,8 @@ public class ServiceController {
         String serverIP = json.getString("clientIP");
 
         if (!serverListManager.contains(serverIP)) {
-            throw new IllegalArgumentException("ip: " + serverIP + " is not in serverlist");
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "ip: " + serverIP + " is not in serverlist");
         }
 
         try {
@@ -343,7 +344,7 @@ public class ServiceController {
     }
 
     @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
-    public JSONObject checksum(HttpServletRequest request) {
+    public JSONObject checksum(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
@@ -351,7 +352,8 @@ public class ServiceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new IllegalArgumentException("serviceName not found: " + serviceName);
+            throw new NacosException(NacosException.NOT_FOUND,
+                "serviceName not found: " + serviceName);
         }
 
         service.recalculateChecksum();

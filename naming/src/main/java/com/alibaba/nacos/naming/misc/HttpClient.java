@@ -288,6 +288,29 @@ public class HttpClient {
         }
     }
 
+    public static void asyncHttpGetLarge(String url, Map<String, String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
+        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareGet(url);
+
+        if (!headers.isEmpty()) {
+            for (String headerKey : headers.keySet()) {
+                builder.setHeader(headerKey, headers.get(headerKey));
+            }
+        }
+
+        builder.setBody(content);
+
+        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
+        builder.setHeader("Accept-Charset", "UTF-8");
+        builder.setHeader("Accept-Encoding", "gzip");
+        builder.setHeader("Content-Encoding", "gzip");
+
+        if (handler != null) {
+            builder.execute(handler);
+        } else {
+            builder.execute();
+        }
+    }
+
     public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
         try {
             HttpClientBuilder builder = HttpClients.custom();
