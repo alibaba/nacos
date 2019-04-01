@@ -29,10 +29,9 @@ import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
