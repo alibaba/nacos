@@ -44,9 +44,9 @@ import java.util.*;
  * Service of Nacos server side
  * <p>
  * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
- * which contains a list of instances.
+ * which contain a list of instances.
  * <p>
- * This class inherits from Service in API module and stores some fields that do not expose to client.
+ * This class inherits from Service in API module and stores some fields that do not have to expose to client.
  *
  * @author nkorange
  */

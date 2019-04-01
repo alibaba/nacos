@@ -411,7 +411,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     }
 
                     if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}", datumKey, count);
+                        Loggers.EPHEMERAL.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}, action: {}",
+                            datumKey, count, action.name());
                     }
                 } catch (Throwable e) {
                     Loggers.EPHEMERAL.error("[NACOS-DISTRO] Error while handling notifying task", e);

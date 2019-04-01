@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -72,6 +73,9 @@ public class OperatorController {
 
     @Autowired
     private DistroMapper distroMapper;
+
+    @Autowired
+    private RaftCore raftCore;
 
     @RequestMapping("/push/state")
     public JSONObject pushState(HttpServletRequest request) {
@@ -144,6 +148,7 @@ public class OperatorController {
         result.put("status", serverStatusManager.getServerStatus().name());
         result.put("serviceCount", serviceCount);
         result.put("instanceCount", ipCount);
+        result.put("raftNotifyTaskCount", raftCore.getNotifyTaskCount());
         result.put("responsibleServiceCount", responsibleDomCount);
         result.put("responsibleInstanceCount", responsibleIPCount);
         result.put("cpu", SystemUtils.getCPU());

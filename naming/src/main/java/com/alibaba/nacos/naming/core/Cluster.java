@@ -112,6 +112,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     public void setService(Service service) {
         this.service = service;
+        this.setServiceName(service.getName());
     }
 
     @Override
