@@ -29,7 +29,6 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -102,7 +101,6 @@ public class ClientWorker {
         }
     }
 
-    @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     void removeCache(String dataId, String group) {
         String groupKey = GroupKey.getKey(dataId, group);
         synchronized (cacheMap) {
@@ -115,7 +113,6 @@ public class ClientWorker {
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
-    @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     void removeCache(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         synchronized (cacheMap) {
@@ -128,7 +125,6 @@ public class ClientWorker {
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
     }
 
-    @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
         CacheData cache = getCache(dataId, group);
         if (null != cache) {
@@ -163,7 +159,6 @@ public class ClientWorker {
         return cache;
     }
 
-    @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) {
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
