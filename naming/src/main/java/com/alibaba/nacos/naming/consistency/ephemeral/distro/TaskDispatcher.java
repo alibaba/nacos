@@ -17,10 +17,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -58,12 +55,8 @@ public class TaskDispatcher {
         }
     }
 
-    public int mapTask(String key) {
-        return Math.abs(key.hashCode()) % partitionConfig.getTaskDispatchThreadCount();
-    }
-
     public void addTask(String key) {
-        taskSchedulerList.get(mapTask(key)).addTask(key);
+        taskSchedulerList.get(UtilsAndCommons.shakeUp(key, partitionConfig.getTaskDispatchThreadCount())).addTask(key);
     }
 
     public class TaskScheduler implements Runnable {
