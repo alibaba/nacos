@@ -68,6 +68,10 @@ public class DistroFilter implements Filter {
         try {
             String path = new URI(req.getRequestURI()).getPath();
             String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            // For client under 0.8.0:
+            if (StringUtils.isBlank(serviceName)) {
+                serviceName = req.getParameter("dom");
+            }
             Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
