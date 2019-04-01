@@ -187,7 +187,8 @@ public class InstanceController {
 
         List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
-            throw new IllegalStateException("no ips found for cluster " + cluster + " in service " + serviceName);
+            throw new NacosException(NacosException.NOT_FOUND,
+                "no ips found for cluster " + cluster + " in service " + serviceName);
         }
 
         for (Instance instance : ips) {
@@ -205,7 +206,7 @@ public class InstanceController {
             }
         }
 
-        throw new IllegalStateException("no matched ip found!");
+        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
     }
 
     @CanDistro
