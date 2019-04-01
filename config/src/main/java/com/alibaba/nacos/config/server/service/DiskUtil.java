@@ -157,16 +157,17 @@ public class DiskUtil {
 
     static public String getConfig(String dataId, String group, String tenant)
         throws IOException {
-        FileInputStream fis = null;
         File file = targetFile(dataId, group, tenant);
         if (file.exists()) {
+            FileInputStream fis = null;
             try {
                 fis = new FileInputStream(file);
+                return IOUtils.toString(fis, Constants.ENCODE);
             } catch (FileNotFoundException e) {
                 return StringUtils.EMPTY;
+            } finally {
+                IOUtils.closeQuietly(fis);
             }
-            String content = IOUtils.toString(fis, Constants.ENCODE);
-            return content;
         } else {
             return StringUtils.EMPTY;
         }
