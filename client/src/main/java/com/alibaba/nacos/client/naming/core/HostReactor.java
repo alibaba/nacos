@@ -25,7 +25,6 @@ import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -267,7 +266,6 @@ public class HostReactor {
         }
     }
 
-    @SuppressFBWarnings("NN_NAKED_NOTIFY")
     public void updateServiceNow(String serviceName, String clusters) {
         ServiceInfo oldService = getSerivceInfo0(serviceName, clusters);
         try {
