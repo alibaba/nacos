@@ -83,6 +83,10 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
         final List<AbstractConfiguration> configurations = new ArrayList<AbstractConfiguration>();
 
         LoggerContext loggerContext = (LoggerContext)LogManager.getContext(false);
+        Configuration contextConfiguration = loggerContext.getConfiguration();
+        if(contextConfiguration instanceof AbstractConfiguration){
+            configurations.add((AbstractConfiguration)contextConfiguration);
+        }
         for (String location : locationList) {
             try {
                 Configuration configuration = loadConfiguration(loggerContext, location);
@@ -135,6 +139,8 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
 
         supportedConfigLocations.add("log4j2.xml");
         supportedConfigLocations.add("log4j2-test.xml");
+        supportedConfigLocations.add("log4j2.properties");
+        supportedConfigLocations.add("log4j2-test.properties");
 
         return supportedConfigLocations.toArray(new String[supportedConfigLocations.size()]);
     }
