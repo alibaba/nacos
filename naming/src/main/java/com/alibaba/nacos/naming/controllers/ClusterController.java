@@ -96,9 +96,8 @@ public class ClusterController {
 
         cluster.setHealthChecker(abstractHealthChecker);
         cluster.setMetadata(UtilsAndCommons.parseMetadata(metadata));
-
+        cluster.init();
         service.getClusterMap().put(clusterName, cluster);
-
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
         service.validate();
