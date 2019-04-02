@@ -22,10 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,8 +56,7 @@ public class SystemUtils {
     public static final String FUNCTION_MODE_NAMING = "naming";
 
 
-
-    private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean)ManagementFactory
+    private static OperatingSystemMXBean operatingSystemMXBean = (OperatingSystemMXBean) ManagementFactory
         .getOperatingSystemMXBean();
 
     /**
@@ -98,15 +94,15 @@ public class SystemUtils {
     }
 
     public static float getLoad() {
-        return (float)operatingSystemMXBean.getSystemLoadAverage();
+        return (float) operatingSystemMXBean.getSystemLoadAverage();
     }
 
     public static float getCPU() {
-        return (float)operatingSystemMXBean.getSystemCpuLoad();
+        return (float) operatingSystemMXBean.getSystemCpuLoad();
     }
 
     public static float getMem() {
-        return (float)(1 - (double)operatingSystemMXBean.getFreePhysicalMemorySize() / (double)operatingSystemMXBean
+        return (float) (1 - (double) operatingSystemMXBean.getFreePhysicalMemorySize() / (double) operatingSystemMXBean
             .getTotalPhysicalMemorySize());
     }
 
@@ -128,23 +124,31 @@ public class SystemUtils {
 
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
-        List<String> lines = IoUtils.readLines(
-                new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8));
-        String comment = "#";
-        for (String line : lines) {
-            String instance = line.trim();
-            if (instance.startsWith(comment)) {
-                // # it is ip
-                continue;
+        Reader reader = null;
+
+        try {
+            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8);
+            List<String> lines = IoUtils.readLines(reader);
+            String comment = "#";
+            for (String line : lines) {
+                String instance = line.trim();
+                if (instance.startsWith(comment)) {
+                    // # it is ip
+                    continue;
+                }
+                if (instance.contains(comment)) {
+                    // 192.168.71.52:8848 # Instance A
+                    instance = instance.substring(0, instance.indexOf(comment));
+                    instance = instance.trim();
+                }
+                instanceList.add(instance);
             }
-            if (instance.contains(comment)) {
-                // 192.168.71.52:8848 # Instance A
-                instance = instance.substring(0, instance.indexOf(comment));
-                instance = instance.trim();
+            return instanceList;
+        } finally {
+            if (reader != null) {
+                reader.close();
             }
-            instanceList.add(instance);
         }
-        return instanceList;
     }
 
     public static void writeClusterConf(String content) throws IOException {

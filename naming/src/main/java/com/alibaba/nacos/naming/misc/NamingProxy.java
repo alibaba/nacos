@@ -79,8 +79,8 @@ public class NamingProxy {
 
         Map<String, String> params = new HashMap<>(8);
         params.put("keys", StringUtils.join(keys, ","));
-        HttpClient.HttpResult result = HttpClient.httpGet("http://" + server + RunningConfig.getContextPath()
-            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new ArrayList<>(), params);
+        HttpClient.HttpResult result = HttpClient.httpGetLarge("http://" + server + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new HashMap<>(8), JSON.toJSONString(params));
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content.getBytes();

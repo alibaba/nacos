@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.persistent.raft;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -39,6 +40,9 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     private RaftCore raftCore;
 
     @Autowired
+    private RaftPeerSet peers;
+
+    @Autowired
     private SwitchDomain switchDomain;
 
     @Override
@@ -54,6 +58,12 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     @Override
     public void remove(String key) throws NacosException {
         try {
+            if (KeyBuilder.matchInstanceListKey(key) && !raftCore.isLeader()) {
+                Datum datum = new Datum();
+                datum.key = key;
+                raftCore.onDelete(datum.key, peers.getLeader());
+                return;
+            }
             raftCore.signalDelete(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
@@ -92,7 +102,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
 
     public void onRemove(Datum datum, RaftPeer source) throws NacosException {
         try {
-            raftCore.onDelete(datum, source);
+            raftCore.onDelete(datum.key, source);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft onRemove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft onRemove failed, datum:" + datum + ", source: " + source);

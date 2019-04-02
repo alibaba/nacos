@@ -25,6 +25,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class Instances implements Record {
 
     private long lastCalculateTime = 0L;
 
-    private List<Instance> instanceList;
+    private List<Instance> instanceList = new ArrayList<>();
 
     public List<Instance> getInstanceList() {
         return instanceList;
