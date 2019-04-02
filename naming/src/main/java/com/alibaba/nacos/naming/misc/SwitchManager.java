@@ -262,7 +262,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 switchDomain.setOverriddenServerStatus(status);
             }
 
-            if (entry.equals(SwitchEntry.INSTANCE_DEFAULT_EPHEMERAL)) {
+            if (entry.equals(SwitchEntry.DEFAULT_INSTANCE_EPHEMERAL)) {
                 String defaultEphemeral = value;
                 switchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(defaultEphemeral));
             }
