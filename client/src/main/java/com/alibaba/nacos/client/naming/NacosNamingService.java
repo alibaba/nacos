@@ -154,7 +154,7 @@ public class NacosNamingService implements NamingService {
         }
     }
 
-    private void initEndpoint(Properties properties) {
+    private void initEndpoint(final Properties properties) {
         if (properties == null) {
 
             return;
@@ -175,11 +175,11 @@ public class NacosNamingService implements NamingService {
             return;
         }
 
-        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENDPOINT_PORT), new Callable<String>() {
+        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
             @Override
             public String call() {
 
-                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
             }
         });
 

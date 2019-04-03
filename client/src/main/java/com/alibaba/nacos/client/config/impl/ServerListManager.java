@@ -20,16 +20,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.utils.EnvUtil;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -168,12 +166,19 @@ public class ServerListManager {
         }
     }
 
-    private String initEndpoint(Properties properties) {
+    private String initEndpoint(final Properties properties) {
 
-        String endpointPortTmp = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
+            @Override
+            public String call() {
+                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
+            }
+        });
+
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             endpointPort = Integer.parseInt(endpointPortTmp);
         }
+
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
         if (Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE))) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointPortTmp);

@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 /**
@@ -172,12 +173,14 @@ public class ParamUtil {
             endpointUrl = endpointUrl.substring(0, defStartOf);
         }
 
-        String endpointUrlSource = System.getProperty(endpointUrl,
-            System.getenv(endpointUrl));
+        String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(System.getProperty(endpointUrl,
+            System.getenv(endpointUrl)), new Callable<String>() {
+            @Override
+            public String call() {
+                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            }
+        });
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrlSource)) {
-            endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
-        }
 
         if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrlSource)) {
             if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(defaultEndpointUrl)) {
