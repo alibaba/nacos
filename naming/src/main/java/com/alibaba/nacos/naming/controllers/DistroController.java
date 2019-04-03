@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerMode;
@@ -84,8 +85,8 @@ public class DistroController {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());
                 if (!serviceManager.containService(namespaceId, serviceName)
-                    && ServerMode.AP.name().equals(switchDomain.getServerMode())) {
-                    serviceManager.createEmptyService(namespaceId, serviceName);
+                    && switchDomain.isDefaultInstanceEphemeral()) {
+                    serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
@@ -106,7 +107,9 @@ public class DistroController {
 
     @RequestMapping(value = "/datum", method = RequestMethod.GET)
     public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String keys = WebUtils.required(request, "keys");
+
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String keys = JSON.parseObject(entity).getString("keys");
         String keySplitter = ",";
         Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {

@@ -59,5 +59,5 @@ public class SwitchEntry {
     public static final String PARAM_JSON = "json";
 
     public static final String OVERRIDDEN_SERVER_STATUS = "overriddenServerStatus";
-    public static final String SERVER_MODE = "serverMode";
+    public static final String DEFAULT_INSTANCE_EPHEMERAL = "defaultInstanceEphemeral";
 }

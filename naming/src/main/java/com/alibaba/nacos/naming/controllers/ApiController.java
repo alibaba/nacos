@@ -24,6 +24,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
+import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -138,6 +139,7 @@ public class ApiController extends InstanceController {
             agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 
+    @CanDistro
     @RequestMapping("/clientBeat")
     public JSONObject clientBeat(HttpServletRequest request) throws Exception {
         OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
