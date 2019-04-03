@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +40,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -104,15 +106,6 @@ public class ServiceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            throw new IllegalArgumentException("specified service not exist, serviceName : " + serviceName);
-        }
-
-        if (!service.allIPs().isEmpty()) {
-            throw new IllegalArgumentException("specified service has instances, serviceName : " + serviceName);
-        }
 
         serviceManager.easyRemoveService(namespaceId, serviceName);
 
@@ -299,13 +292,19 @@ public class ServiceController {
     }
 
     @RequestMapping(value = "/status", method = RequestMethod.POST)
-    public String serviceStatus(HttpServletRequest request) {
+    public String serviceStatus(HttpServletRequest request) throws Exception {
+
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String value = URLDecoder.decode(entity, "UTF-8");
+        JSONObject json = JSON.parseObject(value);
+
         //format: service1@@checksum@@@service2@@checksum
-        String statuses = WebUtils.required(request, "statuses");
-        String serverIP = WebUtils.optional(request, "clientIP", "");
+        String statuses = json.getString("statuses");
+        String serverIP = json.getString("clientIP");
 
         if (!serverListManager.contains(serverIP)) {
-            throw new IllegalArgumentException("ip: " + serverIP + " is not in serverlist");
+            throw new NacosException(NacosException.INVALID_PARAM,
+                "ip: " + serverIP + " is not in serverlist");
         }
 
         try {
@@ -345,7 +344,7 @@ public class ServiceController {
     }
 
     @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
-    public JSONObject checksum(HttpServletRequest request) {
+    public JSONObject checksum(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
@@ -353,7 +352,8 @@ public class ServiceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new IllegalArgumentException("serviceName not found: " + serviceName);
+            throw new NacosException(NacosException.NOT_FOUND,
+                "serviceName not found: " + serviceName);
         }
 
         service.recalculateChecksum();

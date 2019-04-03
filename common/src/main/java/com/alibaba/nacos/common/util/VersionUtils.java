@@ -30,8 +30,9 @@ public class VersionUtils {
 
 
     static{
+        InputStream in = null;
         try{
-            InputStream in = VersionUtils.class.getClassLoader()
+            in = VersionUtils.class.getClassLoader()
                 .getResourceAsStream("nacos-version.txt");
             Properties props = new Properties();
             props.load(in);
@@ -41,6 +42,14 @@ public class VersionUtils {
             }
         } catch(Exception e) {
             e.printStackTrace();
+        } finally {
+            try {
+                if (in != null) {
+                    in.close();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

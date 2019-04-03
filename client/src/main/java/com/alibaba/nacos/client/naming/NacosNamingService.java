@@ -104,14 +104,11 @@ public class NacosNamingService implements NamingService {
 
     private int initClientBeatThreadCount(Properties properties) {
         if (properties == null) {
-
             return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
         }
 
-        int clientBeatThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
+        return NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
             UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
-
-        return clientBeatThreadCount;
     }
 
     private int initPollingThreadCount(Properties properties) {
@@ -120,10 +117,8 @@ public class NacosNamingService implements NamingService {
             return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
         }
 
-        int pollingThreadCount = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
+        return NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
             UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
-
-        return pollingThreadCount;
     }
 
     private boolean isLoadCacheAtStart(Properties properties) {
@@ -283,16 +278,18 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
-        BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
-        beatInfo.setIp(instance.getIp());
-        beatInfo.setPort(instance.getPort());
-        beatInfo.setCluster(instance.getClusterName());
-        beatInfo.setWeight(instance.getWeight());
-        beatInfo.setMetadata(instance.getMetadata());
-        beatInfo.setScheduled(false);
+        if (instance.isEphemeral()) {
+            BeatInfo beatInfo = new BeatInfo();
+            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
+            beatInfo.setIp(instance.getIp());
+            beatInfo.setPort(instance.getPort());
+            beatInfo.setCluster(instance.getClusterName());
+            beatInfo.setWeight(instance.getWeight());
+            beatInfo.setMetadata(instance.getMetadata());
+            beatInfo.setScheduled(false);
 
-        beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+        }
 
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
@@ -314,8 +311,18 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
-        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), ip, port);
-        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), ip, port, clusterName);
+        Instance instance = new Instance();
+        instance.setIp(ip);
+        instance.setPort(port);
+        instance.setClusterName(clusterName);
+
+        deregisterInstance(serviceName, groupName, instance);
+    }
+
+    @Override
+    public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
+        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 
     @Override

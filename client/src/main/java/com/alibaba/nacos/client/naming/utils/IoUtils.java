@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.client.naming.utils;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -163,7 +162,6 @@ public class IoUtils {
         }
     }
 
-    @SuppressFBWarnings("BIT_IOR_OF_SIGNED_BYTE")
     public static boolean isGzipStream(byte[] bytes) {
 
         int minByteArraySize = 2;

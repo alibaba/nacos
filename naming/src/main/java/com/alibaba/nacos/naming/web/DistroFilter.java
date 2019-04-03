@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,7 +56,6 @@ public class DistroFilter implements Filter {
 
     }
 
-    @SuppressFBWarnings("HRS_REQUEST_PARAMETER_TO_HTTP_HEADER")
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
@@ -68,6 +66,10 @@ public class DistroFilter implements Filter {
         try {
             String path = new URI(req.getRequestURI()).getPath();
             String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            // For client under 0.8.0:
+            if (StringUtils.isBlank(serviceName)) {
+                serviceName = req.getParameter("dom");
+            }
             Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {

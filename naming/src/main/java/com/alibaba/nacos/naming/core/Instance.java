@@ -181,7 +181,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
 
         if (ip == null) {
-            throw new IllegalArgumentException("malfomed ip config: " + json);
+            throw new IllegalArgumentException("malformed ip config: " + json);
         }
 
         if (ip.getWeight() > MAX_WEIGHT_VALUE) {
@@ -195,7 +195,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
 
         if (!ip.validate()) {
-            throw new IllegalArgumentException("malfomed ip config: " + json);
+            throw new IllegalArgumentException("malformed ip config: " + json);
         }
 
         return ip;
