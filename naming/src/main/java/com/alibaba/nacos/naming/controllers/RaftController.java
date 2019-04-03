@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * HTTP interfaces for Raft consistency protocol. These interfaces should only be invoked by Nacos server itself.
+ * Methods for Raft consistency protocol. These methods should only be invoked by Nacos server itself.
  *
  * @author nkorange
  * @since 1.0.0
@@ -83,7 +83,6 @@ public class RaftController {
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
-//        String value = Arrays.asList(entity).toArray(new String[1])[0];
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
 
@@ -240,7 +239,6 @@ public class RaftController {
         response.setHeader("Content-Encode", "gzip");
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-//        String value = Arrays.asList(entity).toArray(new String[1])[0];
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);

@@ -21,7 +21,6 @@ import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEven
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.utils.*;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -396,7 +395,6 @@ class ServerAddressIterator implements Iterator<String> {
         }
 
         @Override
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         public int compareTo(RandomizedServerAddress other) {
             if (this.priority != other.priority) {
                 return other.priority - this.priority;

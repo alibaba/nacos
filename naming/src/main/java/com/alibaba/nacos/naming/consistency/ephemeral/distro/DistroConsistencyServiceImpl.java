@@ -100,7 +100,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     public volatile Notifier notifier = new Notifier();
 
-    private volatile Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
+    private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
+
+    private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
 
     @PostConstruct
     public void init() throws Exception {
@@ -190,48 +192,62 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     public void onReceiveChecksums(Map<String, String> checksumMap, String server) {
 
-        List<String> toUpdateKeys = new ArrayList<>();
-        List<String> toRemoveKeys = new ArrayList<>();
-        for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
-            if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
-                // this key should not be sent from remote server:
-                Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
-                // abort the procedure:
-                return;
-            }
-            if (!dataStore.contains(entry.getKey()) ||
-                dataStore.get(entry.getKey()).value == null ||
-                !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
-                toUpdateKeys.add(entry.getKey());
-            }
-        }
-
-        for (String key : dataStore.keys()) {
-
-            if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
-                continue;
-            }
-
-            if (!checksumMap.containsKey(key)) {
-                toRemoveKeys.add(key);
-            }
-        }
-
-        Loggers.EPHEMERAL.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
-
-        for (String key : toRemoveKeys) {
-            onRemove(key);
-        }
-
-        if (toUpdateKeys.isEmpty()) {
+        if (syncChecksumTasks.containsKey(server)) {
+            // Already in process of this server:
+            Loggers.EPHEMERAL.warn("sync checksum task already in process with {}", server);
             return;
         }
 
+        syncChecksumTasks.put(server, "1");
+
         try {
-            byte[] result = NamingProxy.getData(toUpdateKeys, server);
-            processData(result);
-        } catch (Exception e) {
-            Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
+
+            List<String> toUpdateKeys = new ArrayList<>();
+            List<String> toRemoveKeys = new ArrayList<>();
+            for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
+                if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
+                    // this key should not be sent from remote server:
+                    Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
+                    // abort the procedure:
+                    return;
+                }
+                if (!dataStore.contains(entry.getKey()) ||
+                    dataStore.get(entry.getKey()).value == null ||
+                    !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
+                    toUpdateKeys.add(entry.getKey());
+                }
+            }
+
+            for (String key : dataStore.keys()) {
+
+                if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
+                    continue;
+                }
+
+                if (!checksumMap.containsKey(key)) {
+                    toRemoveKeys.add(key);
+                }
+            }
+
+            Loggers.EPHEMERAL.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
+
+            for (String key : toRemoveKeys) {
+                onRemove(key);
+            }
+
+            if (toUpdateKeys.isEmpty()) {
+                return;
+            }
+
+            try {
+                byte[] result = NamingProxy.getData(toUpdateKeys, server);
+                processData(result);
+            } catch (Exception e) {
+                Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
+            }
+        } finally {
+            // Remove this 'in process' flag:
+            syncChecksumTasks.remove(server);
         }
 
     }
@@ -259,8 +275,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                 if (!listeners.containsKey(entry.getKey())) {
                     // pretty sure the service not exist:
-                    if (ServerMode.AP.name().equals(switchDomain.getServerMode())) {
+                    if (switchDomain.isDefaultInstanceEphemeral()) {
                         // create empty service
+                        Loggers.EPHEMERAL.info("creating service {}", entry.getKey());
                         Service service = new Service();
                         String serviceName = KeyBuilder.getServiceName(entry.getKey());
                         String namespaceId = KeyBuilder.getNamespace(entry.getKey());
@@ -277,19 +294,24 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
 
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
-                dataStore.put(entry.getKey(), entry.getValue());
 
                 if (!listeners.containsKey(entry.getKey())) {
-                    Loggers.EPHEMERAL.warn("listener not found: {}", entry.getKey());
+                    // Should not happen:
+                    Loggers.EPHEMERAL.warn("listener of {} not found.", entry.getKey());
                     continue;
                 }
-                for (RecordListener listener : listeners.get(entry.getKey())) {
-                    try {
+
+                try {
+                    for (RecordListener listener : listeners.get(entry.getKey())) {
                         listener.onChange(entry.getKey(), entry.getValue().value);
-                    } catch (Exception e) {
-                        Loggers.EPHEMERAL.error("notify " + listener + ", key: " + entry.getKey() + " failed.", e);
                     }
+                } catch (Exception e) {
+                    Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while execute listener of key: {}", entry.getKey(), e);
+                    continue;
                 }
+
+                // Update data store if listener executed successfully:
+                dataStore.put(entry.getKey(), entry.getValue());
             }
         }
     }
@@ -384,12 +406,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                                 continue;
                             }
                         } catch (Throwable e) {
-                            Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while notifying listener of key: {} {}", datumKey, e);
+                            Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while notifying listener of key: {}", datumKey, e);
                         }
                     }
 
                     if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}", datumKey, count);
+                        Loggers.EPHEMERAL.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}, action: {}",
+                            datumKey, count, action.name());
                     }
                 } catch (Throwable e) {
                     Loggers.EPHEMERAL.error("[NACOS-DISTRO] Error while handling notifying task", e);

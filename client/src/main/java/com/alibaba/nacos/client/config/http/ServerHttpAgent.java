@@ -29,10 +29,9 @@ import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -222,6 +221,11 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private void initAkSk(Properties properties) {
+        String ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
+        if (!StringUtils.isBlank(ramRoleName)) {
+            STSConfig.getInstance().setRamRoleName(ramRoleName);
+        }
+
         String ak = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
         if (StringUtils.isBlank(ak)) {
             accessKey = SpasAdapter.getAk();
