@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import java.util.Collection;
+
 /**
  * string util
  *
@@ -70,5 +72,24 @@ public class StringUtils {
             }
         }
         return null;
+    }
+
+    public static String join(Collection collection, String separator) {
+        if (collection == null) {
+            return null;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        Object[] objects = collection.toArray();
+
+        for (int i = 0; i < collection.size() - 1; i++) {
+            stringBuilder.append(objects[i].toString()).append(separator);
+        }
+
+        if (collection.size() > 0) {
+            stringBuilder.append(objects[collection.size() - 1]);
+        }
+
+        return stringBuilder.toString();
     }
 }
