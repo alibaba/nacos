@@ -166,7 +166,7 @@ public class NacosNamingService implements NamingService {
             endpointUrl = properties.getProperty(PropertyKeyConst.ENDPOINT);
         }
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrl)) {
+        if (StringUtils.isBlank(endpointUrl)) {
             return;
         }
 
