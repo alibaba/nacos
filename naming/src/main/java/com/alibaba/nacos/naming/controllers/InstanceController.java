@@ -112,6 +112,7 @@ public class InstanceController {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
+            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
             return "ok";
         }
 
@@ -332,10 +333,12 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String weight = WebUtils.optional(request, "weight", "1");
-        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
         boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
-        // If server running in CP mode, we set this flag to false:
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
             String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
