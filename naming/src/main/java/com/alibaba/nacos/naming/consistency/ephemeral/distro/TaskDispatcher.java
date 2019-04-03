@@ -100,14 +100,16 @@ public class TaskDispatcher {
                         continue;
                     }
 
+                    if (StringUtils.isBlank(key)) {
+                        continue;
+                    }
+
                     if (dataSize == 0) {
                         keys = new ArrayList<>();
                     }
 
-                    if (StringUtils.isNotBlank(key)) {
-                        keys.add(key);
-                        dataSize++;
-                    }
+                    keys.add(key);
+                    dataSize++;
 
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
