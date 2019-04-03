@@ -187,17 +187,18 @@ public class NamingProxy {
 
     }
 
-    public void deregisterService(String serviceName, String ip, int port, String clusterName) throws NacosException {
+    public void deregisterService(String serviceName, Instance instance) throws NacosException {
 
-        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}:{}@{}",
-            namespaceId, serviceName, ip, port, clusterName);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}",
+            namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
-        params.put("ip", ip);
-        params.put("port", String.valueOf(port));
         params.put(CommonParams.SERVICE_NAME, serviceName);
-        params.put(CommonParams.CLUSTER_NAME, clusterName);
+        params.put(CommonParams.CLUSTER_NAME, instance.getClusterName());
+        params.put("ip", instance.getIp());
+        params.put("port", String.valueOf(instance.getPort()));
+        params.put("ephemeral", String.valueOf(instance.isEphemeral()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
     }
