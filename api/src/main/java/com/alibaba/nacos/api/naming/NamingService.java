@@ -139,6 +139,16 @@ public interface NamingService {
     void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException;
 
     /**
+     * deregister instance with full instance information
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instance    instance information
+     * @throws NacosException
+     */
+    void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException;
+
+    /**
      * get all instances of a service
      *
      * @param serviceName name of service

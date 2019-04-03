@@ -187,7 +187,8 @@ public class InstanceController {
 
         List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
-            throw new IllegalStateException("no ips found for cluster " + cluster + " in service " + serviceName);
+            throw new NacosException(NacosException.NOT_FOUND,
+                "no ips found for cluster " + cluster + " in service " + serviceName);
         }
 
         for (Instance instance : ips) {
@@ -205,7 +206,7 @@ public class InstanceController {
             }
         }
 
-        throw new IllegalStateException("no matched ip found!");
+        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
     }
 
     @CanDistro
@@ -216,15 +217,15 @@ public class InstanceController {
 
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
 
-        // ignore client beat in CP mode:
-        if (ServerMode.CP.name().equals(switchDomain.getServerMode())) {
-            return result;
-        }
-
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
+
+        if (!switchDomain.isDefaultInstanceEphemeral() && !clientBeat.isEphemeral()) {
+            return result;
+        }
+
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
@@ -323,16 +324,6 @@ public class InstanceController {
             throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
         }
 
-        if ((ServerMode.AP.name().equals(switchDomain.getServerMode()) && !instance.isEphemeral())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
-                + " in " + switchDomain.getServerMode() + " mode.");
-        }
-
-        if ((ServerMode.CP.name().equals(switchDomain.getServerMode()) && instance.isEphemeral())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
-                + " in " + switchDomain.getServerMode() + " mode.");
-        }
-
         return instance;
     }
 
@@ -346,7 +337,7 @@ public class InstanceController {
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
         // If server running in CP mode, we set this flag to false:
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
-            String.valueOf(!ServerMode.CP.name().equals(switchDomain.getServerMode()))));
+            String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
         Instance instance = new Instance();
         instance.setPort(Integer.parseInt(port));
