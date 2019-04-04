@@ -34,9 +34,10 @@ import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -86,9 +87,7 @@ public class NacosNamingService implements NamingService {
     }
 
     private void init(Properties properties) {
-
         serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-
         initNamespace(properties);
         initEndpoint(properties);
         initWebRootContext();
@@ -150,30 +149,35 @@ public class NacosNamingService implements NamingService {
         }
     }
 
-    private void initEndpoint(Properties properties) {
+    private void initEndpoint(final Properties properties) {
         if (properties == null) {
 
             return;
         }
-
-        String endpointUrl = TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENDPOINT), new Callable<String>() {
-            @Override
-            public String call() {
-                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+        //这里通过 dubbo/sca 侧来初始化默认传入的是 true
+        boolean isUseEndpointParsingRule = Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE));
+        String endpointUrl;
+        if (isUseEndpointParsingRule) {
+            endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
+            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrl)) {
+                serverList = "";
             }
-        });
+        } else {
+            endpointUrl = properties.getProperty(PropertyKeyConst.ENDPOINT);
+        }
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrl)) {
+        if (StringUtils.isBlank(endpointUrl)) {
             return;
         }
 
-        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENDPOINT_PORT), new Callable<String>() {
+        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
             @Override
             public String call() {
 
-                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
             }
         });
+
         endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
             @Override
             public String call() {
@@ -186,10 +190,6 @@ public class NacosNamingService implements NamingService {
 
     private void initNamespace(Properties properties) {
         String tmpNamespace = null;
-
-        if (properties != null) {
-            tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        }
 
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
@@ -218,6 +218,10 @@ public class NacosNamingService implements NamingService {
                 return namespace;
             }
         });
+
+        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
+            tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        }
 
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
