@@ -23,10 +23,7 @@ import com.google.common.net.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -43,6 +40,12 @@ public class HttpClient {
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
     private static final boolean ENABLE_HTTPS = Boolean
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+    public static final Boolean CON_PROXY_ENABLED =  Boolean
+        .getBoolean("com.alibaba.nacos.client.naming.proxy.enable");
+    public static final String CON_PROXY_HOST = System.
+        getProperty("com.alibaba.nacos.client.naming.proxy.host", "127.0.0.1");
+    public static final Integer CON_PROXY_PORT = Integer.
+        getInteger("com.alibaba.nacos.client.naming.proxy.port", 8001);
 
     private static final String POST = "POST";
     private static final String PUT = "PUT";
@@ -71,7 +74,13 @@ public class HttpClient {
             String encodedContent = encodingParams(paramValues, encoding);
             url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
-            conn = (HttpURLConnection) new URL(url).openConnection();
+            if(CON_PROXY_ENABLED){
+                InetSocketAddress proxyAddress = new InetSocketAddress(CON_PROXY_HOST,CON_PROXY_PORT);
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, proxyAddress);
+                conn = (HttpURLConnection) new URL(url).openConnection(proxy);
+            }else{
+                conn = (HttpURLConnection) new URL(url).openConnection();
+            }
 
             setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);

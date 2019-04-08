@@ -19,7 +19,6 @@ import com.alibaba.nacos.common.util.HttpMethod;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.FluentStringsMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,7 +27,6 @@ import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
@@ -42,10 +40,7 @@ import org.apache.http.message.BasicNameValuePair;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
@@ -56,7 +51,12 @@ import java.util.zip.GZIPInputStream;
 public class HttpClient {
     public static final int TIME_OUT_MILLIS = 10000;
     public static final int CON_TIME_OUT_MILLIS = 5000;
-
+    public static final Boolean CON_PROXY_ENABLED =  Boolean
+        .getBoolean("com.alibaba.nacos.client.naming.proxy.enable");
+    public static final String CON_PROXY_HOST = System.
+        getProperty("com.alibaba.nacos.client.naming.proxy.host", "127.0.0.1");
+    public static final Integer CON_PROXY_PORT = Integer.
+        getInteger("com.alibaba.nacos.client.naming.proxy.port", 8001);
     private static AsyncHttpClient asyncHttpClient;
 
     private static CloseableHttpClient postClient;
@@ -75,7 +75,6 @@ public class HttpClient {
         builder.setIOThreadMultiplier(1);
         builder.setMaxRequestRetry(0);
         builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-
         asyncHttpClient = new AsyncHttpClient(builder.build());
 
         HttpClientBuilder builder2 = HttpClients.custom();
@@ -103,7 +102,13 @@ public class HttpClient {
             String encodedContent = encodingParams(paramValues, encoding);
             url += (null == encodedContent) ? "" : ("?" + encodedContent);
 
-            conn = (HttpURLConnection) new URL(url).openConnection();
+            if(CON_PROXY_ENABLED){
+                InetSocketAddress proxyAddress = new InetSocketAddress(CON_PROXY_HOST,CON_PROXY_PORT);
+                Proxy proxy = new Proxy(Proxy.Type.HTTP, proxyAddress);
+                conn = (HttpURLConnection) new URL(url).openConnection(proxy);
+            }else{
+                conn = (HttpURLConnection) new URL(url).openConnection();
+            }
             conn.setConnectTimeout(connectTimeout);
             conn.setReadTimeout(readTimeout);
             conn.setRequestMethod(method);
