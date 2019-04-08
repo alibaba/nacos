@@ -66,7 +66,7 @@ public class ServerHttpAgent implements HttpAgent {
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
 
-        boolean isSSL = false;
+        boolean isSSL = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");;
 
         do {
             try {
