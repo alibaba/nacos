@@ -66,7 +66,7 @@ public class ServerHttpAgent implements HttpAgent {
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
 
-        boolean isSSL = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");;
+        boolean isSSL = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
 
         do {
             try {
@@ -105,7 +105,7 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpResult httpPost(String path, List<String> headers, List<String> paramValues, String encoding,
                                long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-        boolean isSSL = false;
+        boolean isSSL = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
         do {
             try {
                 List<String> newHeaders = getSpasHeaders(paramValues);
@@ -185,7 +185,10 @@ public class ServerHttpAgent implements HttpAgent {
         if (isSSL) {
             httpPrefix = "https://";
         }
-        return httpPrefix + serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+        if(!serverAddr.startsWith("http")) {
+        	serverAddr = httpPrefix + serverAddr ;
+        }
+        return  serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
     }
 
     public static String getAppname() {
