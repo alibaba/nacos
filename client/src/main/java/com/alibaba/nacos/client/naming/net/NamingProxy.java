@@ -321,7 +321,7 @@ public class NamingProxy {
             curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
         }
 
-        if(!curServer.startsWith("http")) {
+        if(!curServer.startsWith(HttpClient.DEF_HTTP_PREFIX)) {
         	curServer = HttpClient.getPrefix() + curServer;
         }
         url =  curServer + api;

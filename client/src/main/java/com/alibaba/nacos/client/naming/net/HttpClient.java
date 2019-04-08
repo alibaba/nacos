@@ -41,6 +41,7 @@ public class HttpClient {
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
     public static final int CON_TIME_OUT_MILLIS = Integer
         .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    public static final String DEF_HTTP_PREFIX = "http";
     private static final boolean ENABLE_HTTPS = Boolean
         .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
 

@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
+import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -185,7 +186,7 @@ public class ServerHttpAgent implements HttpAgent {
         if (isSSL) {
             httpPrefix = "https://";
         }
-        if(!serverAddr.startsWith("http")) {
+        if(!serverAddr.startsWith(HttpClient.DEF_HTTP_PREFIX)) {
         	serverAddr = httpPrefix + serverAddr ;
         }
         return  serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
