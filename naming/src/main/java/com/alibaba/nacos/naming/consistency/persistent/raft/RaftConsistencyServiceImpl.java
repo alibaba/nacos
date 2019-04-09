@@ -62,9 +62,11 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
                 Datum datum = new Datum();
                 datum.key = key;
                 raftCore.onDelete(datum.key, peers.getLeader());
+                raftCore.unlistenAll(key);
                 return;
             }
             raftCore.signalDelete(key);
+            raftCore.unlistenAll(key);
         } catch (Exception e) {
             Loggers.RAFT.error("Raft remove failed.", e);
             throw new NacosException(NacosException.SERVER_ERROR, "Raft remove failed, key:" + key);

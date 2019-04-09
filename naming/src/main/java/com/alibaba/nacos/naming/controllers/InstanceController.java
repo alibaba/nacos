@@ -121,6 +121,7 @@ public class InstanceController {
         return "ok";
     }
 
+    @CanDistro
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);

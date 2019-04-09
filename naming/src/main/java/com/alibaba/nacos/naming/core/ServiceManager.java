@@ -168,7 +168,9 @@ public class ServiceManager implements RecordListener<Service> {
         if (service != null) {
             service.destroy();
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
+
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
+
             consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJSON());
         }
