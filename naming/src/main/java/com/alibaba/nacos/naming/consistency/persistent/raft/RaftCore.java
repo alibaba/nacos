@@ -809,6 +809,10 @@ public class RaftCore {
         }
     }
 
+    public void unlistenAll(String key) {
+        listeners.remove(key);
+    }
+
     public void setTerm(long term) {
         peers.setTerm(term);
     }

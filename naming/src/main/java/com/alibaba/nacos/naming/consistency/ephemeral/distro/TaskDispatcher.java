@@ -48,6 +48,13 @@ public class TaskDispatcher {
 
     @PostConstruct
     public void init() {
+
+        if (partitionConfig.getTaskDispatchThreadCount() > Runtime.getRuntime().availableProcessors()) {
+            Loggers.EPHEMERAL.error("should not larger than {}, current is: {}",
+                Runtime.getRuntime().availableProcessors(), partitionConfig.getTaskDispatchThreadCount());
+            throw new RuntimeException("task dispatch thread count is too large!");
+        }
+
         for (int i = 0; i < partitionConfig.getTaskDispatchThreadCount(); i++) {
             TaskScheduler taskScheduler = new TaskScheduler(i);
             taskSchedulerList.add(taskScheduler);
