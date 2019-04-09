@@ -187,6 +187,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
 
+        listeners.remove(key);
+
         notifier.addTask(key, ApplyAction.DELETE);
     }
 
