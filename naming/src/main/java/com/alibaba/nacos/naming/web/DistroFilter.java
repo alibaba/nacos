@@ -32,7 +32,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author nacos
@@ -61,7 +64,11 @@ public class DistroFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        String urlString = req.getRequestURI() + "?" + req.getQueryString();
+        String urlString = req.getRequestURI();
+
+        if (StringUtils.isNotBlank(req.getQueryString())) {
+            urlString += "?" + req.getQueryString();
+        }
 
         try {
             String path = new URI(req.getRequestURI()).getPath();
@@ -98,7 +105,8 @@ public class DistroFilter implements Filter {
                     headerList.add(req.getHeader(headerName));
                 }
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList, new HashMap<>(2)
+                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList,
+                        StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
                         , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
 
                 try {
