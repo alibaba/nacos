@@ -482,6 +482,15 @@ public class HttpClient {
         return sb.toString();
     }
 
+    public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
+
+        Map<String, String> map = new HashMap<>(16);
+        for (String key : parameterMap.keySet()) {
+            map.put(key, parameterMap.get(key)[0]);
+        }
+        return map;
+    }
+
     public static class HttpResult {
         final public int code;
         final public String content;

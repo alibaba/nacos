@@ -99,7 +99,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     public void destroy() {
-        checkTask.setCancelled(true);
+        if (checkTask != null) {
+            checkTask.setCancelled(true);
+        }
     }
 
     public HealthCheckTask getHealthCheckTask() {

@@ -217,6 +217,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                         instance.getClusterName(), instance.toJSON());
                     Cluster cluster = new Cluster(instance.getClusterName());
                     cluster.setService(this);
+                    cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
 

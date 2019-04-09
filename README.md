@@ -97,9 +97,9 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * users-nacos@googlegroups.com: Nacos usage general discussion.
      * dev-nacos@googlegroups.com: Nacos developer discussion (APIs, feature design, etc).
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
-* Join us from wechat. Welcome words: Nacos.
+* Join us from DingDing. 
 
-![cwex](http://acm-public.oss-cn-hangzhou.aliyuncs.com/xuc.png)
+![cwex](https://img.alicdn.com/tfs/TB1bpBlQmrqK1RjSZK9XXXyypXa-830-972.png_288x480q80.jpg)
 
 
 ## Who is using

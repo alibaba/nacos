@@ -236,4 +236,12 @@ public class NamingProxy {
             return sb.toString();
         }
     }
+
+    public static void main(String[] args) throws Exception {
+
+        String key = "com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@test.10";
+        List<String> keys = new ArrayList<>();
+        keys.add(key);
+        getData(keys, "11.239.112.161:8848");
+    }
 }
