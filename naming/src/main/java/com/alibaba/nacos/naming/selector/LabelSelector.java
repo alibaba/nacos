@@ -285,12 +285,12 @@ public class LabelSelector extends ExpressionSelector implements Selector {
         }
     }
 
-    public static void main(String[] args) throws NacosException {
-
-        String expression = "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B";
-        expression = StringUtils.deleteWhitespace(expression);
-        System.out.println(ExpressionInterpreter.getTerms(expression));
-
-        System.out.println(LabelSelector.parseExpression(expression));
-    }
+//    public static void main(String[] args) throws NacosException {
+//
+//         String expression = "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B";
+//        expression = StringUtils.deleteWhitespace(expression);
+//         System.out.println(ExpressionInterpreter.getTerms(expression));
+//
+//         System.out.println(LabelSelector.parseExpression(expression));
+//      }
 }
