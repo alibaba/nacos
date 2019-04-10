@@ -394,10 +394,6 @@ public class ServiceManager implements RecordListener<Service> {
                 "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
-        if (service.allIPs().contains(instance)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance already exist: " + instance);
-        }
-
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
