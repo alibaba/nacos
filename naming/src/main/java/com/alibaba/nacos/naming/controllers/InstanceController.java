@@ -135,10 +135,10 @@ public class InstanceController {
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) < 0) {
-            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
-        } else {
+            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
             serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
+        } else {
+            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         }
         return "ok";
     }
@@ -364,6 +364,7 @@ public class InstanceController {
     public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
+        ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
         Service service = serviceManager.getService(namespaceId, serviceName);
 
@@ -407,8 +408,14 @@ public class InstanceController {
                 Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
             }
 
+            if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+                clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                result.put("dom", serviceName);
+            } else {
+                result.put("dom", NamingUtils.getServiceName(serviceName));
+            }
+
             result.put("hosts", new JSONArray());
-            result.put("dom", serviceName);
             result.put("name", serviceName);
             result.put("cacheMillis", cacheMillis);
             result.put("lastRefTime", System.currentTimeMillis());
@@ -453,8 +460,6 @@ public class InstanceController {
         }
 
         JSONArray hosts = new JSONArray();
-
-        ClientInfo clientInfo = new ClientInfo(agent);
 
         for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
             List<Instance> ips = entry.getValue();
