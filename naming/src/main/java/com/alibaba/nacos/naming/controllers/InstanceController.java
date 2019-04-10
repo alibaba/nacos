@@ -112,6 +112,7 @@ public class InstanceController {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
+            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
             return "ok";
         }
 
@@ -120,6 +121,7 @@ public class InstanceController {
         return "ok";
     }
 
+    @CanDistro
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -133,10 +135,10 @@ public class InstanceController {
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) < 0) {
-            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
-        } else {
+            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
             serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
+        } else {
+            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         }
         return "ok";
     }
@@ -187,7 +189,8 @@ public class InstanceController {
 
         List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
-            throw new IllegalStateException("no ips found for cluster " + cluster + " in service " + serviceName);
+            throw new NacosException(NacosException.NOT_FOUND,
+                "no ips found for cluster " + cluster + " in service " + serviceName);
         }
 
         for (Instance instance : ips) {
@@ -205,7 +208,7 @@ public class InstanceController {
             }
         }
 
-        throw new IllegalStateException("no matched ip found!");
+        throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
     }
 
     @CanDistro
@@ -216,15 +219,15 @@ public class InstanceController {
 
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
 
-        // ignore client beat in CP mode:
-        if (ServerMode.CP.name().equals(switchDomain.getServerMode())) {
-            return result;
-        }
-
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
+
+        if (!switchDomain.isDefaultInstanceEphemeral() && !clientBeat.isEphemeral()) {
+            return result;
+        }
+
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
@@ -323,16 +326,6 @@ public class InstanceController {
             throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
         }
 
-        if ((ServerMode.AP.name().equals(switchDomain.getServerMode()) && !instance.isEphemeral())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
-                + " in " + switchDomain.getServerMode() + " mode.");
-        }
-
-        if ((ServerMode.CP.name().equals(switchDomain.getServerMode()) && instance.isEphemeral())) {
-            throw new NacosException(NacosException.INVALID_PARAM, "wrong instance type: " + instance.isEphemeral()
-                + " in " + switchDomain.getServerMode() + " mode.");
-        }
-
         return instance;
     }
 
@@ -341,12 +334,14 @@ public class InstanceController {
         String ip = WebUtils.required(request, "ip");
         String port = WebUtils.required(request, "port");
         String weight = WebUtils.optional(request, "weight", "1");
-        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
         boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
         boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
-        // If server running in CP mode, we set this flag to false:
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
-            String.valueOf(!ServerMode.CP.name().equals(switchDomain.getServerMode()))));
+            String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
         Instance instance = new Instance();
         instance.setPort(Integer.parseInt(port));
@@ -369,6 +364,7 @@ public class InstanceController {
     public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
+        ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
         Service service = serviceManager.getService(namespaceId, serviceName);
 
@@ -412,8 +408,14 @@ public class InstanceController {
                 Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
             }
 
+            if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+                clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                result.put("dom", serviceName);
+            } else {
+                result.put("dom", NamingUtils.getServiceName(serviceName));
+            }
+
             result.put("hosts", new JSONArray());
-            result.put("dom", serviceName);
             result.put("name", serviceName);
             result.put("cacheMillis", cacheMillis);
             result.put("lastRefTime", System.currentTimeMillis());
@@ -458,8 +460,6 @@ public class InstanceController {
         }
 
         JSONArray hosts = new JSONArray();
-
-        ClientInfo clientInfo = new ClientInfo(agent);
 
         for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
             List<Instance> ips = entry.getValue();

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
@@ -49,7 +50,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
         }
 
         try {
-            HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler() {
+            HttpClient.asyncHttpPostLarge(url, null, JSON.toJSONString(params), new AsyncCompletionHandler() {
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {

@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -33,7 +32,10 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * @author nacos
@@ -57,17 +59,24 @@ public class DistroFilter implements Filter {
 
     }
 
-    @SuppressFBWarnings("HRS_REQUEST_PARAMETER_TO_HTTP_HEADER")
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        String urlString = req.getRequestURI() + "?" + req.getQueryString();
+        String urlString = req.getRequestURI();
+
+        if (StringUtils.isNotBlank(req.getQueryString())) {
+            urlString += "?" + req.getQueryString();
+        }
 
         try {
             String path = new URI(req.getRequestURI()).getPath();
             String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+            // For client under 0.8.0:
+            if (StringUtils.isBlank(serviceName)) {
+                serviceName = req.getParameter("dom");
+            }
             Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
@@ -96,7 +105,8 @@ public class DistroFilter implements Filter {
                     headerList.add(req.getHeader(headerName));
                 }
                 HttpClient.HttpResult result =
-                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList, new HashMap<>(2)
+                    HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList,
+                        StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)
                         , PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, "UTF-8", req.getMethod());
 
                 try {

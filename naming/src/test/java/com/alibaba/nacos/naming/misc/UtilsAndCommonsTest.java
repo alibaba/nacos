@@ -40,4 +40,16 @@ public class UtilsAndCommonsTest {
 
         Assert.assertEquals("/nacos/v1/ns", DEFAULT_NACOS_NAMING_CONTEXT);
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testShakeUpException() {
+        UtilsAndCommons.shakeUp(null, 0);
+    }
+
+    @Test
+    public void testShakeUp() {
+        Assert.assertEquals(0, UtilsAndCommons.shakeUp(null, 1));
+        char[] chars = new char[]{2325, 9, 30, 12, 2};
+        Assert.assertEquals(0, UtilsAndCommons.shakeUp(new String(chars), 1));
+    }
 }
