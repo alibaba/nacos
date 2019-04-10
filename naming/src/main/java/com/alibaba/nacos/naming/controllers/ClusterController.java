@@ -69,6 +69,7 @@ public class ClusterController {
             Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName, serviceName);
             cluster = new Cluster();
             cluster.setName(clusterName);
+            cluster.setService(service);
         }
 
         cluster.setDefCkport(NumberUtils.toInt(checkPort));
@@ -96,9 +97,8 @@ public class ClusterController {
 
         cluster.setHealthChecker(abstractHealthChecker);
         cluster.setMetadata(UtilsAndCommons.parseMetadata(metadata));
-
+        cluster.init();
         service.getClusterMap().put(clusterName, cluster);
-
         service.setLastModifiedMillis(System.currentTimeMillis());
         service.recalculateChecksum();
         service.validate();

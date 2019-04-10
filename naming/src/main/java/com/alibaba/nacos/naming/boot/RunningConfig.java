@@ -17,7 +17,6 @@ package com.alibaba.nacos.naming.boot;
 
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -39,7 +38,6 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     @Autowired
     private ServletContext servletContext;
 
-    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
 
