@@ -16,7 +16,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.0.0-RC3</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -113,6 +113,7 @@
         </dependency>
 
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
