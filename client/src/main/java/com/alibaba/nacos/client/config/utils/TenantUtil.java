@@ -24,7 +24,7 @@ import com.alibaba.nacos.client.utils.StringUtils;
  */
 public class TenantUtil {
 
-    static String userTenant = "";
+    private static String userTenant = "";
 
     static {
         userTenant = System.getProperty("tenant.id", "");
