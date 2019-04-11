@@ -102,6 +102,11 @@ public class NacosConfigService implements ConfigService {
         if (StringUtils.isBlank(namespaceTmp)) {
             namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = "";
+        }
+
         namespace = namespaceTmp;
         properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
