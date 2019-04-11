@@ -168,7 +168,9 @@ public class ServiceManager implements RecordListener<Service> {
         if (service != null) {
             service.destroy();
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));
+
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, false));
+
             consistencyService.unlisten(KeyBuilder.buildServiceMetaKey(namespace, name), service);
             Loggers.SRV_LOG.info("[DEAD-SERVICE] {}", service.toJSON());
         }
@@ -390,10 +392,6 @@ public class ServiceManager implements RecordListener<Service> {
         if (service == null) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "service not found, namespace: " + namespaceId + ", service: " + serviceName);
-        }
-
-        if (service.allIPs().contains(instance)) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance already exist: " + instance);
         }
 
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
