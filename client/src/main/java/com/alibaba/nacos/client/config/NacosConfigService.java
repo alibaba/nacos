@@ -82,7 +82,7 @@ public class NacosConfigService implements ConfigService {
     }
 
     private void initNamespace(Properties properties) {
-        String namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        String namespaceTmp = null;
 
         namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
             @Override
@@ -98,6 +98,15 @@ public class NacosConfigService implements ConfigService {
                 return StringUtils.isNotBlank(namespace) ? namespace : "";
             }
         });
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        }
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = "";
+        }
+
         namespace = namespaceTmp;
         properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
