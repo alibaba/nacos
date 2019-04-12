@@ -181,7 +181,7 @@ public class ServerListManager {
 
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
         if (Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE))) {
-            String endpointUrl = ParamUtil.parsingEndpointRule(endpointPortTmp);
+            String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
             if (StringUtils.isNotBlank(endpointUrl)) {
                 serverAddrsStr = "";
             }
