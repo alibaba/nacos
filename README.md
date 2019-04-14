@@ -97,9 +97,9 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * users-nacos@googlegroups.com: Nacos usage general discussion.
      * dev-nacos@googlegroups.com: Nacos developer discussion (APIs, feature design, etc).
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
-* Join us from wechat. Welcome words: Nacos.
+* Join us from DingDing. 
 
-![cwex](http://acm-public.oss-cn-hangzhou.aliyuncs.com/xuc.png)
+![cwex](https://img.alicdn.com/tfs/TB1bpBlQmrqK1RjSZK9XXXyypXa-830-972.png_288x480q80.jpg)
 
 
 ## Who is using
@@ -143,6 +143,26 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![云帐房](http://www.yunzhangfang.com/yzf-pc/img/logo.png)
 ![知氏教育](https://www.chyeth.com/622e88980a5d091eaa6449f82d48ca43.png) 
 ![中化信息](http://www.sinochem.com/Portals/0/xinlogo.png)
+![一点车](https://img.alicdn.com/tfs/TB1DXerNgDqK1RjSZSyXXaxEVXa-333-103.png)
+![明传无线](https://img.alicdn.com/tfs/TB1VfOANgHqK1RjSZFPXXcwapXa-313-40.png)
+![妙优车](https://img.alicdn.com/tfs/TB1lvCyNhTpK1RjSZFMXXbG_VXa-130-60.png)
+![蜂巢](https://img.alicdn.com/tfs/TB1kY9qNgTqK1RjSZPhXXXfOFXa-120-50.png)
+![华存数据](https://img.alicdn.com/tfs/TB1G.GBNbrpK1RjSZTEXXcWAVXa-234-65.png)
+![数云](https://img.alicdn.com/tfs/TB1qsurNgDqK1RjSZSyXXaxEVXa-300-90.png)
+![广通软件](https://img.alicdn.com/tfs/TB13aywNhTpK1RjSZR0XXbEwXXa-98-38.png)
+![菜菜](https://img.alicdn.com/tfs/TB1xqmBNjTpK1RjSZKPXXa3UpXa-162-70.png)
+![科蓝公司](https://img.alicdn.com/tfs/TB18DmINcfpK1RjSZFOXXa6nFXa-200-200.png)
+![浩鲸](https://img.alicdn.com/tfs/TB15uqANXzqK1RjSZFoXXbfcXXa-188-86.png)
+![未名天日语](https://img.alicdn.com/tfs/TB1mvmyNkvoK1RjSZPfXXXPKFXa-238-46.png)
+![金联创](https://img.alicdn.com/tfs/TB1PSWsNmrqK1RjSZK9XXXyypXa-195-130.jpg)
+![同窗链](https://img.alicdn.com/tfs/TB1k1qzNbvpK1RjSZFqXXcXUVXa-160-69.png)
+![顺能](https://img.alicdn.com/tfs/TB1HdyvNmzqK1RjSZFLXXcn2XXa-143-143.jpg)
+![百世快递](https://img.alicdn.com/tfs/TB1UdaGNgHqK1RjSZJnXXbNLpXa-277-62.png)
+![汽车之家](https://img.alicdn.com/tfs/TB17OqENbrpK1RjSZTEXXcWAVXa-240-113.jpg)
+![鲸打卡](https://img.alicdn.com/tfs/TB1q71ANkvoK1RjSZPfXXXPKFXa-257-104.png)
+![时代光华](https://img.alicdn.com/tfs/TB1UzuyNhTpK1RjSZR0XXbEwXXa-201-86.jpg)
+![康美](https://img.alicdn.com/tfs/TB19RCANgHqK1RjSZFPXXcwapXa-180-180.jpg)
+![环球易购](https://img.alicdn.com/tfs/TB1iCGyNb2pK1RjSZFsXXaNlXXa-143-143.jpg)
 ![海格管家](https://img.alicdn.com/tfs/TB1FNq4EwHqK1RjSZFgXXa7JXXa-232-232.jpg)
 ![Nepxion](https://avatars0.githubusercontent.com/u/16344119?s=200&v=4)
 ![东莞最佳拍档](https://img.alicdn.com/tfs/TB11ugsDzTpK1RjSZKPXXa3UpXa-300-300.png)
@@ -151,4 +171,5 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
 ![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
+
 

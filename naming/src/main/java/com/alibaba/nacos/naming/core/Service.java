@@ -18,8 +18,8 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatCheckTask;
 import com.alibaba.nacos.naming.healthcheck.ClientBeatProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
@@ -44,18 +44,15 @@ import java.util.*;
  * Service of Nacos server side
  * <p>
  * We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters,
- * which contains a list of instances.
+ * which contain a list of instances.
  * <p>
- * This class inherits from Service in API module and stores some fields that do not expose to client.
+ * This class inherits from Service in API module and stores some fields that do not have to expose to client.
  *
  * @author nkorange
  */
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
 
     private static final String SERVICE_NAME_SYNTAX = "[0-9a-zA-Z@\\.:_-]+";
-
-    @JSONField(serialize = false)
-    private ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
 
     @JSONField(serialize = false)
     private ClientBeatCheckTask clientBeatCheckTask = new ClientBeatCheckTask(this);
@@ -104,6 +101,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void processClientBeat(final RsInfo rsInfo) {
+        ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
         clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
         HealthCheckReactor.scheduleNow(clientBeatProcessor);
@@ -156,14 +154,19 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         Loggers.SRV_LOG.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
-        for (Instance ip : value.getInstanceList()) {
+        for (Instance instance : value.getInstanceList()) {
 
-            if (ip.getWeight() > 10000.0D) {
-                ip.setWeight(10000.0D);
+            if (instance == null) {
+                // Reject this abnormal instance list:
+                throw new RuntimeException("got null instance " + key);
             }
 
-            if (ip.getWeight() < 0.01D && ip.getWeight() > 0.0D) {
-                ip.setWeight(0.01D);
+            if (instance.getWeight() > 10000.0D) {
+                instance.setWeight(10000.0D);
+            }
+
+            if (instance.getWeight() < 0.01D && instance.getWeight() > 0.0D) {
+                instance.setWeight(0.01D);
             }
         }
 
@@ -214,6 +217,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                         instance.getClusterName(), instance.toJSON());
                     Cluster cluster = new Cluster(instance.getClusterName());
                     cluster.setService(this);
+                    cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
 
@@ -243,7 +247,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] service: {}, ips: {}", getName(), stringBuilder.toString());
+        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
+            getNamespaceId(), getName(), stringBuilder.toString());
 
     }
 
@@ -287,7 +292,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (String cluster : clusters) {
             Cluster clusterObj = clusterMap.get(cluster);
             if (clusterObj == null) {
-                throw new IllegalArgumentException("can not find cluster: " + cluster + ", service:" + getName());
+                continue;
             }
 
             allIPs.addAll(clusterObj.allIPs());

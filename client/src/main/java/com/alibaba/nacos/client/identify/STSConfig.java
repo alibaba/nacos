@@ -25,7 +25,7 @@ import com.alibaba.nacos.client.utils.StringUtils;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class STSConfig {
     private static final String RAM_SECURITY_CREDENTIALS_URL
-        = "";
+        = "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
     private String ramRoleName;
     /**
      * STS 临时凭证有效期剩余多少时开始刷新（允许本地时间比 STS 服务时间最多慢多久）

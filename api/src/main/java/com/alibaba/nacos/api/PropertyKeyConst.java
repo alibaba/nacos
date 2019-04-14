@@ -22,6 +22,8 @@ package com.alibaba.nacos.api;
  */
 public class PropertyKeyConst {
 
+    public final static String IS_USE_ENDPOINT_PARSING_RULE = "isUseEndpointParsingRule";
+
     public final static String ENDPOINT = "endpoint";
 
     public final static String ENDPOINT_PORT = "endpointPort";
@@ -31,6 +33,8 @@ public class PropertyKeyConst {
     public final static String ACCESS_KEY = "accessKey";
 
     public final static String SECRET_KEY = "secretKey";
+
+    public final static String RAM_ROLE_NAME = "ramRoleName";
 
     public final static String SERVER_ADDR = "serverAddr";
 

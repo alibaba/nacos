@@ -17,10 +17,7 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.misc.GlobalConfig;
-import com.alibaba.nacos.naming.misc.GlobalExecutor;
-import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -49,21 +46,19 @@ public class TaskDispatcher {
 
     private List<TaskScheduler> taskSchedulerList = new ArrayList<>();
 
+    private final int cpuCoreCount = Runtime.getRuntime().availableProcessors();
+
     @PostConstruct
     public void init() {
-        for (int i = 0; i < partitionConfig.getTaskDispatchThreadCount(); i++) {
+        for (int i = 0; i < cpuCoreCount; i++) {
             TaskScheduler taskScheduler = new TaskScheduler(i);
             taskSchedulerList.add(taskScheduler);
             GlobalExecutor.submitTaskDispatch(taskScheduler);
         }
     }
 
-    public int mapTask(String key) {
-        return Math.abs(key.hashCode()) % partitionConfig.getTaskDispatchThreadCount();
-    }
-
     public void addTask(String key) {
-        taskSchedulerList.get(mapTask(key)).addTask(key);
+        taskSchedulerList.get(UtilsAndCommons.shakeUp(key, cpuCoreCount)).addTask(key);
     }
 
     public class TaskScheduler implements Runnable {
@@ -107,14 +102,16 @@ public class TaskDispatcher {
                         continue;
                     }
 
+                    if (StringUtils.isBlank(key)) {
+                        continue;
+                    }
+
                     if (dataSize == 0) {
                         keys = new ArrayList<>();
                     }
 
-                    if (StringUtils.isNotBlank(key)) {
-                        keys.add(key);
-                        dataSize++;
-                    }
+                    keys.add(key);
+                    dataSize++;
 
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {

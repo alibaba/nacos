@@ -202,7 +202,7 @@ public class MultiTenant_InstanceAPI_ITCase {
                 .appendParam("namespaceId", "namespace-2")
                 .done(),
             String.class);
-        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        Assert.assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
 
         response = request("/nacos/v1/ns/instance/list",
             Params.newParams()
