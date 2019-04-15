@@ -165,6 +165,9 @@ public class ServerListManager {
     }
 
     public synchronized void onReceiveServerStatus(String configInfo) {
+
+        Loggers.SRV_LOG.info("receive config info: {}", configInfo);
+
         String[] configs = configInfo.split("\r\n");
         if (configs.length == 0) {
             return;
@@ -274,7 +277,8 @@ public class ServerListManager {
             // for every change disable healthy check for some while
             if (switchDomain.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
-                    "disable health check for {} ms from now on", STABLE_PERIOD);
+                    "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
+                    healthyServers, newHealthyList);
 
                 switchDomain.setHealthCheckEnabled(false);
                 autoDisabledHealthCheck = true;
