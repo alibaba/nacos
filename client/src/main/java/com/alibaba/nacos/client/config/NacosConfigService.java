@@ -56,6 +56,9 @@ public class NacosConfigService implements ConfigService {
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
 
     private final long POST_TIMEOUT = 3000L;
+
+    private static final String EMPTY = "";
+
     /**
      * http agent
      */
@@ -95,19 +98,14 @@ public class NacosConfigService implements ConfigService {
             @Override
             public String call() {
                 String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                return StringUtils.isNotBlank(namespace) ? namespace : "";
+                return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
             }
         });
 
         if (StringUtils.isBlank(namespaceTmp)) {
             namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
-
-        if (StringUtils.isBlank(namespaceTmp)) {
-            namespaceTmp = "";
-        }
-
-        namespace = namespaceTmp;
+        namespace = StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : EMPTY;
         properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
 
