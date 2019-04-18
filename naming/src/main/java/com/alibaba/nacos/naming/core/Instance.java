@@ -297,7 +297,7 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     public boolean validate() {
 
-        if(getIp().contains(":")){
+        if(getIp().contains(UtilsAndCommons.IP_PORT_SPLITER)){
             Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
             if (!matcher.matches()) {
                 return false;
