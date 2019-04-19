@@ -26,6 +26,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+
+import org.junit.Ignore;
 import org.springframework.http.HttpMethod;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.After;
@@ -52,6 +54,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
     "server.port=7001"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Ignore
 public class Cmdb_ITCase {
 
     private NamingService naming;
