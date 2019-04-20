@@ -176,9 +176,9 @@ public class ConfigExample {
 		content = configService.getConfig(dataId, group, 5000);
 		System.out.println(content);
 
-		boolean isRemoveOk = configService.removeConfig(dataId, group);
-		System.out.println(isRemoveOk);
-		Thread.sleep(3000);
+		//boolean isRemoveOk = configService.removeConfig(dataId, group);
+		//System.out.println(isRemoveOk);
+		//Thread.sleep(3000);
 
 		content = configService.getConfig(dataId, group, 5000);
 		System.out.println(content);
