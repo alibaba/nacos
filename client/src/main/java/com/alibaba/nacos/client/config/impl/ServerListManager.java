@@ -61,7 +61,7 @@ public class ServerListManager {
                 serverAddrs.add(serverAddr);
             }
         }
-        serverUrls = new ArrayList<String>(serverAddrs);
+        serverUrls = new ArrayList<>(serverAddrs);
         if (StringUtils.isBlank(namespace)) {
             name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()]));
         } else {
@@ -257,11 +257,10 @@ public class ServerListManager {
         if (newList.equals(serverUrls)) {
             return;
         }
-        serverUrls = new ArrayList<String>(newList);
+        serverUrls = new ArrayList<>(newList);
         currentServerAddr = iterator().next();
 
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
-        LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
     }
 
     private List<String> getApacheServerList(String url, String name) {
@@ -372,7 +371,7 @@ public class ServerListManager {
     private int endpointPort = 8080;
     private String contentPath = ParamUtil.getDefaultContextPath();
     private String serverListName = ParamUtil.getDefaultNodesPath();
-    volatile List<String> serverUrls = new ArrayList<String>();
+    volatile List<String> serverUrls = new ArrayList<>();
 
     private volatile String currentServerAddr;
 
@@ -418,7 +417,7 @@ class ServerAddressIterator implements Iterator<String> {
     }
 
     public ServerAddressIterator(List<String> source) {
-        sorted = new ArrayList<RandomizedServerAddress>();
+        sorted = new ArrayList<>();
         for (String address : source) {
             sorted.add(new RandomizedServerAddress(address));
         }

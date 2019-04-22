@@ -115,15 +115,12 @@ public class LocalConfigInfoProcessor {
                         LOGGER.error("[{}] save snapshot error", envName);
                     }
                 }
-
                 if (JVMUtil.isMultiInstance()) {
-                    ConcurrentDiskUtil.writeFileContent(file, config,
-                        Constants.ENCODE);
+                    ConcurrentDiskUtil.writeFileContent(file, config, Constants.ENCODE);
                 } else {
                     IOUtils.writeStringToFile(file, config, Constants.ENCODE);
                 }
             } catch (IOException ioe) {
-                LOGGER.error("[" + envName + "] save snapshot error, " + file, ioe);
             }
         }
     }

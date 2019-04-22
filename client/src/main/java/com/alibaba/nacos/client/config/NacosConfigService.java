@@ -144,10 +144,9 @@ public class NacosConfigService implements ConfigService {
         cr.setGroup(group);
 
         // 优先使用本地配置
+        /*1. 运维手动添加的配置信息，所以优先级最高*/
         String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
         if (content != null) {
-            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
-                dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -155,23 +154,18 @@ public class NacosConfigService implements ConfigService {
         }
 
         try {
+            /*2. 从服务端直接获取配置*/
             content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
-
             cr.setContent(content);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
-
             return content;
         } catch (NacosException ioe) {
             if (NacosException.NO_RIGHT == ioe.getErrCode()) {
                 throw ioe;
             }
-            LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
-                agent.getName(), dataId, group, tenant, ioe.toString());
         }
-
-        LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
-            dataId, group, tenant, ContentUtils.truncateContent(content));
+        /*4. 从snapshot中获取配置信息*/
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
         configFilterChainManager.doFilter(null, cr);
@@ -187,7 +181,7 @@ public class NacosConfigService implements ConfigService {
         group = null2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         String url = Constants.CONFIG_CONTROLLER_PATH;
-        List<String> params = new ArrayList<String>();
+        List<String> params = new ArrayList<>();
         params.add("dataId");
         params.add(dataId);
         params.add("group");

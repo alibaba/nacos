@@ -54,7 +54,7 @@ public class SpasAdapter {
         if (null == paramValues) {
             return null;
         }
-        Map<String, String> signMap = new HashMap<String, String>(5);
+        Map<String, String> signMap = new HashMap<>(5);
         for (Iterator<String> iter = paramValues.iterator(); iter.hasNext(); ) {
             String key = iter.next();
             if (TENANT_KEY.equals(key) || GROUP_KEY.equals(key)) {

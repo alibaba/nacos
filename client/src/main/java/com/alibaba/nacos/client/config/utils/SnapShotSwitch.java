@@ -24,9 +24,6 @@ import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
  */
 public class SnapShotSwitch {
 
-    /**
-     * whether use local cache
-     */
     private static Boolean isSnapShot = true;
 
     public static Boolean getIsSnapShot() {

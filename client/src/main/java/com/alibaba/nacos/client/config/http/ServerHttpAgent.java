@@ -74,14 +74,12 @@ public class ServerHttpAgent implements HttpAgent {
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
-                HttpResult result = HttpSimpleClient.httpGet(
-                    getUrl(serverListMgr.getCurrentServerAddr(), path, isSSL), newHeaders, paramValues, encoding,
-                    readTimeoutMs, isSSL);
+                /*客户端缓存了serverIps 基于随机算法，同机房优先原则*/
+                HttpResult result = HttpSimpleClient.httpGet(getUrl(serverListMgr.getCurrentServerAddr(), path, isSSL), newHeaders, paramValues, encoding, readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
-                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
-                        serverListMgr.getCurrentServerAddr(), result.code);
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
                     return result;
                 }
@@ -96,8 +94,6 @@ public class ServerHttpAgent implements HttpAgent {
                 throw ioe;
             }
         } while (System.currentTimeMillis() <= endTime);
-
-        LOGGER.error("no available server");
         throw new ConnectException("no available server");
     }
 
@@ -247,7 +243,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private List<String> getSpasHeaders(List<String> paramValues) throws IOException {
-        List<String> newHeaders = new ArrayList<String>();
+        List<String> newHeaders = new ArrayList<>();
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (STSConfig.getInstance().isSTSOn()) {
             STSCredential sTSCredential = getSTSCredential();

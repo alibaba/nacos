@@ -15,9 +15,6 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import com.alibaba.nacos.client.utils.LogUtils;
-import org.slf4j.Logger;
-
 /**
  * Get jvm config
  *
@@ -37,13 +34,11 @@ public class JVMUtil {
 
     private static Boolean isMultiInstance = false;
     private static String TRUE = "true";
-    private static final Logger LOGGER = LogUtils.logger(JVMUtil.class);
 
     static {
         String multiDeploy = System.getProperty("isMultiInstance", "false");
         if (TRUE.equals(multiDeploy)) {
             isMultiInstance = true;
         }
-        LOGGER.info("isMultiInstance:{}", isMultiInstance);
     }
 }

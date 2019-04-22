@@ -82,7 +82,7 @@ public class ConcurrentDiskUtil {
                         i);
                 }
             } while (null == rlock);
-            int fileSize = (int)fcin.size();
+            int fileSize = (int) fcin.size();
             ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
             fcin.read(byteBuffer);
             byteBuffer.flip();
@@ -90,11 +90,9 @@ public class ConcurrentDiskUtil {
         } finally {
             if (rlock != null) {
                 rlock.release();
-                rlock = null;
             }
             if (fis != null) {
                 fis.close();
-                fis = null;
             }
         }
     }
@@ -150,13 +148,11 @@ public class ConcurrentDiskUtil {
                             + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
-                    LOGGER.warn("write {} conflict;retry time:{}", file.getName(),
-                        i);
+                    LOGGER.warn("write {} conflict;retry time:{}", file.getName(), i);
                 }
             } while (null == lock);
 
-            ByteBuffer sendBuffer = ByteBuffer.wrap(content
-                .getBytes(charsetName));
+            ByteBuffer sendBuffer = ByteBuffer.wrap(content.getBytes(charsetName));
             while (sendBuffer.hasRemaining()) {
                 channel.write(sendBuffer);
             }
@@ -167,25 +163,19 @@ public class ConcurrentDiskUtil {
             if (lock != null) {
                 try {
                     lock.release();
-                    lock = null;
                 } catch (IOException e) {
-                    LOGGER.warn("close wrong", e);
                 }
             }
             if (channel != null) {
                 try {
                     channel.close();
-                    channel = null;
                 } catch (IOException e) {
-                    LOGGER.warn("close wrong", e);
                 }
             }
             if (raf != null) {
                 try {
                     raf.close();
-                    raf = null;
                 } catch (IOException e) {
-                    LOGGER.warn("close wrong", e);
                 }
             }
 

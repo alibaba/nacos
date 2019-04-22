@@ -35,18 +35,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -143,7 +133,7 @@ public class ClientWorker {
                 //reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
-                int taskId = cacheMap.get().size() / (int)ParamUtil.getPerTaskConfigSize();
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
                 cache.setTaskId(taskId);
             }
 
@@ -199,15 +189,14 @@ public class ClientWorker {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
 
-    public String getServerConfig(String dataId, String group, String tenant, long readTimeout)
-        throws NacosException {
+    public String getServerConfig(String dataId, String group, String tenant, long readTimeout) throws NacosException {
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
 
-        HttpResult result = null;
+        HttpResult result;
         try {
-            List<String> params = null;
+            List<String> params;
             if (StringUtils.isBlank(tenant)) {
                 params = Arrays.asList("dataId", dataId, "group", group);
             } else {
@@ -224,28 +213,20 @@ public class ClientWorker {
 
         switch (result.code) {
             case HttpURLConnection.HTTP_OK:
+                /*3. 保存snapshot文件*/
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.content);
                 return result.content;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
                 return null;
             case HttpURLConnection.HTTP_CONFLICT: {
-                LOGGER.error(
-                    "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
-                        + "tenant={}", agent.getName(), dataId, group, tenant);
-                throw new NacosException(NacosException.CONFLICT,
-                    "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+                throw new NacosException(NacosException.CONFLICT, "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
             case HttpURLConnection.HTTP_FORBIDDEN: {
-                LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(), dataId,
-                    group, tenant);
                 throw new NacosException(result.code, result.content);
             }
             default: {
-                LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(), dataId,
-                    group, tenant, result.code);
-                throw new NacosException(result.code,
-                    "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+                throw new NacosException(result.code, "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
         }
     }
@@ -299,9 +280,9 @@ public class ClientWorker {
         // 分任务
         int listenerSize = cacheMap.get().size();
         // 向上取整为批数
-        int longingTaskCount = (int)Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int)currentLongingTaskCount; i < longingTaskCount; i++) {
+            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
                 executorService.execute(new LongPollingRunnable(i));
             }

@@ -90,8 +90,6 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         addressServerUrl = "http://" + domainName + ":" + addressPort + addressUrl;
         envIdUrl = "http://" + domainName + ":" + addressPort + "/env";
 
-        defaultLog.info("ServerListService address-server port:" + serverPort);
-        defaultLog.info("ADDRESS_SERVER_URL:" + addressServerUrl);
         isHealthCheck = PropertyUtil.isHealthCheck();
         maxFailCount = PropertyUtil.getMaxHealthCheckFailCount();
 
