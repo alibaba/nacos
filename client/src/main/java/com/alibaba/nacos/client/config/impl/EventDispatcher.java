@@ -15,25 +15,23 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.client.utils.LogUtils;
+import org.slf4j.Logger;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
-
-
 /**
  * Event subscription and publishing tools.
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class EventDispatcher {
-	
-	final static public Logger log = LogUtils.logger(EventDispatcher.class);
+
+    private static final Logger LOGGER = LogUtils.logger(EventDispatcher.class);
 
     /**
      * 添加事件监听器
@@ -55,12 +53,12 @@ public class EventDispatcher {
         // 发布该事件暗示的其他事件
         for (AbstractEvent implyEvent : abstractEvent.implyEvents()) {
             try {
-            	// 避免死循环
+                // 避免死循环
                 if (abstractEvent != implyEvent) {
                     fireEvent(implyEvent);
                 }
             } catch (Exception e) {
-                log.warn("", e.toString(), e);
+                LOGGER.warn(e.toString(), e);
             }
         }
 
@@ -68,13 +66,13 @@ public class EventDispatcher {
             try {
                 listener.onEvent(abstractEvent);
             } catch (Exception e) {
-                log.warn(e.toString(), e);
+                LOGGER.warn(e.toString(), e);
             }
         }
     }
 
     static synchronized CopyOnWriteArrayList<AbstractEventListener> getListenerList(
-            Class<? extends AbstractEvent> eventType) {
+        Class<? extends AbstractEvent> eventType) {
         CopyOnWriteArrayList<AbstractEventListener> listeners = LISTENER_MAP.get(eventType);
         if (null == listeners) {
             listeners = new CopyOnWriteArrayList<AbstractEventListener>();
@@ -84,8 +82,9 @@ public class EventDispatcher {
     }
 
     // ========================
-    
-	static final Map<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>> LISTENER_MAP = new HashMap<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>>();
+
+    static final Map<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>> LISTENER_MAP
+        = new HashMap<Class<? extends AbstractEvent>, CopyOnWriteArrayList<AbstractEventListener>>();
 
     // ========================
 
@@ -105,29 +104,30 @@ public class EventDispatcher {
      */
     static public abstract class AbstractEventListener {
         public AbstractEventListener() {
-			/**
-			 * 自动注册给EventDispatcher
-			 */
-            EventDispatcher.addEventListener(this); 
+            /**
+             * 自动注册给EventDispatcher
+             */
+            EventDispatcher.addEventListener(this);
         }
-        
-		/**
-		 * 感兴趣的事件列表
-		 * 
-		 * @return event list
-		 */
+
+        /**
+         * 感兴趣的事件列表
+         *
+         * @return event list
+         */
         abstract public List<Class<? extends AbstractEvent>> interest();
 
         /**
          * 处理事件
+         *
          * @param abstractEvent event to do
          */
         abstract public void onEvent(AbstractEvent abstractEvent);
     }
 
-	/**
-	 * serverList has changed
-	 */
-	static public class ServerlistChangeEvent extends AbstractEvent {
-	}
+    /**
+     * serverList has changed
+     */
+    static public class ServerlistChangeEvent extends AbstractEvent {
+    }
 }

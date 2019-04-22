@@ -15,14 +15,17 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 import io.netty.channel.ConnectTimeoutException;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.net.SocketTimeoutException;
 import java.sql.Connection;
@@ -39,7 +42,16 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
  *
  * @author nacos
  */
-public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
+@Component
+public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
+
+    @Autowired
+    private HealthCheckCommon healthCheckCommon;
+
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    public static final int CONNECT_TIMEOUT_MS = 500;
 
     private static final String CHECK_MYSQL_MASTER_SQL = "show global variables where variable_name='read_only'";
     private static final String MYSQL_SLAVE_READONLY = "ON";
@@ -47,18 +59,24 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
     private static ConcurrentMap<String, Connection> CONNECTION_POOL
             = new ConcurrentHashMap<String, Connection>();
 
-    private static ExecutorService EXECUTOR
-            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2,
-            new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.nacos.mysql.checker");
-                    return thread;
+    private static ExecutorService EXECUTOR;
+
+    static {
+
+        int processorCount = Runtime.getRuntime().availableProcessors();
+        EXECUTOR
+                = Executors.newFixedThreadPool(processorCount <= 1 ? 1 : processorCount / 2,
+                new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r);
+                        thread.setDaemon(true);
+                        thread.setName("com.nacos.mysql.checker");
+                        return thread;
+                    }
                 }
-            }
-    );
+        );
+    }
 
     public MysqlHealthCheckProcessor() {
     }
@@ -70,54 +88,47 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-        List<IpAddress> ips = task.getCluster().allIPs();
+        List<Instance> ips = task.getCluster().allIPs(false);
 
         SRV_LOG.debug("mysql check, ips:" + ips);
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
 
-        VirtualClusterDomain virtualClusterDomain = (VirtualClusterDomain) task.getCluster().getDom();
-
-        if (!isHealthCheckEnabled(virtualClusterDomain)) {
-            return;
-        }
-
-        for (IpAddress ip : ips) {
+        for (Instance ip : ips) {
             try {
 
                 if (ip.isMarked()) {
                     if (SRV_LOG.isDebugEnabled()) {
-                        SRV_LOG.debug("mysql check, ip is marked as to skip health check, ip:" + ip.getIp());
+                        SRV_LOG.debug("mysql check, ip is marked as to skip health check, ip: {}", ip.getIp());
                     }
                     continue;
                 }
 
                 if (!ip.markChecking()) {
-                    SRV_LOG.warn("mysql check started before last one finished, dom: "
-                            + task.getCluster().getDom().getName() + ":"
-                            + task.getCluster().getName() + ":"
-                            + ip.getIp());
+                    SRV_LOG.warn("mysql check started before last one finished, service: {}:{}:{}",
+                        task.getCluster().getService().getName(), task.getCluster().getName(), ip.getIp());
 
-                    reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getMysqlHealthParams());
+                    healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());
                     continue;
                 }
 
                 EXECUTOR.execute(new MysqlCheckTask(ip, task));
+                MetricsMonitor.getMysqlHealthCheckMonitor().incrementAndGet();
             } catch (Exception e) {
-                ip.setCheckRT(Switch.getMysqlHealthParams().getMax());
-                checkFail(ip, task, "mysql:error:" + e.getMessage());
-                reEvaluateCheckRT(Switch.getMysqlHealthParams().getMax(), task, Switch.getMysqlHealthParams());
+                ip.setCheckRT(switchDomain.getMysqlHealthParams().getMax());
+                healthCheckCommon.checkFail(ip, task, "mysql:error:" + e.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getMysqlHealthParams().getMax(), task, switchDomain.getMysqlHealthParams());
             }
         }
     }
 
     private class MysqlCheckTask implements Runnable {
-        private IpAddress ip;
+        private Instance ip;
         private HealthCheckTask task;
         private long startTime = System.currentTimeMillis();
 
-        public MysqlCheckTask(IpAddress ip, HealthCheckTask task) {
+        public MysqlCheckTask(Instance ip, HealthCheckTask task) {
             this.ip = ip;
             this.task = task;
         }
@@ -128,11 +139,12 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
             Statement statement = null;
             ResultSet resultSet = null;
 
-            try {;
+            try {
+
                 Cluster cluster = task.getCluster();
-                String key = cluster.getDom().getName() + ":" + cluster.getName() + ":" + ip.getIp() + ":" + ip.getPort();
+                String key = cluster.getService().getName() + ":" + cluster.getName() + ":" + ip.getIp() + ":" + ip.getPort();
                 Connection connection = CONNECTION_POOL.get(key);
-                AbstractHealthCheckConfig.Mysql config = (AbstractHealthCheckConfig.Mysql) cluster.getHealthChecker();
+                AbstractHealthChecker.Mysql config = (AbstractHealthChecker.Mysql) cluster.getHealthChecker();
 
                 if (connection == null || connection.isClosed()) {
                     MysqlDataSource dataSource = new MysqlDataSource();
@@ -162,12 +174,12 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                     }
                 }
 
-                checkOK(ip, task, "mysql:+ok");
-                reEvaluateCheckRT(System.currentTimeMillis() - startTime, task, Switch.getMysqlHealthParams());
+                healthCheckCommon.checkOK(ip, task, "mysql:+ok");
+                healthCheckCommon.reEvaluateCheckRT(System.currentTimeMillis() - startTime, task, switchDomain.getMysqlHealthParams());
             } catch (SQLException e) {
                 // fail immediately
-                checkFailNow(ip, task, "mysql:" + e.getMessage());
-                reEvaluateCheckRT(Switch.getHttpHealthParams().getMax(), task, Switch.getMysqlHealthParams());
+                healthCheckCommon.checkFailNow(ip, task, "mysql:" + e.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task, switchDomain.getMysqlHealthParams());
             } catch (Throwable t) {
                 Throwable cause = t;
                 int maxStackDepth = 50;
@@ -177,8 +189,8 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                             || cause instanceof TimeoutException
                             || cause.getCause() instanceof TimeoutException) {
 
-                        checkFail(ip, task, "mysql:timeout:" + cause.getMessage());
-                        reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, Switch.getMysqlHealthParams());
+                        healthCheckCommon.checkFail(ip, task, "mysql:timeout:" + cause.getMessage());
+                        healthCheckCommon.reEvaluateCheckRT(task.getCheckRTNormalized() * 2, task, switchDomain.getMysqlHealthParams());
                         return;
                     }
 
@@ -186,22 +198,22 @@ public class MysqlHealthCheckProcessor extends AbstractHealthCheckProcessor {
                 }
 
                 // connection error, probably not reachable
-                checkFail(ip, task, "mysql:error:" + t.getMessage());
-                reEvaluateCheckRT(Switch.getMysqlHealthParams().getMax(), task, Switch.getMysqlHealthParams());
+                healthCheckCommon.checkFail(ip, task, "mysql:error:" + t.getMessage());
+                healthCheckCommon.reEvaluateCheckRT(switchDomain.getMysqlHealthParams().getMax(), task, switchDomain.getMysqlHealthParams());
             } finally {
                 ip.setCheckRT(System.currentTimeMillis() - startTime);
-                if (statement!=null) {
+                if (statement != null) {
                     try {
                         statement.close();
                     } catch (SQLException e) {
-                        Loggers.SRV_LOG.error("MYSQL-CHECK", "failed to close statement:" + statement, e);
+                        Loggers.SRV_LOG.error("[MYSQL-CHECK] failed to close statement:" + statement, e);
                     }
                 }
                 if (resultSet != null) {
                     try {
                         resultSet.close();
                     } catch (SQLException e) {
-                        Loggers.SRV_LOG.error("MYSQL-CHECK", "failed to close resultSet:" + resultSet, e);
+                        Loggers.SRV_LOG.error("[MYSQL-CHECK] failed to close resultSet:" + resultSet, e);
                     }
                 }
             }

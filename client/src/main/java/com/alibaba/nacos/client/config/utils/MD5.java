@@ -15,26 +15,26 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
+import com.alibaba.nacos.api.common.Constants;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.alibaba.nacos.client.config.common.Constants;
-
 /**
  * MD5 util
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5 {
-	private static int DIGITS_SIZE = 16;
-    private static char[] digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+    private static int DIGITS_SIZE = 16;
+    private static char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     private static Map<Character, Integer> rDigits = new HashMap<Character, Integer>(16);
+
     static {
         for (int i = 0; i < digits.length; ++i) {
             rDigits.put(digits[i], i);
@@ -45,41 +45,34 @@ public class MD5 {
     private MessageDigest mHasher;
     private ReentrantLock opLock = new ReentrantLock();
 
-
     private MD5() {
         try {
             mHasher = MessageDigest.getInstance("md5");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
     }
 
-
     public static MD5 getInstance() {
         return me;
     }
-
 
     public String getMD5String(String content) {
         return bytes2string(hash(content));
     }
 
-
     public String getMD5String(byte[] content) {
         return bytes2string(hash(content));
     }
-
 
     public byte[] getMD5Bytes(byte[] content) {
         return hash(content);
     }
 
-
     /**
      * 对字符串进行md5
-     * 
+     *
      * @param str
      * @return md5 byte[16]
      */
@@ -91,20 +84,17 @@ public class MD5 {
                 throw new IllegalArgumentException("md5 need");
             }
             return bt;
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("unsupported utf-8 encoding", e);
-        }
-        finally {
+        } finally {
             opLock.unlock();
         }
     }
 
-
     /**
      * 对二进制数据进行md5
-     * 
-     * @param str
+     *
+     * @param data
      * @return md5 byte[16]
      */
     public byte[] hash(byte[] data) {
@@ -115,16 +105,14 @@ public class MD5 {
                 throw new IllegalArgumentException("md5 need");
             }
             return bt;
-        }
-        finally {
+        } finally {
             opLock.unlock();
         }
     }
 
-
     /**
      * 将一个字节数组转化为可见的字符串
-     * 
+     *
      * @param bt
      * @return
      */
@@ -140,6 +128,5 @@ public class MD5 {
 
         return new String(out);
     }
-
 
 }

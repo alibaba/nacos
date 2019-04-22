@@ -15,6 +15,12 @@
  */
 package com.alibaba.nacos.config.server.manager;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import org.slf4j.Logger;
+
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.Map;
@@ -23,35 +29,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.management.ObjectName;
-import org.slf4j.Logger;
-
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-
 
 /**
  * 用于处理一定要执行成功的任务 单线程的方式处理任务，保证任务一定被成功处理
- * 
+ *
  * @author huali
- * 
  */
 public final class TaskManager implements TaskManagerMBean {
-    
-    private static final Logger log =LogUtil.defaultLog;
+
+    private static final Logger log = LogUtil.defaultLog;
 
     private final ConcurrentHashMap<String, AbstractTask> tasks = new ConcurrentHashMap<String, AbstractTask>();
 
     private final ConcurrentHashMap<String, TaskProcessor> taskProcessors =
-            new ConcurrentHashMap<String, TaskProcessor>();
+        new ConcurrentHashMap<String, TaskProcessor>();
 
     private TaskProcessor defaultTaskProcessor;
 
     Thread processingThread;
 
     private final AtomicBoolean closed = new AtomicBoolean(true);
-    
+
     private String name;
+
 
     class ProcessRunnable implements Runnable {
 
@@ -60,8 +60,7 @@ public final class TaskManager implements TaskManagerMBean {
                 try {
                     Thread.sleep(100);
                     TaskManager.this.process();
-                }
-                catch (Throwable e) {
+                } catch (Throwable e) {
                 }
             }
 
@@ -73,16 +72,13 @@ public final class TaskManager implements TaskManagerMBean {
 
     Condition notEmpty = this.lock.newCondition();
 
-
     public TaskManager() {
         this(null);
     }
 
-
     public AbstractTask getTask(String type) {
         return this.tasks.get(type);
     }
-
 
     public TaskProcessor getTaskProcessor(String type) {
         return this.taskProcessors.get(type);
@@ -93,8 +89,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.name = name;
         if (null != name && name.length() > 0) {
             this.processingThread = new Thread(new ProcessRunnable(), name);
-        }
-        else {
+        } else {
             this.processingThread = new Thread(new ProcessRunnable());
         }
         this.processingThread.setDaemon(true);
@@ -111,66 +106,59 @@ public final class TaskManager implements TaskManagerMBean {
         this.processingThread.interrupt();
     }
 
-
     public void await() throws InterruptedException {
         this.lock.lock();
         try {
             while (!this.isEmpty()) {
                 this.notEmpty.await();
             }
-        }
-        finally {
+        } finally {
             this.lock.unlock();
         }
     }
 
-
-	public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-		this.lock.lock();
-		boolean isawait = false;
-		try {
-			while (!this.isEmpty()) {
-				isawait = this.notEmpty.await(timeout, unit);
-			}
-			return isawait;
-		} finally {
-			this.lock.unlock();
-		}
-	}
-
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        this.lock.lock();
+        boolean isawait = false;
+        try {
+            while (!this.isEmpty()) {
+                isawait = this.notEmpty.await(timeout, unit);
+            }
+            return isawait;
+        } finally {
+            this.lock.unlock();
+        }
+    }
 
     public void addProcessor(String type, TaskProcessor taskProcessor) {
         this.taskProcessors.put(type, taskProcessor);
     }
 
-
     public void removeProcessor(String type) {
         this.taskProcessors.remove(type);
     }
-
 
     public void removeTask(String type) {
         this.lock.lock();
         try {
             this.tasks.remove(type);
-        }
-        finally {
+            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
+        } finally {
             this.lock.unlock();
         }
     }
 
-
     /**
      * 将任务加入到任务Map中
-     * 
+     *
      * @param type
      * @param task
-     * @param previousTask
-     * */
+     */
     public void addTask(String type, AbstractTask task) {
         this.lock.lock();
         try {
             AbstractTask oldTask = tasks.put(type, task);
+            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {
                 task.merge(oldTask);
             }
@@ -179,9 +167,8 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
 
-
     /**
-     * 
+     *
      */
     protected void process() {
         for (Map.Entry<String, AbstractTask> entry : this.tasks.entrySet()) {
@@ -197,9 +184,9 @@ public final class TaskManager implements TaskManagerMBean {
                     }
                     // 先将任务从任务Map中删除
                     this.tasks.remove(entry.getKey());
+                    MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
                 }
-            }
-            finally {
+            } finally {
                 this.lock.unlock();
             }
 
@@ -215,9 +202,8 @@ public final class TaskManager implements TaskManagerMBean {
                     try {
                         // 处理任务
                         result = processor.process(entry.getKey(), task);
-                    }
-                    catch (Throwable t) {
-						log.error("task_fail", "处理task失败", t);
+                    } catch (Throwable t) {
+                        log.error("task_fail", "处理task失败", t);
                     }
                     if (!result) {
                         // 任务处理失败，设置最后处理时间
@@ -234,65 +220,56 @@ public final class TaskManager implements TaskManagerMBean {
             this.lock.lock();
             try {
                 this.notEmpty.signalAll();
-            }
-            finally {
+            } finally {
                 this.lock.unlock();
             }
         }
     }
 
-
     public boolean isEmpty() {
         return tasks.isEmpty();
     }
-
 
     public TaskProcessor getDefaultTaskProcessor() {
         this.lock.lock();
         try {
             return this.defaultTaskProcessor;
-        }
-        finally {
+        } finally {
             this.lock.unlock();
         }
     }
-
 
     public void setDefaultTaskProcessor(TaskProcessor defaultTaskProcessor) {
         this.lock.lock();
         try {
             this.defaultTaskProcessor = defaultTaskProcessor;
-        }
-        finally {
+        } finally {
             this.lock.unlock();
         }
     }
 
-
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
-        for(String taskType: this.taskProcessors.keySet()) {
+        for (String taskType : this.taskProcessors.keySet()) {
             sb.append(taskType).append(":");
             AbstractTask task = this.tasks.get(taskType);
-            if(task != null) {
+            if (task != null) {
                 sb.append(new Date(task.getLastProcessTime()).toString());
             } else {
                 sb.append("finished");
             }
             sb.append(Constants.NACOS_LINE_SEPARATOR);
         }
-        
+
         return sb.toString();
     }
-    
-    
+
     public void init() {
         try {
             ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
-        }
-        catch (Exception e) {
-			log.error("registerMBean_fail", "注册mbean出错", e);
+        } catch (Exception e) {
+            log.error("registerMBean_fail", "注册mbean出错", e);
         }
     }
 }

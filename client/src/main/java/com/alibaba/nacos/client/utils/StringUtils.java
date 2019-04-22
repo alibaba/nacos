@@ -15,15 +15,17 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import java.util.Collection;
+
 /**
  * string util
- * @author Nacos
  *
+ * @author Nacos
  */
 public class StringUtils {
 
     public static final int INDEX_NOT_FOUND = -1;
-    
+
     public static boolean isBlank(String str) {
         int strLen;
         if (str == null || (strLen = str.length()) == 0) {
@@ -36,34 +38,58 @@ public class StringUtils {
         }
         return true;
     }
-    
+
+    public static boolean isNotBlank(String str) {
+
+        return !isBlank(str);
+    }
+
     public static boolean isNotEmpty(String str) {
         return !StringUtils.isEmpty(str);
     }
-    
+
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
-    
+
     public static String defaultIfEmpty(String str, String defaultStr) {
         return StringUtils.isEmpty(str) ? defaultStr : str;
     }
-    
+
     public static boolean equals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
     }
-    
-	public static String substringBetween(String str, String open, String close) {
-		if (str == null || open == null || close == null) {
-			return null;
-		}
-		int start = str.indexOf(open);
-		if (start != INDEX_NOT_FOUND) {
-			int end = str.indexOf(close, start + open.length());
-			if (end != INDEX_NOT_FOUND) {
-				return str.substring(start + open.length(), end);
-			}
-		}
-		return null;
-	}
+
+    public static String substringBetween(String str, String open, String close) {
+        if (str == null || open == null || close == null) {
+            return null;
+        }
+        int start = str.indexOf(open);
+        if (start != INDEX_NOT_FOUND) {
+            int end = str.indexOf(close, start + open.length());
+            if (end != INDEX_NOT_FOUND) {
+                return str.substring(start + open.length(), end);
+            }
+        }
+        return null;
+    }
+
+    public static String join(Collection collection, String separator) {
+        if (collection == null) {
+            return null;
+        }
+
+        StringBuilder stringBuilder = new StringBuilder();
+        Object[] objects = collection.toArray();
+
+        for (int i = 0; i < collection.size() - 1; i++) {
+            stringBuilder.append(objects[i].toString()).append(separator);
+        }
+
+        if (collection.size() > 0) {
+            stringBuilder.append(objects[collection.size() - 1]);
+        }
+
+        return stringBuilder.toString();
+    }
 }

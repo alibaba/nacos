@@ -15,29 +15,35 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.common.util.HttpMethod;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import com.ning.http.client.FluentStringsMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
@@ -53,6 +59,10 @@ public class HttpClient {
 
     private static AsyncHttpClient asyncHttpClient;
 
+    private static CloseableHttpClient postClient;
+
+    private static PoolingHttpClientConnectionManager connectionManager;
+
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
         builder.setMaximumConnectionsTotal(-1);
@@ -67,17 +77,27 @@ public class HttpClient {
         builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
 
         asyncHttpClient = new AsyncHttpClient(builder.build());
+
+        HttpClientBuilder builder2 = HttpClients.custom();
+        builder2.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+        builder2.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
+        builder2.setMaxConnPerRoute(-1);
+        builder2.setMaxConnTotal(-1);
+        builder2.disableAutomaticRetries();
+//        builder2.disableConnectionState()
+
+        postClient = builder2.build();
+    }
+
+    public static HttpResult httpDelete(String url, List<String> headers, Map<String, String> paramValues) {
+        return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "DELETE");
     }
 
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues) {
-        return httpGetWithTimeOut(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8");
+        return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "GET");
     }
 
-    public static HttpResult httpGetWithTimeOut(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout) {
-        return httpGetWithTimeOut(url, headers, paramValues, connectTimeout, readTimeout, "UTF-8");
-    }
-
-    public static HttpResult httpGetWithTimeOut(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout, String encoding) {
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -86,39 +106,16 @@ public class HttpClient {
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(connectTimeout);
             conn.setReadTimeout(readTimeout);
-            conn.setRequestMethod("GET");
+            conn.setRequestMethod(method);
 
             conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
             setHeaders(conn, headers, encoding);
             conn.connect();
 
             return getResult(conn);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("VIPSRV", "Exception while request: " + url + ", caused: " + e.getMessage());
-            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-    }
-
-    public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
-
-        HttpURLConnection conn = null;
-        try {
-            String encodedContent = encodingParams(paramValues, encoding);
-            url += (null == encodedContent) ? "" : ("?" + encodedContent);
-
-            conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
-            conn.setReadTimeout(TIME_OUT_MILLIS);
-            conn.setRequestMethod("GET");
-            setHeaders(conn, headers, encoding);
-            conn.connect();
-
-            return getResult(conn);
-        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {
             if (conn != null) {
@@ -128,12 +125,41 @@ public class HttpClient {
     }
 
     public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+        asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.GET);
+    }
+
+    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+        asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.POST);
+    }
+
+    public static void asyncHttpDelete(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
+        asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.DELETE);
+    }
+
+    public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler, String method) throws Exception {
         if (!MapUtils.isEmpty(paramValues)) {
             String encodedContent = encodingParams(paramValues, "UTF-8");
             url += (null == encodedContent) ? "" : ("?" + encodedContent);
         }
 
-        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareGet(url);
+        AsyncHttpClient.BoundRequestBuilder builder;
+
+        switch (method) {
+            case HttpMethod.GET:
+                builder = asyncHttpClient.prepareGet(url);
+                break;
+            case HttpMethod.POST:
+                builder = asyncHttpClient.preparePost(url);
+                break;
+            case HttpMethod.PUT:
+                builder = asyncHttpClient.preparePut(url);
+                break;
+            case HttpMethod.DELETE:
+                builder = asyncHttpClient.prepareDelete(url);
+                break;
+            default:
+                throw new RuntimeException("not supported method:" + method);
+        }
 
         if (!CollectionUtils.isEmpty(headers)) {
             for (String header : headers) {
@@ -151,26 +177,7 @@ public class HttpClient {
     }
 
     public static void asyncHttpPostLarge(String url, List<String> headers, String content, AsyncCompletionHandler handler) throws Exception {
-        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePost(url);
-
-        if (!CollectionUtils.isEmpty(headers)) {
-            for (String header : headers) {
-                builder.setHeader(header.split("=")[0], header.split("=")[1]);
-            }
-        }
-
-        builder.setBody(content.getBytes("UTF-8"));
-
-        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
-        builder.setHeader("Accept-Charset", "UTF-8");
-        builder.setHeader("Accept-Encoding", "gzip");
-        builder.setHeader("Content-Encoding", "gzip");
-
-        if (handler != null) {
-            builder.execute(handler);
-        } else {
-            builder.execute();
-        }
+        asyncHttpPostLarge(url, headers, content.getBytes(), handler);
     }
 
     public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
@@ -196,8 +203,8 @@ public class HttpClient {
         }
     }
 
-    public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
-        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePost(url);
+    public static void asyncHttpDeleteLarge(String url, List<String> headers, String content, AsyncCompletionHandler handler) throws Exception {
+        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareDelete(url);
 
         if (!CollectionUtils.isEmpty(headers)) {
             for (String header : headers) {
@@ -205,16 +212,12 @@ public class HttpClient {
             }
         }
 
-        if (!MapUtils.isEmpty(paramValues)) {
-            FluentStringsMap params = new FluentStringsMap();
-            for (Map.Entry<String, String> entry : paramValues.entrySet()) {
-                params.put(entry.getKey(), Collections.singletonList(entry.getValue()));
-            }
+        builder.setBody(content.getBytes());
 
-            builder.setParameters(params);
-        }
-
+        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
         builder.setHeader("Accept-Charset", "UTF-8");
+        builder.setHeader("Accept-Encoding", "gzip");
+        builder.setHeader("Content-Encoding", "gzip");
 
         if (handler != null) {
             builder.execute(handler);
@@ -229,11 +232,7 @@ public class HttpClient {
 
     public static HttpResult httpPost(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
         try {
-            HttpClientBuilder builder = HttpClients.custom();
-            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
-            builder.setConnectionTimeToLive(CON_TIME_OUT_MILLIS, TimeUnit.MILLISECONDS);
 
-            CloseableHttpClient httpClient = builder.build();
             HttpPost httpost = new HttpPost(url);
 
             RequestConfig requestConfig = RequestConfig.custom().setConnectionRequestTimeout(5000).setConnectTimeout(5000).setSocketTimeout(5000).setRedirectsEnabled(true).setMaxRedirects(5).build();
@@ -245,9 +244,8 @@ public class HttpClient {
                 nvps.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
             }
 
-
             httpost.setEntity(new UrlEncodedFormEntity(nvps, encoding));
-            HttpResponse response = httpClient.execute(httpost);
+            HttpResponse response = postClient.execute(httpost);
             HttpEntity entity = response.getEntity();
 
             String charset = encoding;
@@ -261,8 +259,111 @@ public class HttpClient {
                 }
             }
 
-            return new HttpResult(response.getStatusLine().getStatusCode(), IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+            return new HttpResult(response.getStatusLine().getStatusCode(), IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Throwable e) {
+            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
+        }
+    }
+
+    public static void asyncHttpPutLarge(String url, Map<String, String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
+        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePut(url);
+
+        if (!headers.isEmpty()) {
+            for (String headerKey : headers.keySet()) {
+                builder.setHeader(headerKey, headers.get(headerKey));
+            }
+        }
+
+        builder.setBody(content);
+
+        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
+        builder.setHeader("Accept-Charset", "UTF-8");
+        builder.setHeader("Accept-Encoding", "gzip");
+        builder.setHeader("Content-Encoding", "gzip");
+
+        if (handler != null) {
+            builder.execute(handler);
+        } else {
+            builder.execute();
+        }
+    }
+
+    public static void asyncHttpGetLarge(String url, Map<String, String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
+        AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.prepareGet(url);
+
+        if (!headers.isEmpty()) {
+            for (String headerKey : headers.keySet()) {
+                builder.setHeader(headerKey, headers.get(headerKey));
+            }
+        }
+
+        builder.setBody(content);
+
+        builder.setHeader("Content-Type", "application/json; charset=UTF-8");
+        builder.setHeader("Accept-Charset", "UTF-8");
+        builder.setHeader("Accept-Encoding", "gzip");
+        builder.setHeader("Content-Encoding", "gzip");
+
+        if (handler != null) {
+            builder.execute(handler);
+        } else {
+            builder.execute();
+        }
+    }
+
+    public static HttpResult httpPutLarge(String url, Map<String, String> headers, byte[] content) {
+        try {
+            HttpClientBuilder builder = HttpClients.custom();
+            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+
+            CloseableHttpClient httpClient = builder.build();
+            HttpPut httpPut = new HttpPut(url);
+
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpPut.setHeader(entry.getKey(), entry.getValue());
+            }
+
+            httpPut.setEntity(new StringEntity(new String(content, "UTF-8"), ContentType.create("application/json", "UTF-8")));
+
+            HttpResponse response = httpClient.execute(httpPut);
+            HttpEntity entity = response.getEntity();
+
+            HeaderElement[] headerElements = entity.getContentType().getElements();
+            String charset = headerElements[0].getParameterByName("charset").getValue();
+
+            return new HttpResult(response.getStatusLine().getStatusCode(),
+                IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+        } catch (Exception e) {
+            return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
+        }
+    }
+
+    public static HttpResult httpGetLarge(String url, Map<String, String> headers, String content) {
+
+        try {
+            HttpClientBuilder builder = HttpClients.custom();
+            builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
+            builder.setConnectionTimeToLive(500, TimeUnit.MILLISECONDS);
+
+            CloseableHttpClient httpClient = builder.build();
+            HttpGetWithEntity httpGetWithEntity = new HttpGetWithEntity();
+            httpGetWithEntity.setURI(new URI(url));
+
+            for (Map.Entry<String, String> entry : headers.entrySet()) {
+                httpGetWithEntity.setHeader(entry.getKey(), entry.getValue());
+            }
+
+            httpGetWithEntity.setEntity(new StringEntity(content, ContentType.create("application/json", "UTF-8")));
+            HttpResponse response = httpClient.execute(httpGetWithEntity);
+            HttpEntity entity = response.getEntity();
+
+            HeaderElement[] headerElements = entity.getContentType().getElements();
+            String charset = headerElements[0].getParameterByName("charset").getValue();
+
+            return new HttpResult(response.getStatusLine().getStatusCode(),
+                IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+        } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
     }
@@ -288,7 +389,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -315,7 +416,7 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        HttpResult result = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult result = new HttpResult(respCode, IOUtils.toString(inputStream, getCharset(conn)), respHeaders);
         inputStream.close();
 
         return result;
@@ -324,15 +425,15 @@ public class HttpClient {
     private static String getCharset(HttpURLConnection conn) {
         String contentType = conn.getContentType();
         if (StringUtils.isEmpty(contentType)) {
-            return "utf-8";
+            return "UTF-8";
         }
 
         String[] values = contentType.split(";");
         if (values.length == 0) {
-            return "utf-8";
+            return "UTF-8";
         }
 
-        String charset = "utf-8";
+        String charset = "UTF-8";
         for (String value : values) {
             value = value.trim();
 
@@ -355,6 +456,7 @@ public class HttpClient {
                 + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
         conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
+        conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
     }
 
     public static String encodingParams(Map<String, String> params, String encoding)
@@ -380,6 +482,15 @@ public class HttpClient {
         return sb.toString();
     }
 
+    public static Map<String, String> translateParameterMap(Map<String, String[]> parameterMap) {
+
+        Map<String, String> map = new HashMap<>(16);
+        for (String key : parameterMap.keySet()) {
+            map.put(key, parameterMap.get(key)[0]);
+        }
+        return map;
+    }
+
     public static class HttpResult {
         final public int code;
         final public String content;
@@ -393,6 +504,16 @@ public class HttpClient {
 
         public String getHeader(String name) {
             return respHeaders.get(name);
+        }
+    }
+
+    public static class HttpGetWithEntity extends HttpEntityEnclosingRequestBase {
+
+        public final static String METHOD_NAME = "GET";
+
+        @Override
+        public String getMethod() {
+            return METHOD_NAME;
         }
     }
 }

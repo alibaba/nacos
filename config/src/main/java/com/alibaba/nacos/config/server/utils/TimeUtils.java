@@ -15,30 +15,27 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import org.apache.commons.lang3.time.FastDateFormat;
+
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.apache.commons.lang.time.FastDateFormat;
 /**
  * Time util
- * @author Nacos
  *
+ * @author Nacos
  */
 public class TimeUtils {
 
-	public static Timestamp getCurrentTime() {
+    public static Timestamp getCurrentTime() {
         Date date = new Date();
         return new Timestamp(date.getTime());
     }
-	public static void main(String[] args) {
-		System.out.println(getCurrentTime().toString());
-	}
-	
-	static public String getCurrentTimeStr() {
+
+    static public String getCurrentTimeStr() {
         Calendar c = Calendar.getInstance();
         c.setTime(new Date());
-        c.get(Calendar.HOUR);
         FastDateFormat format = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
         return format.format(c.getTime());
     }

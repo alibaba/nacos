@@ -19,7 +19,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class Params {
 
@@ -27,7 +27,7 @@ public class Params {
 
     public static Params newParams() {
         Params params = new Params();
-        params.paramMap = new LinkedMultiValueMap<>();
+        params.paramMap = new LinkedMultiValueMap<String, String>();
         return params;
     }
 

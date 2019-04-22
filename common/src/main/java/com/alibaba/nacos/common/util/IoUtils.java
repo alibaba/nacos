@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.common.util;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -29,39 +30,41 @@ import java.util.zip.GZIPInputStream;
  */
 public class IoUtils {
 
-    static public String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input, "UTF-8"))
-                : toString(new InputStreamReader(input, encoding));
-    }
+    public static byte[] tryDecompress(InputStream raw) throws Exception {
 
-    static public String toString(Reader reader) throws IOException {
-        CharArrayWriter sw = new CharArrayWriter();
-        copy(reader, sw);
-        return sw.toString();
-    }
+        try {
+            GZIPInputStream gis
+                = new GZIPInputStream(raw);
+            ByteArrayOutputStream out
+                = new ByteArrayOutputStream();
 
+            IOUtils.copy(gis, out);
 
-    static public long copy(Reader input, Writer output) throws IOException {
-        char[] buffer = new char[1 << 12];
-        long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
-            output.write(buffer, 0, n);
-            count += n;
-        }
-        return count;
-    }
-
-    static public long copy(InputStream input, OutputStream output) throws IOException {
-        byte[] buffer = new byte[1024];
-        int bytesRead;
-        int totalBytes = 0;
-        while ((bytesRead = input.read(buffer)) != -1) {
-            output.write(buffer, 0, bytesRead);
-
-            totalBytes += bytesRead;
+            return out.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-        return totalBytes;
+        return null;
+    }
+
+    static private BufferedReader toBufferedReader(Reader reader) {
+        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
+            reader);
+    }
+
+    public static void writeStringToFile(File file, String data, String encoding)
+        throws IOException {
+        OutputStream os = null;
+        try {
+            os = new FileOutputStream(file);
+            os.write(data.getBytes(encoding));
+            os.flush();
+        } finally {
+            if (null != os) {
+                os.close();
+            }
+        }
     }
 
     static public List<String> readLines(Reader input) throws IOException {
@@ -79,94 +82,6 @@ public class IoUtils {
             }
         }
         return list;
-    }
-
-    static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
-                reader);
-    }
-
-
-    public static boolean delete(File fileOrDir) throws IOException {
-        if (fileOrDir == null) {
-            return false;
-        }
-
-        if (fileOrDir.isDirectory()) {
-            cleanDirectory(fileOrDir);
-        }
-
-        return fileOrDir.delete();
-    }
-
-    public static void cleanDirectory(File directory) throws IOException {
-        if (!directory.exists()) {
-            String message = directory + " does not exist";
-            throw new IllegalArgumentException(message);
-        }
-
-        if (!directory.isDirectory()) {
-            String message = directory + " is not a directory";
-            throw new IllegalArgumentException(message);
-        }
-
-        File[] files = directory.listFiles();
-        if (files == null) {
-            throw new IOException("Failed to list contents of " + directory);
-        }
-
-        IOException exception = null;
-        for (File file : files) {
-            try {
-                delete(file);
-            } catch (IOException ioe) {
-                exception = ioe;
-            }
-        }
-
-        if (null != exception) {
-            throw exception;
-        }
-    }
-
-    public static void writeStringToFile(File file, String data, String encoding)
-            throws IOException {
-        OutputStream os = null;
-        try {
-            os = new FileOutputStream(file);
-            os.write(data.getBytes(encoding));
-            os.flush();
-        } finally {
-            if (null != os) {
-                os.close();
-            }
-        }
-    }
-
-    public static byte[] tryDecompress(InputStream raw) throws Exception {
-
-        try {
-            GZIPInputStream gis
-                    = new GZIPInputStream(raw);
-            ByteArrayOutputStream out
-                    = new ByteArrayOutputStream();
-
-
-            IoUtils.copy(gis, out);
-
-            return out.toByteArray();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    public static void main(String[] args) throws IOException {
-
-//        String path = "/Users/zhupengfei/test_write.txt";
-
-//        writeStringToFile(new File(path), "hello2222", "utf-8");
     }
 
 }

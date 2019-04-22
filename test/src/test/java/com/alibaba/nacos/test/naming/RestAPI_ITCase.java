@@ -18,7 +18,10 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,7 +44,7 @@ import java.net.URL;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
@@ -72,7 +75,7 @@ public class RestAPI_ITCase {
     @Test
     public void dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/dom",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -85,7 +88,7 @@ public class RestAPI_ITCase {
     @Test
     public void domCount() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/domCount",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/domCount",
                 Params.newParams().done(), String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -95,7 +98,7 @@ public class RestAPI_ITCase {
     @Test
     public void rt4Dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/rt4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/rt4Dom",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -105,7 +108,7 @@ public class RestAPI_ITCase {
     @Test
     public void ip4Dom2() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/ip4Dom2",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/ip4Dom2",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -122,7 +125,7 @@ public class RestAPI_ITCase {
     @Test
     public void ip4Dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/ip4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/ip4Dom",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -139,7 +142,7 @@ public class RestAPI_ITCase {
     @Test
     public void replaceDom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/replaceDom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/replaceDom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("token", NamingBase.TEST_TOKEN_4_DOM_1)
@@ -179,7 +182,7 @@ public class RestAPI_ITCase {
     @Test
     public void regAndDeregService() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/regService",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/regService",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_2)
                         .appendParam("app", "test1")
@@ -191,7 +194,7 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/deRegService",
+        response = request("/nacos/v1/ns/api/deRegService",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_2)
                         .appendParam("ip", NamingBase.TEST_IP_4_DOM_2)
@@ -206,7 +209,7 @@ public class RestAPI_ITCase {
     @Test
     public void updateDom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/updateDom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/updateDom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("token", NamingBase.TEST_TOKEN_4_DOM_1)
@@ -220,7 +223,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/dom",
+        response = request("/nacos/v1/ns/api/dom",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -243,7 +246,7 @@ public class RestAPI_ITCase {
     @Test
     public void hello() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/hello",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/hello",
                 Params.newParams().done(), String.class);
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -252,7 +255,7 @@ public class RestAPI_ITCase {
     @Test
     public void replaceIP4Dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/replaceIP4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/replaceIP4Dom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("cluster", "DEFAULT")
@@ -262,7 +265,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/ip4Dom2",
+        response = request("/nacos/v1/ns/api/ip4Dom2",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -277,50 +280,9 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void srvAllIP() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/naming/api/srvAllIP",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(), String.class);
-
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertEquals(NamingBase.TEST_DOM_1, json.getString("dom"));
-        JSONArray hosts = json.getJSONArray("hosts");
-        Assert.assertNotNull(hosts);
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(NamingBase.TEST_IP_4_DOM_1, hosts.getJSONObject(0).getString("ip"));
-        Assert.assertEquals(NamingBase.TEST_PORT_4_DOM_1, hosts.getJSONObject(0).getString("port"));
-    }
-
-    @Test
-    public void srvIPXT() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/naming/api/srvIPXT",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(), String.class);
-
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertEquals(NamingBase.TEST_DOM_1, json.getString("dom"));
-        JSONArray hosts = json.getJSONArray("hosts");
-        Assert.assertNotNull(hosts);
-        Assert.assertEquals(1, hosts.size());
-        Assert.assertEquals(NamingBase.TEST_IP_4_DOM_1, hosts.getJSONObject(0).getString("ip"));
-        Assert.assertEquals(NamingBase.TEST_PORT_4_DOM_1, hosts.getJSONObject(0).getString("port"));
-    }
-
-    @Test
     public void remvIP4Dom() throws Exception {
 
-
-        ResponseEntity<String> response = request("/nacos/naming/api/addIP4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/addIP4Dom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("ipList", NamingBase.TEST_IP_4_DOM_1 + ":" + NamingBase.TEST_PORT2_4_DOM_1)
@@ -329,7 +291,7 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/remvIP4Dom",
+        response = request("/nacos/v1/ns/api/remvIP4Dom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("ipList", NamingBase.TEST_IP_4_DOM_1 + ":" + NamingBase.TEST_PORT2_4_DOM_1)
@@ -342,7 +304,7 @@ public class RestAPI_ITCase {
     @Test
     public void updateSwitch() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/updateSwitch",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "distroThreshold")
                         .appendParam("distroThreshold", "0.3")
@@ -351,7 +313,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "enableAllDomNameCache")
                         .appendParam("enableAllDomNameCache", "false")
@@ -360,7 +322,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "incrementalList")
                         .appendParam("incrementalList", "1.com,2.com")
@@ -370,7 +332,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "healthCheckWhiteList")
                         .appendParam("healthCheckWhiteList", "1.com,2.com")
@@ -380,7 +342,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "clientBeatInterval")
                         .appendParam("clientBeatInterval", "5000")
@@ -389,7 +351,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "pushVersion")
                         .appendParam("type", "java")
@@ -399,7 +361,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "pushCacheMillis")
                         .appendParam("millis", "30000")
@@ -408,7 +370,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/updateSwitch",
+        response = request("/nacos/v1/ns/api/updateSwitch",
                 Params.newParams()
                         .appendParam("entry", "defaultCacheMillis")
                         .appendParam("millis", "3000")
@@ -417,7 +379,7 @@ public class RestAPI_ITCase {
 
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/switches",
+        response = request("/nacos/v1/ns/api/switches",
                 Params.newParams().done(),
                 String.class);
 
@@ -440,20 +402,9 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void checkStatus() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/naming/api/checkStatus",
-                Params.newParams().done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-    }
-
-    @Test
     public void allDomNames() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/allDomNames",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/allDomNames",
                 Params.newParams().done(),
                 String.class);
 
@@ -468,7 +419,7 @@ public class RestAPI_ITCase {
     @Test
     public void searchDom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/searchDom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/searchDom",
                 Params.newParams()
                         .appendParam("expr", "nacos")
                         .done(),
@@ -483,7 +434,7 @@ public class RestAPI_ITCase {
     @Test
     public void addCluster4Dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/addCluster4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/addCluster4Dom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("token", NamingBase.TEST_TOKEN_4_DOM_1)
@@ -496,7 +447,7 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = request("/nacos/naming/api/dom",
+        response = request("/nacos/v1/ns/api/dom",
                 Params.newParams().appendParam("dom", NamingBase.TEST_DOM_1).done(), String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -520,26 +471,9 @@ public class RestAPI_ITCase {
     }
 
     @Test
-    public void domList() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/naming/api/domList",
-                Params.newParams()
-                        .appendParam("startPg", "0")
-                        .appendParam("pgSize", "10")
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        JSONObject json = JSON.parseObject(response.getBody());
-
-        Assert.assertTrue(json.getJSONArray("domList").size() > 0);
-    }
-
-    @Test
     public void distroStatus() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/distroStatus",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/distroStatus",
                 Params.newParams()
                         .done(),
                 String.class);
@@ -550,7 +484,7 @@ public class RestAPI_ITCase {
     @Test
     public void metrics() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/metrics",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/metrics",
                 Params.newParams()
                         .done(),
                 String.class);
@@ -572,20 +506,9 @@ public class RestAPI_ITCase {
     @Test
     public void reCalculateCheckSum4Dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/reCalculateCheckSum4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/reCalculateCheckSum4Dom",
                 Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .done(),
-                String.class);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-    }
-
-    @Test
-    public void getDomString4MD5() throws Exception {
-
-        ResponseEntity<String> response = request("/nacos/naming/api/getDomString4MD5",
-                Params.newParams()
+                        .appendParam(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
                 String.class);
@@ -596,7 +519,7 @@ public class RestAPI_ITCase {
     @Test
     public void getResponsibleServer4Dom() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/getResponsibleServer4Dom",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/getResponsibleServer4Dom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
@@ -608,7 +531,7 @@ public class RestAPI_ITCase {
     @Test
     public void domServeStatus() throws Exception {
 
-        ResponseEntity<String> response = request("/nacos/naming/api/domServeStatus",
+        ResponseEntity<String> response = request("/nacos/v1/ns/api/domServeStatus",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .done(),
@@ -621,11 +544,167 @@ public class RestAPI_ITCase {
         Assert.assertTrue(json.getJSONObject("data").getJSONArray("ips").size() > 0);
     }
 
+    /**
+     * @TCDescription : 根据serviceName创建服务
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void createService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        namingServiceDelete(serviceName);
+    }
+
+    /**
+     * @TCDescription : 根据serviceName获取服务信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void getService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        //get service
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(serviceName, json.getString("name"));
+
+        namingServiceDelete(serviceName);
+    }
+
+    /**
+     * @TCDescription : 获取服务list信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void listService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        //get service
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("pageNo", "1")
+                .appendParam("pageSize", "15")
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        int count = json.getIntValue("count");
+        Assert.assertTrue(count >= 0);
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("pageNo", "1")
+                .appendParam("pageSize", "15")
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(count+1, json.getIntValue("count"));
+
+        namingServiceDelete(serviceName);
+    }
+
+    /**
+     * @TCDescription : 更新serviceName获取服务信息
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void updateService() throws Exception {
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        //update service
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("healthCheckMode", "server")
+                .appendParam("protectThreshold", "3")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+
+        //get service
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        System.out.println(json);
+        Assert.assertEquals(3.0f, json.getFloatValue("protectThreshold"), 0.0f);
+
+        namingServiceDelete(serviceName);
+    }
+
+    private void namingServiceDelete(String serviceName) {
+        //delete service
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .done(),
+            String.class,
+            HttpMethod.DELETE);
+
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        Assert.assertEquals("ok", response.getBody());
+    }
+
     private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
 
         HttpHeaders headers = new HttpHeaders();
 
-        HttpEntity<?> entity = new HttpEntity<>(headers);
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
                 .queryParams(params);
@@ -634,9 +713,22 @@ public class RestAPI_ITCase {
                 builder.toUriString(), HttpMethod.GET, entity, clazz);
     }
 
+    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
+
+        HttpHeaders headers = new HttpHeaders();
+
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
+            .queryParams(params);
+
+        return this.restTemplate.exchange(
+            builder.toUriString(), httpMethod, entity, clazz);
+    }
+
     private void prepareData() {
 
-        ResponseEntity<String> responseEntity = request("/nacos/naming/api/regDom",
+        ResponseEntity<String> responseEntity = request("/nacos/v1/ns/api/regDom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("cktype", "TCP")
@@ -654,7 +746,7 @@ public class RestAPI_ITCase {
             e.printStackTrace();
         }
 
-        responseEntity = request("/nacos/naming/api/addIP4Dom",
+        responseEntity = request("/nacos/v1/ns/api/addIP4Dom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("ipList", NamingBase.TEST_IP_4_DOM_1 + ":" + NamingBase.TEST_PORT_4_DOM_1)
@@ -668,7 +760,7 @@ public class RestAPI_ITCase {
 
     private void removeData() {
 
-        ResponseEntity<String> responseEntity = request("/nacos/naming/api/remvDom",
+        ResponseEntity<String> responseEntity = request("/nacos/v1/ns/api/remvDom",
                 Params.newParams()
                         .appendParam("dom", NamingBase.TEST_DOM_1)
                         .appendParam("token", "abc")

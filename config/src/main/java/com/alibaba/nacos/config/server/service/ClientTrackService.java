@@ -15,16 +15,16 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.model.SubscriberStatus;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.alibaba.nacos.config.server.model.SubscriberStatus;
-
-
 /**
  * 跟踪客户端md5的服务。 一段时间没有比较md5后，就删除IP对应的记录。
+ *
  * @author Nacos
  */
 public class ClientTrackService {
@@ -37,28 +37,28 @@ public class ClientTrackService {
         record.groupKey2md5Map.putAll(clientMd5Map);
     }
 
-    static public void trackClientMd5(String ip, Map<String, String> clientMd5Map, Map<String, Long> clientlastPollingTSMap) {
+    static public void trackClientMd5(String ip, Map<String, String> clientMd5Map,
+                                      Map<String, Long> clientlastPollingTSMap) {
         ClientRecord record = getClientRecord(ip);
         record.lastTime = System.currentTimeMillis();
         record.groupKey2md5Map.putAll(clientMd5Map);
         record.groupKey2pollingTsMap.putAll(clientlastPollingTSMap);
     }
-    
+
     static public void trackClientMd5(String ip, String groupKey, String clientMd5) {
         ClientRecord record = getClientRecord(ip);
         record.lastTime = System.currentTimeMillis();
         record.groupKey2md5Map.put(groupKey, clientMd5);
         record.groupKey2pollingTsMap.put(groupKey, record.lastTime);
     }
-    
-    
+
     /**
      * 返回订阅者客户端个数
      */
     static public int subscribeClientCount() {
         return clientRecords.size();
     }
-    
+
     /**
      * 返回所有订阅者个数
      */
@@ -73,12 +73,12 @@ public class ClientTrackService {
     /**
      * groupkey ->  SubscriberStatus
      */
-    static public Map<String, SubscriberStatus> listSubStatus(String ip){
+    static public Map<String, SubscriberStatus> listSubStatus(String ip) {
         Map<String, SubscriberStatus> status = new HashMap<String, SubscriberStatus>(100);
 
         ClientRecord record = getClientRecord(ip);
-        if(record == null) {
-        	return status;
+        if (record == null) {
+            return status;
         }
 
         for (Map.Entry<String, String> entry : record.groupKey2md5Map.entrySet()) {
@@ -111,7 +111,7 @@ public class ClientTrackService {
         }
         return subs;
     }
-    
+
     /**
      * 指定订阅者IP，查找数据是否最新。 groupKey -> isUptodate
      */
@@ -125,13 +125,13 @@ public class ClientTrackService {
         }
         return result;
     }
-    
+
     /**
      * 指定groupKey，查找所有订阅者以及数据是否最新。 IP -> isUptodate
      */
     static public Map<String, Boolean> listSubscriberByGroup(String groupKey) {
         Map<String, Boolean> subs = new HashMap<String, Boolean>(100);
-        
+
         for (ClientRecord clientRec : clientRecords.values()) {
             String clientMd5 = clientRec.groupKey2md5Map.get(groupKey);
             if (null != clientMd5) {
@@ -141,7 +141,7 @@ public class ClientTrackService {
         }
         return subs;
     }
-    
+
     /**
      * 找到指定clientIp对应的记录。
      */
@@ -154,12 +154,12 @@ public class ClientTrackService {
         return clientRecords.get(clientIp);
     }
 
-    static public void refreshClientRecord(){
+    static public void refreshClientRecord() {
         clientRecords = new ConcurrentHashMap<String, ClientRecord>(50);
     }
 
     /**
-     *  所有客户端记录。遍历 >> 新增/删除
+     * 所有客户端记录。遍历 >> 新增/删除
      */
     static volatile ConcurrentMap<String, ClientRecord> clientRecords = new ConcurrentHashMap<String, ClientRecord>();
 }
@@ -172,7 +172,6 @@ class ClientRecord {
     volatile long lastTime;
     final ConcurrentMap<String, String> groupKey2md5Map;
     final ConcurrentMap<String, Long> groupKey2pollingTsMap;
-
 
     ClientRecord(String clientIp) {
         ip = clientIp;

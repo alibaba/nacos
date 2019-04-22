@@ -15,62 +15,75 @@
  */
 package com.alibaba.nacos.config.server.monitor;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 import com.alibaba.nacos.config.server.service.ClientTrackService;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
 /**
  * Memory monitor
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @Service
 public class MemoryMonitor {
+
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
 
         TimerTaskService.scheduleWithFixedDelay(new PrintMemoryTask(), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
-        
+            DELAY_SECONDS, TimeUnit.SECONDS);
+
         TimerTaskService.scheduleWithFixedDelay(new PrintGetConfigResponeTask(), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
+            DELAY_SECONDS, TimeUnit.SECONDS);
 
         TimerTaskService.scheduleWithFixedDelay(new NotifyTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS,
-                DELAY_SECONDS, TimeUnit.SECONDS);
+            DELAY_SECONDS, TimeUnit.SECONDS);
+
     }
-    
 
     static final long DELAY_SECONDS = 10;
+
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void clear() {
+        MetricsMonitor.getConfigMonitor().set(0);
+        MetricsMonitor.getPublishMonitor().set(0);
+    }
 }
 
-class PrintGetConfigResponeTask implements Runnable{
-	@Override
-	public void run() {
-		memoryLog.info(ResponseMonitor.getStringForPrint());
-	}
+class PrintGetConfigResponeTask implements Runnable {
+    @Override
+    public void run() {
+        memoryLog.info(ResponseMonitor.getStringForPrint());
+    }
 }
 
 class PrintMemoryTask implements Runnable {
+
     @Override
     public void run() {
         int groupCount = ConfigService.groupCount();
         int subClientCount = ClientTrackService.subscribeClientCount();
         long subCount = ClientTrackService.subscriberCount();
-        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}",
-                new Object[] { groupCount, subClientCount, subCount });
+        memoryLog.info("groupCount={}, subscriberClientCount={}, subscriberCount={}", groupCount, subClientCount,
+            subCount);
+        MetricsMonitor.getConfigCountMonitor().set(groupCount);
     }
 }
 
-
 class NotifyTaskQueueMonitorTask implements Runnable {
     final private AsyncNotifyService notifySingleService;
+    private AtomicInteger notifyTask = new AtomicInteger();
+
 
     NotifyTaskQueueMonitorTask(AsyncNotifyService notifySingleService) {
         this.notifySingleService = notifySingleService;
@@ -78,15 +91,10 @@ class NotifyTaskQueueMonitorTask implements Runnable {
 
     @Override
     public void run() {
-    	
-    	 memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-                 new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(), ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size() });
-    	 
-//      for(Map.Entry<String, Executor> entry: notifySingleService.getExecutors().entrySet()) {
-//          ThreadPoolExecutor pool = (ThreadPoolExecutor) entry.getValue();
-//          String target = entry.getKey();
-//          memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-//                  new Object[] { target, pool.getQueue().size() });
-//      }
+        int size = ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size();
+        memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
+            new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(),
+                size});
+        MetricsMonitor.getNotifyTaskMonitor().set(size);
     }
 }

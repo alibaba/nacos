@@ -16,7 +16,7 @@
 package com.alibaba.nacos.test.naming;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class Starter_ITCase {
 }

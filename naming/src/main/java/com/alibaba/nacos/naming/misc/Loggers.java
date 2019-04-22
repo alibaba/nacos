@@ -15,38 +15,13 @@
  */
 package com.alibaba.nacos.naming.misc;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
 
 /**
  * @author nacos
  */
 public class Loggers {
-
-    static {
-
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        lc.reset();
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(lc);
-
-        try {
-            configurator.doConfigure(System.getProperty("nacos.home") + "/conf/nacos-logback.xml");
-        } catch (Exception ignore) {
-        }
-
-        try {
-            configurator.doConfigure(Loggers.class
-                    .getResource("/naming-logback.xml"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Init logger failed!", e);
-        }
-    }
 
     public static final Logger PUSH = LoggerFactory.getLogger("com.alibaba.nacos.naming.push");
 
@@ -58,11 +33,9 @@ public class Loggers {
 
     public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.naming.raft");
 
+    public static final Logger EPHEMERAL = LoggerFactory.getLogger("com.alibaba.nacos.naming.ephemeral");
+
     public static final Logger PERFORMANCE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
 
-    public static final Logger ROLE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.router");
-
     public static final Logger DEBUG_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.debug");
-
-    public static final Logger TENANT = LoggerFactory.getLogger("com.alibaba.nacos.naming.tenant");
 }
