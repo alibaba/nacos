@@ -2,7 +2,9 @@ package com.alibaba.nacos.config.server.service;
 
 import javax.sql.DataSource;
 
-
+/**
+ * @author codewaltz1994
+ */
 public  class DataSourceWrapper{
     private String driverClassName;
     private String url;
@@ -11,13 +13,13 @@ public  class DataSourceWrapper{
 
     private DataSource ds;
 
-    private DynamicDataSourceCP dynamicDataSourceCP;
+    private DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool;
 
-    public DataSourceWrapper(DynamicDataSourceCP dynamicDataSourceCP){
-        this.dynamicDataSourceCP = dynamicDataSourceCP;
+    public DataSourceWrapper(DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool){
+        this.dynamicDataSourceConnectionPool = dynamicDataSourceConnectionPool;
     }
     public DataSource getDataSource(){
-        DataSource tmp =dynamicDataSourceCP.getDataSource(getDriverClassName(), getUrl(), getUsername(), getPassword());
+        DataSource tmp = dynamicDataSourceConnectionPool.getDataSource(getDriverClassName(), getUrl(), getUsername(), getPassword());
         ds = tmp;
         return ds;
     }

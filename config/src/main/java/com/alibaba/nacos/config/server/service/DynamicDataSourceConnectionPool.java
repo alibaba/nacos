@@ -11,11 +11,14 @@ import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.service.BasicDataSourceServiceImpl.defaultIfNull;
 
+/**
+ * @author codewaltz1994
+ */
 
 @Component
-public class DynamicDataSourceCP {
+public class DynamicDataSourceConnectionPool {
 
-
+    private static final String DEFAULT_DATABASE_CONNECTION_POOL="dhcp";
     @Autowired
     Environment env;
 
@@ -25,7 +28,7 @@ public class DynamicDataSourceCP {
         String val = env.getProperty("db.datasourceCP");
 
 
-        if(null!=val && "dhcp".equals(val.trim())){
+        if(null!=val && DEFAULT_DATABASE_CONNECTION_POOL.equals(val.trim())){
             return getDataSourceUsingDHCP(jdbcDriverName, jdbcUrl, userName, password);
         }
         return getDatasourceUsingHikariCP(jdbcDriverName, jdbcUrl, userName, password);

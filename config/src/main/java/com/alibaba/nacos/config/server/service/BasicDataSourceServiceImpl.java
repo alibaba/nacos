@@ -33,7 +33,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
-import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -89,7 +88,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
 
     @Autowired
-    DynamicDataSourceCP dynamicDataSourceCP;
+    DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool;
     static {
         try {
             Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
@@ -158,7 +157,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             }
             int dbNum = Integer.parseInt(val.trim());
 
-            DataSourceWrapper dataSourceWrapper = new DataSourceWrapper(dynamicDataSourceCP);
+            DataSourceWrapper dataSourceWrapper = new DataSourceWrapper(dynamicDataSourceConnectionPool);
 
             for (int i = 0; i < dbNum; i++) {
                 dataSourceWrapper.setDriverClassName(JDBC_DRIVER_NAME);

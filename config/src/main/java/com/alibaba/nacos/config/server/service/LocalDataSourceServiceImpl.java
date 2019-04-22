@@ -63,27 +63,14 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     @Autowired
     private PropertyUtil propertyUtil;
     @Autowired
-    private DynamicDataSourceCP dynamicDataSourceCP;
+    private DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool;
 
 
     @PostConstruct
     public void init() {
-//        BasicDataSource ds = new BasicDataSource();
-//        ds.setDriverClassName(JDBC_DRIVER_NAME);
-//        ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
-//        ds.setUsername(USER_NAME);
-//        ds.setPassword(PASSWORD);
-//        ds.setInitialSize(20);
-//        ds.setMaxActive(30);
-//        ds.setMaxIdle(50);
-//        ds.setMaxWait(10000L);
-//        ds.setPoolPreparedStatements(true);
-//        ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-//            .toMillis(10L));
-//        ds.setTestWhileIdle(true);
 
         String jdbcUrl = "jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true";
-        DataSource ds = dynamicDataSourceCP.getDataSource(JDBC_DRIVER_NAME, jdbcUrl, USER_NAME, PASSWORD);
+        DataSource ds = dynamicDataSourceConnectionPool.getDataSource(JDBC_DRIVER_NAME, jdbcUrl, USER_NAME, PASSWORD);
         jt = new JdbcTemplate();
         jt.setMaxRows(50000);
         jt.setQueryTimeout(5000);
