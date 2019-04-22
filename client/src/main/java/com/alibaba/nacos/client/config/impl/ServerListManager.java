@@ -426,14 +426,17 @@ class ServerAddressIterator implements Iterator<String> {
         iter = sorted.iterator();
     }
 
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    @Override
     public String next() {
         return iter.next().serverIp;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

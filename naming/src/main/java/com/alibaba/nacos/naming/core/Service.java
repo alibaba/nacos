@@ -428,6 +428,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         recalculateChecksum();
     }
 
+    @Override
     public String getChecksum() {
         if (StringUtils.isEmpty(checksum)) {
             recalculateChecksum();

@@ -438,6 +438,7 @@ public class ClientWorker {
         });
 
         executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
             public void run() {
                 try {
                     checkConfigInfo();
@@ -455,6 +456,7 @@ public class ClientWorker {
             this.taskId = taskId;
         }
 
+        @Override
         public void run() {
             try {
                 List<CacheData> cacheDatas = new ArrayList<CacheData>();

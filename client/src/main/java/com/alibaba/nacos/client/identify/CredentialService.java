@@ -85,6 +85,7 @@ public final class CredentialService implements SpasCredentialLoader {
         LOGGER.info("[{}] {} is freed", appName, this.getClass().getSimpleName());
     }
 
+    @Override
     public Credentials getCredential() {
         Credentials localCredential = credentials;
         if (localCredential.valid()) {

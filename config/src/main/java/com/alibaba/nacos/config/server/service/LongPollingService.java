@@ -371,6 +371,7 @@ public class LongPollingService extends AbstractEventListener {
         @Override
         public void run() {
             asyncTimeoutFuture = scheduler.schedule(new Runnable() {
+                @Override
                 public void run() {
                     try {
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
