@@ -19,7 +19,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.StringUtils;
-import org.apache.commons.dbcp.BasicDataSource;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.io.File;
@@ -38,7 +37,6 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
@@ -64,23 +62,28 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     @Autowired
     private PropertyUtil propertyUtil;
+    @Autowired
+    private DynamicDataSourceCP dynamicDataSourceCP;
+
 
     @PostConstruct
     public void init() {
-        BasicDataSource ds = new BasicDataSource();
-        ds.setDriverClassName(JDBC_DRIVER_NAME);
-        ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
-        ds.setUsername(USER_NAME);
-        ds.setPassword(PASSWORD);
-        ds.setInitialSize(20);
-        ds.setMaxActive(30);
-        ds.setMaxIdle(50);
-        ds.setMaxWait(10000L);
-        ds.setPoolPreparedStatements(true);
-        ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-            .toMillis(10L));
-        ds.setTestWhileIdle(true);
+//        BasicDataSource ds = new BasicDataSource();
+//        ds.setDriverClassName(JDBC_DRIVER_NAME);
+//        ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
+//        ds.setUsername(USER_NAME);
+//        ds.setPassword(PASSWORD);
+//        ds.setInitialSize(20);
+//        ds.setMaxActive(30);
+//        ds.setMaxIdle(50);
+//        ds.setMaxWait(10000L);
+//        ds.setPoolPreparedStatements(true);
+//        ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
+//            .toMillis(10L));
+//        ds.setTestWhileIdle(true);
 
+        String jdbcUrl = "jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true";
+        DataSource ds = dynamicDataSourceCP.getDataSource(JDBC_DRIVER_NAME, jdbcUrl, USER_NAME, PASSWORD);
         jt = new JdbcTemplate();
         jt.setMaxRows(50000);
         jt.setQueryTimeout(5000);

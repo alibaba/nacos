@@ -33,6 +33,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +68,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     private static final String DB_LOAD_ERROR_MSG = "[db-load-error]load jdbc.properties error";
 
-    private List<BasicDataSource> dataSourceList = new ArrayList<BasicDataSource>();
+
+
+    private List<DataSourceWrapper> dataSourceList = new ArrayList<DataSourceWrapper>();
     private JdbcTemplate jt;
     private DataSourceTransactionManager tm;
     private TransactionTemplate tjt;
@@ -85,6 +88,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     private Environment env;
 
 
+    @Autowired
+    DynamicDataSourceCP dynamicDataSourceCP;
     static {
         try {
             Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
@@ -143,7 +148,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     @Override
     public synchronized void reload() throws IOException {
-        List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
+
+        List<DataSourceWrapper> dblist = new ArrayList<DataSourceWrapper>();
         try {
             String val = null;
             val = env.getProperty("db.num");
@@ -152,50 +158,38 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             }
             int dbNum = Integer.parseInt(val.trim());
 
+            DataSourceWrapper dataSourceWrapper = new DataSourceWrapper(dynamicDataSourceCP);
+
             for (int i = 0; i < dbNum; i++) {
-                BasicDataSource ds = new BasicDataSource();
-                ds.setDriverClassName(JDBC_DRIVER_NAME);
+                dataSourceWrapper.setDriverClassName(JDBC_DRIVER_NAME);
 
                 val = env.getProperty("db.url." + i);
                 if (null == val) {
                     fatalLog.error("db.url." + i + " is null");
                     throw new IllegalArgumentException();
                 }
-                ds.setUrl(val.trim());
+                dataSourceWrapper.setUrl(val.trim());
+
 
                 val = env.getProperty("db.user");
                 if (null == val) {
                     fatalLog.error("db.user is null");
                     throw new IllegalArgumentException();
                 }
-                ds.setUsername(val.trim());
+
+                dataSourceWrapper.setUsername(val.trim());
 
                 val = env.getProperty("db.password");
                 if (null == val) {
                     fatalLog.error("db.password is null");
                     throw new IllegalArgumentException();
                 }
-                ds.setPassword(val.trim());
 
-                val = env.getProperty("db.initialSize");
-                ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
+                dataSourceWrapper.setPassword(val.trim());
 
-                val = env.getProperty("db.maxActive");
-                ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
+                DataSource ds = dataSourceWrapper.getDataSource();
 
-                val = env.getProperty("db.maxIdle");
-                ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
-
-                ds.setMaxWait(3000L);
-                ds.setPoolPreparedStatements(true);
-
-                // 每10分钟检查一遍连接池
-                ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-                    .toMillis(10L));
-                ds.setTestWhileIdle(true);
-                ds.setValidationQuery("SELECT 1 FROM dual");
-
-                dblist.add(ds);
+                dblist.add(dataSourceWrapper);
 
                 JdbcTemplate jdbcTemplate = new JdbcTemplate();
                 jdbcTemplate.setQueryTimeout(queryTimeout);
@@ -306,7 +300,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             boolean isFound = false;
 
             int index = -1;
-            for (BasicDataSource ds : dataSourceList) {
+            for (DataSourceWrapper dataSourceWrapper : dataSourceList) {
+                DataSource ds = dataSourceWrapper.getDs();
                 index++;
                 testMasterJT.setDataSource(ds);
                 testMasterJT.setQueryTimeout(queryTimeout);
@@ -315,7 +310,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                         .update(
                             "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
-                        fatalLog.warn("[master-db] {}", ds.getUrl());
+                        fatalLog.warn("[master-db] {}", dataSourceWrapper.getUrl());
                     }
                     jt.setDataSource(ds);
                     tm.setDataSource(ds);
