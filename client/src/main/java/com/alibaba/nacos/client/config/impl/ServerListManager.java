@@ -192,7 +192,6 @@ public class ServerListManager {
     }
 
     public synchronized void start() throws NacosException {
-
         if (isStarted || isFixed) {
             return;
         }
@@ -203,17 +202,12 @@ public class ServerListManager {
             try {
                 this.wait((i + 1) * 100L);
             } catch (Exception e) {
-                LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
             }
         }
 
         if (serverUrls.isEmpty()) {
-            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
-                addressServerUrl);
-            throw new NacosException(NacosException.SERVER_ERROR,
-                "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
+            throw new NacosException(NacosException.SERVER_ERROR, "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
         }
-
         TimerService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
     }

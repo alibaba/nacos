@@ -51,6 +51,18 @@ public class ClientWorker {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
 
+    final ScheduledExecutorService executor;
+    final ExecutorService executorService;
+    /**
+     * TODO 只是客户端的缓存，并不是数据的缓存
+     */
+    AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
+
+    HttpAgent agent;
+    ConfigFilterChainManager configFilterChainManager;
+    private boolean isHealthServer = true;
+    private double currentLongingTaskCount = 0;
+
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
         group = null2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
@@ -73,6 +85,7 @@ public class ClientWorker {
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
+        /*依赖客户端缓存*/
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         for (Listener listener : listeners) {
             cache.addListener(listener);
@@ -158,23 +171,15 @@ public class ClientWorker {
         cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         synchronized (cacheMap) {
             CacheData cacheFromMap = getCache(dataId, group, tenant);
-            // multiple listeners on the same dataid+group and race condition,so
-            // double check again
-            // other listener thread beat me to set to cacheMap
             if (null != cacheFromMap) {
                 cache = cacheFromMap;
-                // reset so that server not hang this check
                 cache.setInitializing(true);
             }
-
             Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
             copy.put(key, cache);
             cacheMap.set(copy);
         }
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
-
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
-
         return cache;
     }
 
@@ -204,10 +209,6 @@ public class ClientWorker {
             }
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
-            String message = String.format(
-                "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
-                dataId, group, tenant);
-            LOGGER.error(message, e);
             throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
         }
 
@@ -393,39 +394,31 @@ public class ClientWorker {
         return updateList;
     }
 
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    /**
+     * TODO ClientWork初始化的时候就开始创建了线程LongPullingService
+     */
     public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
-
-        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
+        executor = Executors.newScheduledThreadPool(1, r -> {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
+            t.setDaemon(true);
+            return t;
         });
 
-        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
+        executorService = Executors.newCachedThreadPool(r -> {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
+            t.setDaemon(true);
+            return t;
         });
 
-        executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
+        executor.scheduleWithFixedDelay(() -> {
+            try {
+                checkConfigInfo();
+            } catch (Throwable e) {
+                LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
             }
         }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
@@ -498,8 +491,6 @@ public class ClientWorker {
         }
     }
 
-    // =================
-
     public boolean isHealthServer() {
         return isHealthServer;
     }
@@ -507,17 +498,4 @@ public class ClientWorker {
     private void setHealthServer(boolean isHealthServer) {
         this.isHealthServer = isHealthServer;
     }
-
-    final ScheduledExecutorService executor;
-    final ExecutorService executorService;
-    /**
-     * groupKey -> cacheData
-     */
-    AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-        new HashMap<String, CacheData>());
-
-    HttpAgent agent;
-    ConfigFilterChainManager configFilterChainManager;
-    private boolean isHealthServer = true;
-    private double currentLongingTaskCount = 0;
 }
