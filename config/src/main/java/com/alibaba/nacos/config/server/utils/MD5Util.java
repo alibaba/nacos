@@ -39,9 +39,8 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
 
-    static public List<String> compareMd5(HttpServletRequest request,
-                                          HttpServletResponse response, Map<String, String> clientMd5Map) {
-        List<String> changedGroupKeys = new ArrayList<String>();
+    static public List<String> compareMd5(HttpServletRequest request, HttpServletResponse response, Map<String, String> clientMd5Map) {
+        List<String> changedGroupKeys = new ArrayList<>();
         String tag = request.getHeader("Vipserver-Tag");
         for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();

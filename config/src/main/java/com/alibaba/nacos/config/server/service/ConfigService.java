@@ -24,8 +24,6 @@ import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -33,8 +31,8 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.*;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * config service
@@ -582,11 +580,9 @@ public class ConfigService {
     private final static String NO_SPACE_EN = "No space left on device";
     private final static String DISK_QUATA_CN = "超出磁盘限额";
     private final static String DISK_QUATA_EN = "Disk quota exceeded";
-    static final Logger log = LoggerFactory.getLogger(ConfigService.class);
     /**
      * groupKey -> cacheItem
      */
-    static private final ConcurrentHashMap<String, CacheItem> CACHE =
-        new ConcurrentHashMap<String, CacheItem>();
+    static private final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
 }
 

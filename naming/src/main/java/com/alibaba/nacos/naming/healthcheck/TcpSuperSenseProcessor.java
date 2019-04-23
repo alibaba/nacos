@@ -68,26 +68,19 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     public static final long TCP_KEEP_ALIVE_MILLIS = 0;
 
     private static ScheduledExecutorService TCP_CHECK_EXECUTOR
-        = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setName("nacos.naming.tcp.check.worker");
-            t.setDaemon(true);
-            return t;
-        }
+        = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread t = new Thread(r);
+        t.setName("nacos.naming.tcp.check.worker");
+        t.setDaemon(true);
+        return t;
     });
 
     private static ScheduledExecutorService NIO_EXECUTOR
-        = Executors.newScheduledThreadPool(NIO_THREAD_COUNT,
-        new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("nacos.supersense.checker");
-                return thread;
-            }
+        = Executors.newScheduledThreadPool(NIO_THREAD_COUNT, r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            thread.setName("nacos.supersense.checker");
+            return thread;
         }
     );
 
@@ -142,7 +135,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     }
 
     private void processTask() throws Exception {
-        Collection<Callable<Void>> tasks = new LinkedList<Callable<Void>>();
+        Collection<Callable<Void>> tasks = new LinkedList<>();
         do {
             Beat beat = taskQueue.poll(CONNECT_TIMEOUT_MS / 2, TimeUnit.MILLISECONDS);
             if (beat == null) {
@@ -399,15 +392,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
                 int port = cluster.isUseIPPort4Check() ? instance.getPort() : cluster.getDefCkport();
                 channel.connect(new InetSocketAddress(instance.getIp(), port));
 
-                SelectionKey key
-                    = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
+                SelectionKey key = channel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ);
                 key.attach(beat);
                 keyMap.put(beat.toString(), new BeatKey(key));
 
                 beat.setStartTime(System.currentTimeMillis());
 
-                NIO_EXECUTOR.schedule(new TimeOutTask(key),
-                    CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+                NIO_EXECUTOR.schedule(new TimeOutTask(key), CONNECT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
             } catch (Exception e) {
                 beat.finishCheck(false, false, switchDomain.getTcpHealthParams().getMax(), "tcp:error:" + e.getMessage());
 

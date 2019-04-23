@@ -50,6 +50,10 @@ public class HealthCheckTask implements Runnable {
     @JSONField(serialize = false)
     private HealthCheckProcessor healthCheckProcessor;
 
+
+    /**
+     * TODO
+     */
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
         distroMapper = SpringContext.getAppContext().getBean(DistroMapper.class);
@@ -67,7 +71,6 @@ public class HealthCheckTask implements Runnable {
 
     @Override
     public void run() {
-
         try {
             if (distroMapper.responsible(cluster.getService().getName()) &&
                 switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {

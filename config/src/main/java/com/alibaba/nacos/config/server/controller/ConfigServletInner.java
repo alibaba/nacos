@@ -65,16 +65,12 @@ public class ConfigServletInner {
     /**
      * 轮询接口
      */
-    public String doPollingConfig(HttpServletRequest request, HttpServletResponse response,
-                                  Map<String, String> clientMd5Map, int probeRequestSize)
-        throws IOException, ServletException {
-
+    public String doPollingConfig(HttpServletRequest request, HttpServletResponse response, Map<String, String> clientMd5Map, int probeRequestSize) throws IOException, ServletException {
         // 长轮询
         if (LongPollingService.isSupportLongPolling(request)) {
             longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
         }
-
         // else 兼容短轮询逻辑
         List<String> changedGroups = MD5Util.compareMd5(request, response, clientMd5Map);
 
