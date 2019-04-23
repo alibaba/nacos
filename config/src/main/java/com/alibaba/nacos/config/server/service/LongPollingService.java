@@ -78,8 +78,7 @@ public class LongPollingService extends AbstractEventListener {
     public SampleResult getSubscribleInfo(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
-
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.clientMd5Map.containsKey(groupKey)) {
                 lisentersGroupkeyStatus.put(clientLongPolling.ip, clientLongPolling.clientMd5Map.get(groupKey));
@@ -91,7 +90,7 @@ public class LongPollingService extends AbstractEventListener {
 
     public SampleResult getSubscribleInfoByIp(String clientIp) {
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
 
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.ip.equals(clientIp)) {
