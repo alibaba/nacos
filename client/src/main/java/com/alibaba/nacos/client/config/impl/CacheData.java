@@ -81,7 +81,6 @@ public class CacheData {
                 if (listener instanceof AbstractSharedListener) {
                     AbstractSharedListener adapter = (AbstractSharedListener) listener;
                     adapter.fillContext(dataId, group);
-                    LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
                 }
                 // 执行回调之前先将线程classloader设置为具体webapp的classloader，以免回调方法中调用spi接口是出现异常或错用（多应用部署才会有该问题）。
                 Thread.currentThread().setContextClassLoader(appClassLoader);
@@ -94,14 +93,8 @@ public class CacheData {
                 String contentTmp = cr.getContent();
                 listener.receiveConfigInfo(contentTmp);
                 listenerWrap.lastCallMd5 = md5;
-                LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
-                    listener);
-            } catch (NacosException de) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", name,
-                    dataId, group, md5, listener, de.getErrCode(), de.getErrMsg());
-            } catch (Throwable t) {
-                LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId, group,
-                    md5, listener, t.getCause());
+            } catch (Throwable de) {
+
             } finally {
                 Thread.currentThread().setContextClassLoader(myClassLoader);
             }
@@ -113,6 +106,7 @@ public class CacheData {
                 job.run();
             }
         } catch (Throwable t) {
+
         }
     }
 

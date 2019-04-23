@@ -51,6 +51,11 @@ public class Server implements Comparable<Server> {
 
     private String lastRefTimeStr;
 
+
+
+
+
+
     public String getIp() {
         return ip;
     }

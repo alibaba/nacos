@@ -392,7 +392,6 @@ public class ServerListManager {
         @Override
         public void run() {
             try {
-
                 if (RunningConfig.getServerPort() <= 0) {
                     return;
                 }

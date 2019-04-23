@@ -69,25 +69,22 @@ public class FailoverReactor {
         executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
 
         // backup file on startup if failover directory is empty.
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File cacheDir = new File(failoverDir);
+        executorService.schedule(() -> {
+            try {
+                File cacheDir = new File(failoverDir);
 
-                    if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                        throw new IllegalStateException("failed to create cache dir: " + failoverDir);
-                    }
-
-                    File[] files = cacheDir.listFiles();
-                    if (files == null || files.length <= 0) {
-                        new DiskFileWriter().run();
-                    }
-                } catch (Throwable e) {
-                    NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
+                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                    throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                 }
 
+                File[] files = cacheDir.listFiles();
+                if (files == null || files.length <= 0) {
+                    new DiskFileWriter().run();
+                }
+            } catch (Throwable e) {
+                NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
             }
+
         }, 10000L, TimeUnit.MILLISECONDS);
     }
 

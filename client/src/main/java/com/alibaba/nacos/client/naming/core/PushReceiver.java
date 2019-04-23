@@ -46,14 +46,11 @@ public class PushReceiver implements Runnable {
             this.hostReactor = hostReactor;
             udpSocket = new DatagramSocket();
 
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.push.receiver");
-                    return thread;
-                }
+            executorService = new ScheduledThreadPoolExecutor(1, r -> {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.push.receiver");
+                return thread;
             });
 
             executorService.execute(this);

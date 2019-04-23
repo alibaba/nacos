@@ -79,12 +79,12 @@ public class HostReactor {
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
         if (loadCacheAtStart) {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+            this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
         } else {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
+            this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
 
-        this.updatingMap = new ConcurrentHashMap<String, Object>();
+        this.updatingMap = new ConcurrentHashMap<>();
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
     }
@@ -93,7 +93,7 @@ public class HostReactor {
         return serviceInfoMap;
     }
 
-    public synchronized ScheduledFuture<?> addTask(UpdateTask task) {
+     private synchronized ScheduledFuture<?> addTask(UpdateTask task) {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
 

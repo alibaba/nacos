@@ -36,7 +36,10 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -245,17 +248,12 @@ public class ClientWorker {
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
-
-            LOGGER.warn("[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
 
-        // 有 -> 没有。不通知业务监听器，从server拿到配置后通知。
+        // 有 -> 没有 不通知业务监听器，从server拿到配置后通知。
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
-            LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
-                dataId, group, tenant);
             return;
         }
 
@@ -263,13 +261,9 @@ public class ClientWorker {
         if (cacheData.isUseLocalConfigInfo() && path.exists()
             && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
             String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
-            String md5 = MD5.getInstance().getMD5String(content);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
-            LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-            return;
         }
     }
 
@@ -294,7 +288,7 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) {
+    private List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
             if (!cacheData.isUseLocalConfigInfo()) {
@@ -308,8 +302,7 @@ public class ClientWorker {
                 }
                 if (cacheData.isInitializing()) {
                     // cacheData 首次出现在cacheMap中&首次check更新
-                    inInitializingCacheList
-                        .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
+                    inInitializingCacheList.add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }
             }
         }
@@ -317,17 +310,14 @@ public class ClientWorker {
         return checkUpdateConfigStr(sb.toString(), isInitializingCacheList);
     }
 
-    /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
-     */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) {
+    private List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) {
 
         List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
         long timeout = TimeUnit.SECONDS.toMillis(30L);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
-        headers.add("" + timeout);
+        headers.add(Long.toString(timeout));
 
         // told server do not hang me up if new initializing cacheData added in
         if (isInitializingCacheList) {
@@ -340,26 +330,20 @@ public class ClientWorker {
         }
 
         try {
-            HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
-                agent.getEncode(), timeout);
+            HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params, agent.getEncode(), timeout);
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
                 return parseUpdateDataIdResponse(result.content);
             } else {
                 setHealthServer(false);
-                LOGGER.error("[{}] [check-update] get changed dataId error, code: {}", agent.getName(), result.code);
             }
         } catch (IOException e) {
             setHealthServer(false);
-            LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
         }
         return Collections.emptyList();
     }
 
-    /**
-     * 从HTTP响应拿到变化的groupKey。保证不返回NULL。
-     */
     private List<String> parseUpdateDataIdResponse(String response) {
         if (StringUtils.isBlank(response)) {
             return Collections.emptyList();
@@ -368,10 +352,10 @@ public class ClientWorker {
         try {
             response = URLDecoder.decode(response, "UTF-8");
         } catch (Exception e) {
-            LOGGER.error("[" + agent.getName() + "] [polling-resp] decode modifiedDataIdsString error", e);
+
         }
 
-        List<String> updateList = new LinkedList<String>();
+        List<String> updateList = new LinkedList<>();
 
         for (String dataIdAndGroup : response.split(LINE_SEPARATOR)) {
             if (!StringUtils.isBlank(dataIdAndGroup)) {
@@ -380,14 +364,11 @@ public class ClientWorker {
                 String group = keyArr[1];
                 if (keyArr.length == 2) {
                     updateList.add(GroupKey.getKey(dataId, group));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}", agent.getName(), dataId, group);
                 } else if (keyArr.length == 3) {
                     String tenant = keyArr[2];
                     updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
-                    LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
-                        dataId, group, tenant);
                 } else {
-                    LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(), dataIdAndGroup);
+
                 }
             }
         }
@@ -433,7 +414,7 @@ public class ClientWorker {
         @Override
         public void run() {
             try {
-                List<CacheData> cacheDatas = new ArrayList<CacheData>();
+                List<CacheData> cacheDatas = new ArrayList<>();
                 // check failover config
                 for (CacheData cacheData : cacheMap.get().values()) {
                     if (cacheData.getTaskId() == taskId) {
@@ -444,12 +425,12 @@ public class ClientWorker {
                                 cacheData.checkListenerMd5();
                             }
                         } catch (Exception e) {
-                            LOGGER.error("get local config info error", e);
+
                         }
                     }
                 }
 
-                List<String> inInitializingCacheList = new ArrayList<String>();
+                List<String> inInitializingCacheList = new ArrayList<>();
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
 
@@ -465,14 +446,7 @@ public class ClientWorker {
                         String content = getServerConfig(dataId, group, tenant, 3000L);
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                         cache.setContent(content);
-                        LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
-                            agent.getName(), dataId, group, tenant, cache.getMd5(),
-                            ContentUtils.truncateContent(content));
                     } catch (NacosException ioe) {
-                        String message = String.format(
-                            "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
-                            agent.getName(), dataId, group, tenant);
-                        LOGGER.error(message, ioe);
                     }
                 }
                 for (CacheData cacheData : cacheDatas) {
@@ -484,7 +458,6 @@ public class ClientWorker {
                 }
                 inInitializingCacheList.clear();
             } catch (Throwable e) {
-                LOGGER.error("longPolling error", e);
             } finally {
                 executorService.execute(this);
             }

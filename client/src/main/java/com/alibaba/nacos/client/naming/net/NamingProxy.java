@@ -78,7 +78,6 @@ public class NamingProxy {
                 this.nacosDomain = serverList;
             }
         }
-
         initRefreshSrvIfNeed();
     }
 
@@ -97,12 +96,7 @@ public class NamingProxy {
             }
         });
 
-        executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                refreshSrvIfNeed();
-            }
-        }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(this::refreshSrvIfNeed, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
         refreshSrvIfNeed();
     }
@@ -138,7 +132,6 @@ public class NamingProxy {
 
     private void refreshSrvIfNeed() {
         try {
-
             if (!CollectionUtils.isEmpty(serverList)) {
                 NAMING_LOGGER.debug("server list provided by user: " + serverList);
                 return;
@@ -219,7 +212,6 @@ public class NamingProxy {
 
     public long sendBeat(BeatInfo beatInfo) {
         try {
-            NAMING_LOGGER.info("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
             Map<String, String> params = new HashMap<String, String>(4);
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(CommonParams.NAMESPACE_ID, namespaceId);

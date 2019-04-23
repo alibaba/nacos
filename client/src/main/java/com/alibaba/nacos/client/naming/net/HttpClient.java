@@ -122,7 +122,7 @@ public class HttpClient {
             inputStream = conn.getErrorStream();
         }
 
-        Map<String, String> respHeaders = new HashMap<String, String>(conn.getHeaderFields().size());
+        Map<String, String> respHeaders = new HashMap<>(conn.getHeaderFields().size());
         for (Map.Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
             respHeaders.put(entry.getKey(), entry.getValue().get(0));
         }
@@ -132,7 +132,6 @@ public class HttpClient {
         if (encodingGzip.equals(respHeaders.get(HttpHeaders.CONTENT_ENCODING))) {
             inputStream = new GZIPInputStream(inputStream);
         }
-
         return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
     }
 

@@ -43,16 +43,12 @@ public class EventDispatcher {
 
     public EventDispatcher() {
 
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
-                thread.setDaemon(true);
+        executor = Executors.newSingleThreadExecutor(r -> {
+            Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
+            thread.setDaemon(true);
 
-                return thread;
-            }
+            return thread;
         });
-
         executor.execute(new Notifier());
     }
 

@@ -71,8 +71,6 @@ public class DataSyncer implements ServerChangeListener {
     }
 
     public void submit(SyncTask task, long delay) {
-
-        // If it's a new task:
         if (task.getRetryCount() == 0) {
             Iterator<String> iterator = task.getKeys().iterator();
             while (iterator.hasNext()) {

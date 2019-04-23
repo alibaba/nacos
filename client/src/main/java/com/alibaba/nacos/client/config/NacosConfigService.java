@@ -87,19 +87,11 @@ public class NacosConfigService implements ConfigService {
     private void initNamespace(Properties properties) {
         String namespaceTmp = null;
 
-        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-            @Override
-            public String call() {
-                return TenantUtil.getUserTenant();
-            }
-        });
+        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, TenantUtil::getUserTenant);
 
-        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
-            }
+        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, () -> {
+            String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+            return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
         });
 
         if (StringUtils.isBlank(namespaceTmp)) {

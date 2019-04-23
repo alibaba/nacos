@@ -45,14 +45,11 @@ public class BeatReactor {
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
 
-        executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.beat.sender");
-                return thread;
-            }
+        executorService = new ScheduledThreadPoolExecutor(threadCount, r -> {
+            Thread thread = new Thread(r);
+            thread.setDaemon(true);
+            thread.setName("com.alibaba.nacos.naming.beat.sender");
+            return thread;
         });
 
         executorService.schedule(new BeatProcessor(), 0, TimeUnit.MILLISECONDS);
