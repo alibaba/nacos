@@ -51,14 +51,11 @@ public class PerformanceLoggerThread {
     @Autowired
     private RaftCore raftCore;
 
-    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("nacos-server-performance");
-            return t;
-        }
+    private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.setName("nacos-server-performance");
+        return t;
     });
 
     private static final long PERIOD = 5 * 60;

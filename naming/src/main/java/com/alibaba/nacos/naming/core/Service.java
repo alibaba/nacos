@@ -78,7 +78,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     private long pushCacheMillis = 0L;
 
-    private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
+    private Map<String, Cluster> clusterMap = new HashMap<>();
 
     public Service() {
     }
@@ -339,12 +339,12 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         serviceObject.put("protectThreshold", service.getProtectThreshold());
 
-        List<Object> clustersList = new ArrayList<Object>();
+        List<Object> clustersList = new ArrayList<>();
 
         for (Map.Entry<String, Cluster> entry : service.getClusterMap().entrySet()) {
             Cluster cluster = entry.getValue();
 
-            Map<Object, Object> clusters = new HashMap<Object, Object>(10);
+            Map<Object, Object> clusters = new HashMap<>(10);
             clusters.put("name", cluster.getName());
             clusters.put("healthChecker", cluster.getHealthChecker());
             clusters.put("defCkport", cluster.getDefCkport());

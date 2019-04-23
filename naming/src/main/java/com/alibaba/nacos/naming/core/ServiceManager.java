@@ -652,7 +652,7 @@ public class ServiceManager implements RecordListener<Service> {
     public static class ServiceChecksum {
 
         public String namespaceId;
-        public Map<String, String> serviceName2Checksum = new HashMap<String, String>();
+        public Map<String, String> serviceName2Checksum = new HashMap<>();
 
         public ServiceChecksum() {
             this.namespaceId = Constants.DEFAULT_NAMESPACE_ID;
@@ -664,8 +664,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         public void addItem(String serviceName, String checksum) {
             if (StringUtils.isEmpty(serviceName) || StringUtils.isEmpty(checksum)) {
-                Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] serviceName or checksum is empty,serviceName: {}, checksum: {}",
-                    serviceName, checksum);
+                Loggers.SRV_LOG.warn("[DOMAIN-CHECKSUM] serviceName or checksum is empty,serviceName: {}, checksum: {}", serviceName, checksum);
                 return;
             }
 

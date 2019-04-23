@@ -26,7 +26,7 @@ import java.util.concurrent.*;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
- * @author harold
+ * 客户端心跳机制
  */
 public class BeatReactor {
 
@@ -36,7 +36,7 @@ public class BeatReactor {
 
     private NamingProxy serverProxy;
 
-    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<>();
 
     public BeatReactor(NamingProxy serverProxy) {
         this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);

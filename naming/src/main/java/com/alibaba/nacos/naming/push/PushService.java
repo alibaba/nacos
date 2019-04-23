@@ -50,15 +50,13 @@ public class PushService {
 
     private static final int MAX_RETRY_TIMES = 1;
 
-    private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap
-            = new ConcurrentHashMap<String, Receiver.AckEntry>();
+    private static volatile ConcurrentMap<String, Receiver.AckEntry> ackMap = new ConcurrentHashMap<>();
 
-    private static ConcurrentMap<String, ConcurrentMap<String, PushClient>> clientMap
-            = new ConcurrentHashMap<String, ConcurrentMap<String, PushClient>>();
+    private static ConcurrentMap<String, ConcurrentMap<String, PushClient>> clientMap = new ConcurrentHashMap<>();
 
-    private static volatile ConcurrentHashMap<String, Long> udpSendTimeMap = new ConcurrentHashMap<String, Long>();
+    private static volatile ConcurrentHashMap<String, Long> udpSendTimeMap = new ConcurrentHashMap<>();
 
-    public static volatile ConcurrentHashMap<String, Long> pushCostMap = new ConcurrentHashMap<String, Long>();
+    public static volatile ConcurrentHashMap<String, Long> pushCostMap = new ConcurrentHashMap<>();
 
     private static int totalPush = 0;
 
@@ -69,24 +67,18 @@ public class PushService {
     private static DatagramSocket udpSocket;
 
     private static Map<String, Future> futureMap = new ConcurrentHashMap<>();
-    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.push.retransmitter");
-            return t;
-        }
+    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.setName("com.alibaba.nacos.naming.push.retransmitter");
+        return t;
     });
 
-    private static ScheduledExecutorService udpSender = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
-            t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.push.udpSender");
-            return t;
-        }
+    private static ScheduledExecutorService udpSender = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r);
+        t.setDaemon(true);
+        t.setName("com.alibaba.nacos.naming.push.udpSender");
+        return t;
     });
 
     static {
@@ -310,7 +302,7 @@ public class PushService {
     }
 
     public static List<Receiver.AckEntry> getFailedPushes() {
-        return new ArrayList<Receiver.AckEntry>(ackMap.values());
+        return new ArrayList<>(ackMap.values());
     }
 
     public int getFailedPushCount() {
@@ -347,14 +339,7 @@ public class PushService {
 
         public long lastRefTime = System.currentTimeMillis();
 
-        public PushClient(String namespaceId,
-                          String serviceName,
-                          String clusters,
-                          String agent,
-                          InetSocketAddress socketAddr,
-                          DataSource dataSource,
-                          String tenant,
-                          String app) {
+        public PushClient(String namespaceId, String serviceName, String clusters, String agent, InetSocketAddress socketAddr, DataSource dataSource, String tenant, String app) {
             this.namespaceId = namespaceId;
             this.serviceName = serviceName;
             this.clusters = clusters;

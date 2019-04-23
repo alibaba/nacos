@@ -60,7 +60,7 @@ public class NamingProxy {
 
     private List<String> serverList;
 
-    private List<String> serversFromEndpoint = new ArrayList<String>();
+    private List<String> serversFromEndpoint = new ArrayList<>();
 
     private long lastSrvRefTime = 0L;
 
@@ -158,12 +158,12 @@ public class NamingProxy {
         }
     }
 
+    /**
+     * 向其中一台服务器注册服务记录即可
+     */
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
 
-        NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
-            namespaceId, serviceName, instance);
-
-        final Map<String, String> params = new HashMap<String, String>(8);
+        final Map<String, String> params = new HashMap<>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
@@ -300,8 +300,7 @@ public class NamingProxy {
         return callServer(api, params, curServer, HttpMethod.GET);
     }
 
-    public String callServer(String api, Map<String, String> params, String curServer, String method)
-        throws NacosException {
+    public String callServer(String api, Map<String, String> params, String curServer, String method) throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
         checkSignature(params);
@@ -318,8 +317,7 @@ public class NamingProxy {
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
 
-        MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(result.code))
-            .observe(end - start);
+        MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(result.code)).observe(end - start);
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content;
@@ -329,9 +327,7 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
-        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer
-            + api + ". code:"
-            + result.code + " msg: " + result.content);
+        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer + api + ". code:" + result.code + " msg: " + result.content);
     }
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers) {
@@ -339,9 +335,7 @@ public class NamingProxy {
     }
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) {
-
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
-
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
             throw new IllegalArgumentException("no server available");
         }
@@ -357,9 +351,6 @@ public class NamingProxy {
                 String server = servers.get(index);
                 try {
                     return callServer(api, params, server, method);
-                } catch (NacosException e) {
-                    exception = e;
-                    NAMING_LOGGER.error("request {} failed.", server, e);
                 } catch (Exception e) {
                     exception = e;
                     NAMING_LOGGER.error("request {} failed.", server, e);
@@ -367,7 +358,6 @@ public class NamingProxy {
 
                 index = (index + 1) % servers.size();
             }
-
             throw new IllegalStateException("failed to req API:" + api + " after all servers(" + servers + ") tried: "
                 + exception.getMessage());
         }
@@ -407,12 +397,7 @@ public class NamingProxy {
     }
 
     public List<String> builderHeaders() {
-        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-            "User-Agent", UtilAndComs.VERSION,
-            "Accept-Encoding", "gzip,deflate,sdch",
-            "Connection", "Keep-Alive",
-            "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
-        return headers;
+        return Arrays.asList("Client-Version", UtilAndComs.VERSION, "User-Agent", UtilAndComs.VERSION, "Accept-Encoding", "gzip,deflate,sdch", "Connection", "Keep-Alive", "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
     }
 
     private static String getSignData(String serviceName) {

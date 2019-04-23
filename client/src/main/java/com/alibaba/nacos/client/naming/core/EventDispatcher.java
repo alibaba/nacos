@@ -36,7 +36,7 @@ public class EventDispatcher {
 
     private ExecutorService executor = null;
 
-    private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
+    private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<>();
 
     private ConcurrentMap<String, List<EventListener>> observerMap
         = new ConcurrentHashMap<String, List<EventListener>>();
@@ -53,9 +53,7 @@ public class EventDispatcher {
     }
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
-
-        NAMING_LOGGER.info("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
-        List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
+        List<EventListener> observers = Collections.synchronizedList(new ArrayList<>());
         observers.add(listener);
 
         observers = observerMap.putIfAbsent(ServiceInfo.getKey(serviceInfo.getName(), clusters), observers);

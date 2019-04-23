@@ -59,7 +59,7 @@ public class FailoverReactor {
         }
     });
 
-    private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+    private Map<String, String> switchParams = new ConcurrentHashMap<>();
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
 
     public void init() {

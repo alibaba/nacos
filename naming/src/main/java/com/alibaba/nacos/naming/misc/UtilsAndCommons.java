@@ -146,48 +146,36 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
         SERVICE_SYNCHRONIZATION_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
+            = new ScheduledThreadPoolExecutor(1, r -> {
                 Thread t = new Thread(r);
                 t.setName("nacos.naming.service.worker");
                 t.setDaemon(true);
                 return t;
-            }
-        });
+            });
 
         SERVICE_UPDATE_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
+            = new ScheduledThreadPoolExecutor(1, r -> {
                 Thread t = new Thread(r);
                 t.setName("nacos.naming.service.update.processor");
                 t.setDaemon(true);
                 return t;
-            }
-        });
+            });
 
         INIT_CONFIG_EXECUTOR
-            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
+            = new ScheduledThreadPoolExecutor(1, r -> {
                 Thread t = new Thread(r);
                 t.setName("nacos.naming.init.config.worker");
                 t.setDaemon(true);
                 return t;
-            }
-        });
+            });
 
         RAFT_PUBLISH_EXECUTOR
-            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
+            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
                 Thread t = new Thread(r);
                 t.setName("nacos.naming.raft.publisher");
                 t.setDaemon(true);
                 return t;
-            }
-        });
+            });
 
     }
 

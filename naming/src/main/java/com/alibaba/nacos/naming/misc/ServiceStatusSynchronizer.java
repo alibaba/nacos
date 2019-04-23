@@ -35,7 +35,7 @@ public class ServiceStatusSynchronizer implements Synchronizer {
             return;
         }
 
-        Map<String,String> params = new HashMap<String, String>(10);
+        Map<String, String> params = new HashMap<>(10);
 
         params.put("statuses", msg.getData());
         params.put("clientIP", NetUtils.localServer());

@@ -86,6 +86,10 @@ public class NacosNamingService implements NamingService {
         init(properties);
     }
 
+
+    /**
+     * TODO 名称服务
+     */
     private void init(Properties properties) {
         serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         initNamespace(properties);
@@ -97,6 +101,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
+        /*心跳机制*/
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
@@ -170,20 +175,9 @@ public class NacosNamingService implements NamingService {
             return;
         }
 
-        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
-            @Override
-            public String call() {
+        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
 
-                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
-            }
-        });
-
-        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
-            @Override
-            public String call() {
-                return "8080";
-            }
-        });
+        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, () -> "8080");
 
         endpoint = endpointUrl + ":" + endpointPort;
     }
@@ -191,59 +185,42 @@ public class NacosNamingService implements NamingService {
     private void initNamespace(Properties properties) {
         String tmpNamespace = null;
 
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                return namespace;
-            }
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
+            String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
+            LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
+            return namespace;
         });
 
 
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
-                return namespace;
-            }
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
+            String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+            LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
+            return namespace;
         });
 
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = CredentialService.getInstance().getCredential().getTenantId();
-                LogUtils.NAMING_LOGGER.info("initializer namespace from Credential Module " + namespace);
-                return namespace;
-            }
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
+            String namespace = CredentialService.getInstance().getCredential().getTenantId();
+            LogUtils.NAMING_LOGGER.info("initializer namespace from Credential Module " + namespace);
+            return namespace;
         });
 
         if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
 
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                return UtilAndComs.DEFAULT_NAMESPACE_ID;
-            }
-        });
+        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> UtilAndComs.DEFAULT_NAMESPACE_ID);
         namespace = tmpNamespace;
     }
 
     private void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
         final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
-            @Override
-            public void run() {
-                UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
-                    : "/" + webContext;
+        TemplateUtils.stringNotEmptyAndThenExecute(webContext, () -> {
+            UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
+                : "/" + webContext;
 
-                UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
-                UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
-            }
+            UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
+            UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
         });
     }
 
@@ -281,7 +258,9 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-
+        //
+        // 临时节点发送beat info
+        //
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
             beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
@@ -496,8 +475,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
-            StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
+        eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
     }
 
     @Override

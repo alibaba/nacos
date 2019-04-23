@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -49,11 +48,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.InetSocketAddress;
 import java.util.*;
 
-/**
- * Instance operation controller
- *
- * @author nkorange
- */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
 public class InstanceController {

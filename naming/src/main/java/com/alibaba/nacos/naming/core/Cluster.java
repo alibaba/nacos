@@ -286,26 +286,18 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     public void update(Cluster cluster) {
 
         if (!getHealthChecker().equals(cluster.getHealthChecker())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                getService().getName(), getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
             setHealthChecker(cluster.getHealthChecker());
         }
 
         if (defCkport != cluster.getDefCkport()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
-                getService().getName(), getName(), defCkport, cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
 
         if (defIPPort != cluster.getDefIPPort()) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
-                getService().getName(), getName(), defIPPort, cluster.getDefIPPort());
             defIPPort = cluster.getDefIPPort();
         }
 
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
-            Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
-                getService().getName(), getName(), sitegroup, cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
 

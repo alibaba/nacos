@@ -214,8 +214,6 @@ public class HostReactor {
     }
 
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
-
-        NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
         String key = ServiceInfo.getKey(serviceName, clusters);
         if (failoverReactor.isFailoverSwitch()) {
             return failoverReactor.getService(key);

@@ -47,12 +47,9 @@ public class NamingExample {
 
         System.out.println(naming.getAllInstances("nacos.test.3"));
 
-        naming.subscribe("nacos.test.3", new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
-            }
+        naming.subscribe("nacos.test.3", event -> {
+            System.out.println(((NamingEvent) event).getServiceName());
+            System.out.println(((NamingEvent) event).getInstances());
         });
     }
 }
