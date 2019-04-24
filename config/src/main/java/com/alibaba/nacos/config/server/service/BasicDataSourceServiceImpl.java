@@ -83,12 +83,11 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
 
+    public static String DATASOURCE_CONNECTION_POOL_TYPE;
+
     @Autowired
     private Environment env;
 
-
-    @Autowired
-    DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool;
     static {
         try {
             Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
@@ -157,7 +156,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             }
             int dbNum = Integer.parseInt(val.trim());
 
-            DataSourceWrapper dataSourceWrapper = new DataSourceWrapper(dynamicDataSourceConnectionPool);
+            DataSourceWrapper dataSourceWrapper = new DataSourceWrapper();
 
             for (int i = 0; i < dbNum; i++) {
                 dataSourceWrapper.setDriverClassName(JDBC_DRIVER_NAME);
@@ -185,6 +184,14 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 }
 
                 dataSourceWrapper.setPassword(val.trim());
+
+                val = env.getProperty("db.pool.type");
+                if (null == val) {
+                    log.error("db.pool.type is null");
+                    throw new IllegalArgumentException();
+                }
+                DATASOURCE_CONNECTION_POOL_TYPE=val;
+
 
                 DataSource ds = dataSourceWrapper.getDataSource();
 

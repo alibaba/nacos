@@ -15,12 +15,17 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 
 /**
  * @author codewaltz1994
  */
+
 public  class DataSourceWrapper{
+    private static final Logger log = LoggerFactory.getLogger(DataSourceWrapper.class);
+
     private String driverClassName;
     private String url;
     private String username;
@@ -28,14 +33,8 @@ public  class DataSourceWrapper{
 
     private DataSource ds;
 
-    private DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool;
-
-    public DataSourceWrapper(DynamicDataSourceConnectionPool dynamicDataSourceConnectionPool){
-        this.dynamicDataSourceConnectionPool = dynamicDataSourceConnectionPool;
-    }
     public DataSource getDataSource(){
-        DataSource tmp = dynamicDataSourceConnectionPool.getDataSource(getDriverClassName(), getUrl(), getUsername(), getPassword());
-        ds = tmp;
+        ds = DataSourceBuilder.create().username(getUsername()).password(getPassword()).url(getUrl()).driverClassName(getDriverClassName()).build();
         return ds;
     }
 
