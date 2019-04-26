@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
@@ -201,6 +202,51 @@ public class NamingProxy {
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
+    }
+
+    public void createService(Service service, AbstractSelector selector) throws NacosException {
+
+        NAMING_LOGGER.info("[CREATE-SERVICE] {} creating service : {}",
+            namespaceId, service);
+
+        final Map<String, String> params = new HashMap<String, String>(6);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, service.getName());
+        params.put(CommonParams.GROUP_NAME, service.getGroupName());
+        params.put("protectThreshold", String.valueOf(service.getProtectThreshold()));
+        params.put("metadata", JSON.toJSONString(service.getMetadata()));
+        params.put("selector", JSON.toJSONString(selector));
+
+        reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.POST);
+
+    }
+
+    public boolean deleteService(String serviceName, String groupName) throws NacosException {
+        NAMING_LOGGER.info("[DELETE-SERVICE] {} deleting service : {} with groupName : {}",
+            namespaceId, serviceName, groupName);
+
+        final Map<String, String> params = new HashMap<String, String>(6);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.GROUP_NAME, groupName);
+
+        reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.DELETE);
+        return false;
+    }
+
+    public void updateService(Service service, AbstractSelector selector) throws NacosException {
+        NAMING_LOGGER.info("[UPDATE-SERVICE] {} updating service : {}",
+            namespaceId, service);
+
+        final Map<String, String> params = new HashMap<String, String>(6);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, service.getName());
+        params.put(CommonParams.GROUP_NAME, service.getGroupName());
+        params.put("protectThreshold", String.valueOf(service.getProtectThreshold()));
+        params.put("metadata", JSON.toJSONString(service.getMetadata()));
+        params.put("selector", JSON.toJSONString(selector));
+
+        reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.PUT);
     }
 
     public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)

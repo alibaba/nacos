@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
@@ -137,6 +138,105 @@ public interface NamingService {
      * @throws NacosException
      */
     void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName name of service
+     */
+    void createService(String serviceName) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     */
+    void createService(String serviceName, String groupName) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     */
+    void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     * @param expression
+     */
+    void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param service
+     * @param selector
+     */
+    void createService(Service service, AbstractSelector selector) throws NacosException;
+
+    /**
+     * delete service from Nacos
+     *
+     * @param serviceName
+     */
+    boolean deleteService(String serviceName) throws NacosException;
+
+    /**
+     * delete service from Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     */
+    boolean deleteService(String serviceName, String groupName) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     */
+    void updateService(String serviceName) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     */
+    void updateService(String serviceName, String groupName) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     */
+    void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     * @param expression
+     */
+    void updateService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param service
+     * @param selector
+     */
+    void updateService(Service service, AbstractSelector selector) throws NacosException;
 
     /**
      * deregister instance with full instance information
