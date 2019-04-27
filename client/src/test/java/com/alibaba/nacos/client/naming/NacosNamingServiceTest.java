@@ -38,7 +38,7 @@ public class NacosNamingServiceTest {
         service.setGroupName(Constants.DEFAULT_GROUP);
         service.setProtectThreshold(1.0f);
         Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put("nacos-1", "nacos-1");
+        metadata.put("nacos-1", "test-1");
         service.setMetadata(metadata);
 
         ExpressionSelector selector = new ExpressionSelector();
