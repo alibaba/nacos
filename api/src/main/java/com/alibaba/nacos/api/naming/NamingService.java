@@ -461,6 +461,7 @@ public interface NamingService {
      * delete service from Nacos
      *
      * @param serviceName name of service
+     * @return if delete service success return true
      * @throws NacosException
      */
     boolean deleteService(String serviceName) throws NacosException;
@@ -470,6 +471,7 @@ public interface NamingService {
      *
      * @param serviceName name of service
      * @param groupName   group of service
+     * @return if delete service success return true
      * @throws NacosException
      */
     boolean deleteService(String serviceName, String groupName) throws NacosException;
