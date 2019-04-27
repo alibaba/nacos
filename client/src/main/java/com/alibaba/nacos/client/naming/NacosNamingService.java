@@ -23,9 +23,12 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
+import com.alibaba.nacos.api.selector.ExpressionSelector;
+import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.identify.CredentialService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
@@ -42,10 +45,7 @@ import com.alibaba.nacos.client.utils.TemplateUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -477,6 +477,104 @@ public class NacosNamingService implements NamingService {
             return Balancer.RandomByWeight.selectHost(
                 hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         }
+    }
+
+    @Override
+    public void createService(String serviceName) throws NacosException {
+        createService(serviceName, Constants.DEFAULT_GROUP);
+    }
+
+    @Override
+    public void createService(String serviceName, String groupName) throws NacosException {
+        createService(serviceName, groupName, Constants.PROTECT_THRESHOLD);
+    }
+
+    @Override
+    public void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException {
+        NoneSelector selector = new NoneSelector();
+        Service service = new Service();
+        service.setName(serviceName);
+        service.setGroupName(groupName);
+        service.setProtectThreshold(protectThreshold);
+
+        createService(service, selector);
+    }
+
+    @Override
+    public void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException {
+        Service service = new Service();
+        service.setName(serviceName);
+        service.setGroupName(groupName);
+        service.setProtectThreshold(protectThreshold);
+
+        ExpressionSelector selector = new ExpressionSelector();
+        selector.setExpression(expression);
+
+        createService(service, selector);
+    }
+
+    @Override
+    public void createService(Service service, AbstractSelector selector) throws NacosException {
+        serverProxy.createService(service, selector);
+    }
+
+    @Override
+    public boolean deleteService(String serviceName) throws NacosException {
+        return deleteService(serviceName, Constants.DEFAULT_GROUP);
+    }
+
+    @Override
+    public boolean deleteService(String serviceName, String groupName) throws NacosException {
+        return serverProxy.deleteService(serviceName, groupName);
+    }
+
+    @Override
+    public void updateService(String serviceName, String groupName) throws NacosException {
+        updateService(serviceName, groupName, Constants.PROTECT_THRESHOLD);
+    }
+
+    @Override
+    public void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException {
+        Service service = new Service();
+        service.setName(serviceName);
+        service.setGroupName(groupName);
+        service.setProtectThreshold(protectThreshold);
+
+        updateService(service, new NoneSelector());
+    }
+
+    @Override
+    public void updateService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException {
+        Service service = new Service();
+        service.setName(serviceName);
+        service.setGroupName(groupName);
+        service.setProtectThreshold(protectThreshold);
+
+        ExpressionSelector selector = new ExpressionSelector();
+        selector.setExpression(expression);
+
+        updateService(service, selector);
+    }
+
+    @Override
+    public void updateService(String serviceName, String groupName, Float protectThreshold, Map<String, String> metadata) throws NacosException {
+        Service service = new Service();
+        service.setName(serviceName);
+        service.setGroupName(groupName);
+        service.setProtectThreshold(protectThreshold);
+        service.setMetadata(metadata);
+
+        updateService(service, new NoneSelector());
+    }
+
+    @Override
+    public void updateService(Service service) throws NacosException {
+        updateService(service, new NoneSelector());
+    }
+
+    @Override
+    public void updateService(Service service, AbstractSelector selector) throws NacosException {
+        serverProxy.updateService(service, selector);
     }
 
     @Override
