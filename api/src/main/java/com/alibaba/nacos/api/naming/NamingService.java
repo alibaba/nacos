@@ -414,6 +414,7 @@ public interface NamingService {
      * create service to Nacos
      *
      * @param serviceName name of service
+     * @throws NacosException
      */
     void createService(String serviceName) throws NacosException;
 
@@ -422,75 +423,83 @@ public interface NamingService {
      *
      * @param serviceName name of service
      * @param groupName   group of service
+     * @throws NacosException
      */
     void createService(String serviceName, String groupName) throws NacosException;
 
     /**
      * create service to Nacos
      *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
+     * @param serviceName           name of service
+     * @param groupName             group of service
+     * @param protectThreshold      protectThreshold of service
+     * @throws NacosException
      */
     void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
 
     /**
      * create service to Nacos
      *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     * @param expression
+     * @param serviceName       name of service
+     * @param groupName         group of service
+     * @param protectThreshold  protectThreshold of service
+     * @param expression        expression of selector
+     * @throws NacosException
      */
     void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
 
     /**
      * create service to Nacos
      *
-     * @param service
-     * @param selector
+     * @param service   name of service
+     * @param selector  selector
+     * @throws NacosException
      */
     void createService(Service service, AbstractSelector selector) throws NacosException;
 
     /**
      * delete service from Nacos
      *
-     * @param serviceName
+     * @param serviceName name of service
+     * @throws NacosException
      */
     boolean deleteService(String serviceName) throws NacosException;
 
     /**
      * delete service from Nacos
      *
-     * @param serviceName
-     * @param groupName
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @throws NacosException
      */
     boolean deleteService(String serviceName, String groupName) throws NacosException;
 
     /**
      * update service to Nacos
      *
-     * @param serviceName
-     * @param groupName
+     * @param serviceName  name of service
+     * @param groupName    group of service
+     * @throws NacosException
      */
     void updateService(String serviceName, String groupName) throws NacosException;
 
     /**
      * update service to Nacos
      *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
+     * @param serviceName       name of service
+     * @param groupName         group of service
+     * @param protectThreshold  protectThreshold of service
+     * @throws NacosException
      */
     void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
 
     /**
      * update service to Nacos with  with selector's expression
      *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     * @param expression
+     * @param serviceName       name of service
+     * @param groupName         group of service
+     * @param protectThreshold  protectThreshold of service
+     * @param expression        expression of selector
      * @throws NacosException
      */
     void updateService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
@@ -498,25 +507,28 @@ public interface NamingService {
     /**
      * update service to Nacos
      *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     * @param metadata
+     * @param serviceName       name of service
+     * @param groupName         group of service
+     * @param protectThreshold  protectThreshold of service
+     * @param metadata          metadata of service
+     * @throws NacosException
      */
     void updateService(String serviceName, String groupName, Float protectThreshold, Map<String, String> metadata) throws NacosException;
 
     /**
      * update service to Nacos
      *
-     * @param service
+     * @param service {@link Service} pojo of service
+     * @throws NacosException
      */
     void updateService(Service service) throws NacosException;
 
     /**
      * update service to Nacos with selector
      *
-     * @param service
-     * @param selector
+     * @param service    {@link Service} pojo of service
+     * @param selector   {@link AbstractSelector} pojo of selector
+     * @throws NacosException
      */
     void updateService(Service service, AbstractSelector selector) throws NacosException;
 
