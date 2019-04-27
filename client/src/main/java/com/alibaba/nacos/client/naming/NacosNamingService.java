@@ -525,8 +525,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public boolean deleteService(String serviceName, String groupName) throws NacosException {
-        serverProxy.deleteService(serviceName, groupName);
-        return false;
+        return serverProxy.deleteService(serviceName, groupName);
     }
 
     @Override

@@ -8,6 +8,7 @@ import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -16,7 +17,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-import static org.junit.Assert.*;
+
 
 public class NacosNamingServiceTest {
 
@@ -53,7 +54,7 @@ public class NacosNamingServiceTest {
     @Test
     public void deleteService() {
         try {
-            nameService.deleteService("nacos-api");
+            Assert.assertTrue(nameService.deleteService("nacos-api"));
         } catch (NacosException e) {
             NAMING_LOGGER.error(e.getErrMsg());
         }

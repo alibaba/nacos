@@ -230,8 +230,9 @@ public class NamingProxy {
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
 
-        reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.DELETE);
-        return false;
+        String result = reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.DELETE);
+        NAMING_LOGGER.info(result);
+        return "ok".equals(result);
     }
 
     public void updateService(Service service, AbstractSelector selector) throws NacosException {
