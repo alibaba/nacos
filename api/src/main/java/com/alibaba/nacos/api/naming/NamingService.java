@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Naming Service
@@ -138,105 +139,6 @@ public interface NamingService {
      * @throws NacosException
      */
     void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException;
-
-    /**
-     * create service to Nacos
-     *
-     * @param serviceName name of service
-     */
-    void createService(String serviceName) throws NacosException;
-
-    /**
-     * create service to Nacos
-     *
-     * @param serviceName name of service
-     * @param groupName   group of service
-     */
-    void createService(String serviceName, String groupName) throws NacosException;
-
-    /**
-     * create service to Nacos
-     *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     */
-    void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
-
-    /**
-     * create service to Nacos
-     *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     * @param expression
-     */
-    void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
-
-    /**
-     * create service to Nacos
-     *
-     * @param service
-     * @param selector
-     */
-    void createService(Service service, AbstractSelector selector) throws NacosException;
-
-    /**
-     * delete service from Nacos
-     *
-     * @param serviceName
-     */
-    boolean deleteService(String serviceName) throws NacosException;
-
-    /**
-     * delete service from Nacos
-     *
-     * @param serviceName
-     * @param groupName
-     */
-    boolean deleteService(String serviceName, String groupName) throws NacosException;
-
-    /**
-     * update service to Nacos
-     *
-     * @param serviceName
-     */
-    void updateService(String serviceName) throws NacosException;
-
-    /**
-     * update service to Nacos
-     *
-     * @param serviceName
-     * @param groupName
-     */
-    void updateService(String serviceName, String groupName) throws NacosException;
-
-    /**
-     * update service to Nacos
-     *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     */
-    void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
-
-    /**
-     * update service to Nacos
-     *
-     * @param serviceName
-     * @param groupName
-     * @param protectThreshold
-     * @param expression
-     */
-    void updateService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
-
-    /**
-     * update service to Nacos
-     *
-     * @param service
-     * @param selector
-     */
-    void updateService(Service service, AbstractSelector selector) throws NacosException;
 
     /**
      * deregister instance with full instance information
@@ -507,6 +409,116 @@ public interface NamingService {
      * @throws NacosException
      */
     Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters, boolean subscribe) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName name of service
+     */
+    void createService(String serviceName) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     */
+    void createService(String serviceName, String groupName) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     */
+    void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     * @param expression
+     */
+    void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
+
+    /**
+     * create service to Nacos
+     *
+     * @param service
+     * @param selector
+     */
+    void createService(Service service, AbstractSelector selector) throws NacosException;
+
+    /**
+     * delete service from Nacos
+     *
+     * @param serviceName
+     */
+    boolean deleteService(String serviceName) throws NacosException;
+
+    /**
+     * delete service from Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     */
+    boolean deleteService(String serviceName, String groupName) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     */
+    void updateService(String serviceName, String groupName) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     */
+    void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
+
+    /**
+     * update service to Nacos with  with selector's expression
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     * @param expression
+     * @throws NacosException
+     */
+    void updateService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param serviceName
+     * @param groupName
+     * @param protectThreshold
+     * @param metadata
+     */
+    void updateService(String serviceName, String groupName, Float protectThreshold, Map<String, String> metadata) throws NacosException;
+
+    /**
+     * update service to Nacos
+     *
+     * @param service
+     */
+    void updateService(Service service) throws NacosException;
+
+    /**
+     * update service to Nacos with selector
+     *
+     * @param service
+     * @param selector
+     */
+    void updateService(Service service, AbstractSelector selector) throws NacosException;
 
     /**
      * Subscribe service to receive events of instances alteration
