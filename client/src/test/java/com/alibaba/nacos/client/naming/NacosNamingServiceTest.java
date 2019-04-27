@@ -26,7 +26,7 @@ public class NacosNamingServiceTest {
     @Before
     public void before() throws NacosException {
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "11.160.165.126:8848");
 
         nameService = NacosFactory.createNamingService(properties);
     }
@@ -38,7 +38,7 @@ public class NacosNamingServiceTest {
         service.setGroupName(Constants.DEFAULT_GROUP);
         service.setProtectThreshold(1.0f);
         Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put("nacos-1", "test-1");
+        metadata.put("nacos-1", "this is a test metadata");
         service.setMetadata(metadata);
 
         ExpressionSelector selector = new ExpressionSelector();
