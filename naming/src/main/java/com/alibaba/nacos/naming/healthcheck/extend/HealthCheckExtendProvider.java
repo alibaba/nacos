@@ -1,6 +1,3 @@
-package com.alibaba.nacos.naming.healthcheck.extend;
-
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
@@ -16,6 +13,9 @@ import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.alibaba.nacos.naming.healthcheck.extend;
+
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import org.springframework.beans.BeansException;
