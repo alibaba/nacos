@@ -419,5 +419,5 @@ public class DumpService {
 
     Boolean isQuickStart = false;
 
-    int retentionDays = 30;
+    private int retentionDays = 30;
 }
