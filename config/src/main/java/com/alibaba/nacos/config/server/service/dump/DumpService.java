@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
@@ -100,7 +101,7 @@ public class DumpService {
                 log.warn("clearConfigHistory start");
                 if (ServerListService.isFirstIp()) {
                     try {
-                        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * 30);
+                        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                         int totalCount = persistService.findConfigHistoryCountByTime(startTime);
                         if (totalCount > 0) {
                             int pageSize = 1000;
@@ -278,6 +279,25 @@ public class DumpService {
         return isQuickStart;
     }
 
+    private int getRetentionDays() {
+        String val = env.getProperty("retention.days");
+        if (null == val) {
+            return retentionDays;
+        }
+
+        int tmp = 0;
+        try {
+            tmp = Integer.parseInt(val);
+            if (tmp > 0) {
+                retentionDays = tmp;
+            }
+        } catch (NumberFormatException nfe) {
+            fatalLog.error("read retention.days wrong", nfe);
+        }
+
+        return retentionDays;
+    }
+
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
         dump(dataId, group, tenant, tag, lastModified, handleIp, false);
     }
@@ -400,4 +420,5 @@ public class DumpService {
 
     Boolean isQuickStart = false;
 
+    int retentionDays = 30;
 }
