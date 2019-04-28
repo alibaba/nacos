@@ -468,7 +468,7 @@ class NewConfig extends React.Component {
                       message: locale.moreAdvanced,
                     },
                     {
-                      max: 127,
+                      maxLength: 127,
                       message: locale.groupNotEmpty,
                     },
                     { validator: this.validateChart.bind(this) },
