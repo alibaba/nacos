@@ -20,15 +20,18 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author nkorange
+ * @author jifengnan 2019-04-26
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
@@ -59,11 +62,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
-    public Cluster() {
-    }
-
-    public Cluster(String clusterName) {
+    /**
+     * 创建一个集群(create a cluster)。
+     * <p>集群名不能为空，且只能由阿拉伯数字，英文字母和减号（-）组成(the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed)。
+     *
+     * @param clusterName 集群名
+     * @param service     服务
+     * @throws IllegalArgumentException 服务为空，或者集群名为空，或者集群名不合法(the service is null, or the cluster name is null, or the cluster name is illegal)。
+     * @since 1.1.0
+     * @author jifengnan 2019-04-26
+     */
+    public Cluster(String clusterName, Service service) {
         this.setName(clusterName);
+        this.service = service;
         validate();
     }
 
@@ -113,19 +124,40 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return service;
     }
 
+    /**
+     * 为当前的集群更换服务（replace the service for the current cluster）。
+     * <p>不建议使用，集群所属的服务不应该允许被更改（服务内部的可变属性可以更改，但不应该将一个A服务的集群改成B服务）。
+     * 如果一个集群对应的服务都变了，其实应该新建一个集群。
+     * (Deprecated because the service shouldn't be replaced.
+     * (the service fields can be changed, but the service A shouldn't be replaced to service B).
+     * If the service of a cluster is required to replace, actually, a new cluster is required)
+     *
+     * @param service 服务
+     */
+    @Deprecated
     public void setService(Service service) {
         this.service = service;
-        this.setServiceName(service.getName());
+    }
+
+    /**
+     * 该方法计划在未来被废除，请使用<code>getService.getName()</code>方法(this method is deprecated, please use <code>getService.getName()</code> instead)。
+     *
+     * @param serviceName 服务名
+     * @since 1.1.0
+     * @author jifengnan  2019-04-26
+     */
+    @Deprecated
+    @Override
+    public void setServiceName(String serviceName) {
+        throw new UnsupportedOperationException("This method has been deprecated, please use getService.getName() instead.");
     }
 
     @Override
     public Cluster clone() throws CloneNotSupportedException {
         super.clone();
-        Cluster cluster = new Cluster();
-
+        Cluster cluster = new Cluster(this.getName(), service);
         cluster.setHealthChecker(getHealthChecker().clone());
-        cluster.setService(getService());
-        cluster.persistentInstances = new HashSet<Instance>();
+        cluster.persistentInstances = new HashSet<>();
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
@@ -263,16 +295,28 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName());
+        return new HashCodeBuilder(17, 37)
+            .append(getName())
+            .append(service)
+            .toHashCode();
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Cluster)) {
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
-        return getName().equals(((Cluster) obj).getName());
+        Cluster cluster = (Cluster) o;
+
+        return new EqualsBuilder()
+            .append(getName(), cluster.getName())
+            .append(service, cluster.service)
+            .isEquals();
     }
 
     public int getDefCkport() {
@@ -330,7 +374,15 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return persistentInstances.contains(ip) || ephemeralInstances.contains(ip);
     }
 
+    /**
+     * 验证当前集群是否合法(validate the current cluster)。
+     * <p>集群名不能为空，且只能由阿拉伯数字，英文字母和减号（-）组成(the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed)。
+     *
+     * @throws IllegalArgumentException 服务为空，或者集群名为空，或者集群名不合法(the service is null, or the cluster name is null, or the cluster name is illegal)。
+     */
     public void validate() {
+        Assert.notNull(getName(), "cluster name cannot be null");
+        Assert.notNull(service, "service cannot be null");
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
             throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
         }
