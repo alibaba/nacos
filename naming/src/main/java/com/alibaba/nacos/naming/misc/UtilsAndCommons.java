@@ -36,6 +36,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author nacos
+ * @author jifengnan
  */
 public class UtilsAndCommons {
 
@@ -240,7 +241,7 @@ public class UtilsAndCommons {
 
     /**
      * 根据指定的字符串计算出一个0（含）到{@code upperLimit}（不含）之间的数字，本方法会试图让不同的字符串较均匀的分布在0到{@code upperLimit}之间。
-     * (Provide a number between 0(include) and {@code upperLimit}(exclude) for the given {@code string}, the number will be nearly uniform distribution.)
+     * (Provide a number between 0(inclusive) and {@code upperLimit}(exclusive) for the given {@code string}, the number will be nearly uniform distribution.)
      * <p>
      * <p>
      * 举个例子：假设有N个提供相同服务的服务器地址被存在一个数组中，为了实现负载均衡，可以根据调用者的名字决定使用哪个服务器。
@@ -253,9 +254,10 @@ public class UtilsAndCommons {
      *
      * @param string     字符串。如果为null会固定返回0 (a string. the number 0 will be returned if it's null)
      * @param upperLimit 返回值的上限，必须为正整数(>0) (the upper limit of the returned number, must be a positive integer, which means > 0)
-     * @return 0（含）到upperLimit（不含）之间的一个数字 (a number between 0(include) and upperLimit(exclude))
+     * @return 0（含）到upperLimit（不含）之间的一个数字 (a number between 0(inclusive) and upperLimit(exclusive))
      * @throws IllegalArgumentException if the upper limit equals or less than 0
      * @since 1.0.0
+     * @author jifengnan
      */
     public static int shakeUp(String string, int upperLimit) {
         if (upperLimit < 1) {
