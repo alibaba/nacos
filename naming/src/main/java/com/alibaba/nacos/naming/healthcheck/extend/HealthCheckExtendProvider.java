@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck.extend;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -33,7 +34,7 @@ import java.util.Set;
  * @author XCXCXCXCX
  */
 @Component
-public class HealthCheckExtendProvider implements BeanFactoryAware{
+public class HealthCheckExtendProvider implements BeanFactoryAware {
 
     private ServiceLoader<HealthCheckProcessor> processorLoader
         = ServiceLoader.load(HealthCheckProcessor.class);
@@ -42,9 +43,6 @@ public class HealthCheckExtendProvider implements BeanFactoryAware{
         = ServiceLoader.load(AbstractHealthChecker.class);
 
     private SingletonBeanRegistry registry;
-
-    private static final char LOWER_A = 'A';
-    private static final char LOWER_Z = 'Z';
 
     public void init(){
         loadExtend();
@@ -73,14 +71,10 @@ public class HealthCheckExtendProvider implements BeanFactoryAware{
     }
 
     private String lowerFirstChar(String simpleName) {
-        if(simpleName == null || "".equals(simpleName)){
+        if(StringUtils.isBlank(simpleName)){
             throw new IllegalArgumentException("can't find extend processor class name");
         }
-        char[] chars = simpleName.toCharArray();
-        if(chars[0] >= LOWER_A && chars[0] <= LOWER_Z){
-            chars[0] = (char)(chars[0] + 32);
-        }
-        return String.valueOf(chars);
+        return String.valueOf(simpleName.charAt(0)).toLowerCase() + simpleName.substring(1);
     }
 
     @Override

@@ -58,6 +58,12 @@ public enum HealthCheckType {
     }
 
     public static Class ofHealthCheckerClass(String type){
-        return valueOf(type) == null ? EXTEND.get(type) : valueOf(type).healthCheckerClass;
+        HealthCheckType enumType;
+        try {
+            enumType = valueOf(type);
+        }catch (Exception e){
+            return EXTEND.get(type);
+        }
+        return enumType.healthCheckerClass;
     }
 }
