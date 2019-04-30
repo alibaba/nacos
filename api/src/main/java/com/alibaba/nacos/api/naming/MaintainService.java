@@ -31,6 +31,7 @@ import java.util.Map;
 public interface MaintainService {
 
     /**
+     * query service
      *
      * @param serviceName
      * @return
@@ -39,6 +40,7 @@ public interface MaintainService {
     Service selectOneService(String serviceName) throws NacosException;
 
     /**
+     * query service
      *
      * @param serviceName
      * @param groupName
