@@ -32,49 +32,13 @@ public class NacosNamingServiceTest {
     }
 
     @Test
-    public void createService() {
-        Service service = new Service();
-        service.setName("nacos-api");
-        service.setGroupName(Constants.DEFAULT_GROUP);
-        service.setProtectThreshold(1.0f);
-        Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put("nacos-1", "this is a test metadata");
-        service.setMetadata(metadata);
-
-        ExpressionSelector selector = new ExpressionSelector();
-        selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-
-        try {
-            nameService.createService(service, new NoneSelector());
-        } catch (NacosException e) {
-            NAMING_LOGGER.error(e.getErrMsg());
-        }
-    }
-
-    @Test
     public void deleteService() {
-        try {
-            Assert.assertTrue(nameService.deleteService("nacos-api"));
-        } catch (NacosException e) {
-            NAMING_LOGGER.error(e.getErrMsg());
-        }
+
     }
 
     @Test
     public void updateService() {
-        Service service = new Service();
-        service.setName("nacos-api");
-        service.setGroupName(Constants.DEFAULT_GROUP);
-        service.setProtectThreshold(1.0f);
-        Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put("nacos-1", "nacos-3-update");
-        service.setMetadata(metadata);
 
-        try {
-            nameService.updateService(service);
-        } catch (NacosException e) {
-            NAMING_LOGGER.error(e.getErrMsg());
-        }
     }
 
     @Test
