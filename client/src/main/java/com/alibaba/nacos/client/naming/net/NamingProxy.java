@@ -105,6 +105,7 @@ public class NamingProxy {
             }
         }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
+        // 这个方法的用处
         refreshSrvIfNeed();
     }
 
@@ -202,6 +203,20 @@ public class NamingProxy {
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
+    }
+
+    public Service queryService(String serviceName, String groupName) throws NacosException {
+        NAMING_LOGGER.info("[QUERY-SERVICE] {} query service : {}, {}",
+            namespaceId, serviceName, groupName);
+
+        final Map<String, String> params = new HashMap<String, String>(3);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.GROUP_NAME, groupName);
+
+        String result = reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.GET);
+        JSONObject jsonObject = JSON.parseObject(result);
+        return jsonObject.toJavaObject(Service.class);
     }
 
     public void createService(Service service, AbstractSelector selector) throws NacosException {

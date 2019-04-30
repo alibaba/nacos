@@ -16,20 +16,14 @@
 package com.alibaba.nacos.client.naming;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
-import com.alibaba.nacos.api.selector.ExpressionSelector;
-import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.client.identify.CredentialService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.core.Balancer;
@@ -37,16 +31,13 @@ import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.utils.*;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.*;
-import java.util.concurrent.Callable;
 
 /**
  * @author nkorange
@@ -87,10 +78,9 @@ public class NacosNamingService implements NamingService {
     }
 
     private void init(Properties properties) {
-        serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        initNamespace(properties);
-        initEndpoint(properties);
-        initWebRootContext();
+        namespace = NamingUtils.initNamespace(properties);
+        initServerAddr(properties);
+        NamingUtils.initWebRootContext();
         initCacheDir();
         initLogName(properties);
 
@@ -130,6 +120,14 @@ public class NacosNamingService implements NamingService {
         return loadCacheAtStart;
     }
 
+    private void initServerAddr(Properties properties) {
+        serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        endpoint = NamingUtils.initEndpoint(properties);
+        if (StringUtils.isNotEmpty(endpoint)) {
+            serverList = "";
+        }
+    }
+
     private void initLogName(Properties properties) {
         logName = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
         if (StringUtils.isEmpty(logName)) {
@@ -147,104 +145,6 @@ public class NacosNamingService implements NamingService {
         if (StringUtils.isEmpty(cacheDir)) {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
-    }
-
-    private void initEndpoint(final Properties properties) {
-        if (properties == null) {
-
-            return;
-        }
-        //这里通过 dubbo/sca 侧来初始化默认传入的是 true
-        boolean isUseEndpointParsingRule = Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE));
-        String endpointUrl;
-        if (isUseEndpointParsingRule) {
-            endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrl)) {
-                serverList = "";
-            }
-        } else {
-            endpointUrl = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        }
-
-        if (StringUtils.isBlank(endpointUrl)) {
-            return;
-        }
-
-        String endpointPort = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
-            @Override
-            public String call() {
-
-                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
-            }
-        });
-
-        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
-            @Override
-            public String call() {
-                return "8080";
-            }
-        });
-
-        endpoint = endpointUrl + ":" + endpointPort;
-    }
-
-    private void initNamespace(Properties properties) {
-        String tmpNamespace = null;
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                return namespace;
-            }
-        });
-
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
-                return namespace;
-            }
-        });
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = CredentialService.getInstance().getCredential().getTenantId();
-                LogUtils.NAMING_LOGGER.info("initializer namespace from Credential Module " + namespace);
-                return namespace;
-            }
-        });
-
-        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
-            tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        }
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                return UtilAndComs.DEFAULT_NAMESPACE_ID;
-            }
-        });
-        namespace = tmpNamespace;
-    }
-
-    private void initWebRootContext() {
-        // support the web context with ali-yun if the app deploy by EDAS
-        final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
-            @Override
-            public void run() {
-                UtilAndComs.WEB_CONTEXT = webContext.indexOf("/") > -1 ? webContext
-                    : "/" + webContext;
-
-                UtilAndComs.NACOS_URL_BASE = UtilAndComs.WEB_CONTEXT + "/v1/ns";
-                UtilAndComs.NACOS_URL_INSTANCE = UtilAndComs.NACOS_URL_BASE + "/instance";
-            }
-        });
     }
 
     @Override
@@ -284,7 +184,7 @@ public class NacosNamingService implements NamingService {
 
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
-            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
+            beatInfo.setServiceName(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName));
             beatInfo.setIp(instance.getIp());
             beatInfo.setPort(instance.getPort());
             beatInfo.setCluster(instance.getClusterName());
@@ -292,10 +192,10 @@ public class NacosNamingService implements NamingService {
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
 
-            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+            beatReactor.addBeatInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
-        serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
+        serverProxy.registerService(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
     @Override
@@ -325,8 +225,8 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
-        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
+        beatReactor.removeBeatInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
+        serverProxy.deregisterService(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 
     @Override
@@ -370,9 +270,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -424,9 +324,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -472,109 +372,11 @@ public class NacosNamingService implements NamingService {
 
         if (subscribe) {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         } else {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfoDirectlyFromServer(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         }
-    }
-
-    @Override
-    public void createService(String serviceName) throws NacosException {
-        createService(serviceName, Constants.DEFAULT_GROUP);
-    }
-
-    @Override
-    public void createService(String serviceName, String groupName) throws NacosException {
-        createService(serviceName, groupName, Constants.PROTECT_THRESHOLD);
-    }
-
-    @Override
-    public void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException {
-        NoneSelector selector = new NoneSelector();
-        Service service = new Service();
-        service.setName(serviceName);
-        service.setGroupName(groupName);
-        service.setProtectThreshold(protectThreshold);
-
-        createService(service, selector);
-    }
-
-    @Override
-    public void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException {
-        Service service = new Service();
-        service.setName(serviceName);
-        service.setGroupName(groupName);
-        service.setProtectThreshold(protectThreshold);
-
-        ExpressionSelector selector = new ExpressionSelector();
-        selector.setExpression(expression);
-
-        createService(service, selector);
-    }
-
-    @Override
-    public void createService(Service service, AbstractSelector selector) throws NacosException {
-        serverProxy.createService(service, selector);
-    }
-
-    @Override
-    public boolean deleteService(String serviceName) throws NacosException {
-        return deleteService(serviceName, Constants.DEFAULT_GROUP);
-    }
-
-    @Override
-    public boolean deleteService(String serviceName, String groupName) throws NacosException {
-        return serverProxy.deleteService(serviceName, groupName);
-    }
-
-    @Override
-    public void updateService(String serviceName, String groupName) throws NacosException {
-        updateService(serviceName, groupName, Constants.PROTECT_THRESHOLD);
-    }
-
-    @Override
-    public void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException {
-        Service service = new Service();
-        service.setName(serviceName);
-        service.setGroupName(groupName);
-        service.setProtectThreshold(protectThreshold);
-
-        updateService(service, new NoneSelector());
-    }
-
-    @Override
-    public void updateService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException {
-        Service service = new Service();
-        service.setName(serviceName);
-        service.setGroupName(groupName);
-        service.setProtectThreshold(protectThreshold);
-
-        ExpressionSelector selector = new ExpressionSelector();
-        selector.setExpression(expression);
-
-        updateService(service, selector);
-    }
-
-    @Override
-    public void updateService(String serviceName, String groupName, Float protectThreshold, Map<String, String> metadata) throws NacosException {
-        Service service = new Service();
-        service.setName(serviceName);
-        service.setGroupName(groupName);
-        service.setProtectThreshold(protectThreshold);
-        service.setMetadata(metadata);
-
-        updateService(service, new NoneSelector());
-    }
-
-    @Override
-    public void updateService(Service service) throws NacosException {
-        updateService(service, new NoneSelector());
-    }
-
-    @Override
-    public void updateService(Service service, AbstractSelector selector) throws NacosException {
-        serverProxy.updateService(service, selector);
     }
 
     @Override
@@ -594,7 +396,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
+        eventDispatcher.addListener(hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName),
             StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
     }
 
@@ -615,7 +417,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.removeListener(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","), listener);
+        eventDispatcher.removeListener(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","), listener);
     }
 
     @Override
