@@ -49,12 +49,34 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     private String app;
 
     public static final Pattern IP_PATTERN
-        = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
+        = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})");
 
-    public static final Pattern ONLY_DIGIT_AND_DOT
-        = Pattern.compile("(\\d|\\.)+");
+    public static final Pattern IPV6_PATTERN = Pattern.compile(
+        "(\\A([0-9a-f]{1,4}:){1,1}(:[0-9a-f]{1,4}){1,6}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,6}(:[0-9a-f]{1,4}){1,1}\\Z)|" +
+            "(\\A(([0-9a-f]{1,4}:){1,7}|:):\\Z)|" +
+            "(\\A:(:[0-9a-f]{1,4}){1,7}\\Z)|" +
+            "(\\A((([0-9a-f]{1,4}:){6})(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3})\\Z)|" +
+            "(\\A(([0-9a-f]{1,4}:){5}[0-9a-f]{1,4}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3})\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){5}:[0-9a-f]{1,4}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,1}(:[0-9a-f]{1,4}){1,4}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,3}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,2}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)|" +
+            "(\\A([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,1}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)|" +
+            "(\\A(([0-9a-f]{1,4}:){1,5}|:):(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)|" +
+            "(\\A:(:[0-9a-f]{1,4}){1,5}:(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}\\Z)"
+    );
+
+    public static final Pattern PORT_PATTERN
+        = Pattern.compile("(\\d{1,5})?");
 
     public static final String SPLITER = "_";
+
+    public static final String IPV6_LOCAL_ADDRESS_SPLITTER = "%";
 
     public Instance() {
     }
@@ -299,23 +321,30 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
 
     public boolean validate() {
-        if (onlyContainsDigitAndDot()) {
-            Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
-            if (!matcher.matches()) {
-                return false;
-            }
+        Matcher portMatcher = PORT_PATTERN.matcher(getPort() + "");
+        if (!portMatcher.matches()) {
+            return false;
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
             return false;
         }
 
-        return true;
-    }
+        Matcher matcher = IP_PATTERN.matcher(getIp());
+        if (!matcher.matches()) {
+            String ipv6 = getIp();
 
-    private boolean onlyContainsDigitAndDot() {
-        Matcher matcher = ONLY_DIGIT_AND_DOT.matcher(getIp());
-        return matcher.matches();
+            if (getIp().contains(IPV6_LOCAL_ADDRESS_SPLITTER)) {
+                ipv6 = getIp().split(IPV6_LOCAL_ADDRESS_SPLITTER)[0];
+            }
+
+            Matcher ipv6Matcher = IPV6_PATTERN.matcher(ipv6);
+            if (!ipv6Matcher.matches()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
