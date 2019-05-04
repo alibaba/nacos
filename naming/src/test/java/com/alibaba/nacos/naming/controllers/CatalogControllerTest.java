@@ -18,46 +18,38 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.isA;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 
 /**
  * @author jifengnan 2019-04-29
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
-public class CatalogControllerTest extends BaseTest {
-    @InjectMocks
-    private CatalogController catalogController;
+@RunWith(SpringRunner.class)
+@SpringBootTest
+@AutoConfigureMockMvc
+public class CatalogControllerTest {
 
+    @Autowired
     private MockMvc mockmvc;
 
-    @Before
-    public void before() {
-        super.before();
-        mockmvc = MockMvcBuilders.standaloneSetup(catalogController).build();
-    }
+    @MockBean
+    private ServiceManager serviceManager;
 
     @Test
     public void testServiceDetail() throws Exception {
@@ -69,14 +61,13 @@ public class CatalogControllerTest extends BaseTest {
         cluster.setDefaultPort(1);
 
         service.addCluster(cluster);
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
-
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog/service")
-                .param("namespaceId", Constants.DEFAULT_NAMESPACE_ID)
-                .param("serviceName", TEST_SERVICE_NAME);
-        JSONObject result = JSONObject.parseObject(mockmvc.perform(builder).andReturn().getResponse().getContentAsString());
-
+        when(serviceManager.getService(anyString(), anyString())).thenReturn(service);
+        String result1 = mockmvc.perform(get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog/service")
+            .param(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
+            .param(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME)
+            .param(CommonParams.GROUP_NAME, TEST_GROUP_NAME))
+            .andReturn().getResponse().getContentAsString();
+        JSONObject result = JSONObject.parseObject(result1);
         JSONObject serviceResult = (JSONObject) result.get("service");
         Assert.assertEquals(TEST_SERVICE_NAME, serviceResult.get("name"));
         Assert.assertEquals(12.34, Float.parseFloat(serviceResult.get("protectThreshold").toString()), 0.01);
@@ -94,12 +85,14 @@ public class CatalogControllerTest extends BaseTest {
 
     @Test
     public void testServiceDetailNotFound() throws Exception {
-        expectedException.expectCause(isA(NacosException.class));
-        expectedException.expectMessage(containsString("serivce test-service is not found!"));
-        MockHttpServletRequestBuilder builder =
-            MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog/service")
-                .param("namespaceId", Constants.DEFAULT_NAMESPACE_ID)
-                .param("serviceName", TEST_SERVICE_NAME);
-        mockmvc.perform(builder);
+        String result = mockmvc.perform(get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/catalog/service")
+            .param(CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID)
+            .param(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME)).andReturn().getResponse().getContentAsString();
+
+        Assert.assertTrue(result.contains("test-service is not found!"));
     }
+
+    private static final String TEST_CLUSTER_NAME = "test-cluster";
+    private static final String TEST_SERVICE_NAME = "test-service";
+    private static final String TEST_GROUP_NAME = "test-group-name";
 }
