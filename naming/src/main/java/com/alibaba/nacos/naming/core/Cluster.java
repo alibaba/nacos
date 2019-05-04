@@ -63,7 +63,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     /**
-     * 创建一个集群(create a cluster)。
+     * Create a cluster.
      * <p>集群名不能为空，且只能由阿拉伯数字，英文字母和减号（-）组成(the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed)。
      *
      * @param clusterName 集群名
@@ -140,7 +140,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * 该方法计划在未来被废除，请使用<code>getService.getName()</code>方法(this method is deprecated, please use <code>getService.getName()</code> instead)。
+     * 该方法计划在未来被移除，服务名不应允许被更改。
+     * (this method has been deprecated, the service name is not allowed to change)。
      *
      * @param serviceName 服务名
      * @since 1.1.0
@@ -149,7 +150,20 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @Deprecated
     @Override
     public void setServiceName(String serviceName) {
-        throw new UnsupportedOperationException("This method has been deprecated, please use getService.getName() instead.");
+        throw new UnsupportedOperationException("This method has been deprecated, the service name is not allowed to change.");
+    }
+
+    /**
+     * Get the service name of the current cluster.
+     * <p>注意，通过本方法获取的服务名并非是通过{@link #setServiceName(String)}设置的服务名，而是当前集群所属服务的名字。
+     * (Note that the returned service name is not the name which set by {@link #setServiceName(String)},
+     * but the name of the service to which the current cluster belongs).
+     *
+     * @return the service name of the current cluster.
+     */
+    @Override
+    public String getServiceName() {
+        return service.getName();
     }
 
     @Override

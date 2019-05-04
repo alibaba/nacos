@@ -63,15 +63,15 @@ public class CatalogController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         Service detailedService = serviceManager.getService(namespaceId, serviceName);
         if (detailedService == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
+            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
 
         JSONObject detailView = new JSONObject();
 
         JSONObject serviceObject = new JSONObject();
-        serviceObject.put("name", detailedService.getName());
+        serviceObject.put("name", NamingUtils.getServiceName(serviceName));
         serviceObject.put("protectThreshold", detailedService.getProtectThreshold());
-        serviceObject.put("groupName", detailedService.getGroupName());
+        serviceObject.put("groupName", NamingUtils.getGroupName(serviceName));
         serviceObject.put("selector", detailedService.getSelector());
         serviceObject.put("metadata", detailedService.getMetadata());
 
@@ -140,7 +140,7 @@ public class CatalogController {
     }
 
     @RequestMapping(value = "/services", method = RequestMethod.GET)
-    public Object listDetail(HttpServletRequest request) throws Exception {
+    public Object listDetail(HttpServletRequest request) {
 
         boolean withInstances = Boolean.parseBoolean(WebUtils.optional(request, "withInstances", "true"));
 
