@@ -52,17 +52,34 @@ public class HealthCheckExtendProvider implements BeanFactoryAware {
         Iterator<HealthCheckProcessor> processorIt = processorLoader.iterator();
         Iterator<AbstractHealthChecker> healthCheckerIt = checkerLoader.iterator();
 
+        Set<String> origin = new HashSet<>();
+        for(HealthCheckType type : HealthCheckType.values()){
+            origin.add(type.name());
+        }
         Set<String> processorType = new HashSet<>();
         Set<String> healthCheckerType = new HashSet<>();
+        processorType.addAll(origin);
+        healthCheckerType.addAll(origin);
+
         while(processorIt.hasNext()){
             HealthCheckProcessor processor = processorIt.next();
-            processorType.add(processor.getType());
+            String type = processor.getType();
+            if(processorType.contains(type)){
+                throw new RuntimeException("More than one processor of the same type was found : [type=\"" + type + "\"]");
+            }
+            processorType.add(type);
             registry.registerSingleton(lowerFirstChar(processor.getClass().getSimpleName()), processor);
         }
 
         while(healthCheckerIt.hasNext()){
             AbstractHealthChecker checker = healthCheckerIt.next();
-            healthCheckerType.add(checker.getType());
+            String type = checker.getType();
+            if(healthCheckerType.contains(type)){
+                if(processorType.contains(type)){
+                    throw new RuntimeException("More than one healthChecker of the same type was found : [type=\"" + type + "\"]");
+                }
+            }
+            healthCheckerType.add(type);
             HealthCheckType.registerHealthChecker(checker.getType(), checker.getClass());
         }
         if(!processorType.equals(healthCheckerType)){
