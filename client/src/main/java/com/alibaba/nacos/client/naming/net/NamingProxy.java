@@ -105,7 +105,6 @@ public class NamingProxy {
             }
         }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
-        // 这个方法的用处
         refreshSrvIfNeed();
     }
 
