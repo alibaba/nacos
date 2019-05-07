@@ -171,7 +171,7 @@ public class NamingProxy {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
             namespaceId, serviceName, instance);
 
-        final Map<String, String> params = new HashMap<String, String>(8);
+        final Map<String, String> params = new HashMap<String, String>(9);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
         params.put(CommonParams.GROUP_NAME, groupName);
@@ -202,6 +202,24 @@ public class NamingProxy {
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
 
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
+    }
+
+    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        NAMING_LOGGER.info("[REGISTER-SERVICE] {} update service {} with instance: {}",
+            namespaceId, serviceName, instance);
+
+        final Map<String, String> params = new HashMap<String, String>(8);
+        params.put(CommonParams.NAMESPACE_ID, namespaceId);
+        params.put(CommonParams.SERVICE_NAME, serviceName);
+        params.put(CommonParams.GROUP_NAME, groupName);
+        params.put(CommonParams.CLUSTER_NAME, instance.getClusterName());
+        params.put("ip", instance.getIp());
+        params.put("port", String.valueOf(instance.getPort()));
+        params.put("weight", String.valueOf(instance.getWeight()));
+        params.put("ephemeral", String.valueOf(instance.isEphemeral()));
+        params.put("metadata", JSON.toJSONString(instance.getMetadata()));
+
+        reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.PUT);
     }
 
     public Service queryService(String serviceName, String groupName) throws NacosException {

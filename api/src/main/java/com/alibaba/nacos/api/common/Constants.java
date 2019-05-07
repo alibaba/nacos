@@ -103,7 +103,7 @@ public class Constants {
 
     public static final int FLOW_CONTROL_INTERVAL = 1000;
 
-    public static final float PROTECT_THRESHOLD = 0.0F;
+    public static final float DEFAULT_PROTECT_THRESHOLD = 0.0F;
 
     public static final String LINE_SEPARATOR = Character.toString((char)1);
 

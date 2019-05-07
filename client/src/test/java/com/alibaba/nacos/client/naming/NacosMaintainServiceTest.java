@@ -26,6 +26,7 @@ import static org.junit.Assert.*;
 public class NacosMaintainServiceTest {
 
     private MaintainService maintainService;
+    private NamingService namingService;
 
     @Before
     public void before() throws NacosException {
@@ -75,7 +76,7 @@ public class NacosMaintainServiceTest {
     @Test
     public void test3selectOneService() {
         try {
-            Service service = maintainService.selectOneService("nacos-api");
+            Service service = maintainService.queryService("nacos-api");
             System.out.println("service : " + service.toString());
         } catch (NacosException e) {
             NAMING_LOGGER.error(e.getErrMsg());

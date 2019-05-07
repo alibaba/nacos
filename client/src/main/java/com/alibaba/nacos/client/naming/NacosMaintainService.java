@@ -20,12 +20,13 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.MaintainService;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
-import com.alibaba.nacos.client.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.util.Map;
@@ -33,7 +34,7 @@ import java.util.Properties;
 
 /**
  * @author liaochuntao
- * @since 1.0.0
+ * @since 1.0.1
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosMaintainService implements MaintainService {
@@ -59,9 +60,9 @@ public class NacosMaintainService implements MaintainService {
     }
 
     private void init(Properties properties) {
-        namespace = NamingUtils.initNamespace(properties);
+        namespace = InitUtils.initNamespace(properties);
         initServerAddr(properties);
-        NamingUtils.initWebRootContext();
+        InitUtils.initWebRootContext();
 
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
@@ -69,19 +70,29 @@ public class NacosMaintainService implements MaintainService {
 
     private void initServerAddr(Properties properties) {
         serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        endpoint = NamingUtils.initEndpoint(properties);
+        endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
             serverList = "";
         }
     }
 
     @Override
-    public Service selectOneService(String serviceName) throws NacosException {
-        return selectOneService(serviceName, Constants.DEFAULT_GROUP);
+    public void updateInstance(String serviceName, Instance instance) throws NacosException {
+        updateInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
 
     @Override
-    public Service selectOneService(String serviceName, String groupName) throws NacosException {
+    public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        serverProxy.updateInstance(serviceName, groupName, instance);
+    }
+
+    @Override
+    public Service queryService(String serviceName) throws NacosException {
+        return queryService(serviceName, Constants.DEFAULT_GROUP);
+    }
+
+    @Override
+    public Service queryService(String serviceName, String groupName) throws NacosException {
         return serverProxy.queryService(serviceName, groupName);
     }
 
@@ -92,7 +103,7 @@ public class NacosMaintainService implements MaintainService {
 
     @Override
     public void createService(String serviceName, String groupName) throws NacosException {
-        createService(serviceName, groupName, Constants.PROTECT_THRESHOLD);
+        createService(serviceName, groupName, Constants.DEFAULT_PROTECT_THRESHOLD);
     }
 
     @Override
@@ -135,7 +146,7 @@ public class NacosMaintainService implements MaintainService {
     }
 
     @Override
-    public void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException {
+    public void updateService(String serviceName, String groupName, float protectThreshold) throws NacosException {
         Service service = new Service();
         service.setName(serviceName);
         service.setGroupName(groupName);
@@ -145,7 +156,7 @@ public class NacosMaintainService implements MaintainService {
     }
 
     @Override
-    public void updateService(String serviceName, String groupName, Float protectThreshold, Map<String, String> metadata) throws NacosException {
+    public void updateService(String serviceName, String groupName, float protectThreshold, Map<String, String> metadata) throws NacosException {
         Service service = new Service();
         service.setName(serviceName);
         service.setGroupName(groupName);
