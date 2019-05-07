@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
@@ -26,9 +27,28 @@ import java.util.Map;
  * Operations related to Nacos
  *
  * @author liaochuntao
- * @since 1.0.0
+ * @since 1.0.1
  */
 public interface MaintainService {
+
+    /**
+     * update instance info
+     *
+     * @param serviceName
+     * @param instance
+     * @throws NacosException
+     */
+    void updateInstance(String serviceName, Instance instance) throws NacosException;
+
+    /**
+     * update instance info
+     *
+     * @param serviceName
+     * @param groupName
+     * @param instance
+     * @throws NacosException
+     */
+    void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException;
 
     /**
      * query service
@@ -37,7 +57,7 @@ public interface MaintainService {
      * @return
      * @throws NacosException
      */
-    Service selectOneService(String serviceName) throws NacosException;
+    Service queryService(String serviceName) throws NacosException;
 
     /**
      * query service
@@ -47,7 +67,7 @@ public interface MaintainService {
      * @return
      * @throws NacosException
      */
-    Service selectOneService(String serviceName, String groupName) throws NacosException;
+    Service queryService(String serviceName, String groupName) throws NacosException;
 
     /**
      * create service to Nacos
@@ -123,7 +143,7 @@ public interface MaintainService {
      * @param protectThreshold  protectThreshold of service
      * @throws NacosException
      */
-    void updateService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
+    void updateService(String serviceName, String groupName, float protectThreshold) throws NacosException;
 
     /**
      * update service to Nacos
@@ -134,7 +154,7 @@ public interface MaintainService {
      * @param metadata          metadata of service
      * @throws NacosException
      */
-    void updateService(String serviceName, String groupName, Float protectThreshold, Map<String, String> metadata) throws NacosException;
+    void updateService(String serviceName, String groupName, float protectThreshold, Map<String, String> metadata) throws NacosException;
 
     /**
      * update service to Nacos with selector

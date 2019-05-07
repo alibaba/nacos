@@ -31,7 +31,7 @@ import java.util.concurrent.Callable;
 /**
  * @author liaochuntao
  */
-public class NamingUtils {
+public class InitUtils {
 
     public static final String initNamespace(Properties properties) {
         String tmpNamespace = null;

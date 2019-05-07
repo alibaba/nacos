@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
@@ -31,7 +32,7 @@ import com.alibaba.nacos.client.naming.core.EventDispatcher;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.*;
 import org.apache.commons.lang3.BooleanUtils;
@@ -78,9 +79,9 @@ public class NacosNamingService implements NamingService {
     }
 
     private void init(Properties properties) {
-        namespace = NamingUtils.initNamespace(properties);
+        namespace = InitUtils.initNamespace(properties);
         initServerAddr(properties);
-        NamingUtils.initWebRootContext();
+        InitUtils.initWebRootContext();
         initCacheDir();
         initLogName(properties);
 
@@ -122,7 +123,7 @@ public class NacosNamingService implements NamingService {
 
     private void initServerAddr(Properties properties) {
         serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        endpoint = NamingUtils.initEndpoint(properties);
+        endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
             serverList = "";
         }
@@ -184,7 +185,7 @@ public class NacosNamingService implements NamingService {
 
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
-            beatInfo.setServiceName(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName));
+            beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
             beatInfo.setIp(instance.getIp());
             beatInfo.setPort(instance.getPort());
             beatInfo.setCluster(instance.getClusterName());
@@ -192,10 +193,10 @@ public class NacosNamingService implements NamingService {
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
 
-            beatReactor.addBeatInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
+            beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
-        serverProxy.registerService(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
+        serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
     @Override
@@ -225,8 +226,8 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        beatReactor.removeBeatInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
-        serverProxy.deregisterService(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), instance);
+        beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
+        serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 
     @Override
@@ -270,9 +271,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -324,9 +325,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
-            serviceInfo = hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
-            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
+            serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -372,10 +373,10 @@ public class NacosNamingService implements NamingService {
 
         if (subscribe) {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         } else {
             return Balancer.RandomByWeight.selectHost(
-                hostReactor.getServiceInfoDirectlyFromServer(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
+                hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         }
     }
 
@@ -396,7 +397,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.addListener(hostReactor.getServiceInfo(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName),
+        eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
             StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
     }
 
@@ -417,7 +418,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
-        eventDispatcher.removeListener(com.alibaba.nacos.api.naming.utils.NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","), listener);
+        eventDispatcher.removeListener(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","), listener);
     }
 
     @Override
