@@ -111,7 +111,7 @@ public class Constants {
 
     public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
 
-    public static final String HEALTH_CONTROLLER_PATH = BASE_PATH + "//health";
+    public static final String HEALTH_CONTROLLER_PATH = BASE_PATH + "/health";
 
     public static final String HISTORY_CONTROLLER_PATH = BASE_PATH + "/history";
 
