@@ -64,13 +64,13 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     /**
      * Create a cluster.
-     * <p>集群名不能为空，且只能由阿拉伯数字，英文字母和减号（-）组成(the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed)。
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
      *
-     * @param clusterName 集群名
-     * @param service     服务
-     * @throws IllegalArgumentException 服务为空，或者集群名为空，或者集群名不合法(the service is null, or the cluster name is null, or the cluster name is illegal)。
-     * @since 1.1.0
+     * @param clusterName the cluster name
+     * @param service     the service to which the current cluster belongs
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is illegal
      * @author jifengnan 2019-04-26
+     * @since 1.0.1
      */
     public Cluster(String clusterName, Service service) {
         this.setName(clusterName);
@@ -125,14 +125,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * 为当前的集群更换服务（replace the service for the current cluster）。
-     * <p>不建议使用，集群所属的服务不应该允许被更改（服务内部的可变属性可以更改，但不应该将一个A服务的集群改成B服务）。
-     * 如果一个集群对应的服务都变了，其实应该新建一个集群。
-     * (Deprecated because the service shouldn't be replaced.
+     * Replace the service for the current cluster.
+     * <p>Deprecated because the service shouldn't be replaced.
      * (the service fields can be changed, but the service A shouldn't be replaced to service B).
-     * If the service of a cluster is required to replace, actually, a new cluster is required)
+     * If the service of a cluster is required to replace, actually, a new cluster is required.
      *
-     * @param service 服务
+     * @param service the new service
      */
     @Deprecated
     public void setService(Service service) {
@@ -140,12 +138,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * 该方法计划在未来被移除，服务名不应允许被更改。
-     * (this method has been deprecated, the service name is not allowed to change)。
+     * this method has been deprecated, the service name is not allowed to change.
      *
-     * @param serviceName 服务名
-     * @since 1.1.0
+     * @param serviceName the service name
      * @author jifengnan  2019-04-26
+     * @since 1.0.1
      */
     @Deprecated
     @Override
@@ -155,9 +152,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     /**
      * Get the service name of the current cluster.
-     * <p>注意，通过本方法获取的服务名并非是通过{@link #setServiceName(String)}设置的服务名，而是当前集群所属服务的名字。
-     * (Note that the returned service name is not the name which set by {@link #setServiceName(String)},
-     * but the name of the service to which the current cluster belongs).
+     * <p>Note that the returned service name is not the name which set by {@link #setServiceName(String)},
+     * but the name of the service to which the current cluster belongs.
      *
      * @return the service name of the current cluster.
      */
@@ -389,10 +385,10 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * 验证当前集群是否合法(validate the current cluster)。
-     * <p>集群名不能为空，且只能由阿拉伯数字，英文字母和减号（-）组成(the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed)。
+     * validate the current cluster.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
      *
-     * @throws IllegalArgumentException 服务为空，或者集群名为空，或者集群名不合法(the service is null, or the cluster name is null, or the cluster name is illegal)。
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is illegal
      */
     public void validate() {
         Assert.notNull(getName(), "cluster name cannot be null");
