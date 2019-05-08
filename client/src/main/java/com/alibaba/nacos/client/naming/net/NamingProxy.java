@@ -205,7 +205,7 @@ public class NamingProxy {
     }
 
     public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER.info("[REGISTER-SERVICE] {} update service {} with instance: {}",
+        NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}",
             namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);

@@ -107,7 +107,7 @@ public class NacosMaintainService implements MaintainService {
     }
 
     @Override
-    public void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException {
+    public void createService(String serviceName, String groupName, float protectThreshold) throws NacosException {
         NoneSelector selector = new NoneSelector();
         Service service = new Service();
         service.setName(serviceName);
@@ -118,7 +118,7 @@ public class NacosMaintainService implements MaintainService {
     }
 
     @Override
-    public void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException {
+    public void createService(String serviceName, String groupName, float protectThreshold, String expression) throws NacosException {
         Service service = new Service();
         service.setName(serviceName);
         service.setGroupName(groupName);

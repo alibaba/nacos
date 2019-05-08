@@ -94,7 +94,7 @@ public interface MaintainService {
      * @param protectThreshold      protectThreshold of service
      * @throws NacosException
      */
-    void createService(String serviceName, String groupName, Float protectThreshold) throws NacosException;
+    void createService(String serviceName, String groupName, float protectThreshold) throws NacosException;
 
     /**
      * create service to Nacos
@@ -105,7 +105,7 @@ public interface MaintainService {
      * @param expression        expression of selector
      * @throws NacosException
      */
-    void createService(String serviceName, String groupName, Float protectThreshold, String expression) throws NacosException;
+    void createService(String serviceName, String groupName, float protectThreshold, String expression) throws NacosException;
 
     /**
      * create service to Nacos
