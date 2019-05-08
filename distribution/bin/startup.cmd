@@ -35,9 +35,8 @@ if not "%2" == "cluster" (
     set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
  )
 
-set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
+set "JAVA_OPT=%JAVA_OPT% -Dloader.path=%BASE_DIR%/plugins/health/nacos-health-plugin-example-1.0.jar -jar %BASE_DIR%\target\nacos-server.jar"
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
 set "JAVA_OPT=%JAVA_OPT% --logging.config=%BASE_DIR%/conf/nacos-logback.xml"
 

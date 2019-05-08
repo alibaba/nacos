@@ -19,6 +19,8 @@ import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -35,6 +37,8 @@ import java.util.Set;
  */
 @Component
 public class HealthCheckExtendProvider implements BeanFactoryAware {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(HealthCheckExtendProvider.class);
 
     private ServiceLoader<HealthCheckProcessor> processorLoader
         = ServiceLoader.load(HealthCheckProcessor.class);
@@ -75,15 +79,17 @@ public class HealthCheckExtendProvider implements BeanFactoryAware {
             AbstractHealthChecker checker = healthCheckerIt.next();
             String type = checker.getType();
             if(healthCheckerType.contains(type)){
-                if(processorType.contains(type)){
-                    throw new RuntimeException("More than one healthChecker of the same type was found : [type=\"" + type + "\"]");
-                }
+                throw new RuntimeException("More than one healthChecker of the same type was found : [type=\"" + type + "\"]");
             }
             healthCheckerType.add(type);
             HealthCheckType.registerHealthChecker(checker.getType(), checker.getClass());
         }
         if(!processorType.equals(healthCheckerType)){
             throw new RuntimeException("An unmatched processor and healthChecker are detected in the extension package.");
+        }
+        if(processorType.size() > origin.size()){
+            processorType.removeAll(origin);
+            LOGGER.debug("init health plugin : types=" + processorType);
         }
     }
 
