@@ -67,9 +67,7 @@ public class ClusterController {
         Cluster cluster = service.getClusterMap().get(clusterName);
         if (cluster == null) {
             Loggers.SRV_LOG.warn("[UPDATE-CLUSTER] cluster not exist, will create it: {}, service: {}", clusterName, serviceName);
-            cluster = new Cluster();
-            cluster.setName(clusterName);
-            cluster.setService(service);
+            cluster = new Cluster(clusterName, service);
         }
 
         cluster.setDefCkport(NumberUtils.toInt(checkPort));
