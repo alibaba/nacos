@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -32,11 +33,16 @@ import com.alibaba.nacos.naming.web.CanDistro;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Health status related operation controller
@@ -109,5 +115,21 @@ public class HealthController {
         }
 
         return "ok";
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "checkers", method = RequestMethod.GET)
+    public ResponseEntity checkers(){
+        List<Class> classes = HealthCheckType.getLoadedHealthCheckerClasses();
+        Map<String, AbstractHealthChecker> demos = new HashMap<>();
+        for(Class clazz : classes){
+            try {
+                AbstractHealthChecker checker = (AbstractHealthChecker) clazz.newInstance();
+                demos.put(checker.getType(), checker);
+            } catch (InstantiationException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+        return ResponseEntity.ok(demos);
     }
 }
