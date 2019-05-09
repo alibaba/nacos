@@ -29,7 +29,7 @@ import java.util.Map;
  * @author liaochuntao
  * @since 1.0.1
  */
-public interface MaintainService {
+public interface NamingMaintainService {
 
     /**
      * update instance info

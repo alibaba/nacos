@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.naming;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.MaintainService;
+import com.alibaba.nacos.api.naming.NamingMaintainService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -37,7 +37,7 @@ import java.util.Properties;
  * @since 1.0.1
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
-public class NacosMaintainService implements MaintainService {
+public class NacosNamingMaintainService implements NamingMaintainService {
 
     private String namespace;
 
@@ -47,14 +47,14 @@ public class NacosMaintainService implements MaintainService {
 
     private NamingProxy serverProxy;
 
-    public NacosMaintainService(String serverList) {
+    public NacosNamingMaintainService(String serverList) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
 
         init(properties);
     }
 
-    public NacosMaintainService(Properties properties) {
+    public NacosNamingMaintainService(Properties properties) {
 
         init(properties);
     }
