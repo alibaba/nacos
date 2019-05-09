@@ -17,6 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -65,5 +67,16 @@ public enum HealthCheckType {
             return EXTEND.get(type);
         }
         return enumType.healthCheckerClass;
+    }
+
+    public static List<Class> getLoadedHealthCheckerClasses(){
+        List<Class> all = new ArrayList<>();
+        for(HealthCheckType type : values()){
+            all.add(type.healthCheckerClass);
+        }
+        for(Map.Entry<String, Class> entry : EXTEND.entrySet()){
+            all.add(entry.getValue());
+        }
+        return all;
     }
 }
