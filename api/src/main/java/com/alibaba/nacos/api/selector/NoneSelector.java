@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.selector;
 
-import com.alibaba.nacos.naming.core.Instance;
-
-import java.util.List;
+package com.alibaba.nacos.api.selector;
 
 /**
- * Selector with no filtering.
- *
- * @author nkorange
- * @since 0.7.0
+ * @author liaochuntao
+ * @since 1.0.1
  */
-public class NoneSelector extends com.alibaba.nacos.api.selector.NoneSelector implements Selector {
+public class NoneSelector extends AbstractSelector {
 
-    @Override
-    public List<Instance> select(String consumer, List<Instance> providers) {
-        return providers;
+    public NoneSelector() {
+        this.setType(SelectorType.none.name());
     }
 }
