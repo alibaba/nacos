@@ -29,7 +29,7 @@ public class NamingMaintainFactory {
 
     public static NamingMaintainService createMaintainService(String serverList) throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosMaintainService");
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
             Constructor constructor = driverImplClass.getConstructor(String.class);
             NamingMaintainService vendorImpl = (NamingMaintainService)constructor.newInstance(serverList);
             return vendorImpl;
@@ -40,7 +40,7 @@ public class NamingMaintainFactory {
 
     public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosMaintainService");
+            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             NamingMaintainService vendorImpl = (NamingMaintainService)constructor.newInstance(properties);
             return vendorImpl;
