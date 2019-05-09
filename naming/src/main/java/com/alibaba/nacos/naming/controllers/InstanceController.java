@@ -469,6 +469,12 @@ public class InstanceController {
             }
 
             for (Instance instance : ips) {
+
+                // remove disabled instance:
+                if (!instance.isEnabled()) {
+                    continue;
+                }
+
                 JSONObject ipObj = new JSONObject();
 
                 ipObj.put("ip", instance.getIp());
