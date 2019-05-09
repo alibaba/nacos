@@ -25,24 +25,24 @@ import java.util.Properties;
  * @author liaochuntao
  * @since 1.0.1
  */
-public class MaintainFactory {
+public class NamingMaintainFactory {
 
-    public static MaintainService createMaintainService(String serverList) throws NacosException {
+    public static NamingMaintainService createMaintainService(String serverList) throws NacosException {
         try {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosMaintainService");
             Constructor constructor = driverImplClass.getConstructor(String.class);
-            MaintainService vendorImpl = (MaintainService)constructor.newInstance(serverList);
+            NamingMaintainService vendorImpl = (NamingMaintainService)constructor.newInstance(serverList);
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(-400, e.getMessage());
         }
     }
 
-    public static MaintainService createMaintainService(Properties properties) throws NacosException {
+    public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
         try {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosMaintainService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
-            MaintainService vendorImpl = (MaintainService)constructor.newInstance(properties);
+            NamingMaintainService vendorImpl = (NamingMaintainService)constructor.newInstance(properties);
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(-400, e.getMessage());

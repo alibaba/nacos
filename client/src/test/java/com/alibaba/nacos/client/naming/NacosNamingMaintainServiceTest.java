@@ -4,7 +4,7 @@ import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.MaintainService;
+import com.alibaba.nacos.api.naming.NamingMaintainService;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
@@ -20,12 +20,11 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-import static org.junit.Assert.*;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class NacosMaintainServiceTest {
+public class NacosNamingMaintainServiceTest {
 
-    private MaintainService maintainService;
+    private NamingMaintainService namingMaintainService;
     private NamingService namingService;
 
     @Before
@@ -33,7 +32,7 @@ public class NacosMaintainServiceTest {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
 
-        maintainService = NacosFactory.createMaintainService(properties);
+        namingMaintainService = NacosFactory.createMaintainService(properties);
     }
 
     @Test
@@ -50,7 +49,7 @@ public class NacosMaintainServiceTest {
         selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
 
         try {
-            maintainService.createService(service, new NoneSelector());
+            namingMaintainService.createService(service, new NoneSelector());
         } catch (NacosException e) {
             NAMING_LOGGER.error(e.getErrMsg());
         }
@@ -67,7 +66,7 @@ public class NacosMaintainServiceTest {
         service.setMetadata(metadata);
 
         try {
-            maintainService.updateService(service, new NoneSelector());
+            namingMaintainService.updateService(service, new NoneSelector());
         } catch (NacosException e) {
             NAMING_LOGGER.error(e.getErrMsg());
         }
@@ -76,7 +75,7 @@ public class NacosMaintainServiceTest {
     @Test
     public void test3selectOneService() {
         try {
-            Service service = maintainService.queryService("nacos-api");
+            Service service = namingMaintainService.queryService("nacos-api");
             System.out.println("service : " + service.toString());
         } catch (NacosException e) {
             NAMING_LOGGER.error(e.getErrMsg());
@@ -86,7 +85,7 @@ public class NacosMaintainServiceTest {
     @Test
     public void test4deleteService() {
         try {
-            Assert.assertTrue(maintainService.deleteService("nacos-api"));
+            Assert.assertTrue(namingMaintainService.deleteService("nacos-api"));
         } catch (NacosException e) {
             NAMING_LOGGER.error(e.getErrMsg());
         }

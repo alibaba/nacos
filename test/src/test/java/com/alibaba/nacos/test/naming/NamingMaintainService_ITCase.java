@@ -18,8 +18,8 @@ package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.MaintainFactory;
-import com.alibaba.nacos.api.naming.MaintainService;
+import com.alibaba.nacos.api.naming.NamingMaintainFactory;
+import com.alibaba.nacos.api.naming.NamingMaintainService;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -47,9 +47,9 @@ import java.util.concurrent.TimeUnit;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class MaintainService_ITCase {
+public class NamingMaintainService_ITCase {
 
-    private MaintainService maintainService;
+    private NamingMaintainService namingMaintainService;
     private NamingService namingService;
     private Instance instance;
     private Service service;
@@ -62,9 +62,9 @@ public class MaintainService_ITCase {
 
         NamingBase.prepareServer(port);
 
-        if (maintainService == null) {
+        if (namingMaintainService == null) {
             TimeUnit.SECONDS.sleep(10);
-            maintainService = MaintainFactory.createMaintainService("127.0.0.1" + ":" + port);
+            namingMaintainService = NamingMaintainFactory.createMaintainService("127.0.0.1" + ":" + port);
         }
 
         if (namingService == null) {
@@ -98,7 +98,7 @@ public class MaintainService_ITCase {
         map.put("version", "2.0");
         instance.setMetadata(map);
         namingService.registerInstance("nacos-api", instance);
-        maintainService.updateInstance("nacos-api", instance);
+        namingMaintainService.updateInstance("nacos-api", instance);
         List<Instance> instances = namingService.getAllInstances("nacos-api", true);
 
         Assert.assertEquals(instances.size(), 1);
@@ -112,8 +112,8 @@ public class MaintainService_ITCase {
         selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
 
         System.out.println("service info : " + service);
-        maintainService.createService(service, selector);
-        Service remoteService = maintainService.queryService("nacos-api");
+        namingMaintainService.createService(service, selector);
+        Service remoteService = namingMaintainService.queryService("nacos-api");
         System.out.println("remote service info : " + remoteService);
         Assert.assertEquals(service.toString(), remoteService.toString());
     }
@@ -128,15 +128,15 @@ public class MaintainService_ITCase {
         metadata.put("nacos-1", "nacos-3-update");
         service.setMetadata(metadata);
 
-        maintainService.updateService(service, new NoneSelector());
-        Service remoteService = maintainService.queryService("nacos-api");
+        namingMaintainService.updateService(service, new NoneSelector());
+        Service remoteService = namingMaintainService.queryService("nacos-api");
         System.out.println("remote service info : " + remoteService);
         Assert.assertEquals(service.toString(), remoteService.toString());
     }
 
     @Test
     public void deleteService() throws NacosException {
-        Assert.assertTrue(maintainService.deleteService("nacos-api"));
+        Assert.assertTrue(namingMaintainService.deleteService("nacos-api"));
     }
 
     @Test
