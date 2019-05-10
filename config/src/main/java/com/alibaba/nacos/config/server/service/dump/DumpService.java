@@ -279,7 +279,7 @@ public class DumpService {
     }
 
     private int getRetentionDays() {
-        String val = env.getProperty("retention.days");
+        String val = env.getProperty("nacos.config.retention.days");
         if (null == val) {
             return retentionDays;
         }
@@ -291,7 +291,7 @@ public class DumpService {
                 retentionDays = tmp;
             }
         } catch (NumberFormatException nfe) {
-            fatalLog.error("read retention.days wrong", nfe);
+            fatalLog.error("read nacos.config.retention.days wrong", nfe);
         }
 
         return retentionDays;
