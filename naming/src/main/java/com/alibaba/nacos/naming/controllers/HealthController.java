@@ -121,15 +121,15 @@ public class HealthController {
     @RequestMapping(value = "checkers", method = RequestMethod.GET)
     public ResponseEntity checkers(){
         List<Class> classes = HealthCheckType.getLoadedHealthCheckerClasses();
-        Map<String, AbstractHealthChecker> demos = new HashMap<>(8);
+        Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
         for(Class clazz : classes){
             try {
                 AbstractHealthChecker checker = (AbstractHealthChecker) clazz.newInstance();
-                demos.put(checker.getType(), checker);
+                checkerMap.put(checker.getType(), checker);
             } catch (InstantiationException | IllegalAccessException e) {
                 e.printStackTrace();
             }
         }
-        return ResponseEntity.ok(demos);
+        return ResponseEntity.ok(checkerMap);
     }
 }
