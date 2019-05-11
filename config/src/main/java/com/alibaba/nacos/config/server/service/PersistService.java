@@ -643,18 +643,18 @@ public class PersistService {
     public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
                                    final String srcUser, final Timestamp time, final boolean notify) {
         try {
-            addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
+            addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser, time, notify);
         } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
-            updateConfigInfo4Beta(configInfo, srcIp, null, time, notify);
+            updateConfigInfo4Beta(configInfo, srcIp, srcUser, time, notify);
         }
     }
 
     public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
                                   final String srcUser, final Timestamp time, final boolean notify) {
         try {
-            addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            addConfigInfo4Tag(configInfo, tag, srcIp, srcUser, time, notify);
         } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
-            updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
+            updateConfigInfo4Tag(configInfo, tag, srcIp, srcUser, time, notify);
         }
     }
 
