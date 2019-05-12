@@ -119,10 +119,10 @@ public class HealthController {
 
     @ResponseBody
     @RequestMapping(value = "checkers", method = RequestMethod.GET)
-    public ResponseEntity checkers(){
+    public ResponseEntity checkers() {
         List<Class> classes = HealthCheckType.getLoadedHealthCheckerClasses();
         Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
-        for(Class clazz : classes){
+        for (Class clazz : classes) {
             try {
                 AbstractHealthChecker checker = (AbstractHealthChecker) clazz.newInstance();
                 checkerMap.put(checker.getType(), checker);
