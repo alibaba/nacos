@@ -14,7 +14,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
-import { Button, ConfigProvider, Pagination, Table } from '@alifd/next';
+import { Button, ConfigProvider, Message, Pagination, Table } from '@alifd/next';
 import { HEALTHY_COLOR_MAPPING } from './constant';
 import EditInstanceDialog from './EditInstanceDialog';
 
@@ -23,6 +23,7 @@ class InstanceTable extends React.Component {
   static displayName = 'InstanceTable';
 
   static propTypes = {
+    locale: PropTypes.object,
     clusterName: PropTypes.string,
     serviceName: PropTypes.string,
   };
@@ -55,12 +56,12 @@ class InstanceTable extends React.Component {
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
-      url: 'v1/ns/catalog/instanceList',
+      url: 'v1/ns/catalog/instances',
       data: {
         serviceName,
         clusterName,
-        pgSize: pageSize,
-        startPg: pageNum,
+        pageSize,
+        pageNo: pageNum,
       },
       beforeSend: () => this.openLoading(),
       success: instance => this.setState({ instance }),
@@ -74,25 +75,29 @@ class InstanceTable extends React.Component {
 
   switchState(index, record) {
     const { instance } = this.state;
-    const { ip, port, weight, enabled, metadata } = record;
+    const { ip, port, ephemeral, weight, enabled, metadata } = record;
     const { clusterName, serviceName } = this.props;
-    const newVal = Object.assign({}, instance);
-    newVal.list[index].enabled = !enabled;
     request({
-      method: 'POST',
-      url: 'v1/ns/instance/update',
+      method: 'PUT',
+      url: 'v1/ns/instance',
       data: {
         serviceName,
         clusterName,
         ip,
         port,
+        ephemeral,
         weight,
         enable: !enabled,
         metadata: JSON.stringify(metadata),
       },
       dataType: 'text',
       beforeSend: () => this.openLoading(),
-      success: () => this.setState({ instance: newVal }),
+      success: () => {
+        const newVal = Object.assign({}, instance);
+        newVal.list[index].enabled = !enabled;
+        this.setState({ instance: newVal });
+      },
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -112,6 +117,12 @@ class InstanceTable extends React.Component {
         <Table dataSource={instance.list} loading={loading} getRowProps={this.rowColor}>
           <Table.Column width={138} title="IP" dataIndex="ip" />
           <Table.Column width={100} title={locale.port} dataIndex="port" />
+          <Table.Column
+            width={100}
+            title={locale.ephemeral}
+            dataIndex="ephemeral"
+            cell={val => `${val}`}
+          />
           <Table.Column width={100} title={locale.weight} dataIndex="weight" />
           <Table.Column
             width={100}

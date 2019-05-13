@@ -16,10 +16,10 @@
 package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 
 import java.io.BufferedReader;
@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
  * @author xuanyin
  */
@@ -41,7 +43,6 @@ public class DiskCache {
 
         try {
             makeSureCacheDirExists(dir);
-
 
 
             File file = new File(dir, dom.getKeyEncoded());
@@ -66,7 +67,7 @@ public class DiskCache {
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(), Charset.defaultCharset().toString());
 
         } catch (Throwable e) {
-            LogUtils.LOG.error("NA", "failed to write cache for dom:" + dom.getName(), e);
+            NAMING_LOGGER.error("[NA] failed to write cache for dom:" + dom.getName(), e);
         }
     }
 
@@ -92,8 +93,8 @@ public class DiskCache {
 
                 String fileName = URLDecoder.decode(file.getName(), "UTF-8");
 
-                if (!(fileName.endsWith(ServiceInfo.SPLITER + "meta") || fileName.endsWith(
-                    ServiceInfo.SPLITER + "special-url"))) {
+                if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName.endsWith(
+                    Constants.SERVICE_INFO_SPLITER + "special-url"))) {
                     ServiceInfo dom = new ServiceInfo(fileName);
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);
@@ -118,11 +119,11 @@ public class DiskCache {
                                     ips.add(JSON.parseObject(json, Instance.class));
                                 }
                             } catch (Throwable e) {
-                                LogUtils.LOG.error("NA", "error while parsing cache file: " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cache file: " + json, e);
                             }
                         }
                     } catch (Exception e) {
-                        LogUtils.LOG.error("NA", "failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {
@@ -142,7 +143,7 @@ public class DiskCache {
 
             }
         } catch (Throwable e) {
-            LogUtils.LOG.error("NA", "failed to read cache file", e);
+            NAMING_LOGGER.error("[NA] failed to read cache file", e);
         }
 
         return domMap;

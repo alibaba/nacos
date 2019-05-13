@@ -27,7 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
+ * @since 0.7.0
  */
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_CMDB_CONTEXT + "/ops")
@@ -39,7 +40,7 @@ public class OperationController {
     @Autowired
     private CmdbProvider cmdbProvider;
 
-    @RequestMapping(value = "/updateSwitch", method = RequestMethod.POST)
+    @RequestMapping(value = "/switch", method = RequestMethod.PUT)
     public String updateSwitch(HttpServletRequest request) throws Exception {
 
         String entry = WebUtils.required(request, "entry");
@@ -63,7 +64,7 @@ public class OperationController {
         return "ok";
     }
 
-    @RequestMapping(value = "/queryLabel", method = RequestMethod.GET)
+    @RequestMapping(value = "/label", method = RequestMethod.GET)
     public String queryLabel(HttpServletRequest request) throws Exception {
         String entry = WebUtils.required(request, "entry");
         String label = WebUtils.required(request, "label");

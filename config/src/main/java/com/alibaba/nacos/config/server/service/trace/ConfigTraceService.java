@@ -15,12 +15,15 @@
  */
 package com.alibaba.nacos.config.server.service.trace;
 
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  * Config trace
@@ -68,6 +71,7 @@ public class ConfigTraceService {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
+        MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
         // 方便tlog切分
         if (StringUtils.isBlank(tenant)) {
             tenant = null;

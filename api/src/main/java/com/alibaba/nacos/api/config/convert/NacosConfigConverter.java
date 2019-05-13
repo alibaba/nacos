@@ -16,7 +16,7 @@
 package com.alibaba.nacos.api.config.convert;
 
 /**
- * Nacos Configuration content Converter
+ * Nacos Config Converter
  *
  * @param <T> the target type that wanted
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
@@ -25,7 +25,7 @@ package com.alibaba.nacos.api.config.convert;
 public interface NacosConfigConverter<T> {
 
     /**
-     * Can convert to be target type or not
+     * can convert to be target type or not
      *
      * @param targetType the type of target
      * @return If can , return <code>true</code>, or <code>false</code>
@@ -33,9 +33,9 @@ public interface NacosConfigConverter<T> {
     boolean canConvert(Class<T> targetType);
 
     /**
-     * Convert the Naocs's configuration of type S to target type T.
+     * convert the Naocs's config of type S to target type T.
      *
-     * @param config the Naocs's configuration to convert, which must be an instance of S (never {@code null})
+     * @param config the Naocs's config to convert, which must be an instance of S (never {@code null})
      * @return the converted object, which must be an instance of T (potentially {@code null})
      */
     T convert(String config);

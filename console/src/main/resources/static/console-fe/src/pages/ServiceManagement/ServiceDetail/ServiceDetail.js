@@ -12,12 +12,15 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '@/globalLib';
-import { Button, Card, ConfigProvider, Form, Loading } from '@alifd/next';
+import { Input, Button, Card, ConfigProvider, Form, Loading, Message } from '@alifd/next';
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
-import { getParameter } from 'utils/nacosutil';
+import { getParameter, processMetaData } from 'utils/nacosutil';
+import MonacoEditor from 'components/MonacoEditor';
+import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
 import './ServiceDetail.scss';
 
 const FormItem = Form.Item;
@@ -30,12 +33,19 @@ const pageFormLayout = {
 class ServiceDetail extends React.Component {
   static displayName = 'ServiceDetail';
 
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+    location: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
     this.editServiceDialog = React.createRef();
     this.editClusterDialog = React.createRef();
     this.state = {
       serviceName: getParameter(props.location.search, 'name'),
+      groupName: getParameter(props.location.search, 'groupName'),
       loading: false,
       currentPage: 1,
       clusters: [],
@@ -55,11 +65,12 @@ class ServiceDetail extends React.Component {
   }
 
   getServiceDetail() {
-    const { serviceName } = this.state;
+    const { serviceName, groupName } = this.state;
     request({
-      url: `v1/ns/catalog/serviceDetail?serviceName=${serviceName}`,
+      url: `v1/ns/catalog/service?serviceName=${serviceName}&groupName=${groupName}`,
       beforeSend: () => this.openLoading(),
       success: ({ clusters = [], service = {} }) => this.setState({ service, clusters }),
+      error: e => Message.error(e.responseText || 'error'),
       complete: () => this.closeLoading(),
     });
   }
@@ -84,9 +95,7 @@ class ServiceDetail extends React.Component {
     const { locale = {} } = this.props;
     const { serviceName, loading, service = {}, clusters } = this.state;
     const { metadata = {}, selector = {} } = service;
-    const metadataText = Object.keys(metadata)
-      .map(key => `${key}=${metadata[key]}`)
-      .join(',');
+    const metadataText = processMetaData(METADATA_ENTER)(metadata);
     return (
       <div className="main-container service-detail">
         <Loading
@@ -119,25 +128,31 @@ class ServiceDetail extends React.Component {
             </Button>
           </h1>
 
-          <Form style={{ width: '60%' }} {...pageFormLayout}>
+          <Form {...pageFormLayout}>
             <FormItem label={`${locale.serviceName}:`}>
-              <p>{service.name}</p>
+              <Input value={service.name} readOnly />
+            </FormItem>
+            <FormItem label={`${locale.groupName}:`}>
+              <Input value={service.groupName} readOnly />
             </FormItem>
             <FormItem label={`${locale.protectThreshold}:`}>
-              <p>{service.protectThreshold}</p>
-            </FormItem>
-            <FormItem label={`${locale.healthCheckPattern}:`}>
-              <p>{service.healthCheckMode}</p>
+              <Input value={service.protectThreshold} readOnly />
             </FormItem>
             <FormItem label={`${locale.metadata}:`}>
-              <p>{metadataText}</p>
+              <MonacoEditor
+                language={'properties'}
+                width={'100%'}
+                height={200}
+                value={metadataText}
+                options={MONACO_READONLY_OPTIONS}
+              />
             </FormItem>
             <FormItem label={`${locale.type}:`}>
-              <p>{selector.type}</p>
+              <Input value={selector.type} readOnly />
             </FormItem>
             {service.type === 'label' && (
               <FormItem label={`${locale.selector}:`}>
-                <p>{selector.selector}</p>
+                <Input value={selector.selector} readOnly />
               </FormItem>
             )}
           </Form>

@@ -20,14 +20,14 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
@@ -57,16 +57,12 @@ public class EventDispatcher {
     }
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
-        addListener(serviceInfo, clusters, StringUtils.EMPTY, listener);
-    }
 
-    public void addListener(ServiceInfo serviceInfo, String clusters, String env, EventListener listener) {
-
-        LogUtils.LOG.info("LISTENER", "adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
+        NAMING_LOGGER.info("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
 
-        observers = observerMap.putIfAbsent(ServiceInfo.getKey(serviceInfo.getName(), clusters, env), observers);
+        observers = observerMap.putIfAbsent(ServiceInfo.getKey(serviceInfo.getName(), clusters), observers);
         if (observers != null) {
             observers.add(listener);
         }
@@ -76,10 +72,9 @@ public class EventDispatcher {
 
     public void removeListener(String serviceName, String clusters, EventListener listener) {
 
-        LogUtils.LOG.info("LISTENER", "removing " + serviceName + " with " + clusters + " from listener map");
-        String unit = "";
+        NAMING_LOGGER.info("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
 
-        List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters, unit));
+        List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters));
         if (observers != null) {
             Iterator<EventListener> iter = observers.iterator();
             while (iter.hasNext()) {
@@ -88,7 +83,18 @@ public class EventDispatcher {
                     iter.remove();
                 }
             }
+            if (observers.isEmpty()) {
+                observerMap.remove(ServiceInfo.getKey(serviceName, clusters));
+            }
         }
+    }
+
+    public List<ServiceInfo> getSubscribeServices() {
+        List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
+        for (String key : observerMap.keySet()) {
+            serviceInfos.add(ServiceInfo.fromKey(key));
+        }
+        return serviceInfos;
     }
 
     public void serviceChanged(ServiceInfo serviceInfo) {
@@ -124,7 +130,7 @@ public class EventDispatcher {
                     }
 
                 } catch (Exception e) {
-                    LogUtils.LOG.error("NA", "notify error for service: "
+                    NAMING_LOGGER.error("[NA] notify error for service: "
                         + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
                 }
             }

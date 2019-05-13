@@ -15,14 +15,14 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.client.utils.LogUtils;
+import org.slf4j.Logger;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
 
 /**
  * Event subscription and publishing tools.
@@ -31,7 +31,7 @@ import com.alibaba.nacos.client.logger.Logger;
  */
 public class EventDispatcher {
 
-    final static public Logger log = LogUtils.logger(EventDispatcher.class);
+    private static final Logger LOGGER = LogUtils.logger(EventDispatcher.class);
 
     /**
      * 添加事件监听器
@@ -58,7 +58,7 @@ public class EventDispatcher {
                     fireEvent(implyEvent);
                 }
             } catch (Exception e) {
-                log.warn("", e.toString(), e);
+                LOGGER.warn(e.toString(), e);
             }
         }
 
@@ -66,7 +66,7 @@ public class EventDispatcher {
             try {
                 listener.onEvent(abstractEvent);
             } catch (Exception e) {
-                log.warn(e.toString(), e);
+                LOGGER.warn(e.toString(), e);
             }
         }
     }

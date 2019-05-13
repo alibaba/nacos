@@ -44,7 +44,7 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  * 软负载客户端发布数据专用控制器
@@ -252,7 +252,7 @@ public class ConfigController {
         inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
     }
 
-    /*
+    /**
      * 订阅改配置的客户端信息
      */
     @RequestMapping(value = "/listener", method = RequestMethod.GET)

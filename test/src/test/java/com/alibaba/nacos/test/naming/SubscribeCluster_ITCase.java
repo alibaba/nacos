@@ -51,12 +51,21 @@ public class SubscribeCluster_ITCase {
     private NamingService naming;
     @LocalServerPort
     private int port;
+
     @Before
-    public void init() throws Exception{
+    public void init() throws Exception {
+        NamingBase.prepareServer(port);
         instances.clear();
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -64,6 +73,7 @@ public class SubscribeCluster_ITCase {
 
     /**
      * 添加IP，收到通知
+     *
      * @throws Exception
      */
     @Test
@@ -73,9 +83,9 @@ public class SubscribeCluster_ITCase {
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
-                instances = ((NamingEvent)event).getInstances();
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
             }
         });
 
@@ -90,6 +100,7 @@ public class SubscribeCluster_ITCase {
 
     /**
      * 删除IP，收到通知
+     *
      * @throws Exception
      */
     @Test
@@ -102,15 +113,16 @@ public class SubscribeCluster_ITCase {
 
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             int index = 0;
+
             @Override
             public void onEvent(Event event) {
                 if (index == 0) {
                     index++;
                     return;
                 }
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
-                instances = ((NamingEvent)event).getInstances();
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
             }
         });
 
@@ -124,43 +136,8 @@ public class SubscribeCluster_ITCase {
     }
 
     /**
-     * 改变IP权重，收到通知
-     * @throws Exception
-     */
-    @Test
-    public void subscribeChangeWeight() throws Exception {
-        String serviceName = randomDomainName();
-        Instance instance = getInstance(serviceName);
-        naming.registerInstance(serviceName, instance);
-
-        TimeUnit.SECONDS.sleep(3);
-
-        naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
-            int index = 0;
-            @Override
-            public void onEvent(Event event) {
-                if (index == 0) {
-                    index++;
-                    return;
-                }
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
-                instances = ((NamingEvent)event).getInstances();
-            }
-        });
-
-        instance.setWeight(66.0);
-        naming.registerInstance(serviceName, instance);
-
-        while (instances.isEmpty()) {
-            Thread.sleep(1000L);
-        }
-
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
-    }
-
-    /**
      * 添加不可用IP，收到通知
+     *
      * @throws Exception
      */
     @Test
@@ -170,9 +147,9 @@ public class SubscribeCluster_ITCase {
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
-                instances = ((NamingEvent)event).getInstances();
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
             }
         });
 
@@ -187,6 +164,7 @@ public class SubscribeCluster_ITCase {
 
     /**
      * 新增其他cluster IP，不会收到通知
+     *
      * @throws Exception
      */
     @Test
@@ -195,15 +173,16 @@ public class SubscribeCluster_ITCase {
 
         naming.subscribe(serviceName, Arrays.asList("c2"), new EventListener() {
             int index = 0;
+
             @Override
             public void onEvent(Event event) {
                 if (index == 0) {
                     index++;
                     return;
                 }
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
-                instances = ((NamingEvent)event).getInstances();
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
+                instances = ((NamingEvent) event).getInstances();
             }
         });
 
