@@ -404,9 +404,6 @@
                             <includes>
                                 <include>**/*ITCase.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/RestAPI_ITCase.java</exclude>
-                            </excludes>
                         </configuration>
                         <executions>
                             <execution>
