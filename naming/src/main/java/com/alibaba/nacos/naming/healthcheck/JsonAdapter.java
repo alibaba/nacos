@@ -42,25 +42,16 @@ public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
         return INSTANCE;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T deserialze(DefaultJSONParser parser, Type type, Object fieldName) {
         JSONObject jsonObj = (JSONObject) parser.parse();
         String checkType = jsonObj.getString("type");
 
-        if (StringUtils.equals(checkType, AbstractHealthChecker.Http.TYPE)) {
-            return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.Http.class);
-        }
+        Class target = HealthCheckType.ofHealthCheckerClass(checkType);
 
-        if (StringUtils.equals(checkType, AbstractHealthChecker.Tcp.TYPE)) {
-            return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.Tcp.class);
-        }
-
-        if (StringUtils.equals(checkType, AbstractHealthChecker.None.TYPE)) {
-            return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.None.class);
-        }
-
-        if (StringUtils.equals(checkType, AbstractHealthChecker.Mysql.TYPE)) {
-            return (T) JSON.parseObject(jsonObj.toJSONString(), AbstractHealthChecker.Mysql.class);
+        if(target != null){
+            return (T) JSON.parseObject(jsonObj.toJSONString(), target);
         }
 
         return null;
@@ -83,21 +74,6 @@ public class JsonAdapter implements ObjectDeserializer, ObjectSerializer {
 
         writer.writeFieldValue(',', "type", config.getType());
 
-        if (StringUtils.equals(config.getType(), HealthCheckType.HTTP.name())) {
-            AbstractHealthChecker.Http httpCheckConfig = (AbstractHealthChecker.Http) config;
-            writer.writeFieldValue(',', "path", httpCheckConfig.getPath());
-            writer.writeFieldValue(',', "headers", httpCheckConfig.getHeaders());
-        }
-
-        if (StringUtils.equals(config.getType(), HealthCheckType.TCP.name())) {
-            // nothing sepcial to handle
-        }
-
-        if (StringUtils.equals(config.getType(), HealthCheckType.MYSQL.name())) {
-            AbstractHealthChecker.Mysql mysqlCheckConfig = (AbstractHealthChecker.Mysql) config;
-            writer.writeFieldValue(',', "user", mysqlCheckConfig.getUser());
-            writer.writeFieldValue(',', "pwd", mysqlCheckConfig.getPwd());
-            writer.writeFieldValue(',', "cmd", mysqlCheckConfig.getCmd());
-        }
+        config.jsonAdapterCallback(writer);
     }
 }
