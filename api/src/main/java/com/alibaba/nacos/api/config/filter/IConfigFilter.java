@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  */
 public interface IConfigFilter {
     /**
-     * Init Fuction
+     * Init
      *
      * @param filterConfig Filter Config
      */
@@ -39,7 +39,7 @@ public interface IConfigFilter {
      * @throws NacosException exception
      */
     void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
-        throws NacosException;
+            throws NacosException;
 
     /**
      * deploy
@@ -47,16 +47,16 @@ public interface IConfigFilter {
     void deploy();
 
     /**
-     * order
+     * Get order
      *
-     * @return
+     * @return order number
      */
     int getOrder();
 
     /**
-     * filterName
+     * Get filterName
      *
-     * @return
+     * @return filter name
      */
     String getFilterName();
 

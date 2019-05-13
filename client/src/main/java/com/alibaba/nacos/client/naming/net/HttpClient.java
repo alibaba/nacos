@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.client.naming.net;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.google.common.net.HttpHeaders;
 
@@ -30,14 +30,22 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class HttpClient {
 
-    public static final int TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
-    public static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
-    private static final boolean ENABLE_HTTPS = Boolean.getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+    public static final int TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 50000);
+    public static final int CON_TIME_OUT_MILLIS = Integer
+        .getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+    private static final boolean ENABLE_HTTPS = Boolean
+        .getBoolean("com.alibaba.nacos.client.naming.tls.enable");
+
+    private static final String POST = "POST";
+    private static final String PUT = "PUT";
 
     static {
         // limit max redirection
@@ -61,29 +69,38 @@ public class HttpClient {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
-            url += (null == encodedContent) ? "" : ("?" + encodedContent);
+            url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
             conn = (HttpURLConnection) new URL(url).openConnection();
 
+            setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
             conn.setReadTimeout(TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
-            setHeaders(conn, headers, encoding);
+            conn.setDoOutput(true);
+            if (POST.equals(method) || PUT.equals(method)) {
+                // fix: apache http nio framework must set some content to request body
+                byte[] b = encodedContent.getBytes();
+                conn.setRequestProperty("Content-Length", String.valueOf(b.length));
+                conn.getOutputStream().write(b, 0, b.length);
+                conn.getOutputStream().flush();
+                conn.getOutputStream().close();
+            }
             conn.connect();
-            LogUtils.LOG.debug("Request from server: " + url);
+            NAMING_LOGGER.debug("Request from server: " + url);
             return getResult(conn);
         } catch (Exception e) {
             try {
                 if (conn != null) {
-                    LogUtils.LOG.warn("failed to request " + conn.getURL() + " from "
-                            + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
+                    NAMING_LOGGER.warn("failed to request " + conn.getURL() + " from "
+                        + InetAddress.getByName(conn.getURL().getHost()).getHostAddress());
                 }
             } catch (Exception e1) {
-                LogUtils.LOG.error("NA", "failed to request ", e1);
+                NAMING_LOGGER.error("[NA] failed to request ", e1);
                 //ignore
             }
 
-            LogUtils.LOG.error("NA", "failed to request ", e);
+            NAMING_LOGGER.error("[NA] failed to request ", e);
 
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {
@@ -98,7 +115,8 @@ public class HttpClient {
 
         InputStream inputStream;
         if (HttpURLConnection.HTTP_OK == respCode
-                || HttpURLConnection.HTTP_NOT_MODIFIED == respCode) {
+            || HttpURLConnection.HTTP_NOT_MODIFIED == respCode
+            || Constants.WRITE_REDIRECT_CODE == respCode) {
             inputStream = conn.getInputStream();
         } else {
             inputStream = conn.getErrorStream();
@@ -149,18 +167,18 @@ public class HttpClient {
         }
 
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
-                + encoding);
+            + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
     }
 
     private static String encodingParams(Map<String, String> params, String encoding)
-            throws UnsupportedEncodingException {
-        StringBuilder sb = new StringBuilder();
+        throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
-            return null;
+            return "";
         }
 
         params.put("encoding", encoding);
+        StringBuilder sb = new StringBuilder();
 
         for (Map.Entry<String, String> entry : params.entrySet()) {
             if (StringUtils.isEmpty(entry.getValue())) {
@@ -172,6 +190,9 @@ public class HttpClient {
             sb.append("&");
         }
 
+        if (sb.length() > 0) {
+            sb = sb.deleteCharAt(sb.length() - 1);
+        }
         return sb.toString();
     }
 

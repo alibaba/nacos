@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import RegionGroup from '../../../components/RegionGroup';
 import { getParams, request } from '../../../globalLib';
 import {
@@ -34,6 +35,10 @@ const { Row, Col } = Grid;
 @ConfigProvider.config
 class ListeningToQuery extends React.Component {
   static displayName = 'ListeningToQuery';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);

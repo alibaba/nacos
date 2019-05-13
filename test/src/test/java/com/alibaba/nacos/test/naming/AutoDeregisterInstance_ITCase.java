@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -45,7 +46,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class AutoDeregisterInstance_ITCase {
 
     private NamingService naming;
@@ -55,9 +56,19 @@ public class AutoDeregisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
+
+        NamingBase.prepareServer(port);
+
         if (naming == null) {
-            //TimeUnit.SECONDS.sleep(10);
-            naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            naming = NamingFactory.createNamingService("127.0.0.1:" + port);
+        }
+
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -83,9 +94,9 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
 
@@ -121,9 +132,9 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
 
@@ -154,20 +165,22 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
 
         instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(instances.size(), 1);
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
 
-        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName, beatInfo);
+        namingServiceImpl.getBeatReactor().
+            addBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, beatInfo);
+
         verifyInstanceList(instances, 2, serviceName);
 
         instances = naming.getAllInstances(serviceName);
@@ -198,22 +211,22 @@ public class AutoDeregisterInstance_ITCase {
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
-        namingServiceImpl.getBeatReactor().removeBeatInfo(serviceName, "127.0.0.1", TEST_PORT);
+        namingServiceImpl.getBeatReactor().
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
 
-        //TimeUnit.SECONDS.sleep(40);
         verifyInstanceList(instances, 1, serviceName);
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         BeatInfo beatInfo = new BeatInfo();
-        beatInfo.setDom(serviceName);
+        beatInfo.setServiceName(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName);
         beatInfo.setIp("127.0.0.1");
         beatInfo.setPort(TEST_PORT);
         beatInfo.setCluster("c1");
 
-
-        namingServiceImpl.getBeatReactor().addBeatInfo(serviceName, beatInfo);
+        namingServiceImpl.getBeatReactor().
+            addBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, beatInfo);
         //TimeUnit.SECONDS.sleep(15);
         verifyInstanceList(instances, 2, serviceName);
 
@@ -224,15 +237,15 @@ public class AutoDeregisterInstance_ITCase {
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
         Assert.assertEquals(1, instances.size());
 
+        TimeUnit.SECONDS.sleep(5);
+
         instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
         Assert.assertEquals(1, instances.size());
-
-
     }
 
     public void verifyInstanceList(List<Instance> instances, int size, String serviceName) throws Exception {
         int i = 0;
-        while ( i < 20 ) {
+        while (i < 20) {
             instances = naming.getAllInstances(serviceName);
             if (instances.size() == size) {
                 break;

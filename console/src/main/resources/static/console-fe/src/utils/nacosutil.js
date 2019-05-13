@@ -46,3 +46,31 @@ export const getParameter = (search, name) => {
   const [, value = ''] = hit.split('=');
   return value;
 };
+
+/**
+ * 将回车符和空格替换
+ * @param {*} separator 替换符
+ */
+export const replaceEnter = (separator = ',') => text => {
+  if (typeof text !== 'string') {
+    return text;
+  }
+
+  return text
+    .replace(/\r\n/g, separator)
+    .replace(/[\r\n]/g, separator)
+    .replace(/[\t\s]/g, '');
+};
+
+/**
+ * 处理metaData对象生成可显示对象
+ */
+export const processMetaData = (separator = ',') => (metadata = {}) => {
+  if (Object.prototype.toString.call(metadata) !== '[object Object]') {
+    return '';
+  }
+
+  return Object.keys(metadata)
+    .map(key => `${key}=${metadata[key]}`)
+    .join(separator);
+};

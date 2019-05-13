@@ -22,50 +22,61 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Instance
+ *
+ * @author nkorange
  */
 public class Instance {
 
     /**
-     * Unique ID of this instance.
+     * unique id of this instance.
      */
     private String instanceId;
 
     /**
-     * Instance ip
+     * instance ip
      */
     private String ip;
 
     /**
-     * Instance port
+     * instance port
      */
     private int port;
 
     /**
-     * Instance weight
+     * instance weight
      */
     private double weight = 1.0D;
 
     /**
-     * Instance health status
+     * instance health status
      */
-    @JSONField(name = "valid")
     private boolean healthy = true;
 
+    /**
+     * If instance is enabled to accept request
+     */
     private boolean enabled = true;
 
     /**
-     * Cluster information of instance
+     * If instance is ephemeral
+     *
+     * @since 1.0.0
+     */
+    private boolean ephemeral = true;
+
+    /**
+     * cluster information of instance
      */
     private String clusterName;
 
     /**
-     * Service name of instance
+     * Service information of instance
      */
     private String serviceName;
 
     /**
-     * User extended attributes
+     * user extended attributes
      */
     private Map<String, String> metadata = new HashMap<String, String>();
 
@@ -145,6 +156,14 @@ public class Instance {
         this.enabled = enabled;
     }
 
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
+    }
+
     @Override
     public String toString() {
         return JSON.toJSONString(this);
@@ -160,7 +179,7 @@ public class Instance {
             return false;
         }
 
-        Instance host = (Instance)obj;
+        Instance host = (Instance) obj;
 
         return strEquals(toString(), host.toString());
     }

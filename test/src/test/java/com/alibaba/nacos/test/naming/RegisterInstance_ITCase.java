@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -29,10 +30,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
@@ -45,7 +43,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RegisterInstance_ITCase {
 
     private NamingService naming;
@@ -55,16 +53,34 @@ public class RegisterInstance_ITCase {
 
     @Before
     public void init() throws Exception {
+
+        NamingBase.prepareServer(port);
+
         if (naming == null) {
-            //TimeUnit.SECONDS.sleep(10);
+            TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
     @Test
     @Ignore
     public void regService() throws NacosException, InterruptedException {
-        String serviceName = "dungu.test.99";
+
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
+        properties.put(PropertyKeyConst.NAMESPACE, "t3");
+
+        naming = NamingFactory.createNamingService(properties);
+
+        String serviceName = "dungu.test.10";
         naming.registerInstance(serviceName, "127.0.0.1", 80, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
         Thread.sleep(100000000L);
@@ -87,16 +103,14 @@ public class RegisterInstance_ITCase {
     @Test
     public void regDomTest() throws Exception {
         String serviceName = randomDomainName();
-
-        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
-
         System.out.println(serviceName);
+        naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT);
 
         TimeUnit.SECONDS.sleep(3);
 
         List<Instance> instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);

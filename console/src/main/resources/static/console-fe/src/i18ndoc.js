@@ -12,7 +12,7 @@
  */
 module.exports = {
   'zh-cn': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.7.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.8.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': '配置管理',
     'com.alibaba.nacos.page.serviceManagementVirtual': '服务管理',
     'nacos.component.ExportDialog.tags2': '标签:',
@@ -161,7 +161,7 @@ module.exports = {
     'com.alibaba.nacos.page.newconfig.the_more_advanced': 'Group不能为空',
     'nacos.page.namespace.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use4':
       'ACM专用SecretKey（即将废弃，不建议使用）:',
-    'com.alibaba.nacos.page.namespace.public': 'public(保留控件)',
+    'com.alibaba.nacos.page.namespace.public': 'public(保留空间)',
     'com.alibaba.nacos.page.configsync.error': '错误',
     'nacos.page.namespace.AccessKey_recommended1': 'AccessKey（开发环境推荐）:',
     'com.alibaba.nacos.page.pushTrajectory.configuration': '配置',
@@ -574,7 +574,7 @@ module.exports = {
     'nacos.page.ConfigEditor.submit_failed': '不能为空, 提交失败',
   },
   'en-us': {
-    'com.alibaba.nacos.layout.noenv.nacosversion': '0.7.0',
+    'com.alibaba.nacos.layout.noenv.nacosversion': '0.8.0',
     'com.alibaba.nacos.page.configurationManagementVirtual': 'ConfigManagement',
     'com.alibaba.nacos.page.serviceManagementVirtual': 'ServiceManagement',
     'nacos.component.CloneDialog.the_same_configuration': 'Conflict:',

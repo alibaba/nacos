@@ -12,13 +12,22 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Select, Message, ConfigProvider } from '@alifd/next';
-import { DIALOG_FORM_LAYOUT } from './constant';
+import { DIALOG_FORM_LAYOUT, METADATA_SEPARATOR, METADATA_ENTER } from './constant';
+import MonacoEditor from 'components/MonacoEditor';
+import { replaceEnter, processMetaData } from 'utils/nacosutil';
 
 @ConfigProvider.config
 class EditServiceDialog extends React.Component {
   static displayName = 'EditServiceDialog';
+
+  static propTypes = {
+    queryServiceList: PropTypes.func,
+    getServiceDetail: PropTypes.func,
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -26,6 +35,7 @@ class EditServiceDialog extends React.Component {
       isCreate: false,
       editService: {},
       editServiceDialogVisible: false,
+      errors: { name: {}, protectThreshold: {} },
     };
     this.show = this.show.bind(this);
   }
@@ -34,9 +44,7 @@ class EditServiceDialog extends React.Component {
     let editService = _editService;
     const { metadata = {}, name } = editService;
     if (Object.keys(metadata).length) {
-      editService.metadataText = Object.keys(metadata)
-        .map(k => `${k}=${metadata[k]}`)
-        .join(',');
+      editService.metadataText = processMetaData(METADATA_ENTER)(metadata);
     }
     this.setState({ editService, editServiceDialogVisible: true, isCreate: !name });
   }
@@ -45,18 +53,39 @@ class EditServiceDialog extends React.Component {
     this.setState({ editServiceDialogVisible: false });
   }
 
+  validator(field) {
+    const { locale = {} } = this.props;
+    const errors = Object.assign({}, this.state.errors);
+    const helpMap = {
+      name: locale.serviceNameRequired,
+      protectThreshold: locale.protectThresholdRequired,
+    };
+    if (field.protectThreshold === 0) {
+      field.protectThreshold = '0';
+    }
+    for (const key in field) {
+      if (!field[key]) {
+        errors[key] = { validateState: 'error', help: helpMap[key] };
+        this.setState({ errors });
+        return false;
+      }
+    }
+    return true;
+  }
+
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, healthCheckMode, metadataText, selector } = editService;
+    const { name, protectThreshold, groupName, metadataText = '', selector } = editService;
+    if (!this.validator({ name, protectThreshold })) return;
     request({
-      method: isCreate ? 'PUT' : 'POST',
+      method: isCreate ? 'POST' : 'PUT',
       url: 'v1/ns/service',
       data: {
         serviceName: name,
+        groupName: groupName || 'DEFAULT_GROUP',
         protectThreshold,
-        healthCheckMode,
-        metadata: metadataText,
+        metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
         selector: JSON.stringify(selector),
       },
       dataType: 'text',
@@ -79,26 +108,32 @@ class EditServiceDialog extends React.Component {
   }
 
   onChangeCluster(changeVal) {
+    const resetKey = ['name', 'protectThreshold'];
     const { editService = {} } = this.state;
+    const errors = Object.assign({}, this.state.errors);
+    resetKey.forEach(key => {
+      if (changeVal[key]) {
+        errors[key] = {};
+        this.setState({ errors });
+      }
+    });
     this.setState({
       editService: Object.assign({}, editService, changeVal),
     });
   }
 
-  getFormItemLayout = () => {
-    return {
-      labelCol: { span: 6 },
-      wrapperCol: { span: 14 },
-    };
-  };
+  getFormItemLayout = () => ({
+    labelCol: { span: 6 },
+    wrapperCol: { span: 14 },
+  });
 
   render() {
     const { locale = {} } = this.props;
-    const { isCreate, editService, editServiceDialogVisible } = this.state;
+    const { isCreate, editService, editServiceDialogVisible, errors } = this.state;
     const {
       name,
       protectThreshold,
-      healthCheckMode,
+      groupName,
       metadataText,
       selector = { type: 'none' },
     } = editService;
@@ -113,32 +148,42 @@ class EditServiceDialog extends React.Component {
         onClose={() => this.hide()}
       >
         <Form {...DIALOG_FORM_LAYOUT}>
-          <Form.Item label={`${locale.serviceName}:`} {...formItemLayout}>
+          <Form.Item
+            required={isCreate}
+            {...formItemLayout}
+            label={`${locale.serviceName}:`}
+            {...errors.name}
+          >
             {!isCreate ? (
               <p>{name}</p>
             ) : (
               <Input value={name} onChange={name => this.onChangeCluster({ name })} />
             )}
           </Form.Item>
-          <Form.Item label={`${locale.protectThreshold}:`} {...formItemLayout}>
+          <Form.Item
+            required
+            {...formItemLayout}
+            label={`${locale.protectThreshold}:`}
+            {...errors.protectThreshold}
+          >
             <Input
               value={protectThreshold}
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.healthCheckPattern}:`} {...formItemLayout}>
-            <Select
-              className="full-width"
-              defaultValue={healthCheckMode}
-              onChange={healthCheckMode => this.onChangeCluster({ healthCheckMode })}
-            >
-              <Select.Option value="server">{locale.healthCheckPatternService}</Select.Option>
-              <Select.Option value="client">{locale.healthCheckPatternClient}</Select.Option>
-              <Select.Option value="none">{locale.healthCheckPatternNone}</Select.Option>
-            </Select>
+          <Form.Item {...formItemLayout} label={`${locale.groupName}:`}>
+            <Input
+              defaultValue={groupName}
+              placeholder="DEFAULT_GROUP"
+              readOnly={!isCreate}
+              onChange={groupName => this.onChangeCluster({ groupName })}
+            />
           </Form.Item>
           <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
-            <Input.TextArea
+            <MonacoEditor
+              language={'properties'}
+              width={'100%'}
+              height={200}
               value={metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />

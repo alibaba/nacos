@@ -25,7 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static com.alibaba.nacos.common.util.Constants.STANDALONE_SPRING_PROFILE;
+import static com.alibaba.nacos.core.utils.Constants.STANDALONE_SPRING_PROFILE;
 
 /**
  * {@link StandaloneProfileApplicationListener} Test

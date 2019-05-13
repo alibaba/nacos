@@ -56,9 +56,17 @@ public class SelectInstances_ITCase {
 
     @Before
     public void init() throws Exception {
+        NamingBase.prepareServer(port);
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        }
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -379,7 +387,7 @@ public class SelectInstances_ITCase {
         TimeUnit.SECONDS.sleep(10);
 
         ExpressionSelector expressionSelector = new ExpressionSelector();
-        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'dubbo'");
+        expressionSelector.setExpression("INSTANCE.label.registerSource = 'dubbo'");
         ListView<String> serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
 
         Assert.assertTrue(serviceList.getData().contains(serviceName));
@@ -394,7 +402,7 @@ public class SelectInstances_ITCase {
 
         TimeUnit.SECONDS.sleep(10);
 
-        expressionSelector.setExpression("INSTANCE.metadata.registerSource = 'spring'");
+        expressionSelector.setExpression("INSTANCE.label.registerSource = 'spring'");
         serviceList = naming.getServicesOfServer(1, 10, expressionSelector);
 
         Assert.assertTrue(serviceList.getData().contains(serviceName));
