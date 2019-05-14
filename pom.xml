@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>0.8.0</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -36,7 +36,7 @@
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
         <developerConnection>scm:git@github.com:alibaba/nacos.git</developerConnection>
-        <tag>nacos-all-0.5.0</tag>
+        <tag>nacos-all-1.0.0</tag>
     </scm>
 
     <mailingLists>
@@ -94,8 +94,8 @@
         <maven.test.skip>false</maven.test.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <!-- Compiler settings properties -->
-        <maven.compiler.source>1.6</maven.compiler.source>
-        <maven.compiler.target>1.6</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
         <!-- Exclude all generated code -->
         <sonar.jacoco.itReportPath>${project.basedir}/../test/target/jacoco-it.exec</sonar.jacoco.itReportPath>
@@ -404,9 +404,6 @@
                             <includes>
                                 <include>**/*ITCase.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/RestAPI_ITCase.java</exclude>
-                            </excludes>
                         </configuration>
                         <executions>
                             <execution>
@@ -680,21 +677,20 @@
             </dependency>
 
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-lgpl</artifactId>
-                <version>1.9.6</version>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.9.8</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.9.8</version>
+            </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-core-asl</artifactId>
                 <version>1.9.10</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-annotations</artifactId>
-                <version>3.1.3</version>
             </dependency>
 
             <dependency>

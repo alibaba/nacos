@@ -58,7 +58,7 @@ public class EventDispatcher {
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
 
-        NAMING_LOGGER.info("LISTENER", "adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
+        NAMING_LOGGER.info("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
 
@@ -72,7 +72,7 @@ public class EventDispatcher {
 
     public void removeListener(String serviceName, String clusters, EventListener listener) {
 
-        NAMING_LOGGER.info("LISTENER", "removing " + serviceName + " with " + clusters + " from listener map");
+        NAMING_LOGGER.info("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
 
         List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters));
         if (observers != null) {
@@ -125,12 +125,12 @@ public class EventDispatcher {
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
-                            listener.onEvent(new NamingEvent(serviceInfo.getName(), hosts));
+                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
                         }
                     }
 
                 } catch (Exception e) {
-                    NAMING_LOGGER.error("NA", "notify error for service: "
+                    NAMING_LOGGER.error("[NA] notify error for service: "
                         + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
                 }
             }

@@ -25,7 +25,6 @@ import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -241,8 +240,7 @@ public class HostReactor {
                     try {
                         serviceObj.wait(updateHoldInterval);
                     } catch (InterruptedException e) {
-                        NAMING_LOGGER.error("[getServiceInfo]",
-                            "serviceName:" + serviceName + ", clusters:" + clusters, e);
+                        NAMING_LOGGER.error("[getServiceInfo] serviceName:" + serviceName + ", clusters:" + clusters, e);
                     }
                 }
             }
@@ -268,7 +266,6 @@ public class HostReactor {
         }
     }
 
-    @SuppressFBWarnings("NN_NAKED_NOTIFY")
     public void updateServiceNow(String serviceName, String clusters) {
         ServiceInfo oldService = getSerivceInfo0(serviceName, clusters);
         try {
@@ -278,7 +275,7 @@ public class HostReactor {
                 processServiceJSON(result);
             }
         } catch (Exception e) {
-            NAMING_LOGGER.error("NA", "failed to update serviceName: " + serviceName, e);
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         } finally {
             if (oldService != null) {
                 synchronized (oldService) {
@@ -292,7 +289,7 @@ public class HostReactor {
         try {
             serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
         } catch (Exception e) {
-            NAMING_LOGGER.error("NA", "failed to update serviceName: " + serviceName, e);
+            NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         }
     }
 
@@ -330,7 +327,7 @@ public class HostReactor {
 
                 lastRefTime = serviceObj.getLastRefTime();
             } catch (Throwable e) {
-                NAMING_LOGGER.warn("NA", "failed to update serviceName: " + serviceName, e);
+                NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             }
 
         }

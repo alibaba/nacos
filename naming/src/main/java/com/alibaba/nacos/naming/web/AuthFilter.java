@@ -16,7 +16,9 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.naming.acl.AuthChecker;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.controllers.*;
+import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,15 +34,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class AuthFilter implements Filter {
 
     @Autowired
     private AuthChecker authChecker;
 
-    private static ConcurrentMap<String, Method> methodCache = new
-            ConcurrentHashMap<String, Method>();
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private FilterBase filterBase;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -56,20 +61,13 @@ public class AuthFilter implements Filter {
 
         try {
             String path = new URI(req.getRequestURI()).getPath();
-            String target = getMethodName(path);
-
-            Method method = methodCache.get(target);
+            Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
-                if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-                    method = RaftCommands.class.getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
-                } else {
-                    method = ApiCommands.class.getMethod(target, HttpServletRequest.class);
-                }
-                methodCache.put(target, method);
+                throw new NoSuchMethodException();
             }
 
-            if (method.isAnnotationPresent(NeedAuth.class) && !Switch.isEnableAuthentication()) {
+            if (method.isAnnotationPresent(NeedAuth.class) && !switchDomain.isEnableAuthentication()) {
 
                 if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
                     authChecker.doRaftAuth(req);
@@ -95,15 +93,5 @@ public class AuthFilter implements Filter {
     @Override
     public void destroy() {
 
-    }
-
-    static protected String getMethodName(String path) throws Exception {
-        String target = path.substring(path.lastIndexOf("/") + 1).trim();
-
-        if (StringUtils.isEmpty(target)) {
-            throw new IllegalArgumentException("URL target required");
-        }
-
-        return target;
     }
 }

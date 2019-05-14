@@ -16,13 +16,8 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckMode;
-import com.alibaba.nacos.naming.raft.RaftListener;
-import org.apache.commons.lang3.StringUtils;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+import com.alibaba.nacos.naming.pojo.Record;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -30,78 +25,71 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author nacos
  */
-public class SwitchDomain implements Domain, RaftListener {
+@Component
+public class SwitchDomain implements Record, Cloneable {
 
-    public String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
+    private String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
 
-    public List<String> masters;
+    private List<String> masters;
 
-    public Map<String, Integer> adWeightMap = new HashMap<String, Integer>();
+    private Map<String, Integer> adWeightMap = new HashMap<String, Integer>();
 
-    public long defaultPushCacheMillis = TimeUnit.SECONDS.toMillis(10);
+    private long defaultPushCacheMillis = TimeUnit.SECONDS.toMillis(10);
 
-    private long clientBeatInterval = 5 * 1000;
+    private long clientBeatInterval = TimeUnit.SECONDS.toMillis(5);
 
-    public long defaultCacheMillis = 10000L;
+    private long defaultCacheMillis = TimeUnit.SECONDS.toMillis(3);
 
-    public float distroThreshold = 0.7F;
+    private float distroThreshold = 0.7F;
 
-    public String token = UtilsAndCommons.SUPER_TOKEN;
+    private String token = UtilsAndCommons.SUPER_TOKEN;
 
-    public Map<String, Long> cacheMillisMap = new HashMap<String, Long>();
+    private boolean healthCheckEnabled = true;
 
-    public Map<String, Long> pushCacheMillisMap = new HashMap<String, Long>();
+    private boolean distroEnabled = true;
 
-    public boolean healthCheckEnabled = true;
+    private boolean enableStandalone = true;
 
-    public String defaultHealthCheckMode = HealthCheckMode.client.name();
+    private boolean pushEnabled = true;
 
-    public boolean distroEnabled = true;
+    private int checkTimes = 3;
 
-    public boolean enableStandalone = true;
+    private HttpHealthParams httpHealthParams = new HttpHealthParams();
 
-    public int checkTimes = 3;
+    private TcpHealthParams tcpHealthParams = new TcpHealthParams();
 
-    public HttpHealthParams httpHealthParams = new HttpHealthParams();
-
-    public TcpHealthParams tcpHealthParams = new TcpHealthParams();
-
-    public MysqlHealthParams mysqlHealthParams = new MysqlHealthParams();
+    private MysqlHealthParams mysqlHealthParams = new MysqlHealthParams();
 
     private List<String> incrementalList = new ArrayList<>();
 
-    private boolean allDomNameCache = true;
+    private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
 
-    public long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
+    private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
 
-    public long domStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
+    private boolean disableAddIP = false;
 
-    public boolean disableAddIP = false;
+    private boolean sendBeatOnly = false;
 
-    public boolean enableCache = true;
-
-    public boolean sendBeatOnly = false;
-
-    public Map<String, Integer> limitedUrlMap = new HashMap<>();
+    private Map<String, Integer> limitedUrlMap = new HashMap<>();
 
     /**
      * The server is regarded as expired if its two reporting interval is lagger than this variable.
      */
-    public long distroServerExpiredMillis = 30000;
+    private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(30);
 
     /**
      * since which version, push can be enabled
      */
-    public String pushGoVersion = "0.1.0";
-    public String pushJavaVersion = "0.1.0";
-    public String pushPythonVersion = "0.4.3";
-    public String pushCVersion = "1.0.12";
-    public String trafficSchedulingJavaVersion = "4.5.0";
-    public String trafficSchedulingPythonVersion = "9999.0.0";
-    public String trafficSchedulingCVersion = "1.0.5";
-    public String trafficSchedulingTengineVersion = "2.0.0";
+    private String pushGoVersion = "0.1.0";
+    private String pushJavaVersion = "0.1.0";
+    private String pushPythonVersion = "0.4.3";
+    private String pushCVersion = "1.0.12";
 
-    public boolean enableAuthentication = false;
+    private boolean enableAuthentication = false;
+
+    private String overriddenServerStatus = null;
+
+    private boolean defaultInstanceEphemeral = true;
 
     public boolean isEnableAuthentication() {
         return enableAuthentication;
@@ -129,10 +117,6 @@ public class SwitchDomain implements Domain, RaftListener {
         this.clientBeatInterval = clientBeatInterval;
     }
 
-    public boolean isEnableCache() {
-        return enableCache;
-    }
-
     public boolean isEnableStandalone() {
         return enableStandalone;
     }
@@ -144,21 +128,6 @@ public class SwitchDomain implements Domain, RaftListener {
     public SwitchDomain() {
     }
 
-    @Override
-    public String getToken() {
-        return token;
-    }
-
-    @Override
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    @Override
-    public List<String> getOwners() {
-        return masters;
-    }
-
     public boolean isSendBeatOnly() {
         return sendBeatOnly;
     }
@@ -167,92 +136,13 @@ public class SwitchDomain implements Domain, RaftListener {
         this.sendBeatOnly = sendBeatOnly;
     }
 
-    @Override
-    public void setOwners(List<String> owners) {
-        this.masters = owners;
-    }
-
     // the followings are not implemented
 
-    @Override
     public String getName() {
-        return "00-00---000-VIPSRV_SWITCH_DOMAIN-000---00-00";
+        return UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
 
-    @Override
-    public void setName(String name) {
-
-    }
-
-    @Override
-    public void init() {
-
-    }
-
-    @Override
-    public void destroy() throws Exception {
-
-    }
-
-    @Override
-    public List<IpAddress> allIPs() {
-        return null;
-    }
-
-    @Override
-    public List<IpAddress> srvIPs(String clientIp) {
-        return null;
-    }
-
-    public String toJSON() {
-        return JSON.toJSONString(this);
-    }
-
-    @Override
-    public void setProtectThreshold(float protectThreshold) {
-
-    }
-
-    @Override
-    public float getProtectThreshold() {
-        return 0;
-    }
-
-    @Override
-    public void update(Domain dom) {
-
-    }
-
-    @Override
-    @JSONField(serialize = false)
-    public String getChecksum() {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    public void recalculateChecksum() {
-        throw new NotImplementedException();
-    }
-
-
-    @Override
-    public boolean interests(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
-    }
-
-    @Override
-    public boolean matchUnlistenKey(String key) {
-        return StringUtils.equals(key, UtilsAndCommons.DOMAINS_DATA_ID_PRE + name);
-    }
-
-    @Override
-    public void onChange(String key, String value) throws Exception {
-        SwitchDomain domain = JSON.parseObject(value, SwitchDomain.class);
-        update(domain);
-    }
-
-    @Override
-    public void onDelete(String key, String value) throws Exception {
+    public void update(SwitchDomain domain) {
 
     }
 
@@ -260,12 +150,219 @@ public class SwitchDomain implements Domain, RaftListener {
         return incrementalList;
     }
 
-    public boolean isAllDomNameCache() {
-        return allDomNameCache;
+    public void setIncrementalList(List<String> incrementalList) {
+        this.incrementalList = incrementalList;
     }
 
-    public void setAllDomNameCache(boolean enable) {
-        allDomNameCache = enable;
+    public List<String> getMasters() {
+        return masters;
+    }
+
+    public void setMasters(List<String> masters) {
+        this.masters = masters;
+    }
+
+    public Map<String, Integer> getAdWeightMap() {
+        return adWeightMap;
+    }
+
+    public void setAdWeightMap(Map<String, Integer> adWeightMap) {
+        this.adWeightMap = adWeightMap;
+    }
+
+    public Integer getAdWeight(String key) {
+        return getAdWeightMap().get(key);
+    }
+
+    public long getDefaultPushCacheMillis() {
+        return defaultPushCacheMillis;
+    }
+
+    public void setDefaultPushCacheMillis(long defaultPushCacheMillis) {
+        this.defaultPushCacheMillis = defaultPushCacheMillis;
+    }
+
+    public long getDefaultCacheMillis() {
+        return defaultCacheMillis;
+    }
+
+    public void setDefaultCacheMillis(long defaultCacheMillis) {
+        this.defaultCacheMillis = defaultCacheMillis;
+    }
+
+    public float getDistroThreshold() {
+        return distroThreshold;
+    }
+
+    public void setDistroThreshold(float distroThreshold) {
+        this.distroThreshold = distroThreshold;
+    }
+
+    public long getPushCacheMillis(String serviceName) {
+        return defaultPushCacheMillis;
+    }
+
+    public boolean isHealthCheckEnabled() {
+        return healthCheckEnabled;
+    }
+
+    public void setHealthCheckEnabled(boolean healthCheckEnabled) {
+        this.healthCheckEnabled = healthCheckEnabled;
+    }
+
+    public boolean isHealthCheckEnabled(String serviceName) {
+        return healthCheckEnabled || getHealthCheckWhiteList().contains(serviceName);
+    }
+
+    public boolean isDistroEnabled() {
+        return distroEnabled;
+    }
+
+    public void setDistroEnabled(boolean distroEnabled) {
+        this.distroEnabled = distroEnabled;
+    }
+
+    public boolean isPushEnabled() {
+        return pushEnabled;
+    }
+
+    public void setPushEnabled(boolean pushEnabled) {
+        this.pushEnabled = pushEnabled;
+    }
+
+    public int getCheckTimes() {
+        return checkTimes;
+    }
+
+    public void setCheckTimes(int checkTimes) {
+        this.checkTimes = checkTimes;
+    }
+
+    public HttpHealthParams getHttpHealthParams() {
+        return httpHealthParams;
+    }
+
+    public void setHttpHealthParams(HttpHealthParams httpHealthParams) {
+        this.httpHealthParams = httpHealthParams;
+    }
+
+    public TcpHealthParams getTcpHealthParams() {
+        return tcpHealthParams;
+    }
+
+    public void setTcpHealthParams(TcpHealthParams tcpHealthParams) {
+        this.tcpHealthParams = tcpHealthParams;
+    }
+
+    public MysqlHealthParams getMysqlHealthParams() {
+        return mysqlHealthParams;
+    }
+
+    public void setMysqlHealthParams(MysqlHealthParams mysqlHealthParams) {
+        this.mysqlHealthParams = mysqlHealthParams;
+    }
+
+    public long getServerStatusSynchronizationPeriodMillis() {
+        return serverStatusSynchronizationPeriodMillis;
+    }
+
+    public void setServerStatusSynchronizationPeriodMillis(long serverStatusSynchronizationPeriodMillis) {
+        this.serverStatusSynchronizationPeriodMillis = serverStatusSynchronizationPeriodMillis;
+    }
+
+    public long getServiceStatusSynchronizationPeriodMillis() {
+        return serviceStatusSynchronizationPeriodMillis;
+    }
+
+    public void setServiceStatusSynchronizationPeriodMillis(long serviceStatusSynchronizationPeriodMillis) {
+        this.serviceStatusSynchronizationPeriodMillis = serviceStatusSynchronizationPeriodMillis;
+    }
+
+    public boolean isDisableAddIP() {
+        return disableAddIP;
+    }
+
+    public void setDisableAddIP(boolean disableAddIP) {
+        this.disableAddIP = disableAddIP;
+    }
+
+    public Map<String, Integer> getLimitedUrlMap() {
+        return limitedUrlMap;
+    }
+
+    public void setLimitedUrlMap(Map<String, Integer> limitedUrlMap) {
+        this.limitedUrlMap = limitedUrlMap;
+    }
+
+    public long getDistroServerExpiredMillis() {
+        return distroServerExpiredMillis;
+    }
+
+    public void setDistroServerExpiredMillis(long distroServerExpiredMillis) {
+        this.distroServerExpiredMillis = distroServerExpiredMillis;
+    }
+
+    public String getPushGoVersion() {
+        return pushGoVersion;
+    }
+
+    public void setPushGoVersion(String pushGoVersion) {
+        this.pushGoVersion = pushGoVersion;
+    }
+
+    public String getPushJavaVersion() {
+        return pushJavaVersion;
+    }
+
+    public void setPushJavaVersion(String pushJavaVersion) {
+        this.pushJavaVersion = pushJavaVersion;
+    }
+
+    public String getPushPythonVersion() {
+        return pushPythonVersion;
+    }
+
+    public void setPushPythonVersion(String pushPythonVersion) {
+        this.pushPythonVersion = pushPythonVersion;
+    }
+
+    public String getPushCVersion() {
+        return pushCVersion;
+    }
+
+    public void setPushCVersion(String pushCVersion) {
+        this.pushCVersion = pushCVersion;
+    }
+
+    public String getOverriddenServerStatus() {
+        return overriddenServerStatus;
+    }
+
+    public void setOverriddenServerStatus(String overriddenServerStatus) {
+        this.overriddenServerStatus = overriddenServerStatus;
+    }
+
+    public boolean isDefaultInstanceEphemeral() {
+        return defaultInstanceEphemeral;
+    }
+
+    public void setDefaultInstanceEphemeral(boolean defaultInstanceEphemeral) {
+        this.defaultInstanceEphemeral = defaultInstanceEphemeral;
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
+    }
+
+    @Override
+    protected SwitchDomain clone() throws CloneNotSupportedException {
+        return (SwitchDomain) super.clone();
+    }
+
+    @Override
+    public String getChecksum() {
+        return null;
     }
 
     public interface HealthParams {

@@ -18,12 +18,13 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.IpAddress;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.raft.PeerSet;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,10 +44,9 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
@@ -57,7 +57,7 @@ public class InstanceControllerTest extends BaseTest {
     private InstanceController instanceController;
 
     @Mock
-    private PeerSet peerSet;
+    private RaftPeerSet peerSet;
 
     private MockMvc mockmvc;
 
@@ -70,32 +70,26 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void registerInstance() throws Exception {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
+        Service service = new Service();
+        service.setName(TEST_SERVICE_NAME);
 
-        Cluster cluster = new Cluster();
-        cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setDom(domain);
-        domain.addCluster(cluster);
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
+        service.addCluster(cluster);
 
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        ipAddress.setPort(9999);
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domain.updateIPs(ipList);
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(9999);
+        List<Instance> ipList = new ArrayList<>();
+        ipList.add(instance);
+        service.updateIPs(ipList, false);
 
-        Mockito.when(domainsManager.getDomain(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
-
-        Mockito.when(domainsManager.addLockIfAbsent(
-            UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")))
-            .thenReturn(new ReentrantLock());
+        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.put("/naming/instance")
-                        .param("serviceName", "nacos.test.1")
-                        .param("ip", "1.1.1.1")
-                        .param("port", "9999");
+            MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
+                .param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1")
+                .param("port", "9999");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
 
         Assert.assertEquals("ok", actualValue);
@@ -105,11 +99,11 @@ public class InstanceControllerTest extends BaseTest {
     public void deregisterInstance() throws Exception {
 
         MockHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.delete("/naming/instance")
-                        .param("serviceName", "nacos.test.1")
-                        .param("ip", "1.1.1.1")
-                        .param("port", "9999")
-                        .param("clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+            MockMvcRequestBuilders.delete(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
+                .param("serviceName", TEST_SERVICE_NAME)
+                .param("ip", "1.1.1.1")
+                .param("port", "9999")
+                .param("clusterName", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
 
         Assert.assertEquals("ok", actualValue);
@@ -118,35 +112,33 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void getInstances() throws Exception {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
+        Service service = new Service();
+        service.setName(TEST_SERVICE_NAME);
 
-        Cluster cluster = new Cluster();
-        cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setDom(domain);
-        domain.addCluster(cluster);
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
+        service.addCluster(cluster);
 
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("10.10.10.10");
-        ipAddress.setPort(8888);
-        ipAddress.setWeight(2.0);
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domain.updateIPs(ipList);
+        Instance instance = new Instance();
+        instance.setIp("10.10.10.10");
+        instance.setPort(8888);
+        instance.setWeight(2.0);
+        instance.setServiceName(TEST_SERVICE_NAME);
+        List<Instance> ipList = new ArrayList<>();
+        ipList.add(instance);
+        service.updateIPs(ipList, false);
 
-        Mockito.when(domainsManager.getDomain(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1")).thenReturn(domain);
+        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
-                MockMvcRequestBuilders.get("/v1/ns/instances")
-                        .param("serviceName", "nacos.test.1");
+            MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
+                .param("serviceName", TEST_SERVICE_NAME);
 
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         JSONObject result = JSON.parseObject(actualValue);
 
-        Assert.assertEquals("nacos.test.1", result.getString("dom"));
+        Assert.assertEquals(TEST_SERVICE_NAME, result.getString("name"));
         JSONArray hosts = result.getJSONArray("hosts");
-        Assert.assertTrue(hosts != null);
         Assert.assertNotNull(hosts);
         Assert.assertEquals(hosts.size(), 1);
 

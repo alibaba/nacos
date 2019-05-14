@@ -16,25 +16,19 @@
 package com.alibaba.nacos.client.logging.log4j2;
 
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
-import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.common.util.ClassUtils;
 import com.alibaba.nacos.common.util.ResourceUtils;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.AbstractConfiguration;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
-import org.apache.logging.log4j.core.config.composite.CompositeConfiguration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 /**
  * Support for Log4j version 2.7 or higher
@@ -48,44 +42,32 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
 
     private static final String FILE_PROTOCOL = "file";
 
-    private static final String YAML_PARSER_CLASS_NAME = "com.fasterxml.jackson.dataformat.yaml.YAMLParser";
+    private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
 
-    private static final String JSON_PARSER_CLASS_NAME = "com.fasterxml.jackson.databind.ObjectMapper";
-
-    private Set<String> locationList = new HashSet<String>();
-
-    public Log4J2NacosLogging() {
-        String location = getLocation(NACOS_LOG4J2_LOCATION);
-        if (!StringUtils.isBlank(location)) {
-            locationList.add(location);
-        }
-    }
+    private String location = getLocation(NACOS_LOG4J2_LOCATION);
 
     @Override
     public void loadConfiguration() {
-        String config = findConfig(getCurrentlySupportedConfigLocations());
-        if (config != null) {
-            locationList.add(config);
+        final LoggerContext loggerContext = (LoggerContext)LogManager.getContext(false);
+        final Configuration contextConfiguration = loggerContext.getConfiguration();
+
+        // load and start nacos configuration
+        Configuration configuration = loadConfiguration(loggerContext, location);
+        configuration.start();
+
+        // append loggers and appenders to contextConfiguration
+        Map<String, Appender> appenders = configuration.getAppenders();
+        for (Appender appender: appenders.values()) {
+            contextConfiguration.addAppender(appender);
         }
-
-        final List<AbstractConfiguration> configurations = new ArrayList<AbstractConfiguration>();
-
-        LoggerContext loggerContext = (LoggerContext)LogManager.getContext(false);
-        for (String location : locationList) {
-            try {
-                Configuration configuration = loadConfiguration(loggerContext, location);
-                if (configuration instanceof AbstractConfiguration) {
-                    configurations.add((AbstractConfiguration)configuration);
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException(
-                    "Could not initialize Log4J2 Nacos logging from " + location, e);
+        Map<String, LoggerConfig> loggers = configuration.getLoggers();
+        for (String name : loggers.keySet()) {
+            if (name.startsWith(NACOS_LOGGER_PREFIX)) {
+                contextConfiguration.addLogger(name, loggers.get(name));
             }
         }
 
-        // since log4j 2.6
-        CompositeConfiguration compositeConfiguration = new CompositeConfiguration(configurations);
-        loggerContext.start(compositeConfiguration);
+        loggerContext.updateLoggers();
     }
 
     private Configuration loadConfiguration(LoggerContext loggerContext, String location) {
@@ -107,30 +89,4 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
         }
         return new ConfigurationSource(stream, url);
     }
-
-    private String[] getCurrentlySupportedConfigLocations() {
-        List<String> supportedConfigLocations = new ArrayList<String>();
-
-        if (ClassUtils.isPresent(YAML_PARSER_CLASS_NAME)) {
-            Collections.addAll(supportedConfigLocations, "log4j2.yaml", "log4j2.yml");
-        }
-
-        if (ClassUtils.isPresent(JSON_PARSER_CLASS_NAME)) {
-            Collections.addAll(supportedConfigLocations, "log4j2.json", "log4j2.jsn");
-        }
-        supportedConfigLocations.add("log4j2.xml");
-
-        return supportedConfigLocations.toArray(new String[supportedConfigLocations.size()]);
-    }
-
-    private String findConfig(String[] locations) {
-        for (String location : locations) {
-            ClassLoader defaultClassLoader = ClassUtils.getDefaultClassLoader();
-            if (defaultClassLoader != null && defaultClassLoader.getResource(location) != null) {
-                return "classpath:" + location;
-            }
-        }
-        return null;
-    }
-
 }

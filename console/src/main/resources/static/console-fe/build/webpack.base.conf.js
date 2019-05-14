@@ -31,7 +31,7 @@ module.exports = {
     path: path.resolve(__dirname, '../dist'),
   },
   resolve: {
-    extensions: ['.js', '.jsx', '.json'],
+    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
       '@': resolve('src'),
       utils: resolve('src/utils'),
@@ -51,7 +51,7 @@ module.exports = {
         include: [resolve('src')],
       },
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js|jsx|ts|tsx)$/,
         include: [resolve('src')],
         use: ['babel-loader'],
       },

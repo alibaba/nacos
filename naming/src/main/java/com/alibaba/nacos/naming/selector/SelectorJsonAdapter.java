@@ -34,7 +34,8 @@ import java.lang.reflect.Type;
  * When deserializing object for class Selector, we should consider to convert the selector to
  * its runtime child class object. And this adapter helps us to finish it.
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
+ * @since 0.7.0
  */
 public class SelectorJsonAdapter implements ObjectDeserializer, ObjectSerializer {
 

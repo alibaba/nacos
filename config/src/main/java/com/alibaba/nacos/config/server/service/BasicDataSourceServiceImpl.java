@@ -16,21 +16,12 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.annotation.PostConstruct;
-import javax.sql.DataSource;
-
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataAccessException;
@@ -40,10 +31,19 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import javax.annotation.PostConstruct;
+import javax.sql.DataSource;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Base data source
@@ -52,7 +52,11 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  */
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
-    private static final String JDBC_DRIVER_NAME = "com.mysql.jdbc.Driver";
+
+    private static final Logger log = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
+    private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+    private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
+    private static String JDBC_DRIVER_NAME;
 
     /**
      * JDBC执行超时时间, 单位秒
@@ -76,8 +80,21 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     private volatile int masterIndex;
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
+
     @Autowired
     private Environment env;
+
+
+    static {
+        try {
+            Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
+            JDBC_DRIVER_NAME = MYSQL_HIGH_LEVEL_DRIVER;
+            log.info("Use Mysql 8 as the driver");
+        } catch (ClassNotFoundException e) {
+            log.info("Use Mysql as the driver");
+            JDBC_DRIVER_NAME = DEFAULT_MYSQL_DRIVER;
+        }
+    }
 
     @PostConstruct
     public void init() {
@@ -242,7 +259,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         if (ds == null) {
             return StringUtils.EMPTY;
         }
-        BasicDataSource bds = (BasicDataSource)ds;
+        BasicDataSource bds = (BasicDataSource) ds;
         return bds.getUrl();
     }
 
@@ -282,6 +299,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     }
 
     class SelectMasterTask implements Runnable {
+
         @Override
         public void run() {
             defaultLog.info("check master db.");
@@ -294,7 +312,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 testMasterJT.setQueryTimeout(queryTimeout);
                 try {
                     testMasterJT
-                        .update("DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
+                        .update(
+                            "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         fatalLog.warn("[master-db] {}", ds.getUrl());
                     }
@@ -317,6 +336,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
     class CheckDBHealthTask implements Runnable {
+
         @Override
         public void run() {
             defaultLog.info("check db health.");
@@ -329,9 +349,11 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                     isHealthList.set(i, Boolean.TRUE);
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
-                        fatalLog.error("[db-error] master db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
+                        fatalLog.error("[db-error] master db {} down.",
+                            getIpFromUrl(dataSourceList.get(i).getUrl()));
                     } else {
-                        fatalLog.error("[db-error] slave db {} down.", getIpFromUrl(dataSourceList.get(i).getUrl()));
+                        fatalLog.error("[db-error] slave db {} down.",
+                            getIpFromUrl(dataSourceList.get(i).getUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
 

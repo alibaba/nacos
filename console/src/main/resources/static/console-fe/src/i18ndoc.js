@@ -161,7 +161,7 @@ module.exports = {
     'com.alibaba.nacos.page.newconfig.the_more_advanced': 'Group不能为空',
     'nacos.page.namespace.ACM_special_SecretKey_will_be_abandoned,_not_recommended_for_use4':
       'ACM专用SecretKey（即将废弃，不建议使用）:',
-    'com.alibaba.nacos.page.namespace.public': 'public(保留控件)',
+    'com.alibaba.nacos.page.namespace.public': 'public(保留空间)',
     'com.alibaba.nacos.page.configsync.error': '错误',
     'nacos.page.namespace.AccessKey_recommended1': 'AccessKey（开发环境推荐）:',
     'com.alibaba.nacos.page.pushTrajectory.configuration': '配置',

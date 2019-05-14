@@ -24,14 +24,14 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.client.utils.JSONUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
-import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 /**
  * Server Agent
@@ -197,29 +198,34 @@ public class ServerHttpAgent implements HttpAgent {
 
     public ServerHttpAgent(ServerListManager mgr, Properties properties) {
         serverListMgr = mgr;
-        String ak = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
-        if (StringUtils.isBlank(ak)) {
-            accessKey = SpasAdapter.getAk();
-        } else {
-            accessKey = ak;
-        }
-
-        String sk = properties.getProperty(PropertyKeyConst.SECRET_KEY);
-        if (StringUtils.isBlank(sk)) {
-            secretKey = SpasAdapter.getSk();
-        } else {
-            secretKey = sk;
-        }
+        init(properties);
     }
 
     public ServerHttpAgent(Properties properties) throws NacosException {
-        String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
-        if (StringUtils.isBlank(encodeTmp)) {
-            encode = Constants.ENCODE;
-        } else {
-            encode = encodeTmp.trim();
-        }
         serverListMgr = new ServerListManager(properties);
+        init(properties);
+    }
+
+    private void init(Properties properties) {
+        initEncode(properties);
+        initAkSk(properties);
+    }
+
+    private void initEncode(Properties properties) {
+        encode = TemplateUtils.stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ENCODE), new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return Constants.ENCODE;
+            }
+        });
+    }
+
+    private void initAkSk(Properties properties) {
+        String ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
+        if (!StringUtils.isBlank(ramRoleName)) {
+            STSConfig.getInstance().setRamRoleName(ramRoleName);
+        }
+
         String ak = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
         if (StringUtils.isBlank(ak)) {
             accessKey = SpasAdapter.getAk();
@@ -273,8 +279,9 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String stsResponse = getSTSResponse();
-        STSCredential stsCredentialTmp = (STSCredential)JSONUtils.deserializeObject(stsResponse,
-            new TypeReference<STSCredential>() {});
+        STSCredential stsCredentialTmp = (STSCredential) JSONUtils.deserializeObject(stsResponse,
+            new TypeReference<STSCredential>() {
+            });
         sTSCredential = stsCredentialTmp;
         LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}", sTSCredential.getCode(),
             sTSCredential.getAccessKeyId(), sTSCredential.getLastUpdated(), sTSCredential.getExpiration());
@@ -291,7 +298,7 @@ public class ServerHttpAgent implements HttpAgent {
         int respCode;
         String response;
         try {
-            conn = (HttpURLConnection)new URL(securityCredentialsUrl).openConnection();
+            conn = (HttpURLConnection) new URL(securityCredentialsUrl).openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 100 ? ParamUtil.getConnectTimeout() : 100);
             conn.setReadTimeout(1000);

@@ -16,21 +16,22 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
+ * @author jifengnan 2019-04-26
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
@@ -44,30 +45,37 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private int defIPPort = -1;
 
-    @JSONField(name = "nodegroup")
-    private String legacySyncConfig;
-
-    @JSONField(name = "healthChecker")
-    private AbstractHealthChecker healthChecker = new AbstractHealthChecker.Tcp();
-
     @JSONField(serialize = false)
     private HealthCheckTask checkTask;
 
     @JSONField(serialize = false)
-    private Set<IpAddress> raftIPs = new HashSet<IpAddress>();
+    private Set<Instance> persistentInstances = new HashSet<>();
 
     @JSONField(serialize = false)
-    private Domain dom;
+    private Set<Instance> ephemeralInstances = new HashSet<>();
 
-    private Map<String, Boolean> ipContains = new ConcurrentHashMap<>();
+    @JSONField(serialize = false)
+    private Service service;
+
+    @JSONField(serialize = false)
+    private volatile boolean inited = false;
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
-    public Cluster() {
-    }
-
-    public Cluster(String clusterName) {
+    /**
+     * Create a cluster.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     *
+     * @param clusterName the cluster name
+     * @param service     the service to which the current cluster belongs
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is illegal
+     * @author jifengnan 2019-04-26
+     * @since 1.0.1
+     */
+    public Cluster(String clusterName, Service service) {
         this.setName(clusterName);
+        this.service = service;
+        validate();
     }
 
     public int getDefIPPort() {
@@ -82,187 +90,185 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.defIPPort = defIPPort;
     }
 
-    public List<IpAddress> allIPs() {
-        return new ArrayList<IpAddress>(chooseIPs());
+    public List<Instance> allIPs() {
+        List<Instance> allInstances = new ArrayList<>();
+        allInstances.addAll(persistentInstances);
+        allInstances.addAll(ephemeralInstances);
+        return allInstances;
     }
 
-    public List<IpAddress> allIPs(String tenant) {
-
-        List<IpAddress> list = new ArrayList<>();
-        for (IpAddress ipAddress : chooseIPs()) {
-            if (ipAddress.getTenant().equals(tenant)) {
-                list.add(ipAddress);
-            }
-        }
-        return list;
-    }
-
-    public List<IpAddress> allIPs(String tenant, String app) {
-
-        List<IpAddress> list = new ArrayList<>();
-        for (IpAddress ipAddress : chooseIPs()) {
-            if (ipAddress.getTenant().equals(tenant) && ipAddress.getApp().equals(app)) {
-                list.add(ipAddress);
-            }
-        }
-        return list;
+    public List<Instance> allIPs(boolean ephemeral) {
+        return ephemeral ? new ArrayList<>(ephemeralInstances) : new ArrayList<>(persistentInstances);
     }
 
     public void init() {
+        if (inited) {
+            return;
+        }
         checkTask = new HealthCheckTask(this);
         HealthCheckReactor.scheduleCheck(checkTask);
+        inited = true;
     }
 
     public void destroy() {
-        checkTask.setCancelled(true);
-    }
-
-    public void addIP(IpAddress ip) {
-        chooseIPs().add(ip);
-    }
-
-    public void removeIP(IpAddress ip) {
-        chooseIPs().remove(ip);
+        if (checkTask != null) {
+            checkTask.setCancelled(true);
+        }
     }
 
     public HealthCheckTask getHealthCheckTask() {
         return checkTask;
     }
 
-    public Domain getDom() {
-        return dom;
+    public Service getService() {
+        return service;
     }
 
-    public void setDom(Domain dom) {
-        this.dom = dom;
+    /**
+     * Replace the service for the current cluster.
+     * <p>Deprecated because the service shouldn't be replaced.
+     * (the service fields can be changed, but the service A shouldn't be replaced to service B).
+     * If the service of a cluster is required to replace, actually, a new cluster is required.
+     *
+     * @param service the new service
+     */
+    @Deprecated
+    public void setService(Service service) {
+        this.service = service;
     }
 
-    public String getLegacySyncConfig() {
-        return legacySyncConfig;
+    /**
+     * this method has been deprecated, the service name is not allowed to change.
+     *
+     * @param serviceName the service name
+     * @author jifengnan  2019-04-26
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setServiceName(String serviceName) {
+        throw new UnsupportedOperationException("This method has been deprecated, the service name is not allowed to change.");
     }
 
-    public void setLegacySyncConfig(String nodegroup) {
-        this.legacySyncConfig = nodegroup;
+    /**
+     * Get the service name of the current cluster.
+     * <p>Note that the returned service name is not the name which set by {@link #setServiceName(String)},
+     * but the name of the service to which the current cluster belongs.
+     *
+     * @return the service name of the current cluster.
+     */
+    @Override
+    public String getServiceName() {
+        return service.getName();
     }
 
     @Override
     public Cluster clone() throws CloneNotSupportedException {
         super.clone();
-        Cluster cluster = new Cluster();
-
-        cluster.setHealthChecker(healthChecker.clone());
-        cluster.setDom(getDom());
-        cluster.raftIPs = new HashSet<IpAddress>();
+        Cluster cluster = new Cluster(this.getName(), service);
+        cluster.setHealthChecker(getHealthChecker().clone());
+        cluster.persistentInstances = new HashSet<>();
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
     }
 
-    public void updateIPs(List<IpAddress> ips) {
-        HashMap<String, IpAddress> oldIPMap = new HashMap<>(raftIPs.size());
+    public void updateIPs(List<Instance> ips, boolean ephemeral) {
 
-        for (IpAddress ip : this.raftIPs) {
+        Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
+
+        HashMap<String, Instance> oldIPMap = new HashMap<>(toUpdateInstances.size());
+
+        for (Instance ip : toUpdateInstances) {
             oldIPMap.put(ip.getDatumKey(), ip);
         }
 
-        List<IpAddress> updatedIPs = updatedIPs(ips, oldIPMap.values());
+        List<Instance> updatedIPs = updatedIPs(ips, oldIPMap.values());
         if (updatedIPs.size() > 0) {
-            for (IpAddress ip : updatedIPs) {
-                IpAddress oldIP = oldIPMap.get(ip.getDatumKey());
+            for (Instance ip : updatedIPs) {
+                Instance oldIP = oldIPMap.get(ip.getDatumKey());
 
-                if (responsible(ip)) {
-                    // do not update the ip validation status of updated ips
-                    // because the checker has the most precise result
+                // do not update the ip validation status of updated ips
+                // because the checker has the most precise result
+                // Only when ip is not marked, don't we update the health status of IP:
+                if (!ip.isMarked()) {
+                    ip.setHealthy(oldIP.isHealthy());
+                }
 
-                    // Only when ip is not marked, don't we update the health status of IP:
-                    if (!ip.isMarked()) {
-                        ip.setValid(oldIP.isValid());
-                    }
-
-                } else {
-                    if (ip.isValid() != oldIP.isValid()) {
-                        // ip validation status updated
-                        Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
-                            getDom().getName(), (ip.isValid() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
-                    }
+                if (ip.isHealthy() != oldIP.isHealthy()) {
+                    // ip validation status updated
+                    Loggers.EVT_LOG.info("{} {SYNC} IP-{} {}:{}@{}",
+                        getService().getName(), (ip.isHealthy() ? "ENABLED" : "DISABLED"), ip.getIp(), ip.getPort(), getName());
                 }
 
                 if (ip.getWeight() != oldIP.getWeight()) {
                     // ip validation status updated
-                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getDom().getName(), oldIP.toString(), ip.toString());
+                    Loggers.EVT_LOG.info("{} {SYNC} {IP-UPDATED} {}->{}", getService().getName(), oldIP.toString(), ip.toString());
                 }
             }
         }
 
-        List<IpAddress> newIPs = subtract(ips, oldIPMap.values());
+        List<Instance> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
-                getDom().getName(), getName(), newIPs.size(), newIPs.toString());
+                getService().getName(), getName(), newIPs.size(), newIPs.toString());
 
-            for (IpAddress ip : newIPs) {
+            for (Instance ip : newIPs) {
                 HealthCheckStatus.reset(ip);
             }
         }
 
-        List<IpAddress> deadIPs = subtract(oldIPMap.values(), ips);
+        List<Instance> deadIPs = subtract(oldIPMap.values(), ips);
 
         if (deadIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-DEAD} cluster: {}, dead ips size: {}, content: {}",
-                getDom().getName(), getName(), deadIPs.size(), deadIPs.toString());
+                getService().getName(), getName(), deadIPs.size(), deadIPs.toString());
 
-            for (IpAddress ip : deadIPs) {
+            for (Instance ip : deadIPs) {
                 HealthCheckStatus.remv(ip);
             }
         }
 
-        this.raftIPs = new HashSet<IpAddress>(ips);
+        toUpdateInstances = new HashSet<>(ips);
 
-        StringBuilder stringBuilder = new StringBuilder();
-        for (IpAddress ipAddress : raftIPs) {
-            stringBuilder.append(ipAddress.toIPAddr()).append(ipAddress.isValid());
+        if (ephemeral) {
+            ephemeralInstances = toUpdateInstances;
+        } else {
+            persistentInstances = toUpdateInstances;
         }
-
-        ipContains.clear();
-
-        for (IpAddress ipAddress : raftIPs) {
-            ipContains.put(ipAddress.toIPAddr(), true);
-        }
-
     }
 
-    public List<IpAddress> updatedIPs(Collection<IpAddress> a, Collection<IpAddress> b) {
+    public List<Instance> updatedIPs(Collection<Instance> a, Collection<Instance> b) {
 
-        List<IpAddress> intersects = (List<IpAddress>) CollectionUtils.intersection(a, b);
-        Map<String, IpAddress> stringIPAddressMap = new ConcurrentHashMap<>(intersects.size());
+        List<Instance> intersects = (List<Instance>) CollectionUtils.intersection(a, b);
+        Map<String, Instance> stringIPAddressMap = new ConcurrentHashMap<>(intersects.size());
 
-        for (IpAddress ipAddress : intersects) {
-            stringIPAddressMap.put(ipAddress.getIp() + ":" + ipAddress.getPort(), ipAddress);
+        for (Instance instance : intersects) {
+            stringIPAddressMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
 
         Map<String, Integer> intersectMap = new ConcurrentHashMap<>(a.size() + b.size());
-        Map<String, IpAddress> ipAddressMap = new ConcurrentHashMap<>(a.size());
-        Map<String, IpAddress> ipAddressMap1 = new ConcurrentHashMap<>(b.size());
-        Map<String, IpAddress> ipAddressMap2 = new ConcurrentHashMap<>(a.size());
+        Map<String, Instance> instanceMap = new ConcurrentHashMap<>(a.size());
+        Map<String, Instance> instanceMap1 = new ConcurrentHashMap<>(a.size());
 
-        for (IpAddress ipAddress : b) {
-            if (stringIPAddressMap.containsKey(ipAddress.getIp() + ":" + ipAddress.getPort())) {
-                intersectMap.put(ipAddress.toString(), 1);
+        for (Instance instance : b) {
+            if (stringIPAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
+                intersectMap.put(instance.toString(), 1);
             }
-            ipAddressMap1.put(ipAddress.toString(), ipAddress);
         }
 
 
-        for (IpAddress ipAddress : a) {
-            if (stringIPAddressMap.containsKey(ipAddress.getIp() + ":" + ipAddress.getPort())) {
+        for (Instance instance : a) {
+            if (stringIPAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
 
-                if (intersectMap.containsKey(ipAddress.toString())) {
-                    intersectMap.put(ipAddress.toString(), 2);
+                if (intersectMap.containsKey(instance.toString())) {
+                    intersectMap.put(instance.toString(), 2);
                 } else {
-                    intersectMap.put(ipAddress.toString(), 1);
+                    intersectMap.put(instance.toString(), 1);
                 }
             }
 
-            ipAddressMap2.put(ipAddress.toString(), ipAddress);
+            instanceMap1.put(instance.toString(), instance);
 
         }
 
@@ -271,24 +277,24 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             Integer value = entry.getValue();
 
             if (value == 1) {
-                if (ipAddressMap2.containsKey(key)) {
-                    ipAddressMap.put(key, ipAddressMap2.get(key));
+                if (instanceMap1.containsKey(key)) {
+                    instanceMap.put(key, instanceMap1.get(key));
                 }
             }
         }
 
-        return new ArrayList<>(ipAddressMap.values());
+        return new ArrayList<>(instanceMap.values());
     }
 
-    public List<IpAddress> subtract(Collection<IpAddress> a, Collection<IpAddress> b) {
-        Map<String, IpAddress> mapa = new HashMap<>(b.size());
-        for (IpAddress o : b) {
+    public List<Instance> subtract(Collection<Instance> a, Collection<Instance> b) {
+        Map<String, Instance> mapa = new HashMap<>(b.size());
+        for (Instance o : b) {
             mapa.put(o.getIp() + ":" + o.getPort(), o);
         }
 
-        List<IpAddress> result = new ArrayList<IpAddress>();
+        List<Instance> result = new ArrayList<Instance>();
 
-        for (IpAddress o : a) {
+        for (Instance o : a) {
             if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
                 result.add(o);
             }
@@ -297,22 +303,30 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return result;
     }
 
-    public Set<IpAddress> chooseIPs() {
-        return raftIPs;
-    }
-
     @Override
     public int hashCode() {
-        return Objects.hash(getName());
+        return new HashCodeBuilder(17, 37)
+            .append(getName())
+            .append(service)
+            .toHashCode();
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Cluster)) {
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
-        return getName().equals(((Cluster) obj).getName());
+        Cluster cluster = (Cluster) o;
+
+        return new EqualsBuilder()
+            .append(getName(), cluster.getName())
+            .append(service, cluster.service)
+            .isEquals();
     }
 
     public int getDefCkport() {
@@ -325,33 +339,33 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     public void update(Cluster cluster) {
 
-        if (!healthChecker.equals(cluster.getHealthChecker())) {
+        if (!getHealthChecker().equals(cluster.getHealthChecker())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}:, healthChecker: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), healthChecker.toString(), cluster.getHealthChecker().toString());
-            healthChecker = cluster.getHealthChecker();
+                getService().getName(), getName(), getHealthChecker().toString(), cluster.getHealthChecker().toString());
+            setHealthChecker(cluster.getHealthChecker());
         }
 
         if (defCkport != cluster.getDefCkport()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), defCkport, cluster.getDefCkport());
+                getService().getName(), getName(), defCkport, cluster.getDefCkport());
             defCkport = cluster.getDefCkport();
         }
 
         if (defIPPort != cluster.getDefIPPort()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, defIPPort: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), defIPPort, cluster.getDefIPPort());
+                getService().getName(), getName(), defIPPort, cluster.getDefIPPort());
             defIPPort = cluster.getDefIPPort();
         }
 
         if (!StringUtils.equals(sitegroup, cluster.getSitegroup())) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, sitegroup: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), sitegroup, cluster.getSitegroup());
+                getService().getName(), getName(), sitegroup, cluster.getSitegroup());
             sitegroup = cluster.getSitegroup();
         }
 
         if (isUseIPPort4Check() != cluster.isUseIPPort4Check()) {
             Loggers.SRV_LOG.info("[CLUSTER-UPDATE] {}:{}, useIPPort4Check: {} -> {}",
-                cluster.getDom().getName(), cluster.getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
+                getService().getName(), getName(), isUseIPPort4Check(), cluster.isUseIPPort4Check());
             setUseIPPort4Check(cluster.isUseIPPort4Check());
         }
 
@@ -366,14 +380,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.sitegroup = sitegroup;
     }
 
-    public boolean responsible(IpAddress ip) {
-        return Switch.isHealthCheckEnabled(dom.getName())
-            && !getHealthCheckTask().isCancelled()
-            && DistroMapper.responsible(getDom().getName())
-            && ipContains.containsKey(ip.toIPAddr());
+    public boolean contains(Instance ip) {
+        return persistentInstances.contains(ip) || ephemeralInstances.contains(ip);
     }
 
-    public void valid() {
+    /**
+     * validate the current cluster.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     *
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is illegal
+     */
+    public void validate() {
+        Assert.notNull(getName(), "cluster name cannot be null");
+        Assert.notNull(service, "service cannot be null");
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
             throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
         }

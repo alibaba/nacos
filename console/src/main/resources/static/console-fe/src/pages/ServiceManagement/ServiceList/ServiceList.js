@@ -74,10 +74,15 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword } = this.state;
-    const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`];
+    const { currentPage, pageSize, keyword, withInstances = false } = this.state;
+    const parameter = [
+      `withInstances=${withInstances}`,
+      `pageNo=${currentPage}`,
+      `pageSize=${pageSize}`,
+      `keyword=${keyword}`,
+    ];
     request({
-      url: `v1/ns/catalog/serviceList?${parameter.join('&')}`,
+      url: `v1/ns/catalog/services?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
@@ -99,7 +104,7 @@ class ServiceList extends React.Component {
     setTimeout(() => this.queryServiceList());
   };
 
-  deleteService(serviceName) {
+  deleteService(service) {
     const { locale = {} } = this.props;
     const { prompt, promptDelete } = locale;
     Dialog.confirm({
@@ -108,7 +113,7 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `v1/ns/service?serviceName=${serviceName}`,
+          url: `v1/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {
@@ -155,7 +160,7 @@ class ServiceList extends React.Component {
       <div className="main-container service-management">
         <Loading
           shape="flower"
-          style={{ position: 'relative' }}
+          style={{ position: 'relative', width: '100%' }}
           visible={this.state.loading}
           tip="Loading..."
           color="#333"
@@ -181,6 +186,9 @@ class ServiceList extends React.Component {
                     style={{ width: 200 }}
                     value={keyword}
                     onChange={keyword => this.setState({ keyword })}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                    }
                   />
                 </FormItem>
                 <FormItem label="">
@@ -204,12 +212,11 @@ class ServiceList extends React.Component {
             <Col span="24" style={{ padding: 0 }}>
               <Table
                 dataSource={this.state.dataSource}
-                fixedHeader
-                maxBodyHeight={530}
                 locale={{ empty: pubNoData }}
                 getRowProps={row => this.rowColor(row)}
               >
                 <Column title={locale.columnServiceName} dataIndex="name" />
+                <Column title={locale.groupName} dataIndex="groupName" />
                 <Column title={locale.columnClusterCount} dataIndex="clusterCount" />
                 <Column title={locale.columnIpCount} dataIndex="ipCount" />
                 <Column
@@ -224,7 +231,9 @@ class ServiceList extends React.Component {
                       <Button
                         type="normal"
                         onClick={() =>
-                          this.props.history.push(`/serviceDetail?name=${record.name}`)
+                          this.props.history.push(
+                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`
+                          )
                         }
                       >
                         {detail}
@@ -232,7 +241,7 @@ class ServiceList extends React.Component {
                       <Button
                         style={{ marginLeft: 12 }}
                         type="normal"
-                        onClick={() => this.deleteService(record.name)}
+                        onClick={() => this.deleteService(record)}
                       >
                         {deleteAction}
                       </Button>

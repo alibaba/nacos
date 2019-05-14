@@ -15,17 +15,18 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.net.HttpClient;
+import org.apache.http.HttpStatus;
+import org.junit.Assert;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
-import com.alibaba.nacos.api.naming.pojo.Cluster;
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.pojo.Service;
-
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class NamingBase {
 
@@ -34,6 +35,7 @@ public class NamingBase {
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
     public static final String TEST_PORT_4_DOM_1 = "8080";
     public static final String TEST_PORT2_4_DOM_1 = "8888";
+    public static final String TEST_PORT3_4_DOM_1 = "80";
     public static final String TEST_TOKEN_4_DOM_1 = "abc";
     public static final String TEST_NEW_CLUSTER_4_DOM_1 = "TEST1";
 
@@ -42,6 +44,13 @@ public class NamingBase {
     public static final String TEST_PORT_4_DOM_2 = "7070";
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
     public static final String TEST_SERVER_STATUS = "UP";
+
+    public static final String TEST_GROUP = "group";
+    public static final String TEST_GROUP_1 = "group1";
+    public static final String TEST_GROUP_2 = "group2";
+
+    public static final String TEST_NAMESPACE_1 = "namespace-1";
+    public static final String TEST_NAMESPACE_2 = "namespace-2";
 
     static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
 
@@ -153,5 +162,20 @@ public class NamingBase {
             }
         }
         return true;
+    }
+
+    public static void prepareServer(int localPort) {
+        prepareServer(localPort, "UP");
+    }
+
+    public static void prepareServer(int localPort, String status) {
+        String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
+        List<String> headers = new ArrayList<String>();
+        headers.add("User-Agent");
+        headers.add("Nacos-Server");
+        HttpClient.HttpResult result =
+            HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");
+
+        Assert.assertEquals(HttpStatus.SC_OK, result.code);
     }
 }

@@ -58,20 +58,21 @@ public class BeatReactor {
         executorService.schedule(new BeatProcessor(), 0, TimeUnit.MILLISECONDS);
     }
 
-    public void addBeatInfo(String dom, BeatInfo beatInfo) {
-        NAMING_LOGGER.info("BEAT", "adding beat: {} to beat map.", beatInfo);
-        dom2Beat.put(buildKey(dom, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+    public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
+        NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
+        dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    public void removeBeatInfo(String dom, String ip, int port) {
-        NAMING_LOGGER.info("BEAT", "removing beat: {}:{}:{} from beat map.", dom, ip, port);
-        dom2Beat.remove(buildKey(dom, ip, port));
+    public void removeBeatInfo(String serviceName, String ip, int port) {
+        NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
+        dom2Beat.remove(buildKey(serviceName, ip, port));
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    public String buildKey(String dom, String ip, int port) {
-        return dom + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
+    public String buildKey(String serviceName, String ip, int port) {
+        return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER
+            + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
 
     class BeatProcessor implements Runnable {
@@ -88,7 +89,7 @@ public class BeatReactor {
                     executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
                 }
             } catch (Exception e) {
-                NAMING_LOGGER.error("CLIENT-BEAT", "Exception while scheduling beat.", e);
+                NAMING_LOGGER.error("[CLIENT-BEAT] Exception while scheduling beat.", e);
             } finally {
                 executorService.schedule(this, clientBeatInterval, TimeUnit.MILLISECONDS);
             }
