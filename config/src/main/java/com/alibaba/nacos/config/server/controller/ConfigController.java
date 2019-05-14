@@ -25,15 +25,21 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -41,8 +47,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -381,5 +386,68 @@ public class ConfigController {
             rr.setMessage("remove beta data error");
             return rr;
         }
+    }
+
+    @RequestMapping(params = "export=true", method = RequestMethod.GET)
+    @ResponseBody
+    public ResponseEntity<byte[]> exportConfig(HttpServletRequest request,
+                                               HttpServletResponse response,
+                                               @RequestParam("group") String group,
+                                               @RequestParam(value = "appName", required = false) String appName,
+                                               @RequestParam(value = "tenant", required = false,
+                                             defaultValue = StringUtils.EMPTY) String tenant) {
+        try {
+            // 暂时不考虑数据量大的问题,配制应该不会很多
+            List<ConfigInfo> dataList = persistService.findAllConfigInfo4eExport(group, tenant, appName);
+            String dataJson = JSONUtils.serializeObject(dataList);
+            HttpHeaders headers = new HttpHeaders();
+            String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".data";
+            headers.add("Content-Disposition", "attachment;filename="+fileName);
+            return new ResponseEntity<byte[]>(ZipUtils.gzipString(dataJson), headers, HttpStatus.OK);
+        } catch (Exception e) {
+            String errorMsg = "serialize configInfo data error, group=" + group;
+            log.error(errorMsg, e);
+            throw new RuntimeException(errorMsg, e);
+        }
+    }
+
+    @RequestMapping(params = "import=true", method = RequestMethod.POST)
+    @ResponseBody
+    public RestResult<Boolean> importAndPublishConfig(HttpServletRequest request, HttpServletResponse response,
+                                                      @RequestParam(value = "src_user", required = false) String srcUser,
+                                                      MultipartFile file) throws NacosException {
+        RestResult<Boolean> rr = new RestResult<Boolean>();
+        List<ConfigInfo> configInfoList = null;
+        try {
+            configInfoList = (List<ConfigInfo>) JSONUtils.deserializeObject( ZipUtils.unGzipString(file.getBytes()), new TypeReference<ArrayList<ConfigInfo>>() {
+            });
+        } catch (IOException e) {
+            rr.setCode(500);
+            rr.setData(false);
+            rr.setMessage("parsing data failed");
+            log.error("parsing data failed", e);
+            return rr;
+        }
+        if (configInfoList == null || configInfoList.isEmpty()) {
+            rr.setCode(500);
+            rr.setData(false);
+            rr.setMessage("data is empty");
+            return rr;
+        }
+        final String srcIp = RequestUtil.getRemoteIp(request);
+        String requestIpApp = RequestUtil.getAppName(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false);
+        for (ConfigInfo configInfo : configInfoList) {
+            EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), time.getTime()));
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), requestIpApp, time.getTime(),
+                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+        }
+        rr.setCode(200);
+        rr.setData(true);
+        rr.setMessage("import ok");
+        return rr;
     }
 }

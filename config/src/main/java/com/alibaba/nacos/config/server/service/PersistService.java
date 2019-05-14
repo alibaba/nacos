@@ -33,7 +33,9 @@ import java.util.Map.Entry;
 
 import javax.annotation.PostConstruct;
 
+import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
+import com.alibaba.nacos.config.server.utils.*;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -48,15 +50,11 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.TransactionSystemException;
+import org.springframework.transaction.*;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
-import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.collect.Lists;
 
@@ -3270,6 +3268,121 @@ public class PersistService {
         }
         return true;
     }
+
+    /**
+     * 根据group, appName, tenant查询全部配置信息(导出用)
+     *
+     * @param group
+     * @return ConfigInfo对象的集合
+     */
+    public List<ConfigInfo> findAllConfigInfo4eExport(final String group, final String tenant,
+                                                final String appName) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        String sql = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
+        StringBuilder where = new StringBuilder(" where ");
+        List<String> paramList = new ArrayList<String>();
+        where.append(" tenant_id=? ");
+        paramList.add(tenantTmp);
+        if (StringUtils.isNotBlank(group)) {
+            where.append(" and group_id=? ");
+            paramList.add(group);
+        }
+        if (StringUtils.isNotBlank(appName)) {
+            where.append(" and app_name=? ");
+            paramList.add(appName);
+        }
+        try {
+            return this.jt.query(sql + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * 批量写入主表,插入或更新
+     */
+    public void batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
+                                    Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify) throws NacosException{
+        PlatformTransactionManager transactionManager = this.getTransactionTemplate().getTransactionManager();
+        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        TransactionStatus status = transactionManager.getTransaction(def);
+        for (ConfigInfo configInfo : configInfoList) {
+            try {
+                ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
+            } catch (NacosException e) {
+                defaultLog.error("data verification failed", e);
+                transactionManager.rollback(status);
+                throw e;
+            }
+            ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
+            try {
+                addConfigInfoNoTransaction(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
+            } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
+                updateConfigInfoNoTransaction(configInfo2Save, srcIp, srcUser, time, configAdvanceInfo, notify);
+            }
+        }
+        transactionManager.commit(status);
+
+    }
+
+    /**
+     * 添加普通配置信息，发布数据变更事件,无事务,批量添加用
+     */
+    private void addConfigInfoNoTransaction(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+                                            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
+        try {
+            long configId = addConfigInfoAtomic(srcIp, srcUser, configInfo, time, configAdvanceInfo);
+            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+            addConfiTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant());
+            insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
+            if (notify) {
+                EventDispatcher.fireEvent(
+                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                        configInfo.getTenant(), time.getTime()));
+            }
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * 更新配置信息,无事务,批量更新用
+     */
+    private void updateConfigInfoNoTransaction(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+                                               final Timestamp time, final Map<String, Object> configAdvanceInfo,
+                                               final boolean notify) {
+        try {
+            ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant());
+            String appNameTmp = oldConfigInfo.getAppName();
+            // 用户传过来的appName不为空，则用持久化用户的appName，否则用db的;清空appName的时候需要传空串
+            if (configInfo.getAppName() == null) {
+                configInfo.setAppName(appNameTmp);
+            }
+            updateConfigInfoAtomic(configInfo, srcIp, srcUser, time, configAdvanceInfo);
+            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+            if (configTags != null) {
+                // 删除所有tag，然后再重新创建
+                removeTagByIdAtomic(oldConfigInfo.getId());
+                addConfiTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
+                    configInfo.getGroup(), configInfo.getTenant());
+            }
+            insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
+            if (notify) {
+                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
+                    configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
+            }
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
 
     static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
 
