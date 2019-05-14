@@ -12,5 +12,6 @@
  */
 
 import locale from './locale';
+import base from './base';
 
-export default { locale };
+export default { locale, base };

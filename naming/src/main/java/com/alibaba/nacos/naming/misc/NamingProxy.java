@@ -15,191 +15,186 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import org.apache.commons.collections.CollectionUtils;
+import com.ning.http.client.AsyncCompletionHandler;
+import com.ning.http.client.Response;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.*;
+import java.util.*;
 
 /**
  * @author nacos
  */
 public class NamingProxy {
 
-    private static volatile List<String> servers;
+    private static final String DATA_ON_SYNC_URL = "/distro/datum";
 
-    private static List<String> serverlistFromConfig;
+    private static final String DATA_GET_URL = "/distro/datum";
 
-    private static List<String> lastServers = new ArrayList<String>();
+    private static final String ALL_DATA_GET_URL = "/distro/datums";
 
-    private static Map<String, List<String>> serverListMap = new ConcurrentHashMap<String, List<String>>();
+    private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
 
-    private static long lastSrvRefTime = 0L;
+    public static void syncChecksums(Map<String, String> checksumMap, String server) {
 
-    /**
-     * records last time that query site info of servers and localhost from armory
-     */
-    private static long lastSrvSiteRefreshTime = 0L;
-
-    private static long VIP_SRV_REF_INTER_MILLIS = TimeUnit.SECONDS.toMillis(30);
-
-    /**
-     * query site info of servers and localhost every 12 hours
-     */
-    private static final long VIP_SRV_SITE_REF_INTER_MILLIS = TimeUnit.HOURS.toMillis(1);
-
-    private static String jmenv;
-
-    public static String getJmenv() {
-        jmenv = SystemUtils.getSystemEnv("nacos_jmenv_domain");
-
-        if (StringUtils.isEmpty(jmenv)) {
-            jmenv = System.getProperty("com.alibaba.nacos.naming.jmenv", "jmenv.tbsite.net");
-        }
-
-        if (StringUtils.isEmpty(jmenv)) {
-            jmenv = "jmenv.tbsite.net";
-        }
-
-        return jmenv;
-    }
-
-    private static void refreshSrvSiteIfNeed() {
-        refreshSrvIfNeed();
         try {
-            if (System.currentTimeMillis() - lastSrvSiteRefreshTime > VIP_SRV_SITE_REF_INTER_MILLIS ||
-                    !CollectionUtils.isEqualCollection(servers, lastServers)) {
-                if (!CollectionUtils.isEqualCollection(servers, lastServers)) {
-                    Loggers.SRV_LOG.info("[REFRESH-SERVER-SITE] server list is changed, old: {}, new: {}",
-                        lastServers, servers);
-                }
+            Map<String, String> headers = new HashMap<>(128);
 
-                lastServers = servers;
-            }
+            headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
+            headers.put("Connection", "Keep-Alive");
+
+            HttpClient.asyncHttpPutLarge("http://" + server + RunningConfig.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(),
+                headers, JSON.toJSONBytes(checksumMap),
+                new AsyncCompletionHandler() {
+                    @Override
+                    public Object onCompleted(Response response) throws Exception {
+                        if (HttpURLConnection.HTTP_OK != response.getStatusCode()) {
+                            Loggers.EPHEMERAL.error("failed to req API: {}, code: {}, msg: {}",
+                                "http://" + server + RunningConfig.getContextPath() +
+                                    UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL,
+                                response.getStatusCode(), response.getResponseBody());
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public void onThrowable(Throwable t) {
+                        Loggers.EPHEMERAL.error("failed to req API:" + "http://" + server
+                            + RunningConfig.getContextPath()
+                            + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, t);
+                    }
+                });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("fail to query server site: ", e);
+            Loggers.EPHEMERAL.warn("NamingProxy", e);
         }
     }
 
-    public static List<String> getServers() {
-        refreshSrvIfNeed();
-        return servers;
+    public static byte[] getData(List<String> keys, String server) throws Exception {
+
+        Map<String, String> params = new HashMap<>(8);
+        params.put("keys", StringUtils.join(keys, ","));
+        HttpClient.HttpResult result = HttpClient.httpGetLarge("http://" + server + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL, new HashMap<>(8), JSON.toJSONString(params));
+
+        if (HttpURLConnection.HTTP_OK == result.code) {
+            return result.content.getBytes();
+        }
+
+        throw new IOException("failed to req API: " + "http://" + server
+            + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
+            + result.code + " msg: " + result.content);
     }
 
-    public static void refreshSrvIfNeed() {
+    public static byte[] getAllData(String server) throws Exception {
+
+        Map<String, String> params = new HashMap<>(8);
+        HttpClient.HttpResult result = HttpClient.httpGet("http://" + server + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + ALL_DATA_GET_URL, new ArrayList<>(), params);
+
+        if (HttpURLConnection.HTTP_OK == result.code) {
+            return result.content.getBytes();
+        }
+
+        throw new IOException("failed to req API: " + "http://" + server
+            + RunningConfig.getContextPath()
+            + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_GET_URL + ". code: "
+            + result.code + " msg: " + result.content);
+    }
+
+
+    public static boolean syncData(byte[] data, String curServer) throws Exception {
         try {
-            if (System.currentTimeMillis() - lastSrvRefTime < VIP_SRV_REF_INTER_MILLIS) {
-                return;
+            Map<String, String> headers = new HashMap<>(128);
+
+            headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
+            headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
+            headers.put("Accept-Encoding", "gzip,deflate,sdch");
+            headers.put("Connection", "Keep-Alive");
+            headers.put("Content-Encoding", "gzip");
+
+            HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + curServer + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, headers, data);
+
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                return true;
             }
 
-            if (STANDALONE_MODE) {
-                servers = new ArrayList<>();
-                servers.add(NetUtils.localServer());
-                return;
+            if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
+                return true;
             }
 
-            List<String> serverlist = refreshServerListFromDisk();
-
-            if (CollectionUtils.isNotEmpty(serverlist)) {
-                serverlistFromConfig = serverlist;
-            }
-
-            if (CollectionUtils.isNotEmpty(serverlistFromConfig)) {
-                servers = serverlistFromConfig;
-            }
-
-            if (RunningConfig.getServerPort() > 0) {
-                lastSrvRefTime = System.currentTimeMillis();
-            }
-
+            throw new IOException("failed to req API:" + "http://" + curServer
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL + ". code:"
+                + result.code + " msg: " + result.content);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to update server list", e);
+            Loggers.SRV_LOG.warn("NamingProxy", e);
         }
+        return false;
     }
 
-    public static List<String> refreshServerListFromDisk() {
-
-        List<String> result = new ArrayList<>();
-        // read nacos config if necessary.
+    public static String reqAPI(String api, Map<String, String> params, String curServer) throws Exception {
         try {
-            result = readClusterConf();
+            List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
+                "User-Agent", UtilsAndCommons.SERVER_VERSION,
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "Content-Encoding", "gzip");
+
+
+            HttpClient.HttpResult result;
+
+            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            }
+
+
+            result = HttpClient.httpGet("http://" + curServer + api, headers, params);
+
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                return result.content;
+            }
+
+            if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
+                return StringUtils.EMPTY;
+            }
+
+            throw new IOException("failed to req API:" + "http://" + curServer + api + ". code:"
+                + result.code + " msg: " + result.content);
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to get config: " + CLUSTER_CONF_FILE_PATH, e);
+            Loggers.SRV_LOG.warn("NamingProxy", e);
         }
-
-        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST1 {}", result);
-        }
-
-        //use system env
-        if (CollectionUtils.isEmpty(result)) {
-            result = SystemUtils.getIPsBySystemEnv(UtilsAndCommons.SELF_SERVICE_CLUSTER_ENV);
-            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST4: {}", result);
-            }
-        }
-
-        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("REFRESH-SERVER-LIST2 {}", result);
-        }
-
-        if (!result.isEmpty() && !result.get(0).contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-            for (int i = 0; i < result.size(); i++) {
-                result.set(i, result.get(i) + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort());
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * This method will classify all servers as two kinds of servers: servers in the same site with local host and others
-     *
-     * @return servers
-     */
-    public static ConcurrentHashMap<String, List<String>> getSameSiteServers() {
-        refreshSrvSiteIfNeed();
-        List<String> snapshot = servers;
-        ConcurrentHashMap<String, List<String>> servers = new ConcurrentHashMap<>(2);
-        servers.put("sameSite", snapshot);
-        servers.put("otherSite", new ArrayList<String>());
-
-        if (Loggers.SRV_LOG.isDebugEnabled()) {
-            Loggers.SRV_LOG.debug("sameSiteServers: {}", servers.toString());
-        }
-        return servers;
+        return StringUtils.EMPTY;
     }
 
     public static String reqAPI(String api, Map<String, String> params, String curServer, boolean isPost) throws Exception {
         try {
             List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
-                    "Accept-Encoding", "gzip,deflate,sdch",
-                    "Connection", "Keep-Alive",
-                    "Content-Encoding", "gzip");
+                "User-Agent", UtilsAndCommons.SERVER_VERSION,
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "Content-Encoding", "gzip");
 
 
             HttpClient.HttpResult result;
 
-            if (!curServer.contains(UtilsAndCommons.CLUSTER_CONF_IP_SPLITER)) {
-                curServer = curServer + UtilsAndCommons.CLUSTER_CONF_IP_SPLITER + RunningConfig.getServerPort();
+            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
             }
 
             if (isPost) {
                 result = HttpClient.httpPost("http://" + curServer + RunningConfig.getContextPath()
-                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
             } else {
                 result = HttpClient.httpGet("http://" + curServer + RunningConfig.getContextPath()
-                        + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api, headers, params);
             }
 
             if (HttpURLConnection.HTTP_OK == result.code) {
@@ -211,37 +206,42 @@ public class NamingProxy {
             }
 
             throw new IOException("failed to req API:" + "http://" + curServer
-                    + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api + ". code:"
-                    + result.code + " msg: " + result.content);
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/api/" + api + ". code:"
+                + result.code + " msg: " + result.content);
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("NamingProxy", e);
         }
         return StringUtils.EMPTY;
     }
 
-    public static String getEnv() {
-        try {
+    public static class Request {
 
-            String urlString = "http://" + getJmenv() + ":8080" + "/env";
+        private Map<String, String> params = new HashMap<>(8);
 
-            List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
-                    "Accept-Encoding", "gzip,deflate,sdch",
-                    "Connection", "Keep-Alive");
-
-            HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null);
-            if (HttpURLConnection.HTTP_OK != result.code) {
-                throw new IOException("Error while requesting: " + urlString + "'. Server returned: "
-                        + result.code);
-            }
-
-            String content = result.content;
-
-            return content.trim();
-        } catch (Exception e) {
-            Loggers.SRV_LOG.warn("failed to get env", e);
+        public static Request newRequest() {
+            return new Request();
         }
 
-        return "sh";
+        public Request appendParam(String key, String value) {
+            params.put(key, value);
+            return this;
+        }
+
+        public String toUrl() {
+            StringBuilder sb = new StringBuilder();
+            for (String key : params.keySet()) {
+                sb.append(key).append("=").append(params.get(key)).append("&");
+            }
+            return sb.toString();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        String key = "com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@test.10";
+        List<String> keys = new ArrayList<>();
+        keys.add(key);
+        getData(keys, "11.239.112.161:8848");
     }
 }

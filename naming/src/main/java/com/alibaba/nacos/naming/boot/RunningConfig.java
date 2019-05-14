@@ -16,8 +16,8 @@
 package com.alibaba.nacos.naming.boot;
 
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.raft.RaftCore;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -28,7 +28,7 @@ import javax.servlet.ServletContext;
 /**
  * @author nkorange
  */
-@Component
+@Component("runningConfig")
 public class RunningConfig implements ApplicationListener<WebServerInitializedEvent> {
 
     private static int serverPort;
@@ -38,7 +38,6 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     @Autowired
     private ServletContext servletContext;
 
-    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
 
@@ -47,12 +46,6 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
 
         serverPort = event.getWebServer().getPort();
         contextPath = servletContext.getContextPath();
-
-        try {
-            RaftCore.init();
-        } catch (Exception e) {
-            Loggers.RAFT.error("[NACOS-RAFT] {} {}", "failed to initialize raft sub system", e);
-        }
     }
 
     public static int getServerPort() {
@@ -60,6 +53,10 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     }
 
     public static String getContextPath() {
+
+        if (StringUtils.isBlank(contextPath)) {
+            return UtilsAndCommons.NACOS_SERVER_CONTEXT;
+        }
         return contextPath;
     }
 }

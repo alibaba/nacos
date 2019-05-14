@@ -20,22 +20,14 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.utils.EnvUtil;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -93,6 +85,10 @@ public class ServerListManager {
     public ServerListManager(String endpoint, String namespace) throws NacosException {
         isFixed = false;
         isStarted = false;
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        endpoint = initEndpoint(properties);
+
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
         }
@@ -114,7 +110,7 @@ public class ServerListManager {
 
     public ServerListManager(Properties properties) throws NacosException {
         isStarted = false;
-        String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
@@ -158,10 +154,8 @@ public class ServerListManager {
     }
 
     private void initParam(Properties properties) {
-        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        if (!StringUtils.isBlank(endpointTmp)) {
-            endpoint = endpointTmp;
-        }
+        endpoint = initEndpoint(properties);
+
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
             contentPath = contentPathTmp;
@@ -170,6 +164,31 @@ public class ServerListManager {
         if (!StringUtils.isBlank(serverListNameTmp)) {
             serverListName = serverListNameTmp;
         }
+    }
+
+    private String initEndpoint(final Properties properties) {
+
+        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
+            @Override
+            public String call() {
+                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
+            }
+        });
+
+        if (StringUtils.isNotBlank(endpointPortTmp)) {
+            endpointPort = Integer.parseInt(endpointPortTmp);
+        }
+
+        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
+        if (Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE))) {
+            String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
+            if (StringUtils.isNotBlank(endpointUrl)) {
+                serverAddrsStr = "";
+            }
+            return endpointUrl;
+        }
+
+        return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
     public synchronized void start() throws NacosException {
@@ -361,6 +380,7 @@ public class ServerListManager {
 
     public String addressServerUrl;
 
+    private String serverAddrsStr;
 }
 
 /**
@@ -388,7 +408,6 @@ class ServerAddressIterator implements Iterator<String> {
         }
 
         @Override
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         public int compareTo(RandomizedServerAddress other) {
             if (this.priority != other.priority) {
                 return other.priority - this.priority;

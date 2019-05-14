@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>0.8.0</version>
+        <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -151,10 +151,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-cmdb</artifactId>
         </dependency>
@@ -204,9 +200,9 @@
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
-                <excludes>
-                    <exclude>application.properties</exclude>
-                </excludes>
+                <!--<excludes>-->
+                    <!--<exclude>application.properties</exclude>-->
+                <!--</excludes>-->
             </resource>
         </resources>
     </build>

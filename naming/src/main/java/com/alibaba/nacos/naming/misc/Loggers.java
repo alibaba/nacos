@@ -33,11 +33,9 @@ public class Loggers {
 
     public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.naming.raft");
 
+    public static final Logger EPHEMERAL = LoggerFactory.getLogger("com.alibaba.nacos.naming.ephemeral");
+
     public static final Logger PERFORMANCE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
 
-    public static final Logger ROLE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.router");
-
     public static final Logger DEBUG_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.debug");
-
-    public static final Logger TENANT = LoggerFactory.getLogger("com.alibaba.nacos.naming.tenant");
 }

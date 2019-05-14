@@ -25,12 +25,12 @@ import java.util.Map;
  * <p>
  * Referenced article is https://blog.csdn.net/xieyuooo/article/details/8447301
  *
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 0.8.0
  */
 public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
 
-    private Map<String, String[]> params = new HashMap<String, String[]>();
+    private Map<String, String[]> params = new HashMap<>();
 
     /**
      * Constructs a request object wrapping the given request.

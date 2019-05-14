@@ -60,8 +60,6 @@ import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.collect.Lists;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * 数据库服务，提供ConfigInfo在数据库的存取<br> 3.0开始增加数据版本号, 并将物理删除改为逻辑删除<br> 3.0增加数据库切换功能
  *
@@ -2639,9 +2637,6 @@ public class PersistService {
 
         try {
             jt.update(new PreparedStatementCreator() {
-                @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE",
-                    "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"},
-                    justification = "findbugs does not trust jdbctemplate, sql is constant in practice")
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                     ps.setString(1, configInfo.getDataId());

@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  * @since 0.7.0
  */
 public interface CmdbReader {

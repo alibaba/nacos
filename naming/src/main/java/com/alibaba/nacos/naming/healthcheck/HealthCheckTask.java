@@ -15,11 +15,12 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.VirtualClusterDomain;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import org.apache.commons.lang3.RandomUtils;
 
 /**
@@ -40,39 +41,52 @@ public class HealthCheckTask implements Runnable {
 
     private volatile boolean cancelled = false;
 
+    @JSONField(serialize = false)
+    private DistroMapper distroMapper;
+
+    @JSONField(serialize = false)
+    private SwitchDomain switchDomain;
+
+    @JSONField(serialize = false)
+    private HealthCheckProcessor healthCheckProcessor;
+
     public HealthCheckTask(Cluster cluster) {
         this.cluster = cluster;
+        distroMapper = SpringContext.getAppContext().getBean(DistroMapper.class);
+        switchDomain = SpringContext.getAppContext().getBean(SwitchDomain.class);
+        healthCheckProcessor = SpringContext.getAppContext().getBean(HealthCheckProcessorDelegate.class);
         initCheckRT();
     }
 
     public void initCheckRT() {
         // first check time delay
-        checkRTNormalized = 2000 + RandomUtils.nextInt(0, Switch.getTcpHealthParams().getMax());
-
+        checkRTNormalized = 2000 + RandomUtils.nextInt(0, RandomUtils.nextInt(0, switchDomain.getTcpHealthParams().getMax()));
         checkRTBest = Long.MAX_VALUE;
         checkRTWorst = 0L;
     }
 
     @Override
     public void run() {
-        AbstractHealthCheckProcessor processor = AbstractHealthCheckProcessor.getProcessor(cluster.getHealthChecker());
 
         try {
-            if (DistroMapper.responsible(cluster.getDom().getName())) {
-                processor.process(this);
-                Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getDom().getName());
+            if (distroMapper.responsible(cluster.getService().getName()) &&
+                switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
+                healthCheckProcessor.process(this);
+                if (Loggers.EVT_LOG.isDebugEnabled()) {
+                    Loggers.EVT_LOG.debug("[HEALTH-CHECK] schedule health check task: {}", cluster.getService().getName());
+                }
             }
         } catch (Throwable e) {
-            Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}, error: {}",
-                cluster.getDom().getName(), cluster.getName(), e);
+            Loggers.SRV_LOG.error("[HEALTH-CHECK] error while process health check for {}:{}",
+                cluster.getService().getName(), cluster.getName(), e);
         } finally {
             if (!cancelled) {
                 HealthCheckReactor.scheduleCheck(this);
 
                 // worst == 0 means never checked
                 if (this.getCheckRTWorst() > 0
-                    && Switch.isHealthCheckEnabled(cluster.getDom().getName())
-                    && DistroMapper.responsible(cluster.getDom().getName())) {
+                    && switchDomain.isHealthCheckEnabled(cluster.getService().getName())
+                    && distroMapper.responsible(cluster.getService().getName())) {
                     // TLog doesn't support float so we must convert it into long
                     long diff = ((this.getCheckRTLast() - this.getCheckRTLastLast()) * 10000)
                         / this.getCheckRTLastLast();
@@ -80,12 +94,10 @@ public class HealthCheckTask implements Runnable {
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
                     Cluster cluster = this.getCluster();
-                    if (((VirtualClusterDomain) cluster.getDom()).getEnableHealthCheck()) {
-                        Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                            cluster.getDom().getName(), cluster.getName(), processor.getType(),
-                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
-                            this.getCheckRTLast(), diff);
-                    }
+                    Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
+                        cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                        this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
+                        this.getCheckRTLast(), diff);
                 }
             }
         }

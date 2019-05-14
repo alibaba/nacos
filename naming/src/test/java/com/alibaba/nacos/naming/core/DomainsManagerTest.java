@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
@@ -26,54 +27,35 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 public class DomainsManagerTest extends BaseTest {
 
-    private DomainsManager domainsManager;
-
     @Before
     public void before() {
         super.before();
-        domainsManager = new DomainsManager();
+        serviceManager = new ServiceManager();
     }
 
     @Test
     public void easyRemoveDom() throws Exception {
-        domainsManager.easyRemoveDom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1");
-    }
-
-    @Test
-    public void easyRemvIP4Dom() throws Exception {
-
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
-
-        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
-
-        IpAddress ipAddress = new IpAddress();
-        ipAddress.setIp("1.1.1.1");
-        List<IpAddress> ipList = new ArrayList<IpAddress>();
-        ipList.add(ipAddress);
-        domainsManager.addLockIfAbsent(UtilsAndCommons.assembleFullServiceName(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1"));
-        domainsManager.easyRemvIP4Dom(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.1", ipList, 1L);
+        serviceManager.easyRemoveService(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.1");
     }
 
     @Test
     public void searchDom() throws Exception {
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.test.1");
+        Service service = new Service();
+        service.setName("nacos.test.1");
 
-        domainsManager.chooseDomMap(UtilsAndCommons.getDefaultNamespaceId()).put("nacos.test.1", domain);
+        serviceManager.chooseServiceMap(Constants.DEFAULT_NAMESPACE_ID).put("nacos.test.1", service);
 
-        List<Domain> list = domainsManager.searchDomains(UtilsAndCommons.getDefaultNamespaceId(), "nacos.test.*");
+        List<Service> list = serviceManager.searchServices(Constants.DEFAULT_NAMESPACE_ID, "nacos.test.*");
         Assert.assertNotNull(list);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals("nacos.test.1", list.get(0).getName());
