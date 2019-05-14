@@ -52,7 +52,7 @@ class InstanceTable extends React.Component {
   }
 
   getInstanceList() {
-    const { clusterName, serviceName } = this.props;
+    const { clusterName, serviceName, groupName } = this.props;
     if (!clusterName) return;
     const { pageSize, pageNum } = this.state;
     request({
@@ -60,6 +60,7 @@ class InstanceTable extends React.Component {
       data: {
         serviceName,
         clusterName,
+        groupName,
         pageSize,
         pageNo: pageNum,
       },
