@@ -67,7 +67,7 @@ class EditInstanceDialog extends React.Component {
         port,
         ephemeral,
         weight,
-        enable: enabled,
+        enabled,
         metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
       },
       dataType: 'text',
