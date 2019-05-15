@@ -1,5 +1,7 @@
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.config.server.constant.Constants;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,7 +31,7 @@ public class ZipUtils {
         GZIPOutputStream gzip = null;
         try {
             gzip = new GZIPOutputStream(out);
-            gzip.write(source.getBytes());
+            gzip.write(source.getBytes(Constants.ENCODE));
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
