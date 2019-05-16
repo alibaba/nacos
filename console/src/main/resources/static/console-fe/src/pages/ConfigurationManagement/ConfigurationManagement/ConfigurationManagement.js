@@ -35,6 +35,7 @@ import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
+import Upload from 'rc-upload';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
 import './index.scss';
@@ -667,8 +668,25 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  exportData() {
+    let url = 'v1/cs/configs?export=true&group=' + this.group + '&appName=' + this.appName;
+    window.location.href = url;
+  }
+
   render() {
     const { locale = {} } = this.props;
+    const uploadProps = {
+      accept: 'application/zip',
+      onStart(file) {
+        console.log('onStart', file, file.name);
+      },
+      onSuccess(ret) {
+        console.log('onSuccess', ret);
+      },
+      onError(err) {
+        console.log('onError', err);
+      },
+    };
     return (
       <div>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
@@ -791,6 +809,29 @@ class ConfigurationManagement extends React.Component {
                         size={'xs'}
                       />
                     </div>
+                  </Form.Item>
+                  <Form.Item label={''}>
+                    <Button
+                      type={'primary'}
+                      style={{ marginRight: 10 }}
+                      onClick={this.exportData.bind(this)}
+                      data-spm-click={'gostr=/aliyun;locaid=configsExport'}
+                    >
+                      {locale.export}
+                    </Button>
+                  </Form.Item>
+                  <Form.Item label={''}>
+                    <Upload
+                      name={'file'}
+                      component={'button'}
+                      className={'next-btn next-medium next-btn-primary'}
+                      style={{ marginRight: 10 }}
+                      data-spm-click={'gostr=/aliyun;locaid=configsImport'}
+                      action={'v1/cs/configs?import=true'}
+                      {...uploadProps}
+                    >
+                      {locale.import}
+                    </Upload>
                   </Form.Item>
                   <br />
                   <Form.Item

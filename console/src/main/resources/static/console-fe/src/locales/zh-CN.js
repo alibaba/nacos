@@ -222,6 +222,8 @@ const I18N_CONF = {
     pleaseEnterTag: '请输入标签',
     application: '归属应用:',
     operation: '操作',
+    export: '导出查询结果',
+    import: '导入配置',
   },
   NewConfig: {
     newListingMain: '新建配置',
