@@ -401,7 +401,7 @@ public class ConfigController {
             List<ConfigInfo> dataList = persistService.findAllConfigInfo4eExport(group, tenant, appName);
             String dataJson = JSONUtils.serializeObject(dataList);
             HttpHeaders headers = new HttpHeaders();
-            String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".data";
+            String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".gz";
             headers.add("Content-Disposition", "attachment;filename="+fileName);
             return new ResponseEntity<byte[]>(ZipUtils.gzipString(dataJson), headers, HttpStatus.OK);
         } catch (Exception e) {

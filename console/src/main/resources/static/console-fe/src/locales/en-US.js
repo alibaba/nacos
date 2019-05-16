@@ -223,6 +223,8 @@ const I18N_CONF = {
     pleaseEnterTag: 'Enter Tag',
     application: 'Application',
     operation: 'Operation',
+    export: 'Export query results',
+    import: 'Import',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
