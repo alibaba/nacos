@@ -139,6 +139,12 @@ public class NamingMaintainService_ITCase {
 
     @Test
     public void deleteService() throws NacosException {
+
+        Service preService = new Service();
+        preService.setName(serviceName);
+        System.out.println("service info : " + preService);
+        namingMaintainService.createService(preService, new NoneSelector());
+
         Assert.assertTrue(namingMaintainService.deleteService(serviceName));
     }
 
