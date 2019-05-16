@@ -148,9 +148,4 @@ public class NamingMaintainService_ITCase {
         Assert.assertTrue(namingMaintainService.deleteService(serviceName));
     }
 
-    @Test
-    public void dregInstance() throws NacosException {
-        namingService.deregisterInstance(serviceName, "127.0.0.1", 8081);
-    }
-
 }
