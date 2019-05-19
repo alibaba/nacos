@@ -3276,20 +3276,24 @@ public class PersistService {
      * @return ConfigInfo对象的集合
      */
     public List<ConfigInfo> findAllConfigInfo4eExport(final String group, final String tenant,
-                                                final String appName) {
+                                                final String appName, final String ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String sql = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
         StringBuilder where = new StringBuilder(" where ");
-        List<String> paramList = new ArrayList<String>();
-        where.append(" tenant_id=? ");
-        paramList.add(tenantTmp);
-        if (StringUtils.isNotBlank(group)) {
-            where.append(" and group_id=? ");
-            paramList.add(group);
-        }
-        if (StringUtils.isNotBlank(appName)) {
-            where.append(" and app_name=? ");
-            paramList.add(appName);
+        List<String> paramList = new ArrayList<>();
+        if(StringUtils.isNotBlank(ids)){
+            where.append(" id in (").append(ids).append(") ");
+        } else {
+            where.append(" tenant_id=? ");
+            paramList.add(tenantTmp);
+            if (StringUtils.isNotBlank(group)) {
+                where.append(" and group_id=? ");
+                paramList.add(group);
+            }
+            if (StringUtils.isNotBlank(appName)) {
+                where.append(" and app_name=? ");
+                paramList.add(appName);
+            }
         }
         try {
             return this.jt.query(sql + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
