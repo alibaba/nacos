@@ -669,24 +669,60 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportData() {
-    let url = 'v1/cs/configs?export=true&group=' + this.group + '&appName=' + this.appName;
+    let url =
+      'v1/cs/configs?export=true&group=' +
+      this.group +
+      '&tenant=' +
+      getParams('namespace') +
+      '&appName=' +
+      this.appName +
+      '&ids=';
     window.location.href = url;
   }
 
-  render() {
+  importData() {
     const { locale = {} } = this.props;
+    const self = this;
     const uploadProps = {
       accept: 'application/zip',
-      onStart(file) {
-        console.log('onStart', file, file.name);
-      },
+      action: 'v1/cs/configs?import=true&namespace=' + getParams('namespace'),
       onSuccess(ret) {
-        console.log('onSuccess', ret);
+        Dialog.show({
+          title: locale.importSucc,
+          content: <div>{locale.importSucc}</div>,
+        });
+        self.getData();
       },
       onError(err) {
         console.log('onError', err);
       },
     };
+    Dialog.confirm({
+      title: locale.import,
+      footer: false,
+      content: (
+        <div>
+          <div>目标空间:</div>
+          <div>相同配制:</div>
+          <div>
+            <Upload
+              name={'file'}
+              component={'button'}
+              className={'next-btn next-medium next-btn-primary'}
+              style={{ marginRight: 10 }}
+              data-spm-click={'gostr=/aliyun;locaid=configsImport'}
+              {...uploadProps}
+            >
+              {locale.uploadBtn}
+            </Upload>
+          </div>
+        </div>
+      ),
+    });
+  }
+
+  render() {
+    const { locale = {} } = this.props;
     return (
       <div>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
@@ -821,17 +857,14 @@ class ConfigurationManagement extends React.Component {
                     </Button>
                   </Form.Item>
                   <Form.Item label={''}>
-                    <Upload
-                      name={'file'}
-                      component={'button'}
-                      className={'next-btn next-medium next-btn-primary'}
+                    <Button
+                      type={'primary'}
                       style={{ marginRight: 10 }}
-                      data-spm-click={'gostr=/aliyun;locaid=configsImport'}
-                      action={'v1/cs/configs?import=true'}
-                      {...uploadProps}
+                      onClick={this.importData.bind(this)}
+                      data-spm-click={'gostr=/aliyun;locaid=configsExport'}
                     >
                       {locale.import}
-                    </Upload>
+                    </Button>
                   </Form.Item>
                   <br />
                   <Form.Item
