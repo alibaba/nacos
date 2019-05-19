@@ -142,6 +142,35 @@ public class ZipUtils {
         }
     }
 
+    public static class UnZipResult{
+
+        private List<ZipItem> zipItemList;
+
+        private ZipItem metaDataItem;
+
+
+        public UnZipResult(List<ZipItem> zipItemList, ZipItem metaDataItem) {
+            this.zipItemList = zipItemList;
+            this.metaDataItem = metaDataItem;
+        }
+
+        public List<ZipItem> getZipItemList() {
+            return zipItemList;
+        }
+
+        public void setZipItemList(List<ZipItem> zipItemList) {
+            this.zipItemList = zipItemList;
+        }
+
+        public ZipItem getMetaDataItem() {
+            return metaDataItem;
+        }
+
+        public void setMetaDataItem(ZipItem metaDataItem) {
+            this.metaDataItem = metaDataItem;
+        }
+    }
+
     public static byte[] zip(List<ZipItem> source){
         ByteArrayOutputStream byteOut = null;
         ZipOutputStream zipOut = null;
@@ -176,10 +205,11 @@ public class ZipUtils {
         return result;
     }
 
-    public static List<ZipItem> unzip(byte[] source) {
+    public static UnZipResult unzip(byte[] source) {
 
         ZipInputStream zipIn = null;
-        List<ZipItem> result = new ArrayList<>();
+        List<ZipItem> itemList = new ArrayList<>();
+        ZipItem metaDataItem = null;
         try {
             zipIn = new ZipInputStream(new ByteArrayInputStream(source));
             ZipEntry entry = null;
@@ -192,7 +222,11 @@ public class ZipUtils {
                     while ((offset = zipIn.read(buffer)) != -1) {
                         out.write(buffer, 0, offset);
                     }
-                    result.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                    if(entry.getName().equals(".meta.yml")){
+                        metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
+                    } else {
+                        itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -212,7 +246,7 @@ public class ZipUtils {
                 }
             }
         }
-        return result;
+        return new UnZipResult(itemList, metaDataItem);
     }
 
 
