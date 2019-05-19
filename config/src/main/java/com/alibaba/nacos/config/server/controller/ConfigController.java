@@ -399,14 +399,18 @@ public class ConfigController {
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
         try {
             // 暂时不考虑数据量大的问题,配制应该不会很多
+
             StringBuilder idsSb = new StringBuilder();
-            for(int i = 0; i < ids.size(); i++){
-                Long id = ids.get(i);
-                idsSb.append(id);
-                if((i + 1) < ids.size()){
-                    idsSb.append(",");
+            if(ids != null && !ids.isEmpty()){
+                for(int i = 0; i < ids.size(); i++){
+                    Long id = ids.get(i);
+                    idsSb.append(id);
+                    if((i + 1) < ids.size()){
+                        idsSb.append(",");
+                    }
                 }
             }
+
             List<ConfigInfo> dataList = persistService.findAllConfigInfo4eExport(group, tenant, appName, idsSb.toString());
             List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
             StringBuilder metaData = null;
@@ -419,12 +423,15 @@ public class ConfigController {
                     String metaDataId = ci.getDataId().substring(0,ci.getDataId().lastIndexOf("."))
                         + "~" + ci.getDataId().substring(ci.getDataId().lastIndexOf(".") + 1);
                     metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
-                        .append(ci.getAppName()).append("\r\n");
+                        .append(ci.getAppName()).append("\r\n");  // ACM使用的是 \r\n, 不是根据系统取的
                 }
                 String itemName = ci.getGroup() + "/" + ci.getDataId() ;
                 zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
             }
-            zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaData.toString()));
+            if(metaData != null){
+                zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaData.toString()));
+            }
+
             HttpHeaders headers = new HttpHeaders();
             String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".zip";
             headers.add("Content-Disposition", "attachment;filename="+fileName);
@@ -436,43 +443,84 @@ public class ConfigController {
         }
     }
 
-//    @RequestMapping(params = "import=true", method = RequestMethod.POST)
-//    @ResponseBody
-//    public RestResult<Boolean> importAndPublishConfig(HttpServletRequest request, HttpServletResponse response,
-//                                                      @RequestParam(value = "src_user", required = false) String srcUser,
-//                                                      MultipartFile file) throws NacosException {
-//        RestResult<Boolean> rr = new RestResult<Boolean>();
-//        List<ConfigInfo> configInfoList = null;
-//        try {
-//            configInfoList = (List<ConfigInfo>) JSONUtils.deserializeObject( ZipUtils.unzip(file.getBytes()), new TypeReference<ArrayList<ConfigInfo>>() {
-//            });
-//        } catch (IOException e) {
-//            rr.setCode(500);
-//            rr.setData(false);
-//            rr.setMessage("parsing data failed");
-//            log.error("parsing data failed", e);
-//            return rr;
-//        }
-//        if (configInfoList == null || configInfoList.isEmpty()) {
-//            rr.setCode(500);
-//            rr.setData(false);
-//            rr.setMessage("data is empty");
-//            return rr;
-//        }
-//        final String srcIp = RequestUtil.getRemoteIp(request);
-//        String requestIpApp = RequestUtil.getAppName(request);
-//        final Timestamp time = TimeUtils.getCurrentTime();
-//        persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false);
-//        for (ConfigInfo configInfo : configInfoList) {
-//            EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-//                configInfo.getTenant(), time.getTime()));
-//            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
-//                configInfo.getTenant(), requestIpApp, time.getTime(),
-//                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
-//        }
-//        rr.setCode(200);
-//        rr.setData(true);
-//        rr.setMessage("import ok");
-//        return rr;
-//    }
+    @RequestMapping(params = "import=true", method = RequestMethod.POST)
+    @ResponseBody
+    public RestResult<Boolean> importAndPublishConfig(HttpServletRequest request, HttpServletResponse response,
+                                                      @RequestParam(value = "src_user", required = false) String srcUser,
+                                                      @RequestParam(value = "namespace", required = false) String namespace,
+                                                      MultipartFile file) throws NacosException {
+        RestResult<Boolean> rr = new RestResult<Boolean>();
+        if(StringUtils.isNotBlank(namespace)){
+            if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
+                rr.setCode(500);
+                rr.setData(false);
+                rr.setMessage("namespace does not exist");
+                return rr;
+            }
+        }
+        List<ConfigInfo> configInfoList = null;
+        try {
+            ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
+            ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
+            Map<String, String> metaDataMap = new HashMap<>();
+            if(metaDataZipItem != null){
+                String metaDataStr = metaDataZipItem.getItemData();
+                String[] metaDataArr = metaDataStr.split("\r\n");
+                for(String metaDataItem : metaDataArr){
+                    String[] metaDataItemArr = metaDataItem.split("=");
+                    metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
+                }
+            }
+            List<ZipUtils.ZipItem> itemList = unziped.getZipItemList();
+            if(itemList != null && !itemList.isEmpty()){
+                configInfoList = new ArrayList<>(itemList.size());
+                for(ZipUtils.ZipItem item : itemList){
+                    String[] groupAdnDataId = item.getItemName().split("/");
+                    String group = groupAdnDataId[0];
+                    String dataId = groupAdnDataId[1];
+
+                    String metaDataId = group + "." + dataId;
+                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf("."))
+                        + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1)
+                        + ".app";
+                    ConfigInfo ci = new ConfigInfo();
+                    ci.setTenant(namespace);
+                    ci.setGroup(group);
+                    ci.setDataId(dataId);
+                    ci.setContent(item.getItemData());
+                    if(metaDataMap.get(metaDataId) != null){
+                        ci.setAppName(metaDataMap.get(metaDataId));
+                    }
+                    configInfoList.add(ci);
+                }
+            }
+        } catch (IOException e) {
+            rr.setCode(500);
+            rr.setData(false);
+            rr.setMessage("parsing data failed");
+            log.error("parsing data failed", e);
+            return rr;
+        }
+        if (configInfoList == null || configInfoList.isEmpty()) {
+            rr.setCode(500);
+            rr.setData(false);
+            rr.setMessage("data is empty");
+            return rr;
+        }
+        final String srcIp = RequestUtil.getRemoteIp(request);
+        String requestIpApp = RequestUtil.getAppName(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false);
+        for (ConfigInfo configInfo : configInfoList) {
+            EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), time.getTime()));
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), requestIpApp, time.getTime(),
+                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+        }
+        rr.setCode(200);
+        rr.setData(true);
+        rr.setMessage("import ok");
+        return rr;
+    }
 }
