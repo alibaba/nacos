@@ -25,10 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import javax.annotation.PostConstruct;
@@ -54,6 +51,7 @@ import org.springframework.transaction.*;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.google.common.collect.Lists;
@@ -1458,7 +1456,6 @@ public class PersistService {
      *
      * @param pageNo   页码(必须大于0)
      * @param pageSize 每页大小(必须大于0)
-     * @param group
      * @return ConfigInfo对象的集合
      */
     public Page<ConfigInfo> findConfigInfoByApp(final int pageNo,
@@ -3309,6 +3306,7 @@ public class PersistService {
     public void batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
                                     Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify) throws NacosException{
         PlatformTransactionManager transactionManager = this.getTransactionTemplate().getTransactionManager();
+        assert transactionManager != null;
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         TransactionStatus status = transactionManager.getTransaction(def);
@@ -3323,6 +3321,36 @@ public class PersistService {
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                 configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
             try {
+                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(".") + 1).toLowerCase();
+                String type = null;
+                switch (extName){
+                    case "yml":
+                    case "yaml":
+                        type = "yaml";
+                        break;
+                    case "txt":
+                    case "text":
+                        type = "text";
+                        break;
+                    case "json":
+                        type = "json";
+                        break;
+                    case "xml":
+                        type = "xml";
+                        break;
+                    case "htm":
+                    case "html":
+                        type = "html";
+                        break;
+                    case "properties":
+                        type = "Properties";
+                        break;
+                }
+                if (configAdvanceInfo == null) {
+                    configAdvanceInfo = new HashMap<>();
+                }
+                configAdvanceInfo.put("type", type);
+
                 addConfigInfoNoTransaction(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
             } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
                 updateConfigInfoNoTransaction(configInfo2Save, srcIp, srcUser, time, configAdvanceInfo, notify);
@@ -3385,6 +3413,24 @@ public class PersistService {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
         }
+    }
+
+    /**
+     * 根据 tenantId 查询 tenantInfo (namespace)是否存在
+     *
+     * @param tenantId
+     * @return 根据ID查询到的数据数量
+     */
+    public int tenantInfoCountByTenantId(String tenantId) {
+        Assert.hasText(tenantId, "tenantId can not be null");
+        String sql = "select count(1) from tenant_info where tenant_id = ?";
+        List<String> paramList = new ArrayList<>();
+        paramList.add(tenantId);
+        Integer result = this.jt.queryForObject(sql, paramList.toArray(), Integer.class);
+        if (result == null) {
+            return 0;
+        }
+        return result.intValue();
     }
 
 
