@@ -224,6 +224,8 @@ const I18N_CONF = {
     operation: '操作',
     export: '导出查询结果',
     import: '导入配置',
+    importSucc: '导入成功',
+    uploadBtn: '上传文件',
   },
   NewConfig: {
     newListingMain: '新建配置',

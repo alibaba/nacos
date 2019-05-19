@@ -225,6 +225,8 @@ const I18N_CONF = {
     operation: 'Operation',
     export: 'Export query results',
     import: 'Import',
+    importSucc: 'Import success',
+    uploadBtn: 'Upload File',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
