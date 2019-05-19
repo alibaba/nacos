@@ -15,13 +15,13 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author klw
@@ -31,81 +31,182 @@ import java.util.zip.GZIPOutputStream;
  */
 public class ZipUtils {
 
-    /**
-     * @author klw
-     * @Description: 将字符串使用gzip压缩,并返回压缩后的byte[]
-     * @Date 2019/5/14 17:17
-     * @Param [source]
-     * @return byte[]
-     */
-    public static byte[] gzipString(String source){
-        if (null == source || source.trim().length() <= 0) {
-            return null;
+//    /**
+//     * @author klw
+//     * @Description: 将字符串使用gzip压缩,并返回压缩后的byte[]
+//     * @Date 2019/5/14 17:17
+//     * @Param [source]
+//     * @return byte[]
+//     */
+//    public static byte[] gzipString(String source){
+//        if (null == source || source.trim().length() <= 0) {
+//            return null;
+//        }
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//        GZIPOutputStream gzip = null;
+//        try {
+//            gzip = new GZIPOutputStream(out);
+//            gzip.write(source.getBytes(Constants.ENCODE));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } finally {
+//            if(gzip != null) {
+//                try {
+//                    gzip.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        return out.toByteArray();
+//    }
+//
+//    /**
+//     * @author klw
+//     * @Description: 将压缩后的byte[]解压缩为字符串
+//     * @Date 2019/5/14 17:24
+//     * @Param [source]
+//     * @return java.lang.String
+//     */
+//    public static String unGzipString(byte[] source){
+//        if(source == null || source.length <= 0){
+//            return null;
+//        }
+//        ByteArrayOutputStream out = null;
+//        ByteArrayInputStream in = null;
+//        GZIPInputStream gzip = null;
+//        String result = null;
+//        try {
+//            out = new ByteArrayOutputStream();
+//            in = new ByteArrayInputStream(source);
+//            gzip = new GZIPInputStream(in);
+//            byte[] buffer = new byte[1024];
+//            int offset  = -1;
+//            while ((offset  = gzip.read(buffer)) != -1) {
+//                out.write(buffer, 0, offset );
+//            }
+//            result = out.toString("UTF-8");
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }finally {
+//            if (gzip != null) {
+//                try {
+//                    gzip.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            if (in != null) {
+//                try {
+//                    in.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            if (out != null) {
+//                try {
+//                    out.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//        return result;
+//    }
+
+    public static class ZipItem{
+
+        private String itemName;
+
+        private String itemData;
+
+        public ZipItem(String itemName, String itemData) {
+            this.itemName = itemName;
+            this.itemData = itemData;
         }
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GZIPOutputStream gzip = null;
+
+        public String getItemName() {
+            return itemName;
+        }
+
+        public void setItemName(String itemName) {
+            this.itemName = itemName;
+        }
+
+        public String getItemData() {
+            return itemData;
+        }
+
+        public void setItemData(String itemData) {
+            this.itemData = itemData;
+        }
+    }
+
+    public static byte[] zip(List<ZipItem> source){
+        ByteArrayOutputStream byteOut = null;
+        ZipOutputStream zipOut = null;
+        byte[] result = null;
         try {
-            gzip = new GZIPOutputStream(out);
-            gzip.write(source.getBytes(Constants.ENCODE));
+            byteOut = new ByteArrayOutputStream();
+            zipOut = new ZipOutputStream(byteOut);
+            for (ZipItem item : source) {
+                zipOut.putNextEntry(new ZipEntry(item.getItemName()));
+                zipOut.write(item.getItemData().getBytes(StandardCharsets.UTF_8));
+            }
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if(gzip != null) {
+            if (zipOut != null) {
                 try {
-                    gzip.close();
+                    zipOut.flush();
+                    zipOut.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (byteOut != null) {
+                try {
+                    byteOut.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }
-        return out.toByteArray();
+        result = byteOut.toByteArray();
+        return result;
     }
 
-    /**
-     * @author klw
-     * @Description: 将压缩后的byte[]解压缩为字符串
-     * @Date 2019/5/14 17:24
-     * @Param [source]
-     * @return java.lang.String
-     */
-    public static String unGzipString(byte[] source){
-        if(source == null || source.length <= 0){
-            return null;
-        }
-        ByteArrayOutputStream out = null;
-        ByteArrayInputStream in = null;
-        GZIPInputStream gzip = null;
-        String result = null;
+    public static List<ZipItem> unzip(byte[] source) {
+
+        ZipInputStream zipIn = null;
+        List<ZipItem> result = new ArrayList<>();
         try {
-            out = new ByteArrayOutputStream();
-            in = new ByteArrayInputStream(source);
-            gzip = new GZIPInputStream(in);
-            byte[] buffer = new byte[1024];
-            int offset  = -1;
-            while ((offset  = gzip.read(buffer)) != -1) {
-                out.write(buffer, 0, offset );
+            zipIn = new ZipInputStream(new ByteArrayInputStream(source));
+            ZipEntry entry = null;
+            while ((entry = zipIn.getNextEntry()) != null && !entry.isDirectory()) {
+                ByteArrayOutputStream out = null;
+                try {
+                    out = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[1024];
+                    int offset = -1;
+                    while ((offset = zipIn.read(buffer)) != -1) {
+                        out.write(buffer, 0, offset);
+                    }
+                    result.add(new ZipItem(entry.getName(), out.toString("UTF-8")));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (out != null) {
+                        out.close();
+                    }
+                }
             }
-            result = out.toString("UTF-8");
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
-            if (gzip != null) {
+        } finally {
+            if (zipIn != null) {
                 try {
-                    gzip.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (out != null) {
-                try {
-                    out.close();
+                    zipIn.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -113,5 +214,7 @@ public class ZipUtils {
         }
         return result;
     }
+
+
 
 }

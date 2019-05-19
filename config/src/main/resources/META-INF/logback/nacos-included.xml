@@ -258,5 +258,15 @@
         <appender-ref ref="startLog"/>
     </logger>
 
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout name="StandardFormat" class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss,SSS} %5p [%t] %replace(%caller{1}){'\t|Caller.{1}0|\r\n', ''} - %m%n</pattern>
+        </layout>
+    </appender>
+    <logger name="org.springframework.jdbc.core" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="CONSOLE" />
+    </logger>
+
 </included>
 
