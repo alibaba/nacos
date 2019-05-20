@@ -84,6 +84,7 @@ const I18N_CONF = {
     columnHealthyInstanceCount: '健康实例数',
     operation: '操作',
     detail: '详情',
+    sampleCode: '示例代码',
     deleteAction: '删除',
     prompt: '提示',
     promptDelete: '确定要删除当前服务吗？',
