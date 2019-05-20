@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.service.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.google.common.collect.Lists;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -128,9 +127,6 @@ public class GroupCapacityPersistService {
             GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
                 @Override
-                @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE",
-                    "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"},
-                    justification = "findbugs does not trust jdbctemplate, sql is constant in practice")
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                     String group = capacity.getGroup();
@@ -306,9 +302,6 @@ public class GroupCapacityPersistService {
         try {
             PreparedStatementCreator preparedStatementCreator = new PreparedStatementCreator() {
                 @Override
-                @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE",
-                    "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"},
-                    justification = "findbugs does not trust jdbctemplate, sql is constant in practice")
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(
                         "DELETE FROM group_capacity WHERE group_id = ?;");

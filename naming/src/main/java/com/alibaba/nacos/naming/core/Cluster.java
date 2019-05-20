@@ -54,6 +54,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @JSONField(serialize = false)
     private Service service;
 
+    @JSONField(serialize = false)
+    private volatile boolean inited = false;
+
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
     public Cluster() {
@@ -61,6 +64,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     public Cluster(String clusterName) {
         this.setName(clusterName);
+        validate();
     }
 
     public int getDefIPPort() {
@@ -87,12 +91,18 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     public void init() {
+        if (inited) {
+            return;
+        }
         checkTask = new HealthCheckTask(this);
         HealthCheckReactor.scheduleCheck(checkTask);
+        inited = true;
     }
 
     public void destroy() {
-        checkTask.setCancelled(true);
+        if (checkTask != null) {
+            checkTask.setCancelled(true);
+        }
     }
 
     public HealthCheckTask getHealthCheckTask() {
@@ -105,6 +115,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     public void setService(Service service) {
         this.service = service;
+        this.setServiceName(service.getName());
     }
 
     @Override

@@ -21,9 +21,9 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.*;
@@ -213,7 +213,7 @@ public class RaftCore {
 
             if (!latch.await(UtilsAndCommons.RAFT_PUBLISH_TIMEOUT, TimeUnit.MILLISECONDS)) {
                 // only majority servers return success can we consider this update success
-                Loggers.RAFT.info("data publish failed, caused failed to notify majority, key={}", key);
+                Loggers.RAFT.error("data publish failed, caused failed to notify majority, key={}", key);
                 throw new IllegalStateException("data publish failed, caused failed to notify majority, key=" + key);
             }
 
@@ -243,7 +243,7 @@ public class RaftCore {
             json.put("datum", datum);
             json.put("source", peers.local());
 
-            onDelete(datum, peers.local());
+            onDelete(datum.key, peers.local());
 
             for (final String server : peers.allServersWithoutMySelf()) {
                 String url = buildURL(server, API_ON_DEL);
@@ -312,12 +312,12 @@ public class RaftCore {
         }
         raftStore.updateTerm(local.term.get());
 
-        notifier.addTask(datum, ApplyAction.CHANGE);
+        notifier.addTask(datum.key, ApplyAction.CHANGE);
 
         Loggers.RAFT.info("data added/updated, key={}, term={}", datum.key, local.term);
     }
 
-    public void onDelete(Datum datum, RaftPeer source) throws Exception {
+    public void onDelete(String datumKey, RaftPeer source) throws Exception {
 
         RaftPeer local = peers.local();
 
@@ -337,7 +337,7 @@ public class RaftCore {
         local.resetLeaderDue();
 
         // do apply
-        String key = datum.key;
+        String key = datumKey;
         deleteDatum(key);
 
         if (KeyBuilder.matchServiceMetaKey(key)) {
@@ -352,6 +352,8 @@ public class RaftCore {
 
             raftStore.updateTerm(local.term.get());
         }
+
+        Loggers.RAFT.info("data removed, key={}, term={}", datumKey, local.term);
 
     }
 
@@ -665,41 +667,49 @@ public class RaftCore {
                                 return 1;
                             }
 
-                            List<Datum> datumList = JSON.parseObject(response.getResponseBody(), new TypeReference<List<Datum>>() {
+                            List<JSONObject> datumList = JSON.parseObject(response.getResponseBody(), new TypeReference<List<JSONObject>>() {
                             });
 
-                            for (Datum datum : datumList) {
+                            for (JSONObject datumJson : datumList) {
                                 OPERATE_LOCK.lock();
+                                Datum newDatum = null;
                                 try {
 
-                                    Datum oldDatum = getDatum(datum.key);
+                                    Datum oldDatum = getDatum(datumJson.getString("key"));
 
-                                    if (oldDatum != null && datum.timestamp.get() <= oldDatum.timestamp.get()) {
+                                    if (oldDatum != null && datumJson.getLongValue("timestamp") <= oldDatum.timestamp.get()) {
                                         Loggers.RAFT.info("[NACOS-RAFT] timestamp is smaller than that of mine, key: {}, remote: {}, local: {}",
-                                            datum.key, datum.timestamp, oldDatum.timestamp);
+                                            datumJson.getString("key"), datumJson.getLongValue("timestamp"), oldDatum.timestamp);
                                         continue;
                                     }
 
-                                    raftStore.write(datum);
-
-                                    if (KeyBuilder.matchServiceMetaKey(datum.key)) {
+                                    if (KeyBuilder.matchServiceMetaKey(datumJson.getString("key"))) {
                                         Datum<Service> serviceDatum = new Datum<>();
-                                        serviceDatum.key = datum.key;
-                                        serviceDatum.timestamp.set(datum.timestamp.get());
-                                        serviceDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Service.class);
-                                        datum = serviceDatum;
+                                        serviceDatum.key = datumJson.getString("key");
+                                        serviceDatum.timestamp.set(datumJson.getLongValue("timestamp"));
+                                        serviceDatum.value =
+                                            JSON.parseObject(JSON.toJSONString(datumJson.getJSONObject("value")), Service.class);
+                                        newDatum = serviceDatum;
                                     }
 
-                                    if (KeyBuilder.matchInstanceListKey(datum.key)) {
+                                    if (KeyBuilder.matchInstanceListKey(datumJson.getString("key"))) {
                                         Datum<Instances> instancesDatum = new Datum<>();
-                                        instancesDatum.key = datum.key;
-                                        instancesDatum.timestamp.set(datum.timestamp.get());
-                                        instancesDatum.value = JSON.parseObject(JSON.toJSONString(datum.value), Instances.class);
-                                        datum = instancesDatum;
+                                        instancesDatum.key = datumJson.getString("key");
+                                        instancesDatum.timestamp.set(datumJson.getLongValue("timestamp"));
+                                        instancesDatum.value =
+                                            JSON.parseObject(JSON.toJSONString(datumJson.getJSONObject("value")), Instances.class);
+                                        newDatum = instancesDatum;
                                     }
 
-                                    datums.put(datum.key, datum);
-                                    notifier.addTask(datum, ApplyAction.CHANGE);
+                                    if (newDatum == null || newDatum.value == null) {
+                                        Loggers.RAFT.error("receive null datum: {}", datumJson);
+                                        continue;
+                                    }
+
+                                    raftStore.write(newDatum);
+
+                                    datums.put(newDatum.key, newDatum);
+                                    notifier.addTask(newDatum.key, ApplyAction.CHANGE);
 
                                     local.resetLeaderDue();
 
@@ -713,10 +723,10 @@ public class RaftCore {
                                     raftStore.updateTerm(local.term.get());
 
                                     Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
-                                        datum.key, datum.timestamp, JSON.toJSONString(remote), local.term);
+                                        newDatum.key, newDatum.timestamp, JSON.toJSONString(remote), local.term);
 
                                 } catch (Throwable e) {
-                                    Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader, key: {} {}", datum.key, e);
+                                    Loggers.RAFT.error("[RAFT-BEAT] failed to sync datum from leader, datum: {}", newDatum, e);
                                 } finally {
                                     OPERATE_LOCK.unlock();
                                 }
@@ -799,6 +809,10 @@ public class RaftCore {
         }
     }
 
+    public void unlistenAll(String key) {
+        listeners.remove(key);
+    }
+
     public void setTerm(long term) {
         peers.setTerm(term);
     }
@@ -844,7 +858,7 @@ public class RaftCore {
 
     public void addDatum(Datum datum) {
         datums.put(datum.key, datum);
-        notifier.addTask(datum, ApplyAction.CHANGE);
+        notifier.addTask(datum.key, ApplyAction.CHANGE);
     }
 
     public void loadDatum(String key) {
@@ -861,23 +875,25 @@ public class RaftCore {
     }
 
     private void deleteDatum(String key) {
-
-        Datum deleted = null;
+        Datum deleted;
         try {
             deleted = datums.remove(URLDecoder.decode(key, "UTF-8"));
+            if (deleted != null) {
+                raftStore.delete(deleted);
+                Loggers.RAFT.info("datum deleted, key: {}", key);
+            }
+            notifier.addTask(URLDecoder.decode(key, "UTF-8"), ApplyAction.DELETE);
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);
-        }
-        // FIXME should we ignore the value of 'deleted'?
-        if (deleted != null) {
-            raftStore.delete(deleted);
-            notifier.addTask(deleted, ApplyAction.DELETE);
-            Loggers.RAFT.info("datum deleted, key: {}", key);
         }
     }
 
     public boolean isInitialized() {
         return initialized || !globalConfig.isDataWarmup();
+    }
+
+    public int getNotifyTaskCount() {
+        return notifier.getTaskSize();
     }
 
     public class Notifier implements Runnable {
@@ -886,15 +902,18 @@ public class RaftCore {
 
         private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<Pair>(1024 * 1024);
 
-        public void addTask(Datum datum, ApplyAction action) {
+        public void addTask(String datumKey, ApplyAction action) {
 
-            if (services.containsKey(datum.key) && action == ApplyAction.CHANGE) {
+            if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
                 return;
             }
             if (action == ApplyAction.CHANGE) {
-                services.put(datum.key, StringUtils.EMPTY);
+                services.put(datumKey, StringUtils.EMPTY);
             }
-            tasks.add(Pair.with(datum, action));
+
+            Loggers.RAFT.info("add task {}", datumKey);
+
+            tasks.add(Pair.with(datumKey, action));
         }
 
         public int getTaskSize() {
@@ -914,58 +933,60 @@ public class RaftCore {
                         continue;
                     }
 
-                    Datum datum = (Datum) pair.getValue0();
+                    String datumKey = (String) pair.getValue0();
                     ApplyAction action = (ApplyAction) pair.getValue1();
 
-                    services.remove(datum.key);
+                    services.remove(datumKey);
+
+                    Loggers.RAFT.info("remove task {}", datumKey);
 
                     int count = 0;
 
                     if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
 
-                        if (KeyBuilder.matchServiceMetaKey(datum.key) && !KeyBuilder.matchSwitchKey(datum.key)) {
+                        if (KeyBuilder.matchServiceMetaKey(datumKey) && !KeyBuilder.matchSwitchKey(datumKey)) {
 
                             for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                                 try {
                                     if (action == ApplyAction.CHANGE) {
-                                        listener.onChange(datum.key, getDatum(datum.key).value);
+                                        listener.onChange(datumKey, getDatum(datumKey).value);
                                     }
 
                                     if (action == ApplyAction.DELETE) {
-                                        listener.onDelete(datum.key);
+                                        listener.onDelete(datumKey);
                                     }
                                 } catch (Throwable e) {
-                                    Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {} {}", datum.key, e);
+                                    Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", datumKey, e);
                                 }
                             }
                         }
                     }
 
-                    if (!listeners.containsKey(datum.key)) {
+                    if (!listeners.containsKey(datumKey)) {
                         continue;
                     }
 
-                    for (RecordListener listener : listeners.get(datum.key)) {
+                    for (RecordListener listener : listeners.get(datumKey)) {
 
                         count++;
 
                         try {
                             if (action == ApplyAction.CHANGE) {
-                                listener.onChange(datum.key, getDatum(datum.key).value);
+                                listener.onChange(datumKey, getDatum(datumKey).value);
                                 continue;
                             }
 
                             if (action == ApplyAction.DELETE) {
-                                listener.onDelete(datum.key);
+                                listener.onDelete(datumKey);
                                 continue;
                             }
                         } catch (Throwable e) {
-                            Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {} {}", datum.key, e);
+                            Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", datumKey, e);
                         }
                     }
 
                     if (Loggers.RAFT.isDebugEnabled()) {
-                        Loggers.RAFT.debug("[NACOS-RAFT] datum change notified, key: {}, listener count: {}", datum.key, count);
+                        Loggers.RAFT.debug("[NACOS-RAFT] datum change notified, key: {}, listener count: {}", datumKey, count);
                     }
                 } catch (Throwable e) {
                     Loggers.RAFT.error("[NACOS-RAFT] Error while handling notifying task", e);

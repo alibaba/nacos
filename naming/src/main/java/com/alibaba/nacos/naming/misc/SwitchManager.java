@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -263,9 +262,9 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 switchDomain.setOverriddenServerStatus(status);
             }
 
-            if (entry.equals(SwitchEntry.SERVER_MODE)) {
-                String mode = value;
-                switchDomain.setServerMode(ServerMode.valueOf(mode).name());
+            if (entry.equals(SwitchEntry.DEFAULT_INSTANCE_EPHEMERAL)) {
+                String defaultEphemeral = value;
+                switchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(defaultEphemeral));
             }
 
             if (debug) {
@@ -308,7 +307,7 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         switchDomain.setPushCVersion(newSwitchDomain.getPushCVersion());
         switchDomain.setEnableAuthentication(newSwitchDomain.isEnableAuthentication());
         switchDomain.setOverriddenServerStatus(newSwitchDomain.getOverriddenServerStatus());
-        switchDomain.setServerMode(newSwitchDomain.getServerMode());
+        switchDomain.setDefaultInstanceEphemeral(newSwitchDomain.isDefaultInstanceEphemeral());
     }
 
     public SwitchDomain getSwitchDomain() {

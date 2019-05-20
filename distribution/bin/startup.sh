@@ -101,12 +101,12 @@ else
   JAVA_OPT="${JAVA_OPT} -Xloggc:${BASE_DIR}/logs/nacos_gc.log -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
 fi
 
-JAVA_OPT="${JAVA_OPT} -Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000"
 JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
 JAVA_OPT="${JAVA_OPT} -jar ${BASE_DIR}/target/nacos-server.jar"
 JAVA_OPT="${JAVA_OPT} ${JAVA_OPT_EXT}"
 JAVA_OPT="${JAVA_OPT} --spring.config.location=${CUSTOM_SEARCH_LOCATIONS}"
 JAVA_OPT="${JAVA_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
+JAVA_OPT="${JAVA_OPT} --server.max-http-header-size=524288"
 
 if [ ! -d "${BASE_DIR}/logs" ]; then
   mkdir ${BASE_DIR}/logs
@@ -116,13 +116,13 @@ echo "$JAVA ${JAVA_OPT}"
 
 if [[ "${MODE}" == "standalone" ]]; then
     echo "nacos is starting"
-    $JAVA ${JAVA_OPT}
+    $JAVA ${JAVA_OPT} nacos.nacos
 else
     if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
         touch "${BASE_DIR}/logs/start.out"
     fi
 
     echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
-    nohup $JAVA ${JAVA_OPT} >> ${BASE_DIR}/logs/start.out 2>&1 &
+    nohup $JAVA ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
     echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
 fi

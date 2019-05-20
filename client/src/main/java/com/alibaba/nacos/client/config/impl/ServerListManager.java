@@ -21,7 +21,6 @@ import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEven
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.utils.*;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -86,7 +85,9 @@ public class ServerListManager {
     public ServerListManager(String endpoint, String namespace) throws NacosException {
         isFixed = false;
         isStarted = false;
-        endpoint = initEndpoint(endpoint);
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        endpoint = initEndpoint(properties);
 
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
@@ -109,7 +110,7 @@ public class ServerListManager {
 
     public ServerListManager(Properties properties) throws NacosException {
         isStarted = false;
-        String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
@@ -153,7 +154,7 @@ public class ServerListManager {
     }
 
     private void initParam(Properties properties) {
-        endpoint = initEndpoint(properties.getProperty(PropertyKeyConst.ENDPOINT));
+        endpoint = initEndpoint(properties);
 
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
@@ -165,19 +166,29 @@ public class ServerListManager {
         }
     }
 
-    private String initEndpoint(String endpointTmp) {
-        String endpointPortTmp = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT);
+    private String initEndpoint(final Properties properties) {
+
+        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
+            @Override
+            public String call() {
+                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
+            }
+        });
+
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             endpointPort = Integer.parseInt(endpointPortTmp);
         }
 
-        return TemplateUtils.stringBlankAndThenExecute(endpointTmp, new Callable<String>() {
-            @Override
-            public String call() {
-                String endpointUrl = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
-                return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
+        if (Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE))) {
+            String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
+            if (StringUtils.isNotBlank(endpointUrl)) {
+                serverAddrsStr = "";
             }
-        });
+            return endpointUrl;
+        }
+
+        return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
     public synchronized void start() throws NacosException {
@@ -369,6 +380,7 @@ public class ServerListManager {
 
     public String addressServerUrl;
 
+    private String serverAddrsStr;
 }
 
 /**
@@ -396,7 +408,6 @@ class ServerAddressIterator implements Iterator<String> {
         }
 
         @Override
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         public int compareTo(RandomizedServerAddress other) {
             if (this.priority != other.priority) {
                 return other.priority - this.priority;

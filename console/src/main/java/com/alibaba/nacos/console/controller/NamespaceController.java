@@ -61,7 +61,7 @@ public class NamespaceController {
         rr.setCode(200);
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = persistService.findTenantByKp("1");
-        Namespace namespace0 = new Namespace("", "Public", 200, persistService.configInfoCount(""), 0);
+        Namespace namespace0 = new Namespace("", "public", 200, persistService.configInfoCount(""), 0);
         List<Namespace> namespaces = new ArrayList<Namespace>();
         namespaces.add(namespace0);
         for (TenantInfo tenantInfo : tenantInfos) {
