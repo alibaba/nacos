@@ -64,7 +64,7 @@ const I18N_CONF = {
     namespaceDelete: '删除',
     details: '详情',
     edit: '编辑',
-    namespacePublic: 'public(保留控件)',
+    namespacePublic: 'public(保留空间)',
     pubNoData: '没有数据',
     namespaceAdd: '新建命名空间',
     namespaceNames: '命名空间名称',

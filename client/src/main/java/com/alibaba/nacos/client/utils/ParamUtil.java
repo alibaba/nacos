@@ -15,11 +15,14 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import org.slf4j.Logger;
 
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 /**
  * manage param tool
@@ -27,8 +30,12 @@ import java.util.Properties;
  * @author nacos
  */
 public class ParamUtil {
+
     private final static Logger LOGGER = LogUtils.logger(ParamUtil.class);
 
+    public final static String USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = "true";
+
+    private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
     private static String defaultContextPath = "nacos";
     private static String defaultNodesPath = "serverlist";
     private static String appKey;
@@ -143,4 +150,46 @@ public class ParamUtil {
         ParamUtil.defaultNodesPath = defaultNodesPath;
     }
 
+
+    public static String parsingEndpointRule(String endpointUrl) {
+        // 配置文件中输入的话，以 ENV 中的优先，
+        if (endpointUrl == null
+            || !PATTERN.matcher(endpointUrl).find()) {
+            // skip retrieve from system property and retrieve directly from system env
+            String endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrlSource)) {
+                endpointUrl = endpointUrlSource;
+            }
+
+            return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+        }
+
+        endpointUrl = endpointUrl.substring(endpointUrl.indexOf("${") + 2,
+            endpointUrl.lastIndexOf("}"));
+        int defStartOf = endpointUrl.indexOf(":");
+        String defaultEndpointUrl = null;
+        if (defStartOf != -1) {
+            defaultEndpointUrl = endpointUrl.substring(defStartOf + 1);
+            endpointUrl = endpointUrl.substring(0, defStartOf);
+        }
+
+        String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(System.getProperty(endpointUrl,
+            System.getenv(endpointUrl)), new Callable<String>() {
+            @Override
+            public String call() {
+                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            }
+        });
+
+
+        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrlSource)) {
+            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(defaultEndpointUrl)) {
+                endpointUrl = defaultEndpointUrl;
+            }
+        } else {
+            endpointUrl = endpointUrlSource;
+        }
+
+        return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+    }
 }

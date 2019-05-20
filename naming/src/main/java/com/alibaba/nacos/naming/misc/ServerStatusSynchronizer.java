@@ -61,7 +61,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 }
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
         }
     }
 
