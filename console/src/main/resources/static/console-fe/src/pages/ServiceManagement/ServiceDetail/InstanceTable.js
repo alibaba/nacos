@@ -26,6 +26,7 @@ class InstanceTable extends React.Component {
     locale: PropTypes.object,
     clusterName: PropTypes.string,
     serviceName: PropTypes.string,
+    groupName: PropTypes.string,
   };
 
   constructor(props) {
@@ -88,7 +89,7 @@ class InstanceTable extends React.Component {
         port,
         ephemeral,
         weight,
-        enable: !enabled,
+        enabled: !enabled,
         metadata: JSON.stringify(metadata),
       },
       dataType: 'text',
