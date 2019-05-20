@@ -84,6 +84,7 @@ const I18N_CONF = {
     columnHealthyInstanceCount: 'Healthy Instance Count',
     operation: 'Operation',
     detail: 'Details',
+    sampleCode: 'Code Example',
     deleteAction: 'Delete',
     prompt: 'Confirm',
     promptDelete: 'Do you want to delete the service?',
