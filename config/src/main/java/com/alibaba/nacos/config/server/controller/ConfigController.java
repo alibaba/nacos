@@ -420,8 +420,11 @@ public class ConfigController {
                     if(metaData == null){
                         metaData = new StringBuilder();
                     }
-                    String metaDataId = ci.getDataId().substring(0,ci.getDataId().lastIndexOf("."))
-                        + "~" + ci.getDataId().substring(ci.getDataId().lastIndexOf(".") + 1);
+                    String metaDataId = ci.getDataId();
+                    if(metaDataId.contains(".")){
+                        metaDataId = metaDataId.substring(0,metaDataId.lastIndexOf("."))
+                            + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
+                    }
                     metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
                         .append(ci.getAppName()).append("\r\n");  // ACM使用的是 \r\n, 不是根据系统取的
                 }
@@ -445,15 +448,20 @@ public class ConfigController {
 
     @RequestMapping(params = "import=true", method = RequestMethod.POST)
     @ResponseBody
-    public RestResult<Boolean> importAndPublishConfig(HttpServletRequest request, HttpServletResponse response,
-                                                      @RequestParam(value = "src_user", required = false) String srcUser,
-                                                      @RequestParam(value = "namespace", required = false) String namespace,
-                                                      MultipartFile file) throws NacosException {
-        RestResult<Boolean> rr = new RestResult<Boolean>();
+    public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request, HttpServletResponse response,
+                                                                  @RequestParam(value = "src_user", required = false) String srcUser,
+                                                                  @RequestParam(value = "namespace", required = false) String namespace,
+                                                                  @RequestParam(value = "policy", defaultValue = "ABORT")
+                                                                          SameConfigPolicy policy,
+                                                                  MultipartFile file) throws NacosException {
+        RestResult<Map<String, Object>> rr = new RestResult<>();
+        Map<String, Object> failedData = new HashMap<>();
+        rr.setData(failedData);
+
         if(StringUtils.isNotBlank(namespace)){
             if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
-                rr.setCode(500);
-                rr.setData(false);
+                rr.setCode(5001);
+                failedData.put("succCount", 0);
                 rr.setMessage("namespace does not exist");
                 return rr;
             }
@@ -468,6 +476,12 @@ public class ConfigController {
                 String[] metaDataArr = metaDataStr.split("\r\n");
                 for(String metaDataItem : metaDataArr){
                     String[] metaDataItemArr = metaDataItem.split("=");
+                    if(metaDataItemArr.length != 2){
+                        rr.setCode(5002);
+                        failedData.put("succCount", 0);
+                        rr.setMessage("The imported metadata file is illegal");
+                        return rr;
+                    }
                     metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
                 }
             }
@@ -476,13 +490,20 @@ public class ConfigController {
                 configInfoList = new ArrayList<>(itemList.size());
                 for(ZipUtils.ZipItem item : itemList){
                     String[] groupAdnDataId = item.getItemName().split("/");
+                    if(!item.getItemName().contains("/") || groupAdnDataId.length != 2){
+                        rr.setCode(5003);
+                        failedData.put("succCount", 0);
+                        rr.setMessage("No legitimate data was read, please check the imported data file");
+                        return rr;
+                    }
                     String group = groupAdnDataId[0];
                     String dataId = groupAdnDataId[1];
-
-                    String metaDataId = group + "." + dataId;
-                    metaDataId = metaDataId.substring(0, metaDataId.lastIndexOf("."))
-                        + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1)
-                        + ".app";
+                    String tempDataId = dataId;
+                    if(tempDataId.contains(".")){
+                        tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf("."))
+                            + "~" + tempDataId.substring(tempDataId.lastIndexOf(".") + 1);
+                    }
+                    String metaDataId = group + "." + tempDataId + ".app";
                     ConfigInfo ci = new ConfigInfo();
                     ci.setTenant(namespace);
                     ci.setGroup(group);
@@ -495,22 +516,23 @@ public class ConfigController {
                 }
             }
         } catch (IOException e) {
-            rr.setCode(500);
-            rr.setData(false);
+            rr.setCode(5004);
+            failedData.put("succCount", 0);
             rr.setMessage("parsing data failed");
             log.error("parsing data failed", e);
             return rr;
         }
         if (configInfoList == null || configInfoList.isEmpty()) {
-            rr.setCode(500);
-            rr.setData(false);
+            rr.setCode(5005);
+            failedData.put("succCount", 0);
             rr.setMessage("data is empty");
             return rr;
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp, null, time, false);
+        Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList, srcUser, srcIp,
+            null, time, false, policy);
         for (ConfigInfo configInfo : configInfoList) {
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                 configInfo.getTenant(), time.getTime()));
@@ -519,7 +541,7 @@ public class ConfigController {
                 LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
         rr.setCode(200);
-        rr.setData(true);
+        rr.setData(saveResult);
         rr.setMessage("import ok");
         return rr;
     }
