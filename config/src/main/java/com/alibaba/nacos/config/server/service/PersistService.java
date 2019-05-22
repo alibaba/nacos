@@ -3302,118 +3302,107 @@ public class PersistService {
 
     /**
      * 批量写入主表,插入或更新
+     * 返回的MP的格式:
+     * succCount: 导入成功数量
+     * skipCount: 导入跳过的数量 (仅相同配制跳过时有值)
+     * failData: 导入失败的数据  (仅相同配制终止导入时有值)
+     * skipData: 导入跳过的数据  (仅相同配制跳过时有值)
      */
-    public void batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
-                                    Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify) throws NacosException{
-        PlatformTransactionManager transactionManager = this.getTransactionTemplate().getTransactionManager();
-        assert transactionManager != null;
-        DefaultTransactionDefinition def = new DefaultTransactionDefinition();
-        def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-        TransactionStatus status = transactionManager.getTransaction(def);
-        for (ConfigInfo configInfo : configInfoList) {
+    public Map<String, Object> batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
+                                    Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws NacosException{
+        int succCount = 0;
+        int skipCount = 0;
+        List<Map<String, String>> failData = null;
+        List<Map<String, String>> skipData = null;
+
+        for(int i = 0; i < configInfoList.size(); i++){
+            ConfigInfo configInfo = configInfoList.get(i);
             try {
                 ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {
                 defaultLog.error("data verification failed", e);
-                transactionManager.rollback(status);
                 throw e;
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                 configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
             try {
-                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(".") + 1).toLowerCase();
                 String type = null;
-                switch (extName){
-                    case "yml":
-                    case "yaml":
-                        type = "yaml";
-                        break;
-                    case "txt":
-                    case "text":
-                        type = "text";
-                        break;
-                    case "json":
-                        type = "json";
-                        break;
-                    case "xml":
-                        type = "xml";
-                        break;
-                    case "htm":
-                    case "html":
-                        type = "html";
-                        break;
-                    case "properties":
-                        type = "Properties";
-                        break;
+                if(configInfo.getDataId().contains(".")) {
+                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(".") + 1).toLowerCase();
+                    switch (extName) {
+                        case "yml":
+                        case "yaml":
+                            type = "yaml";
+                            break;
+                        case "txt":
+                        case "text":
+                            type = "text";
+                            break;
+                        case "json":
+                            type = "json";
+                            break;
+                        case "xml":
+                            type = "xml";
+                            break;
+                        case "htm":
+                        case "html":
+                            type = "html";
+                            break;
+                        case "properties":
+                            type = "Properties";
+                            break;
+                    }
                 }
                 if (configAdvanceInfo == null) {
                     configAdvanceInfo = new HashMap<>();
                 }
                 configAdvanceInfo.put("type", type);
 
-                addConfigInfoNoTransaction(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
+                addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
+                succCount++;
             } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
-                updateConfigInfoNoTransaction(configInfo2Save, srcIp, srcUser, time, configAdvanceInfo, notify);
+                if (SameConfigPolicy.ABORT.equals(policy)) {
+                    failData = new ArrayList<>();
+                    skipData = new ArrayList<>();
+                    Map<String, String> faileditem = new HashMap<>();
+                    faileditem.put("dataId", configInfo2Save.getDataId());
+                    faileditem.put("group", configInfo2Save.getGroup());
+                    failData.add(faileditem);
+                    for(int j = (i + 1); j < configInfoList.size(); j++){
+                        ConfigInfo skipConfigInfo = configInfoList.get(j);
+                        Map<String, String> skipitem = new HashMap<>();
+                        skipitem.put("dataId", skipConfigInfo.getDataId());
+                        skipitem.put("group", skipConfigInfo.getGroup());
+                        skipData.add(skipitem);
+                    }
+                    break;
+                } else if (SameConfigPolicy.SKIP.equals(policy)) {
+                    skipCount++;
+                    if(skipData == null){
+                        skipData = new ArrayList<>();
+                    }
+                    Map<String, String> skipitem = new HashMap<>();
+                    skipitem.put("dataId", configInfo2Save.getDataId());
+                    skipitem.put("group", configInfo2Save.getGroup());
+                    skipData.add(skipitem);
+                } else if (SameConfigPolicy.OVERWRITE.equals(policy)) {
+                    succCount++;
+                    updateConfigInfo(configInfo2Save, srcIp, srcUser, time, configAdvanceInfo, notify);
+                }
             }
         }
-        transactionManager.commit(status);
-
-    }
-
-    /**
-     * 添加普通配置信息，发布数据变更事件,无事务,批量添加用
-     */
-    private void addConfigInfoNoTransaction(final String srcIp, final String srcUser, final ConfigInfo configInfo,
-                                            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify) {
-        try {
-            long configId = addConfigInfoAtomic(srcIp, srcUser, configInfo, time, configAdvanceInfo);
-            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-            addConfiTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant());
-            insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
-            if (notify) {
-                EventDispatcher.fireEvent(
-                    new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
-                        configInfo.getTenant(), time.getTime()));
-            }
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
+        Map<String, Object> result = new HashMap<>();
+        result.put("succCount", succCount);
+        result.put("skipCount", skipCount);
+        if(failData != null && !failData.isEmpty()){
+            result.put("failData", failData);
         }
+        if(skipData != null && !skipData.isEmpty()) {
+            result.put("skipData", skipData);
+        }
+        return result;
     }
 
-    /**
-     * 更新配置信息,无事务,批量更新用
-     */
-    private void updateConfigInfoNoTransaction(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-                                               final Timestamp time, final Map<String, Object> configAdvanceInfo,
-                                               final boolean notify) {
-        try {
-            ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
-                configInfo.getTenant());
-            String appNameTmp = oldConfigInfo.getAppName();
-            // 用户传过来的appName不为空，则用持久化用户的appName，否则用db的;清空appName的时候需要传空串
-            if (configInfo.getAppName() == null) {
-                configInfo.setAppName(appNameTmp);
-            }
-            updateConfigInfoAtomic(configInfo, srcIp, srcUser, time, configAdvanceInfo);
-            String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
-            if (configTags != null) {
-                // 删除所有tag，然后再重新创建
-                removeTagByIdAtomic(oldConfigInfo.getId());
-                addConfiTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
-                    configInfo.getGroup(), configInfo.getTenant());
-            }
-            insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
-            if (notify) {
-                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
-                    configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
-            }
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
-    }
 
     /**
      * 根据 tenantId 查询 tenantInfo (namespace)是否存在
