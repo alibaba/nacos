@@ -52,13 +52,12 @@ public class FileController {
         this.fileService = fileService;
     }
 
-    /** request from browser */
     @RequestMapping(value = "/download", method = RequestMethod.GET)
     public ResponseEntity<byte[]> downloadNamespaceGroup(@RequestParam String namespaceId, @RequestParam String group) throws IOException {
         String path = fileService.download(namespaceId, group);
 
         if (StringUtils.isBlank(path)) {
-            return new ResponseEntity<>(null, null, HttpStatus.OK);
+            return ResponseEntity.ok(new byte[0]);
         }
 
         String filename = path.substring(path.lastIndexOf(File.separator) + 1) ;
@@ -77,7 +76,7 @@ public class FileController {
 
         String path = fileService.download(namespace, files);
         if (StringUtils.isBlank(path)) {
-            return new ResponseEntity<>(null, null, HttpStatus.OK);
+            return ResponseEntity.ok(new byte[0]);
         }
 
         String filename = path.substring(path.lastIndexOf(File.separator) + 1) ;

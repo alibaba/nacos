@@ -140,7 +140,7 @@ public class FileService {
             }
             String dataId = dirs[1];
             String group = dirs[0];
-            /** query from db */
+            // query from db
             ConfigInfo cfDb = persistService.findConfigInfo(dataId, group, namespaceId);
             if (null == cfDb) {
                 persistService.insertOrUpdate(
