@@ -29,19 +29,22 @@ import {
   Pagination,
   Select,
   Table,
+  Grid,
+  Upload,
+  Message,
 } from '@alifd/next';
 import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
-import Upload from 'rc-upload';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
 import './index.scss';
 import { LANGUAGE_KEY } from '../../../constants';
 
 const { Panel } = Collapse;
+const { Row, Col } = Grid;
 
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
@@ -683,37 +686,153 @@ class ConfigurationManagement extends React.Component {
   importData() {
     const { locale = {} } = this.props;
     const self = this;
+    self.field.setValue('sameConfigPolicy', 'ABORT');
     const uploadProps = {
       accept: 'application/zip',
       action: 'v1/cs/configs?import=true&namespace=' + getParams('namespace'),
+      data: {
+        policy: self.field.getValue('sameConfigPolicy'),
+      },
+      beforeUpload(file, options) {
+        options.data = {
+          policy: self.field.getValue('sameConfigPolicy'),
+        };
+        return options;
+      },
       onSuccess(ret) {
-        Dialog.show({
-          title: locale.importSucc,
-          content: <div>{locale.importSucc}</div>,
-        });
-        self.getData();
+        const resultCode = ret.response.code;
+        if (resultCode === 200) {
+          importConfirm.hide();
+          if (ret.response.data.failData && ret.response.data.failData.length > 0) {
+            Dialog.alert({
+              title: locale.importAbort,
+              content: (
+                <div style={{ width: '500px' }}>
+                  <h4>
+                    {locale.conflictConfig}：{ret.response.data.failData[0].group}/
+                    {ret.response.data.failData[0].dataId}
+                  </h4>
+                  <div style={{ marginTop: 20 }}>
+                    <h5>
+                      {locale.failureEntries}: {ret.response.data.failData.length}
+                    </h5>
+                    <Table dataSource={ret.response.data.failData}>
+                      <Table.Column title="Data Id" dataIndex="dataId" />
+                      <Table.Column title="Group" dataIndex="group" />
+                    </Table>
+                  </div>
+                  <div>
+                    <h5>
+                      {locale.unprocessedEntries}: {ret.response.data.skipData.length}
+                    </h5>
+                    <Table dataSource={ret.response.data.skipData}>
+                      <Table.Column title="Data Id" dataIndex="dataId" />
+                      <Table.Column title="Group" dataIndex="group" />
+                    </Table>
+                  </div>
+                </div>
+              ),
+            });
+          } else if (ret.response.data.skipCount && ret.response.data.skipCount > 0) {
+            Dialog.alert({
+              title: locale.importSucc,
+              content: (
+                <div style={{ width: '500px' }}>
+                  <div>
+                    <h5>
+                      {locale.skippedEntries}: {ret.response.data.skipData.length}
+                    </h5>
+                    <Table dataSource={ret.response.data.skipData}>
+                      <Table.Column title="Data Id" dataIndex="dataId" />
+                      <Table.Column title="Group" dataIndex="group" />
+                    </Table>
+                  </div>
+                </div>
+              ),
+            });
+          } else {
+            let message =
+              locale.importSuccBegin + ret.response.data.succCount + locale.importSuccEnd;
+            Message.success(message);
+          }
+          self.getData();
+        } else {
+          let alertContent = locale.importFailMsg;
+          if (resultCode === 5001) {
+            alertContent = locale.namespaceNotExist;
+          }
+          if (resultCode === 5002) {
+            alertContent = locale.metadataIllegal;
+          }
+          if (resultCode === 5003 || resultCode === 5004 || resultCode === 5005) {
+            alert(123);
+            alertContent = locale.importDataValidationError;
+          }
+          Dialog.alert({
+            title: locale.importFail,
+            content: alertContent,
+          });
+        }
       },
       onError(err) {
-        console.log('onError', err);
+        Dialog.alert({
+          title: locale.importFail,
+          content: locale.importDataValidationError,
+        });
       },
     };
-    Dialog.confirm({
+    const importConfirm = Dialog.confirm({
       title: locale.import,
       footer: false,
       content: (
         <div>
-          <div>目标空间:</div>
-          <div>相同配制:</div>
+          <h3>{this.state.isok ? locale.deletedSuccessfully : locale.deleteFailed}</h3>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ color: '#999', marginRight: 5 }}>{locale.targetNamespace}:</span>
+            <span style={{ color: '#49D2E7' }}>{this.state.nownamespace_name} </span>|{' '}
+            {this.state.nownamespace_id}
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ color: '#999', marginRight: 5 }}>{locale.samePreparation}:</span>
+            <Select
+              style={{ width: 130 }}
+              size={'medium'}
+              hasArrow
+              mode="single"
+              filterLocal={false}
+              defaultValue={'ABORT'}
+              dataSource={[
+                {
+                  label: locale.abortImport,
+                  value: 'ABORT',
+                },
+                {
+                  label: locale.skipImport,
+                  value: 'SKIP',
+                },
+                {
+                  label: locale.overwriteImport,
+                  value: 'OVERWRITE',
+                },
+              ]}
+              hasClear={false}
+              onChange={function(value, actionType, item) {
+                self.field.setValue('sameConfigPolicy', value);
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <Icon type="prompt" style={{ color: '#FFA003', marginRight: '10px' }} />
+            {locale.importRemind}
+          </div>
           <div>
             <Upload
               name={'file'}
-              component={'button'}
-              className={'next-btn next-medium next-btn-primary'}
-              style={{ marginRight: 10 }}
+              listType="text"
               data-spm-click={'gostr=/aliyun;locaid=configsImport'}
               {...uploadProps}
             >
-              {locale.uploadBtn}
+              <Button type="primary">{locale.uploadBtn}</Button>
             </Upload>
           </div>
         </div>
