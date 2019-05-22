@@ -119,6 +119,8 @@ public class Constants {
 
     public static final String NAMESPACE_CONTROLLER_PATH = BASE_PATH + "/namespaces";
 
+    public static final String FILE_CONTROLLER_PATH = BASE_PATH + "/file";
+
     public static final String ENCODE = "UTF-8";
 
     public static final String MAP_FILE = "map-file.js";
@@ -213,4 +215,9 @@ public class Constants {
     public static final String ACL_RESPONSE = "ACL-Response";
 
     public static final int ATOMIC_MAX_SIZE = 1000;
+
+    public static final String UPLOAD_TERMINATE_MODE = "terminate";
+    public static final String UPLOAD_SKIP_MODE = "skip";
+    public static final String UPLOAD_OVERRIDE_MODE = "override";
+
 }
