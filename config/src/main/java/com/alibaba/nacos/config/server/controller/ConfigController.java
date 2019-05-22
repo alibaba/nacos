@@ -426,7 +426,8 @@ public class ConfigController {
                             + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
                     }
                     metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
-                        .append(ci.getAppName()).append("\r\n");  // ACM使用的是 \r\n, 不是根据系统取的
+                        // ACM使用的是 \r\n, 不是根据系统取的
+                        .append(ci.getAppName()).append("\r\n");
                 }
                 String itemName = ci.getGroup() + "/" + ci.getDataId() ;
                 zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
@@ -455,7 +456,7 @@ public class ConfigController {
                                                                           SameConfigPolicy policy,
                                                                   MultipartFile file) throws NacosException {
         RestResult<Map<String, Object>> rr = new RestResult<>();
-        Map<String, Object> failedData = new HashMap<>();
+        Map<String, Object> failedData = new HashMap<>(4);
         rr.setData(failedData);
 
         if(StringUtils.isNotBlank(namespace)){
@@ -470,7 +471,7 @@ public class ConfigController {
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
-            Map<String, String> metaDataMap = new HashMap<>();
+            Map<String, String> metaDataMap = new HashMap<>(16);
             if(metaDataZipItem != null){
                 String metaDataStr = metaDataZipItem.getItemData();
                 String[] metaDataArr = metaDataStr.split("\r\n");

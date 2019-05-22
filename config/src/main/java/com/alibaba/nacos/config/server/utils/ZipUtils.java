@@ -222,7 +222,7 @@ public class ZipUtils {
                     while ((offset = zipIn.read(buffer)) != -1) {
                         out.write(buffer, 0, offset);
                     }
-                    if(entry.getName().equals(".meta.yml")){
+                    if(".meta.yml".equals(entry.getName())){
                         metaDataItem = new ZipItem(entry.getName(), out.toString("UTF-8"));
                     } else {
                         itemList.add(new ZipItem(entry.getName(), out.toString("UTF-8")));

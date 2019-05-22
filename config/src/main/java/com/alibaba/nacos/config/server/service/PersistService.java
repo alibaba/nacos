@@ -3351,10 +3351,12 @@ public class PersistService {
                         case "properties":
                             type = "Properties";
                             break;
+                        default:
+                            break;
                     }
                 }
                 if (configAdvanceInfo == null) {
-                    configAdvanceInfo = new HashMap<>();
+                    configAdvanceInfo = new HashMap<>(16);
                 }
                 configAdvanceInfo.put("type", type);
 
@@ -3364,13 +3366,13 @@ public class PersistService {
                 if (SameConfigPolicy.ABORT.equals(policy)) {
                     failData = new ArrayList<>();
                     skipData = new ArrayList<>();
-                    Map<String, String> faileditem = new HashMap<>();
+                    Map<String, String> faileditem = new HashMap<>(2);
                     faileditem.put("dataId", configInfo2Save.getDataId());
                     faileditem.put("group", configInfo2Save.getGroup());
                     failData.add(faileditem);
                     for(int j = (i + 1); j < configInfoList.size(); j++){
                         ConfigInfo skipConfigInfo = configInfoList.get(j);
-                        Map<String, String> skipitem = new HashMap<>();
+                        Map<String, String> skipitem = new HashMap<>(2);
                         skipitem.put("dataId", skipConfigInfo.getDataId());
                         skipitem.put("group", skipConfigInfo.getGroup());
                         skipData.add(skipitem);
@@ -3381,7 +3383,7 @@ public class PersistService {
                     if(skipData == null){
                         skipData = new ArrayList<>();
                     }
-                    Map<String, String> skipitem = new HashMap<>();
+                    Map<String, String> skipitem = new HashMap<>(2);
                     skipitem.put("dataId", configInfo2Save.getDataId());
                     skipitem.put("group", configInfo2Save.getGroup());
                     skipData.add(skipitem);
@@ -3391,7 +3393,7 @@ public class PersistService {
                 }
             }
         }
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>(4);
         result.put("succCount", succCount);
         result.put("skipCount", skipCount);
         if(failData != null && !failData.isEmpty()){
