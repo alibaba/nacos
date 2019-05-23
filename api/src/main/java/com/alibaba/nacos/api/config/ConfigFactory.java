@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.api.config;
 
-import java.lang.reflect.Constructor;
-import java.util.Properties;
-
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+
+import java.lang.reflect.Constructor;
+import java.util.Properties;
 
 /**
  * Config Factory
