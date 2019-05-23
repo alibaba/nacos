@@ -765,7 +765,6 @@ class ConfigurationManagement extends React.Component {
             alertContent = locale.metadataIllegal;
           }
           if (resultCode === 5003 || resultCode === 5004 || resultCode === 5005) {
-            alert(123);
             alertContent = locale.importDataValidationError;
           }
           Dialog.alert({
