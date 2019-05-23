@@ -46,7 +46,7 @@ public class FileService {
     @Autowired
     private PersistService persistService;
 
-    public String download(String namespaceId, String group) {
+    public String download(String namespaceId, String group) throws IOException {
         cleanTmpFiles(DOWNLOAD_MODE);
 
         String zipName = getZipName(namespaceId);
@@ -54,21 +54,7 @@ public class FileService {
         File srcDir = new File(srcDirPath);
         String dstFullFilename = srcDirPath + ".zip";
 
-        Page<ConfigInfo> configInfos = persistService.findConfigInfo4Page(1, Integer.MAX_VALUE, null, group, namespaceId, null);
-        if (null == configInfos) {
-            return "";
-        }
-
-        // write files to disk
-        for (int i = 0; i < configInfos.getPageItems().size(); i++) {
-            ConfigInfo configInfo = configInfos.getPageItems().get(i);
-            try {
-                saveToDownloadDir(srcDirPath, configInfo.getGroup(), configInfo.getDataId(), configInfo.getContent());
-            } catch (IOException e) {
-                LogUtil.defaultLog.error("io exception occurs when save file", e);
-                return "";
-            }
-        }
+        saveFilesByPage(srcDirPath, group, namespaceId);
 
         // zip file
         zipFile(dstFullFilename, srcDir);
@@ -95,28 +81,10 @@ public class FileService {
                 if (null == configInfo) {
                     continue;
                 }
-                try {
-                    saveToDownloadDir(srcDirPath, configInfo.getGroup(), configInfo.getDataId(), configInfo.getContent());
-                } catch (IOException e) {
-                    LogUtil.defaultLog.error("io exception occurs when save file", e);
-                    return "";
-                }
+                saveToDownloadDir(srcDirPath, configInfo.getGroup(), configInfo.getDataId(), configInfo.getContent());
             }
         } else {
-            Page<ConfigInfo> configInfos = persistService.findConfigInfo4Page(1, Integer.MAX_VALUE, null, null, namespaceId, null);
-            if (null == configInfos) {
-                return "";
-            }
-
-            for (int i = 0; i < configInfos.getPageItems().size(); i++) {
-                ConfigInfo configInfo = configInfos.getPageItems().get(i);
-                try {
-                    saveToDownloadDir(srcDirPath, configInfo.getGroup(), configInfo.getDataId(), configInfo.getContent());
-                } catch (IOException e) {
-                    LogUtil.defaultLog.error("io exception occurs when save file", e);
-                    return "";
-                }
-            }
+            saveFilesByPage(srcDirPath, null, namespaceId);
         }
 
         // zip file
@@ -126,6 +94,8 @@ public class FileService {
     }
 
     public void resolveZipFile(String zipFilePath, String namespaceId, String uploadMode) throws IOException {
+        cleanTmpFiles(UPLOAD_MODE);
+
         byte[] buffer = new byte[1024];
         int len = 0;
         ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFilePath));
@@ -143,22 +113,15 @@ public class FileService {
             // query from db
             ConfigInfo cfDb = persistService.findConfigInfo(dataId, group, namespaceId);
             if (null == cfDb) {
-                persistService.insertOrUpdate(
-                    null,
-                    null,
-                    readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId),
-                    TimeUtils.getCurrentTime(),
-                    null);
+                persistService.addConfigInfo(null, null, readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId),
+                    TimeUtils.getCurrentTime(), null, true);
             } else {
                 if (Constants.UPLOAD_TERMINATE_MODE.equals(uploadMode)) {
                     break;
                 } else if (Constants.UPLOAD_OVERRIDE_MODE.equals(uploadMode)) {
-                    persistService.insertOrUpdate(
-                        null,
-                        null,
-                        readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId),
-                        TimeUtils.getCurrentTime(),
-                        null);
+                    Timestamp time = TimeUtils.getCurrentTime();
+                    persistService.updateConfigInfo(readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId),
+                        null, null,time, null, true);
                 } else if (Constants.UPLOAD_SKIP_MODE.equals(uploadMode)) {
                     continue;
                 }
@@ -167,6 +130,27 @@ public class FileService {
 
         zis.closeEntry();
         zis.close();
+    }
+
+    private void saveFilesByPage(String srcDirPath, String group, String namespaceId) throws IOException {
+        int pageNo = 1;
+        int pageSize = 20;
+
+        Page<ConfigInfo> configInfos = persistService.findConfigInfo4Page(pageNo, pageSize, null, group, namespaceId, null);
+        if (null == configInfos) {
+            throw new RuntimeException("no config_info record found");
+        }
+
+        while(true) {
+            for (int i = 0; i < configInfos.getPageItems().size(); i++) {
+                ConfigInfo configInfo = configInfos.getPageItems().get(i);
+                saveToDownloadDir(srcDirPath, configInfo.getGroup(), configInfo.getDataId(), configInfo.getContent());
+            }
+            configInfos = persistService.findConfigInfo4Page(++pageNo, pageSize, null, group, namespaceId, null);
+            if (null == configInfos) {
+                break;
+            }
+        }
     }
 
     private ConfigInfo readConfigInfoFromZip(byte[] buffer, int len, ZipInputStream zis, String dataId, String group, String namespaceId) throws IOException {
@@ -200,28 +184,23 @@ public class FileService {
             }
         }
 
-        LogUtil.defaultLog.info("clean download directory");
+        LogUtil.defaultLog.info("clean download[upload] directory");
     }
 
     private String getZipName(String namespaceId) {
-        String str = StringUtils.isBlank(namespaceId) ? "public" : namespaceId;
-        String dirName = "公网" + "_" + str + "_" + System.currentTimeMillis();
-        return dirName;
+        namespaceId = StringUtils.isBlank(namespaceId) ? "public" : namespaceId;
+        return namespaceId + "_" + System.currentTimeMillis();
     }
 
     private String getRootPath(String zipName) {
         return NACOS_HOME + DOWANLOAD_DIR + File.separator  + zipName;
     }
 
-    private void zipFile(String dstFullFilename, File srcDir) {
+    private void zipFile(String dstFullFilename, File srcDir) throws IOException {
         ZipOutputStream zos = null;
         try {
             zos = new ZipOutputStream(new FileOutputStream(dstFullFilename));
             zipFiles(srcDir.listFiles(), zos);
-        } catch (FileNotFoundException e) {
-            LogUtil.fatalLog.error("file not found:{}", dstFullFilename);
-        } catch (IOException e) {
-            LogUtil.fatalLog.error("io exception occurs when zip file", e);
         } finally {
             if (null != zos) {
                 try {
