@@ -3267,10 +3267,10 @@ public class PersistService {
     }
 
     /**
-     * 根据group, appName, tenant查询全部配置信息(导出用)
+     * query all configuration information according to group, appName, tenant (for export)
      *
      * @param group
-     * @return ConfigInfo对象的集合
+     * @return Collection of ConfigInfo objects
      */
     public List<ConfigInfo> findAllConfigInfo4eExport(final String group, final String tenant,
                                                 final String appName, final String ids) {
@@ -3301,21 +3301,21 @@ public class PersistService {
     }
 
     /**
-     * 批量写入主表,插入或更新
-     * 返回的MP的格式:
-     * succCount: 导入成功数量
-     * skipCount: 导入跳过的数量 (仅相同配制跳过时有值)
-     * failData: 导入失败的数据  (仅相同配制终止导入时有值)
-     * skipData: 导入跳过的数据  (仅相同配制跳过时有值)
+     * batch operation,insert or update
+     * the format of the returned:
+     * succCount: number of successful imports
+     * skipCount: number of import skips (only with skip for the same configs)
+     * failData: import failed data (only with abort for the same configs)
+     * skipData: data skipped at import  (only with skip for the same configs)
      */
     public Map<String, Object> batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
-                                    Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws NacosException{
+                                                   Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws NacosException {
         int succCount = 0;
         int skipCount = 0;
         List<Map<String, String>> failData = null;
         List<Map<String, String>> skipData = null;
 
-        for(int i = 0; i < configInfoList.size(); i++){
+        for (int i = 0; i < configInfoList.size(); i++) {
             ConfigInfo configInfo = configInfoList.get(i);
             try {
                 ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
@@ -3325,44 +3325,46 @@ public class PersistService {
             }
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                 configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
-            try {
-                String type = null;
-                if(configInfo.getDataId().contains(".")) {
-                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(".") + 1).toLowerCase();
-                    switch (extName) {
-                        case "yml":
-                        case "yaml":
-                            type = "yaml";
-                            break;
-                        case "txt":
-                        case "text":
-                            type = "text";
-                            break;
-                        case "json":
-                            type = "json";
-                            break;
-                        case "xml":
-                            type = "xml";
-                            break;
-                        case "htm":
-                        case "html":
-                            type = "html";
-                            break;
-                        case "properties":
-                            type = "Properties";
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                if (configAdvanceInfo == null) {
-                    configAdvanceInfo = new HashMap<>(16);
-                }
-                configAdvanceInfo.put("type", type);
 
+            // simple judgment of file type based on suffix
+            String type = null;
+            if (configInfo.getDataId().contains(".")) {
+                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(".") + 1).toLowerCase();
+                switch (extName) {
+                    case "yml":
+                    case "yaml":
+                        type = "yaml";
+                        break;
+                    case "txt":
+                    case "text":
+                        type = "text";
+                        break;
+                    case "json":
+                        type = "json";
+                        break;
+                    case "xml":
+                        type = "xml";
+                        break;
+                    case "htm":
+                    case "html":
+                        type = "html";
+                        break;
+                    case "properties":
+                        type = "Properties";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            if (configAdvanceInfo == null) {
+                configAdvanceInfo = new HashMap<>(16);
+            }
+            configAdvanceInfo.put("type", type);
+            try {
                 addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
                 succCount++;
-            } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
+            } catch (DataIntegrityViolationException ive) {
+                // uniqueness constraint conflict
                 if (SameConfigPolicy.ABORT.equals(policy)) {
                     failData = new ArrayList<>();
                     skipData = new ArrayList<>();
@@ -3370,7 +3372,7 @@ public class PersistService {
                     faileditem.put("dataId", configInfo2Save.getDataId());
                     faileditem.put("group", configInfo2Save.getGroup());
                     failData.add(faileditem);
-                    for(int j = (i + 1); j < configInfoList.size(); j++){
+                    for (int j = (i + 1); j < configInfoList.size(); j++) {
                         ConfigInfo skipConfigInfo = configInfoList.get(j);
                         Map<String, String> skipitem = new HashMap<>(2);
                         skipitem.put("dataId", skipConfigInfo.getDataId());
@@ -3380,7 +3382,7 @@ public class PersistService {
                     break;
                 } else if (SameConfigPolicy.SKIP.equals(policy)) {
                     skipCount++;
-                    if(skipData == null){
+                    if (skipData == null) {
                         skipData = new ArrayList<>();
                     }
                     Map<String, String> skipitem = new HashMap<>(2);
@@ -3396,10 +3398,10 @@ public class PersistService {
         Map<String, Object> result = new HashMap<>(4);
         result.put("succCount", succCount);
         result.put("skipCount", skipCount);
-        if(failData != null && !failData.isEmpty()){
+        if (failData != null && !failData.isEmpty()) {
             result.put("failData", failData);
         }
-        if(skipData != null && !skipData.isEmpty()) {
+        if (skipData != null && !skipData.isEmpty()) {
             result.put("skipData", skipData);
         }
         return result;
@@ -3407,10 +3409,10 @@ public class PersistService {
 
 
     /**
-     * 根据 tenantId 查询 tenantInfo (namespace)是否存在
+     * query tenantInfo (namespace) existence based by tenantId
      *
      * @param tenantId
-     * @return 根据ID查询到的数据数量
+     * @return count by tenantId
      */
     public int tenantInfoCountByTenantId(String tenantId) {
         Assert.hasText(tenantId, "tenantId can not be null");
