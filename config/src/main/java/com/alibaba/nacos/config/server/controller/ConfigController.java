@@ -398,8 +398,6 @@ public class ConfigController {
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
         try {
-            // 暂时不考虑数据量大的问题,配制应该不会很多
-
             StringBuilder idsSb = new StringBuilder();
             if(ids != null && !ids.isEmpty()){
                 for(int i = 0; i < ids.size(); i++){
@@ -416,7 +414,7 @@ public class ConfigController {
             StringBuilder metaData = null;
             for(ConfigInfo ci : dataList){
                 if(StringUtils.isNotBlank(ci.getAppName())){
-                    // 处理app
+                    // Handle appName
                     if(metaData == null){
                         metaData = new StringBuilder();
                     }
@@ -426,7 +424,7 @@ public class ConfigController {
                             + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
                     }
                     metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
-                        // ACM使用的是 \r\n, 不是根据系统取的
+                        // Fixed use of "\r\n" here
                         .append(ci.getAppName()).append("\r\n");
                 }
                 String itemName = ci.getGroup() + "/" + ci.getDataId() ;

@@ -24,20 +24,17 @@ package com.alibaba.nacos.config.server.model;
 public enum SameConfigPolicy {
 
     /**
-     * @author klw
-     * @Description: 重复项终止导入
+     * @Description: abort import  on duplicate
      */
     ABORT,
 
     /**
-     * @author klw
-     * @Description: 重复项跳过
+     * @Description: skipping on duplicate
      */
     SKIP,
 
     /**
-     * @author klw
-     * @Description: 重复项覆盖
+     * @Description: overwrite on duplicate
      */
     OVERWRITE;
 
