@@ -45,5 +45,8 @@
                 additivity="false">
             <AppenderRef ref="NAMING_LOG_FILE"/>
         </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Root>
     </Loggers>
 </Configuration>
