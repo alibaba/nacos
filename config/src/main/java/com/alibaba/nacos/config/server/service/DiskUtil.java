@@ -47,8 +47,6 @@ public class DiskUtil {
     static final String TENANT_BETA_DIR = File.separator + "data" + File.separator + "tenant-beta-data";
     static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
-    public static final String DOWANLOAD_DIR = File.separator + "data" + File.separator + "download-data";
-    public static final String UPLOAD_DIR = File.separator + "data" + File.separator + "upload-data";
 
     static public void saveHeartBeatToDisk(String heartBeatTime)
         throws IOException {
