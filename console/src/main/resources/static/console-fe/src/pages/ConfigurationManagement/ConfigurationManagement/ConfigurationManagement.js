@@ -672,17 +672,49 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  onSelect(checked, record, records) {
+    if (!checked) {
+      this.setState({
+        selectedRecord: records,
+        selectedKeys: this.state.selectedKeys.filter(item => item !== record.id),
+      });
+    } else {
+      this.setState({
+        selectedRecord: records,
+        selectedKeys: this.state.selectedKeys.concat(record.id),
+      });
+    }
+  }
+
+  onSelectAll(checked, records) {
+    let { selectedKeys, selectedRecord, dataSource } = this.state;
+
+    if (!checked) {
+      let keys = dataSource.map(item => item.id);
+
+      selectedKeys = selectedKeys.filter(id => keys.indexOf(id) === -1);
+      selectedRecord = selectedRecord.filter(item => keys.indexOf(item.id) === -1);
+    } else {
+      selectedRecord = selectedRecord.concat(records);
+      selectedKeys = selectedRecord.map(item => item.id);
+    }
+    this.setState({ selectedKeys, selectedRecord });
+  }
+
   upload(file, policy) {
     let formdata = new FormData();
 
     formdata.append('file', file);
     formdata.append('namespaceId', this.state.nownamespace_id);
-    formdata.append('uploadMode', 'policy');
+    formdata.append('uploadMode', policy);
 
-    axios.post('/api/resourcecode/pc/addProductInfo', formdata).then(() => {
-      this.importDialog.current.closeDialog();
-      this.selectAll();
-    });
+    axios
+      .post('/nacos/v1/cs/file/upload', formdata)
+      .then(() => {
+        this.importDialog.current.closeDialog();
+        this.selectAll();
+      })
+      .catch(() => this.importDialog.current.setUploadingflag(false));
   }
 
   download() {
@@ -691,7 +723,12 @@ class ConfigurationManagement extends React.Component {
     const files = record.map(({ dataId, group }) => ({ dataId, group }));
     const data = { namespaceId, files };
 
-    window.open('/nacos/v1/cs/file/downloadMultiFiles?param=' + encodeURI(JSON.stringify(data)), 'blank');
+    this.exportDialog.current.closeDialog();
+
+    window.open(
+      '/nacos/v1/cs/file/downloadMultiFiles?param=' + encodeURI(JSON.stringify(data)),
+      'blank'
+    );
   }
 
   render() {
@@ -919,9 +956,9 @@ class ConfigurationManagement extends React.Component {
                   maxBodyHeight={400}
                   ref={'dataTable'}
                   rowSelection={{
-                    onSelect: (checked, record, records) =>
-                      this.setState({ selectedRecord: records }),
-                    onSelectAll: (checked, records) => this.setState({ selectedRecord: records }),
+                    selectedRowKeys: this.state.selectedKeys,
+                    onSelect: this.onSelect.bind(this),
+                    onSelectAll: this.onSelectAll.bind(this),
                   }}
                 >
                   <Table.Column title={'Data Id'} dataIndex={'dataId'} />
