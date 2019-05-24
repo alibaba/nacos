@@ -26,7 +26,7 @@ class ImportDialog extends React.Component {
       visible: false,
       serverId: '',
       serverName: '',
-      canSubmit: true,
+      isUploading: true,
       policy: '',
       policyLabel: '',
       allPolicy: [],
@@ -49,7 +49,7 @@ class ImportDialog extends React.Component {
     this.callback = callback;
     this.setState({
       visible: true,
-      canSubmit: true,
+      isUploading: true,
       serverId: payload.id,
       serverName: payload.name,
     });
