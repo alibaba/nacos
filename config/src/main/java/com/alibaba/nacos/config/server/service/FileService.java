@@ -32,6 +32,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * FileService
  * @author rushsky518
@@ -71,12 +73,12 @@ public class FileService {
 
     public void resolveZipFile(InputStream is, String namespaceId, String uploadMode) throws IOException {
         ByteArrayOutputStream baos = cloneInputStream(is);
-        InputStream metaInput = new ByteArrayInputStream(baos.toByteArray());
-        InputStream configInput = new ByteArrayInputStream(baos.toByteArray());
+        InputStream metaInputStream = new ByteArrayInputStream(baos.toByteArray());
+        InputStream configInputStream = new ByteArrayInputStream(baos.toByteArray());
         baos.close();
 
-        Map<String, String> metaMap = resolveMetaFile(metaInput);
-        resolveConfigFile(configInput, namespaceId, uploadMode, metaMap);
+        Map<String, String> metaMap = resolveMetaFile(metaInputStream);
+        resolveConfigFile(configInputStream, namespaceId, uploadMode, metaMap);
     }
 
     private static ByteArrayOutputStream cloneInputStream(InputStream in) throws IOException {
@@ -95,7 +97,7 @@ public class FileService {
     }
 
     public Map<String, String> resolveMetaFile(InputStream is) throws IOException {
-        Map<String, String> map = new HashMap<>(512);
+        Map<String, String> map = new HashMap<>(64);
         ZipInputStream zis = new ZipInputStream(is);
         for (ZipEntry zipEntry = zis.getNextEntry(); null != zipEntry; zipEntry = zis.getNextEntry()) {
             if (zipEntry.getName().equals(META_FILENAME)) {
@@ -112,17 +114,14 @@ public class FileService {
                     }
 
                     String group = arr[0];
-                    String dataId = arr[1].replace("~", ".");
+                    String dataId = arr[1].replace(WAVE, DOT);
                     String appname = arr[2].split("=")[1];
-
                     map.put(group + dataId, appname);
                 }
+                br.close();
                 break;
             }
         }
-
-        zis.closeEntry();
-        zis.close();
 
         return map;
     }
@@ -143,18 +142,21 @@ public class FileService {
             String dataId = dirs[1];
             String group = dirs[0];
             // query from db
-            ConfigInfo cfDb = persistService.findConfigInfo(dataId, group, namespaceId);
-            if (null == cfDb) {
-                ConfigInfo configInfo = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
-                persistService.addConfigInfo(null, null, configInfo,
-                    TimeUtils.getCurrentTime(), null, true);
+            ConfigInfo dbCf = persistService.findConfigInfo(dataId, group, namespaceId);
+            if (null == dbCf) {
+                ConfigInfo cf = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
+                Map<String, Object> advanceInfo = new HashMap<>(4);
+                advanceInfo.put("type", getFileType(dataId));
+                persistService.addConfigInfo(null, null, cf, TimeUtils.getCurrentTime(), advanceInfo, false);
             } else {
                 if (Constants.UPLOAD_TERMINATE_MODE.equals(uploadMode)) {
                     break;
                 } else if (Constants.UPLOAD_OVERRIDE_MODE.equals(uploadMode)) {
                     Timestamp time = TimeUtils.getCurrentTime();
-                    ConfigInfo configInfo = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
-                    persistService.updateConfigInfo(configInfo,null, null,time, null, true);
+                    ConfigInfo cf = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
+                    Map<String, Object> advanceInfo = new HashMap<>(4);
+                    advanceInfo.put("type", getFileType(dataId));
+                    persistService.updateConfigInfo(cf,null, null,time, advanceInfo, true);
                 } else if (Constants.UPLOAD_SKIP_MODE.equals(uploadMode)) {
                     continue;
                 }
@@ -178,7 +180,7 @@ public class FileService {
         while(true) {
             for (int i = 0; i < configInfos.getPageItems().size(); i++) {
                 ConfigInfo configInfo = configInfos.getPageItems().get(i);
-                zipSingleFile(zos, new ByteArrayInputStream(configInfo.getContent().getBytes()), configInfo.getGroup() + ZIP_SEPARATOR + configInfo.getDataId());
+                zipSingleFile(zos, new ByteArrayInputStream(configInfo.getContent().getBytes(UTF_8)), configInfo.getGroup() + ZIP_SEPARATOR + configInfo.getDataId());
                 genMetaYmlContent(sb,configInfo);
             }
             configInfos = persistService.findConfigInfo4Page(++pageNo, pageSize, null, group, namespaceId, null);
@@ -197,12 +199,28 @@ public class FileService {
         while ((len = zis.read(buffer)) > 0) {
             baos.write(buffer, 0, len);
         }
-        ConfigInfo cf = new ConfigInfo(dataId, group, new String(baos.toByteArray(), "UTF-8"));
+        ConfigInfo cf = new ConfigInfo(dataId, group, new String(baos.toByteArray(), UTF_8));
         baos.close();
         cf.setTenant(namespaceId);
         String appname = metaMap.get(group + dataId);
         cf.setAppName(null != appname ? appname : "");
         return cf;
+    }
+
+    private String getFileType(String dataId) {
+        String type = "text";
+        if (dataId.contains("json")) {
+            type = "json";
+        } else if (dataId.contains("xml")) {
+            type = "xml";
+        } else if (dataId.contains("yml") || dataId.contains("yaml")) {
+            type = "yaml";
+        } else if (dataId.contains("html") || dataId.contains("htm")) {
+            type = "text/html";
+        } else if (dataId.contains("properties")) {
+            type = "properties";
+        }
+        return type;
     }
 
     private void zipSingleFile(ZipOutputStream zos, InputStream is, String fileName) throws IOException {
@@ -222,12 +240,14 @@ public class FileService {
             return;
         }
 
-        sb.append(ci.getGroup()).append(".")
-            .append(ci.getDataId().replace(".", "~")).append(".")
+        sb.append(ci.getGroup()).append(DOT)
+            .append(ci.getDataId().replace(DOT, WAVE)).append(DOT)
             .append("app=").append(ci.getAppName())
             .append("\n");
     }
 
+    private final String WAVE = "~";
+    private final String DOT = ".";
     private final String META_FILENAME = ".meta.yml";
     private final String ZIP_SEPARATOR = "/";
 }
