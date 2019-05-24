@@ -61,7 +61,7 @@ class ImportDialog extends React.Component {
 
   setPolicy = (...value) => {
     this.setState({
-      policyLabel: value[1].label,
+      policyLabel: value[2].label,
       policy: value[0],
     });
   };
@@ -73,6 +73,7 @@ class ImportDialog extends React.Component {
     } else {
       let targetFile = files[0];
 
+      this.closeDialog();
       this.callback(targetFile, this.state.policy);
       // this.uploadFile(targetFile);
     }
