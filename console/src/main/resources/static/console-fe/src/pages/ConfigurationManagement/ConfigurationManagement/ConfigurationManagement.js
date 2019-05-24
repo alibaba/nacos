@@ -723,7 +723,8 @@ class ConfigurationManagement extends React.Component {
                   </div>
                   <div>
                     <h5>
-                      {locale.unprocessedEntries}: {ret.response.data.skipData.length}
+                      {locale.unprocessedEntries}:{' '}
+                      {ret.response.data.skipData ? ret.response.data.skipData : 0}
                     </h5>
                     <Table dataSource={ret.response.data.skipData}>
                       <Table.Column title="Data Id" dataIndex="dataId" />
