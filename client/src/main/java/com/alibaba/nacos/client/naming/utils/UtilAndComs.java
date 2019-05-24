@@ -28,6 +28,8 @@ public class UtilAndComs {
 
     public static String NACOS_URL_INSTANCE = NACOS_URL_BASE + "/instance";
 
+    public static String NACOS_URL_SERVICE = NACOS_URL_BASE + "/service";
+
     public static final String ENCODING = "UTF-8";
 
     public static final String ENV_LIST_KEY = "envList";

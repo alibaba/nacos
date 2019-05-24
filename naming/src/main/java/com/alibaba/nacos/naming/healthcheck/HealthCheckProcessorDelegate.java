@@ -15,8 +15,14 @@
  */
 package com.alibaba.nacos.naming.healthcheck;
 
+import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author nacos
@@ -24,39 +30,30 @@ import org.springframework.stereotype.Component;
 @Component("healthCheckDelegate")
 public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
 
-    @Autowired
-    private HttpHealthCheckProcessor httpProcessor;
+    private Map<String, HealthCheckProcessor> healthCheckProcessorMap
+        = new HashMap<>();
+
+    public HealthCheckProcessorDelegate(HealthCheckExtendProvider provider) {
+        provider.init();
+    }
 
     @Autowired
-    private TcpSuperSenseProcessor tcpProcessor;
-
-    @Autowired
-    private MysqlHealthCheckProcessor mysqlProcessor;
-
-    @Autowired
-    private NoneHealthCheckProcessor noneProcessor;
+    public void addProcessor(Collection<HealthCheckProcessor> processors){
+        healthCheckProcessorMap.putAll(processors.stream()
+            .filter(processor -> processor.getType() != null)
+            .collect(Collectors.toMap(HealthCheckProcessor::getType, processor -> processor)));
+    }
 
     @Override
     public void process(HealthCheckTask task) {
 
         String type = task.getCluster().getHealthChecker().getType();
-
-        if (type.equals(httpProcessor.getType())) {
-            httpProcessor.process(task);
-            return;
+        HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
+        if(processor == null){
+            processor = healthCheckProcessorMap.get("none");
         }
 
-        if (type.equals(tcpProcessor.getType())) {
-            tcpProcessor.process(task);
-            return;
-        }
-
-        if (type.equals(mysqlProcessor.getType())) {
-            mysqlProcessor.process(task);
-            return;
-        }
-
-        noneProcessor.process(task);
+        processor.process(task);
     }
 
     @Override
