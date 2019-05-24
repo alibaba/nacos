@@ -53,7 +53,7 @@ public class FileController {
 
     private final PersistService persistService;
 
-    private final  FileService fileService;
+    private final FileService fileService;
 
     @Autowired
     public FileController(PersistService persistService, FileService fileService) {
@@ -90,15 +90,15 @@ public class FileController {
         String namespaceId = json.getString("namespaceId");
         List files = json.getJSONArray("files");
         if (StringUtils.isBlank(namespaceId)) {
-            return ResponseEntity.ok(new byte[0]);
+            namespaceId = "";
         }
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(bos);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
         byte[] bytes = null;
         try {
             fileService.download(zos, namespaceId, files);
-            bytes = bos.toByteArray();
+            bytes = baos.toByteArray();
         } catch (IOException e) {
             LogUtil.fatalLog.error("io exception occurs when download config file", e);
         } finally {

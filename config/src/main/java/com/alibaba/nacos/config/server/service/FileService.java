@@ -18,15 +18,14 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -48,6 +47,7 @@ public class FileService {
 
     public void download(ZipOutputStream zos, String namespaceId, List files) throws IOException {
         if (null != files && !files.isEmpty()) {
+            StringBuilder sb = new StringBuilder(512);
             for (int i = 0; i< files.size(); i++) {
                 Map map = (Map)files.get(i);
                 String dataId = map.get("dataId").toString();
@@ -58,6 +58,11 @@ public class FileService {
                     continue;
                 }
                 zipSingleFile(zos, new ByteArrayInputStream(configInfo.getContent().getBytes()), configInfo.getGroup() + ZIP_SEPARATOR + configInfo.getDataId());
+                genMetaYmlContent(sb, configInfo);
+            }
+
+            if (sb.length() > 0) {
+                zipSingleFile(zos, new ByteArrayInputStream(sb.toString().getBytes()), META_FILENAME);
             }
         } else {
             zipFilesByPage(zos, namespaceId, null);
@@ -65,6 +70,64 @@ public class FileService {
     }
 
     public void resolveZipFile(InputStream is, String namespaceId, String uploadMode) throws IOException {
+        ByteArrayOutputStream baos = cloneInputStream(is);
+        InputStream metaInput = new ByteArrayInputStream(baos.toByteArray());
+        InputStream configInput = new ByteArrayInputStream(baos.toByteArray());
+        baos.close();
+
+        Map<String, String> metaMap = resolveMetaFile(metaInput);
+        resolveConfigFile(configInput, namespaceId, uploadMode, metaMap);
+    }
+
+    private static ByteArrayOutputStream cloneInputStream(InputStream in) throws IOException {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = in.read(buffer)) > -1) {
+                baos.write(buffer, 0, len);
+            }
+            baos.flush();
+            return baos;
+        } finally {
+            in.close();
+        }
+    }
+
+    public Map<String, String> resolveMetaFile(InputStream is) throws IOException {
+        Map<String, String> map = new HashMap<>(512);
+        ZipInputStream zis = new ZipInputStream(is);
+        for (ZipEntry zipEntry = zis.getNextEntry(); null != zipEntry; zipEntry = zis.getNextEntry()) {
+            if (zipEntry.getName().equals(META_FILENAME)) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(zis));
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    if (StringUtils.isBlank(line)) {
+                        continue;
+                    }
+                    // example: DEFAULT_GROUP.biz~properties.app=appname
+                    String[] arr = line.split("\\.");
+                    if (3 != arr.length) {
+                        continue;
+                    }
+
+                    String group = arr[0];
+                    String dataId = arr[1].replace("~", ".");
+                    String appname = arr[2].split("=")[1];
+
+                    map.put(group + dataId, appname);
+                }
+                break;
+            }
+        }
+
+        zis.closeEntry();
+        zis.close();
+
+        return map;
+    }
+
+    public void resolveConfigFile(InputStream is, String namespaceId, String uploadMode, Map<String, String> metaMap) throws IOException {
         byte[] buffer = new byte[1024];
         int len = 0;
         ZipInputStream zis = new ZipInputStream(is);
@@ -82,15 +145,16 @@ public class FileService {
             // query from db
             ConfigInfo cfDb = persistService.findConfigInfo(dataId, group, namespaceId);
             if (null == cfDb) {
-                persistService.addConfigInfo(null, null, readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId),
+                ConfigInfo configInfo = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
+                persistService.addConfigInfo(null, null, configInfo,
                     TimeUtils.getCurrentTime(), null, true);
             } else {
                 if (Constants.UPLOAD_TERMINATE_MODE.equals(uploadMode)) {
                     break;
                 } else if (Constants.UPLOAD_OVERRIDE_MODE.equals(uploadMode)) {
                     Timestamp time = TimeUtils.getCurrentTime();
-                    persistService.updateConfigInfo(readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId),
-                        null, null,time, null, true);
+                    ConfigInfo configInfo = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
+                    persistService.updateConfigInfo(configInfo,null, null,time, null, true);
                 } else if (Constants.UPLOAD_SKIP_MODE.equals(uploadMode)) {
                     continue;
                 }
@@ -107,29 +171,37 @@ public class FileService {
 
         Page<ConfigInfo> configInfos = persistService.findConfigInfo4Page(pageNo, pageSize, null, group, namespaceId, null);
         if (null == configInfos) {
-            throw new RuntimeException("no config_info record found");
+            return;
         }
 
+        StringBuilder sb = new StringBuilder(512);
         while(true) {
             for (int i = 0; i < configInfos.getPageItems().size(); i++) {
                 ConfigInfo configInfo = configInfos.getPageItems().get(i);
                 zipSingleFile(zos, new ByteArrayInputStream(configInfo.getContent().getBytes()), configInfo.getGroup() + ZIP_SEPARATOR + configInfo.getDataId());
+                genMetaYmlContent(sb,configInfo);
             }
             configInfos = persistService.findConfigInfo4Page(++pageNo, pageSize, null, group, namespaceId, null);
             if (null == configInfos) {
                 break;
             }
         }
+
+        if (sb.length() > 0) {
+            zipSingleFile(zos, new ByteArrayInputStream(sb.toString().getBytes()), META_FILENAME);
+        }
     }
 
-    private ConfigInfo readConfigInfoFromZip(byte[] buffer, int len, ZipInputStream zis, String dataId, String group, String namespaceId) throws IOException {
+    private ConfigInfo readConfigInfoFromZip(byte[] buffer, int len, ZipInputStream zis, String dataId, String group, String namespaceId, Map<String, String> metaMap) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
         while ((len = zis.read(buffer)) > 0) {
             baos.write(buffer, 0, len);
         }
-        ConfigInfo cf = new ConfigInfo(dataId, group, baos.toString());
+        ConfigInfo cf = new ConfigInfo(dataId, group, new String(baos.toByteArray(), "UTF-8"));
         baos.close();
         cf.setTenant(namespaceId);
+        String appname = metaMap.get(group + dataId);
+        cf.setAppName(null != appname ? appname : "");
         return cf;
     }
 
@@ -142,8 +214,20 @@ public class FileService {
             zos.write(bytes, 0, length);
         }
         is.close();
+        zos.closeEntry();
     }
 
+    private void genMetaYmlContent(StringBuilder sb, ConfigInfo ci) {
+        if (null == ci || StringUtils.isBlank(ci.getAppName())) {
+            return;
+        }
+
+        sb.append(ci.getGroup()).append(".")
+            .append(ci.getDataId().replace(".", "~")).append(".")
+            .append("app=").append(ci.getAppName())
+            .append("\n");
+    }
+
+    private final String META_FILENAME = ".meta.yml";
     private final String ZIP_SEPARATOR = "/";
 }
-
