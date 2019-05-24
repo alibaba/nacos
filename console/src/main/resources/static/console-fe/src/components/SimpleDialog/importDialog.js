@@ -26,6 +26,7 @@ class ImportDialog extends React.Component {
       visible: false,
       serverId: '',
       serverName: '',
+      canSubmit: true,
       policy: '',
       policyLabel: '',
       allPolicy: [],
@@ -48,6 +49,7 @@ class ImportDialog extends React.Component {
     this.callback = callback;
     this.setState({
       visible: true,
+      canSubmit: true,
       serverId: payload.id,
       serverName: payload.name,
     });
@@ -73,19 +75,13 @@ class ImportDialog extends React.Component {
     } else {
       let targetFile = files[0];
 
-      this.closeDialog();
+      this.setUploadingflag(true);
       this.callback(targetFile, this.state.policy);
-      // this.uploadFile(targetFile);
     }
   }
 
-  uploadFile(file) {
-    let fr = new FileReader();
-
-    fr.onload = e => {
-      this.callback(e.target.result, this.state.policy);
-    };
-    fr.readAsText(file);
+  setUploadingflag(flag) {
+    this.setState({ isUploading: flag });
   }
 
   render() {
@@ -98,7 +94,11 @@ class ImportDialog extends React.Component {
           ref={ref => (this.uploader = ref)}
           onChange={this.handleFileChanged.bind(this)}
         />
-        <Button type={'primary'} onClick={() => this.uploader.click()}>
+        <Button
+          type={'primary'}
+          onClick={() => this.uploader.click()}
+          disabled={this.state.isUploading}
+        >
           选择文件
         </Button>
       </div>

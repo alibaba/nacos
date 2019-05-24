@@ -687,7 +687,18 @@ class ConfigurationManagement extends React.Component {
   }
 
   onSelectAll(checked, records) {
-    this.setState({ selectedRecord: records, selectedKeys: records.map(item => item.id) });
+    let { selectedKeys, selectedRecord, dataSource } = this.state;
+
+    if (!checked) {
+      let keys = dataSource.map(item => item.id);
+
+      selectedKeys = selectedKeys.filter(id => keys.indexOf(id) === -1);
+      selectedRecord = selectedRecord.filter(item => keys.indexOf(item.id) === -1);
+    } else {
+      selectedRecord = selectedRecord.concat(records);
+      selectedKeys = selectedRecord.map(item => item.id);
+    }
+    this.setState({ selectedKeys, selectedRecord });
   }
 
   upload(file, policy) {
@@ -697,10 +708,13 @@ class ConfigurationManagement extends React.Component {
     formdata.append('namespaceId', this.state.nownamespace_id);
     formdata.append('uploadMode', policy);
 
-    axios.post('/nacos/v1/cs/file/upload', formdata).then(() => {
-      this.importDialog.current.closeDialog();
-      this.selectAll();
-    });
+    axios
+      .post('/nacos/v1/cs/file/upload', formdata)
+      .then(() => {
+        this.importDialog.current.closeDialog();
+        this.selectAll();
+      })
+      .catch(() => this.importDialog.current.setUploadingflag(false));
   }
 
   download() {
