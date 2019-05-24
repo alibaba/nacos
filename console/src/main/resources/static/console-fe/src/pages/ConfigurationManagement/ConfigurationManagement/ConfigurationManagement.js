@@ -679,7 +679,7 @@ class ConfigurationManagement extends React.Component {
     formdata.append('namespaceId', this.state.nownamespace_id);
     formdata.append('uploadMode', 'policy');
 
-    axios.post('/api/resourcecode/pc/addProductInfo', formdata).then(() => {
+    axios.post('/nacos/v1/cs/file/upload', formdata).then(() => {
       this.importDialog.current.closeDialog();
       this.selectAll();
     });
@@ -691,7 +691,10 @@ class ConfigurationManagement extends React.Component {
     const files = record.map(({ dataId, group }) => ({ dataId, group }));
     const data = { namespaceId, files };
 
-    window.open('/nacos/v1/cs/file/downloadMultiFiles?param=' + encodeURI(JSON.stringify(data)), 'blank');
+    window.open(
+      '/nacos/v1/cs/file/downloadMultiFiles?param=' + encodeURI(JSON.stringify(data)),
+      'blank'
+    );
   }
 
   render() {
