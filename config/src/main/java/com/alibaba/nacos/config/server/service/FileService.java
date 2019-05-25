@@ -60,12 +60,12 @@ public class FileService {
                 if (null == configInfo) {
                     continue;
                 }
-                zipSingleFile(zos, new ByteArrayInputStream(configInfo.getContent().getBytes()), configInfo.getGroup() + ZIP_SEPARATOR + configInfo.getDataId());
+                zipSingleFile(zos, new ByteArrayInputStream(configInfo.getContent().getBytes(UTF_8)), configInfo.getGroup() + ZIP_SEPARATOR + configInfo.getDataId());
                 genMetaYmlContent(sb, configInfo);
             }
 
             if (sb.length() > 0) {
-                zipSingleFile(zos, new ByteArrayInputStream(sb.toString().getBytes()), META_FILENAME);
+                zipSingleFile(zos, new ByteArrayInputStream(sb.toString().getBytes(UTF_8)), META_FILENAME);
             }
         } else {
             zipFilesByPage(zos, namespaceId, null);
@@ -76,7 +76,7 @@ public class FileService {
         Map<String, String> metaMap = new HashMap<>(64);
         List<ConfigInfo> cfList = new ArrayList<>(64);
         resolveMetaAndConfig(is, namespaceId, metaMap, cfList);
-        addOrUpdateConfig(namespaceId, uploadMode, cfList, metaMap);
+        addOrUpdateConfig(namespaceId, uploadMode, metaMap, cfList);
     }
 
     private void resolveMetaAndConfig(InputStream is, String namespaceId, Map<String, String> metaMap, List<ConfigInfo> cfList) throws IOException {
@@ -102,7 +102,7 @@ public class FileService {
         zis.close();
     }
 
-    private void addOrUpdateConfig(String namespaceId, String uploadMode, List<ConfigInfo> cfList, Map<String, String> metaMap) {
+    private void addOrUpdateConfig(String namespaceId, String uploadMode,  Map<String, String> metaMap, List<ConfigInfo> cfList) {
         for (ConfigInfo cf: cfList) {
             // query from db
             ConfigInfo dbCf = persistService.findConfigInfo(cf.getDataId(), cf.getGroup(), namespaceId);
@@ -116,9 +116,9 @@ public class FileService {
                 continue;
             }
 
-            if (Constants.UPLOAD_TERMINATE_MODE.equals(uploadMode)) {
+            if (Constants.UPLOAD_ABORT_MODE.equals(uploadMode)) {
                 break;
-            } else if (Constants.UPLOAD_OVERRIDE_MODE.equals(uploadMode)) {
+            } else if (Constants.UPLOAD_OVERWRITE_MODE.equals(uploadMode)) {
                 String appname = metaMap.get(cf.getGroup() + cf.getDataId());
                 cf.setAppName(appname == null ? "" : appname);
                 Timestamp time = TimeUtils.getCurrentTime();
@@ -153,7 +153,7 @@ public class FileService {
         }
 
         if (sb.length() > 0) {
-            zipSingleFile(zos, new ByteArrayInputStream(sb.toString().getBytes()), META_FILENAME);
+            zipSingleFile(zos, new ByteArrayInputStream(sb.toString().getBytes(UTF_8)), META_FILENAME);
         }
     }
 
@@ -196,8 +196,8 @@ public class FileService {
             type = FileType.JSON.getValue();
         } else if (dataId.contains(FileType.XML.getValue())) {
             type = FileType.XML.getValue();
-        } else if (dataId.contains(FileType.YML.getValue()) || dataId.contains(FileType.YMAL.getValue())) {
-            type = FileType.YMAL.getValue();
+        } else if (dataId.contains(FileType.YML.getValue()) || dataId.contains(FileType.YAML.getValue())) {
+            type = FileType.YAML.getValue();
         } else if (dataId.contains(FileType.HTML.getValue()) || dataId.contains(FileType.HTM.getValue())) {
             type = FileType.HTML.getValue();
         } else if (dataId.contains(FileType.PROPERTIES.getValue())) {
@@ -241,7 +241,7 @@ public class FileService {
         /** yml */
         YML("yml"),
         /** yaml */
-        YMAL("ymal"),
+        YAML("yaml"),
         /** html */
         HTML("html"),
         /** htm */

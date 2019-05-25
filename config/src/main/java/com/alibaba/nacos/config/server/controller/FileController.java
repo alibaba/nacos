@@ -116,7 +116,7 @@ public class FileController {
     @ResponseBody
     public RestResult upload(@RequestParam MultipartFile file,
                              @RequestParam(required = false, defaultValue = "") String namespaceId,
-                             @RequestParam(required = false, defaultValue = "terminate") String uploadMode) throws IOException {
+                             @RequestParam(required = false, defaultValue = "abort") String uploadMode) throws IOException {
         checkNamespaceId(namespaceId);
 
         if (0 == file.getSize()) {

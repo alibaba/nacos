@@ -16,8 +16,8 @@ import { Button, Dialog, Form } from '@alifd/next';
 
 const FormItem = Form.Item;
 
-class ImportDialog extends React.Component {
-  static displayName = 'ZADialog';
+class ExportDialog extends React.Component {
+  static displayName = 'FileDialog';
 
   constructor(props) {
     super(props);
@@ -98,4 +98,4 @@ class ImportDialog extends React.Component {
   }
 }
 
-export default ImportDialog;
+export default ExportDialog;

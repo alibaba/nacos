@@ -17,7 +17,7 @@ import { Button, Dialog, Form, Select } from '@alifd/next';
 const FormItem = Form.Item;
 
 class ImportDialog extends React.Component {
-  static displayName = 'ZADialog';
+  static displayName = 'FileDialog';
 
   constructor(props) {
     super(props);
@@ -35,10 +35,10 @@ class ImportDialog extends React.Component {
 
   componentDidMount() {
     this.setState({
-      policy: 'terminate',
+      policy: 'abort',
       policyLabel: '终止导入',
       allPolicy: [
-        { value: 'terminate', label: '终止导入' },
+        { value: 'abort', label: '终止导入' },
         { value: 'skip', label: '跳过' },
         { value: 'overwrite', label: '覆盖' },
       ],
@@ -49,7 +49,7 @@ class ImportDialog extends React.Component {
     this.callback = callback;
     this.setState({
       visible: true,
-      isUploading: true,
+      isUploading: false,
       serverId: payload.id,
       serverName: payload.name,
     });
