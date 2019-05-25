@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.utils.StringUtils;
@@ -33,6 +32,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static com.alibaba.nacos.config.server.service.FileService.FileType.*;
+import static com.alibaba.nacos.config.server.service.FileService.UploadPolicy.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -103,6 +104,8 @@ public class FileService {
     }
 
     private void addOrUpdateConfig(String namespaceId, String uploadMode,  Map<String, String> metaMap, List<ConfigInfo> cfList) {
+        UploadPolicy policy = UploadPolicy.valueOf(uploadMode.toUpperCase());
+
         for (ConfigInfo cf: cfList) {
             // query from db
             ConfigInfo dbCf = persistService.findConfigInfo(cf.getDataId(), cf.getGroup(), namespaceId);
@@ -116,17 +119,16 @@ public class FileService {
                 continue;
             }
 
-            if (Constants.UPLOAD_ABORT_MODE.equals(uploadMode)) {
+            if (ABORT.equals(policy)) {
                 break;
-            } else if (Constants.UPLOAD_OVERWRITE_MODE.equals(uploadMode)) {
+            } else if (OVERWRITE.equals(policy)) {
                 String appname = metaMap.get(cf.getGroup() + cf.getDataId());
                 cf.setAppName(appname == null ? "" : appname);
                 Timestamp time = TimeUtils.getCurrentTime();
                 Map<String, Object> advanceInfo = new HashMap<>(4);
                 advanceInfo.put("type", getFileType(cf.getDataId()));
-
                 persistService.updateConfigInfo(cf,null, null,time, advanceInfo, true);
-            } else if (Constants.UPLOAD_SKIP_MODE.equals(uploadMode)) { }
+            } else if (SKIP.equals(policy)) { }
         }
     }
 
@@ -191,17 +193,17 @@ public class FileService {
     }
 
     private String getFileType(String dataId) {
-        String type = FileType.TEXT.getValue();
-        if (dataId.contains(FileType.JSON.getValue())) {
-            type = FileType.JSON.getValue();
-        } else if (dataId.contains(FileType.XML.getValue())) {
-            type = FileType.XML.getValue();
-        } else if (dataId.contains(FileType.YML.getValue()) || dataId.contains(FileType.YAML.getValue())) {
-            type = FileType.YAML.getValue();
-        } else if (dataId.contains(FileType.HTML.getValue()) || dataId.contains(FileType.HTM.getValue())) {
-            type = FileType.HTML.getValue();
-        } else if (dataId.contains(FileType.PROPERTIES.getValue())) {
-            type = FileType.PROPERTIES.getValue();
+        String type = TEXT.getValue();
+        if (dataId.contains(JSON.getValue())) {
+            type = JSON.getValue();
+        } else if (dataId.contains(XML.getValue())) {
+            type = XML.getValue();
+        } else if (dataId.contains(YML.getValue()) || dataId.contains(YAML.getValue())) {
+            type = YAML.getValue();
+        } else if (dataId.contains(HTML.getValue()) || dataId.contains(HTM.getValue())) {
+            type = HTML.getValue();
+        } else if (dataId.contains(PROPERTIES.getValue())) {
+            type = PROPERTIES.getValue();
         }
         return type;
     }
@@ -256,6 +258,15 @@ public class FileService {
         public String getValue() {
             return value;
         }
+    }
+
+    enum UploadPolicy {
+        /** abort */
+        ABORT,
+        /** skip */
+        SKIP,
+        /** overwrite */
+        OVERWRITE;
     }
 
     private final String WAVE = "~";

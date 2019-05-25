@@ -216,8 +216,4 @@ public class Constants {
 
     public static final int ATOMIC_MAX_SIZE = 1000;
 
-    public static final String UPLOAD_ABORT_MODE = "abort";
-    public static final String UPLOAD_SKIP_MODE = "skip";
-    public static final String UPLOAD_OVERWRITE_MODE = "overwrite";
-
 }
