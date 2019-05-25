@@ -191,17 +191,17 @@ public class FileService {
     }
 
     private String getFileType(String dataId) {
-        String type = "text";
-        if (dataId.contains("json")) {
-            type = "json";
-        } else if (dataId.contains("xml")) {
-            type = "xml";
-        } else if (dataId.contains("yml") || dataId.contains("yaml")) {
-            type = "yaml";
-        } else if (dataId.contains("html") || dataId.contains("htm")) {
-            type = "text/html";
-        } else if (dataId.contains("properties")) {
-            type = "properties";
+        String type = FileType.TEXT.getValue();
+        if (dataId.contains(FileType.JSON.getValue())) {
+            type = FileType.JSON.getValue();
+        } else if (dataId.contains(FileType.XML.getValue())) {
+            type = FileType.XML.getValue();
+        } else if (dataId.contains(FileType.YML.getValue()) || dataId.contains(FileType.YMAL.getValue())) {
+            type = FileType.YMAL.getValue();
+        } else if (dataId.contains(FileType.HTML.getValue()) || dataId.contains(FileType.HTM.getValue())) {
+            type = FileType.HTML.getValue();
+        } else if (dataId.contains(FileType.PROPERTIES.getValue())) {
+            type = FileType.PROPERTIES.getValue();
         }
         return type;
     }
@@ -227,6 +227,35 @@ public class FileService {
             .append(ci.getDataId().replace(DOT, WAVE)).append(DOT)
             .append("app=").append(ci.getAppName())
             .append("\n");
+    }
+
+    enum FileType {
+        /** txt */
+        TXT("txt"),
+        /** text */
+        TEXT("text"),
+        /** json */
+        JSON("json"),
+        /** xml */
+        XML("xml"),
+        /** yml */
+        YML("yml"),
+        /** yaml */
+        YMAL("ymal"),
+        /** html */
+        HTML("html"),
+        /** htm */
+        HTM("htm"),
+        /** properties */
+        PROPERTIES("properties");
+
+        private String value;
+        FileType(String value) {
+            this.value = value;
+        }
+        public String getValue() {
+            return value;
+        }
     }
 
     private final String WAVE = "~";
