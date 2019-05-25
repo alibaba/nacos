@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,66 +73,21 @@ public class FileService {
     }
 
     public void resolveZipFile(InputStream is, String namespaceId, String uploadMode) throws IOException {
-        ByteArrayOutputStream baos = cloneInputStream(is);
-        InputStream metaInputStream = new ByteArrayInputStream(baos.toByteArray());
-        InputStream configInputStream = new ByteArrayInputStream(baos.toByteArray());
-        baos.close();
-
-        Map<String, String> metaMap = resolveMetaFile(metaInputStream);
-        resolveConfigFile(configInputStream, namespaceId, uploadMode, metaMap);
+        Map<String, String> metaMap = new HashMap<>(64);
+        List<ConfigInfo> cfList = new ArrayList<>(64);
+        resolveMetaAndConfig(is, namespaceId, metaMap, cfList);
+        addOrUpdateConfig(namespaceId, uploadMode, cfList, metaMap);
     }
 
-    private static ByteArrayOutputStream cloneInputStream(InputStream in) throws IOException {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-            byte[] buffer = new byte[1024];
-            int len;
-            while ((len = in.read(buffer)) > -1) {
-                baos.write(buffer, 0, len);
-            }
-            baos.flush();
-            return baos;
-        } finally {
-            in.close();
-        }
-    }
-
-    public Map<String, String> resolveMetaFile(InputStream is) throws IOException {
-        Map<String, String> map = new HashMap<>(64);
-        ZipInputStream zis = new ZipInputStream(is);
-        for (ZipEntry zipEntry = zis.getNextEntry(); null != zipEntry; zipEntry = zis.getNextEntry()) {
-            if (zipEntry.getName().equals(META_FILENAME)) {
-                BufferedReader br = new BufferedReader(new InputStreamReader(zis));
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    if (StringUtils.isBlank(line)) {
-                        continue;
-                    }
-                    // example: DEFAULT_GROUP.biz~properties.app=appname
-                    String[] arr = line.split("\\.");
-                    if (3 != arr.length) {
-                        continue;
-                    }
-
-                    String group = arr[0];
-                    String dataId = arr[1].replace(WAVE, DOT);
-                    String appname = arr[2].split("=")[1];
-                    map.put(group + dataId, appname);
-                }
-                br.close();
-                break;
-            }
-        }
-
-        return map;
-    }
-
-    public void resolveConfigFile(InputStream is, String namespaceId, String uploadMode, Map<String, String> metaMap) throws IOException {
-        byte[] buffer = new byte[1024];
-        int len = 0;
+    private void resolveMetaAndConfig(InputStream is, String namespaceId, Map<String, String> metaMap, List<ConfigInfo> cfList) throws IOException {
         ZipInputStream zis = new ZipInputStream(is);
         for (ZipEntry zipEntry = zis.getNextEntry(); null != zipEntry; zipEntry = zis.getNextEntry()) {
             if (zipEntry.isDirectory()) {
+                continue;
+            }
+
+            if (zipEntry.getName().equals(META_FILENAME)) {
+                fillMetaMap(zis, metaMap);
                 continue;
             }
 
@@ -139,32 +95,39 @@ public class FileService {
             if (dirs.length != 2) {
                 continue;
             }
-            String dataId = dirs[1];
-            String group = dirs[0];
-            // query from db
-            ConfigInfo dbCf = persistService.findConfigInfo(dataId, group, namespaceId);
-            if (null == dbCf) {
-                ConfigInfo cf = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
-                Map<String, Object> advanceInfo = new HashMap<>(4);
-                advanceInfo.put("type", getFileType(dataId));
-                persistService.addConfigInfo(null, null, cf, TimeUtils.getCurrentTime(), advanceInfo, false);
-            } else {
-                if (Constants.UPLOAD_TERMINATE_MODE.equals(uploadMode)) {
-                    break;
-                } else if (Constants.UPLOAD_OVERRIDE_MODE.equals(uploadMode)) {
-                    Timestamp time = TimeUtils.getCurrentTime();
-                    ConfigInfo cf = readConfigInfoFromZip(buffer, len, zis, dataId, group, namespaceId, metaMap);
-                    Map<String, Object> advanceInfo = new HashMap<>(4);
-                    advanceInfo.put("type", getFileType(dataId));
-                    persistService.updateConfigInfo(cf,null, null,time, advanceInfo, true);
-                } else if (Constants.UPLOAD_SKIP_MODE.equals(uploadMode)) {
-                    continue;
-                }
-            }
+            cfList.add(readConfigInfoFromZip(zis, namespaceId, dirs[0], dirs[1]));
         }
 
         zis.closeEntry();
         zis.close();
+    }
+
+    private void addOrUpdateConfig(String namespaceId, String uploadMode, List<ConfigInfo> cfList, Map<String, String> metaMap) {
+        for (ConfigInfo cf: cfList) {
+            // query from db
+            ConfigInfo dbCf = persistService.findConfigInfo(cf.getDataId(), cf.getGroup(), namespaceId);
+            if (null == dbCf) {
+                String appname = metaMap.get(cf.getGroup() + cf.getDataId());
+                cf.setAppName(appname == null ? "" : appname);
+                Map<String, Object> advanceInfo = new HashMap<>(4);
+                advanceInfo.put("type", getFileType(cf.getDataId()));
+
+                persistService.addConfigInfo(null, null, cf, TimeUtils.getCurrentTime(), advanceInfo, false);
+                continue;
+            }
+
+            if (Constants.UPLOAD_TERMINATE_MODE.equals(uploadMode)) {
+                break;
+            } else if (Constants.UPLOAD_OVERRIDE_MODE.equals(uploadMode)) {
+                String appname = metaMap.get(cf.getGroup() + cf.getDataId());
+                cf.setAppName(appname == null ? "" : appname);
+                Timestamp time = TimeUtils.getCurrentTime();
+                Map<String, Object> advanceInfo = new HashMap<>(4);
+                advanceInfo.put("type", getFileType(cf.getDataId()));
+
+                persistService.updateConfigInfo(cf,null, null,time, advanceInfo, true);
+            } else if (Constants.UPLOAD_SKIP_MODE.equals(uploadMode)) { }
+        }
     }
 
     private void zipFilesByPage( ZipOutputStream zos, String namespaceId, String group) throws IOException {
@@ -194,16 +157,36 @@ public class FileService {
         }
     }
 
-    private ConfigInfo readConfigInfoFromZip(byte[] buffer, int len, ZipInputStream zis, String dataId, String group, String namespaceId, Map<String, String> metaMap) throws IOException {
+    private void fillMetaMap(ZipInputStream zis, Map<String, String> metaMap) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(zis));
+        String line;
+        while ((line = br.readLine()) != null) {
+            if (StringUtils.isBlank(line)) {
+                continue;
+            }
+            // example: DEFAULT_GROUP.biz~properties.app=appname
+            String[] arr = line.split("\\.");
+            if (3 != arr.length) {
+                continue;
+            }
+
+            String group = arr[0];
+            String dataId = arr[1].replace(WAVE, DOT);
+            String appname = arr[2].split("=")[1];
+            metaMap.put(group + dataId, appname);
+        }
+    }
+
+    private ConfigInfo readConfigInfoFromZip(ZipInputStream zis, String namespaceId, String group, String dataId) throws IOException {
+        int len;
+        byte[] buffer = new byte[512];
         ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
         while ((len = zis.read(buffer)) > 0) {
             baos.write(buffer, 0, len);
         }
         ConfigInfo cf = new ConfigInfo(dataId, group, new String(baos.toByteArray(), UTF_8));
-        baos.close();
         cf.setTenant(namespaceId);
-        String appname = metaMap.get(group + dataId);
-        cf.setAppName(null != appname ? appname : "");
+        baos.close();
         return cf;
     }
 
