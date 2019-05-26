@@ -34,7 +34,10 @@ import BatchHandle from 'components/BatchHandle';
 import RegionGroup from 'components/RegionGroup';
 import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
+import ImportDialog from 'components/SimpleDialog/importDialog';
+import ExportDialog from 'components/SimpleDialog/exportDialog';
 import DashboardCard from './DashboardCard';
+import axios from 'axios';
 import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
 import './index.scss';
@@ -54,6 +57,8 @@ class ConfigurationManagement extends React.Component {
   constructor(props) {
     super(props);
     this.deleteDialog = React.createRef();
+    this.importDialog = React.createRef();
+    this.exportDialog = React.createRef();
     this.showcode = React.createRef();
     this.field = new Field(this);
     this.appName = getParams('appName') || getParams('edasAppId') || '';
@@ -667,6 +672,65 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  onSelect(checked, record, records) {
+    if (!checked) {
+      this.setState({
+        selectedRecord: records,
+        selectedKeys: this.state.selectedKeys.filter(item => item !== record.id),
+      });
+    } else {
+      this.setState({
+        selectedRecord: records,
+        selectedKeys: this.state.selectedKeys.concat(record.id),
+      });
+    }
+  }
+
+  onSelectAll(checked, records) {
+    let { selectedKeys, selectedRecord, dataSource } = this.state;
+
+    if (!checked) {
+      let keys = dataSource.map(item => item.id);
+
+      selectedKeys = selectedKeys.filter(id => keys.indexOf(id) === -1);
+      selectedRecord = selectedRecord.filter(item => keys.indexOf(item.id) === -1);
+    } else {
+      selectedRecord = selectedRecord.concat(records);
+      selectedKeys = selectedRecord.map(item => item.id);
+    }
+    this.setState({ selectedKeys, selectedRecord });
+  }
+
+  upload(file, policy) {
+    let formdata = new FormData();
+
+    formdata.append('file', file);
+    formdata.append('namespaceId', this.state.nownamespace_id);
+    formdata.append('uploadMode', policy);
+
+    axios
+      .post('/nacos/v1/cs/file/upload', formdata)
+      .then(() => {
+        this.importDialog.current.closeDialog();
+        this.selectAll();
+      })
+      .catch(() => this.importDialog.current.setUploadingflag(false));
+  }
+
+  download() {
+    let record = this.state.selectedRecord;
+    let namespaceId = getParams('namespace') || '';
+    const files = record.map(({ dataId, group }) => ({ dataId, group }));
+    const data = { namespaceId, files };
+
+    this.exportDialog.current.closeDialog();
+
+    window.open(
+      '/nacos/v1/cs/file/downloadMultiFiles?param=' + encodeURI(JSON.stringify(data)),
+      'blank'
+    );
+  }
+
   render() {
     const { locale = {} } = this.props;
     return (
@@ -835,6 +899,53 @@ class ConfigurationManagement extends React.Component {
                     }}
                     onClick={this.chooseEnv.bind(this)}
                   />
+                  <Icon
+                    type={'upload'}
+                    size={'medium'}
+                    style={{
+                      color: 'black',
+                      marginRight: 0,
+                      verticalAlign: 'middle',
+                      cursor: 'pointer',
+                      backgroundColor: '#eee',
+                      border: '1px solid #ddd',
+                      padding: '3px 6px',
+                    }}
+                    onClick={() =>
+                      this.importDialog.current.openDialog(
+                        {
+                          id: this.state.nownamespace_id,
+                          name: this.state.nownamespace_name,
+                        },
+                        this.upload.bind(this)
+                      )
+                    }
+                  />
+                  <Icon
+                    type={'download'}
+                    size={'medium'}
+                    style={{
+                      color: 'black',
+                      marginRight: 0,
+                      verticalAlign: 'middle',
+                      cursor: 'pointer',
+                      backgroundColor: '#eee',
+                      border: '1px solid #ddd',
+                      padding: '3px 6px',
+                    }}
+                    onClick={() =>
+                      this.exportDialog.current.openDialog(
+                        {
+                          id: this.state.nownamespace_id,
+                          name: this.state.nownamespace_name,
+                          total: this.state.selectedRecord.length,
+                        },
+                        this.download.bind(this)
+                      )
+                    }
+                  />
+                  <ImportDialog ref={this.importDialog} />
+                  <ExportDialog ref={this.exportDialog} />
                 </div>
               </div>
               <div>
@@ -844,6 +955,11 @@ class ConfigurationManagement extends React.Component {
                   fixedHeader
                   maxBodyHeight={400}
                   ref={'dataTable'}
+                  rowSelection={{
+                    selectedRowKeys: this.state.selectedKeys,
+                    onSelect: this.onSelect.bind(this),
+                    onSelectAll: this.onSelectAll.bind(this),
+                  }}
                 >
                   <Table.Column title={'Data Id'} dataIndex={'dataId'} />
                   <Table.Column title={'Group'} dataIndex={'group'} />
