@@ -25,7 +25,6 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -397,52 +396,36 @@ public class ConfigController {
                                                @RequestParam(value = "tenant", required = false,
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
-        try {
-            StringBuilder idsSb = new StringBuilder();
-            if(ids != null && !ids.isEmpty()){
-                for(int i = 0; i < ids.size(); i++){
-                    Long id = ids.get(i);
-                    idsSb.append(id);
-                    if((i + 1) < ids.size()){
-                        idsSb.append(",");
-                    }
+        String idsStr = idList2String(ids);
+        List<ConfigInfo> dataList = persistService.findAllConfigInfo4eExport(group, tenant, appName, idsStr);
+        List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
+        StringBuilder metaData = null;
+        for(ConfigInfo ci : dataList){
+            if(StringUtils.isNotBlank(ci.getAppName())){
+                // Handle appName
+                if(metaData == null){
+                    metaData = new StringBuilder();
                 }
-            }
-
-            List<ConfigInfo> dataList = persistService.findAllConfigInfo4eExport(group, tenant, appName, idsSb.toString());
-            List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
-            StringBuilder metaData = null;
-            for(ConfigInfo ci : dataList){
-                if(StringUtils.isNotBlank(ci.getAppName())){
-                    // Handle appName
-                    if(metaData == null){
-                        metaData = new StringBuilder();
-                    }
-                    String metaDataId = ci.getDataId();
-                    if(metaDataId.contains(".")){
-                        metaDataId = metaDataId.substring(0,metaDataId.lastIndexOf("."))
-                            + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
-                    }
-                    metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
-                        // Fixed use of "\r\n" here
-                        .append(ci.getAppName()).append("\r\n");
+                String metaDataId = ci.getDataId();
+                if(metaDataId.contains(".")){
+                    metaDataId = metaDataId.substring(0,metaDataId.lastIndexOf("."))
+                        + "~" + metaDataId.substring(metaDataId.lastIndexOf(".") + 1);
                 }
-                String itemName = ci.getGroup() + "/" + ci.getDataId() ;
-                zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
+                metaData.append(ci.getGroup()).append(".").append(metaDataId).append(".app=")
+                    // Fixed use of "\r\n" here
+                    .append(ci.getAppName()).append("\r\n");
             }
-            if(metaData != null){
-                zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaData.toString()));
-            }
-
-            HttpHeaders headers = new HttpHeaders();
-            String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".zip";
-            headers.add("Content-Disposition", "attachment;filename="+fileName);
-            return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
-        } catch (Exception e) {
-            String errorMsg = "serialize configInfo data error, group=" + group;
-            log.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
+            String itemName = ci.getGroup() + "/" + ci.getDataId() ;
+            zipItemList.add(new ZipUtils.ZipItem(itemName, ci.getContent()));
         }
+        if(metaData != null){
+            zipItemList.add(new ZipUtils.ZipItem(".meta.yml", metaData.toString()));
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".zip";
+        headers.add("Content-Disposition", "attachment;filename="+fileName);
+        return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
 
     @RequestMapping(params = "import=true", method = RequestMethod.POST)
@@ -543,5 +526,87 @@ public class ConfigController {
         rr.setData(saveResult);
         rr.setMessage("import ok");
         return rr;
+    }
+
+    @RequestMapping(params = "clone=true", method = RequestMethod.GET)
+    @ResponseBody
+    public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
+                                                       HttpServletResponse response,
+                                                       @RequestParam(value = "src_user", required = false) String srcUser,
+                                                       @RequestParam(value = "tenant", required = true) String namespace,
+                                                       @RequestParam(value = "ids", required = true) List<Long> ids,
+                                                       @RequestParam(value = "policy", defaultValue = "ABORT")
+                                                           SameConfigPolicy policy) throws NacosException {
+        RestResult<Map<String, Object>> rr = new RestResult<>();
+        Map<String, Object> failedData = new HashMap<>(4);
+        rr.setData(failedData);
+
+        if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
+            rr.setCode(5001);
+            failedData.put("succCount", 0);
+            rr.setMessage("namespace does not exist");
+            return rr;
+        }
+
+        String idsStr = idList2String(ids);
+        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4eExport(null, null, null, idsStr);
+
+        if(queryedDataList == null || queryedDataList.isEmpty()){
+            rr.setCode(5005);
+            failedData.put("succCount", 0);
+            rr.setMessage("data is empty");
+            return rr;
+        }
+
+        List<ConfigInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
+
+        for(ConfigInfo ci : queryedDataList){
+            ConfigInfo ci4save = new ConfigInfo();
+            ci4save.setTenant(namespace);
+            ci4save.setGroup(ci.getGroup());
+            ci4save.setDataId(ci.getDataId());
+            ci4save.setContent(ci.getContent());
+            if(StringUtils.isNotBlank(ci.getAppName())){
+                ci4save.setAppName(ci.getAppName());
+            }
+            configInfoList4Clone.add(ci4save);
+        }
+
+        if (configInfoList4Clone.isEmpty()) {
+            rr.setCode(5005);
+            failedData.put("succCount", 0);
+            rr.setMessage("data is empty");
+            return rr;
+        }
+        final String srcIp = RequestUtil.getRemoteIp(request);
+        String requestIpApp = RequestUtil.getAppName(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        Map<String, Object> saveResult = persistService.batchInsertOrUpdate(configInfoList4Clone, srcUser, srcIp,
+            null, time, false, policy);
+        for (ConfigInfo configInfo : configInfoList4Clone) {
+            EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), time.getTime()));
+            ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), requestIpApp, time.getTime(),
+                LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
+        }
+        rr.setCode(200);
+        rr.setData(saveResult);
+        rr.setMessage("import ok");
+        return rr;
+    }
+
+    private String idList2String(List<Long> ids){
+        StringBuilder idsSb = new StringBuilder();
+        if(ids != null && !ids.isEmpty()){
+            for(int i = 0; i < ids.size(); i++){
+                Long id = ids.get(i);
+                idsSb.append(id);
+                if((i + 1) < ids.size()){
+                    idsSb.append(",");
+                }
+            }
+        }
+        return idsSb.toString();
     }
 }
