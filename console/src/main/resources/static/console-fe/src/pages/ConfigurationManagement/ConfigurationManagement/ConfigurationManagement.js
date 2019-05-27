@@ -45,6 +45,7 @@ import { LANGUAGE_KEY } from '../../../constants';
 
 const { Panel } = Collapse;
 const { Row, Col } = Grid;
+const configsTableSelected = new Map();
 
 @ConfigProvider.config
 class ConfigurationManagement extends React.Component {
@@ -672,15 +673,271 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportData() {
-    let url =
-      'v1/cs/configs?export=true&group=' +
-      this.group +
-      '&tenant=' +
-      getParams('namespace') +
-      '&appName=' +
-      this.appName +
-      '&ids=';
+    let url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
+      'namespace'
+    )}&appName=${this.appName}&ids=`;
     window.location.href = url;
+  }
+
+  exportSelectedData() {
+    const { locale = {} } = this.props;
+    if (configsTableSelected.size === 0) {
+      Dialog.alert({
+        title: locale.exportSelectedAlertTitle,
+        content: locale.exportSelectedAlertContent,
+      });
+    } else {
+      let idsStr = '';
+      configsTableSelected.forEach((value, key, map) => {
+        idsStr = `${idsStr + key},`;
+      });
+      let url = `v1/cs/configs?export=true&group=&tenant=&appName=&ids=${idsStr}`;
+      window.location.href = url;
+    }
+  }
+
+  cloneSelectedDataConfirm() {
+    const { locale = {} } = this.props;
+    const self = this;
+    const { init } = self.field;
+    self.field.setValue('sameConfigPolicy', 'ABORT');
+    self.field.setValue('cloneTargetSpace', undefined);
+    if (configsTableSelected.size === 0) {
+      Dialog.alert({
+        title: locale.exportSelectedAlertTitle,
+        content: locale.exportSelectedAlertContent,
+      });
+      return;
+    }
+    request({
+      url: 'v1/console/namespaces?namespaceId=',
+      beforeSend() {
+        self.openLoading();
+      },
+      success(data) {
+        if (!data || data.code !== 200 || !data.data) {
+          Dialog.alert({
+            title: locale.getNamespaceFailed,
+            content: locale.getNamespaceFailed,
+          });
+        }
+        let namespaces = data.data;
+        let namespaceSelectData = [];
+        namespaces.forEach(item => {
+          if (self.state.nownamespace_id !== item.namespace) {
+            let dataItem = {};
+            if (item.namespaceShowName === 'public') {
+              dataItem.label = 'public | public';
+              dataItem.value = 'public';
+            } else {
+              dataItem.label = `${item.namespaceShowName} | ${item.namespace}`;
+              dataItem.value = item.namespace;
+            }
+            namespaceSelectData.push(dataItem);
+          }
+        });
+        const cloneConfirm = Dialog.confirm({
+          title: locale.cloningConfiguration,
+          footer: false,
+          content: (
+            <div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: '#999', marginRight: 5 }}>{locale.source}</span>
+                <span style={{ color: '#49D2E7' }}>{self.state.nownamespace_name} </span>|{' '}
+                {self.state.nownamespace_id}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: '#999', marginRight: 5 }}>{locale.configurationNumber}</span>
+                <span style={{ color: '#49D2E7' }}>{configsTableSelected.size} </span>
+                {locale.selectedEntry}
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: 'red', marginRight: 2, marginLeft: -10 }}>{'*'}</span>
+                <span style={{ color: '#999', marginRight: 5 }}>{locale.target}</span>
+                <Select
+                  style={{ width: 450 }}
+                  placeholder={locale.selectNamespace}
+                  size={'medium'}
+                  hasArrow
+                  showSearch
+                  hasClear={false}
+                  mode="single"
+                  dataSource={namespaceSelectData}
+                  onChange={(value, actionType, item) => {
+                    if (value) {
+                      document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
+                      self.field.setValue('cloneTargetSpace', value);
+                    }
+                  }}
+                />
+                <br />
+                <span id={'cloneTargetSpaceSelectErr'} style={{ color: 'red', display: 'none' }}>
+                  {locale.selectNamespace}
+                </span>
+              </div>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ color: '#999', marginRight: 5 }}>{locale.samePreparation}:</span>
+                <Select
+                  style={{ width: 130 }}
+                  size={'medium'}
+                  hasArrow
+                  mode="single"
+                  filterLocal={false}
+                  defaultValue={'ABORT'}
+                  dataSource={[
+                    {
+                      label: locale.abortImport,
+                      value: 'ABORT',
+                    },
+                    {
+                      label: locale.skipImport,
+                      value: 'SKIP',
+                    },
+                    {
+                      label: locale.overwriteImport,
+                      value: 'OVERWRITE',
+                    },
+                  ]}
+                  hasClear={false}
+                  onChange={(value, actionType, item) => {
+                    if (value) {
+                      self.field.setValue('sameConfigPolicy', value);
+                    }
+                  }}
+                />
+              </div>
+              <div>
+                <Button
+                  type={'primary'}
+                  style={{ marginRight: 10 }}
+                  onClick={() => {
+                    if (!self.field.getValue('cloneTargetSpace')) {
+                      document.getElementById('cloneTargetSpaceSelectErr').style.display = 'inline';
+                      return;
+                    } else {
+                      document.getElementById('cloneTargetSpaceSelectErr').style.display = 'none';
+                    }
+                    let idsStr = '';
+                    configsTableSelected.forEach((value, key, map) => {
+                      idsStr = `${idsStr + key},`;
+                    });
+                    let cloneTargetSpace = self.field.getValue('cloneTargetSpace');
+                    let sameConfigPolicy = self.field.getValue('sameConfigPolicy');
+                    request({
+                      url: `v1/cs/configs?clone=true&tenant=${cloneTargetSpace}&policy=${sameConfigPolicy}&ids=${idsStr}`,
+                      beforeSend() {
+                        self.openLoading();
+                      },
+                      success(ret) {
+                        self.processImportAndCloneResult(ret, locale, cloneConfirm, false);
+                      },
+                      error(data) {
+                        self.setState({
+                          dataSource: [],
+                          total: 0,
+                          currentPage: 0,
+                        });
+                      },
+                      complete() {
+                        self.closeLoading();
+                      },
+                    });
+                  }}
+                  data-spm-click={'gostr=/aliyun;locaid=doClone'}
+                >
+                  {locale.startCloning}
+                </Button>
+              </div>
+            </div>
+          ),
+        });
+      },
+      error(data) {
+        self.setState({
+          dataSource: [],
+          total: 0,
+          currentPage: 0,
+        });
+      },
+      complete() {
+        self.closeLoading();
+      },
+    });
+  }
+
+  processImportAndCloneResult(ret, locale, confirm, isImport) {
+    const resultCode = ret.code;
+    if (resultCode === 200) {
+      confirm.hide();
+      if (ret.data.failData && ret.data.failData.length > 0) {
+        Dialog.alert({
+          title: isImport ? locale.importAbort : locale.cloneAbort,
+          content: (
+            <div style={{ width: '500px' }}>
+              <h4>
+                {locale.conflictConfig}：{ret.data.failData[0].group}/{ret.data.failData[0].dataId}
+              </h4>
+              <div style={{ marginTop: 20 }}>
+                <h5>
+                  {locale.failureEntries}: {ret.data.failData.length}
+                </h5>
+                <Table dataSource={ret.data.failData}>
+                  <Table.Column title="Data Id" dataIndex="dataId" />
+                  <Table.Column title="Group" dataIndex="group" />
+                </Table>
+              </div>
+              <div>
+                <h5>
+                  {locale.unprocessedEntries}: {ret.data.skipData ? ret.data.skipData : 0}
+                </h5>
+                <Table dataSource={ret.data.skipData}>
+                  <Table.Column title="Data Id" dataIndex="dataId" />
+                  <Table.Column title="Group" dataIndex="group" />
+                </Table>
+              </div>
+            </div>
+          ),
+        });
+      } else if (ret.data.skipCount && ret.data.skipCount > 0) {
+        Dialog.alert({
+          title: isImport ? locale.importSucc : locale.cloneSucc,
+          content: (
+            <div style={{ width: '500px' }}>
+              <div>
+                <h5>
+                  {locale.skippedEntries}: {ret.data.skipData.length}
+                </h5>
+                <Table dataSource={ret.data.skipData}>
+                  <Table.Column title="Data Id" dataIndex="dataId" />
+                  <Table.Column title="Group" dataIndex="group" />
+                </Table>
+              </div>
+            </div>
+          ),
+        });
+      } else {
+        let message = `${isImport ? locale.importSuccBegin : locale.cloneSuccBegin}${
+          ret.data.succCount
+        }${isImport ? locale.importSuccEnd : locale.cloneSuccEnd}`;
+        Message.success(message);
+      }
+      this.getData();
+    } else {
+      let alertContent = isImport ? locale.importFailMsg : locale.cloneFailMsg;
+      if (resultCode === 5001) {
+        alertContent = locale.namespaceNotExist;
+      }
+      if (resultCode === 5002) {
+        alertContent = locale.metadataIllegal;
+      }
+      if (resultCode === 5003 || resultCode === 5004 || resultCode === 5005) {
+        alertContent = locale.importDataValidationError;
+      }
+      Dialog.alert({
+        title: isImport ? locale.importFail : locale.cloneFail,
+        content: alertContent,
+      });
+    }
   }
 
   importData() {
@@ -689,7 +946,7 @@ class ConfigurationManagement extends React.Component {
     self.field.setValue('sameConfigPolicy', 'ABORT');
     const uploadProps = {
       accept: 'application/zip',
-      action: 'v1/cs/configs?import=true&namespace=' + getParams('namespace'),
+      action: `v1/cs/configs?import=true&namespace=${getParams('namespace')}`,
       data: {
         policy: self.field.getValue('sameConfigPolicy'),
       },
@@ -700,79 +957,7 @@ class ConfigurationManagement extends React.Component {
         return options;
       },
       onSuccess(ret) {
-        const resultCode = ret.response.code;
-        if (resultCode === 200) {
-          importConfirm.hide();
-          if (ret.response.data.failData && ret.response.data.failData.length > 0) {
-            Dialog.alert({
-              title: locale.importAbort,
-              content: (
-                <div style={{ width: '500px' }}>
-                  <h4>
-                    {locale.conflictConfig}：{ret.response.data.failData[0].group}/
-                    {ret.response.data.failData[0].dataId}
-                  </h4>
-                  <div style={{ marginTop: 20 }}>
-                    <h5>
-                      {locale.failureEntries}: {ret.response.data.failData.length}
-                    </h5>
-                    <Table dataSource={ret.response.data.failData}>
-                      <Table.Column title="Data Id" dataIndex="dataId" />
-                      <Table.Column title="Group" dataIndex="group" />
-                    </Table>
-                  </div>
-                  <div>
-                    <h5>
-                      {locale.unprocessedEntries}:{' '}
-                      {ret.response.data.skipData ? ret.response.data.skipData : 0}
-                    </h5>
-                    <Table dataSource={ret.response.data.skipData}>
-                      <Table.Column title="Data Id" dataIndex="dataId" />
-                      <Table.Column title="Group" dataIndex="group" />
-                    </Table>
-                  </div>
-                </div>
-              ),
-            });
-          } else if (ret.response.data.skipCount && ret.response.data.skipCount > 0) {
-            Dialog.alert({
-              title: locale.importSucc,
-              content: (
-                <div style={{ width: '500px' }}>
-                  <div>
-                    <h5>
-                      {locale.skippedEntries}: {ret.response.data.skipData.length}
-                    </h5>
-                    <Table dataSource={ret.response.data.skipData}>
-                      <Table.Column title="Data Id" dataIndex="dataId" />
-                      <Table.Column title="Group" dataIndex="group" />
-                    </Table>
-                  </div>
-                </div>
-              ),
-            });
-          } else {
-            let message =
-              locale.importSuccBegin + ret.response.data.succCount + locale.importSuccEnd;
-            Message.success(message);
-          }
-          self.getData();
-        } else {
-          let alertContent = locale.importFailMsg;
-          if (resultCode === 5001) {
-            alertContent = locale.namespaceNotExist;
-          }
-          if (resultCode === 5002) {
-            alertContent = locale.metadataIllegal;
-          }
-          if (resultCode === 5003 || resultCode === 5004 || resultCode === 5005) {
-            alertContent = locale.importDataValidationError;
-          }
-          Dialog.alert({
-            title: locale.importFail,
-            content: alertContent,
-          });
-        }
+        self.processImportAndCloneResult(ret.response, locale, importConfirm, true);
       },
       onError(err) {
         Dialog.alert({
@@ -786,7 +971,6 @@ class ConfigurationManagement extends React.Component {
       footer: false,
       content: (
         <div>
-          <h3>{this.state.isok ? locale.deletedSuccessfully : locale.deleteFailed}</h3>
           <div style={{ marginBottom: 10 }}>
             <span style={{ color: '#999', marginRight: 5 }}>{locale.targetNamespace}:</span>
             <span style={{ color: '#49D2E7' }}>{this.state.nownamespace_name} </span>|{' '}
@@ -838,6 +1022,24 @@ class ConfigurationManagement extends React.Component {
         </div>
       ),
     });
+  }
+
+  configsTableOnSelect(selected, record, records) {
+    if (selected) {
+      configsTableSelected.set(record.id, record);
+    } else {
+      configsTableSelected.delete(record.id);
+    }
+  }
+
+  configsTableOnSelectAll(selected, records) {
+    if (selected) {
+      records.forEach((record, i) => {
+        configsTableSelected.set(record.id, record);
+      });
+    } else {
+      configsTableSelected.clear();
+    }
   }
 
   render() {
@@ -1037,6 +1239,10 @@ class ConfigurationManagement extends React.Component {
                   fixedHeader
                   maxBodyHeight={400}
                   ref={'dataTable'}
+                  rowSelection={{
+                    onSelect: this.configsTableOnSelect,
+                    onSelectAll: this.configsTableOnSelectAll,
+                  }}
                 >
                   <Table.Column title={'Data Id'} dataIndex={'dataId'} />
                   <Table.Column title={'Group'} dataIndex={'group'} />
@@ -1049,16 +1255,36 @@ class ConfigurationManagement extends React.Component {
                 </Table>
                 {this.state.dataSource.length > 0 && (
                   <div style={{ marginTop: 10, overflow: 'hidden' }}>
-                    <Pagination
-                      style={{ float: 'right' }}
-                      pageSizeList={[10, 20, 30]}
-                      pageSizeSelector={'dropdown'}
-                      onPageSizeChange={this.handlePageSizeChange.bind(this)}
-                      current={this.state.currentPage}
-                      total={this.state.total}
-                      pageSize={this.state.pageSize}
-                      onChange={this.changePage.bind(this)}
-                    />
+                    <div style={{ float: 'left' }}>
+                      <Button
+                        type={'primary'}
+                        style={{ marginLeft: 60, marginRight: 10 }}
+                        onClick={this.exportSelectedData.bind(this)}
+                        data-spm-click={'gostr=/aliyun;locaid=configsExport'}
+                      >
+                        {locale.exportSelected}
+                      </Button>
+                      <Button
+                        type={'primary'}
+                        style={{ marginRight: 10 }}
+                        onClick={this.cloneSelectedDataConfirm.bind(this)}
+                        data-spm-click={'gostr=/aliyun;locaid=configsClone'}
+                      >
+                        {locale.clone}
+                      </Button>
+                    </div>
+                    <div style={{ float: 'right' }}>
+                      <Pagination
+                        style={{ float: 'right' }}
+                        pageSizeList={[10, 20, 30]}
+                        pageSizeSelector={'dropdown'}
+                        onPageSizeChange={this.handlePageSizeChange.bind(this)}
+                        current={this.state.currentPage}
+                        total={this.state.total}
+                        pageSize={this.state.pageSize}
+                        onChange={this.changePage.bind(this)}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
