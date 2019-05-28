@@ -699,7 +699,6 @@ class ConfigurationManagement extends React.Component {
   cloneSelectedDataConfirm() {
     const { locale = {} } = this.props;
     const self = this;
-    const { init } = self.field;
     self.field.setValue('sameConfigPolicy', 'ABORT');
     self.field.setValue('cloneTargetSpace', undefined);
     if (configsTableSelected.size === 0) {
