@@ -3421,7 +3421,7 @@ public class PersistService {
         if (result == null) {
             return 0;
         }
-        return result;
+        return result.intValue();
     }
 
 
