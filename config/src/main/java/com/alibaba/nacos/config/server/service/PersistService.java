@@ -15,24 +15,14 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.*;
-import java.util.Map.Entry;
-
-import javax.annotation.PostConstruct;
-
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
-import com.alibaba.nacos.config.server.utils.*;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.MD5;
+import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -47,14 +37,22 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.*;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.google.common.collect.Lists;
+
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.sql.*;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * 数据库服务，提供ConfigInfo在数据库的存取<br> 3.0开始增加数据版本号, 并将物理删除改为逻辑删除<br> 3.0增加数据库切换功能
@@ -3423,7 +3421,7 @@ public class PersistService {
         if (result == null) {
             return 0;
         }
-        return result.intValue();
+        return result;
     }
 
 
