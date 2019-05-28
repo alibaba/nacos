@@ -61,6 +61,8 @@ public class ConfigController {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigController.class);
 
+    private static final String NAMESPACE_PUBLIC_KEY = "public";
+
     private final transient ConfigServletInner inner;
 
     private final transient PersistService persistService;
@@ -541,7 +543,7 @@ public class ConfigController {
         Map<String, Object> failedData = new HashMap<>(4);
         rr.setData(failedData);
 
-        if("public".equals(namespace)){
+        if(NAMESPACE_PUBLIC_KEY.equals(namespace.toLowerCase())){
             namespace = "";
         } else if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
             rr.setCode(5001);
