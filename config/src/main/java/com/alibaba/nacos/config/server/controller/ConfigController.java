@@ -541,7 +541,9 @@ public class ConfigController {
         Map<String, Object> failedData = new HashMap<>(4);
         rr.setData(failedData);
 
-        if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
+        if("public".equals(namespace)){
+            namespace = "";
+        } else if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
             rr.setCode(5001);
             failedData.put("succCount", 0);
             rr.setMessage("namespace does not exist");
