@@ -50,6 +50,13 @@ public @interface NacosConfigurationProperties {
     String dataId();
 
     /**
+     * if the config style is yaml
+     *
+     * @return default value is <code>false</code>
+     */
+    boolean yaml() default false;
+
+    /**
      * It indicates the properties of current doBind bean is auto-refreshed when Nacos configuration is changed.
      *
      * @return default value is <code>false</code>
