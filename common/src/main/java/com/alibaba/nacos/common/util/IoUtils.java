@@ -86,7 +86,6 @@ public class IoUtils {
                 break;
             }
         }
-
         return list;
     }
 
