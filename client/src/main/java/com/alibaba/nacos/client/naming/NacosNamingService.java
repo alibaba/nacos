@@ -79,7 +79,7 @@ public class NacosNamingService implements NamingService {
     }
 
     private void init(Properties properties) {
-        namespace = InitUtils.initNamespace(properties);
+        namespace = InitUtils.initNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();

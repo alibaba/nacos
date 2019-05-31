@@ -18,48 +18,61 @@ package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import com.alibaba.nacos.client.identify.CredentialService;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.utils.*;
 import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
 
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
 /**
  * @author liaochuntao
+ * @author deshao
  */
 public class InitUtils {
 
-    public static final String initNamespace(Properties properties) {
+    /**
+     * 名字命名上加个区别，该方法只是为 Naming 初始化 namespace 的入口。Config 初始化还不一样，因此不能直接复用。
+     *
+     * @param properties
+     * @return
+     */
+    public static final String initNamespaceForNaming(Properties properties) {
         String tmpNamespace = null;
+
+
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
+        if (Boolean.valueOf(isUseCloudNamespaceParsing)) {
+
+            tmpNamespace = TenantUtil.getUserTenantForAns();
+            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
+                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
+                    return namespace;
+                }
+            });
+
+            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
+                    return namespace;
+                }
+            });
+        }
 
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
             public String call() {
                 String namespace = System.getProperty(PropertyKeyConst.NAMESPACE);
                 LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
-                return namespace;
-            }
-        });
-
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
-                return namespace;
-            }
-        });
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = CredentialService.getInstance().getCredential().getTenantId();
-                LogUtils.NAMING_LOGGER.info("initializer namespace from Credential Module " + namespace);
                 return namespace;
             }
         });
@@ -98,12 +111,17 @@ public class InitUtils {
             return "";
         }
         // 是否开启域名解析规则
-        boolean isUseEndpointParsingRule = Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE));
+        String isUseEndpointRuleParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                    String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+
+        boolean isUseEndpointParsingRule = Boolean.valueOf(isUseEndpointRuleParsing);
         String endpointUrl;
         if (isUseEndpointParsingRule) {
             // 获取设置的域名信息
             endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrl)) {
+            if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrl)) {
                 return "";
             }
         } else {

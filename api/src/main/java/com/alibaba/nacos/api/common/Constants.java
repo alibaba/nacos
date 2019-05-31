@@ -105,9 +105,9 @@ public class Constants {
 
     public static final float DEFAULT_PROTECT_THRESHOLD = 0.0F;
 
-    public static final String LINE_SEPARATOR = Character.toString((char)1);
+    public static final String LINE_SEPARATOR = Character.toString((char) 1);
 
-    public static final String WORD_SEPARATOR = Character.toString((char)2);
+    public static final String WORD_SEPARATOR = Character.toString((char) 2);
 
     public static final String LONGPOLLING_LINE_SEPARATOR = "\r\n";
 
@@ -124,6 +124,8 @@ public class Constants {
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
     public static final String DEFAULT_NAMESPACE_ID = "public";
+
+    public static final boolean DEFAULT_USE_CLOUD_NAMESPACE_PARSING = true;
 
     public static final int WRITE_REDIRECT_CODE = 307;
 
