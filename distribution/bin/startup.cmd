@@ -35,7 +35,7 @@ if not "%2" == "cluster" (
     set "JAVA_OPT=%JAVA_OPT% -XX:-UseLargePages"
  )
 
-set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb"
+set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb:%BASE_DIR%\plugins\mysql"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
 set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\nacos-server.jar"
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
