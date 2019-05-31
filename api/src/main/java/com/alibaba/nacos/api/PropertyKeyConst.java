@@ -22,6 +22,8 @@ package com.alibaba.nacos.api;
  */
 public class PropertyKeyConst {
 
+    public final static String IS_USE_CLOUD_NAMESPACE_PARSING = "isUseCloudNamespaceParsing";
+
     public final static String IS_USE_ENDPOINT_PARSING_RULE = "isUseEndpointParsingRule";
 
     public final static String ENDPOINT = "endpoint";
@@ -50,6 +52,9 @@ public class PropertyKeyConst {
 
     public final static String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
 
+    /**
+     * 从系统属性中获取一些变量值的 key
+     */
     public static class SystemEnv {
 
         public static final String ALIBABA_ALIWARE_ENDPOINT_PORT = "ALIBABA_ALIWARE_ENDPOINT_PORT";
@@ -58,4 +63,5 @@ public class PropertyKeyConst {
 
         public static final String ALIBABA_ALIWARE_ENDPOINT_URL = "ALIBABA_ALIWARE_ENDPOINT_URL";
     }
+
 }
