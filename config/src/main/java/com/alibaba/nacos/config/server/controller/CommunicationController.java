@@ -46,7 +46,7 @@ public class CommunicationController {
 
     private final LongPollingService longPollingService;
 
-    private String trueStr = "true";
+    private static final String TRUE = "true";
 
     @Autowired
     public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
@@ -70,7 +70,7 @@ public class CommunicationController {
         long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
         String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
         String isBetaStr = request.getHeader("isBeta");
-        if (StringUtils.isNotBlank(isBetaStr) && trueStr.equals(isBetaStr)) {
+        if (StringUtils.isNotBlank(isBetaStr) && TRUE.equals(isBetaStr)) {
             dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
         } else {
             dumpService.dump(dataId, group, tenant, tag, lastModifiedTs, handleIp);

@@ -74,7 +74,7 @@ public class ServerListManager {
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
     }
 
-    public List<Server> refreshServerList() {
+    private List<Server> refreshServerList() {
 
         List<Server> result = new ArrayList<>();
 
