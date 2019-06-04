@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.utils;
-
-import com.alibaba.nacos.client.utils.StringUtils;
+package com.alibaba.nacos.client.utils;
 
 /**
  * Tenant Util
@@ -24,20 +22,42 @@ import com.alibaba.nacos.client.utils.StringUtils;
  */
 public class TenantUtil {
 
-    private static String userTenant = "";
+    private static String userTenant;
 
     static {
         userTenant = System.getProperty("tenant.id", "");
+    }
+
+    /**
+     * Adapt the way ACM gets tenant on the cloud.
+     * <p>
+     * Note the difference between getting and getting ANS.
+     * Since the processing logic on the server side is different, the default value returns differently.
+     * </p>
+     *
+     * @return
+     */
+    public static String getUserTenantForAcm() {
+        String tmp = userTenant;
+
         if (StringUtils.isBlank(userTenant)) {
-            userTenant = System.getProperty("acm.namespace", "");
+            tmp = System.getProperty("acm.namespace", "");
         }
+
+        return tmp;
     }
 
-    public static String getUserTenant() {
-        return userTenant;
-    }
+    /**
+     * Adapt the way ANS gets tenant on the cloud.
+     *
+     * @return
+     */
+    public static String getUserTenantForAns() {
+        String tmp = userTenant;
 
-    public static void setUserTenant(String userTenant) {
-        TenantUtil.userTenant = userTenant;
+        if (StringUtils.isBlank(userTenant)) {
+            tmp = System.getProperty("ans.namespace");
+        }
+        return tmp;
     }
 }
