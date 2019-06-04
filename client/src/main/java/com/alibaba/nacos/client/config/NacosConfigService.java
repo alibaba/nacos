@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -31,10 +32,10 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
 import java.io.IOException;
@@ -87,20 +88,27 @@ public class NacosConfigService implements ConfigService {
     private void initNamespace(Properties properties) {
         String namespaceTmp = null;
 
-        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-            @Override
-            public String call() {
-                return TenantUtil.getUserTenant();
-            }
-        });
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
 
-        namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
-            }
-        });
+        if (Boolean.valueOf(isUseCloudNamespaceParsing)) {
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    return TenantUtil.getUserTenantForAcm();
+                }
+            });
+
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
+                }
+            });
+        }
 
         if (StringUtils.isBlank(namespaceTmp)) {
             namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
