@@ -17,7 +17,7 @@ package com.alibaba.nacos.api;
 
 /**
  * <p>
- * 支持从 -D 参数中读取指定变量的值
+ * Support for reading the value of the specified variable from the -D parameter
  * </P>
  * Properties that are preferred to which in {@link PropertyKeyConst}
  *
@@ -31,20 +31,22 @@ public interface SystemPropertyKeyConst {
     String NAMING_WEB_CONTEXT = "nacos.naming.web.context";
 
     /**
-     * 在云(阿里云或者其他云厂商 )环境下，是否启用云环境下的 namespace 解析。
+     * In the cloud (Alibaba Cloud or other cloud vendors) environment,
+     * whether to enable namespace resolution in the cloud environment.
      * <p>
-     * 默认是打开的。
+     * The default is on.
      * </p>
      */
-    String IS_USE_CLOUD_NAMESPACE_PARSING = "is.use.cloud.namespace.parsing";
+    String IS_USE_CLOUD_NAMESPACE_PARSING = "nacos.use.cloud.namespace.parsing";
 
     /**
-     * 云环境下，如果进程级需要一个全局统一的 namespace，可以通过 -D 参数指定。
+     * In the cloud environment, if the process level requires a globally uniform namespace,
+     * it can be specified with the -D parameter.
      */
     String ANS_NAMESPACE = "ans.namespace";
 
     /**
-     * 也支持通过 -D 参数来指定。
+     * It is also supported by the -D parameter.
      */
-    String IS_USE_ENDPOINT_PARSING_RULE = "is.use.endpoint.parsing.rule";
+    String IS_USE_ENDPOINT_PARSING_RULE = "nacos.use.endpoint.parsing.rule";
 }
