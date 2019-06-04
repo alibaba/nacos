@@ -370,21 +370,22 @@ public class ServiceController {
 
     /**
      * get subscriber list
+     *
      * @param request
      * @return
      */
     @RequestMapping(value = "/subscribers", method = RequestMethod.GET)
-    public JSONObject subscribers(HttpServletRequest request){
+    public JSONObject subscribers(HttpServletRequest request) {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        boolean aggregation = Boolean.valueOf(WebUtils.required(request,"aggregation"));
+        boolean aggregation = Boolean.valueOf(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
 
         JSONObject result = new JSONObject();
 
         try {
-            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName,namespaceId,aggregation);
-            result.put("subscribers",subscribers);
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            result.put("subscribers", subscribers);
             return result;
         } catch (InterruptedException e) {
 
