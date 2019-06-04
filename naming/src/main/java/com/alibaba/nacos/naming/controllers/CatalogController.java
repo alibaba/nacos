@@ -148,22 +148,24 @@ public class CatalogController {
             String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
                 Constants.DEFAULT_NAMESPACE_ID);
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
+            int pageNo = Integer.parseInt(WebUtils.required(request, "pageNo"));
+            int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
+            String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
-            serviceManager
-                .getServiceMap(namespaceId)
-                .forEach(
-                    (serviceName, service) -> {
+            List<Service> serviceList = new ArrayList<>(8);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, keyword, StringUtils.EMPTY, serviceList);
 
-                        ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                        serviceDetailInfo.setServiceName(NamingUtils.getServiceName(serviceName));
-                        serviceDetailInfo.setGroupName(NamingUtils.getGroupName(serviceName));
-                        serviceDetailInfo.setMetadata(service.getMetadata());
+            for (Service service : serviceList) {
+                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+                serviceDetailInfo.setServiceName(NamingUtils.getServiceName(service.getName()));
+                serviceDetailInfo.setGroupName(NamingUtils.getGroupName(service.getName()));
+                serviceDetailInfo.setMetadata(service.getMetadata());
 
-                        Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
-                        serviceDetailInfo.setClusterMap(clusterInfoMap);
+                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
+                serviceDetailInfo.setClusterMap(clusterInfoMap);
 
-                        serviceDetailInfoList.add(serviceDetailInfo);
-                    });
+                serviceDetailInfoList.add(serviceDetailInfo);
+            }
 
             return serviceDetailInfoList;
         } else {
