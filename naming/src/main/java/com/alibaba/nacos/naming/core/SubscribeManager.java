@@ -38,11 +38,12 @@ import java.util.stream.Collectors;
 
 /**
  * @author Nicholas
+ * @since 1.0.1
  */
 @Service
 public class SubscribeManager {
 
-    private static final String DATA_ON_SYNC_URL = "/service/subscribers";
+    private static final String SUBSCRIBER_ON_SYNC_URL = "/service/subscribers";
 
     @Autowired
     private PushService pushService;
@@ -67,8 +68,7 @@ public class SubscribeManager {
         if (aggregation){
             // size = 1 means only myself in the list, we need at least one another server alive:
             while (serverListManager.getHealthyServers().size() <= 1) {
-                Thread.sleep(1000L);
-                Loggers.EPHEMERAL.info("waiting server list init...");
+                return getSubscribers(serviceName,namespaceId);
             }
 
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
@@ -78,13 +78,13 @@ public class SubscribeManager {
                 Map<String, String> paramValues = new HashMap<>(128);
                 paramValues.put("serviceName",serviceName);
                 paramValues.put("namespaceId",namespaceId);
-                paramValues.put("aggregation",String.valueOf(!aggregation));
+                paramValues.put("aggregation",String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getKey())) {
                     subscriberList.addAll(getSubscribers(serviceName,namespaceId));
                 }
 
                 HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getKey() + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, new ArrayList<>(),paramValues);
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {
                     Subscribers subscribers = (Subscribers) JSONObject.parseObject(result.content, Subscribers.class);
