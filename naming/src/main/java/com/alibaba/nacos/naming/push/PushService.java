@@ -93,13 +93,9 @@ public class PushService {
         try {
             udpSocket = new DatagramSocket();
 
-            Receiver receiver;
+            Receiver receiver = new Receiver();
 
-            Thread inThread;
-
-            receiver = new Receiver();
-
-            inThread = new Thread(receiver);
+            Thread inThread = new Thread(receiver);
             inThread.setDaemon(true);
             inThread.setName("com.alibaba.nacos.naming.push.receiver");
             inThread.start();

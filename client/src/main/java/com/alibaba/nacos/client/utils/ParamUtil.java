@@ -33,7 +33,7 @@ public class ParamUtil {
 
     private final static Logger LOGGER = LogUtils.logger(ParamUtil.class);
 
-    public final static String USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = "true";
+    public final static boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
 
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
     private static String defaultContextPath = "nacos";
