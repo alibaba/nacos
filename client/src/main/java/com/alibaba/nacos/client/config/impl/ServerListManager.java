@@ -182,7 +182,7 @@ public class ServerListManager {
 
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
 
-        // 是否开启域名解析规则
+        // Whether to enable domain name resolution rules
         String isUseEndpointRuleParsing =
             properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                 System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
@@ -359,7 +359,7 @@ public class ServerListManager {
     }
 
     /**
-     * 不同环境的名称
+     * The name of the different environment
      */
     private String name;
     private String namespace = "";
@@ -369,7 +369,7 @@ public class ServerListManager {
     static public final String FIXED_NAME = "fixed";
     private int initServerlistRetryTimes = 5;
     /**
-     * 和其他server的连接超时和socket超时
+     * Connection timeout and socket timeout with other servers
      */
     static final int TIMEOUT = 5000;
 
@@ -391,7 +391,7 @@ public class ServerListManager {
 }
 
 /**
- * 对地址列表排序，同机房优先。
+ * Sort the address list, with the same room priority.
  */
 class ServerAddressIterator implements Iterator<String> {
 
