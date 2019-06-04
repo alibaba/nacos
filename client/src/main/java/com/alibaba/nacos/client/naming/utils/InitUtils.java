@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.utils.*;
-import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -32,7 +31,8 @@ import java.util.concurrent.Callable;
 public class InitUtils {
 
     /**
-     * 名字命名上加个区别，该方法只是为 Naming 初始化 namespace 的入口。Config 初始化还不一样，因此不能直接复用。
+     * Add a difference to the name naming. This method simply initializes the namespace for Naming.
+     * Config initialization is not the same, so it cannot be reused directly.
      *
      * @param properties
      * @return
@@ -77,7 +77,7 @@ public class InitUtils {
             }
         });
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isEmpty(tmpNamespace) && properties != null) {
+        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
 
@@ -110,7 +110,7 @@ public class InitUtils {
 
             return "";
         }
-        // 是否开启域名解析规则
+        // Whether to enable domain name resolution rules
         String isUseEndpointRuleParsing =
             properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                 System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
@@ -119,7 +119,7 @@ public class InitUtils {
         boolean isUseEndpointParsingRule = Boolean.valueOf(isUseEndpointRuleParsing);
         String endpointUrl;
         if (isUseEndpointParsingRule) {
-            // 获取设置的域名信息
+            // Get the set domain name information
             endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
             if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrl)) {
                 return "";
