@@ -53,7 +53,7 @@ public class PropertyKeyConst {
     public final static String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
 
     /**
-     * 从系统属性中获取一些变量值的 key
+     * Get the key value of some variable value from the system property
      */
     public static class SystemEnv {
 
