@@ -29,9 +29,10 @@ public class TenantUtil {
     }
 
     /**
-     * 适配云上 ACM 获取 tenant 的方式。
+     * Adapt the way ACM gets tenant on the cloud.
      * <p>
-     * 注意和 获取 ANS 的区别，由于 server 端的处理逻辑不一样，默认值的返回也不一样。
+     * Note the difference between getting and getting ANS.
+     * Since the processing logic on the server side is different, the default value returns differently.
      * </p>
      *
      * @return
@@ -47,7 +48,7 @@ public class TenantUtil {
     }
 
     /**
-     * 适配云上 ANS 获取 tenant 的方式。
+     * Adapt the way ANS gets tenant on the cloud.
      *
      * @return
      */
