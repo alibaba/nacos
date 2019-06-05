@@ -45,12 +45,13 @@ class ShowServiceCodeing extends React.Component {
     this.shellCode = 'TODO';
     this.pythonCode = 'TODO';
     this.record = {};
+    this.springCode = 'TODO';
     this.sprigboot_code = '/* Refer to document: https://github.com/nacos-group/nacos-examples/blob/master/nacos-spring-boot-example/nacos-spring-boot-discovery-example\n' +
       '*  pom.xml\n' +
       '\t<dependency>\n' +
       '\t    <groupId>com.alibaba.boot</groupId>\n' +
       '\t    <artifactId>nacos-discovery-spring-boot-starter</artifactId>\n' +
-      '\t    <version>0.2.1</version>\n' +
+      '\t    <version>${latest.version}</version>\n' +
       '\t</dependency>\n' +
       '*/\n' +
       '/* Refer to document:  https://github.com/nacos-group/nacos-examples/blob/master/nacos-spring-boot-example/nacos-spring-boot-discovery-example/src/main/resources\n' +
@@ -92,7 +93,7 @@ class ShowServiceCodeing extends React.Component {
 \t<dependency>
 \t        <groupId>org.springframework.cloud</groupId>
 \t        <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-\t        <version>0.2.1.RELEASE</version>
+\t        <version>\${latest.version}</version>
 \t</dependency>
 */
 
@@ -216,6 +217,7 @@ public class NacosConsumerApplication {
     };
     this.defaultCode = this.getJavaCode(obj);
     this.createCodeMirror('text/x-java', this.defaultCode);
+    this.springCode = this.getSpringCode(obj);
     this.nodejsCode = this.getNodejsCode(obj);
     this.cppCode = this.getCppCode(obj);
     this.shellCode = this.getShellCode(obj);
@@ -224,12 +226,66 @@ public class NacosConsumerApplication {
   }
 
   getJavaCode(data) {
+    return '/* Refer to document: https://github.com/alibaba/nacos/blob/master/example/src/main/java/com/alibaba/nacos/example\n' +
+      '*  pom.xml\n' +
+      '    <dependency>\n' +
+      '        <groupId>com.alibaba.nacos</groupId>\n' +
+      '        <artifactId>nacos-client</artifactId>\n' +
+      '        <version>${latest.version}</version>\n' +
+      '    </dependency>\n' +
+      '*/\n' +
+      'package com.alibaba.nacos.example;\n' +
+      '\n' +
+      'import java.util.Properties;\n' +
+      '\n' +
+      'import com.alibaba.nacos.api.exception.NacosException;\n' +
+      'import com.alibaba.nacos.api.naming.NamingFactory;\n' +
+      'import com.alibaba.nacos.api.naming.NamingService;\n' +
+      'import com.alibaba.nacos.api.naming.listener.Event;\n' +
+      'import com.alibaba.nacos.api.naming.listener.EventListener;\n' +
+      'import com.alibaba.nacos.api.naming.listener.NamingEvent;\n' +
+      '\n' +
+      '/**\n' +
+      ' * @author nkorange\n' +
+      ' */\n' +
+      'public class NamingExample {\n' +
+      '\n' +
+      '    public static void main(String[] args) throws NacosException {\n' +
+      '\n' +
+      '        Properties properties = new Properties();\n' +
+      '        properties.setProperty("serverAddr", System.getProperty("serverAddr"));\n' +
+      '        properties.setProperty("namespace", System.getProperty("namespace"));\n' +
+      '\n' +
+      '        NamingService naming = NamingFactory.createNamingService(properties);\n' +
+      '\n' +
+      '        naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");\n' +
+      '\n' +
+      '        naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");\n' +
+      '\n' +
+      '        System.out.println(naming.getAllInstances("nacos.test.3"));\n' +
+      '\n' +
+      '        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");\n' +
+      '\n' +
+      '        System.out.println(naming.getAllInstances("nacos.test.3"));\n' +
+      '\n' +
+      '        naming.subscribe("nacos.test.3", new EventListener() {\n' +
+      '            @Override\n' +
+      '            public void onEvent(Event event) {\n' +
+      '                System.out.println(((NamingEvent)event).getServiceName());\n' +
+      '                System.out.println(((NamingEvent)event).getInstances());\n' +
+      '            }\n' +
+      '        });\n' +
+      '    }\n' +
+      '}';
+  }
+
+  getSpringCode(data) {
     return `/* Refer to document: https://github.com/nacos-group/nacos-examples/tree/master/nacos-spring-example/nacos-spring-discovery-example
 *  pom.xml
 \t<dependency>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-spring-context</artifactId>
-        <version>0.2.2-RC1</version>
+        <version>\${latest.version}</version>
     </dependency>
 */
 
@@ -366,8 +422,13 @@ public class DiscoveryController {
               <Tab shape={'text'} style={{ height: 40, paddingBottom: 10 }}>
                 <TabPane
                   title={'Java'}
-                  key={1}
+                  key={0}
                   onClick={this.changeTab.bind(this, 'commoneditor1', this.defaultCode)}
+                />
+                <TabPane
+                  title={'Spring'}
+                  key={1}
+                  onClick={this.changeTab.bind(this, 'commoneditor1', this.springCode)}
                 />
                 <TabPane
                   title={'Spring Boot'}
