@@ -44,6 +44,8 @@ public class PropertyKeyConst {
 
     public final static String ENCODE = "encode";
 
+    public final static String TIMEOUT = "timeout";
+
     public final static String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
 
     public final static String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
