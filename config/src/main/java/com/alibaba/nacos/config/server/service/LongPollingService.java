@@ -406,6 +406,7 @@ public class LongPollingService extends AbstractEventListener {
                     }
 
                 }
+                //TODO 为什么任务延迟执行时间设置为超时时间？会不会导致 read timeout
             }, timeoutTime, TimeUnit.MILLISECONDS);
 
             allSubs.add(this);

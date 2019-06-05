@@ -70,8 +70,7 @@ public class ConfigAPI_ITCase {
     @Before
     public void setUp() throws Exception {
         Properties properties = new Properties();
-        properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
-        properties.put(PropertyKeyConst.ENDPOINT_PORT, "8080");
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
         iconfig = NacosFactory.createConfigService(properties);
 
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -42,6 +44,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -341,7 +345,10 @@ public class ClientWorker {
     List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) {
 
         List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
-        long timeout = TimeUnit.SECONDS.toMillis(30L);
+
+        // Take a custom timeout parameter to circumvent network errors caused by network latency
+
+        long timeout = TimeUnit.SECONDS.toMillis(this.timeout);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
@@ -360,6 +367,11 @@ public class ClientWorker {
         try {
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
                 agent.getEncode(), timeout);
+
+            // The maximum number of tolerable server reconnection errors has been reached
+            if (result == null) {
+                return Collections.emptyList();
+            }
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
@@ -413,9 +425,13 @@ public class ClientWorker {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
+
+        // Initialize the timeout parameter
+
+        init(properties);
 
         executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
@@ -427,7 +443,7 @@ public class ClientWorker {
             }
         });
 
-        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
+        executorService = Executors.newScheduledThreadPool(Integer.MAX_VALUE, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -446,6 +462,20 @@ public class ClientWorker {
                 }
             }
         }, 1L, 10L, TimeUnit.MILLISECONDS);
+    }
+
+    private void init(Properties properties) {
+        try {
+            String timeoutStr = TemplateUtils.stringBlankAndThenExecute(properties.getProperty(PropertyKeyConst.TIMEOUT), new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return String.valueOf(Constants.SO_TIMEOUT);
+                }
+            });
+            timeout = Long.parseLong(timeoutStr);
+        } catch (NumberFormatException nfe) {
+            timeout = Constants.SO_TIMEOUT;
+        }
     }
 
     class LongPollingRunnable implements Runnable {
@@ -507,10 +537,14 @@ public class ClientWorker {
                     }
                 }
                 inInitializingCacheList.clear();
+                executorService.execute(this);
             } catch (Throwable e) {
                 LOGGER.error("longPolling error", e);
-            } finally {
-                executorService.execute(this);
+
+                // If the server fails, punish the task execution and delay the next task execution
+                // to avoid the client sending a large number of requests when the server cannot
+                // respond to the request
+                executorService.schedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -526,7 +560,7 @@ public class ClientWorker {
     }
 
     final ScheduledExecutorService executor;
-    final ExecutorService executorService;
+    final ScheduledExecutorService executorService;
     /**
      * groupKey -> cacheData
      */
@@ -536,5 +570,7 @@ public class ClientWorker {
     HttpAgent agent;
     ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
+    private long timeout;
     private double currentLongingTaskCount = 0;
+    private long taskPenaltyTime = 2000;
 }
