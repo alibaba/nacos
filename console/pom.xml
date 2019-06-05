@@ -104,6 +104,7 @@
                 <version>2.1.1.RELEASE</version>
                 <configuration>
                     <mainClass>com.alibaba.nacos.Nacos</mainClass>
+                    <layout>ZIP</layout>
                 </configuration>
                 <executions>
                     <execution>

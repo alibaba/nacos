@@ -404,9 +404,6 @@
                             <includes>
                                 <include>**/*ITCase.java</include>
                             </includes>
-                            <excludes>
-                                <exclude>**/RestAPI_ITCase.java</exclude>
-                            </excludes>
                         </configuration>
                         <executions>
                             <execution>
@@ -682,13 +679,13 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
-                <version>2.9.8</version>
+                <version>2.9.9</version>
             </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>2.9.8</version>
+                <version>2.9.9</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.jackson</groupId>

@@ -274,7 +274,7 @@ public class CacheData {
      */
     private volatile boolean isUseLocalConfig = false;
     /**
-     * last motify time
+     * last modify time
      */
     private volatile long localConfigLastModified;
     private volatile String content;
