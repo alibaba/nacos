@@ -16,6 +16,8 @@
 package com.alibaba.nacos.client.naming.utils;
 
 
+import com.alibaba.nacos.client.utils.StringUtils;
+
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
