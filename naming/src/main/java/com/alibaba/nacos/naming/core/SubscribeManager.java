@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
@@ -76,8 +77,8 @@ public class SubscribeManager {
             for (Server server : serverListManager.getHealthyServers()) {
 
                 Map<String, String> paramValues = new HashMap<>(128);
-                paramValues.put("serviceName",serviceName);
-                paramValues.put("namespaceId",namespaceId);
+                paramValues.put(CommonParams.SERVICE_NAME,serviceName);
+                paramValues.put(CommonParams.NAMESPACE_ID,namespaceId);
                 paramValues.put("aggregation",String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getKey())) {
                     subscriberList.addAll(getSubscribers(serviceName,namespaceId));
