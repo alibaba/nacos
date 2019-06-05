@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -95,7 +96,8 @@ public class HealthController {
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
-
+        
+        valid = BooleanUtils.toBoolean(healthyString);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         // Only health check "none" need update health status with api
