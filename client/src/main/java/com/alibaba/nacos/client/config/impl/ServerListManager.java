@@ -28,9 +28,7 @@ import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Serverlist Manager
@@ -45,8 +43,6 @@ public class ServerListManager {
         isFixed = false;
         isStarted = false;
         name = DEFAULT_NAME;
-
-        errServerSet = new CopyOnWriteArraySet();
     }
 
     public ServerListManager(List<String> fixed) {
@@ -73,9 +69,6 @@ public class ServerListManager {
             name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()])) + "-"
                 + namespace;
         }
-
-        errServerSet = new CopyOnWriteArraySet();
-
     }
 
     public ServerListManager(String host, int port) {
@@ -83,9 +76,6 @@ public class ServerListManager {
         isStarted = false;
         name = CUSTOM_NAME + "-" + host + "-" + port;
         addressServerUrl = String.format("http://%s:%d/%s/%s", host, port, contentPath, serverListName);
-
-        errServerSet = new CopyOnWriteArraySet();
-
     }
 
     public ServerListManager(String endpoint) throws NacosException {
@@ -116,9 +106,6 @@ public class ServerListManager {
             addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort, contentPath,
                 serverListName, namespace);
         }
-
-        errServerSet = new CopyOnWriteArraySet();
-
     }
 
     public ServerListManager(Properties properties) throws NacosException {
@@ -164,8 +151,6 @@ public class ServerListManager {
                     contentPath, serverListName, namespace);
             }
         }
-
-        errServerSet = new CopyOnWriteArraySet();
 
     }
 
@@ -239,15 +224,6 @@ public class ServerListManager {
             LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);
         }
         return new ServerAddressIterator(serverUrls);
-    }
-
-    // Consider adding a penalty mechanism, with the offending node coming last
-
-    Iterator<String> iterator(String errServerIp) {
-        if (serverUrls.isEmpty()) {
-            LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);
-        }
-        return new ServerAddressIterator(serverUrls, errServerIp);
     }
 
     class GetServerListTask implements Runnable {
@@ -353,38 +329,20 @@ public class ServerListManager {
         currentServerAddr = iterator().next();
     }
 
-    // Consider adding a penalty mechanism, with the offending node coming last
-
-    public void refreshCurrentServerAddr(String errServerIp) {
-        currentServerAddr = iterator(errServerIp).next();
-    }
-
     public String getCurrentServerAddr() {
         if (StringUtils.isBlank(currentServerAddr)) {
-            currentServerAddr = iterator().next();
+            iterator = iterator();
+            currentServerAddr = iterator.next();
         }
         return currentServerAddr;
     }
 
-    public void addErrServerRecord(String errServerIp) {
-        errServerSet.add(errServerIp);
-        if (errServerSet.size() == serverUrls.size()) {
-            retryCnt.incrementAndGet();
-            // 对错误 errServerSet 进行清空，进行新一轮的重试
-            errServerSet.clear();
-        }
+    public boolean hasNextServer() {
+        return iterator.hasNext();
     }
 
-    public void delErrServerRecord(String errServerIp) {
-        errServerSet.remove(errServerIp);
-        // 如果当前的 errServerSet.size() 与 serverUrls.size() 的比例介于 (0, 1/2] 之间，清除重试次数信息
-        if (errServerSet.size() * 2 <= serverUrls.size()) {
-            retryCnt.set(0);
-        }
-    }
-
-    public boolean isMaxRetry() {
-        return retryCnt.get() >= 4;
+    public String getNextServerAddr() {
+        return iterator.next();
     }
 
     public String getContentPath() {
@@ -426,16 +384,15 @@ public class ServerListManager {
     private String serverListName = ParamUtil.getDefaultNodesPath();
     volatile List<String> serverUrls = new ArrayList<String>();
 
-    private final CopyOnWriteArraySet<String> errServerSet;
-    private final AtomicInteger retryCnt = new AtomicInteger(0);
-
     private volatile String currentServerAddr;
 
+    private Iterator<String> iterator;
     public String serverPort = ParamUtil.getDefaultServerPort();
 
     public String addressServerUrl;
 
     private String serverAddrsStr;
+
 }
 
 /**
@@ -496,14 +453,17 @@ class ServerAddressIterator implements Iterator<String> {
         iter = sorted.iterator();
     }
 
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    @Override
     public String next() {
         return iter.next().serverIp;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
