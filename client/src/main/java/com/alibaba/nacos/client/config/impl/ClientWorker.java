@@ -25,13 +25,12 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -46,15 +45,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -197,7 +191,7 @@ public class ClientWorker {
     }
 
     public CacheData getCache(String dataId, String group) {
-        return getCache(dataId, group, TenantUtil.getUserTenant());
+        return getCache(dataId, group, TenantUtil.getUserTenantForAcm());
     }
 
     public CacheData getCache(String dataId, String group, String tenant) {
@@ -441,7 +435,7 @@ public class ClientWorker {
             }
         });
 
-        executorService = Executors.newScheduledThreadPool(Integer.MAX_VALUE, new ThreadFactory() {
+        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);

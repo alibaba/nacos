@@ -93,7 +93,7 @@ class ServiceDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { serviceName, loading, service = {}, clusters } = this.state;
+    const { serviceName, groupName, loading, service = {}, clusters } = this.state;
     const { metadata = {}, selector = {} } = service;
     const metadataText = processMetaData(METADATA_ENTER)(metadata);
     return (
@@ -169,7 +169,11 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceTable clusterName={cluster.name} serviceName={serviceName} />
+              <InstanceTable
+                clusterName={cluster.name}
+                serviceName={serviceName}
+                groupName={groupName}
+              />
             </Card>
           ))}
         </Loading>

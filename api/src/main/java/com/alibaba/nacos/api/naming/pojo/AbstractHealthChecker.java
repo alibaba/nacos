@@ -16,6 +16,7 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.fastjson.serializer.SerializeWriter;
 import com.alibaba.nacos.api.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,7 +46,15 @@ public abstract class AbstractHealthChecker implements Cloneable {
      * @return Another instance with exactly the same fields.
      * @throws CloneNotSupportedException
      */
+    @Override
     public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
+
+    /**
+     * used to JsonAdapter
+     */
+    public void jsonAdapterCallback(SerializeWriter writer){
+        // do nothing
+    }
 
     public static class None extends AbstractHealthChecker {
 
@@ -114,6 +123,17 @@ public abstract class AbstractHealthChecker implements Cloneable {
             }
 
             return headerMap;
+        }
+
+        /**
+         * used to JsonAdapter
+         *
+         * @param writer
+         */
+        @Override
+        public void jsonAdapterCallback(SerializeWriter writer) {
+            writer.writeFieldValue(',', "path", getPath());
+            writer.writeFieldValue(',', "headers", getHeaders());
         }
 
         @Override
@@ -213,6 +233,18 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         public void setPwd(String pwd) {
             this.pwd = pwd;
+        }
+
+        /**
+         * used to JsonAdapter
+         *
+         * @param writer
+         */
+        @Override
+        public void jsonAdapterCallback(SerializeWriter writer) {
+            writer.writeFieldValue(',', "user", getUser());
+            writer.writeFieldValue(',', "pwd", getPwd());
+            writer.writeFieldValue(',', "cmd", getCmd());
         }
 
         @Override
