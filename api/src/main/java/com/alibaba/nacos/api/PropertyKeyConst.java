@@ -44,7 +44,9 @@ public class PropertyKeyConst {
 
     public final static String ENCODE = "encode";
 
-    public final static String TIMEOUT = "timeout";
+    public final static String CONFIG_LONG_POLL_TIMEOUT = "config.long-poll.timeout";
+
+    public final static String CONFIG_RETRY_TIME = "config.retry.time";
 
     public final static String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
 

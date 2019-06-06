@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -45,12 +46,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -147,7 +151,7 @@ public class ClientWorker {
                 //reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
-                int taskId = cacheMap.get().size() / (int)ParamUtil.getPerTaskConfigSize();
+                int taskId = cacheMap.get().size() / (int) ParamUtil.getPerTaskConfigSize();
                 cache.setTaskId(taskId);
             }
 
@@ -303,9 +307,9 @@ public class ClientWorker {
         // 分任务
         int listenerSize = cacheMap.get().size();
         // 向上取整为批数
-        int longingTaskCount = (int)Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
-            for (int i = (int)currentLongingTaskCount; i < longingTaskCount; i++) {
+            for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
                 executorService.execute(new LongPollingRunnable(i));
             }
@@ -316,7 +320,7 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) {
+    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
             if (!cacheData.isUseLocalConfigInfo()) {
@@ -342,13 +346,11 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) {
+    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
         List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
 
         // Take a custom timeout parameter to circumvent network errors caused by network latency
-
-        long timeout = TimeUnit.SECONDS.toMillis(this.timeout);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
@@ -368,11 +370,6 @@ public class ClientWorker {
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
                 agent.getEncode(), timeout);
 
-            // The maximum number of tolerable server reconnection errors has been reached
-            if (result == null) {
-                return Collections.emptyList();
-            }
-
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
                 return parseUpdateDataIdResponse(result.content);
@@ -383,6 +380,7 @@ public class ClientWorker {
         } catch (IOException e) {
             setHealthServer(false);
             LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
+            throw e;
         }
         return Collections.emptyList();
     }
@@ -447,13 +445,14 @@ public class ClientWorker {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
+                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
                 t.setDaemon(true);
                 return t;
             }
         });
 
         executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
             public void run() {
                 try {
                     checkConfigInfo();
@@ -465,17 +464,10 @@ public class ClientWorker {
     }
 
     private void init(Properties properties) {
-        try {
-            String timeoutStr = TemplateUtils.stringBlankAndThenExecute(properties.getProperty(PropertyKeyConst.TIMEOUT), new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return String.valueOf(Constants.SO_TIMEOUT);
-                }
-            });
-            timeout = Long.parseLong(timeoutStr);
-        } catch (NumberFormatException nfe) {
-            timeout = Constants.SO_TIMEOUT;
-        }
+
+        timeout = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT), Constants.CONFIG_LONG_POLL_TIMEOUT);
+
+        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
     }
 
     class LongPollingRunnable implements Runnable {
@@ -485,9 +477,12 @@ public class ClientWorker {
             this.taskId = taskId;
         }
 
+        @Override
         public void run() {
+
+            List<CacheData> cacheDatas = new ArrayList<CacheData>();
+            List<String> inInitializingCacheList = new ArrayList<String>();
             try {
-                List<CacheData> cacheDatas = new ArrayList<CacheData>();
                 // check failover config
                 for (CacheData cacheData : cacheMap.get().values()) {
                     if (cacheData.getTaskId() == taskId) {
@@ -503,7 +498,6 @@ public class ClientWorker {
                     }
                 }
 
-                List<String> inInitializingCacheList = new ArrayList<String>();
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
 
@@ -537,13 +531,13 @@ public class ClientWorker {
                     }
                 }
                 inInitializingCacheList.clear();
-                executorService.execute(this);
-            } catch (Throwable e) {
-                LOGGER.error("longPolling error", e);
 
-                // If the server fails, punish the task execution and delay the next task execution
-                // to avoid the client sending a large number of requests when the server cannot
-                // respond to the request
+                executorService.execute(this);
+
+            } catch (Throwable e) {
+
+                // If the rotation training task is abnormal, the next execution time of the task will be punished
+                LOGGER.error("longPolling error : ", e);
                 executorService.schedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
             }
         }
@@ -561,6 +555,7 @@ public class ClientWorker {
 
     final ScheduledExecutorService executor;
     final ScheduledExecutorService executorService;
+
     /**
      * groupKey -> cacheData
      */
@@ -571,6 +566,6 @@ public class ClientWorker {
     ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
     private long timeout;
-    private double currentLongingTaskCount = 0;
-    private long taskPenaltyTime = 2000;
+    private volatile double currentLongingTaskCount = 0;
+    private int taskPenaltyTime;
 }

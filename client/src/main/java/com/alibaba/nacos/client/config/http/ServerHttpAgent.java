@@ -42,8 +42,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Server Agent
@@ -88,13 +86,13 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS ConnectException httpGet] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS SocketTimeoutException httpGet] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
+                LOGGER.error("[NACOS IOException httpGet] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
             }
         } while (System.currentTimeMillis() <= endTime);
@@ -109,9 +107,10 @@ public class ServerHttpAgent implements HttpAgent {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
         boolean isSSL = false;
 
-        do {
+        String currentServerAddr = serverListMgr.getCurrentServerAddr();
+        int maxRetry = 3;
 
-            String currentServerAddr = serverListMgr.getCurrentServerAddr();
+        do {
 
             try {
                 List<String> newHeaders = getSpasHeaders(paramValues);
@@ -125,36 +124,35 @@ public class ServerHttpAgent implements HttpAgent {
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
-                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
+                    LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, httpCode: {}",
                         currentServerAddr, result.code);
                 } else {
-                    serverListMgr.delErrServerRecord(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException] currentServerAddr: {}", currentServerAddr);
-                serverListMgr.addErrServerRecord(currentServerAddr);
-                serverListMgr.refreshCurrentServerAddr(currentServerAddr);
+                LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}", currentServerAddr);
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr: {}， err : {}",
+                LOGGER.error("[NACOS SocketTimeoutException httpPost] currentServerAddr: {}， err : {}",
                     currentServerAddr, stoe.getMessage());
-                serverListMgr.addErrServerRecord(currentServerAddr);
-                serverListMgr.refreshCurrentServerAddr();
             } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException] currentServerAddr: " + currentServerAddr, ioe);
+                LOGGER.error("[NACOS IOException httpPost] currentServerAddr: " + currentServerAddr, ioe);
                 throw ioe;
             }
 
-            // 保证依旧可以重试
-            if (serverListMgr.isMaxRetry()) {
-                LOGGER.error("The maximum number of tolerable server reconnection errors has been reached");
-                return null;
+            if (serverListMgr.hasNextServer()) {
+                currentServerAddr = serverListMgr.getNextServerAddr();
+            } else {
+                maxRetry --;
+                if (maxRetry < 0) {
+                    throw new ConnectException("The maximum number of tolerable server reconnection errors has been reached");
+                }
+                serverListMgr.refreshCurrentServerAddr();
             }
 
         } while (System.currentTimeMillis() <= endTime);
 
-        LOGGER.error("no available server");
-        throw new ConnectException("no available server");
+        LOGGER.error("no available server, currentServerAddr : {}", currentServerAddr);
+        throw new ConnectException("no available server, currentServerAddr : " + currentServerAddr);
     }
 
     @Override
@@ -180,13 +178,13 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
                 serverListMgr.refreshCurrentServerAddr();
             } catch (IOException ioe) {
-                LOGGER.error("[NACOS IOException] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
+                LOGGER.error("[NACOS IOException httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
             }
 

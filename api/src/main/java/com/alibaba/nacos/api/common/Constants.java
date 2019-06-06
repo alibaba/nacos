@@ -91,6 +91,16 @@ public class Constants {
     /**
      * millisecond
      */
+    public static final int CONFIG_LONG_POLL_TIMEOUT = 5000;
+
+    /**
+     * millisecond
+     */
+    public static final int CONFIG_RETRY_TIME = 2000;
+
+    /**
+     * millisecond
+     */
     public static final int RECV_WAIT_TIMEOUT = ONCE_TIMEOUT * 5;
 
     public static final String ENCODE = "UTF-8";

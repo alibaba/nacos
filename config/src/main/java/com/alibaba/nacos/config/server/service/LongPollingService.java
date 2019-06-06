@@ -241,8 +241,9 @@ public class LongPollingService extends AbstractEventListener {
         // AsyncContext.setTimeout()的超时时间不准，所以只能自己控制
         asyncContext.setTimeout(0L);
 
+        // I think there is a problem with the task delay setting here that could easily cause a client read timeout
         scheduler.execute(
-            new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
+            new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, delayTime, appName, tag));
     }
 
     @Override
@@ -406,7 +407,7 @@ public class LongPollingService extends AbstractEventListener {
                     }
 
                 }
-                //TODO 为什么任务延迟执行时间设置为超时时间？会不会导致 read timeout
+
             }, timeoutTime, TimeUnit.MILLISECONDS);
 
             allSubs.add(this);
