@@ -99,8 +99,8 @@ const I18N_CONF = {
     pubNoData: '没有数据',
     nodeState: '节点状态',
     clusterTerm: '集群任期',
-    leaderDueMs: 'Leader止时',
-    heartbeatDueMs: '心跳止时',
+    leaderDueMs: 'Leader止时(ms)',
+    heartbeatDueMs: '心跳止时(ms)',
     voteFor: '投票对象',
   },
   EditClusterDialog: {

@@ -77,7 +77,7 @@ class ClusterNodeList extends React.Component {
       `keyword=${keyword}`,
     ];
     request({
-      url: `v1/ns/cluster/states?${parameter.join('&')}`,
+      url: `v1/ns/operator/cluster/states?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, clusterStateList = [] } = {}) => {
         this.setState({

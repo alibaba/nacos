@@ -99,8 +99,8 @@ const I18N_CONF = {
     pubNoData: 'No results found.',
     nodeState: 'NodeState',
     clusterTerm: 'ClusterTerm',
-    leaderDueMs: 'LeaderDueMs',
-    heartbeatDueMs: 'HeartbeatDueMs',
+    leaderDueMs: 'LeaderDue(ms)',
+    heartbeatDueMs: 'HeartbeatDue(ms)',
     voteFor: 'VoteFor',
   },
   EditClusterDialog: {

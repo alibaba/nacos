@@ -56,9 +56,6 @@ public class ClusterController {
     @Autowired
     protected ServiceManager serviceManager;
 
-    @Autowired
-    private RaftPeerSet raftPeerSet;
-
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
 
@@ -105,43 +102,6 @@ public class ClusterController {
         serviceManager.addOrReplaceService(service);
 
         return "ok";
-    }
-
-    @RequestMapping(value = "/states", method = RequestMethod.GET)
-    public Object listStates(HttpServletRequest request) {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        JSONObject result = new JSONObject();
-        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
-        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
-
-        List<RaftPeer> raftPeerLists = new ArrayList<>();
-
-        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, containedInstance, raftPeerLists,  raftPeerSet);
-
-        if (CollectionUtils.isEmpty(raftPeerLists)) {
-            result.put("clusterStateList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
-        }
-
-        JSONArray clusterStateJsonArray = new JSONArray();
-        for(RaftPeer raftPeer: raftPeerLists) {
-            ClusterStateView clusterStateView = new ClusterStateView();
-            clusterStateView.setClusterTerm(raftPeer.term.intValue());
-            clusterStateView.setNodeIp(raftPeer.ip);
-            clusterStateView.setNodeState(raftPeer.state.name());
-            clusterStateView.setVoteFor(raftPeer.voteFor);
-            clusterStateView.setHeartbeatDueMs(raftPeer.heartbeatDueMs);
-            clusterStateView.setLeaderDueMs(raftPeer.leaderDueMs);
-            clusterStateJsonArray.add(clusterStateView);
-        }
-        result.put("clusterStateList", clusterStateJsonArray);
-        result.put("count", total);
-        return result;
     }
 
 }
