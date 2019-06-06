@@ -229,6 +229,41 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<RaftPeer> raftPeerList, RaftPeerSet raftPeerSet) {
+
+        List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
+
+        List<RaftPeer> tempList = new ArrayList<>();
+        if(StringUtils.isNotBlank(keyword)) {
+            for(RaftPeer raftPeer: matchList) {
+                String ip = raftPeer.ip.split(":")[0];
+                if(keyword.equals(ip)) {
+                    tempList.add(raftPeer);
+                }
+            }
+            matchList = tempList;
+        }
+
+        if (pageSize >= matchList.size()) {
+            raftPeerList.addAll(matchList);
+            return matchList.size();
+        }
+
+        for (int i = 0; i < matchList.size(); i++) {
+            if (i < startPage * pageSize) {
+                continue;
+            }
+
+            raftPeerList.add(matchList.get(i));
+
+            if (raftPeerList.size() >= pageSize) {
+                break;
+            }
+        }
+
+        return matchList.size();
+    }
+
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
         JSONObject serviceJson = JSON.parseObject(msg.getData());
@@ -644,41 +679,6 @@ public class ServiceManager implements RecordListener<Service> {
             serviceList.add(matchList.get(i));
 
             if (serviceList.size() >= pageSize) {
-                break;
-            }
-        }
-
-        return matchList.size();
-    }
-
-    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<RaftPeer> raftPeerList, RaftPeerSet raftPeerSet) {
-
-        List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
-
-        List<RaftPeer> tempList = new ArrayList<>();
-        if(StringUtils.isNotBlank(keyword)) {
-            for(RaftPeer raftPeer: matchList) {
-                String ip = raftPeer.ip.split(":")[0];
-                if(keyword.equals(ip)) {
-                    tempList.add(raftPeer);
-                }
-            }
-            matchList = tempList;
-        }
-
-        if (pageSize >= matchList.size()) {
-            raftPeerList.addAll(matchList);
-            return matchList.size();
-        }
-
-        for (int i = 0; i < matchList.size(); i++) {
-            if (i < startPage * pageSize) {
-                continue;
-            }
-
-            raftPeerList.add(matchList.get(i));
-
-            if (raftPeerList.size() >= pageSize) {
                 break;
             }
         }

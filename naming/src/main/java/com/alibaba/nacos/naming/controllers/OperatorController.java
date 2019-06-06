@@ -24,6 +24,8 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -31,8 +33,10 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchEntry;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.ClusterStateView;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.NeedAuth;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsProperties;
@@ -42,6 +46,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -76,6 +82,9 @@ public class OperatorController {
 
     @Autowired
     private RaftCore raftCore;
+
+    @Autowired
+    private RaftPeerSet raftPeerSet;
 
     @RequestMapping("/push/state")
     public JSONObject pushState(HttpServletRequest request) {
@@ -214,5 +223,42 @@ public class OperatorController {
         String serverStatus = WebUtils.required(request, "serverStatus");
         serverListManager.onReceiveServerStatus(serverStatus);
         return "ok";
+    }
+
+    @RequestMapping(value = "/cluster/states", method = RequestMethod.GET)
+    public Object listStates(HttpServletRequest request) {
+
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        JSONObject result = new JSONObject();
+        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
+        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
+        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
+
+        List<RaftPeer> raftPeerLists = new ArrayList<>();
+
+        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, containedInstance, raftPeerLists,  raftPeerSet);
+
+        if (CollectionUtils.isEmpty(raftPeerLists)) {
+            result.put("clusterStateList", Collections.emptyList());
+            result.put("count", 0);
+            return result;
+        }
+
+        JSONArray clusterStateJsonArray = new JSONArray();
+        for(RaftPeer raftPeer: raftPeerLists) {
+            ClusterStateView clusterStateView = new ClusterStateView();
+            clusterStateView.setClusterTerm(raftPeer.term.intValue());
+            clusterStateView.setNodeIp(raftPeer.ip);
+            clusterStateView.setNodeState(raftPeer.state.name());
+            clusterStateView.setVoteFor(raftPeer.voteFor);
+            clusterStateView.setHeartbeatDueMs(raftPeer.heartbeatDueMs);
+            clusterStateView.setLeaderDueMs(raftPeer.leaderDueMs);
+            clusterStateJsonArray.add(clusterStateView);
+        }
+        result.put("clusterStateList", clusterStateJsonArray);
+        result.put("count", total);
+        return result;
     }
 }
