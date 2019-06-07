@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.annotation.Repeat;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
@@ -75,7 +76,7 @@ public class DeregisterInstance_ITCase {
      */
     @Test
     public void dregDomTest() throws Exception {
-        String serviceName = randomDomainName();
+        String serviceName = randomDomainName() + "-dom";
         System.out.println(serviceName);
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
@@ -108,11 +109,11 @@ public class DeregisterInstance_ITCase {
      *
      * @throws Exception
      */
+    @Repeat(value = 20)
     @Test
     public void dregDomClusterTest() throws Exception {
 
-        String serviceName = randomDomainName();
-
+        String serviceName = randomDomainName() + "-cluster";
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
@@ -120,6 +121,7 @@ public class DeregisterInstance_ITCase {
 
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
+        System.out.println("before : " + instances.toString());
         verifyInstanceList(instances, 2, serviceName);
 
         instances = naming.getAllInstances(serviceName);
@@ -130,6 +132,7 @@ public class DeregisterInstance_ITCase {
         TimeUnit.SECONDS.sleep(5);
 
         instances = naming.getAllInstances(serviceName);
+        System.out.println("after : " + instances.toString());
 
         Assert.assertEquals(1, instances.size());
 
@@ -150,7 +153,7 @@ public class DeregisterInstance_ITCase {
     @Test
     public void dregLastDomTest() throws Exception {
 
-        String serviceName = randomDomainName();
+        String serviceName = randomDomainName() + "-last";
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
