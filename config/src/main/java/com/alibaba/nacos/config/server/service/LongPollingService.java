@@ -243,7 +243,7 @@ public class LongPollingService extends AbstractEventListener {
 
         // I think there is a problem with the task delay setting here that could easily cause a client read timeout
         scheduler.execute(
-            new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, delayTime, appName, tag));
+            new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
 
     @Override
