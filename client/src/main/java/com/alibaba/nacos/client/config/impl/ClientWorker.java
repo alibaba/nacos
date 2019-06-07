@@ -344,8 +344,6 @@ public class ClientWorker {
 
         List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
 
-        // Take a custom timeout parameter to circumvent network errors caused by network latency
-
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
         headers.add("" + timeout);
@@ -560,6 +558,6 @@ public class ClientWorker {
     ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
     private long timeout;
-    private volatile double currentLongingTaskCount = 0;
+    private double currentLongingTaskCount = 0;
     private int taskPenaltyTime;
 }

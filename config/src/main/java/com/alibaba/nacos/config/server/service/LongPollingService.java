@@ -241,7 +241,6 @@ public class LongPollingService extends AbstractEventListener {
         // AsyncContext.setTimeout()的超时时间不准，所以只能自己控制
         asyncContext.setTimeout(0L);
 
-        // I think there is a problem with the task delay setting here that could easily cause a client read timeout
         scheduler.execute(
             new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
