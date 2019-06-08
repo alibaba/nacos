@@ -53,12 +53,11 @@ public class SubscribeManager {
     private ServerListManager serverListManager;
 
 
-    private List<Subscriber> getSubscribers(String serviceName, String namespaceId){
-        return pushService.getClients(serviceName,namespaceId);
+    private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
+        return pushService.getClients(serviceName, namespaceId);
     }
 
     /**
-     *
      * @param serviceName
      * @param namespaceId
      * @param aggregation
@@ -66,10 +65,10 @@ public class SubscribeManager {
      * @throws InterruptedException
      */
     public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) throws InterruptedException {
-        if (aggregation){
+        if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
-            while (serverListManager.getHealthyServers().size() <= 1) {
-                return getSubscribers(serviceName,namespaceId);
+            if (serverListManager.getHealthyServers().size() <= 1) {
+                return getSubscribers(serviceName, namespaceId);
             }
 
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
@@ -77,15 +76,15 @@ public class SubscribeManager {
             for (Server server : serverListManager.getHealthyServers()) {
 
                 Map<String, String> paramValues = new HashMap<>(128);
-                paramValues.put(CommonParams.SERVICE_NAME,serviceName);
-                paramValues.put(CommonParams.NAMESPACE_ID,namespaceId);
-                paramValues.put("aggregation",String.valueOf(Boolean.FALSE));
+                paramValues.put(CommonParams.SERVICE_NAME, serviceName);
+                paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
+                paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getKey())) {
-                    subscriberList.addAll(getSubscribers(serviceName,namespaceId));
+                    subscriberList.addAll(getSubscribers(serviceName, namespaceId));
                 }
 
                 HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getKey() + RunningConfig.getContextPath()
-                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(),paramValues);
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {
                     Subscribers subscribers = (Subscribers) JSONObject.parseObject(result.content, Subscribers.class);
@@ -96,7 +95,7 @@ public class SubscribeManager {
             }
         } else {
             // local server
-            return getSubscribers(serviceName,namespaceId);
+            return getSubscribers(serviceName, namespaceId);
         }
         return Collections.emptyList();
     }
