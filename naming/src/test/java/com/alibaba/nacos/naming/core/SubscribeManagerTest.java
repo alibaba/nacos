@@ -87,7 +87,7 @@ public class SubscribeManagerTest extends BaseTest {
             //Mockito.doReturn(3).when(serverListManager.getHealthyServers().size());
             List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
             Assert.assertNotNull(list);
-            Assert.assertEquals(1, list.size());
+            Assert.assertEquals(2, list.size());
             Assert.assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception e) {
 
