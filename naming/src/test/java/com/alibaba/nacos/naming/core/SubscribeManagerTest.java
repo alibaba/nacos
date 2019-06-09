@@ -5,6 +5,7 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.PushService;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +49,10 @@ public class SubscribeManagerTest extends BaseTest {
             Subscriber subscriber = new Subscriber("127.0.0.1:8080", "test", "app", "127.0.0.1", namespaceId, serviceName);
             clients.add(subscriber);
             Mockito.when(pushService.getClients(Mockito.anyString(), Mockito.anyString())).thenReturn(clients);
-            subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            Assert.assertNotNull(list);
+            Assert.assertEquals(1, list.size());
+            Assert.assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception e) {
 
         }
@@ -81,7 +85,10 @@ public class SubscribeManagerTest extends BaseTest {
 
             Mockito.when(serverListManager.getHealthyServers()).thenReturn(healthyServers);
             //Mockito.doReturn(3).when(serverListManager.getHealthyServers().size());
-            subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            List<Subscriber> list = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            Assert.assertNotNull(list);
+            Assert.assertEquals(1, list.size());
+            Assert.assertEquals("public", list.get(0).getNamespaceId());
         } catch (Exception e) {
 
         }
