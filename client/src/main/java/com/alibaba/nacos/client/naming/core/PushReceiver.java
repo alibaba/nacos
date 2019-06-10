@@ -17,7 +17,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
+import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
