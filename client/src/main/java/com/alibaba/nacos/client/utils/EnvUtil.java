@@ -92,8 +92,8 @@ public class EnvUtil {
         }
         StringBuilder result = new StringBuilder();
         for (String string : list) {
-            result.append(",");
             result.append(string);
+            result.append(",");
         }
         return result.toString().substring(0, result.length() - 1);
     }
@@ -101,7 +101,7 @@ public class EnvUtil {
     private static String selfAmorayTag;
     private static String selfVipserverTag;
     private static String selfLocationTag;
-    public final static String AMORY_TAG = "Amory-Tag";
-    public final static String VIPSERVER_TAG = "Vipserver-Tag";
-    public final static String LOCATION_TAG = "Location-Tag";
+    private final static String AMORY_TAG = "Amory-Tag";
+    private final static String VIPSERVER_TAG = "Vipserver-Tag";
+    private final static String LOCATION_TAG = "Location-Tag";
 }
