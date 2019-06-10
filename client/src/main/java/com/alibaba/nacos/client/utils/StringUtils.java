@@ -32,7 +32,7 @@ public class StringUtils {
             return true;
         }
         for (int i = 0; i < strLen; i++) {
-            if ((Character.isWhitespace(str.charAt(i)) == false)) {
+            if (!Character.isWhitespace(str.charAt(i))) {
                 return false;
             }
         }
@@ -40,7 +40,6 @@ public class StringUtils {
     }
 
     public static boolean isNotBlank(String str) {
-
         return !isBlank(str);
     }
 

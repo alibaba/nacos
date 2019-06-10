@@ -515,8 +515,6 @@ public class ClientWorker {
         }
     }
 
-    // =================
-
     public boolean isHealthServer() {
         return isHealthServer;
     }
@@ -525,16 +523,16 @@ public class ClientWorker {
         this.isHealthServer = isHealthServer;
     }
 
-    final ScheduledExecutorService executor;
-    final ExecutorService executorService;
+    private final ScheduledExecutorService executor;
+    private final ExecutorService executorService;
     /**
      * groupKey -> cacheData
      */
-    AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
         new HashMap<String, CacheData>());
 
-    HttpAgent agent;
-    ConfigFilterChainManager configFilterChainManager;
+    private final HttpAgent agent;
+    private final ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
     private double currentLongingTaskCount = 0;
 }
