@@ -105,7 +105,7 @@ class ClusterNodeList extends React.Component {
       nowNamespaceId,
     });
 
-  rowColor = row => ({ className: !row.voteFor ? 'row-bg-red' : '' });
+  rowColor = row => ({ className: !row.voteFor ? '' : '' });
 
   render() {
     const { locale = {} } = this.props;
@@ -180,7 +180,6 @@ class ClusterNodeList extends React.Component {
                 <Column title={locale.clusterTerm} dataIndex="clusterTerm" />
                 <Column title={locale.leaderDueMs} dataIndex="leaderDueMs" />
                 <Column title={locale.heartbeatDueMs} dataIndex="heartbeatDueMs" />
-                <Column title={locale.voteFor} dataIndex="voteFor" />
               </Table>
             </Col>
           </Row>
