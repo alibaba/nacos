@@ -46,6 +46,8 @@ const I18N_CONF = {
     serviceManagement: 'Service List',
     serviceDetail: 'Service Details',
     namespace: 'Namespace',
+    clusterManagementVirtual: 'ClusterManagement',
+    clusterManagement: 'Cluster Node List',
   },
   NameSpace: {
     namespace: 'Namespaces',
@@ -89,6 +91,18 @@ const I18N_CONF = {
     prompt: 'Confirm',
     promptDelete: 'Do you want to delete the service?',
     create: 'Create Service',
+  },
+  ClusterNodeList: {
+    clusterNodeList: 'Node List',
+    nodeIp: 'NodeIp',
+    nodeIpPlaceholder: 'Please enter node Ip',
+    query: 'Search',
+    pubNoData: 'No results found.',
+    nodeState: 'NodeState',
+    clusterTerm: 'ClusterTerm',
+    leaderDueMs: 'LeaderDue(ms)',
+    heartbeatDueMs: 'HeartbeatDue(ms)',
+    voteFor: 'VoteFor',
   },
   EditClusterDialog: {
     updateCluster: 'Update Cluster',

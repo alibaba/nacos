@@ -46,6 +46,8 @@ const I18N_CONF = {
     serviceManagement: '服务列表',
     serviceDetail: '服务详情',
     namespace: '命名空间',
+    clusterManagementVirtual: '集群管理',
+    clusterManagement: '节点列表',
   },
   NameSpace: {
     namespace: '命名空间',
@@ -89,6 +91,18 @@ const I18N_CONF = {
     prompt: '提示',
     promptDelete: '确定要删除当前服务吗？',
     create: '创建服务',
+  },
+  ClusterNodeList: {
+    clusterNodeList: '节点列表',
+    nodeIp: '节点Ip',
+    nodeIpPlaceholder: '请输入节点Ip',
+    query: '查询',
+    pubNoData: '没有数据',
+    nodeState: '节点状态',
+    clusterTerm: '集群任期',
+    leaderDueMs: 'Leader止时(ms)',
+    heartbeatDueMs: '心跳止时(ms)',
+    voteFor: '投票对象',
   },
   EditClusterDialog: {
     updateCluster: '更新集群',
