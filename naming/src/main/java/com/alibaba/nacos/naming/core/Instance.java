@@ -51,6 +51,9 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     public static final Pattern IP_PATTERN
         = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
 
+    public static final Pattern ONLY_DIGIT_AND_DOT
+        = Pattern.compile("(\\d|\\.)+");
+
     public static final String SPLITER = "_";
 
     public Instance() {
@@ -296,10 +299,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
 
     public boolean validate() {
-
-        Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
-        if (!matcher.matches()) {
-            return false;
+        if (onlyContainsDigitAndDot()) {
+            Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
+            if (!matcher.matches()) {
+                return false;
+            }
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
@@ -307,6 +311,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
 
         return true;
+    }
+
+    private boolean onlyContainsDigitAndDot() {
+        Matcher matcher = ONLY_DIGIT_AND_DOT.matcher(getIp());
+        return matcher.matches();
     }
 
     @Override

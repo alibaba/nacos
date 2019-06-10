@@ -49,7 +49,7 @@ export default {
    * 检测属性是否正确
    */
   validateProperties(str = '') {
-    const reg = /^[^=]+=[^=]+$/;
+    const reg = /^[^=]+=.+$/;
     return str
       .replace('\n\r', '\n')
       .split('\n')

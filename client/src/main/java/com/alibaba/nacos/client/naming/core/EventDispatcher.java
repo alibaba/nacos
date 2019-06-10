@@ -125,7 +125,7 @@ public class EventDispatcher {
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
-                            listener.onEvent(new NamingEvent(serviceInfo.getName(), hosts));
+                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
                         }
                     }
 

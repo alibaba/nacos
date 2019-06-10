@@ -32,29 +32,24 @@ public class IoUtils {
 
     public static byte[] tryDecompress(InputStream raw) throws Exception {
 
-        GZIPInputStream gis = null;
-        ByteArrayOutputStream out = null;
         try {
-            gis = new GZIPInputStream(raw);
-            out = new ByteArrayOutputStream();
+            GZIPInputStream gis
+                = new GZIPInputStream(raw);
+            ByteArrayOutputStream out
+                = new ByteArrayOutputStream();
+
             IOUtils.copy(gis, out);
+
             return out.toByteArray();
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (out != null) {
-                out.close();
-            }
-            if (gis != null) {
-                gis.close();
-            }
         }
 
         return null;
     }
 
     static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
+        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
             reader);
     }
 

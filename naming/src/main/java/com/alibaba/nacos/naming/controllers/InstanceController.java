@@ -335,7 +335,15 @@ public class InstanceController {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
         boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
-        boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+
+        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
+        boolean enabled;
+        if (StringUtils.isBlank(enabledString)) {
+            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+        } else {
+            enabled = BooleanUtils.toBoolean(enabledString);
+        }
+
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
             String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
@@ -465,6 +473,12 @@ public class InstanceController {
             }
 
             for (Instance instance : ips) {
+
+                // remove disabled instance:
+                if (!instance.isEnabled()) {
+                    continue;
+                }
+
                 JSONObject ipObj = new JSONObject();
 
                 ipObj.put("ip", instance.getIp());
