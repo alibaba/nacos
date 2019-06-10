@@ -42,7 +42,7 @@ public class SystemUtils {
     /**
      * Standalone mode or not
      */
-    public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+    public static boolean STANDALONE_MODE =  Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     public static final String STANDALONE_MODE_ALONE = "standalone";
     public static final String STANDALONE_MODE_CLUSTER = "cluster";

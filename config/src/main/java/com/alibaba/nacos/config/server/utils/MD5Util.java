@@ -69,7 +69,7 @@ public class MD5Util {
     }
 
     static public String compareMd5ResultString(List<String> changedGroupKeys) throws IOException {
-        if (null == changedGroupKeys || changedGroupKeys.isEmpty()) {
+        if (null == changedGroupKeys) {
             return "";
         }
 
