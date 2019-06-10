@@ -215,8 +215,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 if (!clusterMap.containsKey(instance.getClusterName())) {
                     Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                         instance.getClusterName(), instance.toJSON());
-                    Cluster cluster = new Cluster(instance.getClusterName());
-                    cluster.setService(this);
+                    Cluster cluster = new Cluster(instance.getClusterName(), this);
                     cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }

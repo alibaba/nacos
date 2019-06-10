@@ -58,13 +58,12 @@ public class CatalogController {
 
     @RequestMapping(value = "/service")
     public JSONObject serviceDetail(HttpServletRequest request) throws Exception {
-
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        com.alibaba.nacos.naming.core.Service detailedService = serviceManager.getService(namespaceId, serviceName);
+        Service detailedService = serviceManager.getService(namespaceId, serviceName);
         if (detailedService == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
+            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
 
         JSONObject detailView = new JSONObject();
@@ -80,7 +79,7 @@ public class CatalogController {
 
         List<Cluster> clusters = new ArrayList<>();
 
-        for (Cluster cluster : detailedService.getClusterMap().values()) {
+        for (com.alibaba.nacos.naming.core.Cluster cluster : detailedService.getClusterMap().values()) {
             Cluster clusterView = new Cluster();
             clusterView.setName(cluster.getName());
             clusterView.setHealthChecker(cluster.getHealthChecker());
@@ -88,7 +87,7 @@ public class CatalogController {
             clusterView.setUseIPPort4Check(cluster.isUseIPPort4Check());
             clusterView.setDefaultPort(cluster.getDefaultPort());
             clusterView.setDefaultCheckPort(cluster.getDefaultCheckPort());
-            clusterView.setServiceName(serviceName);
+            clusterView.setServiceName(cluster.getService().getName());
             clusters.add(clusterView);
         }
 
@@ -141,7 +140,7 @@ public class CatalogController {
     }
 
     @RequestMapping(value = "/services", method = RequestMethod.GET)
-    public Object listDetail(HttpServletRequest request) throws Exception {
+    public Object listDetail(HttpServletRequest request) {
 
         boolean withInstances = Boolean.parseBoolean(WebUtils.optional(request, "withInstances", "true"));
 
@@ -149,22 +148,24 @@ public class CatalogController {
             String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
                 Constants.DEFAULT_NAMESPACE_ID);
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
+            int pageNo = Integer.parseInt(WebUtils.required(request, "pageNo"));
+            int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
+            String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
-            serviceManager
-                .getServiceMap(namespaceId)
-                .forEach(
-                    (serviceName, service) -> {
+            List<Service> serviceList = new ArrayList<>(8);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, keyword, StringUtils.EMPTY, serviceList);
 
-                        ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
-                        serviceDetailInfo.setServiceName(NamingUtils.getServiceName(serviceName));
-                        serviceDetailInfo.setGroupName(NamingUtils.getGroupName(serviceName));
-                        serviceDetailInfo.setMetadata(service.getMetadata());
+            for (Service service : serviceList) {
+                ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
+                serviceDetailInfo.setServiceName(NamingUtils.getServiceName(service.getName()));
+                serviceDetailInfo.setGroupName(NamingUtils.getGroupName(service.getName()));
+                serviceDetailInfo.setMetadata(service.getMetadata());
 
-                        Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
-                        serviceDetailInfo.setClusterMap(clusterInfoMap);
+                Map<String, ClusterInfo> clusterInfoMap = getStringClusterInfoMap(service);
+                serviceDetailInfo.setClusterMap(clusterInfoMap);
 
-                        serviceDetailInfoList.add(serviceDetailInfo);
-                    });
+                serviceDetailInfoList.add(serviceDetailInfo);
+            }
 
             return serviceDetailInfoList;
         } else {
@@ -248,7 +249,7 @@ public class CatalogController {
         return ipAddressInfos;
     }
 
-    private JSONObject serviceList(HttpServletRequest request) throws Exception {
+    private JSONObject serviceList(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);

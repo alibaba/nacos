@@ -22,8 +22,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.MD5;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -145,7 +145,7 @@ public class CacheData {
         if (this == obj) {
             return true;
         }
-        CacheData other = (CacheData)obj;
+        CacheData other = (CacheData) obj;
         return dataId.equals(other.dataId) && group.equals(other.group);
     }
 
@@ -172,7 +172,7 @@ public class CacheData {
                 ClassLoader appClassLoader = listener.getClass().getClassLoader();
                 try {
                     if (listener instanceof AbstractSharedListener) {
-                        AbstractSharedListener adapter = (AbstractSharedListener)listener;
+                        AbstractSharedListener adapter = (AbstractSharedListener) listener;
                         adapter.fillContext(dataId, group);
                         LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
                     }
@@ -236,7 +236,7 @@ public class CacheData {
         this.configFilterChainManager = configFilterChainManager;
         this.dataId = dataId;
         this.group = group;
-        this.tenant = TenantUtil.getUserTenant();
+        this.tenant = TenantUtil.getUserTenantForAcm();
         listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
@@ -274,7 +274,7 @@ public class CacheData {
      */
     private volatile boolean isUseLocalConfig = false;
     /**
-     * last motify time
+     * last modify time
      */
     private volatile long localConfigLastModified;
     private volatile String content;
@@ -298,7 +298,7 @@ class ManagerListenerWrap {
         if (obj == this) {
             return true;
         }
-        ManagerListenerWrap other = (ManagerListenerWrap)obj;
+        ManagerListenerWrap other = (ManagerListenerWrap) obj;
         return listener.equals(other.listener);
     }
 

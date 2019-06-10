@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -76,7 +75,6 @@ public class SelectInstances_ITCase {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void selectHealthyInstances() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
@@ -86,8 +84,7 @@ public class SelectInstances_ITCase {
 
         List<Instance> instances = naming.selectInstances(serviceName, true);
 
-        Assert.assertEquals(1, instances.size());
-
+        Assert.assertEquals(2, instances.size());
 
         Instance instanceNotH = null;
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
@@ -108,7 +105,6 @@ public class SelectInstances_ITCase {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void selectUnhealthyInstances() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT);
@@ -118,7 +114,7 @@ public class SelectInstances_ITCase {
         List<Instance> instances = naming.selectInstances(serviceName, false);
 
         TimeUnit.SECONDS.sleep(2);
-        Assert.assertEquals(2, instances.size());
+        Assert.assertEquals(0, instances.size());
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
@@ -131,7 +127,6 @@ public class SelectInstances_ITCase {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void selectHealthyInstancesClusters() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
@@ -153,7 +148,6 @@ public class SelectInstances_ITCase {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void selectUnhealthyInstancesClusters() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
@@ -162,7 +156,7 @@ public class SelectInstances_ITCase {
         TimeUnit.SECONDS.sleep(8);
         List<Instance> instances = naming.selectInstances(serviceName, Arrays.asList("c1", "c2"), false);
         TimeUnit.SECONDS.sleep(2);
-        Assert.assertEquals(instances.size(), 2);
+        Assert.assertEquals(0, instances.size());
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
