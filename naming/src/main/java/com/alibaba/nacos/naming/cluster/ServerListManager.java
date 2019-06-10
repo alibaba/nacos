@@ -41,7 +41,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
 @Component("serverListManager")
 public class ServerListManager {
 
-    public static final int STABLE_PERIOD = 60 * 1000;
+    private static final int STABLE_PERIOD = 60 * 1000;
 
     @Autowired
     private SwitchDomain switchDomain;
