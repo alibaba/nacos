@@ -53,6 +53,8 @@ import java.util.concurrent.Callable;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
+    private static final String DEFAULT_PORT = "8080";
+
     /**
      * Each Naming instance should have different namespace.
      */
@@ -82,7 +84,6 @@ public class NacosNamingService implements NamingService {
     }
 
     public NacosNamingService(Properties properties) {
-
         init(properties);
     }
 
@@ -151,7 +152,6 @@ public class NacosNamingService implements NamingService {
 
     private void initEndpoint(final Properties properties) {
         if (properties == null) {
-
             return;
         }
         //这里通过 dubbo/sca 侧来初始化默认传入的是 true
@@ -159,7 +159,7 @@ public class NacosNamingService implements NamingService {
         String endpointUrl;
         if (isUseEndpointParsingRule) {
             endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrl)) {
+            if (StringUtils.isNotBlank(endpointUrl)) {
                 serverList = "";
             }
         } else {
@@ -181,7 +181,7 @@ public class NacosNamingService implements NamingService {
         endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, new Callable<String>() {
             @Override
             public String call() {
-                return "8080";
+                return DEFAULT_PORT;
             }
         });
 
