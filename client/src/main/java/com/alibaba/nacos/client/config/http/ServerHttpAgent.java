@@ -66,8 +66,7 @@ public class ServerHttpAgent implements HttpAgent {
     public HttpResult httpGet(String path, List<String> headers, List<String> paramValues, String encoding,
                               long readTimeoutMs) throws IOException {
         final long endTime = System.currentTimeMillis() + readTimeoutMs;
-
-        boolean isSSL = false;
+        final boolean isSSL = false;
 
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
