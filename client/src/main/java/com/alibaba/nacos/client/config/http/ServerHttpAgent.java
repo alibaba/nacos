@@ -287,7 +287,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private void initMaxRetry(Properties properties) {
-        maxRetry = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.MAX_RETRY), Constants.MAX_RETRY);
+        maxRetry = NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.MAX_RETRY)), Constants.MAX_RETRY);
     }
 
     @Override
