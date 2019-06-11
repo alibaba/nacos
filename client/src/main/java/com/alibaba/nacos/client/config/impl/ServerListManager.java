@@ -266,7 +266,8 @@ public class ServerListManager {
             return;
         }
         serverUrls = new ArrayList<String>(newList);
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
 
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
         LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
@@ -333,7 +334,8 @@ public class ServerListManager {
     }
 
     public void refreshCurrentServerAddr() {
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
     }
 
     public String getCurrentServerAddr() {
@@ -344,12 +346,12 @@ public class ServerListManager {
         return currentServerAddr;
     }
 
-    public boolean hasNextServer() {
-        return iterator.hasNext();
+    public void updateCurrentServerAddr(String currentServerAddr) {
+        this.currentServerAddr = currentServerAddr;
     }
 
-    public String getNextServerAddr() {
-        return iterator.next();
+    public Iterator<String> getIterator() {
+        return iterator;
     }
 
     public String getContentPath() {

@@ -91,12 +91,17 @@ public class Constants {
     /**
      * millisecond
      */
-    public static final int CONFIG_LONG_POLL_TIMEOUT = 5000;
+    public static final int CONFIG_LONG_POLL_TIMEOUT = 30000;
 
     /**
      * millisecond
      */
     public static final int CONFIG_RETRY_TIME = 2000;
+
+    /**
+     * Maximum number of retries
+     */
+    public static final int MAX_RETRY = 3;
 
     /**
      * millisecond
