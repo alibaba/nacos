@@ -33,6 +33,8 @@ import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NUMBER_PATTERN;
+
 
 /**
  * Check and update statues of ephemeral instances, remove them if they have been expired.
@@ -115,7 +117,7 @@ public class ClientBeatCheckTask implements Runnable {
             return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
         }
         String timeout = metaData.get(Constants.HEART_BEAT_TIMEOUT);
-        if(!StringUtils.isEmpty(timeout) && timeout.matches("^\\d+$")){
+        if(!StringUtils.isEmpty(timeout) && timeout.matches(NUMBER_PATTERN)){
             return Long.valueOf(timeout);
         }
         return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
@@ -127,7 +129,7 @@ public class ClientBeatCheckTask implements Runnable {
             return Constants.DEFAULT_IP_DELETE_TIMEOUT;
         }
         String timeout = metaData.get(Constants.IP_DELETE_TIMEOUT);
-        if(!StringUtils.isEmpty(timeout) && timeout.matches("^\\d+$")){
+        if(!StringUtils.isEmpty(timeout) && timeout.matches(NUMBER_PATTERN)){
             return Long.valueOf(timeout);
         }
         return Constants.DEFAULT_IP_DELETE_TIMEOUT;
