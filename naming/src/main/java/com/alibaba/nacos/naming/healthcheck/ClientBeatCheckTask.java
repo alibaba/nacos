@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -26,9 +27,12 @@ import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
+import org.springframework.util.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.Map;
+
 
 /**
  * Check and update statues of ephemeral instances, remove them if they have been expired.
@@ -73,13 +77,13 @@ public class ClientBeatCheckTask implements Runnable {
 
             // first set health status of instances:
             for (Instance instance : instances) {
-                if (System.currentTimeMillis() - instance.getLastBeat() > ClientBeatProcessor.CLIENT_BEAT_TIMEOUT) {
+                if (System.currentTimeMillis() - instance.getLastBeat() > getInstanceHeartBeatTimeOut(instance)) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
                             instance.setHealthy(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
-                                UtilsAndCommons.LOCALHOST_SITE, ClientBeatProcessor.CLIENT_BEAT_TIMEOUT, instance.getLastBeat());
+                                UtilsAndCommons.LOCALHOST_SITE, getInstanceHeartBeatTimeOut(instance), instance.getLastBeat());
                             getPushService().serviceChanged(service.getNamespaceId(), service.getName());
                         }
                     }
@@ -92,7 +96,7 @@ public class ClientBeatCheckTask implements Runnable {
 
             // then remove obsolete instances:
             for (Instance instance : instances) {
-                if (System.currentTimeMillis() - instance.getLastBeat() > service.getIpDeleteTimeout()) {
+                if (System.currentTimeMillis() - instance.getLastBeat() > getIpDeleteTimeout(instance)) {
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
                     deleteIP(instance);
@@ -103,6 +107,30 @@ public class ClientBeatCheckTask implements Runnable {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         }
 
+    }
+
+    private long getInstanceHeartBeatTimeOut(Instance instance) {
+        Map<String, String> metaData = instance.getMetadata();
+        if(metaData == null || metaData.isEmpty()) {
+            return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
+        }
+        String timeout = metaData.get(Constants.HEART_BEAT_TIMEOUT);
+        if(!StringUtils.isEmpty(timeout) && timeout.matches("^\\d+$")){
+            return Long.valueOf(timeout);
+        }
+        return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
+    }
+
+    private long getIpDeleteTimeout(Instance instance) {
+        Map<String, String> metaData = instance.getMetadata();
+        if(metaData == null || metaData.isEmpty()) {
+            return Constants.DEFAULT_IP_DELETE_TIMEOUT;
+        }
+        String timeout = metaData.get(Constants.IP_DELETE_TIMEOUT);
+        if(!StringUtils.isEmpty(timeout) && timeout.matches("^\\d+$")){
+            return Long.valueOf(timeout);
+        }
+        return Constants.DEFAULT_IP_DELETE_TIMEOUT;
     }
 
     private void deleteIP(Instance instance) {
