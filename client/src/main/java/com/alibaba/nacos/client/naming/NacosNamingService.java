@@ -39,6 +39,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nkorange
@@ -46,6 +47,8 @@ import java.util.*;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     private static final String DEFAULT_PORT = "8080";
+    private static final String NUMBER_PATTERN = "^\\d+$";
+    private static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     /**
      * Each Naming instance should have different namespace.
@@ -148,7 +151,7 @@ public class NacosNamingService implements NamingService {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
     }
-  
+
     @Override
     public void registerInstance(String serviceName, String ip, int port) throws NacosException {
         registerInstance(serviceName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
@@ -193,11 +196,26 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
+            beatInfo.setTime(System.currentTimeMillis());
+            long instanceInterval = getInstanceHeartBeatInterval(instance);
+            beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
+    }
+
+    private long getInstanceHeartBeatInterval(Instance instance) {
+        Map<String, String> metaData = instance.getMetadata();
+        if (metaData == null || metaData.isEmpty()) {
+            return Constants.DEFAULT_HEART_BEAT_INTERVAL;
+        }
+        String interval = metaData.get(Constants.HEART_BEAT_INTERVAL);
+        if (!StringUtils.isEmpty(interval) && interval.matches(NUMBER_PATTERN)) {
+            return Long.valueOf(interval);
+        }
+        return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
     }
 
     @Override
