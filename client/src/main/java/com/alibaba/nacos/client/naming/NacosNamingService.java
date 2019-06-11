@@ -45,6 +45,8 @@ import java.util.*;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
+    private static final String DEFAULT_PORT = "8080";
+
     /**
      * Each Naming instance should have different namespace.
      */
@@ -74,7 +76,6 @@ public class NacosNamingService implements NamingService {
     }
 
     public NacosNamingService(Properties properties) {
-
         init(properties);
     }
 
@@ -148,7 +149,7 @@ public class NacosNamingService implements NamingService {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
     }
-
+  
     @Override
     public void registerInstance(String serviceName, String ip, int port) throws NacosException {
         registerInstance(serviceName, ip, port, Constants.DEFAULT_CLUSTER_NAME);

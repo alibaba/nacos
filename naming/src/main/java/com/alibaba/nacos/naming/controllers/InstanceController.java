@@ -235,10 +235,6 @@ public class InstanceController {
 
         String clusterName = clientBeat.getCluster();
 
-        if (StringUtils.isBlank(clusterName)) {
-            clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-        }
-
         if (Loggers.DEBUG_LOG.isDebugEnabled()) {
             Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
