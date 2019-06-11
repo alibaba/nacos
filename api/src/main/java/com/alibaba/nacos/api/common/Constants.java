@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.common;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Constant
  *
@@ -41,6 +43,12 @@ public class Constants {
     public static final String DATAID = "dataId";
 
     public static final String GROUP = "group";
+
+    public static final String HEART_BEAT_TIMEOUT = "heartBeatTimeout";
+
+    public static final String IP_DELETE_TIMEOUT = "ipDeleteTimeout";
+
+    public static final String HEART_BEAT_INTERVAL = "heartBeatInterval";
 
     public static final String LAST_MODIFIED = "Last-Modified";
 
@@ -122,6 +130,12 @@ public class Constants {
     public static final String NAMING_HTTP_HEADER_SPILIER = "\\|";
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
+
+    public static final long DEFAULT_HEART_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
+
+    public static final long DEFAULT_IP_DELETE_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
+
+    public static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
