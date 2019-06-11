@@ -50,6 +50,8 @@ public class PropertyKeyConst {
 
     public final static String CONFIG_RETRY_TIME = "config.retry.time";
 
+    public final static String MAX_RETRY = "maxRetry";
+
     public final static String NAMING_LOAD_CACHE_AT_START = "namingLoadCacheAtStart";
 
     public final static String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";

@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -69,7 +70,7 @@ public class ServerHttpAgent implements HttpAgent {
         boolean isSSL = false;
 
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
-        int maxRetry = 3;
+        int maxRetry = this.maxRetry;
 
         do {
             try {
@@ -86,6 +87,8 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                         serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
@@ -97,8 +100,8 @@ public class ServerHttpAgent implements HttpAgent {
                 throw ioe;
             }
 
-            if (serverListMgr.hasNextServer()) {
-                currentServerAddr = serverListMgr.getNextServerAddr();
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
             } else {
                 maxRetry --;
                 if (maxRetry < 0) {
@@ -120,7 +123,7 @@ public class ServerHttpAgent implements HttpAgent {
         boolean isSSL = false;
 
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
-        int maxRetry = 3;
+        int maxRetry = this.maxRetry;
 
         do {
 
@@ -139,6 +142,8 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, httpCode: {}",
                         currentServerAddr, result.code);
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
@@ -151,8 +156,8 @@ public class ServerHttpAgent implements HttpAgent {
                 throw ioe;
             }
 
-            if (serverListMgr.hasNextServer()) {
-                currentServerAddr = serverListMgr.getNextServerAddr();
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
             } else {
                 maxRetry --;
                 if (maxRetry < 0) {
@@ -174,7 +179,7 @@ public class ServerHttpAgent implements HttpAgent {
         boolean isSSL = false;
 
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
-        int maxRetry = 3;
+        int maxRetry = this.maxRetry;
 
         do {
             try {
@@ -191,6 +196,8 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                         serverListMgr.getCurrentServerAddr(), result.code);
                 } else {
+                    // Update the currently available server addr
+                    serverListMgr.updateCurrentServerAddr(currentServerAddr);
                     return result;
                 }
             } catch (ConnectException ce) {
@@ -202,8 +209,8 @@ public class ServerHttpAgent implements HttpAgent {
                 throw ioe;
             }
 
-            if (serverListMgr.hasNextServer()) {
-                currentServerAddr = serverListMgr.getNextServerAddr();
+            if (serverListMgr.getIterator().hasNext()) {
+                currentServerAddr = serverListMgr.getIterator().next();
             } else {
                 maxRetry --;
                 if (maxRetry < 0) {
@@ -247,6 +254,7 @@ public class ServerHttpAgent implements HttpAgent {
     private void init(Properties properties) {
         initEncode(properties);
         initAkSk(properties);
+        initMaxRetry(properties);
     }
 
     private void initEncode(Properties properties) {
@@ -277,6 +285,10 @@ public class ServerHttpAgent implements HttpAgent {
         } else {
             secretKey = sk;
         }
+    }
+
+    private void initMaxRetry(Properties properties) {
+        maxRetry = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.MAX_RETRY), Constants.MAX_RETRY);
     }
 
     @Override
@@ -430,6 +442,7 @@ public class ServerHttpAgent implements HttpAgent {
     private String accessKey;
     private String secretKey;
     private String encode;
+    private int maxRetry = 3;
     private volatile STSCredential sTSCredential;
     final ServerListManager serverListMgr;
 
