@@ -406,6 +406,7 @@ public class LongPollingService extends AbstractEventListener {
                     }
 
                 }
+
             }, timeoutTime, TimeUnit.MILLISECONDS);
 
             allSubs.add(this);
