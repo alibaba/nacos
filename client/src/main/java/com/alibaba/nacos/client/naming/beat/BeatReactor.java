@@ -76,22 +76,24 @@ public class BeatReactor {
     }
 
     class BeatProcessor implements Runnable {
-
         @Override
         public void run() {
-            try {
-                for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
-                    BeatInfo beatInfo = entry.getValue();
-                    if (beatInfo.isScheduled()) {
-                        continue;
+            while (true) {
+                try {
+                    for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
+                        BeatInfo beatInfo = entry.getValue();
+                        if (beatInfo.getTime() > System.currentTimeMillis()) {
+                            continue;
+                        }
+                        if (beatInfo.isScheduled()) {
+                            continue;
+                        }
+                        beatInfo.setScheduled(true);
+                        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
                     }
-                    beatInfo.setScheduled(true);
-                    executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
+                } catch (Exception e) {
+                    NAMING_LOGGER.error("[CLIENT-BEAT] Exception while scheduling beat.", e);
                 }
-            } catch (Exception e) {
-                NAMING_LOGGER.error("[CLIENT-BEAT] Exception while scheduling beat.", e);
-            } finally {
-                executorService.schedule(this, clientBeatInterval, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -108,9 +110,8 @@ public class BeatReactor {
         public void run() {
             long result = serverProxy.sendBeat(beatInfo);
             beatInfo.setScheduled(false);
-            if (result > 0) {
-                clientBeatInterval = result;
-            }
+            long nextTime = result > 0 ? System.currentTimeMillis() + result : System.currentTimeMillis() + beatInfo.getPeriod();
+            beatInfo.setTime(nextTime);
         }
     }
 }
