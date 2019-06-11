@@ -447,21 +447,6 @@ class ServerAddressIterator implements Iterator<String> {
         iter = sorted.iterator();
     }
 
-    // Consider adding a penalty mechanism, with the offending node coming last
-
-    public ServerAddressIterator(List<String> source, String errServerIp) {
-        sorted = new ArrayList<RandomizedServerAddress>();
-        for (String address : source) {
-            if (address.equals(errServerIp)) {
-                continue;
-            }
-            sorted.add(new RandomizedServerAddress(address));
-        }
-        Collections.sort(sorted);
-        sorted.add(new RandomizedServerAddress(errServerIp));
-        iter = sorted.iterator();
-    }
-
     @Override
     public boolean hasNext() {
         return iter.hasNext();
