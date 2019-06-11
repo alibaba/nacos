@@ -96,6 +96,11 @@ public class Constants {
     /**
      * millisecond
      */
+    public static final int MIN_CONFIG_LONG_POLL_TIMEOUT = 10000;
+
+    /**
+     * millisecond
+     */
     public static final int CONFIG_RETRY_TIME = 2000;
 
     /**

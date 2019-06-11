@@ -50,7 +50,7 @@ public class ConfigLongPoll_ITCase {
     public void init() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:" + port);
-        properties.put(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT, 2000);
+        properties.put(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT, "20000");
         properties.put(PropertyKeyConst.CONFIG_RETRY_TIME, 3000);
         configService = NacosFactory.createConfigService(properties);
     }
