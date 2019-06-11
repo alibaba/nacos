@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -28,6 +29,7 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
@@ -35,8 +37,18 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -302,7 +314,7 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) {
+    List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
             if (!cacheData.isUseLocalConfigInfo()) {
@@ -328,10 +340,9 @@ public class ClientWorker {
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) {
+    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
         List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
-        long timeout = TimeUnit.SECONDS.toMillis(30L);
 
         List<String> headers = new ArrayList<String>(2);
         headers.add("Long-Pulling-Timeout");
@@ -361,6 +372,7 @@ public class ClientWorker {
         } catch (IOException e) {
             setHealthServer(false);
             LOGGER.error("[" + agent.getName() + "] [check-update] get changed dataId exception", e);
+            throw e;
         }
         return Collections.emptyList();
     }
@@ -403,9 +415,13 @@ public class ClientWorker {
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
+
+        // Initialize the timeout parameter
+
+        init(properties);
 
         executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
             @Override
@@ -417,17 +433,18 @@ public class ClientWorker {
             }
         });
 
-        executorService = Executors.newCachedThreadPool(new ThreadFactory() {
+        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling" + agent.getName());
+                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
                 t.setDaemon(true);
                 return t;
             }
         });
 
         executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
             public void run() {
                 try {
                     checkConfigInfo();
@@ -438,6 +455,14 @@ public class ClientWorker {
         }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
 
+    private void init(Properties properties) {
+
+        timeout = Math.max(NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT)),
+            Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+
+        taskPenaltyTime = NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.CONFIG_RETRY_TIME)), Constants.CONFIG_RETRY_TIME);
+    }
+
     class LongPollingRunnable implements Runnable {
         private int taskId;
 
@@ -445,9 +470,12 @@ public class ClientWorker {
             this.taskId = taskId;
         }
 
+        @Override
         public void run() {
+
+            List<CacheData> cacheDatas = new ArrayList<CacheData>();
+            List<String> inInitializingCacheList = new ArrayList<String>();
             try {
-                List<CacheData> cacheDatas = new ArrayList<CacheData>();
                 // check failover config
                 for (CacheData cacheData : cacheMap.get().values()) {
                     if (cacheData.getTaskId() == taskId) {
@@ -463,7 +491,6 @@ public class ClientWorker {
                     }
                 }
 
-                List<String> inInitializingCacheList = new ArrayList<String>();
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
 
@@ -497,10 +524,14 @@ public class ClientWorker {
                     }
                 }
                 inInitializingCacheList.clear();
-            } catch (Throwable e) {
-                LOGGER.error("longPolling error", e);
-            } finally {
+
                 executorService.execute(this);
+
+            } catch (Throwable e) {
+
+                // If the rotation training task is abnormal, the next execution time of the task will be punished
+                LOGGER.error("longPolling error : ", e);
+                executorService.schedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -513,8 +544,9 @@ public class ClientWorker {
         this.isHealthServer = isHealthServer;
     }
 
-    private final ScheduledExecutorService executor;
-    private final ExecutorService executorService;
+    final ScheduledExecutorService executor;
+    final ScheduledExecutorService executorService;
+
     /**
      * groupKey -> cacheData
      */
@@ -524,5 +556,7 @@ public class ClientWorker {
     private final HttpAgent agent;
     private final ConfigFilterChainManager configFilterChainManager;
     private boolean isHealthServer = true;
+    private long timeout;
     private double currentLongingTaskCount = 0;
+    private int taskPenaltyTime;
 }
