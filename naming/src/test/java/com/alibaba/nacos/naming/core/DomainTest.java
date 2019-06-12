@@ -15,15 +15,24 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.mockito.Mockito.doReturn;
 
 /**
  * @author nkorange
@@ -31,15 +40,20 @@ import java.util.Map;
 public class DomainTest {
 
     private Service service;
+    @Spy
+    protected ApplicationContext context;
+    @Mock
+    protected PushService pushService;
 
     @Before
     public void before() {
+        MockitoAnnotations.initMocks(this);
         service = new Service();
         service.setName("nacos.service.1");
-        Cluster cluster = new Cluster();
-        cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setService(service);
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
         service.addCluster(cluster);
+        new SpringContext().setApplicationContext(context);
+        doReturn(pushService).when(context).getBean(PushService.class);
     }
 
     @Test
@@ -48,9 +62,7 @@ public class DomainTest {
         Service newDomain = new Service();
         newDomain.setName("nacos.service.1");
         newDomain.setProtectThreshold(0.7f);
-        Cluster cluster = new Cluster();
-        cluster.setName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        cluster.setService(newDomain);
+        Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, newDomain);
         newDomain.addCluster(cluster);
 
         service.update(newDomain);
@@ -60,8 +72,7 @@ public class DomainTest {
 
     @Test
     public void addCluster() {
-        Cluster cluster = new Cluster();
-        cluster.setName("nacos-cluster-1");
+        Cluster cluster = new Cluster("nacos-cluster-1", service);
 
         service.addCluster(cluster);
 

@@ -20,12 +20,15 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import org.apache.commons.lang3.ArrayUtils;
@@ -226,6 +229,41 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<RaftPeer> raftPeerList, RaftPeerSet raftPeerSet) {
+
+        List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
+
+        List<RaftPeer> tempList = new ArrayList<>();
+        if(StringUtils.isNotBlank(keyword)) {
+            for(RaftPeer raftPeer: matchList) {
+                String ip = raftPeer.ip.split(":")[0];
+                if(keyword.equals(ip)) {
+                    tempList.add(raftPeer);
+                }
+            }
+            matchList = tempList;
+        }
+
+        if (pageSize >= matchList.size()) {
+            raftPeerList.addAll(matchList);
+            return matchList.size();
+        }
+
+        for (int i = 0; i < matchList.size(); i++) {
+            if (i < startPage * pageSize) {
+                continue;
+            }
+
+            raftPeerList.add(matchList.get(i));
+
+            if (raftPeerList.size() >= pageSize) {
+                break;
+            }
+        }
+
+        return matchList.size();
+    }
+
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
         Message msg = synchronizer.get(serverIP, UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName));
         JSONObject serviceJson = JSON.parseObject(msg.getData());
@@ -357,7 +395,7 @@ public class ServiceManager implements RecordListener<Service> {
             service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
-            service.setGroupName(Constants.DEFAULT_GROUP);
+            service.setGroupName(NamingUtils.getGroupName(serviceName));
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
@@ -485,8 +523,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
-                Cluster cluster = new Cluster(instance.getClusterName());
-                cluster.setService(service);
+                Cluster cluster = new Cluster(instance.getClusterName(), service);
                 cluster.init();
                 service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
