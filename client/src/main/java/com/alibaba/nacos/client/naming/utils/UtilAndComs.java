@@ -20,13 +20,15 @@ package com.alibaba.nacos.client.naming.utils;
  */
 public class UtilAndComs {
 
-    public static final String VERSION = "Nacos-Java-Client:v1.0.0";
+    public static final String VERSION = "Nacos-Java-Client:v1.0.1";
 
     public static String WEB_CONTEXT = "/nacos";
 
     public static String NACOS_URL_BASE = WEB_CONTEXT + "/v1/ns";
 
     public static String NACOS_URL_INSTANCE = NACOS_URL_BASE + "/instance";
+
+    public static String NACOS_URL_SERVICE = NACOS_URL_BASE + "/service";
 
     public static final String ENCODING = "UTF-8";
 
