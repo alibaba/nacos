@@ -111,7 +111,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
-        Service service = task.getCluster().getService();
 
         for (Instance ip : ips) {
 

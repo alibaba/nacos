@@ -61,8 +61,6 @@ public class HttpClient {
 
     private static CloseableHttpClient postClient;
 
-    private static PoolingHttpClientConnectionManager connectionManager;
-
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
         builder.setMaximumConnectionsTotal(-1);
