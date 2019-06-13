@@ -264,7 +264,6 @@ public class NamingProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
 
         String result = reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.DELETE);
-        NAMING_LOGGER.info(result);
         return "ok".equals(result);
     }
 

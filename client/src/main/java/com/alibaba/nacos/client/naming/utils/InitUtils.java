@@ -121,7 +121,7 @@ public class InitUtils {
         if (isUseEndpointParsingRule) {
             // Get the set domain name information
             endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrl)) {
+            if (StringUtils.isBlank(endpointUrl)) {
                 return "";
             }
         } else {
