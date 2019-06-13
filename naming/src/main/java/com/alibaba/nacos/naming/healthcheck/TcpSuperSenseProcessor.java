@@ -59,13 +59,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     /**
      * this value has been carefully tuned, do not modify unless you're confident
      */
-    public static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() <= 1 ?
+    private static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() <= 1 ?
         1 : Runtime.getRuntime().availableProcessors() / 2;
 
     /**
      * because some hosts doesn't support keep-alive connections, disabled temporarily
      */
-    public static final long TCP_KEEP_ALIVE_MILLIS = 0;
+    private static final long TCP_KEEP_ALIVE_MILLIS = 0;
 
     private static ScheduledExecutorService TCP_CHECK_EXECUTOR
         = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
