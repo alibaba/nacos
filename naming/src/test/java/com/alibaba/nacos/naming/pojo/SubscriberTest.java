@@ -1,5 +1,6 @@
 package com.alibaba.nacos.naming.pojo;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -32,5 +33,14 @@ public class SubscriberTest {
         subscriberList.add(subscriber);
         subscribers.setSubscribers(subscriberList);
         subscribers.getSubscribers();
+
+        Assert.assertNotNull(subscriberList);
+        Assert.assertEquals(1, subscriberList.size());
+        Assert.assertEquals("127.0.0.1:8080", subscriberList.get(0).getAddrStr());
+        Assert.assertEquals("127.0.0.1", subscriberList.get(0).getIp());
+        Assert.assertEquals("app", subscriberList.get(0).getApp());
+        Assert.assertEquals("agent", subscriberList.get(0).getAgent());
+        Assert.assertEquals("public", subscriberList.get(0).getNamespaceId());
+        Assert.assertEquals("test", subscriberList.get(0).getServiceName());
     }
 }
