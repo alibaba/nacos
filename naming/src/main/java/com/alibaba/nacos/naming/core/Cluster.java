@@ -162,7 +162,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      */
     @Override
     public String getServiceName() {
-        return service.getName();
+        if (service != null) {
+            return service.getName();
+        } else {
+            return super.getServiceName();
+        }
     }
 
     @Override

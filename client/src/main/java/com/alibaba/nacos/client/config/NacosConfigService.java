@@ -82,7 +82,7 @@ public class NacosConfigService implements ConfigService {
         initNamespace(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
-        worker = new ClientWorker(agent, configFilterChainManager);
+        worker = new ClientWorker(agent, configFilterChainManager, properties);
     }
 
     private void initNamespace(Properties properties) {

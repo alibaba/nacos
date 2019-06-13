@@ -152,6 +152,7 @@ public class ServerListManager {
                     contentPath, serverListName, namespace);
             }
         }
+
     }
 
     private void initParam(Properties properties) {
@@ -265,7 +266,8 @@ public class ServerListManager {
             return;
         }
         serverUrls = new ArrayList<String>(newList);
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
 
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
         LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
@@ -332,14 +334,24 @@ public class ServerListManager {
     }
 
     public void refreshCurrentServerAddr() {
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
     }
 
     public String getCurrentServerAddr() {
         if (StringUtils.isBlank(currentServerAddr)) {
-            currentServerAddr = iterator().next();
+            iterator = iterator();
+            currentServerAddr = iterator.next();
         }
         return currentServerAddr;
+    }
+
+    public void updateCurrentServerAddr(String currentServerAddr) {
+        this.currentServerAddr = currentServerAddr;
+    }
+
+    public Iterator<String> getIterator() {
+        return iterator;
     }
 
     public String getContentPath() {
@@ -383,11 +395,13 @@ public class ServerListManager {
 
     private volatile String currentServerAddr;
 
+    private Iterator<String> iterator;
     public String serverPort = ParamUtil.getDefaultServerPort();
 
     public String addressServerUrl;
 
     private String serverAddrsStr;
+
 }
 
 /**
@@ -433,14 +447,17 @@ class ServerAddressIterator implements Iterator<String> {
         iter = sorted.iterator();
     }
 
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    @Override
     public String next() {
         return iter.next().serverIp;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
