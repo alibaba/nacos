@@ -54,8 +54,6 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
 
     private Set<String> entityTypeSet = new HashSet<>();
 
-    private List<EntityEvent> eventList = new ArrayList<>();
-
     private long eventTimestamp = System.currentTimeMillis();
 
     public CmdbProvider() throws NacosException {

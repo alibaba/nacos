@@ -46,7 +46,7 @@ public class PushService {
     @Autowired
     private SwitchDomain switchDomain;
 
-    public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
+    private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
 
     private static final int MAX_RETRY_TIMES = 1;
 
