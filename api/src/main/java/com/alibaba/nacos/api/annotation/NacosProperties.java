@@ -132,12 +132,12 @@ public @interface NacosProperties {
     String ENCODE_PLACEHOLDER = "${" + PREFIX + ENCODE + ":UTF-8}";
 
     /**
-     * The placeholder of {@link NacosProperties#CONFIG_LONG_POLL_TIMEOUT config.long-poll.timeout}, the value is <code>"${nacos.config.long-poll.timeout:}"</code>
+     * The placeholder of {@link NacosProperties#CONFIG_LONG_POLL_TIMEOUT configLongPollTimeout}, the value is <code>"${nacos.configLongPollTimeout:}"</code>
      */
     String CONFIG_LONG_POLL_TIMEOUT_PLACEHOLDER = "${" + PREFIX + CONFIG_LONG_POLL_TIMEOUT + ":}";
 
     /**
-     * The placeholder of {@link NacosProperties#CONFIG_RETRY_TIME config.retry.time}, the value is <code>"${nacos.config.retry.time:}"</code>
+     * The placeholder of {@link NacosProperties#CONFIG_RETRY_TIME configRetryTime}, the value is <code>"${nacos.configRetryTime:}"</code>
      */
     String CONFIG_RETRY_TIME_PLACEHOLDER = "${" + PREFIX + CONFIG_RETRY_TIME + ":}";
 
@@ -211,7 +211,7 @@ public @interface NacosProperties {
     String encode() default ENCODE_PLACEHOLDER;
 
     /**
-     * The property of "config.long-poll.timeout"
+     * The property of "configLongPollTimeout"
      *
      * @return empty as default value
      * @see #CONFIG_LONG_POLL_TIMEOUT_PLACEHOLDER
@@ -219,7 +219,7 @@ public @interface NacosProperties {
     String configLongPollTimeout() default CONFIG_LONG_POLL_TIMEOUT_PLACEHOLDER;
 
     /**
-     * The property of "config.retry.time"
+     * The property of "configRetryTime"
      *
      * @return empty as default value
      * @see #CONFIG_RETRY_TIME_PLACEHOLDER
