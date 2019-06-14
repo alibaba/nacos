@@ -99,6 +99,26 @@ public class Constants {
     /**
      * millisecond
      */
+    public static final int CONFIG_LONG_POLL_TIMEOUT = 30000;
+
+    /**
+     * millisecond
+     */
+    public static final int MIN_CONFIG_LONG_POLL_TIMEOUT = 10000;
+
+    /**
+     * millisecond
+     */
+    public static final int CONFIG_RETRY_TIME = 2000;
+
+    /**
+     * Maximum number of retries
+     */
+    public static final int MAX_RETRY = 3;
+
+    /**
+     * millisecond
+     */
     public static final int RECV_WAIT_TIMEOUT = ONCE_TIMEOUT * 5;
 
     public static final String ENCODE = "UTF-8";

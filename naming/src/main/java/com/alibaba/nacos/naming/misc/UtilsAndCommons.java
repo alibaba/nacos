@@ -70,7 +70,7 @@ public class UtilsAndCommons {
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
 
-    public static final String NACOS_VERSION = "1.0.0";
+    public static final String NACOS_VERSION = "1.0.1";
 
     public static final String SUPER_TOKEN = "xy";
 
