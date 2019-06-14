@@ -148,4 +148,20 @@ public class InstanceControllerTest extends BaseTest {
         Assert.assertEquals(8888, host.getIntValue("port"));
         Assert.assertEquals(2.0, host.getDoubleValue("weight"), 0.001);
     }
+
+    @Test
+    public void getNullServiceInstances() throws Exception {
+        Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(null);
+        
+        MockHttpServletRequestBuilder builder =
+            MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
+                .param("serviceName", TEST_SERVICE_NAME);
+
+        MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
+        String actualValue = response.getContentAsString();
+        JSONObject result = JSON.parseObject(actualValue);
+
+        JSONArray hosts = result.getJSONArray("hosts");
+        Assert.assertEquals(hosts.size(), 0);
+    }
 }
