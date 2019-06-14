@@ -11,7 +11,7 @@ notifications:
 language: java
 
 jdk:
-  - openjdk8
+  - oraclejdk8
 
 matrix:
   include:
