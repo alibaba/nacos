@@ -90,7 +90,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         tm.setDataSource(ds);
         tjt.setTimeout(5000);
 
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             reload();
         }
     }
