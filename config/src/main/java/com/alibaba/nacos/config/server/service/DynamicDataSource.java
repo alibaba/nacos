@@ -47,7 +47,7 @@ public class DynamicDataSource implements ApplicationContextAware {
     public DataSourceService getDataSource() {
         DataSourceService dataSourceService = null;
 
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             dataSourceService = (DataSourceService)applicationContext.getBean("localDataSourceService");
         } else {
             dataSourceService = (DataSourceService)applicationContext.getBean("basicDataSourceService");
