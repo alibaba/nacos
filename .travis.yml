@@ -10,6 +10,9 @@ notifications:
 
 language: java
 
+jdk:
+  - oraclejdk8
+
 matrix:
   include:
     # On OSX, run with default JDK only.
