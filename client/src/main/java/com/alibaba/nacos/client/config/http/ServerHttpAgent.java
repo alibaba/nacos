@@ -91,9 +91,9 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException httpGet] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException httpGet] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
             } catch (IOException ioe) {
                 LOGGER.error("[NACOS IOException httpGet] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
@@ -146,10 +146,9 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}", currentServerAddr);
+                LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, err : {}", currentServerAddr, ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException httpPost] currentServerAddr: {}， err : {}",
-                    currentServerAddr, stoe.getMessage());
+                LOGGER.error("[NACOS SocketTimeoutException httpPost] currentServerAddr: {}， err : {}", currentServerAddr, stoe.getMessage());
             } catch (IOException ioe) {
                 LOGGER.error("[NACOS IOException httpPost] currentServerAddr: " + currentServerAddr, ioe);
                 throw ioe;
@@ -200,9 +199,9 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}", serverListMgr.getCurrentServerAddr());
+                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
             } catch (IOException ioe) {
                 LOGGER.error("[NACOS IOException httpDelete] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
