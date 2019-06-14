@@ -426,6 +426,7 @@ public class ServerHttpAgent implements HttpAgent {
             return code;
         }
 
+        @Override
         public String toString() {
             return "STSCredential{" +
                 "accessKeyId='" + accessKeyId + '\'' +
