@@ -373,7 +373,11 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service not found: " + serviceName);
+            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            }
+            result.put("hosts", new JSONArray());
+            return result;
         }
 
         checkIfDisabled(service);
