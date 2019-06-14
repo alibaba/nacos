@@ -38,6 +38,7 @@ public class SimpleIPFlowData {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
 
+        @Override
         public Thread newThread(Runnable r) {
             Thread t = new Thread(r);
             t.setName("nacos ip flow control thread");
@@ -49,6 +50,7 @@ public class SimpleIPFlowData {
 
     class DefaultIPFlowDataManagerTask implements Runnable {
 
+        @Override
         public void run() {
             rotateSlot();
         }

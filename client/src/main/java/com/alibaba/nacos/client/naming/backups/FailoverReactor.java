@@ -212,6 +212,7 @@ public class FailoverReactor {
     }
 
     class DiskFileWriter extends TimerTask {
+        @Override
         public void run() {
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
