@@ -91,6 +91,16 @@ public class ClientWorker {
         }
     }
 
+    public void addTenantListenersWithContent(String dataId, String group, String content, List<? extends Listener> listeners) {
+        group = null2defaultGroup(group);
+        String tenant = agent.getTenant();
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        cache.setContent(content);
+        for (Listener listener : listeners) {
+            cache.addListener(listener);
+        }
+    }
+
     public void removeTenantListener(String dataId, String group, Listener listener) {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
