@@ -436,6 +436,44 @@ public class ConfigAPI_ITCase {
     }
 
     /**
+     * @TCDescription : nacos_在主动拉取配置后并注册Listener，在更新配置后才触发Listener监听事件
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test
+    public void nacos_addListener_5() throws InterruptedException, NacosException {
+        final AtomicInteger count = new AtomicInteger(0);
+        final String content = "test-abc";
+        final String newContent = "new-test-def";
+        boolean result = iconfig.publishConfig(dataId, group, content);
+        Assert.assertTrue(result);
+
+        Thread.sleep(3000);
+
+        Listener ml = new AbstractListener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                count.incrementAndGet();
+                System.out.println("Listener receive : [" + configInfo + "]");
+                Assert.assertEquals(content, newContent);
+            }
+        };
+        String receiveContent = iconfig.getConfigAndSignListener(dataId, group, 1000, ml);
+        System.out.println(receiveContent);
+
+        result = iconfig.publishConfig(dataId, group, newContent);
+        Assert.assertTrue(result);
+
+        Assert.assertEquals(content, receiveContent);
+        Thread.sleep(3000);
+
+        Assert.assertEquals(1, count.get());
+        iconfig.removeListener(dataId, group, ml);
+    }
+
+    /**
      * @TCDescription : nacos_正常移除监听器
      * @TestStep : TODO Test steps
      * @ExpectResult : TODO expect results

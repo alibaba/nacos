@@ -66,6 +66,7 @@ public class CacheData {
 
     /**
      * Add listener
+     * if CacheData already set new content, Listener should init lastCallMd5 by CacheData.md5
      *
      * @param listener listener
      */
@@ -74,6 +75,7 @@ public class CacheData {
             throw new IllegalArgumentException("listener is null");
         }
         ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
+        wrap.lastCallMd5 = md5;
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
@@ -167,6 +169,8 @@ public class CacheData {
         final Listener listener = listenerWrap.listener;
 
         Runnable job = new Runnable() {
+
+            @Override
             public void run() {
                 ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
                 ClassLoader appClassLoader = listener.getClass().getClassLoader();
@@ -284,7 +288,7 @@ public class CacheData {
 
 class ManagerListenerWrap {
     final Listener listener;
-    String lastCallMd5 = CacheData.getMd5String(null);
+    volatile String lastCallMd5 = CacheData.getMd5String(null);
 
     ManagerListenerWrap(Listener listener) {
         this.listener = listener;

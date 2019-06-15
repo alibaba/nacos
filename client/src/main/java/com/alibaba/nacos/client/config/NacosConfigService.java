@@ -27,6 +27,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
+import com.alibaba.nacos.client.config.impl.CacheData;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
@@ -123,6 +124,13 @@ public class NacosConfigService implements ConfigService {
     }
 
     @Override
+    public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener) throws NacosException {
+        String content = getConfig(dataId, group, timeoutMs);
+        worker.addTenantListenersWithContent(dataId, group, content, Arrays.asList(listener));
+        return content;
+    }
+
+    @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
         worker.addTenantListeners(dataId, group, Arrays.asList(listener));
     }
@@ -166,6 +174,12 @@ public class NacosConfigService implements ConfigService {
             content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
 
             cr.setContent(content);
+
+            CacheData cacheData = worker.getCache(dataId, group, tenant);
+            if (cacheData != null) {
+                cacheData.setContent(content);
+            }
+
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
 

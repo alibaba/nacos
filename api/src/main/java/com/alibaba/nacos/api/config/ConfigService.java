@@ -37,6 +37,18 @@ public interface ConfigService {
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
 
     /**
+     * Get config
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param timeoutMs read timeout
+     * @param listener {@link Listener}
+     * @return config value
+     * @throws NacosException NacosException
+     */
+    String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener) throws NacosException;
+
+    /**
      * Add a listener to the configuration, after the server modified the
      * configuration, the client will use the incoming listener callback.
      * Recommended asynchronous processing, the application can implement the
