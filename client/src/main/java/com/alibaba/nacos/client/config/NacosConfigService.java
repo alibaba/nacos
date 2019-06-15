@@ -175,11 +175,6 @@ public class NacosConfigService implements ConfigService {
 
             cr.setContent(content);
 
-            CacheData cacheData = worker.getCache(dataId, group, tenant);
-            if (cacheData != null) {
-                cacheData.setContent(content);
-            }
-
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
 

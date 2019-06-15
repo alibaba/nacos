@@ -177,7 +177,6 @@ public class ClientWorker {
             return cache;
         }
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         synchronized (cacheMap) {
             CacheData cacheFromMap = getCache(dataId, group, tenant);
             // multiple listeners on the same dataid+group and race condition,so
@@ -187,6 +186,18 @@ public class ClientWorker {
                 cache = cacheFromMap;
                 // reset so that server not hang this check
                 cache.setInitializing(true);
+            } else {
+                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                String content;
+                // fix issue # 1317
+                if (enableRemoteSyncConfig) {
+                    try {
+                        content = getServerConfig(dataId, group, tenant, 3000L);
+                    } catch (NacosException ignore) {
+                        content = null;
+                    }
+                    cache.setContent(content);
+                }
             }
 
             Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
@@ -471,6 +482,8 @@ public class ClientWorker {
             Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
         taskPenaltyTime = NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.CONFIG_RETRY_TIME)), Constants.CONFIG_RETRY_TIME);
+
+        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
 
     class LongPollingRunnable implements Runnable {
@@ -569,4 +582,5 @@ public class ClientWorker {
     private long timeout;
     private double currentLongingTaskCount = 0;
     private int taskPenaltyTime;
+    private boolean enableRemoteSyncConfig = false;
 }
