@@ -37,7 +37,7 @@ public interface ConfigService {
     String getConfig(String dataId, String group, long timeoutMs) throws NacosException;
 
     /**
-     * Get config
+     * Get config and register Listener
      *
      * @param dataId    dataId
      * @param group     group

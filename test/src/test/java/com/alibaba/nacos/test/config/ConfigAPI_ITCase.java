@@ -436,7 +436,7 @@ public class ConfigAPI_ITCase {
     }
 
     /**
-     * @TCDescription : nacos_在主动拉取配置后并注册Listener，在更新配置后才触发Listener监听事件
+     * @TCDescription : nacos_在主动拉取配置后并注册Listener，在更新配置后才触发Listener监听事件(使用特定接口)
      * @TestStep : TODO Test steps
      * @ExpectResult : TODO expect results
      * @author xiaochun.xxc
@@ -450,7 +450,7 @@ public class ConfigAPI_ITCase {
         boolean result = iconfig.publishConfig(dataId, group, content);
         Assert.assertTrue(result);
 
-        Thread.sleep(3000);
+        Thread.sleep(2000);
 
         Listener ml = new AbstractListener() {
             @Override
@@ -460,6 +460,7 @@ public class ConfigAPI_ITCase {
                 Assert.assertEquals(content, newContent);
             }
         };
+
         String receiveContent = iconfig.getConfigAndSignListener(dataId, group, 1000, ml);
         System.out.println(receiveContent);
 
@@ -467,7 +468,58 @@ public class ConfigAPI_ITCase {
         Assert.assertTrue(result);
 
         Assert.assertEquals(content, receiveContent);
-        Thread.sleep(3000);
+        Thread.sleep(2000);
+
+        Assert.assertEquals(1, count.get());
+        iconfig.removeListener(dataId, group, ml);
+    }
+
+    /**
+     * @TCDescription : nacos_在主动拉取配置后并注册Listener，在更新配置后才触发Listener监听事件(进行配置参数设置)
+     * @TestStep : TODO Test steps
+     * @ExpectResult : TODO expect results
+     * @author xiaochun.xxc
+     * @since 3.6.8
+     */
+    @Test
+    public void nacos_addListener_6() throws InterruptedException, NacosException {
+
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
+        properties.put(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG, "true");
+        ConfigService iconfig = NacosFactory.createConfigService(properties);
+
+        final AtomicInteger count = new AtomicInteger(0);
+        final String content = "test-abc";
+        final String newContent = "new-test-def";
+        boolean result = iconfig.publishConfig(dataId, group, content);
+        Assert.assertTrue(result);
+
+        Thread.sleep(2000);
+
+        Listener ml = new AbstractListener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                count.incrementAndGet();
+                System.out.println("Listener receive : [" + configInfo + "]");
+                Assert.assertEquals(content, newContent);
+            }
+        };
+
+        iconfig.addListener(dataId, group, ml);
+
+        String receiveContent = iconfig.getConfig(dataId, group, 1000);
+
+        System.out.println(receiveContent);
+
+        result = iconfig.publishConfig(dataId, group, newContent);
+        Assert.assertTrue(result);
+
+        Thread.sleep(2000);
+
+        receiveContent = iconfig.getConfig(dataId, group, 1000);
+
+        Assert.assertEquals(newContent, receiveContent);
 
         Assert.assertEquals(1, count.get());
         iconfig.removeListener(dataId, group, ml);

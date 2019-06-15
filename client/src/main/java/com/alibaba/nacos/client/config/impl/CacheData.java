@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
@@ -74,8 +75,7 @@ public class CacheData {
         if (null == listener) {
             throw new IllegalArgumentException("listener is null");
         }
-        ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
-        wrap.lastCallMd5 = md5;
+        ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5);
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
@@ -263,6 +263,22 @@ public class CacheData {
         this.md5 = getMd5String(content);
     }
 
+    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
+                     String tenant, String content) {
+        if (null == dataId || null == group) {
+            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
+        }
+        this.name = name;
+        this.configFilterChainManager = configFilterChainManager;
+        this.dataId = dataId;
+        this.group = group;
+        this.tenant = tenant;
+        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
+        this.isInitializing = true;
+        this.content = StringUtils.isEmpty(content) ? loadCacheContentFromDiskLocal(name, dataId, group, tenant) : content;
+        this.md5 = getMd5String(content);
+    }
+
     // ==================
 
     private final String name;
@@ -292,6 +308,11 @@ class ManagerListenerWrap {
 
     ManagerListenerWrap(Listener listener) {
         this.listener = listener;
+    }
+
+    ManagerListenerWrap(Listener listener, String md5) {
+        this.listener = listener;
+        this.lastCallMd5 = md5;
     }
 
     @Override
