@@ -188,15 +188,14 @@ public class ClientWorker {
                 cache.setInitializing(true);
             } else {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
-                String content;
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
                     try {
-                        content = getServerConfig(dataId, group, tenant, 3000L);
+                        String content = getServerConfig(dataId, group, tenant, 3000L);
+                        cache.setContent(content);
                     } catch (NacosException ignore) {
-                        content = null;
+                        // If the remote pull fails, the local snapshot should not be overwritten
                     }
-                    cache.setContent(content);
                 }
             }
 
