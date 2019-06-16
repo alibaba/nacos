@@ -39,6 +39,11 @@ public interface ConfigService {
     /**
      * Get config and register Listener
      *
+     * If you want to pull it yourself when the program starts to get the configuration for the first time,
+     * and the registered Listener is used for future configuration updates, you can keep the original
+     * code unchanged, just add the system parameter: enableRemoteSyncConfig = "true" ( But there is network overhead);
+     * therefore we recommend that you use this interface directly
+     *
      * @param dataId    dataId
      * @param group     group
      * @param timeoutMs read timeout

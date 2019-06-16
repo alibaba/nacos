@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
@@ -263,22 +262,6 @@ public class CacheData {
         this.md5 = getMd5String(content);
     }
 
-    public CacheData(ConfigFilterChainManager configFilterChainManager, String name, String dataId, String group,
-                     String tenant, String content) {
-        if (null == dataId || null == group) {
-            throw new IllegalArgumentException("dataId=" + dataId + ", group=" + group);
-        }
-        this.name = name;
-        this.configFilterChainManager = configFilterChainManager;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = tenant;
-        listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
-        this.isInitializing = true;
-        this.content = StringUtils.isEmpty(content) ? loadCacheContentFromDiskLocal(name, dataId, group, tenant) : content;
-        this.md5 = getMd5String(content);
-    }
-
     // ==================
 
     private final String name;
@@ -304,7 +287,7 @@ public class CacheData {
 
 class ManagerListenerWrap {
     final Listener listener;
-    volatile String lastCallMd5 = CacheData.getMd5String(null);
+    String lastCallMd5 = CacheData.getMd5String(null);
 
     ManagerListenerWrap(Listener listener) {
         this.listener = listener;
