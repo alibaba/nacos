@@ -82,8 +82,6 @@ class PrintMemoryTask implements Runnable {
 
 class NotifyTaskQueueMonitorTask implements Runnable {
     final private AsyncNotifyService notifySingleService;
-    private AtomicInteger notifyTask = new AtomicInteger();
-
 
     NotifyTaskQueueMonitorTask(AsyncNotifyService notifySingleService) {
         this.notifySingleService = notifySingleService;

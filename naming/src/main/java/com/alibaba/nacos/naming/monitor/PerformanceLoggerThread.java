@@ -134,7 +134,6 @@ public class PerformanceLoggerThread {
             try {
                 int serviceCount = serviceManager.getServiceCount();
                 int ipCount = serviceManager.getInstanceCount();
-                long maxPushMaxCost = getMaxPushCost();
                 long maxPushCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
 

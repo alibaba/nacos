@@ -34,8 +34,6 @@ public class DiskServiceUnitTest {
 
     private DiskUtil diskService;
 
-    private ServletContext servletContext;
-
     private File tempFile;
 
     private String path;
