@@ -82,7 +82,7 @@ public class ClientWorker {
         }
     }
 
-    public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) {
+    public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
@@ -91,7 +91,7 @@ public class ClientWorker {
         }
     }
 
-    public void addTenantListenersWithContent(String dataId, String group, String content, List<? extends Listener> listeners) {
+    public void addTenantListenersWithContent(String dataId, String group, String content, List<? extends Listener> listeners) throws NacosException {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
@@ -171,7 +171,7 @@ public class ClientWorker {
         return cache;
     }
 
-    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) {
+    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
             return cache;
@@ -190,12 +190,8 @@ public class ClientWorker {
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
                 // fix issue # 1317
                 if (enableRemoteSyncConfig) {
-                    try {
-                        String content = getServerConfig(dataId, group, tenant, 3000L);
-                        cache.setContent(content);
-                    } catch (NacosException ignore) {
-                        // If the remote pull fails, the local snapshot should not be overwritten
-                    }
+                    String content = getServerConfig(dataId, group, tenant, 3000L);
+                    cache.setContent(content);
                 }
             }
 
