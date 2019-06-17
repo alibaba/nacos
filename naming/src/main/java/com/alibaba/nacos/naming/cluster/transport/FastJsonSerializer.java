@@ -27,6 +27,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.apache.commons.lang3.CharEncoding.UTF_8;
+
 /**
  * Use FastJSON to serialize data
  *
@@ -44,7 +46,7 @@ public class FastJsonSerializer implements Serializer {
     @Override
     public <T> T deserialize(byte[] data, Class<T> clazz) {
         try {
-            return JSON.parseObject(new String(data, "UTF-8"), clazz);
+            return JSON.parseObject(new String(data, UTF_8), clazz);
         } catch (UnsupportedEncodingException e) {
             return null;
         }
@@ -53,7 +55,7 @@ public class FastJsonSerializer implements Serializer {
     @Override
     public <T> T deserialize(byte[] data, TypeReference<T> clazz) {
         try {
-            String dataString = new String(data, "UTF-8");
+            String dataString = new String(data, UTF_8);
             return JSON.parseObject(dataString, clazz);
         } catch (Exception e) {
             Loggers.SRV_LOG.error("deserialize data failed.", e);
@@ -64,7 +66,7 @@ public class FastJsonSerializer implements Serializer {
     @Override
     public <T extends Record> Map<String, Datum<T>> deserializeMap(byte[] data, Class<T> clazz) {
         try {
-            String dataString = new String(data, "UTF-8");
+            String dataString = new String(data, UTF_8);
             Map<String, JSONObject> dataMap = JSON.parseObject(dataString, new TypeReference<Map<String, JSONObject>>() {
             });
 

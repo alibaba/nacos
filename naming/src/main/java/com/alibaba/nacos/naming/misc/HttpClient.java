@@ -54,14 +54,12 @@ import java.util.zip.GZIPInputStream;
  * @author nacos
  */
 public class HttpClient {
-    public static final int TIME_OUT_MILLIS = 10000;
-    public static final int CON_TIME_OUT_MILLIS = 5000;
+    private static final int TIME_OUT_MILLIS = 10000;
+    private static final int CON_TIME_OUT_MILLIS = 5000;
 
     private static AsyncHttpClient asyncHttpClient;
 
     private static CloseableHttpClient postClient;
-
-    private static PoolingHttpClientConnectionManager connectionManager;
 
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
