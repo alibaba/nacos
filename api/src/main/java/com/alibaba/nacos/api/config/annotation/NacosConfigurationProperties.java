@@ -55,7 +55,7 @@ public @interface NacosConfigurationProperties {
      *
      * @return default value is <code>false</code>
      */
-    String type() default ConfigType.PROPERTIES;
+    ConfigType type() default ConfigType.PROPERTIES;
 
     /**
      * It indicates the properties of current doBind bean is auto-refreshed when Nacos configuration is changed.

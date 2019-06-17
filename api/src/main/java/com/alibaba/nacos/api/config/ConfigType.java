@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- * Licensed under the Apache License, Version 2.0  = the "License");
+ * Licensed under the Apache License, Version 2.0  = the "License"");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -20,36 +20,45 @@ package com.alibaba.nacos.api.config;
  * @author liaochuntao
  * @date 2019-06-14 21:12
  **/
-public class ConfigType {
+public enum ConfigType {
 
     /**
      * config type is "properties"
      */
-    public static final String PROPERTIES = "properties";
+    PROPERTIES("properties"),
 
     /**
      * config type is "xml"
      */
-    public static final String XML = "xml";
+    XML("xml"),
 
     /**
      * config type is "json"
      */
-    public static final String JSON = "json";
+    JSON("json"),
 
     /**
      * config type is "text"
      */
-    public static final String TEXT = "text";
+    TEXT("text"),
 
     /**
      * config type is "html"
      */
-    public static final String HTML = "html";
+    HTML("html"),
 
     /**
      * config type is "yaml"
      */
-    public static final String YAML = "yaml";
+    YAML("yaml");
 
+    String type;
+
+    ConfigType(String type) {
+        this.type = type;
+    }
+
+    public String getType() {
+        return type;
+    }
 }
