@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -47,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     private static final String DEFAULT_PORT = "8080";
-    private static final String NUMBER_PATTERN = "^\\d+$";
     private static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     /**
@@ -197,7 +197,7 @@ public class NacosNamingService implements NamingService {
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
             beatInfo.setTime(System.currentTimeMillis());
-            long instanceInterval = getInstanceHeartBeatInterval(instance);
+            long instanceInterval = instance.getInstanceHeartBeatInterval();
             beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
@@ -206,17 +206,6 @@ public class NacosNamingService implements NamingService {
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 
-    private long getInstanceHeartBeatInterval(Instance instance) {
-        Map<String, String> metaData = instance.getMetadata();
-        if (metaData == null || metaData.isEmpty()) {
-            return Constants.DEFAULT_HEART_BEAT_INTERVAL;
-        }
-        String interval = metaData.get(Constants.HEART_BEAT_INTERVAL);
-        if (!StringUtils.isEmpty(interval) && interval.matches(NUMBER_PATTERN)) {
-            return Long.valueOf(interval);
-        }
-        return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
-    }
 
     @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {

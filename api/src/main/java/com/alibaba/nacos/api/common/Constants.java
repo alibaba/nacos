@@ -44,12 +44,6 @@ public class Constants {
 
     public static final String GROUP = "group";
 
-    public static final String HEART_BEAT_TIMEOUT = "heartBeatTimeout";
-
-    public static final String IP_DELETE_TIMEOUT = "ipDeleteTimeout";
-
-    public static final String HEART_BEAT_INTERVAL = "heartBeatInterval";
-
     public static final String LAST_MODIFIED = "Last-Modified";
 
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
@@ -166,4 +160,6 @@ public class Constants {
     public static final String SERVICE_INFO_SPLITER = "@@";
 
     public static final String NULL_STRING = "null";
+
+    public static final String NUMBER_PATTERN = "^\\d+$";
 }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.healthcheck;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -79,13 +80,13 @@ public class ClientBeatCheckTask implements Runnable {
 
             // first set health status of instances:
             for (Instance instance : instances) {
-                if (System.currentTimeMillis() - instance.getLastBeat() > getInstanceHeartBeatTimeOut(instance)) {
+                if (System.currentTimeMillis() - instance.getLastBeat() > instance.getInstanceHeartBeatTimeOut()) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
                             instance.setHealthy(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
-                                UtilsAndCommons.LOCALHOST_SITE, getInstanceHeartBeatTimeOut(instance), instance.getLastBeat());
+                                UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
                             getPushService().serviceChanged(service.getNamespaceId(), service.getName());
                         }
                     }
@@ -98,7 +99,7 @@ public class ClientBeatCheckTask implements Runnable {
 
             // then remove obsolete instances:
             for (Instance instance : instances) {
-                if (System.currentTimeMillis() - instance.getLastBeat() > getIpDeleteTimeout(instance)) {
+                if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
                     deleteIP(instance);
@@ -111,29 +112,6 @@ public class ClientBeatCheckTask implements Runnable {
 
     }
 
-    private long getInstanceHeartBeatTimeOut(Instance instance) {
-        Map<String, String> metaData = instance.getMetadata();
-        if(metaData == null || metaData.isEmpty()) {
-            return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
-        }
-        String timeout = metaData.get(Constants.HEART_BEAT_TIMEOUT);
-        if(!StringUtils.isEmpty(timeout) && timeout.matches(NUMBER_PATTERN)){
-            return Long.valueOf(timeout);
-        }
-        return Constants.DEFAULT_HEART_BEAT_TIMEOUT;
-    }
-
-    private long getIpDeleteTimeout(Instance instance) {
-        Map<String, String> metaData = instance.getMetadata();
-        if(metaData == null || metaData.isEmpty()) {
-            return Constants.DEFAULT_IP_DELETE_TIMEOUT;
-        }
-        String timeout = metaData.get(Constants.IP_DELETE_TIMEOUT);
-        if(!StringUtils.isEmpty(timeout) && timeout.matches(NUMBER_PATTERN)){
-            return Long.valueOf(timeout);
-        }
-        return Constants.DEFAULT_IP_DELETE_TIMEOUT;
-    }
 
     private void deleteIP(Instance instance) {
 
