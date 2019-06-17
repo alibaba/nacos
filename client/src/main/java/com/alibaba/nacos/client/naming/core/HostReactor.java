@@ -100,7 +100,7 @@ public class HostReactor {
     public ServiceInfo processServiceJSON(String json) {
         ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
-        if (serviceInfo.getHosts() == null || serviceInfo.getHosts().isEmpty() || !serviceInfo.validate()) {
+        if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
             return oldService;
         }
