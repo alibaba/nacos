@@ -56,7 +56,7 @@ public class ServerListManager {
 
     private Set<String> liveSites = new HashSet<>();
 
-    public final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+    private final static String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
     private long lastHealthServerMillis = 0L;
 

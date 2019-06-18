@@ -118,7 +118,7 @@ public class FailoverReactor {
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
                         Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
-                        List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeperator()));
+                        List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeparator()));
 
                         for (String line : lines) {
                             String line1 = line.trim();
