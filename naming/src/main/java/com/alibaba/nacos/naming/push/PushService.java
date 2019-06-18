@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -46,7 +47,7 @@ public class PushService {
     @Autowired
     private SwitchDomain switchDomain;
 
-    public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
+    private static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
 
     private static final int MAX_RETRY_TIMES = 1;
 
@@ -133,7 +134,7 @@ public class PushService {
                                  String tenant,
                                  String app) {
 
-        PushClient client = new PushService.PushClient(namespaceId,
+        PushClient client = new PushClient(namespaceId,
                 serviceName,
                 clusters,
                 agent,
@@ -164,6 +165,19 @@ public class PushService {
             }
             Loggers.PUSH.debug("client: {} added for serviceName: {}", client.getAddrStr(), client.getServiceName());
         }
+    }
+
+    public List<Subscriber> getClients(String serviceName, String namespaceId) {
+        String serviceKey = UtilsAndCommons.assembleFullServiceName(namespaceId, serviceName);
+        ConcurrentMap<String, PushClient> clientConcurrentMap = clientMap.get(serviceKey);
+        if (Objects.isNull(clientConcurrentMap)) {
+            return null;
+        }
+        List<Subscriber> clients = new ArrayList<Subscriber>();
+        clientConcurrentMap.forEach((key, client) -> {
+            clients.add(new Subscriber(client.getAddrStr(),client.getAgent(),client.getApp(),client.getIp(),namespaceId,serviceName));
+        });
+        return clients;
     }
 
     public static void removeClientIfZombie() {

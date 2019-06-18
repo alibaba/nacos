@@ -16,7 +16,6 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
@@ -30,9 +29,6 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  */
 @Component
 public class DynamicDataSource implements ApplicationContextAware {
-
-    @Autowired
-    private PropertyUtil propertyUtil;
 
     private ApplicationContext applicationContext;
 
@@ -48,7 +44,7 @@ public class DynamicDataSource implements ApplicationContextAware {
     public DataSourceService getDataSource() {
         DataSourceService dataSourceService = null;
 
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             dataSourceService = (DataSourceService)applicationContext.getBean("localDataSourceService");
         } else {
             dataSourceService = (DataSourceService)applicationContext.getBean("basicDataSourceService");
