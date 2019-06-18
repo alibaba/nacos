@@ -140,9 +140,7 @@ public class HostReactor {
 
                 if (!oldHostMap.containsKey(key)) {
                     newHosts.add(host);
-                    continue;
                 }
-
             }
 
             for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
@@ -154,7 +152,6 @@ public class HostReactor {
 
                 if (!newHostMap.containsKey(key)) {
                     remvHosts.add(host);
-                    continue;
                 }
 
             }

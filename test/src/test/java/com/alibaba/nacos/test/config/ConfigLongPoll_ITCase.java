@@ -83,7 +83,7 @@ public class ConfigLongPoll_ITCase {
             }
         });
 
-        TimeUnit.SECONDS.sleep(30);
+        TimeUnit.SECONDS.sleep(10);
 
     }
 
