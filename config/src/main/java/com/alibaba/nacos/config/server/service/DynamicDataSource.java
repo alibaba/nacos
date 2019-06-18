@@ -32,6 +32,7 @@ public class DynamicDataSource implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }

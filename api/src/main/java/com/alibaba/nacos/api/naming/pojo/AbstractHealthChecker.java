@@ -193,6 +193,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         }
 
+        @Override
         public Tcp clone() throws CloneNotSupportedException {
             Tcp config = new Tcp();
             config.setType(this.type);
