@@ -91,9 +91,9 @@ public class ServerHttpAgent implements HttpAgent {
                     return result;
                 }
             } catch (ConnectException ce) {
-                LOGGER.error("[NACOS ConnectException httpDelete] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
+                LOGGER.error("[NACOS ConnectException httpGet] currentServerAddr:{}, err : {}", serverListMgr.getCurrentServerAddr(), ce.getMessage());
             } catch (SocketTimeoutException stoe) {
-                LOGGER.error("[NACOS SocketTimeoutException httpDelete] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
+                LOGGER.error("[NACOS SocketTimeoutException httpGet] currentServerAddr:{}， err : {}", serverListMgr.getCurrentServerAddr(), stoe.getMessage());
             } catch (IOException ioe) {
                 LOGGER.error("[NACOS IOException httpGet] currentServerAddr: " + serverListMgr.getCurrentServerAddr(), ioe);
                 throw ioe;
@@ -138,7 +138,7 @@ public class ServerHttpAgent implements HttpAgent {
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
                     || result.code == HttpURLConnection.HTTP_UNAVAILABLE) {
-                    LOGGER.error("[NACOS ConnectException httpPost] currentServerAddr: {}, httpCode: {}",
+                    LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                         currentServerAddr, result.code);
                 } else {
                     // Update the currently available server addr
@@ -425,6 +425,7 @@ public class ServerHttpAgent implements HttpAgent {
             return code;
         }
 
+        @Override
         public String toString() {
             return "STSCredential{" +
                 "accessKeyId='" + accessKeyId + '\'' +

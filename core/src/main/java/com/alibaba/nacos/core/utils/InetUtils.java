@@ -114,8 +114,7 @@ public class InetUtils {
                     log.info("Testing interface: " + ifc.getDisplayName());
                     if (ifc.getIndex() < lowest || result == null) {
                         lowest = ifc.getIndex();
-                    }
-                    else if (result != null) {
+                    } else if (result != null) {
                         continue;
                     }
 

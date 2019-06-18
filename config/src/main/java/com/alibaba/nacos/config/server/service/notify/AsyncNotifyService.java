@@ -319,10 +319,12 @@ public class AsyncNotifyService extends AbstractEventListener {
             // this.executor = executor;
         }
 
+        @Override
         public void setFailCount(int count) {
             this.failCount = count;
         }
 
+        @Override
         public int getFailCount() {
             return failCount;
         }

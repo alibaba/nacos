@@ -28,6 +28,7 @@ import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
@@ -40,7 +41,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -61,6 +61,9 @@ public class ServiceController {
 
     @Autowired
     private ServerListManager serverListManager;
+
+    @Autowired
+    private SubscribeManager subscribeManager;
 
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
@@ -362,6 +365,31 @@ public class ServiceController {
 
         result.put("checksum", service.getChecksum());
 
+        return result;
+    }
+
+    /**
+     * get subscriber list
+     *
+     * @param request
+     * @return
+     */
+    @RequestMapping(value = "/subscribers", method = RequestMethod.GET)
+    public JSONObject subscribers(HttpServletRequest request) {
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        boolean aggregation = Boolean.valueOf(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
+
+        JSONObject result = new JSONObject();
+
+        try {
+            List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
+            result.put("subscribers", subscribers);
+            return result;
+        } catch (InterruptedException e) {
+
+        }
         return result;
     }
 

@@ -13,31 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.naming.utils;
+package com.alibaba.nacos.naming.pojo;
 
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author nkorange
+ * @author nicholas
+ * @version $Id: Subscribers.java, v 0.1 2019-05-28 下午10:47 nicholas Exp $$
  */
-public class GenericPoller<T> implements Poller<T> {
+public class Subscribers implements Serializable {
 
-    private AtomicInteger index = new AtomicInteger(0);
-    private List<T> items = new ArrayList<T>();
+    private List<Subscriber> subscribers;
 
-    public GenericPoller(List<T> items) {
-        this.items = items;
+    public List<Subscriber> getSubscribers() {
+        return subscribers;
     }
 
-    @Override
-    public T next() {
-        return items.get(Math.abs(index.getAndIncrement() % items.size()));
-    }
-
-    @Override
-    public Poller<T> refresh(List<T> items) {
-        return new GenericPoller<T>(items);
+    public void setSubscribers(List<Subscriber> subscribers) {
+        this.subscribers = subscribers;
     }
 }
