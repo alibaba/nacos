@@ -30,7 +30,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class BeatReactor {
 
-    private ScheduledExecutorService executorService;
+    private ScheduledExecutorService taskExecutorService;
+    private ExecutorService mainLoopExecutor;
 
     private volatile long clientBeatInterval = 5 * 1000;
 
@@ -45,7 +46,7 @@ public class BeatReactor {
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
 
-        executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
+        taskExecutorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
@@ -55,7 +56,17 @@ public class BeatReactor {
             }
         });
 
-        executorService.schedule(new BeatProcessor(), 0, TimeUnit.MILLISECONDS);
+        mainLoopExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.beat.sender.mainloop");
+                return thread;
+            }
+        });
+
+        mainLoopExecutor.execute(new BeatProcessor());
     }
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
@@ -89,7 +100,7 @@ public class BeatReactor {
                             continue;
                         }
                         beatInfo.setScheduled(true);
-                        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
+                        taskExecutorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
                     }
                 } catch (Exception e) {
                     NAMING_LOGGER.error("[CLIENT-BEAT] Exception while scheduling beat.", e);
