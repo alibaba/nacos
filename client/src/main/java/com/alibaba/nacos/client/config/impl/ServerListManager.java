@@ -285,7 +285,6 @@ public class ServerListManager {
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (null == serverAddr || serverAddr.trim().isEmpty()) {
-                        continue;
                     } else {
                         String[] ipPort = serverAddr.trim().split(":");
                         String ip = ipPort[0].trim();

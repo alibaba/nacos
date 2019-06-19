@@ -626,7 +626,7 @@ public class ConfigAPI_ITCase {
      */
     @Test(timeout = TIME_OUT)
     public void nacos_removeListener_4() {
-        iconfig.removeListener(dataId, group, (Listener) null);
+        iconfig.removeListener(dataId, group, null);
         Assert.assertTrue(true);
     }
 
