@@ -45,6 +45,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
@@ -525,11 +526,11 @@ public class RaftCore {
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GZIPOutputStream gzip = new GZIPOutputStream(out);
-            gzip.write(content.getBytes("UTF-8"));
+            gzip.write(content.getBytes(StandardCharsets.UTF_8));
             gzip.close();
 
             byte[] compressedBytes = out.toByteArray();
-            String compressedContent = new String(compressedBytes, "UTF-8");
+            String compressedContent = new String(compressedBytes, StandardCharsets.UTF_8);
             Loggers.RAFT.info("raw beat data size: {}, size of compressed data: {}",
                 content.length(), compressedContent.length());
 

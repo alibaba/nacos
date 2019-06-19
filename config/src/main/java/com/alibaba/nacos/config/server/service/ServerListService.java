@@ -262,7 +262,6 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     List<String> ips = new ArrayList<String>(lines.size());
                     for (String serverAddr : lines) {
                         if (null == serverAddr || serverAddr.trim().isEmpty()) {
-                            continue;
                         } else {
                             ips.add(getFormatServerAddr(serverAddr));
                         }

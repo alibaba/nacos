@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.naming.acl;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * @author nkorange
  */
@@ -50,7 +52,7 @@ public class AuthInfo {
     public String toString() {
         try {
             // very simple encryption is enough
-            byte[] authBytes = (operator + ":" + appKey).getBytes("UTF-8");
+            byte[] authBytes = (operator + ":" + appKey).getBytes(StandardCharsets.UTF_8);
             StringBuilder authBuilder = new StringBuilder();
             for (byte authByte : authBytes) {
                 authBuilder.append((byte) (~((short) authByte))).append(",");

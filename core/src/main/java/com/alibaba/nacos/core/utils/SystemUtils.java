@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -127,7 +128,8 @@ public class SystemUtils {
         Reader reader = null;
 
         try {
-            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8);
+            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+                StandardCharsets.UTF_8);
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {
