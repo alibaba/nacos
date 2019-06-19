@@ -86,10 +86,10 @@ public class BeatReactor {
         @Override
         public void run() {
             long result = serverProxy.sendBeat(beatInfo);
-            long nextTime = result > 0 ? System.currentTimeMillis() + result : System.currentTimeMillis() + beatInfo.getPeriod();
             if (beatInfo.isStop()) {
                 return;
             }
+            long nextTime = result > 0 ? System.currentTimeMillis() + result : System.currentTimeMillis() + beatInfo.getPeriod();
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }
