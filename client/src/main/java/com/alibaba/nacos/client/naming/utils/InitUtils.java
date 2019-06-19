@@ -37,7 +37,7 @@ public class InitUtils {
      * @param properties
      * @return
      */
-    public static final String initNamespaceForNaming(Properties properties) {
+    public static String initNamespaceForNaming(Properties properties) {
         String tmpNamespace = null;
 
 
@@ -90,7 +90,7 @@ public class InitUtils {
         return tmpNamespace;
     }
 
-    public static final void initWebRootContext() {
+    public static void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
         final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
         TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
@@ -105,7 +105,7 @@ public class InitUtils {
         });
     }
 
-    public static final String initEndpoint(final Properties properties) {
+    public static String initEndpoint(final Properties properties) {
         if (properties == null) {
 
             return "";
