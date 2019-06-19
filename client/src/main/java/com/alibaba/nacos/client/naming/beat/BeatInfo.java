@@ -32,7 +32,7 @@ public class BeatInfo {
     private Map<String, String> metadata;
     private volatile boolean scheduled;
     private volatile long period;
-    private volatile long time;
+    private volatile boolean stop;
 
     @Override
     public String toString() {
@@ -103,11 +103,11 @@ public class BeatInfo {
         this.period = period;
     }
 
-    public long getTime() {
-        return time;
+    public boolean isStop() {
+        return stop;
     }
 
-    public void setTime(long time) {
-        this.time = time;
+    public void setStop(boolean stop) {
+        this.stop = stop;
     }
 }
