@@ -16,7 +16,6 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
 
 import java.util.HashMap;
 import java.util.Map;
