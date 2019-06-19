@@ -196,7 +196,6 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
-            beatInfo.setTime(System.currentTimeMillis());
             long instanceInterval = instance.getInstanceHeartBeatInterval();
             beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
