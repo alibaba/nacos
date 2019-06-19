@@ -89,7 +89,7 @@ public class BeatReactor {
             if (beatInfo.isStop()) {
                 return;
             }
-            long nextTime = result > 0 ? System.currentTimeMillis() + result : System.currentTimeMillis() + beatInfo.getPeriod();
+            long nextTime = result > 0 ? result : beatInfo.getPeriod();
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }
