@@ -16,8 +16,6 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * @author caoyixiong
- * @Date: 2019/6/20
- * @Copyright (c) 2015, lianjia.com All Rights Reserved
  */
 @RunWith(MockitoJUnitRunner.class)
 public class BeatReactorTest {
