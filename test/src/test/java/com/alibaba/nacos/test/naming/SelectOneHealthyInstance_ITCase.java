@@ -89,7 +89,7 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -108,7 +108,7 @@ public class SelectOneHealthyInstance_ITCase {
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
 
-        Assert.assertTrue(instance.getIp() != "1.1.1.1");
+        Assert.assertNotSame("1.1.1.1", instance.getIp());
         Assert.assertTrue(instance.getPort() != 60002);
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
@@ -122,7 +122,7 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -139,7 +139,7 @@ public class SelectOneHealthyInstance_ITCase {
 
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1", "c2"));
-        Assert.assertTrue(instance.getIp() != "1.1.1.1");
+        Assert.assertNotSame("1.1.1.1", instance.getIp());
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
@@ -152,6 +152,6 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 }
