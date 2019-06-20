@@ -263,7 +263,7 @@ public class InstanceController {
         }
 
         service.processClientBeat(clientBeat);
-
+        result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
         return result;
     }
 
