@@ -16,7 +16,6 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import org.apache.commons.lang3.StringUtils;
