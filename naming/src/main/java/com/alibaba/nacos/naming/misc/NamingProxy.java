@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;

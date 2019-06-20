@@ -16,7 +16,6 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.naming.NamingApp;
-import com.alibaba.nacos.naming.selector.Selector;
 
 import org.junit.Assert;
 import org.junit.Before;
