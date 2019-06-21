@@ -221,7 +221,7 @@ public class ClientWorker {
                 "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
                 dataId, group, tenant);
             LOGGER.error(message, e);
-            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
+            throw new NacosException(NacosException.SERVER_ERROR, e);
         }
 
         switch (result.code) {
