@@ -32,6 +32,7 @@ import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
+import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
@@ -263,7 +264,6 @@ public class NamingProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
 
         String result = reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.DELETE);
-        NAMING_LOGGER.info(result);
         return "ok".equals(result);
     }
 
@@ -298,7 +298,9 @@ public class NamingProxy {
 
     public long sendBeat(BeatInfo beatInfo) {
         try {
-            NAMING_LOGGER.info("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
+            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.debug("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
+            }
             Map<String, String> params = new HashMap<String, String>(4);
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(CommonParams.NAMESPACE_ID, namespaceId);

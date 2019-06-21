@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.annotation.Repeat;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
@@ -112,7 +113,6 @@ public class DeregisterInstance_ITCase {
     public void dregDomClusterTest() throws Exception {
 
         String serviceName = randomDomainName();
-
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
