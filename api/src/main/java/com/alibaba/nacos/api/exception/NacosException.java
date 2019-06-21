@@ -31,6 +31,8 @@ public class NacosException extends Exception {
 
     private String errMsg;
 
+    private Throwable throwable;
+
     public NacosException() {
     }
 
@@ -38,6 +40,19 @@ public class NacosException extends Exception {
         super(errMsg);
         this.errCode = errCode;
         this.errMsg = errMsg;
+    }
+
+    public NacosException(int errCode, Throwable throwable) {
+        super(throwable);
+        this.errCode = errCode;
+        this.throwable = throwable;
+    }
+
+    public NacosException(int errCode, String errMsg, Throwable throwable) {
+        super(errMsg, throwable);
+        this.errCode = errCode;
+        this.errMsg = errMsg;
+        this.throwable = throwable;
     }
 
     public int getErrCode() {
