@@ -77,6 +77,21 @@ public @interface NacosProperties {
     String ENCODE = "encode";
 
     /**
+     * The property name of "long-poll.timeout"
+     */
+    String CONFIG_LONG_POLL_TIMEOUT = "configLongPollTimeout";
+
+    /**
+     * The property name of "config.retry.time"
+     */
+    String CONFIG_RETRY_TIME = "configRetryTime";
+
+    /**
+     * The property name of "maxRetry"
+     */
+    String MAX_RETRY = "maxRetry";
+
+    /**
      * The placeholder of endpoint, the value is <code>"${nacos.endpoint:}"</code>
      */
     String ENDPOINT_PLACEHOLDER = "${" + PREFIX + ENDPOINT + ":}";
@@ -115,6 +130,21 @@ public @interface NacosProperties {
      * The placeholder of {@link NacosProperties#ENCODE encode}, the value is <code>"${nacos.encode:UTF-8}"</code>
      */
     String ENCODE_PLACEHOLDER = "${" + PREFIX + ENCODE + ":UTF-8}";
+
+    /**
+     * The placeholder of {@link NacosProperties#CONFIG_LONG_POLL_TIMEOUT configLongPollTimeout}, the value is <code>"${nacos.configLongPollTimeout:}"</code>
+     */
+    String CONFIG_LONG_POLL_TIMEOUT_PLACEHOLDER = "${" + PREFIX + CONFIG_LONG_POLL_TIMEOUT + ":}";
+
+    /**
+     * The placeholder of {@link NacosProperties#CONFIG_RETRY_TIME configRetryTime}, the value is <code>"${nacos.configRetryTime:}"</code>
+     */
+    String CONFIG_RETRY_TIME_PLACEHOLDER = "${" + PREFIX + CONFIG_RETRY_TIME + ":}";
+
+    /**
+     * The placeholder of {@link NacosProperties#MAX_RETRY maxRetry}, the value is <code>"${nacos.maxRetry:}"</code>
+     */
+    String MAX_RETRY_PLACEHOLDER = "${" + PREFIX + MAX_RETRY + ":}";
 
     /**
      * The property of "endpoint"
@@ -179,5 +209,29 @@ public @interface NacosProperties {
      * @see #ENCODE_PLACEHOLDER
      */
     String encode() default ENCODE_PLACEHOLDER;
+
+    /**
+     * The property of "configLongPollTimeout"
+     *
+     * @return empty as default value
+     * @see #CONFIG_LONG_POLL_TIMEOUT_PLACEHOLDER
+     */
+    String configLongPollTimeout() default CONFIG_LONG_POLL_TIMEOUT_PLACEHOLDER;
+
+    /**
+     * The property of "configRetryTime"
+     *
+     * @return empty as default value
+     * @see #CONFIG_RETRY_TIME_PLACEHOLDER
+     */
+    String configRetryTime() default CONFIG_RETRY_TIME_PLACEHOLDER;
+
+    /**
+     * The property of "maxRetry"
+     *
+     * @return empty as default value
+     * @see #MAX_RETRY
+     */
+    String maxRetry() default MAX_RETRY_PLACEHOLDER;
 
 }

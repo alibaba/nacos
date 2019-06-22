@@ -94,6 +94,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         writer.write(this.content);
     }
 
+    @Override
     public int compareTo(ConfigInfoBase o) {
         if (o == null) {
             return 1;

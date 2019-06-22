@@ -3,7 +3,6 @@
 .project
 .settings
 target
-.project
 .idea
 .vscode
 .DS_Store
