@@ -66,7 +66,7 @@ public class BeatReactor {
     public void removeBeatInfo(String serviceName, String ip, int port) {
         NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
         BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
-        beatInfo.setStop(true);
+        beatInfo.setStopped(true);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
@@ -86,7 +86,7 @@ public class BeatReactor {
         @Override
         public void run() {
             long result = serverProxy.sendBeat(beatInfo);
-            if (beatInfo.isStop()) {
+            if (beatInfo.isStopped()) {
                 return;
             }
             long nextTime = result > 0 ? result : beatInfo.getPeriod();
