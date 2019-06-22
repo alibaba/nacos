@@ -46,9 +46,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import static com.alibaba.nacos.client.naming.net.HttpClient.request;
 import static com.alibaba.nacos.test.naming.NamingBase.*;
-import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",

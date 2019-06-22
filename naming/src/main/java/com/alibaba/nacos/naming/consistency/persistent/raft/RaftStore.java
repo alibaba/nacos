@@ -40,7 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author nacos
@@ -54,9 +54,8 @@ public class RaftStore {
 
     private String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
 
-    public synchronized ConcurrentHashMap<String, Datum> loadDatums(RaftCore.Notifier notifier) throws Exception {
+    public synchronized void loadDatums(RaftCore.Notifier notifier, ConcurrentMap<String, Datum> datums) throws Exception {
 
-        ConcurrentHashMap<String, Datum> datums = new ConcurrentHashMap<>(32);
         Datum datum;
         long start = System.currentTimeMillis();
         for (File cache : listCaches()) {
@@ -77,7 +76,6 @@ public class RaftStore {
         }
 
         Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", datums.size(), (System.currentTimeMillis() - start));
-        return datums;
     }
 
     public synchronized Properties loadMeta() throws Exception {

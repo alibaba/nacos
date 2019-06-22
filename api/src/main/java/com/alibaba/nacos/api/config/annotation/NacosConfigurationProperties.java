@@ -18,6 +18,7 @@ package com.alibaba.nacos.api.config.annotation;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.annotation.NacosProperties;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 
 import java.lang.annotation.*;
 
@@ -54,7 +55,7 @@ public @interface NacosConfigurationProperties {
      *
      * @return default value is <code>false</code>
      */
-    boolean yaml() default false;
+    ConfigType type() default ConfigType.PROPERTIES;
 
     /**
      * It indicates the properties of current doBind bean is auto-refreshed when Nacos configuration is changed.
