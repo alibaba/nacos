@@ -144,7 +144,7 @@ public class ClientInfo {
         /**
          * Unknown client type
          */
-        UNKNOWN;
+        UNKNOWN
     }
 
     public static class ClientTypeDescription {
