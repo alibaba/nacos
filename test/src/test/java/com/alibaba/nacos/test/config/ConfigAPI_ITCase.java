@@ -86,7 +86,7 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -108,7 +108,7 @@ public class ConfigAPI_ITCase {
         Assert.assertTrue(result);
         value = iconfig.getConfig(dataId, group, TIME_OUT);
         System.out.println(value);
-        Assert.assertEquals(null, value);
+        Assert.assertNull(value);
     }
 
     /**
@@ -133,7 +133,7 @@ public class ConfigAPI_ITCase {
             Assert.assertTrue(true);
             return;
         }
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -218,7 +218,7 @@ public class ConfigAPI_ITCase {
             Assert.assertTrue(true);
             return;
         }
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -251,7 +251,7 @@ public class ConfigAPI_ITCase {
             Assert.assertTrue(true);
             return;
         }
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -283,7 +283,7 @@ public class ConfigAPI_ITCase {
         Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
         String value = iconfig.getConfig(dataId, group, TIME_OUT);
-        Assert.assertEquals(null, value);
+        Assert.assertNull(value);
     }
 
     /**
@@ -310,7 +310,7 @@ public class ConfigAPI_ITCase {
             Assert.assertTrue(true);
             return;
         }
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -366,7 +366,7 @@ public class ConfigAPI_ITCase {
     public void nacos_addListener_2() {
         try {
             iconfig.addListener(dataId, group, null);
-            Assert.assertFalse(true);
+            Assert.fail();
         } catch (Exception e) {
             Assert.assertFalse(false);
         }
@@ -537,7 +537,7 @@ public class ConfigAPI_ITCase {
         iconfig.addListener(dataId, group, new AbstractListener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
-                Assert.assertTrue(false);
+                Assert.fail();
             }
         });
         Thread.sleep(TIME_OUT);
@@ -571,7 +571,7 @@ public class ConfigAPI_ITCase {
                 }
             });
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -653,7 +653,7 @@ public class ConfigAPI_ITCase {
 
             Assert.assertEquals(content, JSON.parseObject(result.content).getString("content"));
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -682,7 +682,7 @@ public class ConfigAPI_ITCase {
             Assert.assertNotNull(JSON.parseObject(result.content).getString("data"));
 
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -713,7 +713,7 @@ public class ConfigAPI_ITCase {
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -744,7 +744,7 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
             Assert.assertEquals(true, JSON.parseObject(result.content).getBoolean("data"));
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -773,7 +773,7 @@ public class ConfigAPI_ITCase {
             Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") >= 1);
             Assert.assertTrue(JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content").startsWith(content));
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -803,7 +803,7 @@ public class ConfigAPI_ITCase {
             Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
 
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -829,11 +829,11 @@ public class ConfigAPI_ITCase {
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
 
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
+            Assert.assertEquals(1, JSON.parseObject(result.content).getIntValue("totalCount"));
             Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
 
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 
@@ -858,10 +858,10 @@ public class ConfigAPI_ITCase {
             List<String> params = Arrays.asList("dataId", dataId, "group", group, "pageNo","1", "pageSize","10", "search", "accurate");
             result = agent.httpGet(CONFIG_CONTROLLER_PATH + "/", null, params, "utf-8", TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
-            Assert.assertTrue(JSON.parseObject(result.content).getIntValue("totalCount") == 1);
+            Assert.assertEquals(1, JSON.parseObject(result.content).getIntValue("totalCount"));
             Assert.assertEquals(content, JSON.parseObject(result.content).getJSONArray("pageItems").getJSONObject(0).getString("content"));
         } catch (Exception e) {
-            Assert.assertTrue(false);
+            Assert.fail();
         }
     }
 

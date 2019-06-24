@@ -110,7 +110,7 @@ public class Unsubscribe_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -153,7 +153,7 @@ public class Unsubscribe_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
 }
