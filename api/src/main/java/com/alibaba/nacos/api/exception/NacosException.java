@@ -18,8 +18,6 @@ package com.alibaba.nacos.api.exception;
 import com.alibaba.nacos.api.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 
-import java.lang.reflect.InvocationTargetException;
-
 /**
  * Nacos Exception
  *
