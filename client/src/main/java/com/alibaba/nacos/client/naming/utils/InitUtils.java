@@ -18,23 +18,55 @@ package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import com.alibaba.nacos.client.identify.CredentialService;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.client.utils.*;
 
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
 /**
  * @author liaochuntao
+ * @author deshao
  */
 public class InitUtils {
 
-    public static final String initNamespace(Properties properties) {
+    /**
+     * Add a difference to the name naming. This method simply initializes the namespace for Naming.
+     * Config initialization is not the same, so it cannot be reused directly.
+     *
+     * @param properties
+     * @return
+     */
+    public static String initNamespaceForNaming(Properties properties) {
         String tmpNamespace = null;
+
+
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
+        if (Boolean.valueOf(isUseCloudNamespaceParsing)) {
+
+            tmpNamespace = TenantUtil.getUserTenantForAns();
+            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
+                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Property :" + namespace);
+                    return namespace;
+                }
+            });
+
+            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
+                    return namespace;
+                }
+            });
+        }
 
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
@@ -45,26 +77,7 @@ public class InitUtils {
             }
         });
 
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from System Environment :" + namespace);
-                return namespace;
-            }
-        });
-
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
-            @Override
-            public String call() {
-                String namespace = CredentialService.getInstance().getCredential().getTenantId();
-                LogUtils.NAMING_LOGGER.info("initializer namespace from Credential Module " + namespace);
-                return namespace;
-            }
-        });
-
-        if (com.alibaba.nacos.client.utils.StringUtils.isEmpty(tmpNamespace) && properties != null) {
+        if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
 
@@ -77,7 +90,7 @@ public class InitUtils {
         return tmpNamespace;
     }
 
-    public static final void initWebRootContext() {
+    public static void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
         final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
         TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
@@ -92,18 +105,23 @@ public class InitUtils {
         });
     }
 
-    public static final String initEndpoint(final Properties properties) {
+    public static String initEndpoint(final Properties properties) {
         if (properties == null) {
 
             return "";
         }
-        // 是否开启域名解析规则
-        boolean isUseEndpointParsingRule = Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE));
+        // Whether to enable domain name resolution rules
+        String isUseEndpointRuleParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                    String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+
+        boolean isUseEndpointParsingRule = Boolean.valueOf(isUseEndpointRuleParsing);
         String endpointUrl;
         if (isUseEndpointParsingRule) {
-            // 获取设置的域名信息
+            // Get the set domain name information
             endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrl)) {
+            if (StringUtils.isBlank(endpointUrl)) {
                 return "";
             }
         } else {

@@ -31,10 +31,12 @@ public class GenericPoller<T> implements Poller<T> {
         this.items = items;
     }
 
+    @Override
     public T next() {
         return items.get(Math.abs(index.getAndIncrement() % items.size()));
     }
 
+    @Override
     public Poller<T> refresh(List<T> items) {
         return new GenericPoller<T>(items);
     }

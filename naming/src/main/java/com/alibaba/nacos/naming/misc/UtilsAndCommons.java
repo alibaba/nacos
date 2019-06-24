@@ -70,7 +70,7 @@ public class UtilsAndCommons {
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
 
-    public static final String NACOS_VERSION = "1.0.0";
+    public static final String NACOS_VERSION = "1.0.1";
 
     public static final String SUPER_TOKEN = "xy";
 
@@ -117,6 +117,8 @@ public class UtilsAndCommons {
     public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
 
     public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
+
+    public static final String NUMBER_PATTERN = "^\\d+$";
 
     public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
 

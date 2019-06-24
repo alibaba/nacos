@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
@@ -151,6 +152,7 @@ public class ServerListManager {
                     contentPath, serverListName, namespace);
             }
         }
+
     }
 
     private void initParam(Properties properties) {
@@ -180,7 +182,13 @@ public class ServerListManager {
         }
 
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        if (Boolean.valueOf(properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE))) {
+
+        // Whether to enable domain name resolution rules
+        String isUseEndpointRuleParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                    String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+        if (Boolean.valueOf(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
             if (StringUtils.isNotBlank(endpointUrl)) {
                 serverAddrsStr = "";
@@ -258,7 +266,8 @@ public class ServerListManager {
             return;
         }
         serverUrls = new ArrayList<String>(newList);
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
 
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
         LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
@@ -325,14 +334,24 @@ public class ServerListManager {
     }
 
     public void refreshCurrentServerAddr() {
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
     }
 
     public String getCurrentServerAddr() {
         if (StringUtils.isBlank(currentServerAddr)) {
-            currentServerAddr = iterator().next();
+            iterator = iterator();
+            currentServerAddr = iterator.next();
         }
         return currentServerAddr;
+    }
+
+    public void updateCurrentServerAddr(String currentServerAddr) {
+        this.currentServerAddr = currentServerAddr;
+    }
+
+    public Iterator<String> getIterator() {
+        return iterator;
     }
 
     public String getContentPath() {
@@ -352,7 +371,7 @@ public class ServerListManager {
     }
 
     /**
-     * 不同环境的名称
+     * The name of the different environment
      */
     private String name;
     private String namespace = "";
@@ -362,7 +381,7 @@ public class ServerListManager {
     static public final String FIXED_NAME = "fixed";
     private int initServerlistRetryTimes = 5;
     /**
-     * 和其他server的连接超时和socket超时
+     * Connection timeout and socket timeout with other servers
      */
     static final int TIMEOUT = 5000;
 
@@ -376,15 +395,17 @@ public class ServerListManager {
 
     private volatile String currentServerAddr;
 
+    private Iterator<String> iterator;
     public String serverPort = ParamUtil.getDefaultServerPort();
 
     public String addressServerUrl;
 
     private String serverAddrsStr;
+
 }
 
 /**
- * 对地址列表排序，同机房优先。
+ * Sort the address list, with the same room priority.
  */
 class ServerAddressIterator implements Iterator<String> {
 
@@ -426,14 +447,17 @@ class ServerAddressIterator implements Iterator<String> {
         iter = sorted.iterator();
     }
 
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    @Override
     public String next() {
         return iter.next().serverIp;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

@@ -23,8 +23,8 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -36,9 +36,9 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class HostReactor {
 
-    public static final long DEFAULT_DELAY = 1000L;
+    private static final long DEFAULT_DELAY = 1000L;
 
-    public long updateHoldInterval = 5000L;
+    private static final long UPDATE_HOLD_INTERVAL = 5000L;
 
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
 
@@ -140,9 +140,7 @@ public class HostReactor {
 
                 if (!oldHostMap.containsKey(key)) {
                     newHosts.add(host);
-                    continue;
                 }
-
             }
 
             for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
@@ -154,7 +152,6 @@ public class HostReactor {
 
                 if (!newHostMap.containsKey(key)) {
                     remvHosts.add(host);
-                    continue;
                 }
 
             }
@@ -234,11 +231,11 @@ public class HostReactor {
 
         } else if (updatingMap.containsKey(serviceName)) {
 
-            if (updateHoldInterval > 0) {
+            if (UPDATE_HOLD_INTERVAL > 0) {
                 // hold a moment waiting for update finish
                 synchronized (serviceObj) {
                     try {
-                        serviceObj.wait(updateHoldInterval);
+                        serviceObj.wait(UPDATE_HOLD_INTERVAL);
                     } catch (InterruptedException e) {
                         NAMING_LOGGER.error("[getServiceInfo] serviceName:" + serviceName + ", clusters:" + clusters, e);
                     }

@@ -62,6 +62,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
+    public Cluster() {
+    }
+
     /**
      * Create a cluster.
      * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
@@ -138,7 +141,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * this method has been deprecated, the service name is not allowed to change.
+     * this method has been deprecated, the service name shouldn't be changed.
      *
      * @param serviceName the service name
      * @author jifengnan  2019-04-26
@@ -147,7 +150,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @Deprecated
     @Override
     public void setServiceName(String serviceName) {
-        throw new UnsupportedOperationException("This method has been deprecated, the service name is not allowed to change.");
+        super.setServiceName(serviceName);
     }
 
     /**
@@ -159,7 +162,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      */
     @Override
     public String getServiceName() {
-        return service.getName();
+        if (service != null) {
+            return service.getName();
+        } else {
+            return super.getServiceName();
+        }
     }
 
     @Override
