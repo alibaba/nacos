@@ -322,6 +322,7 @@ public class ServerListManager {
         String split = "";
         for (String serverIp : serverIps) {
             sb.append(split);
+            serverIp = serverIp.replaceAll("http(s)?://", "");
             sb.append(serverIp.replaceAll(":", "_"));
             split = "-";
         }
