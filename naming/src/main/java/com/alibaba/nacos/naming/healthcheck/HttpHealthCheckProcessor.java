@@ -55,7 +55,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
 
     private static AsyncHttpClient asyncHttpClient;
 
-    public static final int CONNECT_TIMEOUT_MS = 500;
+    private static final int CONNECT_TIMEOUT_MS = 500;
 
     static {
         try {

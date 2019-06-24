@@ -47,6 +47,18 @@ export const getParameter = (search, name) => {
   return value;
 };
 
+export const encodeKV = (text, separator) =>
+  text
+    .split('\r\n')
+    .filter(row => row.trim() && row.split('=').filter(kv => kv.trim()).length === 2)
+    .map(row =>
+      row
+        .split('=')
+        .map(kv => encodeURIComponent(kv.trim()))
+        .join('=')
+    )
+    .join(separator);
+
 /**
  * 将回车符和空格替换
  * @param {*} separator 替换符
@@ -56,8 +68,7 @@ export const replaceEnter = (separator = ',') => text => {
     return text;
   }
 
-  return text
-    .replace(/\r\n/g, separator)
+  return encodeKV(text, separator)
     .replace(/[\r\n]/g, separator)
     .replace(/[\t\s]/g, '');
 };

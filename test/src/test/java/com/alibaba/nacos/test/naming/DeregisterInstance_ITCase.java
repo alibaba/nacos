@@ -112,7 +112,6 @@ public class DeregisterInstance_ITCase {
     public void dregDomClusterTest() throws Exception {
 
         String serviceName = randomDomainName();
-
         System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");

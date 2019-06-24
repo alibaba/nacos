@@ -113,10 +113,4 @@ public class ClusterTest {
         cluster.validate();
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSetServiceName() {
-        Service service = new Service("nacos.service.2");
-        cluster = new Cluster("nacos-cluster-1", service);
-        cluster.setServiceName(null);
-    }
 }
