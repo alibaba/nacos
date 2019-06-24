@@ -15,6 +15,11 @@
  */
 package com.alibaba.nacos.api.exception;
 
+import com.alibaba.nacos.api.common.Constants;
+import org.apache.commons.lang3.StringUtils;
+
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Nacos Exception
  *
@@ -31,7 +36,7 @@ public class NacosException extends Exception {
 
     private String errMsg;
 
-    private Throwable throwable;
+    private Throwable causeThrowable;
 
     public NacosException() {
     }
@@ -45,14 +50,14 @@ public class NacosException extends Exception {
     public NacosException(int errCode, Throwable throwable) {
         super(throwable);
         this.errCode = errCode;
-        this.throwable = throwable;
+        setCauseThrowable(throwable);
     }
 
     public NacosException(int errCode, String errMsg, Throwable throwable) {
         super(errMsg, throwable);
         this.errCode = errCode;
         this.errMsg = errMsg;
-        this.throwable = throwable;
+        setCauseThrowable(throwable);
     }
 
     public int getErrCode() {
@@ -60,7 +65,13 @@ public class NacosException extends Exception {
     }
 
     public String getErrMsg() {
-        return errMsg;
+        if (!StringUtils.isBlank(this.errMsg)) {
+            return errMsg;
+        }
+        if (this.causeThrowable != null) {
+            return causeThrowable.getMessage();
+        }
+        return Constants.NULL;
     }
 
     public void setErrCode(int errCode) {
@@ -71,9 +82,20 @@ public class NacosException extends Exception {
         this.errMsg = errMsg;
     }
 
+    public void setCauseThrowable(Throwable throwable) {
+        this.causeThrowable = getCauseThrowable(throwable);
+    }
+
+    private Throwable getCauseThrowable(Throwable t) {
+        if (t.getCause() == null) {
+            return t;
+        }
+        return getCauseThrowable(t.getCause());
+    }
+
     @Override
     public String toString() {
-        return "ErrCode:" + errCode + ",ErrMsg:" + errMsg;
+        return "ErrCode:" + getErrCode() + ",ErrMsg:" + getErrMsg();
     }
 
     /**
