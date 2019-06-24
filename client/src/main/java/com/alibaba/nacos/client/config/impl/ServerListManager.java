@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
+import com.alibaba.nacos.client.identify.Constants;
 import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
 
@@ -118,12 +119,16 @@ public class ServerListManager {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
-            for (String serverAddr : serverAddrsArr) {
-                String[] serverAddrArr = serverAddr.split(":");
-                if (serverAddrArr.length == 1) {
-                    serverAddrs.add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
-                } else {
+            for (String serverAddr: serverAddrsArr) {
+                if (serverAddr.startsWith(Constants.HTTPS) || serverAddr.startsWith(Constants.HTTP)) {
                     serverAddrs.add(serverAddr);
+                } else {
+                    String[] serverAddrArr = serverAddr.split(":");
+                    if (serverAddrArr.length == 1) {
+                        serverAddrs.add(Constants.HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                    } else {
+                        serverAddrs.add(Constants.HTTP + serverAddr);
+                    }
                 }
             }
             serverUrls = serverAddrs;

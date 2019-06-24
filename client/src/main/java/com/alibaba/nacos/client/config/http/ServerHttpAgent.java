@@ -78,7 +78,7 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpResult result = HttpSimpleClient.httpGet(
-                    getUrl(currentServerAddr, path, isSSL), newHeaders, paramValues, encoding,
+                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
                     readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
@@ -133,7 +133,7 @@ public class ServerHttpAgent implements HttpAgent {
                 }
 
                 HttpResult result = HttpSimpleClient.httpPost(
-                    getUrl(currentServerAddr, path, isSSL), newHeaders, paramValues, encoding,
+                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
                     readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
@@ -187,7 +187,7 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 HttpResult result = HttpSimpleClient.httpDelete(
-                    getUrl(currentServerAddr, path, isSSL), newHeaders, paramValues, encoding,
+                    getUrl(currentServerAddr, path), newHeaders, paramValues, encoding,
                     readTimeoutMs, isSSL);
                 if (result.code == HttpURLConnection.HTTP_INTERNAL_ERROR
                     || result.code == HttpURLConnection.HTTP_BAD_GATEWAY
@@ -224,12 +224,8 @@ public class ServerHttpAgent implements HttpAgent {
         throw new ConnectException("no available server");
     }
 
-    private String getUrl(String serverAddr, String relativePath, boolean isSSL) {
-        String httpPrefix = "http://";
-        if (isSSL) {
-            httpPrefix = "https://";
-        }
-        return httpPrefix + serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
+    private String getUrl(String serverAddr, String relativePath) {
+        return serverAddr + "/" + serverListMgr.getContentPath() + relativePath;
     }
 
     public static String getAppname() {

@@ -49,4 +49,8 @@ public class Constants {
 
     public static final String NO_APP_NAME = "";
 
+    public static final String HTTP = "http://";
+
+    public static final String HTTPS = "https://";
+
 }
