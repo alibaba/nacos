@@ -443,8 +443,6 @@ public class PersistService {
         }
     }
 
-    ;
-
     static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
         @Override
         public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
