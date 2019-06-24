@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.common;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Constant
  *
@@ -143,6 +145,12 @@ public class Constants {
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
+    public static final long DEFAULT_HEART_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
+
+    public static final long DEFAULT_IP_DELETE_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
+
+    public static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
+
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
     public static final boolean DEFAULT_USE_CLOUD_NAMESPACE_PARSING = true;
@@ -152,4 +160,6 @@ public class Constants {
     public static final String SERVICE_INFO_SPLITER = "@@";
 
     public static final String NULL_STRING = "null";
+
+    public static final String NUMBER_PATTERN = "^\\d+$";
 }
