@@ -376,6 +376,10 @@ public class ServiceController {
      */
     @RequestMapping(value = "/subscribers", method = RequestMethod.GET)
     public JSONObject subscribers(HttpServletRequest request) {
+
+        int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
+        int pageSize = NumberUtils.toInt(WebUtils.required(request, "pageSize"));
+
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -385,7 +389,23 @@ public class ServiceController {
 
         try {
             List<Subscriber> subscribers = subscribeManager.getSubscribers(serviceName, namespaceId, aggregation);
-            result.put("subscribers", subscribers);
+
+            int start = (pageNo - 1) * pageSize;
+            int end = start + pageSize;
+
+            int count = subscribers.size();
+
+            if (start < 0) {
+                start = 0;
+            }
+
+            if (end > count) {
+                end = count;
+            }
+
+            result.put("subscribers", subscribers.subList(start, end));
+            result.put("count", count);
+
             return result;
         } catch (InterruptedException e) {
 
