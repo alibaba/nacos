@@ -190,7 +190,7 @@ public class DataSyncer {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
-                    NamingProxy.syncChecksums(keyChecksums, member.getKey());
+                    NamingProxy.syncCheckSums(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
                 Loggers.EPHEMERAL.error("timed sync task failed.", e);
