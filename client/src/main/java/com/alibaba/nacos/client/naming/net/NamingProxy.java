@@ -398,7 +398,7 @@ public class NamingProxy {
         List<String> headers = builderHeaders();
 
         String url;
-        if (curServer.startsWith(Constants.HTTPS) || curServer.startsWith(Constants.HTTP)) {
+        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
             url = curServer + api;
         } else {
             if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
