@@ -40,6 +40,8 @@ import java.util.concurrent.TimeUnit;
 public class ServerListManager {
 
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
+    private static final String HTTPS = "https://";
+    private static final String HTTP = "http://";
 
     public ServerListManager() {
         isFixed = false;
@@ -120,14 +122,14 @@ public class ServerListManager {
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
             for (String serverAddr: serverAddrsArr) {
-                if (serverAddr.startsWith(Constants.HTTPS) || serverAddr.startsWith(Constants.HTTP)) {
+                if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
                     String[] serverAddrArr = serverAddr.split(":");
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(Constants.HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
                     } else {
-                        serverAddrs.add(Constants.HTTP + serverAddr);
+                        serverAddrs.add(HTTP + serverAddr);
                     }
                 }
             }
