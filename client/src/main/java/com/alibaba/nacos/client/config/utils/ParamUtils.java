@@ -43,9 +43,7 @@ public class ParamUtils {
         int length = param.length();
         for (int i = 0; i < length; i++) {
             char ch = param.charAt(i);
-            if (Character.isLetterOrDigit(ch)) {
-            } else if (isValidChar(ch)) {
-            } else {
+            if (!Character.isLetterOrDigit(ch) && !isValidChar(ch)) {
                 return false;
             }
         }
