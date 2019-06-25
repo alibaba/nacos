@@ -30,7 +30,7 @@ public class ResponseExceptionHandler {
 
     @ExceptionHandler(NacosException.class)
     private ResponseEntity<String> handleNacosException(NacosException e) {
-        Loggers.SRV_LOG.error("got exception. {}", e.getErrorMsg(), e);
+        Loggers.SRV_LOG.warn("got exception. {}", e.getErrorMsg(), e);
         return ResponseEntity.status(e.getErrorCode()).body(e.getMessage());
     }
 
