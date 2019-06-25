@@ -102,7 +102,7 @@ public class PerformanceLoggerThread {
     }
 
     @Scheduled(cron = "0/15 * * * * ?")
-    public void collectmetrics() {
+    public void collectMetrics() {
         int serviceCount = serviceManager.getServiceCount();
         MetricsMonitor.getDomCountMonitor().set(serviceCount);
 
