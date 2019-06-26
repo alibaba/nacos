@@ -178,15 +178,22 @@ public class IoUtils {
         if (!isGzipStream(raw)) {
             return raw;
         }
+        GZIPInputStream gis = null;
+        ByteArrayOutputStream out = null;
 
-        GZIPInputStream gis
-            = new GZIPInputStream(new ByteArrayInputStream(raw));
-        ByteArrayOutputStream out
-            = new ByteArrayOutputStream();
-
-        IoUtils.copy(gis, out);
-
-        return out.toByteArray();
+        try {
+            gis = new GZIPInputStream(new ByteArrayInputStream(raw));
+            out = new ByteArrayOutputStream();
+            IoUtils.copy(gis, out);
+            return out.toByteArray();
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+            if (gis != null) {
+                gis.close();
+            }
+        }
     }
 }
 

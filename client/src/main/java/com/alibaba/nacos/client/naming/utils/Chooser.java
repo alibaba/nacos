@@ -138,7 +138,7 @@ public class Chooser<K, T> {
             }
 
             double doublePrecisionDelta = 0.0001;
-            if (index != 0 && !(Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
+            if (index == 0 || (Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
                 throw new IllegalStateException(
                     "Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
             }
