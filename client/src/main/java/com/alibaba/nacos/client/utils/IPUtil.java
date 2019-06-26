@@ -26,31 +26,23 @@ import java.util.regex.Pattern;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class IPUtil {
 
+    private static final String IPV4_PATTERN = "^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$";
+    private static final String IPV6_PATTERN = "^([\\da-fA-F]{1,4}:){7}[\\da-fA-F]{1,4}$";
+
     public static boolean isIPV4(String addr) {
-        if (null == addr) {
-            return false;
-        }
-        String rexp = "^((25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(25[0-5]|2[0-4]\\d|[01]?\\d\\d?)$";
-
-        Pattern pat = Pattern.compile(rexp);
-
-        Matcher mat = pat.matcher(addr);
-
-        boolean ipAddress = mat.find();
-        return ipAddress;
+        return isMatch(addr, IPV4_PATTERN);
     }
 
     public static boolean isIPV6(String addr) {
-        if (null == addr) {
+        return isMatch(addr, IPV6_PATTERN);
+    }
+
+    private static boolean isMatch(String data, String pattern) {
+        if (StringUtils.isBlank(data)) {
             return false;
         }
-        String rexp = "^([\\da-fA-F]{1,4}:){7}[\\da-fA-F]{1,4}$";
-
-        Pattern pat = Pattern.compile(rexp);
-
-        Matcher mat = pat.matcher(addr);
-
-        boolean ipAddress = mat.find();
-        return ipAddress;
+        Pattern pat = Pattern.compile(pattern);
+        Matcher mat = pat.matcher(data);
+        return mat.find();
     }
 }
