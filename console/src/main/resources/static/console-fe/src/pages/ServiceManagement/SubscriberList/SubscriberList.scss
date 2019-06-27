@@ -1,3 +1,4 @@
+
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,15 +12,19 @@
  * limitations under the License.
  */
 
-export const LANGUAGE_KEY = 'docsite_language';
-export const LANGUAGE_SWITCH = 'LANGUAGE_SWITCH';
-
-// TODO: 后端暂时没有统一成功失败标记
-// export const SUCCESS_RESULT_CODE = 'SUCCESS';
-
-export const REDUX_DEVTOOLS = '__REDUX_DEVTOOLS_EXTENSION__';
-
-export const GET_STATE = 'GET_STATE';
-
-export const GET_SUBSCRIBERS = 'GET_SUBSCRIBERS';
-export const REMOVE_SUBSCRIBERS = 'REMOVE_SUBSCRIBERS';
+.subscriber-list {
+  .page-title {
+    height: 30px;
+    width: 100%;
+    line-height: 30px;
+    margin: 0 0 20px;
+    padding: 0 0 0 10px;
+    border-left: 3px solid #09c;
+    color: #ccc;
+  }
+  .title-item {
+    font-size: 14px;
+    color: #000;
+    margin-right: 8px;
+  }
+}

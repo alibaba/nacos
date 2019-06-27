@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
