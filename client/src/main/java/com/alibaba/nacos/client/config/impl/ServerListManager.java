@@ -33,11 +33,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.utils.EnvUtil;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+
+import com.alibaba.nacos.client.identify.Constants;
+import com.alibaba.nacos.client.utils.*;
+import org.slf4j.Logger;
+
 
 import org.slf4j.Logger;
 
@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 public class ServerListManager {
 
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
+    private static final String HTTPS = "https://";
+    private static final String HTTP = "http://";
 
     public ServerListManager() {
         isFixed = false;
@@ -128,12 +130,16 @@ public class ServerListManager {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
-            for (String serverAddr : serverAddrsArr) {
-                String[] serverAddrArr = serverAddr.split(":");
-                if (serverAddrArr.length == 1) {
-                    serverAddrs.add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
-                } else {
+            for (String serverAddr: serverAddrsArr) {
+                if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
+                } else {
+                    String[] serverAddrArr = serverAddr.split(":");
+                    if (serverAddrArr.length == 1) {
+                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                    } else {
+                        serverAddrs.add(HTTP + serverAddr);
+                    }
                 }
             }
             serverUrls = serverAddrs;
@@ -325,6 +331,7 @@ public class ServerListManager {
         String split = "";
         for (String serverIp : serverIps) {
             sb.append(split);
+            serverIp = serverIp.replaceAll("http(s)?://", "");
             sb.append(serverIp.replaceAll(":", "_"));
             split = "-";
         }

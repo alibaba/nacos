@@ -124,7 +124,7 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
-        datums = raftStore.loadDatums(notifier);
+        raftStore.loadDatums(notifier, datums);
 
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 

@@ -92,6 +92,11 @@ public @interface NacosProperties {
     String MAX_RETRY = "maxRetry";
 
     /**
+     * The property name of "enableRemoteSyncConfig"
+     */
+    String ENABLE_REMOTE_SYNC_CONFIG = "enableRemoteSyncConfig";
+
+    /**
      * The placeholder of endpoint, the value is <code>"${nacos.endpoint:}"</code>
      */
     String ENDPOINT_PLACEHOLDER = "${" + PREFIX + ENDPOINT + ":}";
@@ -145,6 +150,11 @@ public @interface NacosProperties {
      * The placeholder of {@link NacosProperties#MAX_RETRY maxRetry}, the value is <code>"${nacos.maxRetry:}"</code>
      */
     String MAX_RETRY_PLACEHOLDER = "${" + PREFIX + MAX_RETRY + ":}";
+
+    /**
+     * The placeholder of {@link NacosProperties#ENABLE_REMOTE_SYNC_CONFIG enableRemoteSyncConfig}, the value is <code>"${nacos.enableRemoteSyncConfig:}"</code>
+     */
+    String ENABLE_REMOTE_SYNC_CONFIG_PLACEHOLDER = "${" + PREFIX + ENABLE_REMOTE_SYNC_CONFIG + "}";
 
     /**
      * The property of "endpoint"
@@ -233,5 +243,13 @@ public @interface NacosProperties {
      * @see #MAX_RETRY
      */
     String maxRetry() default MAX_RETRY_PLACEHOLDER;
+
+    /**
+     * The property of "enableRemoteSyncConfig"
+     *
+     * @return empty as default value
+     * @see #ENABLE_REMOTE_SYNC_CONFIG
+     */
+    String enableRemoteSyncConfig() default ENABLE_REMOTE_SYNC_CONFIG_PLACEHOLDER;
 
 }

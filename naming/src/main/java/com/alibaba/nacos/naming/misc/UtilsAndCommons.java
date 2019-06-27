@@ -118,6 +118,8 @@ public class UtilsAndCommons {
 
     public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
 
+    public static final String NUMBER_PATTERN = "^\\d+$";
+
     public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
 
     public static final ScheduledExecutorService SERVICE_UPDATE_EXECUTOR;

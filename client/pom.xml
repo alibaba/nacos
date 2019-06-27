@@ -111,6 +111,11 @@
             <artifactId>simpleclient</artifactId>
             <version>0.5.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
 
