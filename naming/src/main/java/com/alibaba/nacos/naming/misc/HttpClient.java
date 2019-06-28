@@ -79,7 +79,6 @@ public class HttpClient {
         builder2.setMaxConnPerRoute(-1);
         builder2.setMaxConnTotal(-1);
         builder2.disableAutomaticRetries();
-//        builder2.disableConnectionState()
 
         postClient = builder2.build();
     }
