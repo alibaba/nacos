@@ -55,4 +55,9 @@ public class UtilAndComs {
     public static final int DEFAULT_POLLING_THREAD_COUNT = Runtime.getRuntime()
         .availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2
         : 1;
+
+    public static final String HTTP = "http://";
+
+    public static final String HTTPS = "https://";
+
 }
