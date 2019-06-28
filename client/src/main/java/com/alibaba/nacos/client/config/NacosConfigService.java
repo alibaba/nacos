@@ -56,7 +56,7 @@ public class NacosConfigService implements ConfigService {
 
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
 
-    private final long POST_TIMEOUT = 3000L;
+    private static final long POST_TIMEOUT = 3000L;
 
     private static final String EMPTY = "";
 

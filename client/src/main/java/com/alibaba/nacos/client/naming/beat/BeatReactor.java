@@ -32,8 +32,6 @@ public class BeatReactor {
 
     private ScheduledExecutorService executorService;
 
-    private volatile long clientBeatInterval = 5 * 1000;
-
     private NamingProxy serverProxy;
 
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
