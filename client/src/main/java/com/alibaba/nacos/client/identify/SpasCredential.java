@@ -26,12 +26,12 @@ public interface SpasCredential {
      *
      * @return AccessKey
      */
-    public String getAccessKey();
+    String getAccessKey();
 
     /**
      * get SecretKey
      *
      * @return SecretKey
      */
-    public String getSecretKey();
+    String getSecretKey();
 }

@@ -17,7 +17,6 @@ import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Message, ConfigProvider } from '@alifd/next';
 import { DIALOG_FORM_LAYOUT, METADATA_ENTER, METADATA_SEPARATOR } from './constant';
 import MonacoEditor from 'components/MonacoEditor';
-import { replaceEnter, processMetaData } from 'utils/nacosutil';
 
 @ConfigProvider.config
 class EditInstanceDialog extends React.Component {
@@ -45,7 +44,7 @@ class EditInstanceDialog extends React.Component {
     let editInstance = _editInstance;
     const { metadata = {} } = editInstance;
     if (Object.keys(metadata).length) {
-      editInstance.metadataText = processMetaData(METADATA_ENTER)(metadata);
+      editInstance.metadataText = JSON.stringify(metadata, null, '\t');
     }
     this.setState({ editInstance, editInstanceDialogVisible: true });
   }
@@ -68,7 +67,7 @@ class EditInstanceDialog extends React.Component {
         ephemeral,
         weight,
         enabled,
-        metadata: replaceEnter(METADATA_SEPARATOR)(metadataText),
+        metadata: metadataText,
       },
       dataType: 'text',
       beforeSend: () => openLoading(),
@@ -127,7 +126,7 @@ class EditInstanceDialog extends React.Component {
           </Form.Item>
           <Form.Item label={`${locale.metadata}:`}>
             <MonacoEditor
-              language={'properties'}
+              language="json"
               width={'100%'}
               height={200}
               value={editInstance.metadataText}
