@@ -46,7 +46,7 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
 
     private CmdbService cmdbService;
 
-    ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
+    private ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
 
     private Map<String, Map<String, Entity>> entityMap = new ConcurrentHashMap<>();
 
