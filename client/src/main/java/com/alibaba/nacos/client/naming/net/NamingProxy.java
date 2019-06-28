@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.identify.Constants;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
@@ -398,14 +397,12 @@ public class NamingProxy {
         List<String> headers = builderHeaders();
 
         String url;
-        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
-            url = curServer + api;
-        } else {
-            if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
-                curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
-            }
-            url = HttpClient.getPrefix() + curServer + api;
+
+        if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
+            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
         }
+
+        url = HttpClient.getPrefix() + curServer + api;
 
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
@@ -421,8 +418,8 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
-        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:"
-            + curServer + api + ". code:"
+        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer
+            + api + ". code:"
             + result.code + " msg: " + result.content);
     }
 
@@ -559,6 +556,6 @@ public class NamingProxy {
             this.serverPort = Integer.parseInt(sp);
         }
     }
-    
+
 }
 
