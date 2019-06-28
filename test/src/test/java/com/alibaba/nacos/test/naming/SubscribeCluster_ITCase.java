@@ -196,6 +196,6 @@ public class SubscribeCluster_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 }

@@ -18,8 +18,7 @@ package com.alibaba.nacos.console.controller;
 import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

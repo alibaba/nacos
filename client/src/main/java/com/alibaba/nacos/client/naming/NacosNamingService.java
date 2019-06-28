@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -39,6 +40,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author nkorange
@@ -46,6 +48,7 @@ import java.util.*;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     private static final String DEFAULT_PORT = "8080";
+    private static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
     /**
      * Each Naming instance should have different namespace.
@@ -148,7 +151,7 @@ public class NacosNamingService implements NamingService {
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
     }
-  
+
     @Override
     public void registerInstance(String serviceName, String ip, int port) throws NacosException {
         registerInstance(serviceName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
@@ -193,12 +196,15 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
+            long instanceInterval = instance.getInstanceHeartBeatInterval();
+            beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
+
 
     @Override
     public void deregisterInstance(String serviceName, String ip, int port) throws NacosException {
@@ -223,6 +229,11 @@ public class NacosNamingService implements NamingService {
         instance.setClusterName(clusterName);
 
         deregisterInstance(serviceName, groupName, instance);
+    }
+
+    @Override
+    public void deregisterInstance(String serviceName, Instance instance) throws NacosException {
+        deregisterInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
 
     @Override
