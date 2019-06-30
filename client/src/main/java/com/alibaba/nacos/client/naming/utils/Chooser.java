@@ -138,6 +138,7 @@ public class Chooser<K, T> {
             }
 
             double doublePrecisionDelta = 0.0001;
+
             if (index == 0 || (Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
                 return;
             }
