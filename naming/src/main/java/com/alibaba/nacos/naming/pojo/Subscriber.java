@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.pojo;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @author nicholas
@@ -90,5 +91,39 @@ public class Subscriber implements Serializable {
 
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Subscriber that = (Subscriber) o;
+        return Objects.equals(addrStr, that.addrStr) &&
+            Objects.equals(agent, that.agent) &&
+            Objects.equals(app, that.app) &&
+            Objects.equals(ip, that.ip) &&
+            Objects.equals(namespaceId, that.namespaceId) &&
+            Objects.equals(serviceName, that.serviceName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(addrStr, agent, app, ip, namespaceId, serviceName);
+    }
+
+    @Override
+    public String toString() {
+        return "Subscriber{" +
+            "addrStr='" + addrStr + '\'' +
+            ", agent='" + agent + '\'' +
+            ", app='" + app + '\'' +
+            ", ip='" + ip + '\'' +
+            ", namespaceId='" + namespaceId + '\'' +
+            ", serviceName='" + serviceName + '\'' +
+            '}';
     }
 }
