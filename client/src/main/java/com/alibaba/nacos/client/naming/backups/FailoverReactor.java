@@ -21,8 +21,8 @@ import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -118,7 +118,7 @@ public class FailoverReactor {
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
                         Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
-                        List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeperator()));
+                        List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeparator()));
 
                         for (String line : lines) {
                             String line1 = line.trim();
@@ -212,6 +212,7 @@ public class FailoverReactor {
     }
 
     class DiskFileWriter extends TimerTask {
+        @Override
         public void run() {
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {

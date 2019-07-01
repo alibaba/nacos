@@ -97,6 +97,16 @@ public class DistroFilter implements Filter {
             // proxy request to other server if necessary:
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
 
+                String userAgent = req.getHeader("User-Agent");
+
+                if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
+                    // This request is sent from peer server, should not be redirected again:
+                    Loggers.SRV_LOG.error("receive invalid redirect request from peer {}", req.getRemoteAddr());
+                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                        "receive invalid redirect request from peer " + req.getRemoteAddr());
+                    return;
+                }
+
                 List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
                 while (headers.hasMoreElements()) {

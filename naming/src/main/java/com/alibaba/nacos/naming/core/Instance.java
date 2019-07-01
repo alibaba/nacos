@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
 
     private static final double MAX_WEIGHT_VALUE = 10000.0D;
-    private static final double MIN_POSTIVE_WEIGHT_VALUE = 0.01D;
+    private static final double MIN_POSITIVE_WEIGHT_VALUE = 0.01D;
     private static final double MIN_WEIGHT_VALUE = 0.00D;
 
     private volatile long lastBeat = System.currentTimeMillis();
@@ -48,10 +48,13 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     private String app;
 
-    public static final Pattern IP_PATTERN
+    private static final Pattern IP_PATTERN
         = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
 
-    public static final String SPLITER = "_";
+    private static final Pattern ONLY_DIGIT_AND_DOT
+        = Pattern.compile("(\\d|\\.)+");
+
+    private static final String SPLITER = "_";
 
     public Instance() {
     }
@@ -188,8 +191,8 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             ip.setWeight(MAX_WEIGHT_VALUE);
         }
 
-        if (ip.getWeight() < MIN_POSTIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
-            ip.setWeight(MIN_POSTIVE_WEIGHT_VALUE);
+        if (ip.getWeight() < MIN_POSITIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
+            ip.setWeight(MIN_POSITIVE_WEIGHT_VALUE);
         } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
             ip.setWeight(0.0D);
         }
@@ -296,10 +299,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
     }
 
     public boolean validate() {
-
-        Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
-        if (!matcher.matches()) {
-            return false;
+        if (onlyContainsDigitAndDot()) {
+            Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
+            if (!matcher.matches()) {
+                return false;
+            }
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
@@ -307,6 +311,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         }
 
         return true;
+    }
+
+    private boolean onlyContainsDigitAndDot() {
+        Matcher matcher = ONLY_DIGIT_AND_DOT.matcher(getIp());
+        return matcher.matches();
     }
 
     @Override
