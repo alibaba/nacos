@@ -41,6 +41,8 @@ import ListeningToQuery from './pages/ConfigurationManagement/ListeningToQuery';
 import ConfigurationManagement from './pages/ConfigurationManagement/ConfigurationManagement';
 import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
+import SubscriberList from './pages/ServiceManagement/SubscriberList';
+import ClusterNodeList from './pages/ClusterManagement/ClusterNodeList';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -81,6 +83,8 @@ const MENU = [
   { path: '/configurationManagement', component: ConfigurationManagement },
   { path: '/serviceManagement', component: ServiceList },
   { path: '/serviceDetail', component: ServiceDetail },
+  { path: '/subscriberList', component: SubscriberList },
+  { path: '/clusterManagement', component: ClusterNodeList },
 ];
 
 @connect(

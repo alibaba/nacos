@@ -187,10 +187,10 @@ public class ConfigSubService {
                  */
                 if (result.code == HttpURLConnection.HTTP_OK) {
                     String json = result.content;
-                    Object resultObj = JSONUtils.deserializeObject(json,
+                    SampleResult resultObj = JSONUtils.deserializeObject(json,
                         new TypeReference<SampleResult>() {
                         });
-                    return (SampleResult)resultObj;
+                    return resultObj;
 
                 } else {
 

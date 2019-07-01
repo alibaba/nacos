@@ -16,11 +16,9 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.naming.acl.AuthChecker;
-import com.alibaba.nacos.naming.controllers.*;
-import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.*;
@@ -30,8 +28,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author nkorange

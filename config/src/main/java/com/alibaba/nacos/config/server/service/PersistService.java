@@ -94,6 +94,7 @@ public class PersistService {
 
     static final class ConfigInfoWrapperRowMapper implements
         RowMapper<ConfigInfoWrapper> {
+        @Override
         public ConfigInfoWrapper mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoWrapper info = new ConfigInfoWrapper();
@@ -128,6 +129,7 @@ public class PersistService {
 
     static final class ConfigInfoBetaWrapperRowMapper implements
         RowMapper<ConfigInfoBetaWrapper> {
+        @Override
         public ConfigInfoBetaWrapper mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoBetaWrapper info = new ConfigInfoBetaWrapper();
@@ -163,6 +165,7 @@ public class PersistService {
 
     static final class ConfigInfoTagWrapperRowMapper implements
         RowMapper<ConfigInfoTagWrapper> {
+        @Override
         public ConfigInfoTagWrapper mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoTagWrapper info = new ConfigInfoTagWrapper();
@@ -198,6 +201,7 @@ public class PersistService {
 
     static final class ConfigInfoRowMapper implements
         RowMapper<ConfigInfo> {
+        @Override
         public ConfigInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfo info = new ConfigInfo();
 
@@ -227,6 +231,7 @@ public class PersistService {
 
     static final class ConfigKeyRowMapper implements
         RowMapper<ConfigKey> {
+        @Override
         public ConfigKey mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigKey info = new ConfigKey();
 
@@ -239,6 +244,7 @@ public class PersistService {
     }
 
     static final class ConfigAdvanceInfoRowMapper implements RowMapper<ConfigAdvanceInfo> {
+        @Override
         public ConfigAdvanceInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigAdvanceInfo info = new ConfigAdvanceInfo();
             info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
@@ -255,6 +261,7 @@ public class PersistService {
     }
 
     static final class ConfigAllInfoRowMapper implements RowMapper<ConfigAllInfo> {
+        @Override
         public ConfigAllInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigAllInfo info = new ConfigAllInfo();
             info.setDataId(rs.getString("data_id"));
@@ -291,6 +298,7 @@ public class PersistService {
 
     static final class ConfigInfo4BetaRowMapper implements
         RowMapper<ConfigInfo4Beta> {
+        @Override
         public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfo4Beta info = new ConfigInfo4Beta();
 
@@ -320,6 +328,7 @@ public class PersistService {
 
     static final class ConfigInfo4TagRowMapper implements
         RowMapper<ConfigInfo4Tag> {
+        @Override
         public ConfigInfo4Tag mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfo4Tag info = new ConfigInfo4Tag();
 
@@ -349,6 +358,7 @@ public class PersistService {
 
     static final class ConfigInfoBaseRowMapper implements
         RowMapper<ConfigInfoBase> {
+        @Override
         public ConfigInfoBase mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfoBase info = new ConfigInfoBase();
 
@@ -371,6 +381,7 @@ public class PersistService {
 
     static final class ConfigInfoAggrRowMapper implements
         RowMapper<ConfigInfoAggr> {
+        @Override
         public ConfigInfoAggr mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoAggr info = new ConfigInfoAggr();
@@ -385,6 +396,7 @@ public class PersistService {
     }
 
     static final class ConfigInfoChangedRowMapper implements RowMapper<ConfigInfoChanged> {
+        @Override
         public ConfigInfoChanged mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfoChanged info = new ConfigInfoChanged();
             info.setDataId(rs.getString("data_id"));
@@ -395,6 +407,7 @@ public class PersistService {
     }
 
     static final class ConfigHistoryRowMapper implements RowMapper<ConfigHistoryInfo> {
+        @Override
         public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
             configHistoryInfo.setId(rs.getLong("nid"));
@@ -411,6 +424,7 @@ public class PersistService {
     }
 
     static final class ConfigHistoryDetailRowMapper implements RowMapper<ConfigHistoryInfo> {
+        @Override
         public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
             configHistoryInfo.setId(rs.getLong("nid"));
@@ -429,9 +443,8 @@ public class PersistService {
         }
     }
 
-    ;
-
     static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
+        @Override
         public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             TenantInfo info = new TenantInfo();
             info.setTenantId(rs.getString("tenant_id"));
@@ -442,6 +455,7 @@ public class PersistService {
     }
 
     static final class UserRowMapper implements RowMapper<User> {
+        @Override
         public User mapRow(ResultSet rs, int rowNum) throws SQLException {
             User user = new User();
             user.setUsername(rs.getString("username"));
@@ -799,6 +813,7 @@ public class PersistService {
 
         try {
             this.jt.update(sql, new PreparedStatementSetter() {
+                @Override
                 public void setValues(PreparedStatement ps) throws SQLException {
                     int index = 1;
                     ps.setString(index++, dataId);
@@ -822,6 +837,7 @@ public class PersistService {
 
         try {
             this.jt.update(sql, new PreparedStatementSetter() {
+                @Override
                 public void setValues(PreparedStatement ps) throws SQLException {
                     int index = 1;
                     ps.setString(index++, dataId);
@@ -2637,6 +2653,7 @@ public class PersistService {
 
         try {
             jt.update(new PreparedStatementCreator() {
+                @Override
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                     ps.setString(1, configInfo.getDataId());
