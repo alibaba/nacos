@@ -52,7 +52,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
     /**
      * used to JsonAdapter
      */
-    public void jsonAdapterCallback(SerializeWriter writer){
+    public void jsonAdapterCallback(SerializeWriter writer) {
         // do nothing
     }
 
@@ -112,7 +112,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return Collections.emptyMap();
             }
 
-            Map<String, String> headerMap = new HashMap<String, String>(16);
+            Map<String, String> headerMap = new HashMap<>(16);
             for (String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
                 String[] splits = s.split(":");
                 if (splits.length != 2) {
@@ -147,7 +147,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Http other = (Http)obj;
+            Http other = (Http) obj;
 
             if (!strEquals(type, other.getType())) {
                 return false;
@@ -259,7 +259,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Mysql other = (Mysql)obj;
+            Mysql other = (Mysql) obj;
 
             if (!strEquals(user, other.getUser())) {
                 return false;
