@@ -169,10 +169,9 @@ public class AsyncNotifyService extends AbstractEventListener {
 
     class AsyncNotifyCallBack implements FutureCallback<HttpResponse> {
 
-        public AsyncNotifyCallBack(CloseableHttpAsyncClient httpclient, NotifySingleTask task
-        ) {
+        public AsyncNotifyCallBack(CloseableHttpAsyncClient httpClient, NotifySingleTask task) {
             this.task = task;
-            this.httpclient = httpclient;
+            this.httpClient = httpClient;
         }
 
         @Override
@@ -241,7 +240,7 @@ public class AsyncNotifyService extends AbstractEventListener {
         }
 
         private NotifySingleTask task;
-        private CloseableHttpAsyncClient httpclient;
+        private CloseableHttpAsyncClient httpClient;
     }
 
     static class NotifySingleTask extends NotifyTask {
