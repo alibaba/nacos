@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -69,6 +70,16 @@ public class PersistService {
     private DynamicDataSource dynamicDataSource;
 
     private DataSourceService dataSourceService;
+
+    private static final String SQL_FIND_ALL_CONFIG_INFO = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
+
+    private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
+
+    /**
+     * @author klw
+     * @Description: constant variables
+     */
+    public static final String SPOT = ".";
 
     @PostConstruct
     public void init() {
@@ -3270,10 +3281,9 @@ public class PersistService {
      * @param group
      * @return Collection of ConfigInfo objects
      */
-    public List<ConfigInfo> findAllConfigInfo4eExport(final String group, final String tenant,
+    public List<ConfigInfo> findAllConfigInfo4Export(final String group, final String tenant,
                                                 final String appName, final String ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        String sql = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
         StringBuilder where = new StringBuilder(" where ");
         List<String> paramList = new ArrayList<>();
         if(StringUtils.isNotBlank(ids)){
@@ -3291,7 +3301,7 @@ public class PersistService {
             }
         }
         try {
-            return this.jt.query(sql + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -3326,32 +3336,12 @@ public class PersistService {
 
             // simple judgment of file type based on suffix
             String type = null;
-            if (configInfo.getDataId().contains(".")) {
-                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(".") + 1).toLowerCase();
-                switch (extName) {
-                    case "yml":
-                    case "yaml":
-                        type = "yaml";
-                        break;
-                    case "txt":
-                    case "text":
-                        type = "text";
-                        break;
-                    case "json":
-                        type = "json";
-                        break;
-                    case "xml":
-                        type = "xml";
-                        break;
-                    case "htm":
-                    case "html":
-                        type = "html";
-                        break;
-                    case "properties":
-                        type = "Properties";
-                        break;
-                    default:
-                        break;
+            if (configInfo.getDataId().contains(SPOT)) {
+                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toLowerCase();
+                try{
+                    type = FileTypeEnum.valueOf(extName).getFileType();
+                }catch (Exception ex){
+                    type = FileTypeEnum.TEXT.getFileType();
                 }
             }
             if (configAdvanceInfo == null) {
@@ -3414,10 +3404,9 @@ public class PersistService {
      */
     public int tenantInfoCountByTenantId(String tenantId) {
         Assert.hasText(tenantId, "tenantId can not be null");
-        String sql = "select count(1) from tenant_info where tenant_id = ?";
         List<String> paramList = new ArrayList<>();
         paramList.add(tenantId);
-        Integer result = this.jt.queryForObject(sql, paramList.toArray(), Integer.class);
+        Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, paramList.toArray(), Integer.class);
         if (result == null) {
             return 0;
         }

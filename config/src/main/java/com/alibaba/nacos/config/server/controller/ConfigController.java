@@ -18,6 +18,8 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
+import com.alibaba.nacos.config.server.result.ResultBuilder;
+import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
@@ -25,6 +27,7 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -62,6 +65,12 @@ public class ConfigController {
     private static final Logger log = LoggerFactory.getLogger(ConfigController.class);
 
     private static final String NAMESPACE_PUBLIC_KEY = "public";
+
+    public static final String EXPORT_CONFIG_FILE_NAME = "nacos_config_export_";
+
+    public static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
+
+    public static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
     private final transient ConfigServletInner inner;
 
@@ -398,8 +407,9 @@ public class ConfigController {
                                                @RequestParam(value = "tenant", required = false,
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
-        String idsStr = idList2String(ids);
-        List<ConfigInfo> dataList = persistService.findAllConfigInfo4eExport(group, tenant, appName, idsStr);
+        ids.removeAll(Collections.singleton(null));
+        String idsStr = Joiner.on(",").join(ids);
+        List<ConfigInfo> dataList = persistService.findAllConfigInfo4Export(group, tenant, appName, idsStr);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
         for(ConfigInfo ci : dataList){
@@ -425,7 +435,7 @@ public class ConfigController {
         }
 
         HttpHeaders headers = new HttpHeaders();
-        String fileName="nacos_config_export_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss") + ".zip";
+        String fileName=EXPORT_CONFIG_FILE_NAME + DateFormatUtils.format(new Date(), EXPORT_CONFIG_FILE_NAME_DATE_FORMAT) + EXPORT_CONFIG_FILE_NAME_EXT;
         headers.add("Content-Disposition", "attachment;filename="+fileName);
         return new ResponseEntity<byte[]>(ZipUtils.zip(zipItemList), headers, HttpStatus.OK);
     }
@@ -438,16 +448,12 @@ public class ConfigController {
                                                                   @RequestParam(value = "policy", defaultValue = "ABORT")
                                                                           SameConfigPolicy policy,
                                                                   MultipartFile file) throws NacosException {
-        RestResult<Map<String, Object>> rr = new RestResult<>();
         Map<String, Object> failedData = new HashMap<>(4);
-        rr.setData(failedData);
 
         if(StringUtils.isNotBlank(namespace)){
             if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
-                rr.setCode(5001);
                 failedData.put("succCount", 0);
-                rr.setMessage("namespace does not exist");
-                return rr;
+                return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
             }
         }
         List<ConfigInfo> configInfoList = null;
@@ -461,10 +467,8 @@ public class ConfigController {
                 for(String metaDataItem : metaDataArr){
                     String[] metaDataItemArr = metaDataItem.split("=");
                     if(metaDataItemArr.length != 2){
-                        rr.setCode(5002);
                         failedData.put("succCount", 0);
-                        rr.setMessage("The imported metadata file is illegal");
-                        return rr;
+                        return ResultBuilder.buildResult(ResultCodeEnum.METADATA_ILLEGAL, failedData);
                     }
                     metaDataMap.put(metaDataItemArr[0], metaDataItemArr[1]);
                 }
@@ -475,10 +479,8 @@ public class ConfigController {
                 for(ZipUtils.ZipItem item : itemList){
                     String[] groupAdnDataId = item.getItemName().split("/");
                     if(!item.getItemName().contains("/") || groupAdnDataId.length != 2){
-                        rr.setCode(5003);
                         failedData.put("succCount", 0);
-                        rr.setMessage("No legitimate data was read, please check the imported data file");
-                        return rr;
+                        return ResultBuilder.buildResult(ResultCodeEnum.DATA_VALIDATION_FAILED, failedData);
                     }
                     String group = groupAdnDataId[0];
                     String dataId = groupAdnDataId[1];
@@ -500,17 +502,13 @@ public class ConfigController {
                 }
             }
         } catch (IOException e) {
-            rr.setCode(5004);
             failedData.put("succCount", 0);
-            rr.setMessage("parsing data failed");
             log.error("parsing data failed", e);
-            return rr;
+            return ResultBuilder.buildResult(ResultCodeEnum.PARSING_DATA_FAILED, failedData);
         }
         if (configInfoList == null || configInfoList.isEmpty()) {
-            rr.setCode(5005);
             failedData.put("succCount", 0);
-            rr.setMessage("data is empty");
-            return rr;
+            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
@@ -524,10 +522,7 @@ public class ConfigController {
                 configInfo.getTenant(), requestIpApp, time.getTime(),
                 LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
-        rr.setCode(200);
-        rr.setData(saveResult);
-        rr.setMessage("import ok");
-        return rr;
+        return ResultBuilder.buildSuccessResult("导入成功", saveResult);
     }
 
     @RequestMapping(params = "clone=true", method = RequestMethod.GET)
@@ -539,27 +534,22 @@ public class ConfigController {
                                                        @RequestParam(value = "ids", required = true) List<Long> ids,
                                                        @RequestParam(value = "policy", defaultValue = "ABORT")
                                                            SameConfigPolicy policy) throws NacosException {
-        RestResult<Map<String, Object>> rr = new RestResult<>();
         Map<String, Object> failedData = new HashMap<>(4);
-        rr.setData(failedData);
 
         if(NAMESPACE_PUBLIC_KEY.equals(namespace.toLowerCase())){
             namespace = "";
         } else if(persistService.tenantInfoCountByTenantId(namespace) <= 0){
-            rr.setCode(5001);
             failedData.put("succCount", 0);
-            rr.setMessage("namespace does not exist");
-            return rr;
+            return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
 
-        String idsStr = idList2String(ids);
-        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4eExport(null, null, null, idsStr);
+        ids.removeAll(Collections.singleton(null));
+        String idsStr = Joiner.on(",").join(ids);
+        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4Export(null, null, null, idsStr);
 
         if(queryedDataList == null || queryedDataList.isEmpty()){
-            rr.setCode(5005);
             failedData.put("succCount", 0);
-            rr.setMessage("data is empty");
-            return rr;
+            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
 
         List<ConfigInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
@@ -577,10 +567,8 @@ public class ConfigController {
         }
 
         if (configInfoList4Clone.isEmpty()) {
-            rr.setCode(5005);
             failedData.put("succCount", 0);
-            rr.setMessage("data is empty");
-            return rr;
+            return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
@@ -594,23 +582,7 @@ public class ConfigController {
                 configInfo.getTenant(), requestIpApp, time.getTime(),
                 LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
-        rr.setCode(200);
-        rr.setData(saveResult);
-        rr.setMessage("import ok");
-        return rr;
+        return ResultBuilder.buildSuccessResult("导入成功", saveResult);
     }
 
-    private String idList2String(List<Long> ids){
-        StringBuilder idsSb = new StringBuilder();
-        if(ids != null && !ids.isEmpty()){
-            for(int i = 0; i < ids.size(); i++){
-                Long id = ids.get(i);
-                idsSb.append(id);
-                if((i + 1) < ids.size()){
-                    idsSb.append(",");
-                }
-            }
-        }
-        return idsSb.toString();
-    }
 }

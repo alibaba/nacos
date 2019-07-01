@@ -36,6 +36,6 @@ public enum SameConfigPolicy {
     /**
      * @Description: overwrite on duplicate
      */
-    OVERWRITE;
+    OVERWRITE
 
 }
