@@ -15,22 +15,31 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
+
 import com.alibaba.nacos.client.identify.Constants;
 import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.net.HttpURLConnection;
-import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+
+import org.slf4j.Logger;
 
 /**
  * Serverlist Manager
@@ -291,9 +300,7 @@ public class ServerListManager {
                 List<String> lines = IOUtils.readLines(new StringReader(httpResult.content));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
-                    if (null == serverAddr || serverAddr.trim().isEmpty()) {
-                        continue;
-                    } else {
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(serverAddr)) {
                         String[] ipPort = serverAddr.trim().split(":");
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {

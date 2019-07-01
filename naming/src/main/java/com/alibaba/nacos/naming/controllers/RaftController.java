@@ -45,6 +45,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ public class RaftController {
     @RequestMapping(value = "/beat", method = RequestMethod.POST)
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        String entity = new String(IoUtils.tryDecompress(request.getInputStream()), "UTF-8");
+        String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
 
