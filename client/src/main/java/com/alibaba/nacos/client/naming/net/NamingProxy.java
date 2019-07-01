@@ -218,6 +218,7 @@ public class NamingProxy {
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
+        params.put("enable", String.valueOf(instance.isEnabled()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
