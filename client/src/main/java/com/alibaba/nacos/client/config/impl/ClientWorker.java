@@ -305,7 +305,6 @@ public class ClientWorker {
             cacheData.setContent(content);
             LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
                 agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-            return;
         }
     }
 
