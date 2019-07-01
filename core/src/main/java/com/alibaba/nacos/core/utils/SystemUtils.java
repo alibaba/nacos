@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +43,7 @@ public class SystemUtils {
     /**
      * Standalone mode or not
      */
-    public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+    public static final boolean STANDALONE_MODE =  Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     public static final String STANDALONE_MODE_ALONE = "standalone";
     public static final String STANDALONE_MODE_CLUSTER = "cluster";
@@ -50,7 +51,7 @@ public class SystemUtils {
     /**
      * server
      */
-    public static String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
+    public static final String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
 
     public static final String FUNCTION_MODE_CONFIG = "config";
     public static final String FUNCTION_MODE_NAMING = "naming";
@@ -127,7 +128,8 @@ public class SystemUtils {
         Reader reader = null;
 
         try {
-            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8);
+            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+                StandardCharsets.UTF_8);
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {

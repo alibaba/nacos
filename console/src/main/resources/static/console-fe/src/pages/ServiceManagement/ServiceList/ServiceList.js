@@ -29,6 +29,7 @@ import {
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
+import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
 
 import './ServiceList.scss';
 
@@ -48,6 +49,7 @@ class ServiceList extends React.Component {
   constructor(props) {
     super(props);
     this.editServiceDialog = React.createRef();
+    this.showcode = React.createRef();
     this.state = {
       loading: false,
       total: 0,
@@ -69,8 +71,10 @@ class ServiceList extends React.Component {
 
   openEditServiceDialog() {
     try {
-      this.editServiceDialog.current.getInstance().show(this.state.service);
-    } catch (error) {}
+      this.editServiceDialog.current.getInstance()
+        .show(this.state.service);
+    } catch (error) {
+    }
   }
 
   queryServiceList() {
@@ -103,6 +107,21 @@ class ServiceList extends React.Component {
   getQueryLater = () => {
     setTimeout(() => this.queryServiceList());
   };
+
+  showcode = () => {
+    setTimeout(() => this.queryServiceList());
+  };
+
+  /**
+   *
+   * Added method to open sample code window
+   * @author yongchao9  #2019年05月18日 下午5:46:28
+   *
+   */
+  showSampleCode(record) {
+    this.showcode.current.getInstance()
+      .openDialog(record);
+  }
 
   deleteService(service) {
     const { locale = {} } = this.props;
@@ -138,6 +157,7 @@ class ServiceList extends React.Component {
 
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
+
   render() {
     const { locale = {} } = this.props;
     const {
@@ -149,6 +169,7 @@ class ServiceList extends React.Component {
       create,
       operation,
       detail,
+      sampleCode,
       deleteAction,
     } = locale;
     const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
@@ -160,7 +181,10 @@ class ServiceList extends React.Component {
       <div className="main-container service-management">
         <Loading
           shape="flower"
-          style={{ position: 'relative', width: '100%' }}
+          style={{
+            position: 'relative',
+            width: '100%',
+          }}
           visible={this.state.loading}
           tip="Loading..."
           color="#333"
@@ -177,7 +201,13 @@ class ServiceList extends React.Component {
             <span className="title-item">{nowNamespaceName}</span>
             <span className="title-item">{nowNamespaceId}</span>
           </h3>
-          <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
+          <Row
+            className="demo-row"
+            style={{
+              marginBottom: 10,
+              padding: 0,
+            }}
+          >
             <Col span="24">
               <Form inline field={this.field}>
                 <FormItem label={serviceName}>
@@ -227,24 +257,32 @@ class ServiceList extends React.Component {
                   title={operation}
                   align="center"
                   cell={(value, index, record) => (
+                    // @author yongchao9  #2019年05月18日 下午5:46:28
+                    /* Add a link to view "sample code"
+                     replace the original button with a label,
+                     which is consistent with the operation style in configuration management.
+                     */
                     <div>
-                      <Button
-                        type="normal"
+                      <a
                         onClick={() =>
                           this.props.history.push(
-                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`
-                          )
-                        }
+                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`,
+                          )}
+                        style={{ marginRight: 5 }}
                       >
                         {detail}
-                      </Button>
-                      <Button
-                        style={{ marginLeft: 12 }}
-                        type="normal"
+                      </a>
+                      <span style={{ marginRight: 5 }}>|</span>
+                      <a style={{ marginRight: 5 }} onClick={() => this.showSampleCode(record)}>
+                        {sampleCode}
+                      </a>
+                      <span style={{ marginRight: 5 }}>|</span>
+                      <a
                         onClick={() => this.deleteService(record)}
+                        style={{ marginRight: 5 }}
                       >
                         {deleteAction}
-                      </Button>
+                      </a>
                     </div>
                   )}
                 />
@@ -252,7 +290,11 @@ class ServiceList extends React.Component {
             </Col>
           </Row>
           {this.state.total > this.state.pageSize && (
-            <div style={{ marginTop: 10, textAlign: 'right' }}>
+            <div style={{
+              marginTop: 10,
+              textAlign: 'right',
+            }}
+            >
               <Pagination
                 current={this.state.currentPage}
                 total={this.state.total}
@@ -264,6 +306,7 @@ class ServiceList extends React.Component {
             </div>
           )}
         </Loading>
+        <ShowServiceCodeing ref={this.showcode} />
         <EditServiceDialog
           ref={this.editServiceDialog}
           openLoading={() => this.openLoading()}

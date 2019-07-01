@@ -41,7 +41,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
 @Component("serverListManager")
 public class ServerListManager {
 
-    public static final int STABLE_PERIOD = 60 * 1000;
+    private static final int STABLE_PERIOD = 60 * 1000;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -56,7 +56,7 @@ public class ServerListManager {
 
     private Set<String> liveSites = new HashSet<>();
 
-    public final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+    private final static String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
     private long lastHealthServerMillis = 0L;
 
@@ -74,7 +74,7 @@ public class ServerListManager {
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
     }
 
-    public List<Server> refreshServerList() {
+    private List<Server> refreshServerList() {
 
         List<Server> result = new ArrayList<>();
 
@@ -111,12 +111,12 @@ public class ServerListManager {
 
                 String ip;
                 int port;
-                if (serverList.get(0).contains(UtilsAndCommons.IP_PORT_SPLITER)) {
-
-                    ip = serverList.get(i).split(UtilsAndCommons.IP_PORT_SPLITER)[0];
-                    port = Integer.parseInt(serverList.get(i).split(UtilsAndCommons.IP_PORT_SPLITER)[1]);
+                String server = serverList.get(i);
+                if (server.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                    ip = server.split(UtilsAndCommons.IP_PORT_SPLITER)[0];
+                    port = Integer.parseInt(server.split(UtilsAndCommons.IP_PORT_SPLITER)[1]);
                 } else {
-                    ip = serverList.get(i);
+                    ip = server;
                     port = RunningConfig.getServerPort();
                 }
 
