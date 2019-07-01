@@ -866,6 +866,7 @@ class ConfigurationManagement extends React.Component {
 
   processImportAndCloneResult(ret, locale, confirm, isImport) {
     const resultCode = ret.code;
+    console.log(ret);
     if (resultCode === 200) {
       confirm.hide();
       if (ret.data.failData && ret.data.failData.length > 0) {
@@ -887,7 +888,7 @@ class ConfigurationManagement extends React.Component {
               </div>
               <div>
                 <h5>
-                  {locale.unprocessedEntries}: {ret.data.skipData ? ret.data.skipData : 0}
+                  {locale.unprocessedEntries}: {ret.data.skipData ? ret.data.skipData.length : 0}
                 </h5>
                 <Table dataSource={ret.data.skipData}>
                   <Table.Column title="Data Id" dataIndex="dataId" />
@@ -923,13 +924,13 @@ class ConfigurationManagement extends React.Component {
       this.getData();
     } else {
       let alertContent = isImport ? locale.importFailMsg : locale.cloneFailMsg;
-      if (resultCode === 5001) {
+      if (resultCode === 100001) {
         alertContent = locale.namespaceNotExist;
       }
-      if (resultCode === 5002) {
+      if (resultCode === 100002) {
         alertContent = locale.metadataIllegal;
       }
-      if (resultCode === 5003 || resultCode === 5004 || resultCode === 5005) {
+      if (resultCode === 100003 || resultCode === 100004 || resultCode === 100005) {
         alertContent = locale.importDataValidationError;
       }
       Dialog.alert({
