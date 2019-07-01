@@ -109,6 +109,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             return;
         }
         checkTask = new HealthCheckTask(this);
+
         HealthCheckReactor.scheduleCheck(checkTask);
         inited = true;
     }
@@ -299,7 +300,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             mapa.put(o.getIp() + ":" + o.getPort(), o);
         }
 
-        List<Instance> result = new ArrayList<Instance>();
+        List<Instance> result = new ArrayList<>();
 
         for (Instance o : a) {
             if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
