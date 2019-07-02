@@ -19,8 +19,7 @@ matrix:
       env: CUSTOM_JDK="oraclejdk8"
 
 jdk:
-  - openjdk10
-  - openjdk9
+  - openjdk11
   - openjdk8
 
 before_install:
