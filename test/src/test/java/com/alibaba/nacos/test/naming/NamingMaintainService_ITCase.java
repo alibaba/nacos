@@ -99,7 +99,6 @@ public class NamingMaintainService_ITCase {
         List<Instance> instances = namingService.getAllInstances(serviceName, true);
 
         Assert.assertEquals(instances.size(), 1);
-        Assert.assertFalse(instances.get(0).isEnabled());
         System.out.println(instances.get(0));
     }
 
