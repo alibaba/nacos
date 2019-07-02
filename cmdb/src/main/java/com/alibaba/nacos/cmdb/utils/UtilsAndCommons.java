@@ -20,11 +20,12 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
+ * @since 0.7.0
  */
 public class UtilsAndCommons {
 
-    public static final String NACOS_SERVER_VERSION = "/v1";
+    private static final String NACOS_SERVER_VERSION = "/v1";
 
     public static final String NACOS_CMDB_CONTEXT = NACOS_SERVER_VERSION + "/cmdb";
 

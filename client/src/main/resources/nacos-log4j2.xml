@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <RollingFile name="CONFIG_LOG_FILE" fileName="${sys:nacos.logging.path}/config.log"
+                     filePattern="${sys:nacos.logging.path}/config.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+        </RollingFile>
+
+        <RollingFile name="NAMING_LOG_FILE" fileName="${sys:nacos.logging.path}/naming.log"
+                     filePattern="${sys:nacos.logging.path}/naming.log.%d{yyyy-MM-dd}.%i">
+            <PatternLayout>
+                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</Pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Logger name="com.alibaba.nacos.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Logger>
+
+        <Logger name="com.alibaba.nacos.client.config" level="${sys:com.alibaba.nacos.config.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Logger>
+
+        <Logger name="com.alibaba.nacos.client.naming" level="${sys:com.alibaba.nacos.naming.log.level:-info}"
+                additivity="false">
+            <AppenderRef ref="NAMING_LOG_FILE"/>
+        </Logger>
+        <Root level="INFO">
+            <AppenderRef ref="CONFIG_LOG_FILE"/>
+        </Root>
+    </Loggers>
+</Configuration>

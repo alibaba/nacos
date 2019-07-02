@@ -23,6 +23,7 @@ class HistoryDetail extends React.Component {
   static displayName = 'HistoryDetail';
 
   static propTypes = {
+    locale: PropTypes.object,
     history: PropTypes.object,
   };
 

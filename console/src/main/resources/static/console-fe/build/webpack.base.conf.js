@@ -31,12 +31,15 @@ module.exports = {
     path: path.resolve(__dirname, '../dist'),
   },
   resolve: {
-    extensions: ['.js', '.jsx', '.json'],
+    extensions: ['.js', '.jsx', '.json', '.ts', '.tsx'],
     alias: {
       '@': resolve('src'),
       utils: resolve('src/utils'),
       components: resolve('src/components'),
     },
+  },
+  node: {
+    fs: 'empty'
   },
   module: {
     rules: [
@@ -51,7 +54,7 @@ module.exports = {
         include: [resolve('src')],
       },
       {
-        test: /\.(js|jsx)$/,
+        test: /\.(js|jsx|ts|tsx)$/,
         include: [resolve('src')],
         use: ['babel-loader'],
       },

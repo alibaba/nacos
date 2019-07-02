@@ -9,3 +9,8 @@
 # misc
 .DS_Store
 npm-debug.log*
+
+# test
+test/uirecorder.log
+test/reports
+test/screenshots/*

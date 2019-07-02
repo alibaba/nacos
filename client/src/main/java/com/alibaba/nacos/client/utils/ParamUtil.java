@@ -15,13 +15,14 @@
  */
 package com.alibaba.nacos.client.utils;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
+import org.slf4j.Logger;
+
 import java.io.InputStream;
 import java.util.Properties;
-
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.config.utils.ParamUtils;
-import com.alibaba.nacos.client.logger.Logger;
+import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 /**
  * manage param tool
@@ -29,8 +30,12 @@ import com.alibaba.nacos.client.logger.Logger;
  * @author nacos
  */
 public class ParamUtil {
-    final static public Logger log = LogUtils.logger(ParamUtils.class);
 
+    private final static Logger LOGGER = LogUtils.logger(ParamUtil.class);
+
+    public final static boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
+
+    private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
     private static String defaultContextPath = "nacos";
     private static String defaultNodesPath = "serverlist";
     private static String appKey;
@@ -49,7 +54,7 @@ public class ParamUtil {
         String defaultServerPortTmp = "8848";
 
         defaultServerPort = System.getProperty("nacos.server.port", defaultServerPortTmp);
-        log.info("settings", "[req-serv] nacos-server port:{}", defaultServerPort);
+        LOGGER.info("[settings] [req-serv] nacos-server port:{}", defaultServerPort);
 
         String tmp = "1000";
         try {
@@ -57,10 +62,10 @@ public class ParamUtil {
             connectTimeout = Integer.parseInt(tmp);
         } catch (NumberFormatException e) {
             final String msg = "[http-client] invalid connect timeout:" + tmp;
-            log.error("settings", "NACOS-XXXX", msg, e);
+            LOGGER.error("[settings] " + msg, e);
             throw new IllegalArgumentException(msg, e);
         }
-        log.info("settings", "[http-client] connect timeout:{}", connectTimeout);
+        LOGGER.info("[settings] [http-client] connect timeout:{}", connectTimeout);
 
         try {
             InputStream in = HttpSimpleClient.class.getClassLoader()
@@ -72,16 +77,16 @@ public class ParamUtil {
             if (val != null) {
                 clientVersion = val;
             }
-            log.info("NACOS_CLIENT_VERSION:{}", clientVersion);
+            LOGGER.info("NACOS_CLIENT_VERSION: {}", clientVersion);
         } catch (Exception e) {
-            log.error("500", "read application.properties", e);
+            LOGGER.error("[500] read application.properties", e);
         }
 
         try {
             perTaskConfigSize = Double.valueOf(System.getProperty("PER_TASK_CONFIG_SIZE", "3000"));
-            log.warn("PER_TASK_CONFIG_SIZE:", perTaskConfigSize);
+            LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
         } catch (Throwable t) {
-            log.error("PER_TASK_CONFIG_SIZE", "PER_TASK_CONFIG_SIZE invalid", t);
+            LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", t);
         }
     }
 
@@ -145,4 +150,46 @@ public class ParamUtil {
         ParamUtil.defaultNodesPath = defaultNodesPath;
     }
 
+
+    public static String parsingEndpointRule(String endpointUrl) {
+        // 配置文件中输入的话，以 ENV 中的优先，
+        if (endpointUrl == null
+            || !PATTERN.matcher(endpointUrl).find()) {
+            // skip retrieve from system property and retrieve directly from system env
+            String endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrlSource)) {
+                endpointUrl = endpointUrlSource;
+            }
+
+            return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+        }
+
+        endpointUrl = endpointUrl.substring(endpointUrl.indexOf("${") + 2,
+            endpointUrl.lastIndexOf("}"));
+        int defStartOf = endpointUrl.indexOf(":");
+        String defaultEndpointUrl = null;
+        if (defStartOf != -1) {
+            defaultEndpointUrl = endpointUrl.substring(defStartOf + 1);
+            endpointUrl = endpointUrl.substring(0, defStartOf);
+        }
+
+        String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(System.getProperty(endpointUrl,
+            System.getenv(endpointUrl)), new Callable<String>() {
+            @Override
+            public String call() {
+                return System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            }
+        });
+
+
+        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrlSource)) {
+            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(defaultEndpointUrl)) {
+                endpointUrl = defaultEndpointUrl;
+            }
+        } else {
+            endpointUrl = endpointUrlSource;
+        }
+
+        return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
+    }
 }

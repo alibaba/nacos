@@ -23,10 +23,9 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -188,10 +187,10 @@ public class ConfigSubService {
                  */
                 if (result.code == HttpURLConnection.HTTP_OK) {
                     String json = result.content;
-                    Object resultObj = JSONUtils.deserializeObject(json,
+                    SampleResult resultObj = JSONUtils.deserializeObject(json,
                         new TypeReference<SampleResult>() {
                         });
-                    return (SampleResult)resultObj;
+                    return resultObj;
 
                 } else {
 

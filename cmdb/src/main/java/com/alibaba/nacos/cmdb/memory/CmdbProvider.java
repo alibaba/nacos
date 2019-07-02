@@ -35,7 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
+ * @since 0.7.0
  */
 @Component
 public class CmdbProvider implements CmdbReader, CmdbWriter {
@@ -45,15 +46,13 @@ public class CmdbProvider implements CmdbReader, CmdbWriter {
 
     private CmdbService cmdbService;
 
-    ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
+    private ServiceLoader<CmdbService> serviceLoader = ServiceLoader.load(CmdbService.class);
 
     private Map<String, Map<String, Entity>> entityMap = new ConcurrentHashMap<>();
 
     private Map<String, Label> labelMap = new ConcurrentHashMap<>();
 
     private Set<String> entityTypeSet = new HashSet<>();
-
-    private List<EntityEvent> eventList = new ArrayList<>();
 
     private long eventTimestamp = System.currentTimeMillis();
 

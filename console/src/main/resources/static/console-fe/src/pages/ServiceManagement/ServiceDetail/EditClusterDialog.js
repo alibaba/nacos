@@ -12,13 +12,22 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../../globalLib';
 import { Dialog, Form, Input, Switch, Select, Message, ConfigProvider } from '@alifd/next';
-import { DIALOG_FORM_LAYOUT } from './constant';
+import { DIALOG_FORM_LAYOUT, METADATA_SEPARATOR, METADATA_ENTER } from './constant';
+import MonacoEditor from 'components/MonacoEditor';
 
 @ConfigProvider.config
 class EditClusterDialog extends React.Component {
   static displayName = 'EditClusterDialog';
+
+  static propTypes = {
+    openLoading: PropTypes.func,
+    closeLoading: PropTypes.func,
+    getServiceDetail: PropTypes.func,
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -32,9 +41,9 @@ class EditClusterDialog extends React.Component {
   show(_editCluster) {
     let editCluster = _editCluster;
     const { metadata = {} } = editCluster;
-    editCluster.metadataText = Object.keys(metadata)
-      .map(k => `${k}=${metadata[k]}`)
-      .join(',');
+    if (Object.keys(metadata).length) {
+      editCluster.metadataText = JSON.stringify(metadata, null, '\t');
+    }
     this.setState({
       editCluster,
       editClusterDialogVisible: true,
@@ -56,8 +65,8 @@ class EditClusterDialog extends React.Component {
       healthChecker,
     } = this.state.editCluster;
     request({
-      method: 'POST',
-      url: 'v1/ns/cluster/update',
+      method: 'PUT',
+      url: 'v1/ns/cluster',
       data: {
         serviceName,
         clusterName: name,
@@ -105,6 +114,7 @@ class EditClusterDialog extends React.Component {
     return (
       <Dialog
         className="cluster-edit-dialog"
+        style={{ width: 600 }}
         title={updateCluster}
         visible={editClusterDialogVisible}
         onOk={() => this.onConfirm()}
@@ -120,6 +130,7 @@ class EditClusterDialog extends React.Component {
             >
               <Select.Option value="TCP">TCP</Select.Option>
               <Select.Option value="HTTP">HTTP</Select.Option>
+              <Select.Option value="NONE">NONE</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item label={`${checkPort}:`}>
@@ -135,37 +146,27 @@ class EditClusterDialog extends React.Component {
               onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
             />
           </Form.Item>
-          {type === 'HTTP' ? (
-            <div>
-              <div className="next-row next-form-item next-left next-medium">
-                <div className="next-col next-col-fixed-12 next-form-item-label">
-                  <label>{`${checkPath}:`}</label>
-                </div>
-                <div className="next-col next-col-12 next-form-item-control">
-                  <Input
-                    className="in-text"
-                    value={path}
-                    onChange={path => healthCheckerChange({ path })}
-                  />
-                </div>
-              </div>
-              <div className="next-row next-form-item next-left next-medium">
-                <div className="next-col next-col-fixed-12 next-form-item-label">
-                  <label>{`${checkHeaders}:`}</label>
-                </div>
-                <div className="next-col next-col-12 next-form-item-control">
-                  <Input
-                    className="in-text"
-                    value={headers}
-                    onChange={headers => healthCheckerChange({ headers })}
-                  />
-                </div>
-              </div>
-            </div>
-          ) : null}
+          {type === 'HTTP' && [
+            <Form.Item label={`${checkPath}:`}>
+              <Input
+                className="in-text"
+                value={path}
+                onChange={path => healthCheckerChange({ path })}
+              />
+            </Form.Item>,
+            <Form.Item label={`${checkHeaders}:`}>
+              <Input
+                className="in-text"
+                value={headers}
+                onChange={headers => healthCheckerChange({ headers })}
+              />
+            </Form.Item>,
+          ]}
           <Form.Item label={`${locale.metadata}:`}>
-            <Input
-              className="in-text"
+            <MonacoEditor
+              language="json"
+              width={'100%'}
+              height={200}
               value={metadataText}
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />

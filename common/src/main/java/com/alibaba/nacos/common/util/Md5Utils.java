@@ -27,12 +27,12 @@ public class Md5Utils {
     private static final int HEX_VALUE_COUNT = 16;
 
     public static String getMD5(byte[] bytes) {
-        char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-        char str[] = new char[16 * 2];
+        char[] hexDigits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        char[] str = new char[16 * 2];
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("MD5");
             md.update(bytes);
-            byte tmp[] = md.digest();
+            byte[] tmp = md.digest();
             int k = 0;
             for (int i = 0; i < HEX_VALUE_COUNT; i++) {
                 byte byte0 = tmp[i];

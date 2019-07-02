@@ -15,24 +15,15 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import javax.annotation.PostConstruct;
-
+import com.alibaba.nacos.config.server.enums.FileTypeEnum;
+import com.alibaba.nacos.config.server.exception.NacosException;
+import com.alibaba.nacos.config.server.model.*;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.MD5;
+import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -52,27 +43,17 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
-import com.alibaba.nacos.config.server.model.ConfigAllInfo;
-import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
-import com.alibaba.nacos.config.server.model.ConfigInfo4Tag;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
-import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.model.SubInfo;
-import com.alibaba.nacos.config.server.model.TenantInfo;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
-import com.alibaba.nacos.config.server.utils.PaginationHelper;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.google.common.collect.Lists;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import javax.annotation.PostConstruct;
+import java.io.IOException;
+import java.sql.*;
+import java.util.*;
+import java.util.Map.Entry;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * 数据库服务，提供ConfigInfo在数据库的存取<br> 3.0开始增加数据版本号, 并将物理删除改为逻辑删除<br> 3.0增加数据库切换功能
@@ -89,6 +70,16 @@ public class PersistService {
     private DynamicDataSource dynamicDataSource;
 
     private DataSourceService dataSourceService;
+
+    private static final String SQL_FIND_ALL_CONFIG_INFO = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
+
+    private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
+
+    /**
+     * @author klw
+     * @Description: constant variables
+     */
+    public static final String SPOT = ".";
 
     @PostConstruct
     public void init() {
@@ -108,6 +99,7 @@ public class PersistService {
 
     static final class ConfigInfoWrapperRowMapper implements
         RowMapper<ConfigInfoWrapper> {
+        @Override
         public ConfigInfoWrapper mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoWrapper info = new ConfigInfoWrapper();
@@ -142,6 +134,7 @@ public class PersistService {
 
     static final class ConfigInfoBetaWrapperRowMapper implements
         RowMapper<ConfigInfoBetaWrapper> {
+        @Override
         public ConfigInfoBetaWrapper mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoBetaWrapper info = new ConfigInfoBetaWrapper();
@@ -177,6 +170,7 @@ public class PersistService {
 
     static final class ConfigInfoTagWrapperRowMapper implements
         RowMapper<ConfigInfoTagWrapper> {
+        @Override
         public ConfigInfoTagWrapper mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoTagWrapper info = new ConfigInfoTagWrapper();
@@ -212,6 +206,7 @@ public class PersistService {
 
     static final class ConfigInfoRowMapper implements
         RowMapper<ConfigInfo> {
+        @Override
         public ConfigInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfo info = new ConfigInfo();
 
@@ -241,6 +236,7 @@ public class PersistService {
 
     static final class ConfigKeyRowMapper implements
         RowMapper<ConfigKey> {
+        @Override
         public ConfigKey mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigKey info = new ConfigKey();
 
@@ -253,6 +249,7 @@ public class PersistService {
     }
 
     static final class ConfigAdvanceInfoRowMapper implements RowMapper<ConfigAdvanceInfo> {
+        @Override
         public ConfigAdvanceInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigAdvanceInfo info = new ConfigAdvanceInfo();
             info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
@@ -269,6 +266,7 @@ public class PersistService {
     }
 
     static final class ConfigAllInfoRowMapper implements RowMapper<ConfigAllInfo> {
+        @Override
         public ConfigAllInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigAllInfo info = new ConfigAllInfo();
             info.setDataId(rs.getString("data_id"));
@@ -305,6 +303,7 @@ public class PersistService {
 
     static final class ConfigInfo4BetaRowMapper implements
         RowMapper<ConfigInfo4Beta> {
+        @Override
         public ConfigInfo4Beta mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfo4Beta info = new ConfigInfo4Beta();
 
@@ -334,6 +333,7 @@ public class PersistService {
 
     static final class ConfigInfo4TagRowMapper implements
         RowMapper<ConfigInfo4Tag> {
+        @Override
         public ConfigInfo4Tag mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfo4Tag info = new ConfigInfo4Tag();
 
@@ -363,6 +363,7 @@ public class PersistService {
 
     static final class ConfigInfoBaseRowMapper implements
         RowMapper<ConfigInfoBase> {
+        @Override
         public ConfigInfoBase mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfoBase info = new ConfigInfoBase();
 
@@ -385,6 +386,7 @@ public class PersistService {
 
     static final class ConfigInfoAggrRowMapper implements
         RowMapper<ConfigInfoAggr> {
+        @Override
         public ConfigInfoAggr mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             ConfigInfoAggr info = new ConfigInfoAggr();
@@ -399,6 +401,7 @@ public class PersistService {
     }
 
     static final class ConfigInfoChangedRowMapper implements RowMapper<ConfigInfoChanged> {
+        @Override
         public ConfigInfoChanged mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigInfoChanged info = new ConfigInfoChanged();
             info.setDataId(rs.getString("data_id"));
@@ -409,6 +412,7 @@ public class PersistService {
     }
 
     static final class ConfigHistoryRowMapper implements RowMapper<ConfigHistoryInfo> {
+        @Override
         public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
             configHistoryInfo.setId(rs.getLong("nid"));
@@ -425,6 +429,7 @@ public class PersistService {
     }
 
     static final class ConfigHistoryDetailRowMapper implements RowMapper<ConfigHistoryInfo> {
+        @Override
         public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
             configHistoryInfo.setId(rs.getLong("nid"));
@@ -443,15 +448,24 @@ public class PersistService {
         }
     }
 
-    ;
-
     static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
+        @Override
         public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             TenantInfo info = new TenantInfo();
             info.setTenantId(rs.getString("tenant_id"));
             info.setTenantName(rs.getString("tenant_name"));
             info.setTenantDesc(rs.getString("tenant_desc"));
             return info;
+        }
+    }
+
+    static final class UserRowMapper implements RowMapper<User> {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = new User();
+            user.setUsername(rs.getString("username"));
+            user.setPassword(rs.getString("password"));
+            return user;
         }
     }
 
@@ -804,6 +818,7 @@ public class PersistService {
 
         try {
             this.jt.update(sql, new PreparedStatementSetter() {
+                @Override
                 public void setValues(PreparedStatement ps) throws SQLException {
                     int index = 1;
                     ps.setString(index++, dataId);
@@ -827,6 +842,7 @@ public class PersistService {
 
         try {
             this.jt.update(sql, new PreparedStatementSetter() {
+                @Override
                 public void setValues(PreparedStatement ps) throws SQLException {
                     int index = 1;
                     ps.setString(index++, dataId);
@@ -1465,7 +1481,6 @@ public class PersistService {
      *
      * @param pageNo   页码(必须大于0)
      * @param pageSize 每页大小(必须大于0)
-     * @param group
      * @return ConfigInfo对象的集合
      */
     public Page<ConfigInfo> findConfigInfoByApp(final int pageNo,
@@ -2642,9 +2657,7 @@ public class PersistService {
 
         try {
             jt.update(new PreparedStatementCreator() {
-                @SuppressFBWarnings(value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE",
-                    "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"},
-                    justification = "findbugs does not trust jdbctemplate, sql is constant in practice")
+                @Override
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
                     PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
                     ps.setString(1, configInfo.getDataId());
@@ -3113,6 +3126,22 @@ public class PersistService {
         }
     }
 
+    public User findUserByUsername(String username) {
+        String sql = "SELECT username,password FROM users WHERE username=? ";
+        try {
+            return this.jt.queryForObject(sql, new Object[] {username}, USER_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        } catch (Exception e) {
+            fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
     private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
         for (Map<String, Object> map : list) {
@@ -3263,7 +3292,148 @@ public class PersistService {
         return true;
     }
 
+    /**
+     * query all configuration information according to group, appName, tenant (for export)
+     *
+     * @param group
+     * @return Collection of ConfigInfo objects
+     */
+    public List<ConfigInfo> findAllConfigInfo4Export(final String group, final String tenant,
+                                                final String appName, final String ids) {
+        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        StringBuilder where = new StringBuilder(" where ");
+        List<String> paramList = new ArrayList<>();
+        if(StringUtils.isNotBlank(ids)){
+            where.append(" id in (").append(ids).append(") ");
+        } else {
+            where.append(" tenant_id=? ");
+            paramList.add(tenantTmp);
+            if (StringUtils.isNotBlank(group)) {
+                where.append(" and group_id=? ");
+                paramList.add(group);
+            }
+            if (StringUtils.isNotBlank(appName)) {
+                where.append(" and app_name=? ");
+                paramList.add(appName);
+            }
+        }
+        try {
+            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * batch operation,insert or update
+     * the format of the returned:
+     * succCount: number of successful imports
+     * skipCount: number of import skips (only with skip for the same configs)
+     * failData: import failed data (only with abort for the same configs)
+     * skipData: data skipped at import  (only with skip for the same configs)
+     */
+    public Map<String, Object> batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
+                                                   Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws NacosException {
+        int succCount = 0;
+        int skipCount = 0;
+        List<Map<String, String>> failData = null;
+        List<Map<String, String>> skipData = null;
+
+        for (int i = 0; i < configInfoList.size(); i++) {
+            ConfigInfo configInfo = configInfoList.get(i);
+            try {
+                ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
+            } catch (NacosException e) {
+                defaultLog.error("data verification failed", e);
+                throw e;
+            }
+            ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
+
+            // simple judgment of file type based on suffix
+            String type = null;
+            if (configInfo.getDataId().contains(SPOT)) {
+                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toLowerCase();
+                try{
+                    type = FileTypeEnum.valueOf(extName).getFileType();
+                }catch (Exception ex){
+                    type = FileTypeEnum.TEXT.getFileType();
+                }
+            }
+            if (configAdvanceInfo == null) {
+                configAdvanceInfo = new HashMap<>(16);
+            }
+            configAdvanceInfo.put("type", type);
+            try {
+                addConfigInfo(srcIp, srcUser, configInfo2Save, time, configAdvanceInfo, notify);
+                succCount++;
+            } catch (DataIntegrityViolationException ive) {
+                // uniqueness constraint conflict
+                if (SameConfigPolicy.ABORT.equals(policy)) {
+                    failData = new ArrayList<>();
+                    skipData = new ArrayList<>();
+                    Map<String, String> faileditem = new HashMap<>(2);
+                    faileditem.put("dataId", configInfo2Save.getDataId());
+                    faileditem.put("group", configInfo2Save.getGroup());
+                    failData.add(faileditem);
+                    for (int j = (i + 1); j < configInfoList.size(); j++) {
+                        ConfigInfo skipConfigInfo = configInfoList.get(j);
+                        Map<String, String> skipitem = new HashMap<>(2);
+                        skipitem.put("dataId", skipConfigInfo.getDataId());
+                        skipitem.put("group", skipConfigInfo.getGroup());
+                        skipData.add(skipitem);
+                    }
+                    break;
+                } else if (SameConfigPolicy.SKIP.equals(policy)) {
+                    skipCount++;
+                    if (skipData == null) {
+                        skipData = new ArrayList<>();
+                    }
+                    Map<String, String> skipitem = new HashMap<>(2);
+                    skipitem.put("dataId", configInfo2Save.getDataId());
+                    skipitem.put("group", configInfo2Save.getGroup());
+                    skipData.add(skipitem);
+                } else if (SameConfigPolicy.OVERWRITE.equals(policy)) {
+                    succCount++;
+                    updateConfigInfo(configInfo2Save, srcIp, srcUser, time, configAdvanceInfo, notify);
+                }
+            }
+        }
+        Map<String, Object> result = new HashMap<>(4);
+        result.put("succCount", succCount);
+        result.put("skipCount", skipCount);
+        if (failData != null && !failData.isEmpty()) {
+            result.put("failData", failData);
+        }
+        if (skipData != null && !skipData.isEmpty()) {
+            result.put("skipData", skipData);
+        }
+        return result;
+    }
+
+
+    /**
+     * query tenantInfo (namespace) existence based by tenantId
+     *
+     * @param tenantId
+     * @return count by tenantId
+     */
+    public int tenantInfoCountByTenantId(String tenantId) {
+        Assert.hasText(tenantId, "tenantId can not be null");
+        List<String> paramList = new ArrayList<>();
+        paramList.add(tenantId);
+        Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, paramList.toArray(), Integer.class);
+        if (result == null) {
+            return 0;
+        }
+        return result.intValue();
+    }
+
+
     static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
+
+    static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
 
     static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 

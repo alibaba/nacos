@@ -19,12 +19,13 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.Chooser;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
 import com.alibaba.nacos.client.naming.utils.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
@@ -39,7 +40,7 @@ public class Balancer {
     public static class RandomByWeight {
 
         public static List<Instance> selectAll(ServiceInfo serviceInfo) {
-            List<Instance> hosts = nothing(serviceInfo);
+            List<Instance> hosts = serviceInfo.getHosts();
 
             if (CollectionUtils.isEmpty(hosts)) {
                 throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
@@ -58,10 +59,6 @@ public class Balancer {
 
             return getHostByRandomWeight(hosts);
         }
-
-        public static List<Instance> nothing(ServiceInfo serviceInfo) {
-            return serviceInfo.getHosts();
-        }
     }
 
     /**
@@ -71,15 +68,15 @@ public class Balancer {
      * @return The random-weight result of the host
      */
     protected static Instance getHostByRandomWeight(List<Instance> hosts) {
-        LogUtils.LOG.debug("entry randomWithWeight");
+        NAMING_LOGGER.debug("entry randomWithWeight");
         if (hosts == null || hosts.size() == 0) {
-            LogUtils.LOG.debug("hosts == null || hosts.size() == 0");
+            NAMING_LOGGER.debug("hosts == null || hosts.size() == 0");
             return null;
         }
 
         Chooser<String, Instance> vipChooser = new Chooser<String, Instance>("www.taobao.com");
 
-        LogUtils.LOG.debug("new Chooser");
+        NAMING_LOGGER.debug("new Chooser");
 
         List<Pair<Instance>> hostsWithWeight = new ArrayList<Pair<Instance>>();
         for (Instance host : hosts) {
@@ -87,10 +84,9 @@ public class Balancer {
                 hostsWithWeight.add(new Pair<Instance>(host, host.getWeight()));
             }
         }
-        LogUtils.LOG.debug("for (Host host : hosts)");
+        NAMING_LOGGER.debug("for (Host host : hosts)");
         vipChooser.refresh(hostsWithWeight);
-        LogUtils.LOG.debug("vipChooser.refresh");
-        Instance host = vipChooser.randomWithWeight();
-        return host;
+        NAMING_LOGGER.debug("vipChooser.refresh");
+        return vipChooser.randomWithWeight();
     }
 }

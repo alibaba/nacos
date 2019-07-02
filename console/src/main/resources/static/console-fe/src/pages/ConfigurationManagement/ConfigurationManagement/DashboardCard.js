@@ -12,11 +12,18 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { ConfigProvider, Slider } from '@alifd/next';
 
 @ConfigProvider.config
 class DashboardCard extends React.Component {
   static displayName = 'DashboardCard';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    data: PropTypes.object,
+    height: PropTypes.number,
+  };
 
   render() {
     const { data = {}, height, locale = {} } = this.props;

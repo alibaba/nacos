@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.config;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -23,17 +24,19 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.http.HttpAgent;
+import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
+import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerHttpAgent;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
-import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
-import com.alibaba.nacos.client.logger.Logger;
-import com.alibaba.nacos.client.logger.support.LoggerHelper;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -41,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 /**
  * Config Impl
@@ -50,14 +54,18 @@ import java.util.Properties;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosConfigService implements ConfigService {
 
-    final static public Logger log = LogUtils.logger(NacosConfigService.class);
-    public final long POST_TIMEOUT = 3000L;
+    private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
+
+    private static final long POST_TIMEOUT = 3000L;
+
+    private static final String EMPTY = "";
+
     /**
      * http agent
      */
-    private ServerHttpAgent agent;
+    private HttpAgent agent;
     /**
-     * longpulling
+     * longpolling
      */
     private ClientWorker worker;
     private String namespace;
@@ -71,22 +79,54 @@ public class NacosConfigService implements ConfigService {
         } else {
             encode = encodeTmp.trim();
         }
-        String namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        if (StringUtils.isBlank(namespaceTmp)) {
-            namespace = TenantUtil.getUserTenant();
-            properties.put(PropertyKeyConst.NAMESPACE, namespace);
-        } else {
-            namespace = namespaceTmp;
-            properties.put(PropertyKeyConst.NAMESPACE, namespace);
-        }
-        agent = new ServerHttpAgent(properties);
+        initNamespace(properties);
+        agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
-        worker = new ClientWorker(agent, configFilterChainManager);
+        worker = new ClientWorker(agent, configFilterChainManager, properties);
+    }
+
+    private void initNamespace(Properties properties) {
+        String namespaceTmp = null;
+
+        String isUseCloudNamespaceParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
+        if (Boolean.valueOf(isUseCloudNamespaceParsing)) {
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    return TenantUtil.getUserTenantForAcm();
+                }
+            });
+
+            namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
+                @Override
+                public String call() {
+                    String namespace = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
+                    return StringUtils.isNotBlank(namespace) ? namespace : EMPTY;
+                }
+            });
+        }
+
+        if (StringUtils.isBlank(namespaceTmp)) {
+            namespaceTmp = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        }
+        namespace = StringUtils.isNotBlank(namespaceTmp) ? namespaceTmp.trim() : EMPTY;
+        properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
 
     @Override
     public String getConfig(String dataId, String group, long timeoutMs) throws NacosException {
         return getConfigInner(namespace, dataId, group, timeoutMs);
+    }
+
+    @Override
+    public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener) throws NacosException {
+        String content = getConfig(dataId, group, timeoutMs);
+        worker.addTenantListenersWithContent(dataId, group, content, Arrays.asList(listener));
+        return content;
     }
 
     @Override
@@ -121,8 +161,8 @@ public class NacosConfigService implements ConfigService {
         // 优先使用本地配置
         String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
         if (content != null) {
-            log.warn(agent.getName(), "[get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", dataId,
-                group, tenant, ContentUtils.truncateContent(content));
+            LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
+                dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -131,22 +171,23 @@ public class NacosConfigService implements ConfigService {
 
         try {
             content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
+
             cr.setContent(content);
+
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
+
             return content;
         } catch (NacosException ioe) {
             if (NacosException.NO_RIGHT == ioe.getErrCode()) {
                 throw ioe;
             }
-            log.warn("NACOS-0003",
-                LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0003", "环境问题", "get from server error"));
-            log.warn(agent.getName(), "[get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
-                dataId, group, tenant, ioe.toString());
+            LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
+                agent.getName(), dataId, group, tenant, ioe.toString());
         }
 
-        log.warn(agent.getName(), "[get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", dataId,
-            group, tenant, ContentUtils.truncateContent(content));
+        LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
+            dataId, group, tenant, ContentUtils.truncateContent(content));
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
         configFilterChainManager.doFilter(null, cr);
@@ -179,20 +220,20 @@ public class NacosConfigService implements ConfigService {
         try {
             result = agent.httpDelete(url, null, params, encode, POST_TIMEOUT);
         } catch (IOException ioe) {
-            log.warn("[remove] error, " + dataId + ", " + group + ", " + tenant + ", msg: " + ioe.toString());
+            LOGGER.warn("[remove] error, " + dataId + ", " + group + ", " + tenant + ", msg: " + ioe.toString());
             return false;
         }
 
         if (HttpURLConnection.HTTP_OK == result.code) {
-            log.info(agent.getName(), "[remove] ok, dataId={}, group={}, tenant={}", dataId, group, tenant);
+            LOGGER.info("[{}] [remove] ok, dataId={}, group={}, tenant={}", agent.getName(), dataId, group, tenant);
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.code) {
-            log.warn(agent.getName(), "[remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", dataId, group,
-                tenant, result.code, result.content);
+            LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
+                group, tenant, result.code, result.content);
             throw new NacosException(result.code, result.content);
         } else {
-            log.warn(agent.getName(), "[remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", dataId, group,
-                tenant, result.code, result.content);
+            LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
+                group, tenant, result.code, result.content);
             return false;
         }
     }
@@ -241,24 +282,22 @@ public class NacosConfigService implements ConfigService {
         try {
             result = agent.httpPost(url, headers, params, encode, POST_TIMEOUT);
         } catch (IOException ioe) {
-            log.warn("NACOS-0006",
-                LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0006", "环境问题", "[publish-single] exception"));
-            log.warn(agent.getName(), "[publish-single] exception, dataId={}, group={}, msg={}", dataId, group,
-                ioe.toString());
+            LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId,
+                group, ioe.toString());
             return false;
         }
 
         if (HttpURLConnection.HTTP_OK == result.code) {
-            log.info(agent.getName(), "[publish-single] ok, dataId={}, group={}, tenant={}, config={}", dataId, group,
-                tenant, ContentUtils.truncateContent(content));
+            LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", agent.getName(), dataId,
+                group, tenant, ContentUtils.truncateContent(content));
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.code) {
-            log.warn(agent.getName(), "[publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", dataId,
-                group, tenant, result.code, result.content);
+            LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
+                dataId, group, tenant, result.code, result.content);
             throw new NacosException(result.code, result.content);
         } else {
-            log.warn(agent.getName(), "[publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", dataId,
-                group, tenant, result.code, result.content);
+            LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
+                dataId, group, tenant, result.code, result.content);
             return false;
         }
 

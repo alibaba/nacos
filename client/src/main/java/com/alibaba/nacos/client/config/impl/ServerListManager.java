@@ -24,21 +24,22 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
-import com.alibaba.nacos.client.logger.support.LoggerHelper;
-import com.alibaba.nacos.client.utils.EnvUtil;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.alibaba.nacos.client.identify.Constants;
+import com.alibaba.nacos.client.utils.*;
+import org.slf4j.Logger;
+
+
+import org.slf4j.Logger;
 
 /**
  * Serverlist Manager
@@ -47,7 +48,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  */
 public class ServerListManager {
 
-    final static public Logger log = LogUtils.logger(ServerListManager.class);
+    private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
+    private static final String HTTPS = "https://";
+    private static final String HTTP = "http://";
 
     public ServerListManager() {
         isFixed = false;
@@ -95,6 +98,10 @@ public class ServerListManager {
     public ServerListManager(String endpoint, String namespace) throws NacosException {
         isFixed = false;
         isStarted = false;
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        endpoint = initEndpoint(properties);
+
         if (StringUtils.isBlank(endpoint)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
         }
@@ -116,19 +123,23 @@ public class ServerListManager {
 
     public ServerListManager(Properties properties) throws NacosException {
         isStarted = false;
-        String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
-            for (String serverAddr : serverAddrsArr) {
-                String[] serverAddrArr = serverAddr.split(":");
-                if (serverAddrArr.length == 1) {
-                    serverAddrs.add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
-                } else {
+            for (String serverAddr: serverAddrsArr) {
+                if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
+                } else {
+                    String[] serverAddrArr = serverAddr.split(":");
+                    if (serverAddrArr.length == 1) {
+                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                    } else {
+                        serverAddrs.add(HTTP + serverAddr);
+                    }
                 }
             }
             serverUrls = serverAddrs;
@@ -157,13 +168,12 @@ public class ServerListManager {
                     contentPath, serverListName, namespace);
             }
         }
+
     }
 
     private void initParam(Properties properties) {
-        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
-        if (!StringUtils.isBlank(endpointTmp)) {
-            endpoint = endpointTmp;
-        }
+        endpoint = initEndpoint(properties);
+
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
         if (!StringUtils.isBlank(contentPathTmp)) {
             contentPath = contentPathTmp;
@@ -172,6 +182,37 @@ public class ServerListManager {
         if (!StringUtils.isBlank(serverListNameTmp)) {
             serverListName = serverListNameTmp;
         }
+    }
+
+    private String initEndpoint(final Properties properties) {
+
+        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
+            @Override
+            public String call() {
+                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
+            }
+        });
+
+        if (StringUtils.isNotBlank(endpointPortTmp)) {
+            endpointPort = Integer.parseInt(endpointPortTmp);
+        }
+
+        String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
+
+        // Whether to enable domain name resolution rules
+        String isUseEndpointRuleParsing =
+            properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                    String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+        if (Boolean.valueOf(isUseEndpointRuleParsing)) {
+            String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
+            if (StringUtils.isNotBlank(endpointUrl)) {
+                serverAddrsStr = "";
+            }
+            return endpointUrl;
+        }
+
+        return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
     public synchronized void start() throws NacosException {
@@ -186,14 +227,13 @@ public class ServerListManager {
             try {
                 this.wait((i + 1) * 100L);
             } catch (Exception e) {
-                log.warn("get serverlist fail,url: " + addressServerUrl);
+                LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
             }
         }
 
         if (serverUrls.isEmpty()) {
-            log.error("NACOS-0008", LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0008", "环境问题",
-                "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl));
-            log.error(name, "NACOS-XXXX", "[init-serverlist] fail to get NACOS-server serverlist!");
+            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
+                addressServerUrl);
             throw new NacosException(NacosException.SERVER_ERROR,
                 "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
         }
@@ -204,7 +244,7 @@ public class ServerListManager {
 
     Iterator<String> iterator() {
         if (serverUrls.isEmpty()) {
-            log.error(name, "NACOS-XXXX", "[iterator-serverlist] No server address defined!");
+            LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);
         }
         return new ServerAddressIterator(serverUrls);
     }
@@ -224,7 +264,7 @@ public class ServerListManager {
             try {
                 updateIfChanged(getApacheServerList(url, name));
             } catch (Exception e) {
-                log.error(name, "NACOS-XXXX", "[update-serverlist] failed to update serverlist from address server!",
+                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!",
                     e);
             }
         }
@@ -232,10 +272,7 @@ public class ServerListManager {
 
     private void updateIfChanged(List<String> newList) {
         if (null == newList || newList.isEmpty()) {
-
-            log.warn("NACOS-0001", LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0001", "环境问题",
-                "[update-serverlist] current serverlist from address server is empty!!!"));
-            log.warn(name, "[update-serverlist] current serverlist from address server is empty!!!");
+            LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
             return;
         }
         /**
@@ -245,10 +282,11 @@ public class ServerListManager {
             return;
         }
         serverUrls = new ArrayList<String>(newList);
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
 
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
-        log.info(name, "[update-serverlist] serverlist updated to {}", serverUrls);
+        LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
     }
 
     private List<String> getApacheServerList(String url, String name) {
@@ -262,9 +300,7 @@ public class ServerListManager {
                 List<String> lines = IOUtils.readLines(new StringReader(httpResult.content));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
-                    if (null == serverAddr || serverAddr.trim().isEmpty()) {
-                        continue;
-                    } else {
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(serverAddr)) {
                         String[] ipPort = serverAddr.trim().split(":");
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {
@@ -276,12 +312,12 @@ public class ServerListManager {
                 }
                 return result;
             } else {
-                log.error(addressServerUrl, "NACOS-XXXX", "[check-serverlist] error. code={}", httpResult.code);
+                LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
+                    httpResult.code);
                 return null;
             }
         } catch (IOException e) {
-            log.error("NACOS-0001", LoggerHelper.getErrorCodeStr("NACOS", "NACOS-0001", "环境问题", e.toString()));
-            log.error(addressServerUrl, "NACOS-XXXX", "[check-serverlist] exception. msg={}", e.toString(), e);
+            LOGGER.error("[check-serverlist] exception. url: " + url, e);
             return null;
         }
     }
@@ -295,6 +331,7 @@ public class ServerListManager {
         String split = "";
         for (String serverIp : serverIps) {
             sb.append(split);
+            serverIp = serverIp.replaceAll("http(s)?://", "");
             sb.append(serverIp.replaceAll(":", "_"));
             split = "-";
         }
@@ -312,14 +349,24 @@ public class ServerListManager {
     }
 
     public void refreshCurrentServerAddr() {
-        currentServerAddr = iterator().next();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
     }
 
     public String getCurrentServerAddr() {
         if (StringUtils.isBlank(currentServerAddr)) {
-            currentServerAddr = iterator().next();
+            iterator = iterator();
+            currentServerAddr = iterator.next();
         }
         return currentServerAddr;
+    }
+
+    public void updateCurrentServerAddr(String currentServerAddr) {
+        this.currentServerAddr = currentServerAddr;
+    }
+
+    public Iterator<String> getIterator() {
+        return iterator;
     }
 
     public String getContentPath() {
@@ -339,7 +386,7 @@ public class ServerListManager {
     }
 
     /**
-     * 不同环境的名称
+     * The name of the different environment
      */
     private String name;
     private String namespace = "";
@@ -349,7 +396,7 @@ public class ServerListManager {
     static public final String FIXED_NAME = "fixed";
     private int initServerlistRetryTimes = 5;
     /**
-     * 和其他server的连接超时和socket超时
+     * Connection timeout and socket timeout with other servers
      */
     static final int TIMEOUT = 5000;
 
@@ -363,14 +410,17 @@ public class ServerListManager {
 
     private volatile String currentServerAddr;
 
+    private Iterator<String> iterator;
     public String serverPort = ParamUtil.getDefaultServerPort();
 
     public String addressServerUrl;
 
+    private String serverAddrsStr;
+
 }
 
 /**
- * 对地址列表排序，同机房优先。
+ * Sort the address list, with the same room priority.
  */
 class ServerAddressIterator implements Iterator<String> {
 
@@ -394,7 +444,6 @@ class ServerAddressIterator implements Iterator<String> {
         }
 
         @Override
-        @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
         public int compareTo(RandomizedServerAddress other) {
             if (this.priority != other.priority) {
                 return other.priority - this.priority;
@@ -413,14 +462,17 @@ class ServerAddressIterator implements Iterator<String> {
         iter = sorted.iterator();
     }
 
+    @Override
     public boolean hasNext() {
         return iter.hasNext();
     }
 
+    @Override
     public String next() {
         return iter.next().serverIp;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

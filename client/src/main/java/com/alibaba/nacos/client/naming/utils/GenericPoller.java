@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class GenericPoller<T> implements Poller<T> {
 
@@ -31,10 +31,12 @@ public class GenericPoller<T> implements Poller<T> {
         this.items = items;
     }
 
+    @Override
     public T next() {
         return items.get(Math.abs(index.getAndIncrement() % items.size()));
     }
 
+    @Override
     public Poller<T> refresh(List<T> items) {
         return new GenericPoller<T>(items);
     }

@@ -1,3 +1,85 @@
+## 1.0.0-RC4(Mar 22, 2019)
+* [#923] Nacos 1.0.0 compatible with nacos-client 0.6.2
+* [#938] Client beat processor task lost
+* [#946] Change default server mode to AP
+
+
+
+## 1.0.0-RC1(Mar 15, 2019)
+
+* [#870] About Nacos's namespace and tenant design
+* [#869] Client exception message is confusing
+* [#866] BeatInfo scheduled property may have the memory visibility issue
+* [#865] checksum value is not correct
+* [#839] Refactor API URLs 
+* [#811] ApiCommands.updateIpPublish countDownLatch timeout issue
+* [#809] Instance field 'valid' should be deprecated and replaced by 'healthy'
+* [#803] Nacos front-end function regression plan and landing
+* [#801] Nacos uses nignx as a best practice article for current limiting.
+* [#757] The word 'domain' should be replaced by 'service'
+* [#745] Support server running mode in CP, AP or mixed
+* [#744] The exact status of server should be stored and controlled
+* [#725] Will the nacos registry be how to do multi-environment deployment?
+* [#677] Support ephemeral instances and persistent instances
+* [#651] Remove old API entry 'APICommands'
+* [#650] Refactor server list management to make it irrelevant to consistency protocol
+* [#634] Add global push enable switch and data query enable switch
+* [#629] Server data needs warm up before open traffic
+* [#502] Registering ephemeral instance as well as persistent instances
+* [#501] Health check mode confict when building muilt clusters whit nacos sync + nacos
+* [#479] Metadata should be displayed and edited using standard property syntax
+* [#327] Inform the ACM SDK of the RAM role name and access the configuration ? ?
+* [#269] need to support service group in naming module
+
+## 0.9.0(Feb 28, 2019)
+
+* [#840] Nacos server adds startup mode to distinguish between config and naming.
+* [#762] Register instance returns failed when the health check mode is 'server' in standalone mode.
+* [#473] Nacos Cluster Mode kubernate Startup nacos.log error Log.
+* [#240] Log strong dependence problem.
+* [#824] getServicesOfServer throws exception if service list is empty.
+* [#802] Nacos server multi-boot mode support.
+* [#800] Nacos's client-to-server addressing mode document introduction.
+* [#768] The interval at which the heartbeat is sent in BeatReactor is not controlled by the server return value.
+* [#759] why instance can't auto-delete.
+* [#756] Format of instance and service should be validated.
+* [#720] Memory leak in PushService.
+* [#653] IoUtils under nacos-common-0.2.1-RC1.jar lacks "" judgment on encoding.
+* [#588] Client compatible to jdk1.6.
+
+## 0.8.0(Jan 22, 2019) PRE-GA
+
+* [#162] Support open metrics and prometheus
+* [#268] Health check is performed in the Nacos startup script
+* [#320] Nacos supports multiple configuration files, configuration template abstraction and inheritance
+* [#333] Use nacos in k8s to get hostname exception
+* [#335] update nacos.io docker img priority/low
+* [#339] Project language problem identified in github
+* [#381] Discuss：How to support Login
+* [#397] Some questions for Nacos
+* [#402] When the configuration is added or edited, the edit box will not come out 
+* [#462] Nacos monitor discuss (0.8 version)
+* [#496] Warning log printing when quering a nonexistent service
+* [#497] Make subscription of service triggered by getInstance method optional
+* [#498] Support namespace for service discovery
+* [#499] When the configuration is newly created (if data-id and group already exist), the original configuration will be overwritten
+* [#512] nacos-logs start.out always print 8848 (but port can be changed)
+* [#514] Nacos 0.7 not support namespace
+* [#523] Add a switch to control server detection and client reporting heartbeat switching
+* [#526] Possible data loss in server side health check mode
+* [#527] Many repeat client beat tasks can be generated
+* [#558] Enable access log recording by default 
+* [#560] Nacos server startup issues
+* [#579] New API support - “update health in none health check mode through api”
+* [#587] Client sends request concurrently
+* [#592] Service restful interface put/post is reversed
+* [#599] getSubscribeServices method gets services that were deregistered
+* [#603] Format log of naming module 
+* [#609] Always print a NPE log at start
+* [#663] Nacos update instance info NPE
+* [#668] 0.8.0-SNAPSHOT naming heartbeat not compatible with lower version client
+* [#672] Startup.cmd bug
+
 ## 0.7.0(Dec, 2018)
 
 * [ #461 ] Registration failed when instance port is set to 0

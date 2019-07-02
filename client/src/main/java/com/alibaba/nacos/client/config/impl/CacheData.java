@@ -21,10 +21,10 @@ import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
-import com.alibaba.nacos.client.config.utils.LogUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
-import com.alibaba.nacos.client.config.utils.TenantUtil;
-import com.alibaba.nacos.client.logger.Logger;
+import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.TenantUtil;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class CacheData {
 
-    final static public Logger log = LogUtils.logger(CacheData.class);
+    private static final Logger LOGGER = LogUtils.logger(CacheData.class);
 
     public boolean isInitializing() {
         return isInitializing;
@@ -66,6 +66,7 @@ public class CacheData {
 
     /**
      * Add listener
+     * if CacheData already set new content, Listener should init lastCallMd5 by CacheData.md5
      *
      * @param listener listener
      */
@@ -73,9 +74,9 @@ public class CacheData {
         if (null == listener) {
             throw new IllegalArgumentException("listener is null");
         }
-        ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
+        ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5);
         if (listeners.addIfAbsent(wrap)) {
-            log.info(name, "[add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", tenant, dataId, group,
+            LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
         }
     }
@@ -86,7 +87,7 @@ public class CacheData {
         }
         ManagerListenerWrap wrap = new ManagerListenerWrap(listener);
         if (listeners.remove(wrap)) {
-            log.info(name, "[remove-listener] ok, dataId={}, group={}, cnt={}", dataId, group, listeners.size());
+            LOGGER.info("[{}] [remove-listener] ok, dataId={}, group={}, cnt={}", name, dataId, group, listeners.size());
         }
     }
 
@@ -145,7 +146,7 @@ public class CacheData {
         if (this == obj) {
             return true;
         }
-        CacheData other = (CacheData)obj;
+        CacheData other = (CacheData) obj;
         return dataId.equals(other.dataId) && group.equals(other.group);
     }
 
@@ -167,14 +168,15 @@ public class CacheData {
         final Listener listener = listenerWrap.listener;
 
         Runnable job = new Runnable() {
+            @Override
             public void run() {
                 ClassLoader myClassLoader = Thread.currentThread().getContextClassLoader();
                 ClassLoader appClassLoader = listener.getClass().getClassLoader();
                 try {
                     if (listener instanceof AbstractSharedListener) {
-                        AbstractSharedListener adapter = (AbstractSharedListener)listener;
+                        AbstractSharedListener adapter = (AbstractSharedListener) listener;
                         adapter.fillContext(dataId, group);
-                        log.info(name, "[notify-context] dataId={}, group={}, md5={}", dataId, group, md5);
+                        LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
                     }
                     // 执行回调之前先将线程classloader设置为具体webapp的classloader，以免回调方法中调用spi接口是出现异常或错用（多应用部署才会有该问题）。
                     Thread.currentThread().setContextClassLoader(appClassLoader);
@@ -187,18 +189,14 @@ public class CacheData {
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
                     listenerWrap.lastCallMd5 = md5;
-                    log.info(
-                        name,
-                        "[notify-ok] dataId={}, group={}, md5={}, listener={} ",
-                        dataId, group, md5, listener);
+                    LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
+                        listener);
                 } catch (NacosException de) {
-                    log.error(name, "NACOS-XXXX",
-                        "[notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", dataId,
-                        group, md5, listener, de.getErrCode(), de.getErrMsg());
+                    LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} errCode={} errMsg={}", name,
+                        dataId, group, md5, listener, de.getErrCode(), de.getErrMsg());
                 } catch (Throwable t) {
-                    log.error(name, "NACOS-XXXX",
-                        "[notify-error] dataId={}, group={}, md5={}, listener={} tx={}", dataId, group, md5,
-                        listener, t.getCause());
+                    LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId, group,
+                        md5, listener, t.getCause());
                 } finally {
                     Thread.currentThread().setContextClassLoader(myClassLoader);
                 }
@@ -213,15 +211,12 @@ public class CacheData {
                 job.run();
             }
         } catch (Throwable t) {
-            log.error(
-                name,
-                "NACOS-XXXX",
-                "[notify-error] dataId={}, group={}, md5={}, listener={} throwable={}",
-                dataId, group, md5, listener, t.getCause());
+            LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} throwable={}", name, dataId, group,
+                md5, listener, t.getCause());
         }
         final long finishNotify = System.currentTimeMillis();
-        log.info(name, "[notify-listener] time cost={}ms in ClientWorker, dataId={}, group={}, md5={}, listener={} ",
-            (finishNotify - startNotify), dataId, group, md5, listener);
+        LOGGER.info("[{}] [notify-listener] time cost={}ms in ClientWorker, dataId={}, group={}, md5={}, listener={} ",
+            name, (finishNotify - startNotify), dataId, group, md5, listener);
     }
 
     static public String getMd5String(String config) {
@@ -243,7 +238,7 @@ public class CacheData {
         this.configFilterChainManager = configFilterChainManager;
         this.dataId = dataId;
         this.group = group;
-        this.tenant = TenantUtil.getUserTenant();
+        this.tenant = TenantUtil.getUserTenantForAcm();
         listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
         this.isInitializing = true;
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
@@ -281,7 +276,7 @@ public class CacheData {
      */
     private volatile boolean isUseLocalConfig = false;
     /**
-     * last motify time
+     * last modify time
      */
     private volatile long localConfigLastModified;
     private volatile String content;
@@ -297,6 +292,11 @@ class ManagerListenerWrap {
         this.listener = listener;
     }
 
+    ManagerListenerWrap(Listener listener, String md5) {
+        this.listener = listener;
+        this.lastCallMd5 = md5;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (null == obj || obj.getClass() != getClass()) {
@@ -305,7 +305,7 @@ class ManagerListenerWrap {
         if (obj == this) {
             return true;
         }
-        ManagerListenerWrap other = (ManagerListenerWrap)obj;
+        ManagerListenerWrap other = (ManagerListenerWrap) obj;
         return listener.equals(other.listener);
     }
 

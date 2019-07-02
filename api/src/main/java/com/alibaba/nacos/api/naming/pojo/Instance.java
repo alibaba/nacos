@@ -16,56 +16,71 @@
 package com.alibaba.nacos.api.naming.pojo;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN;
+
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * Instance
+ *
+ * @author nkorange
  */
 public class Instance {
 
     /**
-     * Unique ID of this instance.
+     * unique id of this instance.
      */
     private String instanceId;
 
     /**
-     * Instance ip
+     * instance ip
      */
     private String ip;
 
     /**
-     * Instance port
+     * instance port
      */
     private int port;
 
     /**
-     * Instance weight
+     * instance weight
      */
     private double weight = 1.0D;
 
     /**
-     * Instance health status
+     * instance health status
      */
-    @JSONField(name = "valid")
     private boolean healthy = true;
 
+    /**
+     * If instance is enabled to accept request
+     */
     private boolean enabled = true;
 
     /**
-     * Cluster information of instance
+     * If instance is ephemeral
+     *
+     * @since 1.0.0
+     */
+    private boolean ephemeral = true;
+
+    /**
+     * cluster information of instance
      */
     private String clusterName;
 
     /**
-     * Service name of instance
+     * Service information of instance
      */
     private String serviceName;
 
     /**
-     * User extended attributes
+     * user extended attributes
      */
     private Map<String, String> metadata = new HashMap<String, String>();
 
@@ -145,6 +160,14 @@ public class Instance {
         this.enabled = enabled;
     }
 
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
+    }
+
     @Override
     public String toString() {
         return JSON.toJSONString(this);
@@ -160,7 +183,7 @@ public class Instance {
             return false;
         }
 
-        Instance host = (Instance)obj;
+        Instance host = (Instance) obj;
 
         return strEquals(toString(), host.toString());
     }
@@ -172,6 +195,29 @@ public class Instance {
 
     private static boolean strEquals(String str1, String str2) {
         return str1 == null ? str2 == null : str1.equals(str2);
+    }
+
+    public long getInstanceHeartBeatInterval() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_INTERVAL, Constants.DEFAULT_HEART_BEAT_INTERVAL);
+    }
+
+    public long getInstanceHeartBeatTimeOut() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, Constants.DEFAULT_HEART_BEAT_TIMEOUT);
+    }
+
+    public long getIpDeleteTimeout() {
+        return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT, Constants.DEFAULT_IP_DELETE_TIMEOUT);
+    }
+
+    private long getMetaDataByKeyWithDefault( String key, long defaultValue) {
+        if (getMetadata() == null || getMetadata().isEmpty()) {
+            return defaultValue;
+        }
+        String value = getMetadata().get(key);
+        if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
+            return Long.valueOf(value);
+        }
+        return defaultValue;
     }
 
 }
