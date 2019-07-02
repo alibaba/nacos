@@ -13,6 +13,11 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
+import { getParams } from '../../../globalLib';
+import request from '../../../utils/request';
+import validateContent from 'utils/validateContent';
+import SuccessDialog from '../../../components/SuccessDialog';
+import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import './index.scss';
 import {
   Balloon,
@@ -60,31 +65,50 @@ class ConfigEditor extends React.Component {
     this.state = {
       loading: false,
       isBeta: false,
+      isNewConfig: true,
       betaPublishSuccess: false,
       betaIps: '',
       tabActiveKey: '',
       form: {
         dataId: '', // 配置 ID
         group: '', // 分组
-        tenant: '', // 租户 ID
         content: '', // 配置内容
         appName: '', // 应用名
         desc: '', // 描述
-        tags: [],
+        config_tags: [],
         type: 'text', // 配置格式
       },
       tagDataSource: [],
       openAdvancedSettings: false,
     };
-    this.field = new Field(this);
+    this.successDialog = React.createRef();
   }
 
   componentDidMount() {
-    this.initMoacoEditor('json', '{"a":100}');
+    const isNewConfig = !getParams('dataId');
+    const group = getParams('group').trim();
+    this.setState({ isNewConfig }, () => {
+      if (!isNewConfig) {
+        this.changeForm(
+          {
+            dataId: getParams('dataId').trim(),
+            group,
+          },
+          () => this.getConfig()
+        );
+      } else {
+        if (group) {
+          this.setState({ group });
+        }
+        this.initMoacoEditor('text', '');
+      }
+    });
   }
 
   initMoacoEditor(language, value) {
     const container = document.getElementById('container');
+    container.innerHTML = '';
+    this.monacoEditor = null;
     const options = {
       value,
       language: this.state.configType,
@@ -111,24 +135,117 @@ class ConfigEditor extends React.Component {
   }
 
   clickTab(tabActiveKey) {
-    this.setState({ tabActiveKey });
+    this.setState({ tabActiveKey }, () => this.getConfig(tabActiveKey === 'bata'));
+  }
+
+  getCodeVal() {
+    const { locale = {} } = this.props;
+    const { type, content } = this.state.form;
+    const codeVal = this.monacoEditor ? this.monacoEditor.getValue() : content;
+    if (!codeVal) {
+      Message.error({
+        content: locale.submitFailed,
+        align: 'cc cc',
+      });
+      return false;
+    }
+    return codeVal;
   }
 
   publish() {
-    console.log('publish...', this.state.form);
+    const { locale = {} } = this.props;
+    const { type } = this.state.form;
+    if (this.state.isNewConfig) {
+      this.validation();
+    }
+    const content = this.getCodeVal();
+    if (!content) {
+      return;
+    }
+    if (validateContent.validate({ content, type })) {
+      this._publishConfig();
+    } else {
+      Dialog.confirm({
+        content: locale.codeValErrorPrompt,
+        onOk: () => this._publishConfig(),
+      });
+    }
+  }
+
+  _publishConfig(beta = false) {
+    const { locale } = this.props;
+    const { betaIps, isNewConfig } = this.state;
+    const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
+    if (beta) {
+      headers.betaIps = betaIps;
+    }
+    const data = { ...this.state.form, content: this.getCodeVal() };
+    return request({
+      url: 'v1/cs/configs',
+      method: 'post',
+      data,
+      transformRequest: [
+        function(data) {
+          let ret = '';
+          for (let it in data) {
+            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
+          }
+          return ret;
+        },
+      ],
+      headers,
+    }).then(res => {
+      this.successDialog.current.getInstance().openDialog({
+        title: <div>{locale.toedit}</div>,
+        isok: true,
+        ...data,
+      });
+      if (res) {
+        this.setState({ isNewConfig: false });
+      }
+      return res;
+    });
   }
 
   publishBeta() {
-    this.setState({ betaPublishSuccess: true, tabActiveKey: 'beta' });
+    this._publishConfig(true).then(res => {
+      if (res) {
+        this.setState({ betaPublishSuccess: true, tabActiveKey: 'beta' });
+      }
+    });
   }
 
   stopBeta() {
-    this.setState({ isBeta: false, betaPublishSuccess: false, tabActiveKey: '' });
+    const { dataId, group } = this.state.form;
+    request
+      .delete('v1/cs/configs', {
+        params: {
+          beta: true,
+          dataId,
+          group,
+        },
+      })
+      .then(res => {
+        if (res.data) {
+          this.setState(
+            {
+              isBeta: false,
+              betaPublishSuccess: false,
+              tabActiveKey: '',
+            },
+            () => this.getConfig()
+          );
+        }
+      });
   }
 
-  changeForm(item) {
+  changeForm(item, cb) {
     const { form } = this.state;
-    this.setState({ form: { ...form, ...item } });
+    this.setState({ form: { ...form, ...item } }, () => {
+      if (cb) {
+        cb();
+      }
+    });
   }
 
   setConfigTags(tags) {
@@ -145,11 +262,65 @@ class ConfigEditor extends React.Component {
         tags.splice(i, 1);
       }
     });
-    this.changeForm({ tags });
+    this.changeForm({ config_tags: tags });
   }
 
   goBack() {
-    console.log('goBack');
+    const serverId = getParams('serverId') || '';
+    const tenant = getParams('namespace');
+    const searchGroup = getParams('searchGroup') || '';
+    const searchDataId = getParams('searchDataId') || '';
+    this.props.history.push(
+      `/configurationManagement?serverId=${serverId}&group=${searchGroup}&dataId=${searchDataId}&namespace=${tenant}`
+    );
+  }
+
+  getConfig(beta = false) {
+    const namespace = getParams('namespace');
+    const { dataId, group } = this.state.form;
+    return request
+      .get('v1/cs/configs', {
+        params: {
+          dataId,
+          group,
+          beta,
+          show: 'all',
+          namespaceId: namespace,
+          tenant: namespace,
+        },
+      })
+      .then(res => {
+        const { type, content, configTags } = res;
+        this.changeForm({ ...res, config_tags: configTags ? configTags.split(',') : [] });
+        this.initMoacoEditor(type, content);
+        this.codeVal = content;
+        return res;
+      });
+  }
+
+  validation() {
+    const { locale } = this.props;
+    const { form } = this.state;
+    const { dataId, group } = form;
+    if (!dataId) {
+      this.setState({
+        dataIdError: {
+          validateState: 'error',
+          help: locale.recipientFrom,
+        },
+      });
+      return false;
+    }
+    if (!group) {
+      this.setState({
+        groupError: {
+          validateState: 'error',
+          help: locale.homeApplication,
+        },
+      });
+      return false;
+    }
+    return true;
   }
 
   render() {
@@ -157,10 +328,13 @@ class ConfigEditor extends React.Component {
       loading,
       openAdvancedSettings,
       isBeta,
+      isNewConfig,
       betaPublishSuccess,
       form,
       tagDataSource,
       tabActiveKey,
+      dataIdError = {},
+      groupError = {},
     } = this.state;
     const { locale = {} } = this.props;
 
@@ -186,49 +360,63 @@ class ConfigEditor extends React.Component {
             </Tab>
           )}
           <Form className="form">
-            <Form.Item label="Data ID:" required>
-              <Input onChange={dataId => this.changeForm({ dataId })} />
+            <Form.Item label="Data ID:" required {...dataIdError}>
+              <Input
+                value={form.dataId}
+                onChange={dataId =>
+                  this.changeForm({ dataId }, () => this.setState({ dataIdError: {} }))
+                }
+                disabled={!isNewConfig}
+              />
             </Form.Item>
-            <Form.Item label="Group:" required>
-              <Input onChange={group => this.changeForm({ group })} />
+            <Form.Item label="Group:" required {...groupError}>
+              <Input
+                value={form.group}
+                onChange={group =>
+                  this.changeForm({ group }, () => this.setState({ groupError: {} }))
+                }
+                disabled={!isNewConfig}
+              />
             </Form.Item>
             <Form.Item label=" ">
               <div
                 className="switch"
                 onClick={() => this.setState({ openAdvancedSettings: !openAdvancedSettings })}
               >
-                显示高级选项
+                {openAdvancedSettings ? locale.collapse : locale.groupNotEmpty}
               </div>
             </Form.Item>
             {openAdvancedSettings && (
               <>
-                <Form.Item label="标签:">
+                <Form.Item label={locale.tags}>
                   <Select
                     size="medium"
                     hasArrow
                     autoWidth
                     mode="tag"
                     filterLocal
+                    value={form.config_tags}
                     dataSource={tagDataSource}
-                    onChange={tags => this.setConfigTags(tags)}
+                    onChange={config_tags => this.setConfigTags(config_tags)}
                     hasClear
                   />
                 </Form.Item>
-                <Form.Item label="标归属应用:">
-                  <Input onChange={appName => this.changeForm({ appName })} />
+                <Form.Item label={locale.targetEnvironment}>
+                  <Input value={form.appName} onChange={appName => this.changeForm({ appName })} />
                 </Form.Item>
               </>
             )}
-            <Form.Item label="描述:">
-              <Input.TextArea aria-label="TextArea" onChange={desc => this.changeForm({ desc })} />
+            <Form.Item label={locale.description}>
+              <Input.TextArea
+                value={form.desc}
+                aria-label="TextArea"
+                onChange={desc => this.changeForm({ desc })}
+              />
             </Form.Item>
-            <Form.Item label="租户 ID:">
-              <Input onChange={tenant => this.changeForm({ tenant })} />
-            </Form.Item>
-            {!betaPublishSuccess && (
-              <Form.Item label="Beta发布:">
+            {!isNewConfig && !betaPublishSuccess && (
+              <Form.Item label={locale.betaPublish}>
                 <Checkbox checked={isBeta} onChange={isBeta => this.setState({ isBeta })}>
-                  默认不要勾选。
+                  {locale.betaSwitchPrompt}
                 </Checkbox>
                 {isBeta && (
                   <Input.TextArea
@@ -239,8 +427,14 @@ class ConfigEditor extends React.Component {
                 )}
               </Form.Item>
             )}
-            <Form.Item label="配置格式:">
-              <Radio.Group value={form.type} onChange={type => this.changeForm({ type })}>
+            <Form.Item label={locale.format}>
+              <Radio.Group
+                value={form.type}
+                onChange={type => {
+                  this.initMoacoEditor(type, '');
+                  this.changeForm({ type });
+                }}
+              >
                 {LANGUAGE_LIST.map(item => (
                   <Radio value={item.value} key={item.value}>
                     {item.label}
@@ -251,13 +445,16 @@ class ConfigEditor extends React.Component {
             <Form.Item
               label={
                 <div className="help-label">
-                  <span>配置内容</span>
+                  <span>{locale.configcontent}</span>
                   <Balloon
                     trigger={<Icon type="help" size="small" />}
                     align="t"
                     style={{ marginRight: 5 }}
                     triggerType="hover"
-                  />
+                  >
+                    <p>{locale.escExit}</p>
+                    <p>{locale.releaseBeta}</p>
+                  </Balloon>
                   <span>:</span>
                 </div>
               }
@@ -274,24 +471,25 @@ class ConfigEditor extends React.Component {
                   disabled={tabActiveKey === 'production'}
                   onClick={() => this.publish()}
                 >
-                  发布
+                  {locale.publish}
                 </Button>
               )}
               {isBeta && betaPublishSuccess && tabActiveKey !== 'production' && (
                 <Button size="large" type="primary" onClick={() => this.stopBeta()}>
-                  停止Beta
+                  {locale.stopPublishBeta}
                 </Button>
               )}
               {isBeta && tabActiveKey !== 'production' && (
                 <Button size="large" type="primary" onClick={() => this.publishBeta()}>
-                  发布Beta
+                  {locale.release}
                 </Button>
               )}
               <Button size="large" type="normal" onClick={() => this.goBack()}>
-                返回
+                {locale.back}
               </Button>
             </Col>
           </Row>
+          <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>
     );
