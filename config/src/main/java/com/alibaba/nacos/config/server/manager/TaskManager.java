@@ -16,6 +16,7 @@
 package com.alibaba.nacos.config.server.manager;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.slf4j.Logger;
 
@@ -51,8 +52,10 @@ public final class TaskManager implements TaskManagerMBean {
 
     private String name;
 
+
     class ProcessRunnable implements Runnable {
 
+        @Override
         public void run() {
             while (!TaskManager.this.closed.get()) {
                 try {
@@ -140,6 +143,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         try {
             this.tasks.remove(type);
+            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
         } finally {
             this.lock.unlock();
         }
@@ -150,12 +154,12 @@ public final class TaskManager implements TaskManagerMBean {
      *
      * @param type
      * @param task
-     * @param previousTask
      */
     public void addTask(String type, AbstractTask task) {
         this.lock.lock();
         try {
             AbstractTask oldTask = tasks.put(type, task);
+            MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {
                 task.merge(oldTask);
             }
@@ -181,6 +185,7 @@ public final class TaskManager implements TaskManagerMBean {
                     }
                     // 先将任务从任务Map中删除
                     this.tasks.remove(entry.getKey());
+                    MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
                 }
             } finally {
                 this.lock.unlock();
@@ -244,6 +249,7 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
 
+    @Override
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
         for (String taskType : this.taskProcessors.keySet()) {

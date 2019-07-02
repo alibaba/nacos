@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import {
   Button,
   Field,
@@ -28,6 +29,7 @@ import {
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
+import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
 
 import './ServiceList.scss';
 
@@ -39,9 +41,15 @@ const { Column } = Table;
 class ServiceList extends React.Component {
   static displayName = 'ServiceList';
 
+  static propTypes = {
+    locale: PropTypes.object,
+    history: PropTypes.object,
+  };
+
   constructor(props) {
     super(props);
     this.editServiceDialog = React.createRef();
+    this.showcode = React.createRef();
     this.state = {
       loading: false,
       total: 0,
@@ -63,15 +71,22 @@ class ServiceList extends React.Component {
 
   openEditServiceDialog() {
     try {
-      this.editServiceDialog.current.getInstance().show(this.state.service);
-    } catch (error) {}
+      this.editServiceDialog.current.getInstance()
+        .show(this.state.service);
+    } catch (error) {
+    }
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword } = this.state;
-    const parameter = [`startPg=${currentPage}`, `pgSize=${pageSize}`, `keyword=${keyword}`];
+    const { currentPage, pageSize, keyword, withInstances = false } = this.state;
+    const parameter = [
+      `withInstances=${withInstances}`,
+      `pageNo=${currentPage}`,
+      `pageSize=${pageSize}`,
+      `keyword=${keyword}`,
+    ];
     request({
-      url: `v1/ns/catalog/serviceList?${parameter.join('&')}`,
+      url: `v1/ns/catalog/services?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
@@ -93,7 +108,22 @@ class ServiceList extends React.Component {
     setTimeout(() => this.queryServiceList());
   };
 
-  deleteService(serviceName) {
+  showcode = () => {
+    setTimeout(() => this.queryServiceList());
+  };
+
+  /**
+   *
+   * Added method to open sample code window
+   * @author yongchao9  #2019年05月18日 下午5:46:28
+   *
+   */
+  showSampleCode(record) {
+    this.showcode.current.getInstance()
+      .openDialog(record);
+  }
+
+  deleteService(service) {
     const { locale = {} } = this.props;
     const { prompt, promptDelete } = locale;
     Dialog.confirm({
@@ -102,7 +132,7 @@ class ServiceList extends React.Component {
       onOk: () => {
         request({
           method: 'DELETE',
-          url: `v1/ns/service?serviceName=${serviceName}`,
+          url: `v1/ns/service?serviceName=${service.name}&groupName=${service.groupName}`,
           dataType: 'text',
           beforeSend: () => this.openLoading(),
           success: res => {
@@ -119,7 +149,14 @@ class ServiceList extends React.Component {
     });
   }
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+    });
+
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
+
 
   render() {
     const { locale = {} } = this.props;
@@ -132,9 +169,10 @@ class ServiceList extends React.Component {
       create,
       operation,
       detail,
+      sampleCode,
       deleteAction,
     } = locale;
-    const { keyword } = this.state;
+    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -143,13 +181,33 @@ class ServiceList extends React.Component {
       <div className="main-container service-management">
         <Loading
           shape="flower"
-          style={{ position: 'relative' }}
+          style={{
+            position: 'relative',
+            width: '100%',
+          }}
           visible={this.state.loading}
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup left={serviceList} namespaceCallBack={this.getQueryLater} />
-          <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
+          <div style={{ marginTop: -15 }}>
+            <RegionGroup
+              setNowNameSpace={this.setNowNameSpace}
+              namespaceCallBack={this.getQueryLater}
+            />
+          </div>
+          <h3 className="page-title">
+            <span className="title-item">{serviceList}</span>
+            <span className="title-item">|</span>
+            <span className="title-item">{nowNamespaceName}</span>
+            <span className="title-item">{nowNamespaceId}</span>
+          </h3>
+          <Row
+            className="demo-row"
+            style={{
+              marginBottom: 10,
+              padding: 0,
+            }}
+          >
             <Col span="24">
               <Form inline field={this.field}>
                 <FormItem label={serviceName}>
@@ -158,6 +216,9 @@ class ServiceList extends React.Component {
                     style={{ width: 200 }}
                     value={keyword}
                     onChange={keyword => this.setState({ keyword })}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                    }
                   />
                 </FormItem>
                 <FormItem label="">
@@ -181,12 +242,11 @@ class ServiceList extends React.Component {
             <Col span="24" style={{ padding: 0 }}>
               <Table
                 dataSource={this.state.dataSource}
-                fixedHeader
-                maxBodyHeight={530}
                 locale={{ empty: pubNoData }}
                 getRowProps={row => this.rowColor(row)}
               >
                 <Column title={locale.columnServiceName} dataIndex="name" />
+                <Column title={locale.groupName} dataIndex="groupName" />
                 <Column title={locale.columnClusterCount} dataIndex="clusterCount" />
                 <Column title={locale.columnIpCount} dataIndex="ipCount" />
                 <Column
@@ -197,22 +257,32 @@ class ServiceList extends React.Component {
                   title={operation}
                   align="center"
                   cell={(value, index, record) => (
+                    // @author yongchao9  #2019年05月18日 下午5:46:28
+                    /* Add a link to view "sample code"
+                     replace the original button with a label,
+                     which is consistent with the operation style in configuration management.
+                     */
                     <div>
-                      <Button
-                        type="normal"
+                      <a
                         onClick={() =>
-                          this.props.history.push(`/serviceDetail?name=${record.name}`)
-                        }
+                          this.props.history.push(
+                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`,
+                          )}
+                        style={{ marginRight: 5 }}
                       >
                         {detail}
-                      </Button>
-                      <Button
-                        style={{ marginLeft: 12 }}
-                        type="normal"
-                        onClick={() => this.deleteService(record.name)}
+                      </a>
+                      <span style={{ marginRight: 5 }}>|</span>
+                      <a style={{ marginRight: 5 }} onClick={() => this.showSampleCode(record)}>
+                        {sampleCode}
+                      </a>
+                      <span style={{ marginRight: 5 }}>|</span>
+                      <a
+                        onClick={() => this.deleteService(record)}
+                        style={{ marginRight: 5 }}
                       >
                         {deleteAction}
-                      </Button>
+                      </a>
                     </div>
                   )}
                 />
@@ -220,7 +290,11 @@ class ServiceList extends React.Component {
             </Col>
           </Row>
           {this.state.total > this.state.pageSize && (
-            <div style={{ marginTop: 10, textAlign: 'right' }}>
+            <div style={{
+              marginTop: 10,
+              textAlign: 'right',
+            }}
+            >
               <Pagination
                 current={this.state.currentPage}
                 total={this.state.total}
@@ -232,6 +306,7 @@ class ServiceList extends React.Component {
             </div>
           )}
         </Loading>
+        <ShowServiceCodeing ref={this.showcode} />
         <EditServiceDialog
           ref={this.editServiceDialog}
           openLoading={() => this.openLoading()}

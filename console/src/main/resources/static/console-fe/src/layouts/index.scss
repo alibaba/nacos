@@ -18,7 +18,6 @@
   width: 100%;
   z-index: 1000;
   background-color: #fff;
-  border-bottom: 1px solid #eee;
 }
 .header-container-primary {
   background: #252a2f;
@@ -98,6 +97,13 @@
   font-family: PingFangSC-Medium;
   font-size: 14px;
   opacity: 0.6;
+}
+.header-container .header-body .logout {
+  float: right;
+  color: #fff;
+  opacity: 0.6;
+  font-family: Avenir-Medium;
+  margin-right: 40px;
 }
 .header-container .header-body .language-switch:hover {
   opacity: 1;
@@ -1387,4 +1393,8 @@ h6 {
     padding-left: 20px;
     padding-right: 20px;
   }
+}
+
+.product-nav-list li.selected a {
+  background-color: #F4F6F8;
 }

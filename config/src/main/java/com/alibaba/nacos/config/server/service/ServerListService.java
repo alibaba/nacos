@@ -15,13 +15,29 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.PostConstruct;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletResponse;
+
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -38,20 +54,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.PostConstruct;
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.*;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.common.util.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.common.util.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.common.util.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 
 /**
  * Serverlist service
@@ -260,9 +267,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     List<String> lines = IOUtils.readLines(new StringReader(result.content));
                     List<String> ips = new ArrayList<String>(lines.size());
                     for (String serverAddr : lines) {
-                        if (null == serverAddr || serverAddr.trim().isEmpty()) {
-                            continue;
-                        } else {
+                        if (StringUtils.isNotBlank(serverAddr)) {
                             ips.add(getFormatServerAddr(serverAddr));
                         }
                     }
@@ -377,6 +382,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     serverListUnhealth.add(serverIp);
                 }
                 defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
+                MetricsMonitor.getUnhealthException().increment();
             }
         }
 
@@ -391,6 +397,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     serverListUnhealth.add(serverIp);
                 }
                 defaultLog.error("unhealthIp:{}, unhealthCount:{}", serverIp, failCount);
+                MetricsMonitor.getUnhealthException().increment();
             }
         }
     }

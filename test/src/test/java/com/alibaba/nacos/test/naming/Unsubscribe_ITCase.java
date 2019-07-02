@@ -33,7 +33,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
@@ -51,13 +50,21 @@ public class Unsubscribe_ITCase {
     private NamingService naming;
     @LocalServerPort
     private int port;
-    
+
     @Before
     public void init() throws Exception{
+        NamingBase.prepareServer(port);
         instances = Collections.emptyList();
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
+        }
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
 
@@ -103,7 +110,7 @@ public class Unsubscribe_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -146,7 +153,7 @@ public class Unsubscribe_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
 }

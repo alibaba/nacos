@@ -15,7 +15,8 @@
  */
 package com.alibaba.nacos.client.naming.utils;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
@@ -23,14 +24,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static org.apache.commons.lang3.CharEncoding.UTF_8;
+
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * @author nkorange
  */
 public class IoUtils {
 
-    static public String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input, "UTF-8"))
-            : toString(new InputStreamReader(input, encoding));
+    static public String toString(InputStream input, String encoding) {
+
+        try {
+            return (null == encoding) ? toString(new InputStreamReader(input, UTF_8))
+                : toString(new InputStreamReader(input, encoding));
+        } catch (Exception e) {
+            NAMING_LOGGER.error("NA", "read input failed.", e);
+            return StringUtils.EMPTY;
+        }
     }
 
     static public String toString(Reader reader) throws IOException {
@@ -78,7 +88,7 @@ public class IoUtils {
     }
 
     static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
+        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
             reader);
     }
 
@@ -155,7 +165,6 @@ public class IoUtils {
         }
     }
 
-    @SuppressFBWarnings("BIT_IOR_OF_SIGNED_BYTE")
     public static boolean isGzipStream(byte[] bytes) {
 
         int minByteArraySize = 2;
@@ -170,15 +179,22 @@ public class IoUtils {
         if (!isGzipStream(raw)) {
             return raw;
         }
+        GZIPInputStream gis = null;
+        ByteArrayOutputStream out = null;
 
-        GZIPInputStream gis
-            = new GZIPInputStream(new ByteArrayInputStream(raw));
-        ByteArrayOutputStream out
-            = new ByteArrayOutputStream();
-
-        IoUtils.copy(gis, out);
-
-        return out.toByteArray();
+        try {
+            gis = new GZIPInputStream(new ByteArrayInputStream(raw));
+            out = new ByteArrayOutputStream();
+            IoUtils.copy(gis, out);
+            return out.toByteArray();
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+            if (gis != null) {
+                gis.close();
+            }
+        }
     }
 }
 

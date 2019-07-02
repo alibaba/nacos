@@ -16,18 +16,18 @@
 package com.alibaba.nacos.naming.boot;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 /**
- * @author <a href="mailto:zpf.073@gmail.com">nkorange</a>
+ * A global spring context bean to inject bean for non-bean classes
+ *
+ * @author nkorange
  */
-@Component
+@Component("nacosApplicationContext")
 public class SpringContext implements ApplicationContextAware {
 
-    @Autowired
     static ApplicationContext context;
 
     @Override

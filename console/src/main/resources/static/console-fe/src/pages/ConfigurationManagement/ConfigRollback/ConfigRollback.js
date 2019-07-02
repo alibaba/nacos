@@ -12,13 +12,18 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
+import { getParams, request } from '../../../globalLib';
+import { Button, ConfigProvider, Dialog, Field, Form, Input } from '@alifd/next';
+
 import './index.scss';
-import { getParams, request, aliwareIntl } from '../../../globalLib';
-import { Button, Dialog, Field, Form, Input } from '@alifd/next';
 
 const FormItem = Form.Item;
 
+@ConfigProvider.config
 class ConfigRollback extends React.Component {
+  static displayName = 'ConfigRollback';
+
   constructor(props) {
     super(props);
     this.field = new Field(this);
@@ -32,21 +37,27 @@ class ConfigRollback extends React.Component {
       showmore: false,
     };
     // this.params = window.location.hash.split('?')[1]||'';
+  }
+
+  static propTypes = {
+    history: PropTypes.object,
+    locale: PropTypes.object,
+  };
+
+  componentDidMount() {
+    const { locale = {} } = this.props;
     this.typeMap = {
       // 操作映射提示
       U: 'publish',
-      I: aliwareIntl.get('com.alibaba.nacos.page.configRollback.delete'),
+      I: locale.rollbackDelete,
       D: 'publish',
     };
     this.typeMapName = {
       // 操作映射名
-      U: aliwareIntl.get('com.alibaba.nacos.page.configRollback.updated'),
-      I: aliwareIntl.get('com.alibaba.nacos.page.configRollback.inserted'),
-      D: aliwareIntl.get('com.alibaba.nacos.page.configRollback.delete'),
+      U: locale.update,
+      I: locale.insert,
+      D: locale.rollbackDelete,
     };
-  }
-
-  componentDidMount() {
     this.getDataDetail();
   }
 
@@ -94,19 +105,18 @@ class ConfigRollback extends React.Component {
   }
 
   onOpenConfirm() {
+    const { locale = {} } = this.props;
     const self = this;
     let type = 'post';
     if (this.opType.trim() === 'I') {
       type = 'delete';
     }
     Dialog.confirm({
-      language: aliwareIntl.currentLanguageCode || 'zh-cn',
-      title: aliwareIntl.get('com.alibaba.nacos.page.configRollback.please_confirm_rollback'),
+      title: locale.rollBack,
       content: (
         <div style={{ marginTop: '-20px' }}>
           <h3>
-            {aliwareIntl.get('com.alibaba.nacos.page.configRollback.determine')}{' '}
-            {aliwareIntl.get('com.alibaba.nacos.page.configRollback.the_following_configuration')}
+            {locale.determine} {locale.followingConfiguration}
           </h3>
           <p>
             <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
@@ -145,12 +155,7 @@ class ConfigRollback extends React.Component {
           data: postData,
           success(data) {
             if (data === true) {
-              Dialog.alert({
-                language: aliwareIntl.currentLanguageCode || 'zh-cn',
-                content: aliwareIntl.get(
-                  'com.alibaba.nacos.page.configRollback.rollback_successful'
-                ),
-              });
+              Dialog.alert({ content: locale.rollbackSuccessful });
             }
           },
         });
@@ -159,6 +164,7 @@ class ConfigRollback extends React.Component {
   }
 
   render() {
+    const { locale = {} } = this.props;
     const { init } = this.field;
     const formItemLayout = {
       labelCol: {
@@ -170,15 +176,13 @@ class ConfigRollback extends React.Component {
     };
     return (
       <div style={{ padding: 10 }}>
-        <h1>{aliwareIntl.get('com.alibaba.nacos.page.configRollback.configuration_rollback')}</h1>
+        <h1>{locale.configurationRollback}</h1>
         <Form field={this.field}>
           <FormItem label="Data ID:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>
               <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>
-                {this.state.showmore
-                  ? aliwareIntl.get('com.alibaba.nacos.page.configRollback.retracted')
-                  : aliwareIntl.get('com.alibaba.nacos.page.configRollback.for_more_advanced')}
+                {this.state.showmore ? locale.collapse : locale.more}
               </a>
             </div>
           </FormItem>
@@ -186,28 +190,17 @@ class ConfigRollback extends React.Component {
             <FormItem label="Group:" required {...formItemLayout}>
               <Input htmlType="text" readOnly {...init('group')} />
             </FormItem>
-            <FormItem
-              label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.home')}
-              {...formItemLayout}
-            >
+            <FormItem label={locale.home} {...formItemLayout}>
               <Input htmlType="text" readOnly {...init('appName')} />
             </FormItem>
           </div>
-          <FormItem
-            label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.action_type')}
-            required
-            {...formItemLayout}
-          >
+          <FormItem label={locale.actionType} required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('opType')} />
           </FormItem>
           <FormItem label="MD5:" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('md5')} />
           </FormItem>
-          <FormItem
-            label={aliwareIntl.get('com.alibaba.nacos.page.configRollback.configuration')}
-            required
-            {...formItemLayout}
-          >
+          <FormItem label={locale.configuration} required {...formItemLayout}>
             <Input.TextArea htmlType="text" multiple rows={15} readOnly {...init('content')} />
           </FormItem>
           <FormItem label=" " {...formItemLayout}>
@@ -216,10 +209,10 @@ class ConfigRollback extends React.Component {
               style={{ marginRight: 10 }}
               onClick={this.onOpenConfirm.bind(this)}
             >
-              {aliwareIntl.get('com.alibaba.nacos.page.configRollback.rollback')}
+              {locale.rollBack}
             </Button>
             <Button type="normal" onClick={this.goList.bind(this)}>
-              {aliwareIntl.get('com.alibaba.nacos.page.configRollback.return')}
+              {locale.back}
             </Button>
           </FormItem>
         </Form>

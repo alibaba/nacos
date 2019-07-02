@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.client.identify;
 
-import com.alibaba.nacos.client.config.utils.LogUtils;
-import com.alibaba.nacos.client.logger.Logger;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
+import org.slf4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +27,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Nacos
  */
 public final class CredentialService implements SpasCredentialLoader {
-    static final public Logger log = LogUtils.logger(CredentialService.class);
+    private static final Logger LOGGER = LogUtils.logger(CredentialService.class);
+
     private static ConcurrentHashMap<String, CredentialService> instances
         = new ConcurrentHashMap<String, CredentialService>();
 
@@ -81,9 +82,10 @@ public final class CredentialService implements SpasCredentialLoader {
         if (watcher != null) {
             watcher.stop();
         }
-        log.info(appName, this.getClass().getSimpleName() + " is freed");
+        LOGGER.info("[{}] {} is freed", appName, this.getClass().getSimpleName());
     }
 
+    @Override
     public Credentials getCredential() {
         Credentials localCredential = credentials;
         if (localCredential.valid()) {

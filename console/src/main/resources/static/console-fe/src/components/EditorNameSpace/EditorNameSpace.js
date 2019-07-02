@@ -12,6 +12,7 @@
  */
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { request } from '../../globalLib';
 import { Button, ConfigProvider, Dialog, Field, Form, Input, Loading } from '@alifd/next';
 
@@ -22,6 +23,11 @@ const FormItem = Form.Item;
 @ConfigProvider.config
 class EditorNameSpace extends React.Component {
   static displayName = 'EditorNameSpace';
+
+  static propTypes = {
+    getNameSpaces: PropTypes.func,
+    locale: PropTypes.object,
+  };
 
   constructor(props) {
     super(props);
@@ -188,7 +194,7 @@ class EditorNameSpace extends React.Component {
                 <Input
                   {...this.field.init('namespaceDesc', {
                     rules: [
-                      { required: true, message: locale.namespace },
+                      { required: true, message: locale.namespaceDesc },
                       { validator: this.validateChart.bind(this) },
                     ],
                   })}
