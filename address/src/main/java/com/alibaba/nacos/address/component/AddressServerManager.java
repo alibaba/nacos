@@ -16,6 +16,7 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
+import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.consistency.persistent.raft.LeaderElectFinishedEvent;
 import com.alibaba.nacos.naming.consistency.persistent.raft.MakeLeaderEvent;
 import com.alibaba.nacos.naming.core.Service;
@@ -25,6 +26,7 @@ import com.alibaba.nacos.naming.misc.SwitchManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -60,14 +62,30 @@ public class AddressServerManager implements ApplicationListener<ApplicationEven
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
 
-        if (event instanceof LeaderElectFinishedEvent ||
-            event instanceof MakeLeaderEvent) {
-            // will handler the leader elect finished and follower make leader event
-            try {
-                switchManager.update(SwitchEntry.CHECK, "false", false);
-            } catch (Exception e) {
-                logger.error("update the health check cause an exception.", e);
-            }
+        // 1. process the standalone mode
+        if (event instanceof ApplicationStartedEvent && SystemUtils.STANDALONE_MODE) {
+
+            closeSwitchForHealthCheck(false);
+        }
+
+        // 2. process the cluster mode
+        if (!SystemUtils.STANDALONE_MODE && (event instanceof LeaderElectFinishedEvent ||
+            event instanceof MakeLeaderEvent)) {
+            // will handler the leader elect finished and follower make leader event in cluster mode
+            closeSwitchForHealthCheck(true);
+        }
+
+    }
+
+    /**
+     * @param isClusterMode
+     */
+    private void closeSwitchForHealthCheck(boolean isClusterMode) {
+        try {
+            switchManager.update(SwitchEntry.CHECK, "false", !isClusterMode);
+        } catch (Exception e) {
+            String tips = isClusterMode ? "cluster mode" : "standalone";
+            logger.error(String.format("update the health check cause an exception in %s.", tips), e);
         }
     }
 
