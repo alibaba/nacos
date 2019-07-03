@@ -349,10 +349,13 @@ const I18N_CONF = {
   },
   ConfigEditor: {
     official: '正式',
+    production: '正式',
+    beta: 'BETA',
     wrong: '错误',
     submitFailed: '不能为空, 提交失败',
     toedittitle: '编辑配置',
     toedit: '编辑配置',
+    newConfigEditor: '新建配置',
     vdchart: '请勿输入非法字符',
     recipientFrom: 'Data ID不能为空',
     homeApplication: 'Group不能为空',
