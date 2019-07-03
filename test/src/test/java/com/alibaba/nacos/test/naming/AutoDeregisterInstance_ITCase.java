@@ -93,7 +93,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, Constants.DEFAULT_CLUSTER_NAME, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
@@ -130,7 +130,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, Constants.DEFAULT_CLUSTER_NAME, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
@@ -161,7 +161,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, Constants.DEFAULT_CLUSTER_NAME, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
 
@@ -207,7 +207,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, Constants.DEFAULT_CLUSTER_NAME, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
 

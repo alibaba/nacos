@@ -274,7 +274,7 @@ public class MultiTenant_InstanceAPI_ITCase {
         //AP下，通过HTTP删除实例前必须删除心跳
         NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "33.33.33.33", 8888);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, Constants.DEFAULT_CLUSTER_NAME, "33.33.33.33", 8888);
         TimeUnit.SECONDS.sleep(3L);
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
             Params.newParams()
@@ -315,7 +315,7 @@ public class MultiTenant_InstanceAPI_ITCase {
         //AP下，通过HTTP删除实例前必须删除心跳
         NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(TEST_GROUP_2 + Constants.SERVICE_INFO_SPLITER + serviceName, "22.22.22.22", 80);
+            removeBeatInfo(TEST_GROUP_2 + Constants.SERVICE_INFO_SPLITER + serviceName, Constants.DEFAULT_CLUSTER_NAME, "22.22.22.22", 80);
 
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
             Params.newParams()
