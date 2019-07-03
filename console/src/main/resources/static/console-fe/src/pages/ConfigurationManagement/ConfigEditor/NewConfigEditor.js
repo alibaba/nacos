@@ -49,7 +49,7 @@ const LANGUAGE_LIST = [
   { value: 'properties', label: 'Properties' },
 ];
 
-const TAB_LIST = [{ key: 'production', label: '正式' }, { key: 'beta', label: 'BETA' }];
+const TAB_LIST = ['production', 'beta'];
 
 @ConfigProvider.config
 class ConfigEditor extends React.Component {
@@ -57,7 +57,7 @@ class ConfigEditor extends React.Component {
 
   static propTypes = {
     locale: PropTypes.object,
-    // history: PropTypes.object,
+    history: PropTypes.object,
   };
 
   constructor(props) {
@@ -82,6 +82,7 @@ class ConfigEditor extends React.Component {
       openAdvancedSettings: false,
     };
     this.successDialog = React.createRef();
+    this.diffEditorDialog = React.createRef();
   }
 
   componentDidMount() {
@@ -134,6 +135,31 @@ class ConfigEditor extends React.Component {
     }
   }
 
+  createDiffCodeMirror(leftCode, rightCode) {
+    const target = this.diffEditorDialog.current.getInstance();
+    target.innerHTML = '';
+    this.diffeditor = window.CodeMirror.MergeView(target, {
+      value: leftCode || '',
+      origLeft: null,
+      orig: rightCode || '',
+      lineNumbers: true,
+      mode: this.mode,
+      theme: 'xq-light',
+      highlightDifferences: true,
+      connect: 'align',
+      collapseIdentical: false,
+    });
+  }
+
+  openDiff(cbName) {
+    this.diffcb = cbName;
+    let leftvalue = this.monacoEditor.getValue();
+    let rightvalue = this.codeVal;
+    leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
+    this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
+  }
+
   clickTab(tabActiveKey) {
     this.setState({ tabActiveKey }, () => this.getConfig(tabActiveKey === 'bata'));
   }
@@ -163,12 +189,13 @@ class ConfigEditor extends React.Component {
       return;
     }
     if (validateContent.validate({ content, type })) {
-      this._publishConfig();
+      return this._publishConfig();
     } else {
       Dialog.confirm({
         content: locale.codeValErrorPrompt,
         onOk: () => this._publishConfig(),
       });
+      return false;
     }
   }
 
@@ -195,29 +222,34 @@ class ConfigEditor extends React.Component {
       ],
       headers,
     }).then(res => {
-      this.successDialog.current.getInstance().openDialog({
-        title: <div>{locale.toedit}</div>,
-        isok: true,
-        ...data,
-      });
       if (res) {
-        this.setState({ isNewConfig: false });
+        if (isNewConfig) {
+          this.setState({ isNewConfig: false });
+        }
+        this.getConfig();
       }
       return res;
     });
   }
 
   publishBeta() {
-    this._publishConfig(true).then(res => {
+    return this._publishConfig(true).then(res => {
       if (res) {
-        this.setState({ betaPublishSuccess: true, tabActiveKey: 'beta' });
+        this.setState(
+          {
+            betaPublishSuccess: true,
+            tabActiveKey: 'beta',
+          },
+          () => this.getConfig(true)
+        );
       }
     });
   }
 
   stopBeta() {
+    const { locale } = this.props;
     const { dataId, group } = this.state.form;
-    request
+    return request
       .delete('v1/cs/configs', {
         params: {
           beta: true,
@@ -236,6 +268,7 @@ class ConfigEditor extends React.Component {
             () => this.getConfig()
           );
         }
+        return res;
       });
   }
 
@@ -352,9 +385,9 @@ class ConfigEditor extends React.Component {
           </h1>
           {betaPublishSuccess && (
             <Tab shape="wrapped" activeKey={tabActiveKey} onChange={key => this.clickTab(key)}>
-              {TAB_LIST.map(({ key, label }) => (
-                <Tab.Item title={label} key={key}>
-                  {label}
+              {TAB_LIST.map(key => (
+                <Tab.Item title={locale[key]} key={key}>
+                  {locale[key]}
                 </Tab.Item>
               ))}
             </Tab>
@@ -413,11 +446,13 @@ class ConfigEditor extends React.Component {
                 onChange={desc => this.changeForm({ desc })}
               />
             </Form.Item>
-            {!isNewConfig && !betaPublishSuccess && (
+            {!isNewConfig && tabActiveKey !== 'production' && (
               <Form.Item label={locale.betaPublish}>
-                <Checkbox checked={isBeta} onChange={isBeta => this.setState({ isBeta })}>
-                  {locale.betaSwitchPrompt}
-                </Checkbox>
+                {!betaPublishSuccess && (
+                  <Checkbox checked={isBeta} onChange={isBeta => this.setState({ isBeta })}>
+                    {locale.betaSwitchPrompt}
+                  </Checkbox>
+                )}
                 {isBeta && (
                   <Input.TextArea
                     aria-label="TextArea"
@@ -464,31 +499,63 @@ class ConfigEditor extends React.Component {
           </Form>
           <Row>
             <Col span="24" className="button-list">
-              {(!isBeta || tabActiveKey === 'production') && (
+              {isBeta && betaPublishSuccess && tabActiveKey !== 'production' && (
                 <Button
                   size="large"
                   type="primary"
-                  disabled={tabActiveKey === 'production'}
-                  onClick={() => this.publish()}
+                  onClick={() =>
+                    this.stopBeta().then(() => {
+                      this.successDialog.current.getInstance().openDialog({
+                        title: <div>{locale.stopPublishBeta}</div>,
+                        isok: true,
+                        ...form,
+                      });
+                    })
+                  }
                 >
-                  {locale.publish}
-                </Button>
-              )}
-              {isBeta && betaPublishSuccess && tabActiveKey !== 'production' && (
-                <Button size="large" type="primary" onClick={() => this.stopBeta()}>
                   {locale.stopPublishBeta}
                 </Button>
               )}
               {isBeta && tabActiveKey !== 'production' && (
-                <Button size="large" type="primary" onClick={() => this.publishBeta()}>
+                <Button size="large" type="primary" onClick={() => this.openDiff('publishBeta')}>
                   {locale.release}
                 </Button>
               )}
+              <Button
+                size="large"
+                type="primary"
+                disabled={tabActiveKey === 'production'}
+                onClick={() => this.openDiff('publish')}
+              >
+                {locale.publish}
+              </Button>
               <Button size="large" type="normal" onClick={() => this.goBack()}>
                 {locale.back}
               </Button>
             </Col>
           </Row>
+          <DiffEditorDialog
+            ref={this.diffEditorDialog}
+            publishConfig={() => {
+              this[this.diffcb]();
+              let title = locale.toedit;
+              if (isNewConfig) {
+                title = locale.newConfigEditor;
+              }
+              if (this.diffcb === 'publishBeta') {
+                title = locale.betaPublish;
+              }
+              if (this.diffcb === 'publish' && tabActiveKey === 'beta') {
+                title = locale.stopPublishBeta;
+                this.stopBeta();
+              }
+              this.successDialog.current.getInstance().openDialog({
+                title: <div>{title}</div>,
+                isok: true,
+                ...form,
+              });
+            }}
+          />
           <SuccessDialog ref={this.successDialog} />
         </Loading>
       </div>

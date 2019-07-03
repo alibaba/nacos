@@ -351,9 +351,12 @@ const I18N_CONF = {
   },
   ConfigEditor: {
     official: 'Official',
+    production: 'Production',
+    beta: 'BETA',
     wrong: 'Error',
     submitFailed: 'Cannot be empty, submit failed',
     toedittitle: 'Edit Configuration',
+    newConfigEditor: 'New Config Editor',
     toedit: 'Edit Configuration',
     vdchart: 'Illegal characters not allowed',
     recipientFrom: 'Data ID cannot be empty',
