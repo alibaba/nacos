@@ -369,8 +369,12 @@ const I18N_CONF = {
     escExit: 'Press F1 to view in full screen',
     releaseBeta: 'Press Esc to exit ',
     release: 'Beta Publish',
+    stopPublishBeta: 'Stop Beta',
+    betaPublish: 'Beta Publish:',
+    betaSwitchPrompt: 'Not checked by default.',
     publish: 'Publish',
     back: 'Back',
+    codeValErrorPrompt: 'Configuration information may have syntax errors. Are you sure to submit?',
   },
   EditorNameSpace: {
     notice: 'Notice',
