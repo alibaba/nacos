@@ -43,6 +43,7 @@ import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
 import SubscriberList from './pages/ServiceManagement/SubscriberList';
 import ClusterNodeList from './pages/ClusterManagement/ClusterNodeList';
+import Welcome from './pages/Welcome/Welcome';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -70,7 +71,8 @@ const store = createStore(
 );
 
 const MENU = [
-  { path: '/', exact: true, render: () => <Redirect to="/configurationManagement" /> },
+  { path: '/', exact: true, render: () => <Redirect to="/welcome" /> },
+  { path: '/welcome', component: Welcome },
   { path: '/namespace', component: Namespace },
   { path: '/newconfig', component: Newconfig },
   { path: '/configsync', component: Configsync },
