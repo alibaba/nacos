@@ -16,6 +16,7 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.Instance;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
@@ -27,6 +28,7 @@ import java.util.List;
 /**
  * @author pbting
  * @date 2019-07-01 8:53 PM
+ * @since 1.1.0
  */
 @Component
 public class AddressServerGeneratorManager {
@@ -52,7 +54,7 @@ public class AddressServerGeneratorManager {
      * @param ipArray
      * @return
      */
-    public List<Instance> generateInstancesByIps(String serviceName, String clusterName, String[] ipArray) {
+    public List<Instance> generateInstancesByIps(String serviceName, String rawProductName, String clusterName, String[] ipArray) {
         if (StringUtils.isEmpty(serviceName)
             || StringUtils.isEmpty(clusterName)
             || ipArray == null || ipArray.length == 0) {
@@ -67,8 +69,8 @@ public class AddressServerGeneratorManager {
             instance.setPort(Integer.valueOf(ipAndPort[1]));
             instance.setClusterName(clusterName);
             instance.setServiceName(serviceName);
-            instance.setTenant(AddressServerConstants.DEFAULT_NAMESPACE);
-            instance.setApp(serviceName);
+            instance.setTenant(Constants.DEFAULT_NAMESPACE_ID);
+            instance.setApp(rawProductName);
             instance.setEphemeral(false);
             instanceList.add(instance);
         }
@@ -80,7 +82,7 @@ public class AddressServerGeneratorManager {
      * @param ip
      * @return
      */
-    private String[] generateIpAndPort(String ip) {
+    public String[] generateIpAndPort(String ip) {
 
         int index = ip.indexOf(AddressServerConstants.IP_PORT_SEPARATOR);
         if (index != -1) {
@@ -98,15 +100,9 @@ public class AddressServerGeneratorManager {
 
         StringBuilder ips = new StringBuilder();
         instanceList.forEach(instance -> {
-            if (instance.getPort() == AddressServerConstants.DEFAULT_SERVER_PORT) {
-                //the default port then not contains the port.
-                ips.append(instance.getIp());
-            } else {
-                ips.append(instance.getIp() + ":" + instance.getPort());
-            }
+            ips.append(instance.getIp() + ":" + instance.getPort());
             ips.append("\n");
         });
-
 
         return ips.toString();
     }
@@ -117,10 +113,10 @@ public class AddressServerGeneratorManager {
      */
     public String generateNacosServiceName(String rawServiceName) {
 
-        if (rawServiceName.indexOf(AddressServerConstants.DEFAULT_GROUP) != -1) {
+        if (rawServiceName.indexOf(Constants.DEFAULT_GROUP) != -1) {
             return rawServiceName;
         }
 
-        return AddressServerConstants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + rawServiceName;
+        return Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + rawServiceName;
     }
 }

@@ -130,14 +130,16 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     /**
      * Replace the service for the current cluster.
-     * <p>Deprecated because the service shouldn't be replaced.
+     * <p>  the service shouldn't be replaced. so if the service is not empty will nothing to do.
      * (the service fields can be changed, but the service A shouldn't be replaced to service B).
      * If the service of a cluster is required to replace, actually, a new cluster is required.
      *
      * @param service the new service
      */
-    @Deprecated
     public void setService(Service service) {
+        if (this.service != null) {
+            return;
+        }
         this.service = service;
     }
 

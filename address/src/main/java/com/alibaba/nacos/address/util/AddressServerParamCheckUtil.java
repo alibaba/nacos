@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
  *
  * @author pbting
  * @date 2019-06-19 11:19 AM
+ * @since 1.1.0
  */
 public class AddressServerParamCheckUtil {
 
