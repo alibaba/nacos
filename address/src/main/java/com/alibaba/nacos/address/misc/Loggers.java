@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright (C) 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.address;
+package com.alibaba.nacos.address.misc;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @author nacos
- * @since 1.1.0
+ * @author pbting
+ * @date 2019-07-04 4:34 PM
  */
-@SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
-public class AddressServer {
-    public static void main(String[] args) {
+public class Loggers {
 
-        SpringApplication.run(AddressServer.class, args);
-    }
+    public static final Logger addressLogger = LoggerFactory.getLogger("com.alibaba.nacos.address.main");
 }

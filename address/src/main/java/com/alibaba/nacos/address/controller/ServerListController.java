@@ -16,8 +16,7 @@
 package com.alibaba.nacos.address.controller;
 
 import com.alibaba.nacos.address.component.AddressServerGeneratorManager;
-import com.alibaba.nacos.address.component.AddressServerManager;
-import com.alibaba.nacos.address.constant.AddressServerConstants;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -32,15 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * @author pbting
  * @date 2019-06-18 5:04 PM
+ * @since 1.1.0
  */
 @RestController
 public class ServerListController {
 
     @Autowired
     private ServiceManager serviceManager;
-
-    @Autowired
-    private AddressServerManager addressServerManager;
 
     @Autowired
     private AddressServerGeneratorManager addressServerBuilderManager;
@@ -51,24 +48,23 @@ public class ServerListController {
      * @return
      */
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)
-    public ResponseEntity getCluster(@PathVariable(name = "product") String product,
-                                     @PathVariable(required = false) String cluster) {
-        String productName = addressServerBuilderManager.generateProductName(product);
-        String clusterName = addressServerManager.getDefaultClusterNameIfEmpty(cluster);
+    public ResponseEntity getCluster(@PathVariable String product,
+                                     @PathVariable String cluster) {
 
+        String productName = addressServerBuilderManager.generateProductName(product);
         String serviceName = addressServerBuilderManager.generateNacosServiceName(productName);
-        Service service = serviceManager.getService(AddressServerConstants.DEFAULT_NAMESPACE, serviceName);
+        Service service = serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, serviceName);
         if (service == null) {
 
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + product + " not found.");
         }
 
-        if (!service.getClusterMap().containsKey(clusterName)) {
+        if (!service.getClusterMap().containsKey(cluster)) {
 
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + product + ",cluster=" + clusterName + " not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + product + ",cluster=" + cluster + " not found.");
         }
 
-        Cluster clusterObj = service.getClusterMap().get(clusterName);
+        Cluster clusterObj = service.getClusterMap().get(cluster);
         return ResponseEntity.status(HttpStatus.OK).body(addressServerBuilderManager.generateResponseIps(clusterObj.allIPs(false)));
     }
 }

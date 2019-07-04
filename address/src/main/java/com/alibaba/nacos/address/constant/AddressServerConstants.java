@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  *
  * @author pbting
  * @date 2019-06-17 7:23 PM
+ * @since 1.1.0
  */
 public interface AddressServerConstants {
 
@@ -30,11 +31,6 @@ public interface AddressServerConstants {
      *
      */
     int DEFAULT_SERVER_PORT = 8848;
-
-    /**
-     *
-     */
-    boolean SKIP_CLIENT_BEAT_CHECK_TASK = true;
 
     /**
      *
@@ -53,41 +49,27 @@ public interface AddressServerConstants {
     /**
      *
      */
-    String DEFAULT_GROUP = "DEFAULT_GROUP";
-
-    /**
-     *
-     */
-    String DEFAULT_NAMESPACE = "public";
-
-    /**
-     *
-     */
     String DEFAULT_GET_CLUSTER = "serverlist";
 
     /**
      *
      */
-    String MULTI_IPS_SEPARATOR = ";";
+    String MULTI_IPS_SEPARATOR = ",";
 
     /**
      * the default product name when deploy nacos with naming and config
      */
-    String ALIWARE_NACOS_DEFAULT_PRODUCT_NAME = "aliware.nacos.dom";
+    String ALIWARE_NACOS_DEFAULT_PRODUCT_NAME = "nacos.as.default";
 
     /**
      * when the config and naming will separate deploy,then must specify product name by the client。
      */
-    String ALIWARE_NACOS_PRODUCT_DOM_TEMPLATE = "aliware.%s.dom";
+    String ALIWARE_NACOS_PRODUCT_DOM_TEMPLATE = "nacos.as.%s";
 
     /**
      *
      */
     String ADDRESS_SERVER_REQUEST_URL =
-            UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
+        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
 
-    /**
-     *
-     */
-    String ADDRESS_SERVER_REQUEST_URL_WITH_NONE_PREFIX = UtilsAndCommons.NACOS_SERVER_VERSION + "/as";
 }
