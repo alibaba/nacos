@@ -12,4 +12,3 @@ target
 node_modules
 test/derby.log
 derby.log
-console/src/main/resources/static/console-fe/package-lock.json
