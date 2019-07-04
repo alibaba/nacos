@@ -359,6 +359,7 @@ class ConfigEditor extends React.Component {
   render() {
     const {
       loading,
+      betaIps,
       openAdvancedSettings,
       isBeta,
       isNewConfig,
@@ -517,7 +518,12 @@ class ConfigEditor extends React.Component {
                 </Button>
               )}
               {isBeta && tabActiveKey !== 'production' && (
-                <Button size="large" type="primary" onClick={() => this.openDiff('publishBeta')}>
+                <Button
+                  size="large"
+                  type="primary"
+                  disabled={!betaIps}
+                  onClick={() => this.openDiff('publishBeta')}
+                >
                   {locale.release}
                 </Button>
               )}
