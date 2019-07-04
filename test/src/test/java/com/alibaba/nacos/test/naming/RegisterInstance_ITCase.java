@@ -120,7 +120,7 @@ public class RegisterInstance_ITCase {
 
         String serviceName = randomDomainName();
 
-        System.err.println(serviceName);
+        System.out.println(serviceName);
 
         naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT, TEST_NEW_CLUSTER_4_DOM_1);
 
@@ -128,7 +128,7 @@ public class RegisterInstance_ITCase {
 
         List<Instance> instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances2.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);
