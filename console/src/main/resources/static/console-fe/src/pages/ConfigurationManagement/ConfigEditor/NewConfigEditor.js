@@ -465,9 +465,10 @@ class ConfigEditor extends React.Component {
             )}
             <Form.Item label={locale.format}>
               <Radio.Group
+                defaultValue="text"
                 value={form.type}
                 onChange={type => {
-                  this.initMoacoEditor(type, '');
+                  this.initMoacoEditor(type, form.content);
                   this.changeForm({ type });
                 }}
               >
