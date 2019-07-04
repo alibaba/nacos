@@ -103,6 +103,20 @@ public class NamingMaintainService_ITCase {
     }
 
     @Test
+    public void updateInstanceWithDisable() throws NacosException {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("netType", "external-update");
+        map.put("version", "2.0");
+        namingService.registerInstance(serviceName, instance);
+        instance.setMetadata(map);
+        instance.setEnabled(false);
+        namingMaintainService.updateInstance(serviceName, instance);
+        List<Instance> instances = namingService.getAllInstances(serviceName, true);
+
+        Assert.assertEquals(instances.size(), 0);
+    }
+
+    @Test
     public void createAndUpdateService() throws NacosException {
 
         // register service
