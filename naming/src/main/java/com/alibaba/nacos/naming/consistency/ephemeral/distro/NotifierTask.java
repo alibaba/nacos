@@ -6,8 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author caoyixiong
- * @Date: 2019/7/5
- * @Copyright (c) 2015, lianjia.com All Rights Reserved
  */
 public class NotifierTask {
     private static final Integer NOTIFY_SUCCESS = -1;
