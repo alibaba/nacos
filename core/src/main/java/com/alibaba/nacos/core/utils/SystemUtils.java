@@ -19,8 +19,6 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
@@ -38,12 +36,10 @@ import static org.apache.commons.lang3.CharEncoding.UTF_8;
  */
 public class SystemUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
-
     /**
      * Standalone mode or not
      */
-    public static final boolean STANDALONE_MODE =  Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     public static final String STANDALONE_MODE_ALONE = "standalone";
     public static final String STANDALONE_MODE_CLUSTER = "cluster";
@@ -83,7 +79,7 @@ public class SystemUtils {
 
     public static List<String> getIPsBySystemEnv(String key) {
         String env = getSystemEnv(key);
-        List<String> ips = new ArrayList<String>();
+        List<String> ips = new ArrayList<>();
         if (StringUtils.isNotEmpty(env)) {
             ips = Arrays.asList(env.split(","));
         }
