@@ -39,7 +39,6 @@ public class NotifierTask {
     public boolean isValidToNotify(String listenerId) {
         if (!listenerNotifyMap.containsKey(listenerId)) {
             listenerNotifyMap.put(listenerId, 0);
-            return true;
         }
         if (NOTIFY_SUCCESS.equals(listenerNotifyMap.get(listenerId))) {
             return false;
