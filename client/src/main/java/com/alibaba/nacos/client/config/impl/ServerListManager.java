@@ -34,12 +34,10 @@ import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEven
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 
-import com.alibaba.nacos.client.identify.Constants;
 import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
 
 
-import org.slf4j.Logger;
 
 /**
  * Serverlist Manager
