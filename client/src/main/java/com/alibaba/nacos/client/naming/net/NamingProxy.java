@@ -56,6 +56,8 @@ public class NamingProxy {
 
     private String namespaceId;
 
+    private String shareNamespaceIds;
+
     private String endpoint;
 
     private String nacosDomain;
@@ -71,8 +73,12 @@ public class NamingProxy {
     private Properties properties;
 
     public NamingProxy(String namespaceId, String endpoint, String serverList) {
+        this(namespaceId, "", endpoint, serverList);
+    }
 
+    public NamingProxy(String namespaceId, String shareNamespaceIds, String endpoint, String serverList) {
         this.namespaceId = namespaceId;
+        this.shareNamespaceIds = shareNamespaceIds;
         this.endpoint = endpoint;
         if (StringUtils.isNotEmpty(serverList)) {
             this.serverList = Arrays.asList(serverList.split(","));
@@ -503,7 +509,7 @@ public class NamingProxy {
             "User-Agent", UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
-            "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
+            "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming", CommonParams.SHARE_NAMESPACE, shareNamespaceIds);
         return headers;
     }
 

@@ -31,4 +31,6 @@ public class CommonParams {
 
     public static final String GROUP_NAME = "groupName";
 
+    public static final String SHARE_NAMESPACE = "shareNamespace";
+
 }

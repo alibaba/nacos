@@ -55,6 +55,8 @@ public class NacosNamingService implements NamingService {
      */
     private String namespace;
 
+    private String shareNamespace;
+
     private String endpoint;
 
     private String serverList;
@@ -84,13 +86,14 @@ public class NacosNamingService implements NamingService {
 
     private void init(Properties properties) {
         namespace = InitUtils.initNamespaceForNaming(properties);
+        shareNamespace = InitUtils.initShareNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();
         initLogName(properties);
 
         eventDispatcher = new EventDispatcher();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList);
+        serverProxy = new NamingProxy(namespace, shareNamespace, endpoint, serverList);
         serverProxy.setProperties(properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));

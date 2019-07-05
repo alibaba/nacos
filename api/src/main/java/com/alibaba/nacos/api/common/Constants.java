@@ -153,6 +153,8 @@ public class Constants {
 
     public static final String DEFAULT_NAMESPACE_ID = "public";
 
+    public static final String DEFAULT_SHARE_NAMESPACE_ID = "";
+
     public static final boolean DEFAULT_USE_CLOUD_NAMESPACE_PARSING = true;
 
     public static final int WRITE_REDIRECT_CODE = 307;

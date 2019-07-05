@@ -146,9 +146,15 @@ public class InstanceController {
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+            Constants.DEFAULT_SHARE_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+
+        String shareNamespaceIds = request.getHeader(CommonParams.SHARE_NAMESPACE).trim();
+        if (StringUtils.isEmpty(shareNamespaceIds)) {
+            shareNamespaceIds = Constants.DEFAULT_SHARE_NAMESPACE_ID;
+        }
+
         String agent = request.getHeader("Client-Version");
         if (StringUtils.isBlank(agent)) {
             agent = request.getHeader("User-Agent");
@@ -165,7 +171,7 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, shareNamespaceIds, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
@@ -173,6 +179,8 @@ public class InstanceController {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
+        String shareNamespaceId = WebUtils.optional(request, CommonParams.SHARE_NAMESPACE,
+            Constants.DEFAULT_SHARE_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         String ip = WebUtils.required(request, "ip");
@@ -180,7 +188,10 @@ public class InstanceController {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
+            service = findServiceInShareNamespace(shareNamespaceId, serviceName);
+            if (service == null) {
+                throw new NacosException(NacosException.NOT_FOUND, "no service " + serviceName + " found!");
+            }
         }
 
         List<String> clusters = new ArrayList<>();
@@ -366,17 +377,29 @@ public class InstanceController {
 
     public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
+        return doSrvIPXT(namespaceId, Constants.DEFAULT_SHARE_NAMESPACE_ID, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tid, healthyOnly);
+    }
+
+    public JSONObject doSrvIPXT(String namespaceId, String shareNamespaceIds, String serviceName, String agent, String clusters, String clientIP, int udpPort,
+                                String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            boolean findInShareNamespace = false;
+            service = findServiceInShareNamespace(shareNamespaceIds, serviceName);
+            if (service != null) {
+                findInShareNamespace = true;
             }
-            result.put("hosts", new JSONArray());
-            return result;
+            if (!findInShareNamespace) {
+                if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+                    Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+                }
+                result.put("hosts", new JSONArray());
+                return result;
+            }
         }
 
         checkIfDisabled(service);
@@ -524,5 +547,16 @@ public class InstanceController {
         result.put("env", env);
         result.put("metadata", service.getMetadata());
         return result;
+    }
+
+    private Service findServiceInShareNamespace(String shareNamespaceIds, String serviceName) {
+        String[] shareNamespaces = shareNamespaceIds.split(",");
+        for (String s : shareNamespaces) {
+            Service service = serviceManager.getService(s.trim(), serviceName);
+            if (service != null) {
+                return service;
+            }
+        }
+        return null;
     }
 }

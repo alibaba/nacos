@@ -46,6 +46,8 @@ public class PropertyKeyConst {
 
     public final static String ENCODE = "encode";
 
+    public final static String SHARE_NAMESPACE = "shareNamespace";
+
     public final static String CONFIG_LONG_POLL_TIMEOUT = "configLongPollTimeout";
 
     public final static String CONFIG_RETRY_TIME = "configRetryTime";
