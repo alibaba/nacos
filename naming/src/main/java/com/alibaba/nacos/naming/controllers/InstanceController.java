@@ -76,7 +76,7 @@ public class InstanceController {
 
             JSONObject result = new JSONObject();
             try {
-                result = doSrvIPXT(client.getNamespaceId(), client.getServiceName(), client.getAgent(),
+                result = doSrvIPXT(client.getNamespaceId(), client.getShareNamespace(), client.getServiceName(), client.getAgent(),
                     client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
                     false, StringUtils.EMPTY, StringUtils.EMPTY, false);
             } catch (Exception e) {
@@ -88,6 +88,7 @@ public class InstanceController {
 
             return result.toJSONString();
         }
+
     };
 
     @CanDistro
@@ -409,7 +410,7 @@ public class InstanceController {
         // now try to enable the push
         try {
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
-                pushService.addClient(namespaceId, serviceName,
+                pushService.addClient(namespaceId, shareNamespaceIds, serviceName,
                     clusters,
                     agent,
                     new InetSocketAddress(clientIP, udpPort),

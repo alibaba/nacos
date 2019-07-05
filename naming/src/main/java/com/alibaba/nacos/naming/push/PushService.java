@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -127,6 +128,7 @@ public class PushService {
     }
 
     public void addClient(String namespaceId,
+                          String shareNamespaceId,
                                  String serviceName,
                                  String clusters,
                                  String agent,
@@ -135,7 +137,7 @@ public class PushService {
                                  String tenant,
                                  String app) {
 
-        PushClient client = new PushClient(namespaceId,
+        PushClient client = new PushClient(namespaceId, shareNamespaceId,
                 serviceName,
                 clusters,
                 agent,
@@ -339,6 +341,7 @@ public class PushService {
 
     public class PushClient {
         private String namespaceId;
+        private String shareNamespace;
         private String serviceName;
         private String clusters;
         private String agent;
@@ -359,6 +362,7 @@ public class PushService {
         public long lastRefTime = System.currentTimeMillis();
 
         public PushClient(String namespaceId,
+                          String shareNamespace,
                           String serviceName,
                           String clusters,
                           String agent,
@@ -367,6 +371,7 @@ public class PushService {
                           String tenant,
                           String app) {
             this.namespaceId = namespaceId;
+            this.shareNamespace = shareNamespace;
             this.serviceName = serviceName;
             this.clusters = clusters;
             this.agent = agent;
@@ -447,6 +452,14 @@ public class PushService {
 
         public void setServiceName(String serviceName) {
             this.serviceName = serviceName;
+        }
+
+        public String getShareNamespace() {
+            return shareNamespace;
+        }
+
+        public void setShareNamespace(String shareNamespace) {
+            this.shareNamespace = shareNamespace;
         }
 
         public String getTenant() {
