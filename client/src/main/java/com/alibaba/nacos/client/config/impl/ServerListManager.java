@@ -273,13 +273,23 @@ public class ServerListManager {
             LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
             return;
         }
+
+        List<String> newServerAddrList = new ArrayList<>();
+        for (String server : newList) {
+            if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
+                newServerAddrList.add(server);
+            } else {
+                newServerAddrList.add(HTTP + server);
+            }
+        }
+
         /**
          * no change
          */
-        if (newList.equals(serverUrls)) {
+        if (newServerAddrList.equals(serverUrls)) {
             return;
         }
-        serverUrls = new ArrayList<String>(newList);
+        serverUrls = new ArrayList<String>(newServerAddrList);
         iterator = iterator();
         currentServerAddr = iterator.next();
 
