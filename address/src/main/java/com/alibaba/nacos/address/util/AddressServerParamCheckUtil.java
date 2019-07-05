@@ -35,9 +35,6 @@ public class AddressServerParamCheckUtil {
 
     private static final Pattern IP_PATTERN = Pattern.compile(IP_REGEX);
 
-    /**
-     * @return
-     */
     public static String checkIps(String... ips) {
 
         if (ips == null || ips.length == 0) {

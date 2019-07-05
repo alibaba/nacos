@@ -43,8 +43,8 @@ public class ServerListController {
     private AddressServerGeneratorManager addressServerBuilderManager;
 
     /**
-     * @param product
-     * @param cluster
+     * @param product will get Ip list of that products to be associated
+     * @param cluster will get Ip list of that product cluster to be associated
      * @return
      */
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)

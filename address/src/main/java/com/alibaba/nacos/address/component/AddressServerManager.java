@@ -63,7 +63,7 @@ public class AddressServerManager {
     }
 
     /**
-     * @param ips multi ip will separator by the ';'
+     * @param ips multi ip will separator by the ','
      * @return
      */
     public String[] splitIps(String ips) {

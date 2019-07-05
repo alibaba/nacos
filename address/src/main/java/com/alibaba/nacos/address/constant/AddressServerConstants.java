@@ -28,31 +28,32 @@ public interface AddressServerConstants {
 
 
     /**
-     *
+     * the default server port when create the Instance object.
      */
     int DEFAULT_SERVER_PORT = 8848;
 
     /**
-     *
+     * when post ips is not given the product,then use the default.
      */
     String DEFAULT_PRODUCT = "nacos";
+
     /**
-     *
+     * the separator between ip and port.
      */
     String IP_PORT_SEPARATOR = ":";
 
     /**
-     *
+     * the separator for {@Service#name} between raw service name and group
      */
     String GROUP_SERVICE_NAME_SEP = "@@";
 
     /**
-     *
+     * when post ips is not given the cluster,then use the default.
      */
     String DEFAULT_GET_CLUSTER = "serverlist";
 
     /**
-     *
+     * post multi ip will use the "," to separator
      */
     String MULTI_IPS_SEPARATOR = ",";
 
@@ -67,7 +68,7 @@ public interface AddressServerConstants {
     String ALIWARE_NACOS_PRODUCT_DOM_TEMPLATE = "nacos.as.%s";
 
     /**
-     *
+     * the url for address server prefix
      */
     String ADDRESS_SERVER_REQUEST_URL =
         UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/as";

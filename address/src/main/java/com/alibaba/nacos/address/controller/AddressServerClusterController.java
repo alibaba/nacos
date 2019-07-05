@@ -56,14 +56,15 @@ public class AddressServerClusterController {
     private AddressServerGeneratorManager addressServerGeneratorManager;
 
     /**
-     * @param product
-     * @param cluster
+     * @param product Ip list of products to be associated
+     * @param cluster Ip list of product cluster to be associated
+     * @param ips     will post ip list.
      * @return
      */
     @RequestMapping(value = "", method = RequestMethod.POST)
-    public ResponseEntity putCluster(@RequestParam(required = false) String product,
-                                     @RequestParam(required = false) String cluster,
-                                     @RequestParam(name = "ips") String ips) {
+    public ResponseEntity postCluster(@RequestParam(required = false) String product,
+                                      @RequestParam(required = false) String cluster,
+                                      @RequestParam(name = "ips") String ips) {
 
         //1. prepare the storage name for product and cluster
         String productName = addressServerGeneratorManager.generateProductName(product);
@@ -100,8 +101,9 @@ public class AddressServerClusterController {
     }
 
     /**
-     * @param product
-     * @param cluster
+     * @param product Ip list of products to be associated
+     * @param cluster Ip list of product cluster to be associated
+     * @param ips     will delete ips.
      * @return
      */
     @RequestMapping(value = "", method = RequestMethod.DELETE)

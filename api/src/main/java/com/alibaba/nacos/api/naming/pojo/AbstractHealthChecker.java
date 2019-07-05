@@ -112,7 +112,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return Collections.emptyMap();
             }
 
-            Map<String, String> headerMap = new HashMap<>(16);
+            Map<String, String> headerMap = new HashMap<String, String>(16);
             for (String s : headers.split(Constants.NAMING_HTTP_HEADER_SPILIER)) {
                 String[] splits = s.split(":");
                 if (splits.length != 2) {

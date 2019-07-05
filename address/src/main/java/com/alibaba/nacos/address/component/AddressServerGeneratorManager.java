@@ -26,6 +26,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ * will generator some result by the input parameter.
+ *
  * @author pbting
  * @date 2019-07-01 8:53 PM
  * @since 1.1.0
@@ -33,9 +35,6 @@ import java.util.List;
 @Component
 public class AddressServerGeneratorManager {
 
-    /**
-     * @return
-     */
     public String generateProductName(String name) {
 
         if (StringUtils.isBlank(name) || AddressServerConstants.DEFAULT_PRODUCT.equals(name)) {
@@ -78,10 +77,6 @@ public class AddressServerGeneratorManager {
         return instanceList;
     }
 
-    /**
-     * @param ip
-     * @return
-     */
     public String[] generateIpAndPort(String ip) {
 
         int index = ip.indexOf(AddressServerConstants.IP_PORT_SEPARATOR);
@@ -94,7 +89,8 @@ public class AddressServerGeneratorManager {
     }
 
     /**
-     * @return
+     * @param instanceList a instance set will generate string response to client.
+     * @return the result of response to client
      */
     public String generateResponseIps(List<Instance> instanceList) {
 
@@ -108,8 +104,8 @@ public class AddressServerGeneratorManager {
     }
 
     /**
-     * @param rawServiceName
-     * @return
+     * @param rawServiceName the raw service name will not contains the {@Constans.DEFAULT_GROUP}
+     * @return the nacos service name
      */
     public String generateNacosServiceName(String rawServiceName) {
 
