@@ -274,7 +274,7 @@ public class ServerListManager {
             return;
         }
 
-        List<String> newServerAddrList = new ArrayList<>();
+        List<String> newServerAddrList = new ArrayList<String>();
         for (String server : newList) {
             if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
                 newServerAddrList.add(server);
