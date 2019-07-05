@@ -64,6 +64,9 @@ public class BeatReactor {
     public void removeBeatInfo(String serviceName, String ip, int port) {
         NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
         BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
+        if (beatInfo == null) {
+            return;
+        }
         beatInfo.setStopped(true);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
