@@ -351,7 +351,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
         private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
 
-        private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<Pair>(1024 * 1024);
+        private BlockingQueue<NotifierTask> tasks = new LinkedBlockingQueue<NotifierTask>(1024 * 1024);
 
         public void addTask(String datumKey, ApplyAction action) {
 
@@ -361,7 +361,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             if (action == ApplyAction.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
-            tasks.add(Pair.with(datumKey, action));
+            tasks.add(new NotifierTask(datumKey, action));
         }
 
         public int getTaskSize() {
@@ -374,46 +374,46 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
             while (true) {
                 try {
-
-                    Pair pair = tasks.take();
-
-                    if (pair == null) {
+                    NotifierTask notifierTask = tasks.take();
+                    if (notifierTask == null) {
                         continue;
                     }
 
-                    String datumKey = (String) pair.getValue0();
-                    ApplyAction action = (ApplyAction) pair.getValue1();
-
+                    String datumKey = notifierTask.getDatumKey();
+                    ApplyAction action = notifierTask.getApplyAction();
                     services.remove(datumKey);
-
-                    int count = 0;
 
                     if (!listeners.containsKey(datumKey)) {
                         continue;
                     }
 
                     for (RecordListener listener : listeners.get(datumKey)) {
+                        String listenerId = listener.getClass().getName() + "@" + Integer.toHexString(listener.hashCode());
 
-                        count++;
+                        if (!notifierTask.isValidToNotify(listenerId)) {
+                            continue;
+                        }
 
                         try {
                             if (action == ApplyAction.CHANGE) {
                                 listener.onChange(datumKey, dataStore.get(datumKey).value);
+                                notifierTask.success(listenerId);
                                 continue;
                             }
 
                             if (action == ApplyAction.DELETE) {
                                 listener.onDelete(datumKey);
-                                continue;
+                                notifierTask.success(listenerId);
                             }
                         } catch (Throwable e) {
                             Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while notifying listener of key: {}", datumKey, e);
+                            tasks.add(notifierTask);
                         }
                     }
 
                     if (Loggers.EPHEMERAL.isDebugEnabled()) {
                         Loggers.EPHEMERAL.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}, action: {}",
-                            datumKey, count, action.name());
+                            datumKey, listeners.get(datumKey).size(), action.name());
                     }
                 } catch (Throwable e) {
                     Loggers.EPHEMERAL.error("[NACOS-DISTRO] Error while handling notifying task", e);

@@ -119,16 +119,15 @@ public class EventDispatcher {
                     continue;
                 }
 
+                List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
+                if (listeners == null || listeners.isEmpty()) {
+                    continue;
+                }
                 try {
-                    List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
-
-                    if (!CollectionUtils.isEmpty(listeners)) {
-                        for (EventListener listener : listeners) {
-                            List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
-                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
-                        }
+                    for (EventListener listener : listeners) {
+                        List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
+                        listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
                     }
-
                 } catch (Exception e) {
                     NAMING_LOGGER.error("[NA] notify error for service: "
                         + serviceInfo.getName() + ", clusters: " + serviceInfo.getClusters(), e);
