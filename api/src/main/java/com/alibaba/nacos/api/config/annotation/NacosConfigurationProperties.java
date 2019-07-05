@@ -61,7 +61,7 @@ public @interface NacosConfigurationProperties {
      * set config type is yaml
      * this method is deprecated, we support you use {@link #type()} to set config type
      *
-     * @return
+     * @return default value <code>false</code>
      */
     @Deprecated
     boolean yaml() default false;
