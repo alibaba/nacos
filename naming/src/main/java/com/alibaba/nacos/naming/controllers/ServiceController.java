@@ -29,12 +29,14 @@ import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 import com.alibaba.nacos.naming.selector.Selector;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -230,6 +232,75 @@ public class ServiceController {
         return result;
 
     }
+
+    @RequestMapping(value = "/getAll", method = RequestMethod.GET)
+    public JSONArray getAll(HttpServletRequest request) {
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String groupName = WebUtils.optional(request, CommonParams.GROUP_NAME, Constants.DEFAULT_GROUP);
+        String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME, Constants.DEFAULT_CLUSTER_NAME);
+
+        String agent = request.getHeader("Client-Version");
+        if (StringUtils.isBlank(agent)) {
+            agent = request.getHeader("User-Agent");
+        }
+        ClientInfo clientInfo = new ClientInfo(agent);
+
+        JSONArray result = new JSONArray();
+        Map<String, Service> serviceMap = serviceManager.chooseServiceMap(namespaceId);
+        if (serviceMap == null || serviceMap.isEmpty()) {
+            return result;
+        }
+
+        List<Service> services = new ArrayList<>(serviceMap.values());
+        for (Service service : services) {
+            if (!groupName.equalsIgnoreCase(service.getGroupName())) {
+                continue;
+            }
+            JSONObject serviceObject = new JSONObject();
+            result.add(serviceObject);
+
+            serviceObject.put("name", NamingUtils.getServiceName(service.getName()));
+            JSONArray instanceList = new JSONArray();
+            serviceObject.put("hosts", instanceList);
+            serviceObject.put("namespaceId", service.getNamespaceId());
+            serviceObject.put("protectThreshold", service.getProtectThreshold());
+            serviceObject.put("metadata", service.getMetadata());
+            serviceObject.put("selector", service.getSelector());
+            serviceObject.put("groupName", NamingUtils.getGroupName(service.getName()));
+
+            Cluster cluster = service.getClusterMap().get(clusterName);
+            if (cluster == null) {
+                continue;
+            }
+            List<Instance> instances = cluster.allIPs();
+            if (instances == null || instances.isEmpty()) {
+                continue;
+            }
+            for (Instance instance : instances) {
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("ip", instance.getIp());
+                jsonObject.put("port", instance.getPort());
+                jsonObject.put("valid", instance.validate());
+                jsonObject.put("healthy", instance.isHealthy());
+                jsonObject.put("marked", instance.isMarked());
+                jsonObject.put("instanceId", instance.getInstanceId());
+                jsonObject.put("metadata", instance.getMetadata());
+                jsonObject.put("enabled", instance.isEnabled());
+                jsonObject.put("weight", instance.getWeight());
+                jsonObject.put("clusterName", instance.getClusterName());
+                if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+                    clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+                    jsonObject.put("serviceName", instance.getServiceName());
+                } else {
+                    jsonObject.put("serviceName", NamingUtils.getServiceName(instance.getServiceName()));
+                }
+                jsonObject.put("ephemeral", instance.isEphemeral());
+                instanceList.add(jsonObject);
+            }
+        }
+        return result;
+    }
+
 
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
