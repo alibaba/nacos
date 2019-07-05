@@ -96,7 +96,18 @@ class ConfigEditor extends React.Component {
             dataId: getParams('dataId').trim(),
             group,
           },
-          () => this.getConfig()
+          () =>
+            this.getConfig(true).then(res => {
+              if (!res) {
+                this.getConfig();
+                return;
+              }
+              this.setState({
+                isBeta: true,
+                tabActiveKey: 'beta',
+                betaPublishSuccess: true,
+              });
+            })
         );
       } else {
         if (group) {
@@ -155,7 +166,7 @@ class ConfigEditor extends React.Component {
   openDiff(cbName) {
     this.diffcb = cbName;
     let leftvalue = this.monacoEditor.getValue();
-    let rightvalue = this.codeVal;
+    let rightvalue = this.codeVal || '';
     leftvalue = leftvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     rightvalue = rightvalue.replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     this.diffEditorDialog.current.getInstance().openDialog(leftvalue, rightvalue);
@@ -310,7 +321,7 @@ class ConfigEditor extends React.Component {
     );
   }
 
-  getConfig(beta = false) {
+  getConfig(beta = false, decide = false) {
     const namespace = getParams('namespace');
     const { dataId, group } = this.state.form;
     const params = {
@@ -327,6 +338,7 @@ class ConfigEditor extends React.Component {
     }
     return request.get('v1/cs/configs', { params }).then(res => {
       const form = beta ? res.data : res;
+      if (!form) return false;
       const { type, content, configTags, betaIps } = form;
       this.setState({ betaIps });
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
@@ -528,7 +540,7 @@ class ConfigEditor extends React.Component {
                 <Button
                   size="large"
                   type="primary"
-                  disabled={!betaIps}
+                  disabled={!betaIps || betaPublishSuccess}
                   onClick={() => this.openDiff('publishBeta')}
                 >
                   {locale.release}
