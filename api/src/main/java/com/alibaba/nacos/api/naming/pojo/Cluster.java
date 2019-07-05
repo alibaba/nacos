@@ -55,7 +55,7 @@ public class Cluster {
      */
     private boolean useIPPort4Check = true;
 
-    private Map<String, String> metadata = new HashMap<>();
+    private Map<String, String> metadata = new HashMap<String, String>();
 
     public Cluster() {
 

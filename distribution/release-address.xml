@@ -31,8 +31,8 @@
 
         <fileSet>
             <includes>
-                <include>conf/**</include>
-                <include>benchmark/*</include>
+                <include>conf/cluster.conf.example</include>
+                <include>conf/nacos-logback.xml</include>
             </includes>
         </fileSet>
 
