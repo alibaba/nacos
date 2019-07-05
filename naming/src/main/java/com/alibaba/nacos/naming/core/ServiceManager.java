@@ -234,10 +234,10 @@ public class ServiceManager implements RecordListener<Service> {
         List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
 
         List<RaftPeer> tempList = new ArrayList<>();
-        if(StringUtils.isNotBlank(keyword)) {
-            for(RaftPeer raftPeer: matchList) {
+        if (StringUtils.isNotBlank(keyword)) {
+            for (RaftPeer raftPeer : matchList) {
                 String ip = raftPeer.ip.split(":")[0];
-                if(keyword.equals(ip)) {
+                if (keyword.equals(ip)) {
                     tempList.add(raftPeer);
                 }
             }
@@ -388,6 +388,10 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public void createEmptyService(String namespaceId, String serviceName, boolean local) throws NacosException {
+        createServiceIfAbsent(namespaceId, serviceName, local, null);
+    }
+
+    public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster) throws NacosException {
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
 
@@ -399,6 +403,10 @@ public class ServiceManager implements RecordListener<Service> {
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
             service.recalculateChecksum();
+            if (cluster != null) {
+                cluster.setService(service);
+                service.getClusterMap().put(cluster.getName(), cluster);
+            }
             service.validate();
             if (local) {
                 putService(service);
