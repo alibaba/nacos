@@ -553,7 +553,14 @@ public class InstanceController {
     private Service findServiceInShareNamespace(String shareNamespaceIds, String serviceName) {
         String[] shareNamespaces = shareNamespaceIds.split(",");
         for (String s : shareNamespaces) {
-            Service service = serviceManager.getService(s.trim(), serviceName);
+            String[] npAndGp = s.trim().split(":");
+            Service service = serviceManager.getService(npAndGp[0].trim(), serviceName);
+            if (service != null) {
+                return service;
+            }
+            String group = npAndGp[1].trim();
+            String newServiceName = NamingUtils.getGroupedName(NamingUtils.getServiceName(serviceName), group);
+            service = serviceManager.getService(npAndGp[0].trim(), newServiceName);
             if (service != null) {
                 return service;
             }

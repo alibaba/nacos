@@ -47,10 +47,15 @@ public class SelectServiceInShareNamespace_ITCase {
 
     private NamingService naming1;
     private NamingService naming2;
+    private NamingService naming3;
+
+    private String groupName;
+
     @LocalServerPort
     private int port;
     @Before
     public void init() throws Exception{
+        groupName = randomDomainName();
         NamingBase.prepareServer(port);
         if (naming1 == null) {
             Properties properties = new Properties();
@@ -62,6 +67,11 @@ public class SelectServiceInShareNamespace_ITCase {
             properties2.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
             properties2.setProperty(PropertyKeyConst.NAMESPACE, "57425802-3058-4507-9a73-3229b9f00a36");
             naming2 = NamingFactory.createNamingService(properties2);
+
+            Properties properties3 = new Properties();
+            properties3.setProperty(PropertyKeyConst.SERVER_ADDR, "127.0.0.1"+":"+port);
+            properties3.setProperty(PropertyKeyConst.SHARE_NAMESPACE, "57425802-3058-4507-9a73-3229b9f00a36:" + groupName);
+            naming3 = NamingFactory.createNamingService(properties3);
         }
         while (true) {
             if (!"UP".equals(naming1.getServerStatus())) {
@@ -73,7 +83,7 @@ public class SelectServiceInShareNamespace_ITCase {
     }
 
     @Test
-    public void testSelectInstanceInShareNamespace() throws NacosException, InterruptedException {
+    public void testSelectInstanceInShareNamespaceNoGroup() throws NacosException, InterruptedException {
         String service1 = randomDomainName();
         String service2 = randomDomainName();
         naming1.registerInstance(service1, "127.0.0.1", 90);
@@ -84,6 +94,21 @@ public class SelectServiceInShareNamespace_ITCase {
         List<Instance> instances = naming1.getAllInstances(service2);
         Assert.assertEquals(1, instances.size());
         Assert.assertEquals(service2, NamingUtils.getServiceName(instances.get(0).getServiceName()));
+    }
+
+    @Test
+    public void testSelectInstanceInShareNamespaceWithGroup() throws NacosException, InterruptedException {
+        String service1 = randomDomainName();
+        String service2 = randomDomainName();
+        naming2.registerInstance(service1, groupName, "127.0.0.1", 90);
+        naming3.registerInstance(service2, "127.0.0.2", 90);
+
+        Thread.sleep(1000);
+
+        List<Instance> instances = naming3.getAllInstances(service1);
+        Assert.assertEquals(1, instances.size());
+        Assert.assertEquals(service1, NamingUtils.getServiceName(instances.get(0).getServiceName()));
+        Assert.assertEquals(groupName, NamingUtils.getServiceName(NamingUtils.getGroupName(instances.get(0).getServiceName())));
     }
 
 }
