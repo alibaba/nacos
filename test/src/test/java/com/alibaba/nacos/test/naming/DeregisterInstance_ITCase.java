@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.annotation.Repeat;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
@@ -160,7 +159,7 @@ public class DeregisterInstance_ITCase {
         verifyInstanceList(instances, 2, serviceName);
 
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(instances.size(), 2);
+        Assert.assertEquals(2, instances.size());
 
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
 
@@ -168,15 +167,15 @@ public class DeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
 
         naming.deregisterInstance(serviceName,"127.0.0.2", TEST_PORT, "c2");
         TimeUnit.SECONDS.sleep(5);
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(instances.size(), 0);
+        Assert.assertEquals(0, instances.size());
     }
 
     public void verifyInstanceList(List<Instance> instances, int size, String serviceName) throws Exception {

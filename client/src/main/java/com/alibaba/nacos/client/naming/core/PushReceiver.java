@@ -35,7 +35,7 @@ public class PushReceiver implements Runnable {
 
     private ScheduledExecutorService executorService;
 
-    public static final int UDP_MSS = 64 * 1024;
+    private static final int UDP_MSS = 64 * 1024;
 
     private DatagramSocket udpSocket;
 

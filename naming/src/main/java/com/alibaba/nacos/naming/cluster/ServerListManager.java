@@ -56,7 +56,7 @@ public class ServerListManager {
 
     private Set<String> liveSites = new HashSet<>();
 
-    public final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+    private final static String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
 
     private long lastHealthServerMillis = 0L;
 
@@ -237,7 +237,7 @@ public class ServerListManager {
         }
 
         //local site servers
-        List<String> allLocalSiteSrvs = new ArrayList<String>();
+        List<String> allLocalSiteSrvs = new ArrayList<>();
         for (Server server : servers) {
 
             if (server.getKey().endsWith(":0")) {
@@ -277,7 +277,7 @@ public class ServerListManager {
             // for every change disable healthy check for some while
             if (switchDomain.isHealthCheckEnabled()) {
                 Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
-                    "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
+                        "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
                     healthyServers, newHealthyList);
 
                 switchDomain.setHealthCheckEnabled(false);
@@ -351,38 +351,38 @@ public class ServerListManager {
 
         @Override
         public void run() {
-                try {
-                    List<Server> refreshedServers = refreshServerList();
-                    List<Server> oldServers = servers;
+            try {
+                List<Server> refreshedServers = refreshServerList();
+                List<Server> oldServers = servers;
 
-                    if (CollectionUtils.isEmpty(refreshedServers)) {
-                        Loggers.RAFT.warn("refresh server list failed, ignore it.");
-                        return;
-                    }
-
-                    boolean changed = false;
-
-                    List<Server> newServers = (List<Server>) CollectionUtils.subtract(refreshedServers, oldServers);
-                    if (CollectionUtils.isNotEmpty(newServers)) {
-                        servers.addAll(newServers);
-                        changed = true;
-                        Loggers.RAFT.info("server list is updated, new: {} servers: {}", newServers.size(), newServers);
-                    }
-
-                    List<Server> deadServers = (List<Server>) CollectionUtils.subtract(oldServers, refreshedServers);
-                    if (CollectionUtils.isNotEmpty(deadServers)) {
-                        servers.removeAll(deadServers);
-                        changed = true;
-                        Loggers.RAFT.info("server list is updated, dead: {}, servers: {}", deadServers.size(), deadServers);
-                    }
-
-                    if (changed) {
-                        notifyListeners();
-                    }
-
-                } catch (Exception e) {
-                    Loggers.RAFT.info("error while updating server list.", e);
+                if (CollectionUtils.isEmpty(refreshedServers)) {
+                    Loggers.RAFT.warn("refresh server list failed, ignore it.");
+                    return;
                 }
+
+                boolean changed = false;
+
+                List<Server> newServers = (List<Server>) CollectionUtils.subtract(refreshedServers, oldServers);
+                if (CollectionUtils.isNotEmpty(newServers)) {
+                    servers.addAll(newServers);
+                    changed = true;
+                    Loggers.RAFT.info("server list is updated, new: {} servers: {}", newServers.size(), newServers);
+                }
+
+                List<Server> deadServers = (List<Server>) CollectionUtils.subtract(oldServers, refreshedServers);
+                if (CollectionUtils.isNotEmpty(deadServers)) {
+                    servers.removeAll(deadServers);
+                    changed = true;
+                    Loggers.RAFT.info("server list is updated, dead: {}, servers: {}", deadServers.size(), deadServers);
+                }
+
+                if (changed) {
+                    notifyListeners();
+                }
+
+            } catch (Exception e) {
+                Loggers.RAFT.info("error while updating server list.", e);
+            }
         }
     }
 

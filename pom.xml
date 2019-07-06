@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -428,6 +428,7 @@
         <module>config</module>
         <module>core</module>
         <module>naming</module>
+        <module>address</module>
         <module>test</module>
         <module>api</module>
         <module>client</module>
@@ -723,6 +724,12 @@
                 <version>1.2</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.github.keran213539</groupId>
+                <artifactId>commonOkHttp</artifactId>
+                <version>0.4.1</version>
+                <scope>test</scope>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>

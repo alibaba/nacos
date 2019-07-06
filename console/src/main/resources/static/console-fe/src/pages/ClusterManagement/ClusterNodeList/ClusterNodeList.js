@@ -109,13 +109,7 @@ class ClusterNodeList extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const {
-      pubNoData,
-      clusterNodeList,
-      nodeIp,
-      nodeIpPlaceholder,
-      query,
-    } = locale;
+    const { pubNoData, clusterNodeList, nodeIp, nodeIpPlaceholder, query } = locale;
     const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
@@ -159,7 +153,9 @@ class ClusterNodeList extends React.Component {
                 <FormItem label="">
                   <Button
                     type="primary"
-                    onClick={() => this.setState({ currentPage: 1 }, () => this.queryClusterStateList())}
+                    onClick={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryClusterStateList())
+                    }
                     style={{ marginRight: 10 }}
                   >
                     {query}

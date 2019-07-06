@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -263,7 +262,7 @@ public class InstanceController {
         }
 
         service.processClientBeat(clientBeat);
-
+        result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
         return result;
     }
 
@@ -373,7 +372,11 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service not found: " + serviceName);
+            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            }
+            result.put("hosts", new JSONArray());
+            return result;
         }
 
         checkIfDisabled(service);

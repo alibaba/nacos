@@ -15,10 +15,11 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.exception.NacosException;
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Map;
+
+import com.alibaba.nacos.config.server.exception.NacosException;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * 参数合法性检查工具类
@@ -46,11 +47,7 @@ public class ParamUtils {
         int length = param.length();
         for (int i = 0; i < length; i++) {
             char ch = param.charAt(i);
-            if (Character.isLetterOrDigit(ch)) {
-                continue;
-            } else if (isValidChar(ch)) {
-                continue;
-            } else {
+            if (!Character.isLetterOrDigit(ch) && !isValidChar(ch)) {
                 return false;
             }
         }

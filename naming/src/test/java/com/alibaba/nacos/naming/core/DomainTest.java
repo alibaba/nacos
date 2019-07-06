@@ -16,8 +16,6 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.naming.boot.SpringContext;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
