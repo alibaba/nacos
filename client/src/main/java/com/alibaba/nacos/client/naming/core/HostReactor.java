@@ -140,9 +140,7 @@ public class HostReactor {
 
                 if (!oldHostMap.containsKey(key)) {
                     newHosts.add(host);
-                    continue;
                 }
-
             }
 
             for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
@@ -154,7 +152,6 @@ public class HostReactor {
 
                 if (!newHostMap.containsKey(key)) {
                     remvHosts.add(host);
-                    continue;
                 }
 
             }
@@ -198,7 +195,7 @@ public class HostReactor {
         return serviceInfo;
     }
 
-    private ServiceInfo getSerivceInfo0(String serviceName, String clusters) {
+    private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
 
         String key = ServiceInfo.getKey(serviceName, clusters);
 
@@ -221,7 +218,7 @@ public class HostReactor {
             return failoverReactor.getService(key);
         }
 
-        ServiceInfo serviceObj = getSerivceInfo0(serviceName, clusters);
+        ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
 
         if (null == serviceObj) {
             serviceObj = new ServiceInfo(serviceName, clusters);
@@ -267,7 +264,7 @@ public class HostReactor {
     }
 
     public void updateServiceNow(String serviceName, String clusters) {
-        ServiceInfo oldService = getSerivceInfo0(serviceName, clusters);
+        ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
 
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);

@@ -217,6 +217,7 @@ public class NamingProxy {
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
+        params.put("enabled", String.valueOf(instance.isEnabled()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
@@ -397,12 +398,14 @@ public class NamingProxy {
         List<String> headers = builderHeaders();
 
         String url;
-
-        if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
-            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
+        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+            url = curServer + api;
+        } else {
+            if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
+                curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
+            }
+            url = HttpClient.getPrefix() + curServer + api;
         }
-
-        url = HttpClient.getPrefix() + curServer + api;
 
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
@@ -418,8 +421,8 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
-        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer
-            + api + ". code:"
+        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:"
+            + curServer + api + ". code:"
             + result.code + " msg: " + result.content);
     }
 
@@ -556,6 +559,6 @@ public class NamingProxy {
             this.serverPort = Integer.parseInt(sp);
         }
     }
-
+    
 }
 

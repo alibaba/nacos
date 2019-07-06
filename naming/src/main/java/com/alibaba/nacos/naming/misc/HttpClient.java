@@ -19,7 +19,6 @@ import com.alibaba.nacos.common.util.HttpMethod;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
-import com.ning.http.client.FluentStringsMap;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,7 +27,6 @@ import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
@@ -36,7 +34,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 
 import java.io.IOException;
@@ -54,14 +51,12 @@ import java.util.zip.GZIPInputStream;
  * @author nacos
  */
 public class HttpClient {
-    public static final int TIME_OUT_MILLIS = 10000;
-    public static final int CON_TIME_OUT_MILLIS = 5000;
+    private static final int TIME_OUT_MILLIS = 10000;
+    private static final int CON_TIME_OUT_MILLIS = 5000;
 
     private static AsyncHttpClient asyncHttpClient;
 
     private static CloseableHttpClient postClient;
-
-    private static PoolingHttpClientConnectionManager connectionManager;
 
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
@@ -84,7 +79,6 @@ public class HttpClient {
         builder2.setMaxConnPerRoute(-1);
         builder2.setMaxConnTotal(-1);
         builder2.disableAutomaticRetries();
-//        builder2.disableConnectionState()
 
         postClient = builder2.build();
     }

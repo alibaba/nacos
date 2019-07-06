@@ -17,7 +17,6 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -59,13 +58,13 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     /**
      * this value has been carefully tuned, do not modify unless you're confident
      */
-    public static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() <= 1 ?
+    private static final int NIO_THREAD_COUNT = Runtime.getRuntime().availableProcessors() <= 1 ?
         1 : Runtime.getRuntime().availableProcessors() / 2;
 
     /**
      * because some hosts doesn't support keep-alive connections, disabled temporarily
      */
-    public static final long TCP_KEEP_ALIVE_MILLIS = 0;
+    private static final long TCP_KEEP_ALIVE_MILLIS = 0;
 
     private static ScheduledExecutorService TCP_CHECK_EXECUTOR
         = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -111,7 +110,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
         if (CollectionUtils.isEmpty(ips)) {
             return;
         }
-        Service service = task.getCluster().getService();
 
         for (Instance ip : ips) {
 
@@ -137,12 +135,10 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
             taskQueue.add(beat);
             MetricsMonitor.getTcpHealthCheckMonitor().incrementAndGet();
         }
-
-//        selector.wakeup();
     }
 
     private void processTask() throws Exception {
-        Collection<Callable<Void>> tasks = new LinkedList<Callable<Void>>();
+        Collection<Callable<Void>> tasks = new LinkedList<>();
         do {
             Beat beat = taskQueue.poll(CONNECT_TIMEOUT_MS / 2, TimeUnit.MILLISECONDS);
             if (beat == null) {
@@ -347,7 +343,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
                 try {
                     beat.finishCheck(false, false, beat.getTask().getCheckRTNormalized() * 2, "tcp:timeout");
-
                     key.cancel();
                     key.channel().close();
                 } catch (Exception ignore) {
@@ -359,7 +354,7 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
     private class TaskProcessor implements Callable<Void> {
 
         private static final int MAX_WAIT_TIME_MILLISECONDS = 500;
-        Beat beat = null;
+        Beat beat;
 
         public TaskProcessor(Beat beat) {
             this.beat = beat;

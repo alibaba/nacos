@@ -36,7 +36,7 @@ public class JVMUtil {
     }
 
     private static Boolean isMultiInstance = false;
-    private static String TRUE = "true";
+    private static final String TRUE = "true";
     private static final Logger LOGGER = LogUtils.logger(JVMUtil.class);
 
     static {

@@ -12,17 +12,21 @@ language: java
 
 matrix:
   include:
-  # On OSX, run with default JDK only.
-  # - os: osx
-  # On Linux, run with specific JDKs only.
-  - os: linux
-    env: CUSTOM_JDK="oraclejdk8"
+    # On OSX, run with default JDK only.
+    # - os: osx
+    # On Linux, run with specific JDKs only.
+    - os: linux
+      env: CUSTOM_JDK="oraclejdk8"
+
+jdk:
+  - openjdk11
+  - openjdk8
 
 before_install:
   - echo 'MAVEN_OPTS="$MAVEN_OPTS -Xmx1024m -XX:MaxPermSize=512m -XX:+BytecodeVerificationLocal"' >> ~/.mavenrc
   - cat ~/.mavenrc
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then export JAVA_HOME=$(/usr/libexec/java_home); fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then jdk_switcher use "$CUSTOM_JDK"; fi
+#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then export JAVA_HOME=$(/usr/libexec/java_home); fi
+#  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then jdk_switcher use "$CUSTOM_JDK"; fi
 
 script:
   - mvn -B clean package apache-rat:check findbugs:findbugs -Dmaven.test.skip=true

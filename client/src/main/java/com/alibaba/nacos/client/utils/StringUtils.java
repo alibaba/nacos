@@ -28,7 +28,7 @@ import java.util.Locale;
  */
 public class StringUtils {
 
-    public static final int INDEX_NOT_FOUND = -1;
+    private static final int INDEX_NOT_FOUND = -1;
 
     public static final String EMPTY = "";
 

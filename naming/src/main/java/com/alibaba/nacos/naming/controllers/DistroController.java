@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -39,6 +38,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -115,11 +116,11 @@ public class DistroController {
         for (String key : keys.split(keySplitter)) {
             datumMap.put(key, consistencyService.get(key));
         }
-        response.getWriter().write(new String(serializer.serialize(datumMap), "UTF-8"));
+        response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));
     }
 
     @RequestMapping(value = "/datums", method = RequestMethod.GET)
     public void getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), "UTF-8"));
+        response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8));
     }
 }

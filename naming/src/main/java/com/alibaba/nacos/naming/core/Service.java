@@ -78,7 +78,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     private long pushCacheMillis = 0L;
 
-    private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
+    private Map<String, Cluster> clusterMap = new HashMap<>();
 
     public Service() {
     }
@@ -427,6 +427,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         recalculateChecksum();
     }
 
+    @Override
     public String getChecksum() {
         if (StringUtils.isEmpty(checksum)) {
             recalculateChecksum();

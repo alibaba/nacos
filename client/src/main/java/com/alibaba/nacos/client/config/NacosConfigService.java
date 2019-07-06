@@ -56,7 +56,7 @@ public class NacosConfigService implements ConfigService {
 
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
 
-    private final long POST_TIMEOUT = 3000L;
+    private static final long POST_TIMEOUT = 3000L;
 
     private static final String EMPTY = "";
 
@@ -123,6 +123,13 @@ public class NacosConfigService implements ConfigService {
     }
 
     @Override
+    public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener) throws NacosException {
+        String content = getConfig(dataId, group, timeoutMs);
+        worker.addTenantListenersWithContent(dataId, group, content, Arrays.asList(listener));
+        return content;
+    }
+
+    @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
         worker.addTenantListeners(dataId, group, Arrays.asList(listener));
     }
@@ -166,6 +173,7 @@ public class NacosConfigService implements ConfigService {
             content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
 
             cr.setContent(content);
+
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
 

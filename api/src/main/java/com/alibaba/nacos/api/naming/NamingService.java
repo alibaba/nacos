@@ -19,12 +19,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
-import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Naming Service
@@ -139,6 +137,14 @@ public interface NamingService {
      * @throws NacosException
      */
     void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException;
+
+    /**
+     * deregister instance with full instance information and default groupName
+     * @param serviceName
+     * @param instance
+     * @throws NacosException
+     */
+    void deregisterInstance(String serviceName, Instance instance) throws NacosException;
 
     /**
      * deregister instance with full instance information
