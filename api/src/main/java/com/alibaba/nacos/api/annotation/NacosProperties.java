@@ -154,7 +154,7 @@ public @interface NacosProperties {
     /**
      * The placeholder of {@link NacosProperties#ENABLE_REMOTE_SYNC_CONFIG enableRemoteSyncConfig}, the value is <code>"${nacos.enableRemoteSyncConfig:}"</code>
      */
-    String ENABLE_REMOTE_SYNC_CONFIG_PLACEHOLDER = "${" + PREFIX + ENABLE_REMOTE_SYNC_CONFIG + "}";
+    String ENABLE_REMOTE_SYNC_CONFIG_PLACEHOLDER = "${" + PREFIX + ENABLE_REMOTE_SYNC_CONFIG + ":}";
 
     /**
      * The property of "endpoint"
