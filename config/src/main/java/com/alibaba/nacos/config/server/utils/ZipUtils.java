@@ -115,7 +115,10 @@ public class ZipUtils {
         ZipItem metaDataItem = null;
         try (ZipInputStream zipIn = new ZipInputStream(new ByteArrayInputStream(source))) {
             ZipEntry entry;
-            while ((entry = zipIn.getNextEntry()) != null && !entry.isDirectory()) {
+            while ((entry = zipIn.getNextEntry()) != null) {
+                if(entry.isDirectory()){
+                    continue;
+                }
                 try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
                     byte[] buffer = new byte[1024];
                     int offset;
