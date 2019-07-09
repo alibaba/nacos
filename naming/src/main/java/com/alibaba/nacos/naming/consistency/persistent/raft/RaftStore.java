@@ -38,9 +38,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @author nacos
@@ -54,9 +55,8 @@ public class RaftStore {
 
     private String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
 
-    public synchronized ConcurrentHashMap<String, Datum> loadDatums(RaftCore.Notifier notifier) throws Exception {
+    public synchronized void loadDatums(RaftCore.Notifier notifier, ConcurrentMap<String, Datum> datums) throws Exception {
 
-        ConcurrentHashMap<String, Datum> datums = new ConcurrentHashMap<>(32);
         Datum datum;
         long start = System.currentTimeMillis();
         for (File cache : listCaches()) {
@@ -77,7 +77,6 @@ public class RaftStore {
         }
 
         Loggers.RAFT.info("finish loading all datums, size: {} cost {} ms.", datums.size(), (System.currentTimeMillis() - start));
-        return datums;
     }
 
     public synchronized Properties loadMeta() throws Exception {
@@ -121,7 +120,7 @@ public class RaftStore {
             buffer = ByteBuffer.allocate((int) file.length());
             fc.read(buffer);
 
-            String json = new String(buffer.array(), "UTF-8");
+            String json = new String(buffer.array(), StandardCharsets.UTF_8);
             if (StringUtils.isBlank(json)) {
                 return null;
             }
@@ -222,7 +221,7 @@ public class RaftStore {
         FileChannel fc = null;
         ByteBuffer data;
 
-        data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes("UTF-8"));
+        data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes(StandardCharsets.UTF_8));
 
         try {
             fc = new FileOutputStream(cacheFile, false).getChannel();

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+
 import com.google.common.collect.Lists;
 
 /**
@@ -72,9 +73,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
 
         @Override
         public void doFilter(final IConfigRequest request, final IConfigResponse response) throws NacosException {
-            if (this.currentPosition == this.additionalFilters.size()) {
-                return;
-            } else {
+            if (this.currentPosition != this.additionalFilters.size()) {
                 this.currentPosition++;
                 IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);
                 nextFilter.doFilter(request, response, this);

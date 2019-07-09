@@ -38,6 +38,9 @@ module.exports = {
       components: resolve('src/components'),
     },
   },
+  node: {
+    fs: 'empty'
+  },
   module: {
     rules: [
       {

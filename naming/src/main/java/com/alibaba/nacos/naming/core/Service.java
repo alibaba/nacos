@@ -78,7 +78,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     private long pushCacheMillis = 0L;
 
-    private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
+    private Map<String, Cluster> clusterMap = new HashMap<>();
 
     public Service() {
     }
@@ -215,8 +215,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 if (!clusterMap.containsKey(instance.getClusterName())) {
                     Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                         instance.getClusterName(), instance.toJSON());
-                    Cluster cluster = new Cluster(instance.getClusterName());
-                    cluster.setService(this);
+                    Cluster cluster = new Cluster(instance.getClusterName(), this);
                     cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
@@ -428,6 +427,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         recalculateChecksum();
     }
 
+    @Override
     public String getChecksum() {
         if (StringUtils.isEmpty(checksum)) {
             recalculateChecksum();

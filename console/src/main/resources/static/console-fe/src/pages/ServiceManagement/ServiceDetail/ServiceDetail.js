@@ -18,7 +18,7 @@ import { Input, Button, Card, ConfigProvider, Form, Loading, Message } from '@al
 import EditServiceDialog from './EditServiceDialog';
 import EditClusterDialog from './EditClusterDialog';
 import InstanceTable from './InstanceTable';
-import { getParameter, processMetaData } from 'utils/nacosutil';
+import { getParameter } from 'utils/nacosutil';
 import MonacoEditor from 'components/MonacoEditor';
 import { MONACO_READONLY_OPTIONS, METADATA_ENTER } from './constant';
 import './ServiceDetail.scss';
@@ -93,9 +93,12 @@ class ServiceDetail extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
-    const { serviceName, loading, service = {}, clusters } = this.state;
+    const { serviceName, groupName, loading, service = {}, clusters } = this.state;
     const { metadata = {}, selector = {} } = service;
-    const metadataText = processMetaData(METADATA_ENTER)(metadata);
+    let metadataText = '';
+    if (Object.keys(metadata).length) {
+      metadataText = JSON.stringify(metadata, null, '\t');
+    }
     return (
       <div className="main-container service-detail">
         <Loading
@@ -140,7 +143,7 @@ class ServiceDetail extends React.Component {
             </FormItem>
             <FormItem label={`${locale.metadata}:`}>
               <MonacoEditor
-                language={'properties'}
+                language="json"
                 width={'100%'}
                 height={200}
                 value={metadataText}
@@ -169,7 +172,11 @@ class ServiceDetail extends React.Component {
                 </Button>
               }
             >
-              <InstanceTable clusterName={cluster.name} serviceName={serviceName} />
+              <InstanceTable
+                clusterName={cluster.name}
+                serviceName={serviceName}
+                groupName={groupName}
+              />
             </Card>
           ))}
         </Loading>

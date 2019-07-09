@@ -45,6 +45,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
@@ -123,7 +124,7 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
-        datums = raftStore.loadDatums(notifier);
+        raftStore.loadDatums(notifier, datums);
 
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
@@ -396,7 +397,7 @@ public class RaftCore {
             local.voteFor = local.ip;
             local.state = RaftPeer.State.CANDIDATE;
 
-            Map<String, String> params = new HashMap<String, String>(1);
+            Map<String, String> params = new HashMap<>(1);
             params.put("vote", JSON.toJSONString(local));
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildURL(server, API_VOTE);
@@ -525,11 +526,11 @@ public class RaftCore {
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GZIPOutputStream gzip = new GZIPOutputStream(out);
-            gzip.write(content.getBytes("UTF-8"));
+            gzip.write(content.getBytes(StandardCharsets.UTF_8));
             gzip.close();
 
             byte[] compressedBytes = out.toByteArray();
-            String compressedContent = new String(compressedBytes, "UTF-8");
+            String compressedContent = new String(compressedBytes, StandardCharsets.UTF_8);
             Loggers.RAFT.info("raw beat data size: {}, size of compressed data: {}",
                 content.length(), compressedContent.length());
 
@@ -604,14 +605,14 @@ public class RaftCore {
 
         peers.makeLeader(remote);
 
-        Map<String, Integer> receivedKeysMap = new HashMap<String, Integer>(datums.size());
+        Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
 
         for (Map.Entry<String, Datum> entry : datums.entrySet()) {
             receivedKeysMap.put(entry.getKey(), 0);
         }
 
         // now check datums
-        List<String> batch = new ArrayList<String>();
+        List<String> batch = new ArrayList<>();
         if (!switchDomain.isSendBeatOnly()) {
             int processedCount = 0;
             Loggers.RAFT.info("[RAFT] received beat with {} keys, RaftCore.datums' size is {}, remote server: {}, term: {}, local term: {}",
@@ -744,7 +745,7 @@ public class RaftCore {
 
             }
 
-            List<String> deadKeys = new ArrayList<String>();
+            List<String> deadKeys = new ArrayList<>();
             for (Map.Entry<String, Integer> entry : receivedKeysMap.entrySet()) {
                 if (entry.getValue() == 0) {
                     deadKeys.add(entry.getKey());
@@ -900,7 +901,7 @@ public class RaftCore {
 
         private ConcurrentHashMap<String, String> services = new ConcurrentHashMap<>(10 * 1024);
 
-        private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<Pair>(1024 * 1024);
+        private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<>(1024 * 1024);
 
         public void addTask(String datumKey, ApplyAction action) {
 
