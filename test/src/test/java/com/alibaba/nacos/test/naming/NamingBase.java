@@ -56,6 +56,8 @@ public class NamingBase {
 
     public static final int TEST_PORT = 8080;
 
+    public static final int TIME_OUT = 3000;
+
     public static String randomDomainName() {
         StringBuilder sb = new StringBuilder();
         sb.append("jinhan");
