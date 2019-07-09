@@ -385,6 +385,7 @@ public class ConfigAPI_ITCase {
         final AtomicInteger count = new AtomicInteger(0);
         final String content = "test-abc";
         boolean result = iconfig.publishConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
         Assert.assertTrue(result);
 
         Listener ml = new AbstractListener() {
