@@ -3298,16 +3298,28 @@ public class PersistService {
      * @param group
      * @return Collection of ConfigInfo objects
      */
-    public List<ConfigInfo> findAllConfigInfo4Export(final String group, final String tenant,
-                                                final String appName, final String ids) {
+    public List<ConfigInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
+                                                final String appName, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         StringBuilder where = new StringBuilder(" where ");
-        List<String> paramList = new ArrayList<>();
-        if(StringUtils.isNotBlank(ids)){
-            where.append(" id in (").append(ids).append(") ");
+        List<Object> paramList = new ArrayList<>();
+        if(!CollectionUtils.isEmpty(ids)){
+            where.append(" id in (");
+            for (int i = 0; i < ids.size(); i++) {
+                if (i != 0) {
+                    where.append(", ");
+                }
+                where.append("?");
+                paramList.add(ids.get(i));
+            }
+            where.append(") ");
         } else {
             where.append(" tenant_id=? ");
             paramList.add(tenantTmp);
+            if (!StringUtils.isBlank(dataId)) {
+                where.append(" and data_id like ? ");
+                paramList.add(generateLikeArgument(dataId));
+            }
             if (StringUtils.isNotBlank(group)) {
                 where.append(" and group_id=? ");
                 paramList.add(group);
