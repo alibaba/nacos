@@ -27,7 +27,6 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -402,14 +401,14 @@ public class ConfigController {
     @ResponseBody
     public ResponseEntity<byte[]> exportConfig(HttpServletRequest request,
                                                HttpServletResponse response,
-                                               @RequestParam("group") String group,
+                                               @RequestParam(value = "dataId", required = false) String dataId,
+                                               @RequestParam(value = "group", required = false) String group,
                                                @RequestParam(value = "appName", required = false) String appName,
                                                @RequestParam(value = "tenant", required = false,
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
-        String idsStr = Joiner.on(",").join(ids);
-        List<ConfigInfo> dataList = persistService.findAllConfigInfo4Export(group, tenant, appName, idsStr);
+        List<ConfigInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
         for(ConfigInfo ci : dataList){
@@ -544,8 +543,7 @@ public class ConfigController {
         }
 
         ids.removeAll(Collections.singleton(null));
-        String idsStr = Joiner.on(",").join(ids);
-        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4Export(null, null, null, idsStr);
+        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4Export(null,null, null, null, ids);
 
         if(queryedDataList == null || queryedDataList.isEmpty()){
             failedData.put("succCount", 0);
