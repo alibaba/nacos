@@ -32,8 +32,6 @@ public class BeatReactor {
 
     private ScheduledExecutorService executorService;
 
-    private volatile long clientBeatInterval = 5 * 1000;
-
     private NamingProxy serverProxy;
 
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
@@ -54,46 +52,28 @@ public class BeatReactor {
                 return thread;
             }
         });
-
-        executorService.schedule(new BeatProcessor(), 0, TimeUnit.MILLISECONDS);
     }
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
         dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
     public void removeBeatInfo(String serviceName, String ip, int port) {
         NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
-        dom2Beat.remove(buildKey(serviceName, ip, port));
+        BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
+        if (beatInfo == null) {
+            return;
+        }
+        beatInfo.setStopped(true);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    public String buildKey(String serviceName, String ip, int port) {
+    private String buildKey(String serviceName, String ip, int port) {
         return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER
             + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
-    }
-
-    class BeatProcessor implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                for (Map.Entry<String, BeatInfo> entry : dom2Beat.entrySet()) {
-                    BeatInfo beatInfo = entry.getValue();
-                    if (beatInfo.isScheduled()) {
-                        continue;
-                    }
-                    beatInfo.setScheduled(true);
-                    executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
-                }
-            } catch (Exception e) {
-                NAMING_LOGGER.error("[CLIENT-BEAT] Exception while scheduling beat.", e);
-            } finally {
-                executorService.schedule(this, clientBeatInterval, TimeUnit.MILLISECONDS);
-            }
-        }
     }
 
     class BeatTask implements Runnable {
@@ -106,11 +86,12 @@ public class BeatReactor {
 
         @Override
         public void run() {
-            long result = serverProxy.sendBeat(beatInfo);
-            beatInfo.setScheduled(false);
-            if (result > 0) {
-                clientBeatInterval = result;
+            if (beatInfo.isStopped()) {
+                return;
             }
+            long result = serverProxy.sendBeat(beatInfo);
+            long nextTime = result > 0 ? result : beatInfo.getPeriod();
+            executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }
 }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -235,10 +234,6 @@ public class InstanceController {
 
         String clusterName = clientBeat.getCluster();
 
-        if (StringUtils.isBlank(clusterName)) {
-            clusterName = UtilsAndCommons.DEFAULT_CLUSTER_NAME;
-        }
-
         if (Loggers.DEBUG_LOG.isDebugEnabled()) {
             Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
@@ -267,7 +262,7 @@ public class InstanceController {
         }
 
         service.processClientBeat(clientBeat);
-
+        result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
         return result;
     }
 
@@ -339,7 +334,15 @@ public class InstanceController {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
         boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
-        boolean enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+
+        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
+        boolean enabled;
+        if (StringUtils.isBlank(enabledString)) {
+            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+        } else {
+            enabled = BooleanUtils.toBoolean(enabledString);
+        }
+
         boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
             String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
 
@@ -369,7 +372,11 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "service not found: " + serviceName);
+            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
+                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            }
+            result.put("hosts", new JSONArray());
+            return result;
         }
 
         checkIfDisabled(service);
@@ -469,6 +476,12 @@ public class InstanceController {
             }
 
             for (Instance instance : ips) {
+
+                // remove disabled instance:
+                if (!instance.isEnabled()) {
+                    continue;
+                }
+
                 JSONObject ipObj = new JSONObject();
 
                 ipObj.put("ip", instance.getIp());

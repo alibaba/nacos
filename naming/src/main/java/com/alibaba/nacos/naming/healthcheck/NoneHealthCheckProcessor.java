@@ -28,7 +28,6 @@ public class NoneHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-        return;
     }
 
     @Override

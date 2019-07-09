@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
@@ -39,7 +38,7 @@ public class NamingProxy {
 
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
 
-    public static void syncChecksums(Map<String, String> checksumMap, String server) {
+    public static void syncCheckSums(Map<String, String> checksumMap, String server) {
 
         try {
             Map<String, String> headers = new HashMap<>(128);
@@ -235,13 +234,5 @@ public class NamingProxy {
             }
             return sb.toString();
         }
-    }
-
-    public static void main(String[] args) throws Exception {
-
-        String key = "com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@test.10";
-        List<String> keys = new ArrayList<>();
-        keys.add(key);
-        getData(keys, "11.239.112.161:8848");
     }
 }

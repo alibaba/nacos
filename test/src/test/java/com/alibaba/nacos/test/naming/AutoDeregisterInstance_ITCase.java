@@ -24,7 +24,6 @@ import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -78,7 +77,6 @@ public class AutoDeregisterInstance_ITCase {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void autoDregDomClustersTest() throws Exception {
         String serviceName = randomDomainName();
 
@@ -116,7 +114,6 @@ public class AutoDeregisterInstance_ITCase {
      * @throws Exception
      */
     @Test
-    @Ignore
     public void autoDregDomTest() throws Exception {
         String serviceName = randomDomainName();
 
@@ -139,8 +136,6 @@ public class AutoDeregisterInstance_ITCase {
         instances = naming.getAllInstances(serviceName);
 
         Assert.assertEquals(1, instances.size());
-
-
     }
 
 

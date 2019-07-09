@@ -55,6 +55,7 @@ public final class TaskManager implements TaskManagerMBean {
 
     class ProcessRunnable implements Runnable {
 
+        @Override
         public void run() {
             while (!TaskManager.this.closed.get()) {
                 try {
@@ -248,6 +249,7 @@ public final class TaskManager implements TaskManagerMBean {
         }
     }
 
+    @Override
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
         for (String taskType : this.taskProcessors.keySet()) {

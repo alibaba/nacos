@@ -20,15 +20,18 @@ import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.springframework.util.Assert;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author nkorange
+ * @author jifengnan 2019-04-26
  */
 public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implements Cloneable {
 
@@ -62,8 +65,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     public Cluster() {
     }
 
-    public Cluster(String clusterName) {
+    /**
+     * Create a cluster.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     *
+     * @param clusterName the cluster name
+     * @param service     the service to which the current cluster belongs
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is illegal
+     * @author jifengnan 2019-04-26
+     * @since 1.0.1
+     */
+    public Cluster(String clusterName, Service service) {
         this.setName(clusterName);
+        this.service = service;
         validate();
     }
 
@@ -95,6 +109,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             return;
         }
         checkTask = new HealthCheckTask(this);
+
         HealthCheckReactor.scheduleCheck(checkTask);
         inited = true;
     }
@@ -113,19 +128,56 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return service;
     }
 
+    /**
+     * Replace the service for the current cluster.
+     * <p>  the service shouldn't be replaced. so if the service is not empty will nothing to do.
+     * (the service fields can be changed, but the service A shouldn't be replaced to service B).
+     * If the service of a cluster is required to replace, actually, a new cluster is required.
+     *
+     * @param service the new service
+     */
     public void setService(Service service) {
+        if (this.service != null) {
+            return;
+        }
         this.service = service;
-        this.setServiceName(service.getName());
+    }
+
+    /**
+     * this method has been deprecated, the service name shouldn't be changed.
+     *
+     * @param serviceName the service name
+     * @author jifengnan  2019-04-26
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setServiceName(String serviceName) {
+        super.setServiceName(serviceName);
+    }
+
+    /**
+     * Get the service name of the current cluster.
+     * <p>Note that the returned service name is not the name which set by {@link #setServiceName(String)},
+     * but the name of the service to which the current cluster belongs.
+     *
+     * @return the service name of the current cluster.
+     */
+    @Override
+    public String getServiceName() {
+        if (service != null) {
+            return service.getName();
+        } else {
+            return super.getServiceName();
+        }
     }
 
     @Override
     public Cluster clone() throws CloneNotSupportedException {
         super.clone();
-        Cluster cluster = new Cluster();
-
+        Cluster cluster = new Cluster(this.getName(), service);
         cluster.setHealthChecker(getHealthChecker().clone());
-        cluster.setService(getService());
-        cluster.persistentInstances = new HashSet<Instance>();
+        cluster.persistentInstances = new HashSet<>();
         cluster.checkTask = null;
         cluster.metadata = new HashMap<>(metadata);
         return cluster;
@@ -250,7 +302,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             mapa.put(o.getIp() + ":" + o.getPort(), o);
         }
 
-        List<Instance> result = new ArrayList<Instance>();
+        List<Instance> result = new ArrayList<>();
 
         for (Instance o : a) {
             if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
@@ -263,16 +315,28 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     @Override
     public int hashCode() {
-        return Objects.hash(getName());
+        return new HashCodeBuilder(17, 37)
+            .append(getName())
+            .append(service)
+            .toHashCode();
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Cluster)) {
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
-        return getName().equals(((Cluster) obj).getName());
+        Cluster cluster = (Cluster) o;
+
+        return new EqualsBuilder()
+            .append(getName(), cluster.getName())
+            .append(service, cluster.service)
+            .isEquals();
     }
 
     public int getDefCkport() {
@@ -330,7 +394,15 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return persistentInstances.contains(ip) || ephemeralInstances.contains(ip);
     }
 
+    /**
+     * validate the current cluster.
+     * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
+     *
+     * @throws IllegalArgumentException the service is null, or the cluster name is null, or the cluster name is illegal
+     */
     public void validate() {
+        Assert.notNull(getName(), "cluster name cannot be null");
+        Assert.notNull(service, "service cannot be null");
         if (!getName().matches(CLUSTER_NAME_SYNTAX)) {
             throw new IllegalArgumentException("cluster name can only have these characters: 0-9a-zA-Z-, current: " + getName());
         }

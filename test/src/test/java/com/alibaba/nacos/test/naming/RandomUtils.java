@@ -38,7 +38,6 @@ public class RandomUtils {
     public static long getLongMoreThanZero() {
         long res;
         for(res = rd.nextLong(); res <= 0L; res = rd.nextLong()) {
-            ;
         }
 
         return res;
@@ -52,7 +51,6 @@ public class RandomUtils {
     public static long getLongMoreThanZeroLessThan(long n) {
         long res;
         for(res = getLongLessThan(n); res <= 0L; res = getLongLessThan(n)) {
-            ;
         }
 
         return res;
@@ -74,7 +72,6 @@ public class RandomUtils {
     public static int getIntegerMoreThanZero() {
         int res;
         for(res = rd.nextInt(); res <= 0; res = rd.nextInt()) {
-            ;
         }
 
         return res;
@@ -88,7 +85,6 @@ public class RandomUtils {
     public static int getIntegerMoreThanZeroLessThan(int n) {
         int res;
         for(res = rd.nextInt(n); res == 0; res = rd.nextInt(n)) {
-            ;
         }
 
         return res;
@@ -273,7 +269,6 @@ public class RandomUtils {
             int[] source = new int[len];
 
             for(int i = min; i < min + len; source[i - min] = i++) {
-                ;
             }
 
             int[] result = new int[n];

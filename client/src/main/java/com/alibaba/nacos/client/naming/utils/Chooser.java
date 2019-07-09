@@ -99,13 +99,13 @@ public class Chooser<K, T> {
         }
 
         public void refresh() {
-            Double originWeightSum = (double)0;
+            Double originWeightSum = (double) 0;
 
             for (Pair<T> item : itemsWithWeight) {
 
                 double weight = item.weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
-                if (!(weight > 0)) {
+                if (weight <= 0) {
                     continue;
                 }
 
@@ -124,7 +124,7 @@ public class Chooser<K, T> {
             for (Pair<T> item : itemsWithWeight) {
                 double singleWeight = item.weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
-                if (!(singleWeight > 0)) {
+                if (singleWeight <= 0) {
                     continue;
                 }
                 exactWeights[index++] = singleWeight / originWeightSum;
@@ -138,10 +138,11 @@ public class Chooser<K, T> {
             }
 
             double doublePrecisionDelta = 0.0001;
-            if (index != 0 && !(Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
-                throw new IllegalStateException(
-                    "Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
+
+            if (index == 0 || (Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
+                return;
             }
+            throw new IllegalStateException("Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
         }
 
         @Override
@@ -164,7 +165,7 @@ public class Chooser<K, T> {
             if (!(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
                 return false;
             }
-            Ref<T> otherRef = (Ref<T>)other;
+            Ref<T> otherRef = (Ref<T>) other;
             if (itemsWithWeight == null) {
                 if (otherRef.itemsWithWeight != null) {
                     return false;
@@ -197,7 +198,7 @@ public class Chooser<K, T> {
             return false;
         }
 
-        Chooser otherChooser = (Chooser)other;
+        Chooser otherChooser = (Chooser) other;
         if (this.uniqueKey == null) {
             if (otherChooser.getUniqueKey() != null) {
                 return false;

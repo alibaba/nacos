@@ -19,11 +19,10 @@ package com.alibaba.nacos.core.utils;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.management.ManagementFactory;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,12 +36,10 @@ import static org.apache.commons.lang3.CharEncoding.UTF_8;
  */
 public class SystemUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
-
     /**
      * Standalone mode or not
      */
-    public static boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
+    public static final boolean STANDALONE_MODE = Boolean.getBoolean(STANDALONE_MODE_PROPERTY_NAME);
 
     public static final String STANDALONE_MODE_ALONE = "standalone";
     public static final String STANDALONE_MODE_CLUSTER = "cluster";
@@ -50,7 +47,7 @@ public class SystemUtils {
     /**
      * server
      */
-    public static String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
+    public static final String FUNCTION_MODE = System.getProperty(FUNCTION_MODE_PROPERTY_NAME);
 
     public static final String FUNCTION_MODE_CONFIG = "config";
     public static final String FUNCTION_MODE_NAMING = "naming";
@@ -82,7 +79,7 @@ public class SystemUtils {
 
     public static List<String> getIPsBySystemEnv(String key) {
         String env = getSystemEnv(key);
-        List<String> ips = new ArrayList<String>();
+        List<String> ips = new ArrayList<>();
         if (StringUtils.isNotEmpty(env)) {
             ips = Arrays.asList(env.split(","));
         }
@@ -127,7 +124,8 @@ public class SystemUtils {
         Reader reader = null;
 
         try {
-            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)), UTF_8);
+            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+                StandardCharsets.UTF_8);
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {

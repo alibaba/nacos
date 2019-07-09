@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author nkorange
@@ -34,7 +35,7 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         if (!StringUtils.isEmpty(encoding)) {
             try {
-                value = new String(value.getBytes("UTF-8"), encoding);
+                value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
             } catch (UnsupportedEncodingException ignore) {
             }
         }
@@ -57,7 +58,7 @@ public class WebUtils {
         String encoding = req.getParameter("encoding");
         if (!StringUtils.isEmpty(encoding)) {
             try {
-                value = new String(value.getBytes("UTF-8"), encoding);
+                value = new String(value.getBytes(StandardCharsets.UTF_8), encoding);
             } catch (UnsupportedEncodingException ignore) {
             }
         }
