@@ -235,7 +235,7 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      * @return java.lang.Boolean
      */
-    @RequestMapping(method = RequestMethod.DELETE)
+    @RequestMapping(params = "delType=ids", method = RequestMethod.DELETE)
     @ResponseBody
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
                                  @RequestParam(value = "ids")List<Long> ids) {
