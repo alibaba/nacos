@@ -76,9 +76,9 @@ public class PersistService {
 
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
 
-    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id in (?)";
+    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
 
-    private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE id in (?)";
+    private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
 
     /**
      * @author klw
@@ -2839,8 +2839,20 @@ public class PersistService {
         if(StringUtils.isBlank(ids)){
             return;
         }
+        StringBuilder sql = new StringBuilder(SQL_DELETE_CONFIG_INFO_BY_IDS);
+        sql.append("id in (");
+        List<Long> paramList = new ArrayList<>();
+        String[] tagArr = ids.split(",");
+        for (int i = 0; i < tagArr.length; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append("?");
+            paramList.add(Long.valueOf(tagArr[i]));
+        }
+        sql.append(") ");
         try {
-            jt.update(SQL_DELETE_CONFIG_INFO_BY_IDS, ids);
+            jt.update(sql.toString(), paramList.toArray());
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -2936,9 +2948,20 @@ public class PersistService {
         if(StringUtils.isBlank(ids)){
             return null;
         }
+        StringBuilder sql = new StringBuilder(SQL_FIND_CONFIG_INFO_BY_IDS);
+        sql.append("id in (");
+        List<Long> paramList = new ArrayList<>();
+        String[] tagArr = ids.split(",");
+        for (int i = 0; i < tagArr.length; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append("?");
+            paramList.add(Long.valueOf(tagArr[i]));
+        }
+        sql.append(") ");
         try {
-            return this.jt.query(SQL_FIND_CONFIG_INFO_BY_IDS,
-                new Object[] {ids}, CONFIG_INFO_ROW_MAPPER);
+            return this.jt.query(sql.toString(), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
