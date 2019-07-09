@@ -673,9 +673,10 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportData() {
-    let url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
-      'namespace'
-    )}&appName=${this.appName}&ids=`;
+    let url =
+      `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams('namespace')}&appName=${
+        this.appName
+      }&ids=&dataId=` + this.dataId;
     window.location.href = url;
   }
 
