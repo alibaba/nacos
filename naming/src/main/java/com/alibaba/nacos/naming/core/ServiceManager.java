@@ -295,7 +295,7 @@ public class ServiceManager implements RecordListener<Service> {
             }
         }
 
-        pushService.serviceChanged(service.getNamespaceId(), service.getName());
+        pushService.serviceChanged(service);
         StringBuilder stringBuilder = new StringBuilder();
         List<Instance> allIps = service.allIPs();
         for (Instance instance : allIps) {
