@@ -294,7 +294,6 @@ public class NamingProxy {
         params.put("udpPort", String.valueOf(udpPort));
         params.put("clientIP", NetUtils.localIP());
         params.put("healthyOnly", String.valueOf(healthyOnly));
-        params.put("app", AppNameUtils.getAppName());
 
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
@@ -483,18 +482,17 @@ public class NamingProxy {
     private void checkSignature(Map<String, String> params) {
         String ak = getAccessKey();
         String sk = getSecretKey();
+        params.put("app", AppNameUtils.getAppName());
         if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
             return;
         }
 
         try {
-            String app = System.getProperty("project.name");
             String signData = getSignData(params.get("serviceName"));
             String signature = SignUtil.sign(signData, sk);
             params.put("signature", signature);
             params.put("data", signData);
             params.put("ak", ak);
-            params.put("app", app);
         } catch (Exception e) {
             e.printStackTrace();
         }
