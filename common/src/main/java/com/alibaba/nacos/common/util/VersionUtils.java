@@ -25,13 +25,15 @@ import java.util.Properties;
 public class VersionUtils {
 
     public static String VERSION;
-    /**获取当前version*/
+    /**
+     * 获取当前version
+     */
     public static final String VERSION_DEFAULT = "${project.version}";
 
 
-    static{
+    static {
         InputStream in = null;
-        try{
+        try {
             in = VersionUtils.class.getClassLoader()
                 .getResourceAsStream("nacos-version.txt");
             Properties props = new Properties();
@@ -40,7 +42,7 @@ public class VersionUtils {
             if (val != null && !VERSION_DEFAULT.equals(val)) {
                 VERSION = val;
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         } finally {
             try {
