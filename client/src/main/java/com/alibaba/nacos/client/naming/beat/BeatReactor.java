@@ -56,14 +56,14 @@ public class BeatReactor {
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
-        dom2Beat.put(buildKey(serviceName, beatInfo.getCluster(),beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        dom2Beat.put(buildKey(serviceName, beatInfo.getCluster(), beatInfo.getIp(), beatInfo.getPort()), beatInfo);
         executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    public void removeBeatInfo(String serviceName, String cluster,String ip, int port) {
-        NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName,cluster,ip, port);
-        BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, cluster,ip, port));
+    public void removeBeatInfo(String serviceName, String clusterName, String ip, int port) {
+        NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, clusterName, ip, port);
+        BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, clusterName, ip, port));
         if (beatInfo == null) {
             return;
         }
@@ -71,9 +71,9 @@ public class BeatReactor {
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
-    private String buildKey(String serviceName, String cluster, String ip, int port) {
+    private String buildKey(String serviceName, String clusterName, String ip, int port) {
         return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER +
-        cluster + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
+            clusterName + Constants.NAMING_INSTANCE_ID_SPLITTER + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
     }
 
     class BeatTask implements Runnable {
