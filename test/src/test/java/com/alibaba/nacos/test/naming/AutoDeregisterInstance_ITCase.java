@@ -79,6 +79,7 @@ public class AutoDeregisterInstance_ITCase {
     @Test
     public void autoDregDomClustersTest() throws Exception {
         String serviceName = randomDomainName();
+        String clusterName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
@@ -93,7 +94,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, clusterName, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
@@ -116,6 +117,7 @@ public class AutoDeregisterInstance_ITCase {
     @Test
     public void autoDregDomTest() throws Exception {
         String serviceName = randomDomainName();
+        String clusterName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
@@ -130,7 +132,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, clusterName, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
         instances = naming.getAllInstances(serviceName);
@@ -147,6 +149,7 @@ public class AutoDeregisterInstance_ITCase {
     @Test
     public void autoRegDomTest() throws Exception {
         String serviceName = randomDomainName();
+        String clusterName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT);
@@ -161,7 +164,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, clusterName, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
 
@@ -193,6 +196,7 @@ public class AutoDeregisterInstance_ITCase {
     public void autoRegDomClustersTest() throws Exception {
 
         String serviceName = randomDomainName();
+        String clusterName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");
@@ -207,7 +211,7 @@ public class AutoDeregisterInstance_ITCase {
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "127.0.0.1", TEST_PORT);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, clusterName, "127.0.0.1", TEST_PORT);
 
         verifyInstanceList(instances, 1, serviceName);
 
