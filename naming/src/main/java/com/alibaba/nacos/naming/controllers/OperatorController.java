@@ -224,11 +224,9 @@ public class OperatorController {
      * @return clusterHosts in the static file cluster.conf
      */
     @RequestMapping(value = "/servers", method = RequestMethod.PUT)
-    public JSONObject updateServerList(@RequestParam("clusterHosts") List<String> clusterHosts) throws Exception {
+    public String updateServerList(@RequestParam("clusterHosts") List<String> clusterHosts) throws Exception {
         serverListManager.updateServers(clusterHosts);
-        JSONObject result = new JSONObject();
-        result.put("servers", serverListManager.getServers());
-        return result;
+        return "ok";
     }
 
     @RequestMapping("/server/status")
