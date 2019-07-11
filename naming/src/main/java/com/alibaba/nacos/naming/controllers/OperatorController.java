@@ -41,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -214,6 +215,19 @@ public class OperatorController {
             result.put("servers", serverListManager.getServers());
         }
 
+        return result;
+    }
+
+    /**
+     * update the static file cluster.conf
+     * @param clusterHosts
+     * @return clusterHosts in the static file cluster.conf
+     */
+    @RequestMapping(value = "/servers", method = RequestMethod.PUT)
+    public JSONObject updateServerList(@RequestParam("clusterHosts") List<String> clusterHosts) throws Exception {
+        serverListManager.updateServers(clusterHosts);
+        JSONObject result = new JSONObject();
+        result.put("servers", serverListManager.getServers());
         return result;
     }
 

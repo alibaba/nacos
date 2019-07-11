@@ -16,16 +16,22 @@
 package com.alibaba.nacos.naming.cluster;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
+import com.alibaba.nacos.naming.cluster.servers.Servers;
+import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,12 +45,17 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
  * @since 1.0.0
  */
 @Component("serverListManager")
-public class ServerListManager {
+public class ServerListManager implements RecordListener<Servers>{
 
     private static final int STABLE_PERIOD = 60 * 1000;
 
+    private static final String DATUM_SERVER_LIST_KEY = "com.alibaba.nacos.naming.serverLists";
+
     @Autowired
     private SwitchDomain switchDomain;
+
+    @Resource(name = "consistencyDelegate")
+    private ConsistencyService consistencyService;
 
     private List<ServerChangeListener> listeners = new ArrayList<>();
 
@@ -345,6 +356,53 @@ public class ServerListManager {
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[DISTRO-STATUS-CLEAN] Failed to request to clean server status to " + serverIP, e);
         }
+    }
+
+    public void updateServers(List<String> clusterHosts) throws NacosException {
+        rewriteClusterConf(clusterHosts);
+        Servers newServers = new Servers(clusterHosts);
+        consistencyService.put(DATUM_SERVER_LIST_KEY, newServers);
+    }
+
+    private void rewriteClusterConf(List<String> clusterHosts) throws NacosException {
+        if(clusterHosts == null || clusterHosts.isEmpty() || clusterHosts.get(0) == null || clusterHosts.get(0).isEmpty()){
+            throw new NacosException(NacosException.INVALID_PARAM, "cluster.conf must have at least one valid host");
+        }
+        try {
+            writeClusterConf(generateText(clusterHosts));
+        } catch (IOException e) {
+            throw new NacosException(NacosException.SERVER_ERROR, "write cluster.conf failed", e);
+        }
+    }
+
+    private String generateText(List<String> clusterHosts) {
+        String lineSeparator = System.getProperty("line.separator");
+        StringBuilder content = new StringBuilder();
+        for(String host : clusterHosts){
+            content.append(host)
+                .append(lineSeparator);
+        }
+        return content.toString();
+    }
+
+    @Override
+    public boolean interests(String key) {
+        return DATUM_SERVER_LIST_KEY.equals(key);
+    }
+
+    @Override
+    public boolean matchUnlistenKey(String key) {
+        return false;
+    }
+
+    @Override
+    public void onChange(String key, Servers value) throws Exception {
+        rewriteClusterConf(value.getClusterHosts());
+    }
+
+    @Override
+    public void onDelete(String key) throws Exception {
+
     }
 
     public class ServerListUpdater implements Runnable {
