@@ -262,6 +262,7 @@ public class MultiTenant_InstanceAPI_ITCase {
     @Test
     public void multipleTenant_deleteInstance() throws Exception {
         String serviceName = randomDomainName();
+        String clusterName = randomDomainName();
 
         naming1.registerInstance(serviceName, "11.11.11.11", 80);
 
@@ -274,11 +275,12 @@ public class MultiTenant_InstanceAPI_ITCase {
         //AP下，通过HTTP删除实例前必须删除心跳
         NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "33.33.33.33", 8888);
+            removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName , clusterName, "33.33.33.33",8888);
         TimeUnit.SECONDS.sleep(3L);
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
             Params.newParams()
                 .appendParam("serviceName", serviceName)
+                .appendParam("clusterName", clusterName)
                 .appendParam("ip", "33.33.33.33")
                 .appendParam("port", "8888")
                 .appendParam("namespaceId", "namespace-1") //删除namespace-1中没有的IP
@@ -305,6 +307,7 @@ public class MultiTenant_InstanceAPI_ITCase {
     @Test
     public void multipleTenant_group_deleteInstance() throws Exception {
         String serviceName = randomDomainName();
+        String clusterName = randomDomainName();
 
         naming1.registerInstance(serviceName, TEST_GROUP_1,"11.11.11.11", 80);
 
@@ -315,11 +318,12 @@ public class MultiTenant_InstanceAPI_ITCase {
         //AP下，通过HTTP删除实例前必须删除心跳
         NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
         namingServiceImpl.getBeatReactor().
-            removeBeatInfo(TEST_GROUP_2 + Constants.SERVICE_INFO_SPLITER + serviceName, "22.22.22.22", 80);
+            removeBeatInfo(TEST_GROUP_2 + Constants.SERVICE_INFO_SPLITER + serviceName, clusterName,"22.22.22.22", 80);
 
         ResponseEntity<String> response = request("/nacos/v1/ns/instance",
             Params.newParams()
                 .appendParam("serviceName", serviceName)
+                .appendParam("clusterName", clusterName)
                 .appendParam("namespaceId", "namespace-2") //删除namespace-1中没有的IP
                 .appendParam("groupName", TEST_GROUP_2)
                 .appendParam("ip", "22.22.22.22")
