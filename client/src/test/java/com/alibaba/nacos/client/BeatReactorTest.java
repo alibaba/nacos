@@ -42,7 +42,7 @@ public class BeatReactorTest {
 
         Assert.assertEquals(1, getActiveThread(beatReactor));
         Thread.sleep(1100L);
-        beatReactor.removeBeatInfo("testService", beatInfo.getIp(), beatInfo.getPort());
+        beatReactor.removeBeatInfo("testService", beatInfo.getCluster(), beatInfo.getIp(), beatInfo.getPort());
         Thread.sleep(3100L);
         Assert.assertEquals(0, getActiveThread(beatReactor));
     }
