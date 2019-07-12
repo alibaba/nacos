@@ -96,7 +96,7 @@ public class HealthController {
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
-        
+
         valid = BooleanUtils.toBoolean(healthyString);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -108,7 +108,7 @@ public class HealthController {
                     Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
                         + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
                         + ", service: " + serviceName + ", msg: update thought HealthController api");
-                    pushService.serviceChanged(namespaceId, service.getName());
+                    pushService.serviceChanged(service);
                     break;
                 }
             }
