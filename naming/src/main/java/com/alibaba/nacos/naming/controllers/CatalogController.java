@@ -150,10 +150,11 @@ public class CatalogController {
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
             int pageNo = Integer.parseInt(WebUtils.required(request, "pageNo"));
             int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-            String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
+            String serviceName = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
+            String groupName = WebUtils.optional(request, "groupName", StringUtils.EMPTY);
 
             List<Service> serviceList = new ArrayList<>(8);
-            serviceManager.getPagedService(namespaceId, pageNo, pageSize, keyword, StringUtils.EMPTY, serviceList);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, serviceName, groupName, StringUtils.EMPTY, serviceList);
 
             for (Service service : serviceList) {
                 ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
@@ -257,11 +258,12 @@ public class CatalogController {
 
         int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
+        String serviceName = WebUtils.optional(request, "serviceName", StringUtils.EMPTY);
+        String groupName = WebUtils.optional(request, "groupName", StringUtils.EMPTY);
         String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
 
         List<Service> services = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services);
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, serviceName, groupName,  containedInstance, services);
 
         if (CollectionUtils.isEmpty(services)) {
             result.put("serviceList", Collections.emptyList());
