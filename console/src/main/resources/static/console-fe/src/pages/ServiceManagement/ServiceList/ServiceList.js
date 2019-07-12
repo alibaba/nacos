@@ -55,8 +55,11 @@ class ServiceList extends React.Component {
       total: 0,
       pageSize: 10,
       currentPage: 1,
-      keyword: '',
       dataSource: [],
+      search: {
+        serviceName: '',
+        groupName: '',
+      },
     };
     this.field = new Field(this);
   }
@@ -71,19 +74,18 @@ class ServiceList extends React.Component {
 
   openEditServiceDialog() {
     try {
-      this.editServiceDialog.current.getInstance()
-        .show(this.state.service);
-    } catch (error) {
-    }
+      this.editServiceDialog.current.getInstance().show(this.state.service);
+    } catch (error) {}
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword, withInstances = false } = this.state;
+    const { currentPage, pageSize, search, withInstances = false } = this.state;
     const parameter = [
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
-      `keyword=${keyword}`,
+      `serviceName=${search.serviceName}`,
+      `groupName=${search.groupName}`,
     ];
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
@@ -119,8 +121,7 @@ class ServiceList extends React.Component {
    *
    */
   showSampleCode(record) {
-    this.showcode.current.getInstance()
-      .openDialog(record);
+    this.showcode.current.getInstance().openDialog(record);
   }
 
   deleteService(service) {
@@ -157,7 +158,6 @@ class ServiceList extends React.Component {
 
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
-
   render() {
     const { locale = {} } = this.props;
     const {
@@ -165,6 +165,8 @@ class ServiceList extends React.Component {
       serviceList,
       serviceName,
       serviceNamePlaceholder,
+      groupName,
+      groupNamePlaceholder,
       query,
       create,
       operation,
@@ -172,7 +174,7 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -214,8 +216,19 @@ class ServiceList extends React.Component {
                   <Input
                     placeholder={serviceNamePlaceholder}
                     style={{ width: 200 }}
-                    value={keyword}
-                    onChange={keyword => this.setState({ keyword })}
+                    value={search.serviceName}
+                    onChange={serviceName => this.setState({ search: { ...search, serviceName } })}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                    }
+                  />
+                </FormItem>
+                <FormItem label={groupName}>
+                  <Input
+                    placeholder={groupNamePlaceholder}
+                    style={{ width: 200 }}
+                    value={search.groupName}
+                    onChange={groupName => this.setState({ search: { ...search, groupName } })}
                     onPressEnter={() =>
                       this.setState({ currentPage: 1 }, () => this.queryServiceList())
                     }
@@ -266,8 +279,9 @@ class ServiceList extends React.Component {
                       <a
                         onClick={() =>
                           this.props.history.push(
-                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`,
-                          )}
+                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`
+                          )
+                        }
                         style={{ marginRight: 5 }}
                       >
                         {detail}
@@ -277,10 +291,7 @@ class ServiceList extends React.Component {
                         {sampleCode}
                       </a>
                       <span style={{ marginRight: 5 }}>|</span>
-                      <a
-                        onClick={() => this.deleteService(record)}
-                        style={{ marginRight: 5 }}
-                      >
+                      <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>
                         {deleteAction}
                       </a>
                     </div>
@@ -290,10 +301,11 @@ class ServiceList extends React.Component {
             </Col>
           </Row>
           {this.state.total > this.state.pageSize && (
-            <div style={{
-              marginTop: 10,
-              textAlign: 'right',
-            }}
+            <div
+              style={{
+                marginTop: 10,
+                textAlign: 'right',
+              }}
             >
               <Pagination
                 current={this.state.currentPage}

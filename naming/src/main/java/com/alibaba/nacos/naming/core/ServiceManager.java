@@ -599,13 +599,21 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public List<Service> searchServices(String namespaceId, String regex) {
+        return searchServices(namespaceId, regex, null);
+    }
+
+    public List<Service> searchServices(String namespaceId, String regex, String groupName) {
         List<Service> result = new ArrayList<>();
         for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
             Service service = entry.getValue();
-            String key = service.getName() + ":" + ArrayUtils.toString(service.getOwners());
-            if (key.matches(regex)) {
-                result.add(service);
+            if(StringUtils.isNotEmpty(groupName)&&!groupName.equals(service.getGroupName())){
+                continue;
             }
+            String key = service.getName() + ":" + ArrayUtils.toString(service.getOwners());
+            if(StringUtils.isNotEmpty(regex)&&!key.matches(regex)){
+                continue;
+            }
+            result.add(service);
         }
 
         return result;
@@ -633,7 +641,7 @@ public class ServiceManager implements RecordListener<Service> {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList) {
+    public int getPagedService(String namespaceId, int startPage, int pageSize, String serviceName, String groupName, String containedInstance, List<Service> serviceList) {
 
         List<Service> matchList;
 
@@ -641,8 +649,8 @@ public class ServiceManager implements RecordListener<Service> {
             return 0;
         }
 
-        if (StringUtils.isNotBlank(keyword)) {
-            matchList = searchServices(namespaceId, ".*" + keyword + ".*");
+        if (StringUtils.isNotBlank(serviceName) || StringUtils.isNotBlank(groupName)) {
+            matchList = searchServices(namespaceId, StringUtils.isNotBlank(serviceName) ? ".*" + serviceName + ".*" : null, groupName);
         } else {
             matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
         }
