@@ -474,10 +474,13 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
+        Service service = getService(namespaceId, serviceName);
+        removeInstance(namespaceId, serviceName, ephemeral, service, ips);
+    }
+
+    public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Service service, Instance... ips) throws NacosException {
 
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
-
-        Service service = getService(namespaceId, serviceName);
 
         List<Instance> instanceList = substractIpAddresses(service, ephemeral, ips);
 
