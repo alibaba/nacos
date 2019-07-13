@@ -294,7 +294,7 @@ const I18N_CONF = {
     newListingMain: '新建配置',
     newListing: '新建配置',
     publishFailed: '发布失败。请检查参数是否正确。',
-    doNotEnte: 'Illegal characters not allowed',
+    doNotEnter: '不允许非法字符',
     newConfig: 'Data ID 不能为空',
     dataIdIsNotEmpty: 'Data ID 长度不能超过255字符',
     groupPlaceholder: '请输入Group名称',
