@@ -34,12 +34,10 @@ import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEven
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 
-import com.alibaba.nacos.client.identify.Constants;
 import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
 
 
-import org.slf4j.Logger;
 
 /**
  * Serverlist Manager
@@ -275,13 +273,23 @@ public class ServerListManager {
             LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
             return;
         }
+
+        List<String> newServerAddrList = new ArrayList<String>();
+        for (String server : newList) {
+            if (server.startsWith(HTTP) || server.startsWith(HTTPS)) {
+                newServerAddrList.add(server);
+            } else {
+                newServerAddrList.add(HTTP + server);
+            }
+        }
+
         /**
          * no change
          */
-        if (newList.equals(serverUrls)) {
+        if (newServerAddrList.equals(serverUrls)) {
             return;
         }
-        serverUrls = new ArrayList<String>(newList);
+        serverUrls = new ArrayList<String>(newServerAddrList);
         iterator = iterator();
         currentServerAddr = iterator.next();
 

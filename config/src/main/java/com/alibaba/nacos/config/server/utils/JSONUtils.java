@@ -15,6 +15,11 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+
+import java.io.IOException;
+import java.io.InputStream;
+
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,6 +52,11 @@ public class JSONUtils {
     public static <T> T deserializeObject(String s, TypeReference<T> typeReference)
         throws IOException {
         return mapper.readValue(s, typeReference);
+    }
+
+    public static <T> T deserializeObject(InputStream src, TypeReference<?> typeReference)
+        throws IOException {
+        return mapper.readValue(src, typeReference);
     }
 
 }

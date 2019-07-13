@@ -51,15 +51,18 @@ if [ -z "$JAVA_HOME" ]; then
   fi
 fi
 
+export SERVER="nacos-server"
 export MODE="cluster"
 export FUNCTION_MODE="all"
-while getopts ":m:f:" opt
+while getopts ":m:f:s:" opt
 do
     case $opt in
         m)
             MODE=$OPTARG;;
         f)
             FUNCTION_MODE=$OPTARG;;
+        s)
+            SERVER=$OPTARG;;
         ?)
         echo "Unknown parameter"
         exit 1;;
@@ -102,7 +105,7 @@ else
 fi
 
 JAVA_OPT="${JAVA_OPT} -Dnacos.home=${BASE_DIR}"
-JAVA_OPT="${JAVA_OPT} -Dloader.path=${BASE_DIR}/plugins/health -jar ${BASE_DIR}/target/nacos-server.jar"
+JAVA_OPT="${JAVA_OPT} -Dloader.path=${BASE_DIR}/plugins/health -jar ${BASE_DIR}/target/${SERVER}.jar"
 JAVA_OPT="${JAVA_OPT} ${JAVA_OPT_EXT}"
 JAVA_OPT="${JAVA_OPT} --spring.config.location=${CUSTOM_SEARCH_LOCATIONS}"
 JAVA_OPT="${JAVA_OPT} --logging.config=${BASE_DIR}/conf/nacos-logback.xml"
@@ -115,14 +118,16 @@ fi
 echo "$JAVA ${JAVA_OPT}"
 
 if [[ "${MODE}" == "standalone" ]]; then
-    echo "nacos is starting"
-    $JAVA ${JAVA_OPT} nacos.nacos
+    echo "nacos is starting with standalone"
 else
-    if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
-        touch "${BASE_DIR}/logs/start.out"
-    fi
-
-    echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
-    nohup $JAVA ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
-    echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
+    echo "nacos is starting with cluster"
 fi
+
+# check the start.out log output file
+if [ ! -f "${BASE_DIR}/logs/start.out" ]; then
+  touch "${BASE_DIR}/logs/start.out"
+fi
+# start
+echo "$JAVA ${JAVA_OPT}" > ${BASE_DIR}/logs/start.out 2>&1 &
+nohup $JAVA ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
+echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"

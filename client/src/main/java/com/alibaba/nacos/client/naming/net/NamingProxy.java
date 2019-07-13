@@ -29,7 +29,6 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.identify.Constants;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
@@ -218,6 +217,7 @@ public class NamingProxy {
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
+        params.put("enabled", String.valueOf(instance.isEnabled()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 

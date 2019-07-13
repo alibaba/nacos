@@ -30,13 +30,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Collections;
 import java.util.List;
@@ -169,7 +165,7 @@ public class Subscribe_ITCase extends RestAPI_ITCase {
         Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
 
-    @Test
+    @Test(timeout = 20*TIME_OUT)
     public void subscribeEmpty() throws Exception {
 
         String serviceName = randomDomainName();

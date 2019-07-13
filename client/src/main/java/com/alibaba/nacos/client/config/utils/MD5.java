@@ -17,9 +17,9 @@ package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.common.Constants;
 
+import com.google.common.collect.Maps;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,7 +33,7 @@ public class MD5 {
     private static int DIGITS_SIZE = 16;
     private static char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-    private static Map<Character, Integer> rDigits = new HashMap<Character, Integer>(16);
+    private static Map<Character, Integer> rDigits = Maps.newHashMapWithExpectedSize(16);
 
     static {
         for (int i = 0; i < digits.length; ++i) {
