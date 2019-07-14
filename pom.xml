@@ -437,6 +437,7 @@
         <module>distribution</module>
         <module>console</module>
         <module>cmdb</module>
+        <module>dns</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
