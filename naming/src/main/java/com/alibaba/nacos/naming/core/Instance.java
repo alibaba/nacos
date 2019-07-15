@@ -16,11 +16,12 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONCreator;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.math.NumberUtils;
+import org.springframework.util.Assert;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
@@ -30,6 +31,7 @@ import java.util.regex.Pattern;
  * IP under service
  *
  * @author nkorange
+ * @author jifengnan 2019-5-28
  */
 public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance implements Comparable {
 
@@ -48,6 +50,11 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     private String app;
 
+    /**
+     * The cluster to which the current instance belongs
+     */
+    private Cluster cluster;
+
     private static final Pattern IP_PATTERN
         = Pattern.compile("(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}):?(\\d{1,5})?");
 
@@ -55,9 +62,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         = Pattern.compile("(\\d|\\.)+");
 
     private static final String SPLITER = "_";
-
-    public Instance() {
-    }
 
     public boolean isMockValid() {
         return mockValid;
@@ -75,89 +79,134 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         this.lastBeat = lastBeat;
     }
 
-    public Instance(String ip, int port) {
-        this.setIp(ip);
-        this.setPort(port);
-        this.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+    /**
+     * Create a new instance.
+     *
+     * @param ip      the IP of the current instance. The IP format can be ddd.ddd.ddd.ddd or a domain name(nacos.io).
+     * @param port    the port of the current instance
+     * @param cluster the cluster to which the current instance belongs
+     * @throws IllegalArgumentException if the IP or port format is invalid, or the cluster is null.
+     */
+    public Instance(String ip, int port, Cluster cluster) {
+        super.setIp(ip);
+        super.setPort(port);
+        Assert.notNull(cluster, "Cluster cannot be null");
+        this.cluster = cluster;
+        super.setClusterName(cluster.getName());
+        super.setServiceName(cluster.getService().getName());
+        validate();
     }
 
-    public Instance(String ip, int port, String clusterName) {
-        this.setIp(ip.trim());
-        this.setPort(port);
-        this.setClusterName(clusterName);
+    /**
+     * Create a new instance.
+     * <p>
+     * For fast json deserialization only, which means it can be removed if a new deserialization way be added.
+     *
+     * @param ip          the IP of the current instance. The IP format can be ddd.ddd.ddd.ddd or a domain name(nacos.io).
+     * @param port        the port of the current instance
+     * @param cluster     the cluster to which the current instance belongs
+     * @param clusterName the cluster name
+     * @param serviceName the service name
+     * @throws IllegalArgumentException if the IP or port format is invalid, or the cluster is null.
+     */
+    @JSONCreator
+    private Instance(String ip, int port, Cluster cluster, String clusterName, String serviceName) {
+        super.setIp(ip);
+        super.setPort(port);
+        this.cluster = cluster;
+        super.setClusterName(clusterName);
+        super.setServiceName(serviceName);
+        validate();
     }
 
-    public Instance(String ip, int port, String clusterName, String tenant, String app) {
-        this.setIp(ip.trim());
-        this.setPort(port);
-        this.setClusterName(clusterName);
-        this.tenant = tenant;
-        this.app = app;
+    /**
+     * Get the cluster name to which the current instance belongs.
+     *
+     * <p>Note that the returned cluster name may not be the name which set by {@link #setClusterName(String)},
+     * but the name of the cluster to which the current instance belongs({@link Cluster#getName()}).
+     *
+     * @return the cluster name
+     */
+    @Override
+    public String getClusterName() {
+        if (cluster != null) {
+            return cluster.getName();
+        }
+        return super.getClusterName();
     }
 
-    public static Instance fromString(String config) {
-        String[] ipAddressAttributes = config.split(SPLITER);
-        if (ipAddressAttributes.length < 1) {
-            return null;
+    /**
+     * Replace the cluster name for the current instance.
+     * <p>
+     * Deprecated because the cluster name shouldn't be replaced, the correct way is to create a new instance.
+     * This method is just for backward compatibility.
+     *
+     * @param clusterName the new cluster name
+     */
+    @Override
+    @Deprecated
+    public void setClusterName(String clusterName) {
+        super.setClusterName(clusterName);
+    }
+
+    /**
+     * Replace the service name for the current instance.
+     * <p>
+     * Deprecated because the service name shouldn't be replaced, the correct way is to create a new instance.
+     * This method is just for backward compatibility.
+     *
+     * @param serviceName the new service name
+     */
+    @Override
+    @Deprecated
+    public void setServiceName(String serviceName) {
+        super.setServiceName(serviceName);
+    }
+
+    /**
+     * Get the service name.
+     *
+     *
+     * <p>Note that the returned service name may not be the name which set by {@link #setServiceName(String)},
+     * but the name of the service to which the current instance belongs({@link Service#getName()}).
+     *
+     * @return the service name
+     */
+    @Override
+    public String getServiceName() {
+        if (cluster != null) {
+            return cluster.getService().getName();
         }
+        return super.getServiceName();
+    }
 
-        String provider = ipAddressAttributes[0];
-        Matcher matcher = IP_PATTERN.matcher(provider);
-        if (!matcher.matches()) {
-            return null;
-        }
 
-        int expectedGroupCount = 2;
+    /**
+     * Replace the IP of the current instance.
+     * <p>
+     * Deprecated because the IP shouldn't be replaced, the correct way is to create a new instance.
+     * This method is just for backward compatibility.
+     *
+     * @param ip the new IP
+     */
+    @Override
+    @Deprecated
+    public void setIp(String ip) {
+        super.setIp(ip);
+    }
 
-        int port = 0;
-        if (NumberUtils.isNumber(matcher.group(expectedGroupCount))) {
-            port = Integer.parseInt(matcher.group(expectedGroupCount));
-        }
-
-        Instance instance = new Instance(matcher.group(1), port);
-
-        // 7 possible formats of config:
-        // ip:port
-        // ip:port_weight
-        // ip:port_weight_cluster
-        // ip:port_weight_valid
-        // ip:port_weight_valid_cluster
-        // ip:port_weight_valid_marked
-        // ip:port_weight_valid_marked_cluster
-        int minimumLength = 1;
-
-        if (ipAddressAttributes.length > minimumLength) {
-            // determine 'weight':
-            instance.setWeight(NumberUtils.toDouble(ipAddressAttributes[minimumLength], 1));
-        }
-
-        minimumLength++;
-
-        if (ipAddressAttributes.length > minimumLength) {
-            // determine 'valid':
-            if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
-                instance.setHealthy(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
-            }
-
-            // determine 'cluster':
-            if (!Boolean.TRUE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1]) &&
-                !Boolean.FALSE.toString().equals(ipAddressAttributes[ipAddressAttributes.length - 1])) {
-                instance.setClusterName(ipAddressAttributes[ipAddressAttributes.length - 1]);
-            }
-        }
-
-        minimumLength++;
-
-        if (ipAddressAttributes.length > minimumLength) {
-            // determine 'marked':
-            if (Boolean.TRUE.toString().equals(ipAddressAttributes[minimumLength]) ||
-                Boolean.FALSE.toString().equals(ipAddressAttributes[minimumLength])) {
-                instance.setMarked(Boolean.parseBoolean(ipAddressAttributes[minimumLength]));
-            }
-        }
-
-        return instance;
+    /**
+     * Replace the port of the current instance.
+     * <p>
+     * Deprecated because the port shouldn't be replaced, the correct way is to create a new instance.
+     * This method is just for backward compatibility.
+     *
+     * @param port the new port
+     */
+    @Override
+    @Deprecated
+    public void setPort(int port) {
+        super.setPort(port);
     }
 
     public String toIPAddr() {
@@ -171,37 +220,6 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
 
     public String toJSON() {
         return JSON.toJSONString(this);
-    }
-
-
-    public static Instance fromJSON(String json) {
-        Instance ip;
-
-        try {
-            ip = JSON.parseObject(json, Instance.class);
-        } catch (Exception e) {
-            ip = fromString(json);
-        }
-
-        if (ip == null) {
-            throw new IllegalArgumentException("malformed ip config: " + json);
-        }
-
-        if (ip.getWeight() > MAX_WEIGHT_VALUE) {
-            ip.setWeight(MAX_WEIGHT_VALUE);
-        }
-
-        if (ip.getWeight() < MIN_POSITIVE_WEIGHT_VALUE && ip.getWeight() > MIN_WEIGHT_VALUE) {
-            ip.setWeight(MIN_POSITIVE_WEIGHT_VALUE);
-        } else if (ip.getWeight() < MIN_WEIGHT_VALUE) {
-            ip.setWeight(0.0D);
-        }
-
-        if (!ip.validate()) {
-            throw new IllegalArgumentException("malformed ip config: " + json);
-        }
-
-        return ip;
     }
 
     @Override
@@ -294,26 +312,41 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         this.tenant = tenant;
     }
 
+    public Cluster getCluster() {
+        return cluster;
+    }
+
     public String generateInstanceId() {
         return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
     }
 
-    public boolean validate() {
+    /**
+     * Validate current instance.
+     * <p>
+     * The IP format can be ddd.ddd.ddd.ddd or a domain name(nacos.io).
+     */
+    public void validate() {
+        Assert.isTrue(getPort() >= 0, "Port must be greater than or equals to 0");
         if (onlyContainsDigitAndDot()) {
             Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
             if (!matcher.matches()) {
-                return false;
+                throw new IllegalArgumentException(String.format("IP(%s) or port(%d) format is invalid", getIp(), getPort()));
             }
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
-            return false;
+            throw new IllegalArgumentException(String.format("Illegal weight value: %f", getWeight()));
         }
-
-        return true;
     }
 
+    /**
+     * Whether the IP consists of digits and dots.
+     * Its to support host name.
+     *
+     * @return true if the IP consists of digits and dots only.
+     */
     private boolean onlyContainsDigitAndDot() {
+        Assert.notNull(getIp(), "IP cannot be null");
         Matcher matcher = ONLY_DIGIT_AND_DOT.matcher(getIp());
         return matcher.matches();
     }

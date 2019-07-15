@@ -22,10 +22,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -36,7 +33,6 @@ import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +65,9 @@ public class InstanceController {
     @Autowired
     private ServiceManager serviceManager;
 
+    @Autowired
+    private InstanceManager instanceManager;
+
     private DataSource pushDataSource = new DataSource() {
 
         @Override
@@ -90,42 +89,45 @@ public class InstanceController {
         }
     };
 
+    /**
+     * Register an instance to a service in AP mode.
+     * <p>
+     * This method creates service or cluster silently if they don't exist.
+     *
+     * @param request the current HTTP request
+     * @return "ok" if the registration is successful
+     * @throws Exception if the server for the instance is not found
+     */
     @CanDistro
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
-
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-
-        serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
+        instanceManager.register(request);
         return "ok";
     }
 
+    /**
+     * Deregister the instance.
+     *
+     * @param request the current http request
+     * @return "ok" if the deregistration is successful
+     * @throws Exception if the server for the instance is not found
+     */
     @CanDistro
     @RequestMapping(value = "", method = RequestMethod.DELETE)
     public String deregister(HttpServletRequest request) throws Exception {
-        Instance instance = getIPAddress(request);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-
-        Service service = serviceManager.getService(namespaceId, serviceName);
-        if (service == null) {
-            Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
-            return "ok";
-        }
-
-        serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
-
+        instanceManager.deregister(request);
         return "ok";
     }
 
-    @CanDistro
+    /**
+     * Update the instance.
+     *
+     * @param request the current http request
+     * @return "ok" if the update is successful
+     * @throws Exception if the server for the instance is not found or the instance is not found
+     */
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
-
         String agent = request.getHeader("Client-Version");
         if (StringUtils.isBlank(agent)) {
             agent = request.getHeader("User-Agent");
@@ -135,9 +137,9 @@ public class InstanceController {
 
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
             clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
-            serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
+            instanceManager.update(request);
         } else {
-            serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
+            instanceManager.register(request);
         }
         return "ok";
     }
@@ -210,6 +212,13 @@ public class InstanceController {
         throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
     }
 
+    /**
+     * Heartbeat checking for instances.
+     *
+     * @param request the current http request
+     * @return the new heart beat interval
+     * @throws Exception if the server for the instance is not found
+     */
     @CanDistro
     @RequestMapping(value = "/beat", method = RequestMethod.PUT)
     public JSONObject beat(HttpServletRequest request) throws Exception {
@@ -241,21 +250,22 @@ public class InstanceController {
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
             clientBeat.getPort());
 
+        Service service = serviceManager.getService(namespaceId, serviceName);
+
         if (instance == null) {
-            instance = new Instance();
-            instance.setPort(clientBeat.getPort());
-            instance.setIp(clientBeat.getIp());
+            if (service == null) {
+                service = serviceManager.createServiceIfAbsent(namespaceId, serviceName, clientBeat.isEphemeral());
+            }
+            Cluster cluster = new Cluster(clusterName, service);
+            service.addCluster(cluster);
+            instance = new Instance(clientBeat.getIp(), clientBeat.getPort(), cluster);
             instance.setWeight(clientBeat.getWeight());
             instance.setMetadata(clientBeat.getMetadata());
-            instance.setClusterName(clusterName);
-            instance.setServiceName(serviceName);
             instance.setInstanceId(instance.generateInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
-
-        Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
             throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
@@ -300,62 +310,6 @@ public class InstanceController {
 
         result.put("ips", ipArray);
         return result;
-    }
-
-    private Instance parseInstance(HttpServletRequest request) throws Exception {
-
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String app = WebUtils.optional(request, "app", "DEFAULT");
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-
-        Instance instance = getIPAddress(request);
-        instance.setApp(app);
-        instance.setServiceName(serviceName);
-        instance.setInstanceId(instance.generateInstanceId());
-        instance.setLastBeat(System.currentTimeMillis());
-        if (StringUtils.isNotEmpty(metadata)) {
-            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
-        }
-
-        if (!instance.validate()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
-        }
-
-        return instance;
-    }
-
-    private Instance getIPAddress(HttpServletRequest request) {
-
-        String ip = WebUtils.required(request, "ip");
-        String port = WebUtils.required(request, "port");
-        String weight = WebUtils.optional(request, "weight", "1");
-        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
-        if (StringUtils.isBlank(cluster)) {
-            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-        }
-        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
-
-        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
-        boolean enabled;
-        if (StringUtils.isBlank(enabledString)) {
-            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
-        } else {
-            enabled = BooleanUtils.toBoolean(enabledString);
-        }
-
-        boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
-            String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
-
-        Instance instance = new Instance();
-        instance.setPort(Integer.parseInt(port));
-        instance.setIp(ip);
-        instance.setWeight(Double.parseDouble(weight));
-        instance.setClusterName(cluster);
-        instance.setHealthy(healthy);
-        instance.setEnabled(enabled);
-        instance.setEphemeral(ephemeral);
-
-        return instance;
     }
 
     public void checkIfDisabled(Service service) throws Exception {

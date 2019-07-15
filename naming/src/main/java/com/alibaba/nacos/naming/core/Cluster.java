@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.fastjson.annotation.JSONCreator;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckReactor;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
@@ -54,16 +55,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @JSONField(serialize = false)
     private Set<Instance> ephemeralInstances = new HashSet<>();
 
-    @JSONField(serialize = false)
     private Service service;
 
     @JSONField(serialize = false)
     private volatile boolean inited = false;
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
-
-    public Cluster() {
-    }
 
     /**
      * Create a cluster.
@@ -76,9 +73,24 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      * @since 1.0.1
      */
     public Cluster(String clusterName, Service service) {
-        this.setName(clusterName);
+        super.setName(clusterName);
         this.service = service;
         validate();
+        init();
+    }
+
+    /**
+     * Create a cluster.
+     * <p>
+     * For fast json deserialization only, which means it can be deleted if a new deserialization way is added.
+     *
+     * @param service the service to which the current cluster belongs
+     * @param name    the cluster name
+     */
+    @JSONCreator
+    private Cluster(Service service, String name) {
+        super.setName(name);
+        this.service = service;
     }
 
     public int getDefIPPort() {
@@ -111,6 +123,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         checkTask = new HealthCheckTask(this);
 
         HealthCheckReactor.scheduleCheck(checkTask);
+        if (service != null) {
+            service.getClusterMap().putIfAbsent(getName(), this);
+        }
         inited = true;
     }
 
@@ -144,7 +159,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * this method has been deprecated, the service name shouldn't be changed.
+     * Replace the service name for the current cluster.
+     * <p>
+     * This method has been deprecated, the service name shouldn't be changed.
      *
      * @param serviceName the service name
      * @author jifengnan  2019-04-26
@@ -170,6 +187,20 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         } else {
             return super.getServiceName();
         }
+    }
+
+    /**
+     * Replace the name for the current cluster.
+     * <p>
+     * This method has been deprecated, the name shouldn't be changed.
+     *
+     * @param name the new cluster name
+     * @author jifengnan  2019-07-13
+     */
+    @Deprecated
+    @Override
+    public void setName(String name) {
+        super.setName(name);
     }
 
     @Override

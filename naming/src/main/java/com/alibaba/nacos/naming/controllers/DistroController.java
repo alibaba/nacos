@@ -87,7 +87,7 @@ public class DistroController {
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());
                 if (!serviceManager.containService(namespaceId, serviceName)
                     && switchDomain.isDefaultInstanceEphemeral()) {
-                    serviceManager.createEmptyService(namespaceId, serviceName, true);
+                    serviceManager.createServiceIfAbsent(namespaceId, serviceName, true);
                 }
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }

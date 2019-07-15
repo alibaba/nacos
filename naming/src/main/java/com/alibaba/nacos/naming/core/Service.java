@@ -16,7 +16,9 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONCreator;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -34,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.util.Assert;
 
 import java.math.BigInteger;
 import java.nio.charset.Charset;
@@ -49,6 +52,7 @@ import java.util.*;
  * This class inherits from Service in API module and stores some fields that do not have to expose to client.
  *
  * @author nkorange
+ * @author jifengnan  2019-05-08
  */
 public class Service extends com.alibaba.nacos.api.naming.pojo.Service implements Record, RecordListener<Instances> {
 
@@ -80,11 +84,51 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     private Map<String, Cluster> clusterMap = new HashMap<>();
 
-    public Service() {
+    /**
+     * Create a service with the specified name.
+     * <p>The new service will belong to the namespace: {@link Constants#DEFAULT_NAMESPACE_ID},
+     * and the group name of the new service will be {@link Constants#DEFAULT_GROUP}.
+     *
+     * @param name the name of the new service
+     * @throws IllegalArgumentException the current service name is null or contains invalid text content
+     */
+    public Service(String name) {
+        this(name, Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP);
     }
 
-    public Service(String name) {
-        super(name);
+    /**
+     * Create a service with the specified name.
+     * <p>The service will belong to the namespace: <code>namespaceId</code>.
+     * and the group name of the new service will be {@link Constants#DEFAULT_GROUP}.
+     *
+     * @param name        the name of the new service
+     * @param namespaceId the namespace of the new service
+     * @throws IllegalArgumentException the current service name/namespaceId is null, or contains invalid text content
+     */
+    public Service(String name, String namespaceId) {
+        this(name, namespaceId, Constants.DEFAULT_GROUP);
+    }
+
+    /**
+     * Create a service with the specified name.
+     * <p>The service will belong to the namespace: <code>namespaceId</code>.
+     * and the group name of the new service will be the <code>groupName</code>.
+     *
+     * @param name        the name of the new service
+     * @param namespaceId the namespace of the new service
+     * @param groupName   the group name of the new service
+     * @throws IllegalArgumentException the current service name/namespaceId/group name is null, or contains invalid text content
+     */
+    @JSONCreator
+    public Service(String name, String namespaceId, String groupName) {
+        if (name == null || !name.matches(SERVICE_NAME_SYNTAX)) {
+            throw new IllegalArgumentException("service name can and only can have these characters: 0-9a-zA-Z-._:, current: " + getName());
+        }
+        Assert.hasText(namespaceId, "namespaceId must not be null and must contain at least one non-whitespace character");
+        Assert.hasText(groupName, "group name must not be null and must contain at least one non-whitespace character");
+        this.namespaceId = namespaceId;
+        super.setName(name);
+        super.setGroupName(groupName);
     }
 
     @JSONField(serialize = false)
@@ -216,16 +260,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                         instance.getClusterName(), instance.toJSON());
                     Cluster cluster = new Cluster(instance.getClusterName(), this);
-                    cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
 
-                List<Instance> clusterIPs = ipMap.get(instance.getClusterName());
-                if (clusterIPs == null) {
-                    clusterIPs = new LinkedList<>();
-                    ipMap.put(instance.getClusterName(), clusterIPs);
-                }
-
+                List<Instance> clusterIPs = ipMap.computeIfAbsent(instance.getClusterName(), k -> new LinkedList<>());
                 clusterIPs.add(instance);
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + instance, e);
@@ -387,6 +425,15 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return namespaceId;
     }
 
+    /**
+     * Replace the namespace of the current service.
+     * <p>
+     * Deprecated because the namespace shouldn't be changed, the correct way is to create a new service.
+     * This method is just for backward compatibility.
+     *
+     * @param namespaceId the new namespace ID
+     */
+    @Deprecated
     public void setNamespaceId(String namespaceId) {
         this.namespaceId = namespaceId;
     }
@@ -510,5 +557,56 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (Cluster cluster : clusterMap.values()) {
             cluster.validate();
         }
+    }
+
+    /**
+     * Replace the group name of the current service.
+     * <p>
+     * Deprecated because the group name shouldn't be changed, the correct way is to create a new service.
+     * This method is just for backward compatibility.
+     *
+     * @param groupName the new group name
+     * @author jifengnan  2019-05-08
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setGroupName(String groupName) {
+        super.setGroupName(groupName);
+    }
+
+    /**
+     * Change the name of the current service.
+     * <p>
+     * Deprecated because the current service name shouldn't be changed, the correct way is to create a new service.
+     * This method is just for backward compatibility.
+     *
+     * @param name the new service name
+     * @author jifengnan  2019-05-08
+     * @since 1.0.1
+     */
+    @Deprecated
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Service service = (Service) o;
+        return Objects.equals(getNamespaceId(), service.getNamespaceId()) &&
+            Objects.equals(getName(), service.getName()) &&
+            Objects.equals(getGroupName(), service.getGroupName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getNamespaceId(), getName(), getGroupName());
     }
 }

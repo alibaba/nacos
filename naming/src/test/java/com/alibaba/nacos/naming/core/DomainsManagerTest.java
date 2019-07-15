@@ -41,8 +41,7 @@ public class DomainsManagerTest extends BaseTest {
 
     @Test
     public void easyRemoveDom() throws Exception {
-        Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId(TEST_NAMESPACE);
+        Service service = new Service(TEST_SERVICE_NAME, TEST_NAMESPACE);
         manager.putService(service);
         manager.easyRemoveService(TEST_NAMESPACE, TEST_SERVICE_NAME);
     }
@@ -56,8 +55,7 @@ public class DomainsManagerTest extends BaseTest {
 
     @Test
     public void searchDom() {
-        Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId(TEST_NAMESPACE);
+        Service service = new Service(TEST_SERVICE_NAME, TEST_NAMESPACE);
         manager.putService(service);
 
         List<Service> list = manager.searchServices(TEST_NAMESPACE, "test.*");

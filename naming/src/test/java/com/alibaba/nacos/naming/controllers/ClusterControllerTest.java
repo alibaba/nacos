@@ -59,7 +59,6 @@ public class ClusterControllerTest extends BaseTest {
     @Test
     public void testUpdate() throws Exception {
         Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId("test-namespace");
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
 
         MockHttpServletRequestBuilder builder =
@@ -97,8 +96,7 @@ public class ClusterControllerTest extends BaseTest {
     public void testUpdateInvalidType() throws Exception {
         expectedException.expectCause(isA(NacosException.class));
         expectedException.expectMessage("unknown health check type:{\"type\":\"123\"}");
-        Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        Service service = new Service(TEST_SERVICE_NAME, Constants.DEFAULT_NAMESPACE_ID);
         when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster")

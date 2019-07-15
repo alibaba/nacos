@@ -53,10 +53,8 @@ public class CatalogControllerTest {
 
     @Test
     public void testServiceDetail() throws Exception {
-        Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
+        Service service = new Service(TEST_SERVICE_NAME, Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME);
         service.setProtectThreshold(12.34f);
-        service.setGroupName(TEST_GROUP_NAME);
         Cluster cluster = new Cluster(TEST_CLUSTER_NAME, service);
         cluster.setDefaultPort(1);
 

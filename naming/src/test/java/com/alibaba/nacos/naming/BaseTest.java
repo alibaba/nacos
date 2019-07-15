@@ -19,8 +19,7 @@ import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
-import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -38,6 +37,7 @@ import static org.mockito.Mockito.doReturn;
 
 /**
  * @author nkorange
+ * @author jifengnan 2019-07-13
  */
 public class BaseTest {
 
@@ -71,10 +71,19 @@ public class BaseTest {
         doReturn(pushService).when(context).getBean(PushService.class);
     }
 
+    protected Instance createInstance(String ip, int port) {
+        Service service = new Service(TEST_SERVICE_NAME);
+        Cluster cluster = new Cluster(TEST_CLUSTER_NAME, service);
+        service.addCluster(cluster);
+        return new Instance(ip, port, cluster);
+    }
+
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
     protected static final String TEST_SERVICE_NAME = "test-service";
     protected static final String TEST_GROUP_NAME = "test-group-name";
     protected static final String TEST_NAMESPACE = "test-namespace";
+    protected static final String IP1 = "1.1.1.1";
+    protected static final String IP2 = "2.2.2.2";
 
     @Spy
     protected ApplicationContext context;

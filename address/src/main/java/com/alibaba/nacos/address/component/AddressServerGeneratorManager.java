@@ -17,8 +17,13 @@ package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -48,14 +53,14 @@ public class AddressServerGeneratorManager {
     /**
      * Note: if the parameter inputted is empty then will return the empty list.
      *
-     * @param serviceName
-     * @param clusterName
+     * @param service
+     * @param cluster
      * @param ipArray
      * @return
      */
-    public List<Instance> generateInstancesByIps(String serviceName, String rawProductName, String clusterName, String[] ipArray) {
-        if (StringUtils.isEmpty(serviceName)
-            || StringUtils.isEmpty(clusterName)
+    public List<Instance> generateInstancesByIps(Service service, String rawProductName, Cluster cluster, String[] ipArray) throws NacosException {
+        if (service == null
+            || cluster == null
             || ipArray == null || ipArray.length == 0) {
             return Collections.emptyList();
         }
@@ -63,11 +68,7 @@ public class AddressServerGeneratorManager {
         List<Instance> instanceList = new ArrayList<>(ipArray.length);
         for (String ip : ipArray) {
             String[] ipAndPort = generateIpAndPort(ip);
-            Instance instance = new Instance();
-            instance.setIp(ipAndPort[0]);
-            instance.setPort(Integer.valueOf(ipAndPort[1]));
-            instance.setClusterName(clusterName);
-            instance.setServiceName(serviceName);
+            Instance instance = new Instance(ipAndPort[0], Integer.valueOf(ipAndPort[1]), cluster);
             instance.setTenant(Constants.DEFAULT_NAMESPACE_ID);
             instance.setApp(rawProductName);
             instance.setEphemeral(false);
@@ -115,4 +116,7 @@ public class AddressServerGeneratorManager {
 
         return Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + rawServiceName;
     }
+
+    @Autowired
+    private ServiceManager serviceManager;
 }

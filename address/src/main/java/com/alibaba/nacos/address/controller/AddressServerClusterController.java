@@ -78,14 +78,13 @@ public class AddressServerClusterController {
         try {
             String serviceName = addressServerGeneratorManager.generateNacosServiceName(productName);
 
-            Cluster clusterObj = new Cluster();
-            clusterObj.setName(clusterName);
+            Service service = serviceManager.createServiceIfAbsent(Constants.DEFAULT_NAMESPACE_ID, serviceName, false);
+            Cluster clusterObj = new Cluster(clusterName, service);
             clusterObj.setHealthChecker(new AbstractHealthChecker.None());
-            serviceManager.createServiceIfAbsent(Constants.DEFAULT_NAMESPACE_ID, serviceName, false, clusterObj);
             String[] ipArray = addressServerManager.splitIps(ips);
             String checkResult = AddressServerParamCheckUtil.checkIps(ipArray);
             if (AddressServerParamCheckUtil.CHECK_OK.equals(checkResult)) {
-                List<Instance> instanceList = addressServerGeneratorManager.generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
+                List<Instance> instanceList = addressServerGeneratorManager.generateInstancesByIps(service, rawProductName, clusterObj, ipArray);
                 for (Instance instance : instanceList) {
                     serviceManager.registerInstance(Constants.DEFAULT_NAMESPACE_ID, serviceName, instance);
                 }
@@ -135,7 +134,11 @@ public class AddressServerClusterController {
                     String[] ipArray = addressServerManager.splitIps(ips);
                     String checkResult = AddressServerParamCheckUtil.checkIps(ipArray);
                     if (AddressServerParamCheckUtil.CHECK_OK.equals(checkResult)) {
-                        List<Instance> instanceList = addressServerGeneratorManager.generateInstancesByIps(serviceName, rawProductName, clusterName, ipArray);
+                        Cluster clusterObj = service.getClusterMap().get(clusterName);
+                        if (clusterObj == null) {
+                            clusterObj = new Cluster(clusterName, service);
+                        }
+                        List<Instance> instanceList = addressServerGeneratorManager.generateInstancesByIps(service, rawProductName, clusterObj, ipArray);
                         serviceManager.removeInstance(Constants.DEFAULT_NAMESPACE_ID, serviceName, false, instanceList.toArray(new Instance[instanceList.size()]));
                     } else {
                         responseEntity = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(checkResult);

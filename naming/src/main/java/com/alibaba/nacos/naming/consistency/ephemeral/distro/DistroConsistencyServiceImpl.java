@@ -265,6 +265,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
     }
 
+    /**
+     * Analyze byte data to generate Instances.
+     *
+     * @param data byte data
+     * @throws Exception
+     */
     public void processData(byte[] data) throws Exception {
         if (data.length > 0) {
             Map<String, Datum<Instances>> datumMap =
@@ -279,12 +285,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     if (switchDomain.isDefaultInstanceEphemeral()) {
                         // create empty service
                         Loggers.EPHEMERAL.info("creating service {}", entry.getKey());
-                        Service service = new Service();
                         String serviceName = KeyBuilder.getServiceName(entry.getKey());
                         String namespaceId = KeyBuilder.getNamespace(entry.getKey());
-                        service.setName(serviceName);
-                        service.setNamespaceId(namespaceId);
-                        service.setGroupName(Constants.DEFAULT_GROUP);
+                        Service service = new Service(serviceName, namespaceId, Constants.DEFAULT_GROUP);
                         // now validate the service. if failed, exception will be thrown
                         service.setLastModifiedMillis(System.currentTimeMillis());
                         service.recalculateChecksum();

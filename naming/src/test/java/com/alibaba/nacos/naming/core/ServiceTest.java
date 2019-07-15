@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.BaseTest;
 import org.junit.Assert;
 import org.junit.Before;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 public class ServiceTest extends BaseTest {
     @Spy
-    private Service service;
+    private Service service = new Service(TEST_SERVICE_NAME);
 
     @Before
     public void before() {
@@ -38,21 +39,74 @@ public class ServiceTest extends BaseTest {
 
     @Test
     public void testUpdateIPs() {
-        service.setName("test-service");
         List<Instance> instances = new ArrayList<>();
-        Instance instance = new Instance("1.1.1.1", 1, "test-instance1");
+        Instance instance = JSON.parseObject(InstanceTest.OLD_DATA, Instance.class);
         instances.add(instance);
         service.updateIPs(instances, true);
         Assert.assertEquals(instances, service.allIPs(true));
 
+        Cluster cluster = new Cluster(TEST_CLUSTER_NAME, service);
         instances = new ArrayList<>();
-        instance = new Instance();
-        instance.setIp("2.2.2.2");
-        instance.setPort(2);
+        instance = new Instance(IP2, 2, cluster);
         instances.add(instance);
         instances.add(null);
         service.updateIPs(instances, true);
         instances.remove(null);
         Assert.assertEquals(instances, service.allIPs(true));
+        Assert.assertEquals(cluster, service.getClusterMap().get(TEST_CLUSTER_NAME));
+    }
+
+    @Test
+    public void testCreateService() {
+        Service service = new Service(TEST_SERVICE_NAME, TEST_NAMESPACE);
+        Assert.assertEquals(TEST_SERVICE_NAME, service.getName());
+        Assert.assertEquals(TEST_NAMESPACE, service.getNamespaceId());
+
+        service = new Service(TEST_SERVICE_NAME, TEST_NAMESPACE, TEST_GROUP_NAME);
+        Assert.assertEquals(TEST_SERVICE_NAME, service.getName());
+        Assert.assertEquals(TEST_NAMESPACE, service.getNamespaceId());
+        Assert.assertEquals(TEST_GROUP_NAME, service.getGroupName());
+    }
+
+    @Test
+    public void testCreateService_NullName() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("service name can and only can have these characters: 0-9a-zA-Z-._:, current: null");
+        new Service(null, TEST_NAMESPACE, TEST_GROUP_NAME);
+    }
+
+    @Test
+    public void testCreateService_BlankName() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("service name can and only can have these characters: 0-9a-zA-Z-._:, current: null");
+        new Service(" ", TEST_NAMESPACE, TEST_GROUP_NAME);
+    }
+
+    @Test
+    public void testCreateService_NullNameSpace() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("namespaceId must not be null and must contain at least one non-whitespace character");
+        new Service(TEST_SERVICE_NAME, null, TEST_GROUP_NAME);
+    }
+
+    @Test
+    public void testCreateService_BlankNameSpace() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("namespaceId must not be null and must contain at least one non-whitespace character");
+        new Service(TEST_SERVICE_NAME, " ", TEST_GROUP_NAME);
+    }
+
+    @Test
+    public void testCreateService_NullGroupName() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("group name must not be null and must contain at least one non-whitespace character");
+        new Service(TEST_SERVICE_NAME, TEST_NAMESPACE, null);
+    }
+
+    @Test
+    public void testCreateService_BlankGroupName() {
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage("group name must not be null and must contain at least one non-whitespace character");
+        new Service(TEST_SERVICE_NAME, TEST_NAMESPACE, " ");
     }
 }

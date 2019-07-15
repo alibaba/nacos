@@ -65,6 +65,13 @@ public class ServiceController {
     @Autowired
     private SubscribeManager subscribeManager;
 
+    /**
+     * Create a service.
+     *
+     * @param request the current http request
+     * @return "ok" if the creation is successful
+     * @throws Exception if the service exists
+     */
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String create(HttpServletRequest request) throws Exception {
 
@@ -85,12 +92,11 @@ public class ServiceController {
             metadataMap = UtilsAndCommons.parseMetadata(metadata);
         }
 
-        Service service = new Service(serviceName);
+        Service service = new Service(serviceName, namespaceId);
         service.setProtectThreshold(protectThreshold);
         service.setEnabled(true);
         service.setMetadata(metadataMap);
         service.setSelector(parseSelector(selector));
-        service.setNamespaceId(namespaceId);
 
 
         // now valid the service. if failed, exception will be thrown

@@ -16,29 +16,31 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.misc.GlobalConfig;
-
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.mockito.InjectMocks;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 /**
  * @author jifengnan
  */
 public class TaskDispatcherTest {
 
+    @InjectMocks
     private TaskDispatcher taskDispatcher;
+
+    @Spy
+    private GlobalConfig conf = new GlobalConfig();
 
     @Before
     public void init() {
-        taskDispatcher = new TaskDispatcher();
-        GlobalConfig conf = new GlobalConfig();
-        ReflectionTestUtils.setField(conf, "taskDispatchThreadCount", 3);
-        ReflectionTestUtils.setField(taskDispatcher, "partitionConfig", conf);
-        taskDispatcher.init();
+        MockitoAnnotations.initMocks(this);
     }
 
     @Test
     public void testAddTask() {
+        taskDispatcher.init();
         char[] chars = new char[]{2325, 9, 30, 12, 2};
         taskDispatcher.addTask(new String(chars));
     }

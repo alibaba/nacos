@@ -35,6 +35,7 @@ import com.alibaba.nacos.naming.pojo.ServiceView;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -108,7 +109,7 @@ public class CatalogController {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
+            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
 
         if (!service.getClusterMap().containsKey(clusterName)) {
@@ -132,9 +133,17 @@ public class CatalogController {
             end = instances.size();
         }
 
+        instances = instances.subList(start, end);
+        List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList = new ArrayList<>(instances.size());
+        for (Instance source : instances) {
+            com.alibaba.nacos.api.naming.pojo.Instance target = new com.alibaba.nacos.api.naming.pojo.Instance();
+            BeanUtils.copyProperties(source, target);
+            instanceList.add(target);
+        }
+
         JSONObject result = new JSONObject();
-        result.put("list", instances.subList(start, end));
-        result.put("count", instances.size());
+        result.put("list", instanceList);
+        result.put("count", instanceList.size());
 
         return result;
     }

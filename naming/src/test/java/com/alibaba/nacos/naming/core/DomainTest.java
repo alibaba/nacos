@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.naming.boot.SpringContext;
+import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
@@ -23,42 +23,33 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.mockito.Mockito.doReturn;
-
 /**
  * @author nkorange
+ * @author jifengnan 2019-07-14
  */
-public class DomainTest {
+public class DomainTest extends BaseTest {
 
     private Service service;
-    @Spy
-    protected ApplicationContext context;
     @Mock
     protected PushService pushService;
 
     @Before
     public void before() {
         MockitoAnnotations.initMocks(this);
-        service = new Service();
-        service.setName("nacos.service.1");
+        service = new Service("nacos.service.1");
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, service);
         service.addCluster(cluster);
-        new SpringContext().setApplicationContext(context);
-        doReturn(pushService).when(context).getBean(PushService.class);
     }
 
     @Test
     public void updateDomain() {
 
-        Service newDomain = new Service();
-        newDomain.setName("nacos.service.1");
+        Service newDomain = new Service("nacos.service.1");
         newDomain.setProtectThreshold(0.7f);
         Cluster cluster = new Cluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME, newDomain);
         newDomain.addCluster(cluster);
@@ -83,9 +74,7 @@ public class DomainTest {
     @Test
     public void updateIps() throws Exception {
 
-        Instance instance = new Instance();
-        instance.setIp("1.1.1.1");
-        instance.setPort(1234);
+        Instance instance = new Instance("1.1.1.1", 1234, service.getClusterMap().get(UtilsAndCommons.DEFAULT_CLUSTER_NAME));
         List<Instance> list = new ArrayList<Instance>();
         list.add(instance);
 
