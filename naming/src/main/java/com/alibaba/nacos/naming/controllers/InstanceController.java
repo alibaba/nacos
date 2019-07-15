@@ -126,6 +126,7 @@ public class InstanceController {
      * @return "ok" if the update is successful
      * @throws Exception if the server for the instance is not found or the instance is not found
      */
+    @CanDistro
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
         String agent = request.getHeader("Client-Version");
