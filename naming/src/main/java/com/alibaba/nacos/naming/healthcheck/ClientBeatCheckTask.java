@@ -22,6 +22,7 @@ import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.healthcheck.events.InstanceHeartbeatTimeoutEvent;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.ning.http.client.AsyncCompletionHandler;
@@ -82,6 +83,7 @@ public class ClientBeatCheckTask implements Runnable {
                                 instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
                                 UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
                             getPushService().serviceChanged(service);
+                            SpringContext.getAppContext().publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
                     }
                 }
