@@ -144,11 +144,7 @@ public class ServiceManager implements RecordListener<Service> {
             if (oldDom != null) {
                 oldDom.update(service);
             } else {
-                putService(service);
-                service.init();
-                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
-                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
-                Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
+                putServiceAndInit(service);
             }
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[NACOS-SERVICE] error while processing service update", e);
@@ -409,13 +405,34 @@ public class ServiceManager implements RecordListener<Service> {
             }
             service.validate();
             if (local) {
-                putService(service);
-                service.init();
-                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
-                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
+                putServiceAndInit(service);
             } else {
                 addOrReplaceService(service);
             }
+        }
+    }
+
+    public void putServiceIfAbsent(Service service, boolean local, Cluster cluster) throws NacosException {
+        final String namespaceId = service.getNamespaceId();
+        final String serviceName = service.getName();
+
+        if (getService(namespaceId, serviceName) != null) {
+            return;
+        }
+
+        Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
+        // now validate the service. if failed, exception will be thrown
+        service.setLastModifiedMillis(System.currentTimeMillis());
+        service.recalculateChecksum();
+        if (cluster != null) {
+            cluster.setService(service);
+            service.getClusterMap().put(cluster.getName(), cluster);
+        }
+        service.validate();
+        if (local) {
+            putServiceAndInit(service);
+        } else {
+            addOrReplaceService(service);
         }
     }
 
@@ -599,6 +616,14 @@ public class ServiceManager implements RecordListener<Service> {
             }
         }
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
+    }
+
+    private void putServiceAndInit(Service service) throws NacosException {
+        putService(service);
+        service.init();
+        consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
+        consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
+        Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
     }
 
     public List<Service> searchServices(String namespaceId, String regex) {
