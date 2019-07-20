@@ -78,6 +78,7 @@ const I18N_CONF = {
     serviceList: 'Service List',
     serviceName: 'Service Name',
     serviceNamePlaceholder: 'Enter Service Name',
+    hiddenEmptyService: 'Hidden Empty Service',
     query: 'Search',
     pubNoData: 'No results found.',
     columnServiceName: 'Service Name',
