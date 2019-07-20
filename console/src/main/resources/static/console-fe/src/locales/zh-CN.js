@@ -78,6 +78,7 @@ const I18N_CONF = {
     serviceList: '服务列表',
     serviceName: '服务名称',
     serviceNamePlaceholder: '请输入服务名称',
+    hiddenEmptyService: '隐藏空服务',
     query: '查询',
     pubNoData: '没有数据',
     columnServiceName: '服务名',
