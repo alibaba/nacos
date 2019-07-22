@@ -378,6 +378,7 @@ public class ServerListManager {
     }
 
     private void checkDistroHeartbeat() {
+
         Loggers.EPHEMERAL.debug("check distro heartbeat.");
 
         List<Server> servers = distroConfig.get(LOCALHOST_SITE);
