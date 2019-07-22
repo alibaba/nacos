@@ -138,6 +138,6 @@ public class KeyBuilder {
     }
 
     public static String getServiceName(String key) {
-        return key.split(NAMESPACE_KEY_CONNECTOR)[1];
+        return key.split(NAMESPACE_KEY_CONNECTOR).length > 1 ? key.split(NAMESPACE_KEY_CONNECTOR)[1] : key.split(NAMESPACE_KEY_CONNECTOR)[0];
     }
 }
