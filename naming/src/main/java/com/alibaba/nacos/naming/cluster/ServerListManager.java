@@ -48,6 +48,8 @@ public class ServerListManager {
 
     private List<ServerChangeListener> listeners = new ArrayList<>();
 
+    private Map<String, Long> distroBeats = new ConcurrentHashMap<>(16);
+
     private List<Server> servers = new ArrayList<>();
 
     private List<Server> healthyServers = new ArrayList<>();
@@ -165,7 +167,6 @@ public class ServerListManager {
     }
 
     public synchronized void onReceiveServerStatus(String configInfo) {
-
         Loggers.SRV_LOG.info("receive config info: {}", configInfo);
 
         String[] configs = configInfo.split("\r\n");
@@ -173,7 +174,6 @@ public class ServerListManager {
             return;
         }
 
-        List<Server> newHealthyList = new ArrayList<>();
         List<Server> tmpServerList = new ArrayList<>();
 
         for (String config : configs) {
@@ -192,6 +192,13 @@ public class ServerListManager {
             server.setServePort(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1]));
             server.setLastRefTime(Long.parseLong(params[2]));
 
+            Long lastBeat = distroBeats.get(server.getKey());
+            long now = System.currentTimeMillis();
+            if (null != lastBeat) {
+                server.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
+            }
+            distroBeats.put(server.getKey(), now);
+
             if (!contains(server.getKey())) {
                 throw new IllegalArgumentException("server: " + server.getKey() + " is not in serverlist");
             }
@@ -200,7 +207,6 @@ public class ServerListManager {
             server.setLastRefTimeStr(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date));
 
             server.setWeight(params.length == 4 ? Integer.parseInt(params[3]) : 1);
-            server.setAlive(System.currentTimeMillis() - server.getLastRefTime() < switchDomain.getDistroServerExpiredMillis());
             List<Server> list = distroConfig.get(server.getSite());
             if (list == null || list.size() <= 0) {
                 list = new ArrayList<>();
@@ -208,6 +214,7 @@ public class ServerListManager {
                 distroConfig.put(server.getSite(), list);
             }
 
+            // update tmpServerList
             for (Server s : list) {
                 String serverId = s.getKey() + "_" + s.getSite();
                 String newServerId = server.getKey() + "_" + server.getSite();
@@ -231,64 +238,6 @@ public class ServerListManager {
         }
         liveSites.addAll(distroConfig.keySet());
 
-        List<Server> servers = distroConfig.get(LOCALHOST_SITE);
-        if (CollectionUtils.isEmpty(servers)) {
-            return;
-        }
-
-        //local site servers
-        List<String> allLocalSiteSrvs = new ArrayList<>();
-        for (Server server : servers) {
-
-            if (server.getKey().endsWith(":0")) {
-                continue;
-            }
-
-            server.setAdWeight(switchDomain.getAdWeight(server.getKey()) == null ? 0 : switchDomain.getAdWeight(server.getKey()));
-
-            for (int i = 0; i < server.getWeight() + server.getAdWeight(); i++) {
-
-                if (!allLocalSiteSrvs.contains(server.getKey())) {
-                    allLocalSiteSrvs.add(server.getKey());
-                }
-
-                if (server.isAlive() && !newHealthyList.contains(server)) {
-                    newHealthyList.add(server);
-                }
-            }
-        }
-
-        Collections.sort(newHealthyList);
-        float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
-
-        if (autoDisabledHealthCheck
-            && curRatio > switchDomain.getDistroThreshold()
-            && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
-            Loggers.SRV_LOG.info("[NACOS-DISTRO] distro threshold restored and " +
-                "stable now, enable health check. current ratio: {}", curRatio);
-
-            switchDomain.setHealthCheckEnabled(true);
-
-            // we must set this variable, otherwise it will conflict with user's action
-            autoDisabledHealthCheck = false;
-        }
-
-        if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
-            // for every change disable healthy check for some while
-            if (switchDomain.isHealthCheckEnabled()) {
-                Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
-                        "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
-                    healthyServers, newHealthyList);
-
-                switchDomain.setHealthCheckEnabled(false);
-                autoDisabledHealthCheck = true;
-
-                lastHealthServerMillis = System.currentTimeMillis();
-            }
-
-            healthyServers = newHealthyList;
-            notifyListeners();
-        }
     }
 
     public void clean() {
@@ -310,28 +259,18 @@ public class ServerListManager {
     }
 
     private void cleanInvalidServers() {
-
         for (Map.Entry<String, List<Server>> entry : distroConfig.entrySet()) {
-            List<Server> tmpServers = null;
             List<Server> currentServerList = entry.getValue();
-
-            for (Server server : entry.getValue()) {
-                if (!server.isAlive()) {
-
-                    tmpServers = new ArrayList<>();
-
-                    for (Server server1 : currentServerList) {
-                        String serverKey1 = server1.getKey() + "_" + server1.getSite();
-                        String serverKey = server.getKey() + "_" + server.getSite();
-
-                        if (!serverKey.equals(serverKey1) && !tmpServers.contains(server1)) {
-                            tmpServers.add(server1);
-                        }
-                    }
+            List<Server> aliveServers = new ArrayList<>(currentServerList.size());
+            for (Server server : currentServerList) {
+                if (server.isAlive()) {
+                    aliveServers.add(server);
                 }
             }
-            if (tmpServers != null) {
-                distroConfig.put(entry.getKey(), tmpServers);
+            if (!aliveServers.isEmpty()) {
+                distroConfig.put(entry.getKey(), aliveServers);
+            } else {
+                distroConfig.remove(entry.getKey());
             }
         }
     }
@@ -392,16 +331,11 @@ public class ServerListManager {
         @Override
         public void run() {
             try {
-
                 if (RunningConfig.getServerPort() <= 0) {
                     return;
                 }
 
-                for (String key : distroConfig.keySet()) {
-                    for (Server server : distroConfig.get(key)) {
-                        server.setAlive(System.currentTimeMillis() - server.getLastRefTime() < switchDomain.getDistroServerExpiredMillis());
-                    }
-                }
+                checkDistroHeartbeat();
 
                 int weight = Runtime.getRuntime().availableProcessors() / 2;
                 if (weight <= 0) {
@@ -442,4 +376,74 @@ public class ServerListManager {
 
         }
     }
+
+    private void checkDistroHeartbeat() {
+        Loggers.EPHEMERAL.debug("check distro heartbeat.");
+
+        List<Server> servers = distroConfig.get(LOCALHOST_SITE);
+        if (CollectionUtils.isEmpty(servers)) {
+            return;
+        }
+
+        List<Server> newHealthyList = new ArrayList<>(servers.size());
+        long now = System.currentTimeMillis();
+        for (Server s: servers) {
+            Long lastBeat = distroBeats.get(s.getKey());
+            if (null == lastBeat) {
+                continue;
+            }
+            s.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
+        }
+
+        //local site servers
+        List<String> allLocalSiteSrvs = new ArrayList<>();
+        for (Server server : servers) {
+            if (server.getKey().endsWith(":0")) {
+                continue;
+            }
+            server.setAdWeight(switchDomain.getAdWeight(server.getKey()) == null ? 0 : switchDomain.getAdWeight(server.getKey()));
+
+            for (int i = 0; i < server.getWeight() + server.getAdWeight(); i++) {
+                if (!allLocalSiteSrvs.contains(server.getKey())) {
+                    allLocalSiteSrvs.add(server.getKey());
+                }
+                if (server.isAlive() && !newHealthyList.contains(server)) {
+                    newHealthyList.add(server);
+                }
+            }
+        }
+
+        Collections.sort(newHealthyList);
+        float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
+
+        if (autoDisabledHealthCheck
+            && curRatio > switchDomain.getDistroThreshold()
+            && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
+            Loggers.SRV_LOG.info("[NACOS-DISTRO] distro threshold restored and " +
+                "stable now, enable health check. current ratio: {}", curRatio);
+
+            switchDomain.setHealthCheckEnabled(true);
+
+            // we must set this variable, otherwise it will conflict with user's action
+            autoDisabledHealthCheck = false;
+        }
+
+        if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
+            // for every change disable healthy check for some while
+            if (switchDomain.isHealthCheckEnabled()) {
+                Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, " +
+                        "disable health check for {} ms from now on, old: {}, new: {}", STABLE_PERIOD,
+                    healthyServers, newHealthyList);
+
+                switchDomain.setHealthCheckEnabled(false);
+                autoDisabledHealthCheck = true;
+
+                lastHealthServerMillis = System.currentTimeMillis();
+            }
+
+            healthyServers = newHealthyList;
+            notifyListeners();
+    }
+  }
+
 }
