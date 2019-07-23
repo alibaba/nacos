@@ -322,6 +322,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         if (!listeners.containsKey(key)) {
             listeners.put(key, new CopyOnWriteArrayList<>());
         }
+
+        if (listeners.get(key).contains(listener)) {
+            return;
+        }
+
         listeners.get(key).add(listener);
     }
 
