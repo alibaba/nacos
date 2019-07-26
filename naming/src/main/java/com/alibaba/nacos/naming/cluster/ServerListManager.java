@@ -23,6 +23,7 @@ import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.cluster.servers.Servers;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.collections.CollectionUtils;
@@ -48,8 +49,6 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
 public class ServerListManager implements RecordListener<Servers>{
 
     private static final int STABLE_PERIOD = 60 * 1000;
-
-    private static final String DATUM_SERVER_LIST_KEY = "com.alibaba.nacos.naming.serverLists";
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -83,6 +82,12 @@ public class ServerListManager implements RecordListener<Servers>{
     public void init() {
         GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
+        try {
+            Loggers.SRV_LOG.info("listen for service meta change");
+            consistencyService.listen(KeyBuilder.SERVER_LIST_KEY, this);
+        } catch (NacosException e) {
+            Loggers.SRV_LOG.error("listen for service meta change failed!");
+        }
     }
 
     private List<Server> refreshServerList() {
@@ -359,9 +364,8 @@ public class ServerListManager implements RecordListener<Servers>{
     }
 
     public void updateServers(List<String> clusterHosts) throws NacosException {
-        rewriteClusterConf(clusterHosts);
         Servers newServers = new Servers(clusterHosts);
-        consistencyService.put(DATUM_SERVER_LIST_KEY, newServers);
+        consistencyService.put(KeyBuilder.SERVER_LIST_KEY, newServers);
     }
 
     private void rewriteClusterConf(List<String> clusterHosts) throws NacosException {
@@ -387,7 +391,7 @@ public class ServerListManager implements RecordListener<Servers>{
 
     @Override
     public boolean interests(String key) {
-        return DATUM_SERVER_LIST_KEY.equals(key);
+        return KeyBuilder.matchServerListKey(key);
     }
 
     @Override
@@ -397,6 +401,7 @@ public class ServerListManager implements RecordListener<Servers>{
 
     @Override
     public void onChange(String key, Servers value) throws Exception {
+        Loggers.RAFT.info("listen serverList changed." + value);
         rewriteClusterConf(value.getClusterHosts());
     }
 

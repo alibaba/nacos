@@ -34,4 +34,11 @@ public class Servers implements Record{
     public String getChecksum() {
         return Md5Utils.getMD5(clusterHosts.toString(), "UTF-8");
     }
+
+    @Override
+    public String toString() {
+        return "Servers{" +
+            "clusterHosts=" + clusterHosts +
+            '}';
+    }
 }

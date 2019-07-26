@@ -21,6 +21,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.cluster.servers.Servers;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -152,6 +153,11 @@ public class RaftController {
             return "ok";
         }
 
+        if (KeyBuilder.matchServerListKey(key)){
+            raftConsistencyService.put(key, JSON.parseObject(json.getString("value"), Servers.class));
+            return "ok";
+        }
+
         throw new NacosException(NacosException.INVALID_PARAM, "unknown type publish key: " + key);
     }
 
@@ -222,6 +228,9 @@ public class RaftController {
             });
         } else if (KeyBuilder.matchSwitchKey(datumJson.getString(key))) {
             datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<SwitchDomain>>() {
+            });
+        } else if (KeyBuilder.matchServerListKey(datumJson.getString(key))){
+            datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Servers>>() {
             });
         } else if (KeyBuilder.matchServiceMetaKey(datumJson.getString(key))) {
             datum = JSON.parseObject(jsonObject.getString("datum"), new TypeReference<Datum<Service>>() {

@@ -32,11 +32,17 @@ public class KeyBuilder {
 
     public static final String SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta.";
 
+    public static final String SERVER_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.";
+
     public static final String INSTANCE_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.iplist.";
 
     public static final String BRIEF_SERVICE_META_KEY_PREFIX = "meta.";
 
     public static final String BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist.";
+
+    public static final String BRIEF_SERVER_LIST_KEY_PREFIX = "serverList.";
+
+    public static final String SERVER_LIST_KEY = SERVER_LIST_KEY_PREFIX + "serverList";
 
     private static String buildEphemeralInstanceListKey(String namespaceId, String serviceName) {
         return INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR
@@ -73,6 +79,10 @@ public class KeyBuilder {
         return key.startsWith(SERVICE_META_KEY_PREFIX) || key.startsWith(BRIEF_SERVICE_META_KEY_PREFIX);
     }
 
+    public static boolean matchServerListKey(String key){
+        return key.equals(SERVER_LIST_KEY);
+    }
+
     public static boolean matchSwitchKey(String key) {
         return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }
@@ -106,6 +116,10 @@ public class KeyBuilder {
         return BRIEF_SERVICE_META_KEY_PREFIX + key.split(SERVICE_META_KEY_PREFIX)[1];
     }
 
+    public static String briefServerListKey(String key) {
+        return BRIEF_SERVER_LIST_KEY_PREFIX + key.split(SERVER_LIST_KEY_PREFIX)[1];
+    }
+
     public static String detailInstanceListkey(String key) {
         return INSTANCE_LIST_KEY_PREFIX.substring(0, INSTANCE_LIST_KEY_PREFIX.indexOf(BRIEF_INSTANCE_LIST_KEY_PREFIX))
             + key;
@@ -113,6 +127,11 @@ public class KeyBuilder {
 
     public static String detailServiceMetaKey(String key) {
         return SERVICE_META_KEY_PREFIX.substring(0, SERVICE_META_KEY_PREFIX.indexOf(BRIEF_SERVICE_META_KEY_PREFIX))
+            + key;
+    }
+
+    public static String detailServerListKey(String key) {
+        return SERVER_LIST_KEY_PREFIX.substring(0, SERVER_LIST_KEY_PREFIX.indexOf(BRIEF_SERVER_LIST_KEY_PREFIX))
             + key;
     }
 

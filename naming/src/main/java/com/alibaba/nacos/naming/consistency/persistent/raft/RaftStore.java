@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.naming.cluster.servers.Servers;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -131,7 +132,6 @@ public class RaftStore {
             }
 
             if (KeyBuilder.matchServiceMetaKey(file.getName())) {
-
                 Datum<Service> serviceDatum;
 
                 try {
@@ -155,6 +155,11 @@ public class RaftStore {
                 }
 
                 return serviceDatum;
+            }
+
+            if(KeyBuilder.matchServerListKey(file.getName())){
+                return JSON.parseObject(json.replace("\\", ""), new TypeReference<Datum<Servers>>() {
+                });
             }
 
             if (KeyBuilder.matchInstanceListKey(file.getName())) {

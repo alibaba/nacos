@@ -20,6 +20,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
+import com.alibaba.nacos.naming.cluster.servers.Servers;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -508,6 +509,8 @@ public class RaftCore {
                         element.put("key", KeyBuilder.briefServiceMetaKey(datum.key));
                     } else if (KeyBuilder.matchInstanceListKey(datum.key)) {
                         element.put("key", KeyBuilder.briefInstanceListkey(datum.key));
+                    } else if (KeyBuilder.matchServerListKey(datum.key)){
+                        element.put("key", KeyBuilder.briefServerListKey(datum.key));
                     }
                     element.put("timestamp", datum.timestamp);
 
@@ -700,6 +703,15 @@ public class RaftCore {
                                         instancesDatum.value =
                                             JSON.parseObject(JSON.toJSONString(datumJson.getJSONObject("value")), Instances.class);
                                         newDatum = instancesDatum;
+                                    }
+
+                                    if (KeyBuilder.matchServerListKey(datumJson.getString("key"))) {
+                                        Datum<Servers> serversDatum = new Datum<>();
+                                        serversDatum.key = datumJson.getString("key");
+                                        serversDatum.timestamp.set(datumJson.getLongValue("timestamp"));
+                                        serversDatum.value =
+                                            JSON.parseObject(JSON.toJSONString(datumJson.getJSONObject("value")), Servers.class);
+                                        newDatum = serversDatum;
                                     }
 
                                     if (newDatum == null || newDatum.value == null) {
