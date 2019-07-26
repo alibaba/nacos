@@ -46,7 +46,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
  * @since 1.0.0
  */
 @Component("serverListManager")
-public class ServerListManager implements RecordListener<Servers>{
+public class ServerListManager implements RecordListener<Servers> {
 
     private static final int STABLE_PERIOD = 60 * 1000;
 
