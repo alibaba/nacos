@@ -80,7 +80,7 @@ public class KeyBuilder {
     }
 
     public static boolean matchServerListKey(String key){
-        return key.equals(SERVER_LIST_KEY);
+        return SERVER_LIST_KEY.equals(key);
     }
 
     public static boolean matchSwitchKey(String key) {
