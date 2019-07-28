@@ -10,27 +10,25 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.alibaba.nacos.dns.record;
+package com.alibaba.nacos.dns.record.conversion;
+
+import com.alibaba.nacos.dns.record.BaseRecord;
 
 /**
  * @author paderlol
- * @date 2019年07月28日, 16:36:20
+ * @date 2019年07月28日, 16:29:00
  */
-public enum RecordType {
+public interface RecordConversion {
+
     /**
-     * @description Address record type.
+     * Transform base record.
+     *
+     * @param domain the domain
+     * @return the base record
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:29:00
      */
-    A,
-    /**
-     * @description Srv record type.
-     */
-    SRV,
-    /**
-     * @description Txt record type.
-     */
-    TXT,
-    /**
-     * @description Canonical name record type.
-     */
-    CNAME
+    BaseRecord transform(String domain);
+
 }

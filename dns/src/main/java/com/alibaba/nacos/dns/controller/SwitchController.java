@@ -12,22 +12,56 @@
  */
 package com.alibaba.nacos.dns.controller;
 
-import com.alibaba.nacos.dns.record.RecordType;
+import com.alibaba.nacos.dns.exception.DomainNotFoundException;
+import com.alibaba.nacos.dns.exception.SystemEntryNotFoundException;
+import com.alibaba.nacos.dns.service.SwitchService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static com.alibaba.nacos.dns.constant.DnsConstants.GET_DOMAIN_FAILED;
 import static com.alibaba.nacos.dns.constant.DnsConstants.NACOS_DNS_CONTEXT;
 
+/**
+ * @author paderlol
+ */
 @RestController
 @RequestMapping(value = NACOS_DNS_CONTEXT + "/switches")
 public class SwitchController {
 
-    @GetMapping("/{domainName}")
-    public ResponseEntity getSwitch(@PathVariable("domainName") String domainName,
-        @PathVariable(value = "type", required = false) RecordType recordType) {
+    private final SwitchService switchService;
 
-        return null;
+    public SwitchController(SwitchService switchService) {
+        this.switchService = switchService;
     }
 
+    @GetMapping("/{domainName}")
+    public ResponseEntity getSystemConfig(@PathVariable("domainName") String domainName) {
+
+        try {
+            return ResponseEntity.ok().body(switchService.getSystemConfig(domainName));
+        } catch (Exception e) {
+            if (e instanceof DomainNotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(GET_DOMAIN_FAILED);
+            }
+        }
+    }
+
+    @PutMapping("/{entry}/{value}")
+    public ResponseEntity updateSystemConfig(@PathVariable("entry") String entry, @PathVariable("value") String value) {
+
+        try {
+            switchService.updateSystemConfig(entry, value);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            if (e instanceof SystemEntryNotFoundException) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(GET_DOMAIN_FAILED);
+            }
+        }
+    }
 
 }

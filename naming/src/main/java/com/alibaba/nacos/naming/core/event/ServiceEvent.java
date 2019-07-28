@@ -14,7 +14,10 @@ package com.alibaba.nacos.naming.core.event;
 
 import com.alibaba.nacos.naming.core.Service;
 import org.springframework.context.ApplicationEvent;
-
+/**
+ * @author paderlol
+ *
+ */
 public class ServiceEvent extends ApplicationEvent {
 
     /**

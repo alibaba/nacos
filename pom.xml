@@ -481,6 +481,11 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-dns</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-api</artifactId>
                 <version>${project.version}</version>
             </dependency>

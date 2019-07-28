@@ -16,9 +16,29 @@ import com.alibaba.nacos.dns.dto.UpdateDomainDto;
 
 import java.util.Map;
 
+/**
+ * @author paderlol
+ * @date 2019年07月28日, 16:24:12
+ */
 public interface DomainService {
 
+    /**
+     * Get config
+     * @param domain the domain
+     * @return the config
+     * @author zhanglong
+     * @date 2019年07月28日, 16:24:12
+     */
     public Map<String, String> getConfig(String domain);
 
+    /**
+     * Update config.
+     *
+     * @param domain          the domain
+     * @param updateDomainDto the update domain dto
+     * @return the boolean
+     * @author zhanglong
+     * @date 2019年07月28日, 16:24:12
+     */
     public boolean updateConfig(String domain, UpdateDomainDto updateDomainDto);
 }

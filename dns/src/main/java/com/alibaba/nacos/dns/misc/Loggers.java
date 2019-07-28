@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright (C) 2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,27 +10,19 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.alibaba.nacos.dns.record;
+package com.alibaba.nacos.dns.misc;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author paderlol
- * @date 2019年07月28日, 16:36:20
+ * @date 2019年07月28日, 18:39:50
  */
-public enum RecordType {
+public class Loggers {
+
     /**
-     * @description Address record type.
+     * @description The constant dnsLogger.
      */
-    A,
-    /**
-     * @description Srv record type.
-     */
-    SRV,
-    /**
-     * @description Txt record type.
-     */
-    TXT,
-    /**
-     * @description Canonical name record type.
-     */
-    CNAME
+    public static final Logger dnsLogger = LoggerFactory.getLogger("com.alibaba.nacos.dns.main");
 }

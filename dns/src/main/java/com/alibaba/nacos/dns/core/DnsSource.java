@@ -17,23 +17,123 @@ import com.alibaba.nacos.naming.core.Service;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author paderlol
+ * @date 2019年07月28日, 16:31:31
+ */
 public interface DnsSource {
+    /**
+     * Put service.
+     *
+     * @param service the service
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:31
+     */
     void putService(Service service);
 
+    /**
+     * Get service by domain name
+     * @param domain the domain
+     * @return the service by domain name
+     * @description service by domain name .
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:31
+     */
     Service getServiceByDomainName(String domain);
 
+    /**
+     * Get system config
+     * @return the system config
+     * @description system config .
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:31
+     */
     Map<String, String> getSystemConfig();
 
+    /**
+     * Update system config.
+     *
+     * @param key   the key
+     * @param value the value
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:31
+     */
     void updateSystemConfig(String key, String value);
 
+    /**
+     * Update cache time.
+     *
+     * @param domain    the domain
+     * @param cacheTime the cache time
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:31
+     */
     void updateCacheTime(String domain, Integer cacheTime);
 
+    /**
+     * Get cache time which is ttl
+     * @param domain the domain
+     * @return the cache time
+     * @description cache time .
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:32
+     */
     int getCacheTime(String domain);
 
-    void putMappingName(String domain, String cName);
+    /**
+     * Put canonical name.
+     *
+     * @param domain        the domain
+     * @param canonicalName the canonical name
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:32
+     */
+    void putCanonicalName(String domain, String canonicalName);
 
-    List<String> getMappingName(String domain);
+    /**
+     * Get CNAME by domain
+     * @param domain the domain
+     * @return the canonical name by domain
+     * @description canonical name by domain .
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:32
+     */
+    List<String> getCanonicalNameByDomain(String domain);
 
-    Service getServiceByCname(String cName);
+    /**
+     * Get domain by CNAME
+     * @param canonicalName the canonical name
+     * @return the service by canonical name
+     * @description service by canonical name .
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:32
+     */
+    Service getServiceByCanonicalName(String canonicalName);
+
+    /**
+     * Is exist domain boolean.
+     *
+     * @param domain the domain
+     * @return the boolean
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:32
+     */
+    boolean isExistDomain(String domain);
+
+    /**
+     * Is exist canonical name boolean.
+     *
+     * @param canonicalName the canonical name
+     * @return the boolean
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:32
+     */
+    boolean isExistCanonicalName(String canonicalName);
 
 }

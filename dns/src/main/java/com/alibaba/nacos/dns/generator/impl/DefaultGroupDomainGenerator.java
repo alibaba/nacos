@@ -12,12 +12,16 @@
  */
 package com.alibaba.nacos.dns.generator.impl;
 
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.dns.generator.DomainGenerator;
 import com.alibaba.nacos.naming.core.Service;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_GROUP;
 
+/**
+ * @author paderlol
+ */
 @Component
 public class DefaultGroupDomainGenerator implements DomainGenerator {
 
@@ -26,12 +30,13 @@ public class DefaultGroupDomainGenerator implements DomainGenerator {
     @Override
     public boolean isMatch(Service service) {
 
-        return DEFAULT_GROUP.equals(service.getGroupName());
+        return DEFAULT_GROUP.equals(NamingUtils.getGroupName(service.getName()));
     }
 
     @Override
     public String create(Service service) {
 
-        return String.format(FULL_DOMAIN_MAPPING, service.getName(), service.getNamespaceId());
+        return String.format(FULL_DOMAIN_MAPPING, NamingUtils.getServiceName(service.getName()),
+            service.getNamespaceId());
     }
 }

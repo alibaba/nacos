@@ -15,6 +15,17 @@ package com.alibaba.nacos.dns.record;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author paderlol
+ */
 public class SrvRecord extends BaseRecord {
     private List<InstanceInfo> instances = new ArrayList<>();
+
+    public List<InstanceInfo> getInstances() {
+        return instances;
+    }
+
+    public void setInstances(List<InstanceInfo> instances) {
+        this.instances = instances;
+    }
 }

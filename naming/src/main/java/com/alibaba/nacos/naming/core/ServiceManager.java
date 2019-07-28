@@ -152,6 +152,7 @@ public class ServiceManager implements RecordListener<Service> {
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
                 Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
             }
+            SpringContext.getAppContext().publishEvent(new ServiceEvent(service));
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[NACOS-SERVICE] error while processing service update", e);
         }
@@ -387,7 +388,7 @@ public class ServiceManager implements RecordListener<Service> {
 
     public void addOrReplaceService(Service service) throws NacosException {
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
-        SpringContext.getAppContext().publishEvent(new ServiceEvent(service));
+
     }
 
     public void createEmptyService(String namespaceId, String serviceName, boolean local) throws NacosException {

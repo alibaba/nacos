@@ -10,27 +10,32 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.alibaba.nacos.dns.record;
+package com.alibaba.nacos.dns.service;
+
+import java.util.Map;
 
 /**
  * @author paderlol
- * @date 2019年07月28日, 16:36:20
+ * @date 2019年07月28日, 16:23:30
  */
-public enum RecordType {
+public interface SwitchService {
+
     /**
-     * @description Address record type.
+     * Get dns system config
+     * @param domain the domain
+     * @return the system config
+     * @author zhanglong
+     * @date 2019年07月28日, 16:23:30
      */
-    A,
+    Map<String, String> getSystemConfig(String domain);
+
     /**
-     * @description Srv record type.
+     * Update system config.
+     *
+     * @param entry the entry
+     * @param value the value
+     * @author zhanglong
+     * @date 2019年07月28日, 16:23:30
      */
-    SRV,
-    /**
-     * @description Txt record type.
-     */
-    TXT,
-    /**
-     * @description Canonical name record type.
-     */
-    CNAME
+    void updateSystemConfig(String entry, String value);
 }

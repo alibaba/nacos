@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author paderlol
+ */
 @Component
 public class DomainGeneratorDelegate implements ApplicationContextAware, InitializingBean {
 

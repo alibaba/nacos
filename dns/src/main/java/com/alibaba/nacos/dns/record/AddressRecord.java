@@ -12,25 +12,20 @@
  */
 package com.alibaba.nacos.dns.record;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author paderlol
- * @date 2019年07月28日, 16:36:20
  */
-public enum RecordType {
-    /**
-     * @description Address record type.
-     */
-    A,
-    /**
-     * @description Srv record type.
-     */
-    SRV,
-    /**
-     * @description Txt record type.
-     */
-    TXT,
-    /**
-     * @description Canonical name record type.
-     */
-    CNAME
+public class AddressRecord extends BaseRecord {
+    private List<String> address = new ArrayList<>();
+
+    public List<String> getAddress() {
+        return address;
+    }
+
+    public void setAddress(List<String> address) {
+        this.address = address;
+    }
 }

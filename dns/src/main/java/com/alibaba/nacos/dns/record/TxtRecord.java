@@ -15,14 +15,17 @@ package com.alibaba.nacos.dns.record;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @author paderlol
+ */
 public class TxtRecord extends BaseRecord {
-    private Map<String, String> metadata = new HashMap<>();
+    private Map<String, String> text = new HashMap<>();
 
-    public Map<String, String> getMetadata() {
-        return metadata;
+    public Map<String, String> getText() {
+        return text;
     }
 
-    public void setMetadata(Map<String, String> metadata) {
-        this.metadata = metadata;
+    public void setText(Map<String, String> text) {
+        this.text = text;
     }
 }
