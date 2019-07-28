@@ -77,7 +77,7 @@ public class InstanceController {
 
             JSONObject result = new JSONObject();
 
-            Map<String, String> clusters = new HashMap<>();
+            Map<String, String> clusters = new HashMap<>(1);
             clusters.put(client.getServiceName(), client.getClusters());
 
             try {
@@ -160,8 +160,8 @@ public class InstanceController {
         }
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
 
-        Map<String, String> clsutersMap = new HashMap<>();
-        clsutersMap.put(serviceName, clusters);
+        Map<String, String> clusterMap = new HashMap<>(1);
+        clusterMap.put(serviceName, clusters);
 
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
@@ -174,7 +174,7 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, new String[]{serviceName}, agent, clsutersMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly).getJSONObject(0);
+        return doSrvIPXT(namespaceId, new String[]{serviceName}, agent, clusterMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly).getJSONObject(0);
     }
 
     @RequestMapping(value = "/list/multiGroup", method = RequestMethod.GET)
@@ -185,7 +185,7 @@ public class InstanceController {
 
         String serviceNames = WebUtils.required(request, CommonParams.SERVICE_NAMES);
         String clustersJson = WebUtils.optional(request, CommonParams.CLUSTER_NAMES, StringUtils.EMPTY);
-        Map<String, String> clusters = StringUtils.isEmpty(clustersJson) ? new HashMap<>() : JSON.parseObject(clustersJson, HashedMap.class);
+        Map<String, String> clusters = StringUtils.isEmpty(clustersJson) ? new HashMap<>(0) : JSON.parseObject(clustersJson, HashedMap.class);
         String agent = request.getHeader("Client-Version");
         if (StringUtils.isBlank(agent)) {
             agent = request.getHeader("User-Agent");

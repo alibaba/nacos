@@ -128,7 +128,7 @@ public class ApiController extends InstanceController {
         String agent = request.getHeader("Client-Version");
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
 
-        Map<String, String> clusterMap = new HashMap<>();
+        Map<String, String> clusterMap = new HashMap<>(1);
         clusterMap.put(serviceName, clusters);
 
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);

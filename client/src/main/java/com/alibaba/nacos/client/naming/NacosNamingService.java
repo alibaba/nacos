@@ -300,7 +300,7 @@ public class NacosNamingService implements NamingService {
     public List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
-        Map<String, String> clusterMap = new HashMap<String, String>();
+        Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
         for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
             clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
         }
@@ -373,7 +373,7 @@ public class NacosNamingService implements NamingService {
     public List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
-        Map<String, String> clusterMap = new HashMap<String, String>();
+        Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
         for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
             clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
         }
@@ -439,7 +439,7 @@ public class NacosNamingService implements NamingService {
     public Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
-        Map<String, String> clusterMap = new HashMap<String, String>();
+        Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
         for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
             clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
         }

@@ -397,7 +397,7 @@ public class ConfigAPI_ITCase {
         };
         iconfig.addListener(dataId, group, ml);
         while (count.get() == 0) {
-            Thread.sleep(2000);
+            Thread.sleep(100);
         }
         Assert.assertEquals(1, count.get());
         iconfig.removeListener(dataId, group, ml);
