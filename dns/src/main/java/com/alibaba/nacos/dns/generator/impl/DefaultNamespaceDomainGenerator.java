@@ -12,12 +12,16 @@
  */
 package com.alibaba.nacos.dns.generator.impl;
 
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.dns.generator.DomainGenerator;
 import com.alibaba.nacos.naming.core.Service;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.api.common.Constants.DEFAULT_NAMESPACE_ID;
 
+/**
+ * @author paderlol
+ */
 @Component
 public class DefaultNamespaceDomainGenerator implements DomainGenerator {
 
@@ -32,6 +36,7 @@ public class DefaultNamespaceDomainGenerator implements DomainGenerator {
     @Override
     public String create(Service service) {
 
-        return String.format(FULL_DOMAIN_MAPPING, service.getName(), service.getGroupName());
+        return String.format(FULL_DOMAIN_MAPPING, NamingUtils.getServiceName(service.getName()),
+            NamingUtils.getGroupName(service.getName()));
     }
 }

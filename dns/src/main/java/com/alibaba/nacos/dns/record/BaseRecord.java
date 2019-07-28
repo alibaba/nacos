@@ -14,6 +14,9 @@ package com.alibaba.nacos.dns.record;
 
 import java.io.Serializable;
 
+/**
+ * @author paderlol
+ */
 public abstract class BaseRecord implements Serializable {
 
     private RecordType record;

@@ -2,6 +2,9 @@ package com.alibaba.nacos.dns.dto;
 
 import java.io.Serializable;
 
+/**
+ * @author paderlol
+ */
 public class UpdateDomainDto implements Serializable {
 
     private Integer cacheTime;

@@ -14,6 +14,9 @@ package com.alibaba.nacos.dns.record;
 
 import java.io.Serializable;
 
+/**
+ * @author paderlol
+ */
 public class InstanceInfo implements Serializable {
     private String address;
     private int port;

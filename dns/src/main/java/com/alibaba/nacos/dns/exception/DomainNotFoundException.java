@@ -12,7 +12,9 @@
  */
 package com.alibaba.nacos.dns.exception;
 
-
+/**
+ * @author paderlol
+ */
 public class DomainNotFoundException extends RuntimeException {
 
     public DomainNotFoundException(String message) {

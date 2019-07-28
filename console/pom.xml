@@ -41,7 +41,7 @@
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-naming</artifactId>
+            <artifactId>nacos-dns</artifactId>
         </dependency>
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->

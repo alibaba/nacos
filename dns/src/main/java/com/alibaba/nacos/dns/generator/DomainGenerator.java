@@ -14,11 +14,36 @@ package com.alibaba.nacos.dns.generator;
 
 import com.alibaba.nacos.naming.core.Service;
 
+/**
+ * @author paderlol
+ * @date 2019年07月28日, 16:31:16
+ */
 public interface DomainGenerator {
 
+    /**
+     * @description The constant DOMAIN_SUFFIX.
+     */
     String DOMAIN_SUFFIX = ".nacos.local";
 
+    /**
+     * Is match boolean.
+     *
+     * @param service the service
+     * @return the boolean
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:16
+     */
     public boolean isMatch(Service service);
 
+    /**
+     * Create string.
+     *
+     * @param service the service
+     * @return the string
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:31:16
+     */
     public String create(Service service);
 }

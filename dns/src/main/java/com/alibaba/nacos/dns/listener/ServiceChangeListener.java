@@ -15,20 +15,24 @@ package com.alibaba.nacos.dns.listener;
 import com.alibaba.nacos.dns.core.DnsSource;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.event.ServiceEvent;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * @author paderlol
+ */
 @Component
-public class ServiceChangeListener {
+public class ServiceChangeListener implements ApplicationListener<ServiceEvent> {
 
-    final DnsSource dnsSource;
+    private final DnsSource dnsSource;
 
     public ServiceChangeListener(DnsSource dnsSource) {
         this.dnsSource = dnsSource;
     }
 
-    @EventListener
-    public void serviceChange(ServiceEvent event) {
+
+    @Override
+    public void onApplicationEvent(ServiceEvent event) {
         Service service = (Service)event.getSource();
         dnsSource.putService(service);
     }

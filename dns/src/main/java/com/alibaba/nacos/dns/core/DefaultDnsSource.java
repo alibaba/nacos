@@ -15,6 +15,7 @@ package com.alibaba.nacos.dns.core;
 import com.alibaba.nacos.dns.config.DnsProperties;
 import com.alibaba.nacos.dns.generator.DomainGeneratorDelegate;
 import com.alibaba.nacos.naming.core.Service;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
@@ -26,13 +27,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.alibaba.nacos.dns.constant.DnsConstants.*;
 
+/**
+ * @author paderlol
+ */
 @Component
 public class DefaultDnsSource implements DnsSource, InitializingBean {
     private final Map<String, Service> serviceMap = new ConcurrentHashMap<>();
     private final Map<String, String> systemConfig = new ConcurrentHashMap<>();
     private final Map<String, Integer> domainCacheTime = new ConcurrentHashMap<>();
-    private final Map<String, CopyOnWriteArrayList<String>> domainForMappingName = new ConcurrentHashMap<>();
-    private final Map<String, String> mappingNameForDomain = new ConcurrentHashMap<>();
+    private final Map<String, CopyOnWriteArrayList<String>> domainForCanonicalName = new ConcurrentHashMap<>();
+    private final Map<String, String> canonicalNameForDomain = new ConcurrentHashMap<>();
 
     private final DomainGeneratorDelegate domainGeneratorDelegate;
     private final DnsProperties dnsProperties;
@@ -79,30 +83,41 @@ public class DefaultDnsSource implements DnsSource, InitializingBean {
     }
 
     @Override
-    public void putMappingName(String domain, String cName) {
-        if (mappingNameForDomain.containsKey(cName)) {
+    public void putCanonicalName(String domain, String canonicalName) {
+        if (serviceMap.containsKey(domain)) {
 
-            mappingNameForDomain.put(cName, domain);
+            canonicalNameForDomain.put(canonicalName, domain);
             CopyOnWriteArrayList<String> mappingNames =
-                domainForMappingName.getOrDefault(domain, new CopyOnWriteArrayList<>());
-            domainForMappingName.putIfAbsent(domain, mappingNames);
-            mappingNames.add(cName);
+                domainForCanonicalName.getOrDefault(domain, new CopyOnWriteArrayList<>());
+            domainForCanonicalName.putIfAbsent(domain, mappingNames);
+            mappingNames.add(canonicalName);
         }
     }
 
     @Override
-    public List<String> getMappingName(String domain) {
-        return Collections.unmodifiableList(domainForMappingName.getOrDefault(domain, new CopyOnWriteArrayList<>()));
+    public List<String> getCanonicalNameByDomain(String domain) {
+        return Collections.unmodifiableList(domainForCanonicalName.getOrDefault(domain, new CopyOnWriteArrayList<>()));
     }
 
     @Override
-    public Service getServiceByCname(String cName) {
-        String domainName = mappingNameForDomain.get(cName);
-        return serviceMap.get(domainName);
+    public Service getServiceByCanonicalName(String canonicalName) {
+        String domainName = canonicalNameForDomain.get(canonicalName);
+
+        return StringUtils.isNotBlank(domainName) ? serviceMap.get(domainName) : null;
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public boolean isExistDomain(String domain) {
+        return serviceMap.containsKey(domain);
+    }
+
+    @Override
+    public boolean isExistCanonicalName(String canonicalName) {
+        return canonicalNameForDomain.containsKey(canonicalName);
+    }
+
+    @Override
+    public void afterPropertiesSet() {
         systemConfig.put(DEFAULT_CACHE_TIME_KEY, String.valueOf(dnsProperties.getDefaultCacheTime()));
         systemConfig.put(UPSTREAM_SERVERS_FOR_DOMAIN_SUFFIX_MAP_KEY,
             dnsProperties.getUpstreamServersForDomainSuffixMap());

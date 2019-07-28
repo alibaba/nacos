@@ -10,27 +10,24 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.alibaba.nacos.dns.record;
+package com.alibaba.nacos.dns.service;
+
+import com.alibaba.nacos.dns.record.BaseRecord;
+import com.alibaba.nacos.dns.record.RecordType;
 
 /**
  * @author paderlol
- * @date 2019年07月28日, 16:36:20
+ * @date 2019年07月28日, 16:23:50
  */
-public enum RecordType {
+public interface RecordService {
+
     /**
-     * @description Address record type.
+     * Get record from domain and recordType
+     * @param domain     the domain
+     * @param recordType the record type
+     * @return the record
+     * @author zhanglong
+     * @date 2019年07月28日, 16:23:50
      */
-    A,
-    /**
-     * @description Srv record type.
-     */
-    SRV,
-    /**
-     * @description Txt record type.
-     */
-    TXT,
-    /**
-     * @description Canonical name record type.
-     */
-    CNAME
+    BaseRecord getRecord(String domain, RecordType recordType);
 }

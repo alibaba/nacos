@@ -14,6 +14,9 @@ package com.alibaba.nacos.dns.constant;
 
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
+/**
+ * @author paderlol
+ */
 public class DnsConstants {
 
     public static final String DEFAULT_CACHE_TIME_KEY = "defaultCacheTime";
@@ -21,9 +24,9 @@ public class DnsConstants {
     public static final String DEFAULT_UPSTREAM_SERVER_KEY = "defaultUpstreamServer";
     public static final String EDNS_ENABLED_KEY = "ednsEnabled";
     public static final String CNAME_KEY = "CNAME";
+    public static final String GET_DOMAIN_FAILED = "Get domain failed";
     /**
      * the url for dns
      */
-    public static final String NACOS_DNS_CONTEXT =
-        UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_SERVER_VERSION + "/dns";
+    public static final String NACOS_DNS_CONTEXT = UtilsAndCommons.NACOS_SERVER_VERSION + "/dns";
 }

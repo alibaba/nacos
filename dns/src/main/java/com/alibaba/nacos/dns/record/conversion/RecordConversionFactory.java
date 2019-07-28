@@ -10,19 +10,24 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package com.alibaba.nacos.dns.record;
+package com.alibaba.nacos.dns.record.conversion;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.alibaba.nacos.dns.record.RecordType;
 
-public class CNameRecord extends BaseRecord {
-    private List<String> cNames = new ArrayList<>();
+/**
+ * @author paderlol
+ * @date 2019年07月28日, 16:29:20
+ */
+public interface RecordConversionFactory {
 
-    public List<String> getcNames() {
-        return cNames;
-    }
-
-    public void setcNames(List<String> cNames) {
-        this.cNames = cNames;
-    }
+    /**
+     * Create record conversion.
+     *
+     * @param recordType the record type
+     * @return the record conversion
+     * @description
+     * @author paderlol
+     * @date 2019年07月28日, 16:29:20
+     */
+    RecordConversion create(RecordType recordType);
 }
