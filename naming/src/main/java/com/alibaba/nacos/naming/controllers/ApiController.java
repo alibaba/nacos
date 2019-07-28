@@ -122,8 +122,15 @@ public class ApiController extends InstanceController {
             Constants.DEFAULT_NAMESPACE_ID);
 
         String dom = WebUtils.required(request, "dom");
+
+        String serviceName = NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP);
+
         String agent = request.getHeader("Client-Version");
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
+
+        Map<String, String> clusterMap = new HashMap<>();
+        clusterMap.put(serviceName, clusters);
+
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
         String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
@@ -135,8 +142,8 @@ public class ApiController extends InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP),
-            agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, new String[]{serviceName},
+            agent, clusterMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly).getJSONObject(0);
     }
 
     @CanDistro

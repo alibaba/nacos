@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Naming Service
@@ -241,6 +242,18 @@ public interface NamingService {
     List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters, boolean subscribe) throws NacosException;
 
     /**
+     * Get all instances within specified multi groupName and clusters
+     *
+     * @param serviceName   name of service
+     * @param groupNames    list of groupName
+     * @param clusters      list cluster of group
+     * @param subscribe     if subscribe the service
+     * @return A list of qualified instance
+     * @throws NacosException
+     */
+    List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException;
+
+    /**
      * Get qualified instances of service
      *
      * @param serviceName name of service
@@ -333,6 +346,19 @@ public interface NamingService {
     List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy, boolean subscribe) throws NacosException;
 
     /**
+     * Get qualified instances within specified multi groupName and clusters
+     *
+     * @param serviceName name of service
+     * @param groupNames  groups of service
+     * @param clusters    list cluster of group
+     * @param healthy     a flag to indicate returning healthy or unhealthy instances
+     * @param subscribe   if subscribe the service
+     * @return A qualified list of instance
+     * @throws NacosException
+     */
+    List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe) throws NacosException;
+
+    /**
      * Select one healthy instance of service using predefined load balance strategy
      *
      * @param serviceName name of service
@@ -415,6 +441,18 @@ public interface NamingService {
      * @throws NacosException
      */
     Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters, boolean subscribe) throws NacosException;
+
+    /**
+     * Select one healthy instance of service from multi group and cluster using predefined load balance strategy
+     *
+     * @param serviceName   name of service
+     * @param groupNames    a list of group should the instance belongs to
+     * @param clusters      list cluster of group
+     * @param subscribe     if subscribe the service
+     * @return qualified instance
+     * @throws NacosException
+     */
+    Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException;
 
     /**
      * Subscribe service to receive events of instances alteration

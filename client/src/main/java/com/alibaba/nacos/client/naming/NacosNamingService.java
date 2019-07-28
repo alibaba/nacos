@@ -297,6 +297,29 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
+    public List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException {
+        List<ServiceInfo> serviceInfos;
+        List<String> serviceNames = new LinkedList<String>();
+        Map<String, String> clusterMap = new HashMap<String, String>();
+        for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
+            clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
+        }
+        for (String groupName : groupNames) {
+            serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
+        }
+        if (subscribe) {
+            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap);
+        } else {
+            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap);
+        }
+        List<Instance> result = new ArrayList<Instance>(serviceInfos.size());
+        for (ServiceInfo serviceInfo : serviceInfos) {
+            result.addAll(serviceInfo.getHosts());
+        }
+        return result;
+    }
+
+    @Override
     public List<Instance> selectInstances(String serviceName, boolean healthy) throws NacosException {
         return selectInstances(serviceName, new ArrayList<String>(), healthy);
     }
@@ -343,7 +366,26 @@ public class NacosNamingService implements NamingService {
         } else {
             serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
-        return selectInstances(serviceInfo, healthy);
+        return selectInstances(healthy, serviceInfo);
+    }
+
+    @Override
+    public List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe) throws NacosException {
+        List<ServiceInfo> serviceInfos;
+        List<String> serviceNames = new LinkedList<String>();
+        Map<String, String> clusterMap = new HashMap<String, String>();
+        for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
+            clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
+        }
+        for (String groupName : groupNames) {
+            serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
+        }
+        if (subscribe) {
+            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap);
+        } else {
+            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap);
+        }
+        return selectInstances(healthy, serviceInfos.toArray(new ServiceInfo[0]));
     }
 
     @Override
@@ -384,7 +426,6 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters, boolean subscribe) throws NacosException {
-
         if (subscribe) {
             return Balancer.RandomByWeight.selectHost(
                 hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
@@ -392,6 +433,25 @@ public class NacosNamingService implements NamingService {
             return Balancer.RandomByWeight.selectHost(
                 hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ",")));
         }
+    }
+
+    @Override
+    public Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException {
+        List<ServiceInfo> serviceInfos;
+        List<String> serviceNames = new LinkedList<String>();
+        Map<String, String> clusterMap = new HashMap<String, String>();
+        for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
+            clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
+        }
+        for (String groupName : groupNames) {
+            serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
+        }
+        if (subscribe) {
+            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap);
+        } else {
+            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap);
+        }
+        return Balancer.RandomByWeight.selectHost(serviceInfos.toArray(new ServiceInfo[0]));
     }
 
     @Override
@@ -466,18 +526,22 @@ public class NacosNamingService implements NamingService {
         return serverProxy.serverHealthy() ? "UP" : "DOWN";
     }
 
-    private List<Instance> selectInstances(ServiceInfo serviceInfo, boolean healthy) {
-        List<Instance> list;
-        if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
-            return new ArrayList<Instance>();
-        }
-
-        Iterator<Instance> iterator = list.iterator();
-        while (iterator.hasNext()) {
-            Instance instance = iterator.next();
-            if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
-                iterator.remove();
+    private List<Instance> selectInstances(boolean healthy, ServiceInfo... serviceInfos) {
+        List<Instance> list = new ArrayList<Instance>();
+        for (ServiceInfo serviceInfo : serviceInfos) {
+            List<Instance> tmp;
+            if (serviceInfo == null || CollectionUtils.isEmpty(tmp = serviceInfo.getHosts())) {
+                continue;
             }
+
+            Iterator<Instance> iterator = tmp.iterator();
+            while (iterator.hasNext()) {
+                Instance instance = iterator.next();
+                if (healthy != instance.isHealthy() || !instance.isEnabled() || instance.getWeight() <= 0) {
+                    iterator.remove();
+                }
+            }
+            list.addAll(tmp);
         }
 
         return list;

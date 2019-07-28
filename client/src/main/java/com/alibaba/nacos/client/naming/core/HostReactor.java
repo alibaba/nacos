@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -210,6 +211,14 @@ public class HostReactor {
         return null;
     }
 
+    public List<ServiceInfo> getServiceInfosDirectlyFromServer(final String serviceNames, final Map<String, String> clusterMap) throws NacosException {
+        String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, 0, false);
+        if (StringUtils.isNotEmpty(result)) {
+            return JSON.parseArray(result, ServiceInfo.class);
+        }
+        return Collections.emptyList();
+    }
+
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
 
         NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
@@ -248,6 +257,46 @@ public class HostReactor {
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
+    public List<ServiceInfo> getServiceInfos(final String serviceNames, final Map<String, String> clusterMap) {
+
+        final String[] names = serviceNames.split(",");
+        final List<ServiceInfo> serviceInfos = new LinkedList<ServiceInfo>();
+        final boolean[] find = {false};
+
+        Runnable queryWork = new Runnable() {
+            @Override
+            public void run() {
+                for (String serviceName : names) {
+                    String clusters = clusterMap.get(serviceName);
+                    clusters = StringUtils.isEmpty(clusters) ? StringUtils.EMPTY : clusters;
+                    String key = ServiceInfo.getKey(serviceName, clusters);
+                    ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
+                    if (null == serviceObj) {
+                        continue;
+                    }
+                    scheduleUpdateIfAbsent(serviceName, clusters);
+                    find[0] = true;
+                    serviceInfos.add(serviceInfoMap.get(key));
+                }
+            }
+        };
+
+        queryWork.run();
+
+        if (find[0] == false) {
+            CountDownLatch latch = new CountDownLatch(names.length);
+            updateServicesNow(serviceNames, clusterMap, latch);
+            try {
+                latch.await(UPDATE_HOLD_INTERVAL, TimeUnit.MILLISECONDS);
+                queryWork.run();
+            } catch (InterruptedException e) {
+                NAMING_LOGGER.error("[getServiceInfo] serviceNames:" + serviceNames + ", clusters:" + JSON.toJSONString(clusterMap), e);
+            }
+        }
+
+        return serviceInfos;
+    }
+
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -279,6 +328,21 @@ public class HostReactor {
                     oldService.notifyAll();
                 }
             }
+        }
+    }
+
+    public void updateServicesNow(String serviceNames, Map<String, String> clusterMap, CountDownLatch latch) {
+        try {
+            String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, pushReceiver.getUDPPort(), false);
+            List<String> jsons = JSON.parseArray(result, String.class);
+            for (String json : jsons) {
+                if (StringUtils.isNotEmpty(json)) {
+                    processServiceJSON(json);
+                }
+                latch.countDown();
+            }
+        } catch (Exception e) {
+            NAMING_LOGGER.error("[NA] failed to update serviceNames: " + serviceNames, e);
         }
     }
 

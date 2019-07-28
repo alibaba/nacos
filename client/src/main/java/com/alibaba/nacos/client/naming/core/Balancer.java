@@ -49,12 +49,16 @@ public class Balancer {
             return hosts;
         }
 
-        public static Instance selectHost(ServiceInfo dom) {
+        public static Instance selectHost(ServiceInfo... doms) {
 
-            List<Instance> hosts = selectAll(dom);
+            List<Instance> hosts = new ArrayList<Instance>();
+
+            for (ServiceInfo dom : doms) {
+                hosts.addAll(selectAll(dom));
+            }
 
             if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for service: " + dom.getName());
+                throw new IllegalStateException("no host to srv for service: " + doms);
             }
 
             return getHostByRandomWeight(hosts);
