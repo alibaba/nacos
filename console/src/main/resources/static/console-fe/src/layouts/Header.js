@@ -49,6 +49,10 @@ class Header extends React.Component {
     this.props.history.push('/login');
   };
 
+  changePassword = () => {
+    this.props.history.push('/password');
+  };
+
   getUsername = () => {
     const token = window.localStorage.getItem('token');
     if (token) {
@@ -94,6 +98,7 @@ class Header extends React.Component {
             <Dropdown trigger={<div className="logout">{this.getUsername()}</div>}>
               <Menu>
                 <Menu.Item onClick={this.logout}>{locale.logout}</Menu.Item>
+                <Menu.Item onClick={this.changePassword}>{locale.changePassword}</Menu.Item>
               </Menu>
             </Dropdown>
           )}

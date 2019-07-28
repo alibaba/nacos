@@ -19,6 +19,7 @@ const I18N_CONF = {
     community: '社区',
     languageSwitchButton: 'En',
     logout: '登出',
+    changePassword: '修改密码',
   },
   Login: {
     login: '登录',
@@ -49,6 +50,19 @@ const I18N_CONF = {
     namespace: '命名空间',
     clusterManagementVirtual: '集群管理',
     clusterManagement: '节点列表',
+  },
+  Password: {
+    passwordNotConsistent: '两次输入密码不一致',
+    passwordRequired: '密码不能为空',
+    pleaseInputOldPassword: '请输入原始密码',
+    pleaseInputNewPassword: '请输入新密码',
+    pleaseInputNewPasswordAgain: '请再次输入新密码',
+    oldPassword: '原始密码',
+    newPassword: '新密码',
+    checkPassword: '再次输入',
+    changePassword: '修改密码',
+    invalidPassword: '原始密码错误',
+    modifyPasswordFailed: '修改密码失败',
   },
   NameSpace: {
     namespace: '命名空间',
