@@ -375,6 +375,7 @@ public class InstanceController {
             if (Loggers.DEBUG_LOG.isDebugEnabled()) {
                 Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
             }
+            result.put("name", serviceName);
             result.put("hosts", new JSONArray());
             return result;
         }

@@ -293,6 +293,9 @@ const I18N_CONF = {
     selectedEntry: '| Selected Entry',
     cloneSelectedAlertTitle: 'Clone config',
     cloneSelectedAlertContent: 'please select the configuration to clone',
+    delSelectedAlertTitle: 'Delete config',
+    delSelectedAlertContent: 'please select the configuration to delete',
+    delSuccessMsg: 'delete successful',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',

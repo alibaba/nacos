@@ -163,27 +163,27 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 }
                 ds.setUrl(val.trim());
 
-                val = env.getProperty("db.user");
+                val = env.getProperty("db.user." + i, env.getProperty("db.user"));
                 if (null == val) {
-                    fatalLog.error("db.user is null");
+                    fatalLog.error("db.user." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setUsername(val.trim());
 
-                val = env.getProperty("db.password");
+                val = env.getProperty("db.password." + i, env.getProperty("db.password"));
                 if (null == val) {
-                    fatalLog.error("db.password is null");
+                    fatalLog.error("db.password." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setPassword(val.trim());
 
-                val = env.getProperty("db.initialSize");
+                val = env.getProperty("db.initialSize." + i, env.getProperty("db.initialSize"));
                 ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
 
-                val = env.getProperty("db.maxActive");
+                val = env.getProperty("db.maxActive." + i, env.getProperty("db.maxActive"));
                 ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
 
-                val = env.getProperty("db.maxIdle");
+                val = env.getProperty("db.maxIdle." + i, env.getProperty("db.maxIdle"));
                 ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
 
                 ds.setMaxWait(3000L);

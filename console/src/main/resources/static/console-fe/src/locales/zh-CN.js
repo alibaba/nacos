@@ -291,6 +291,9 @@ const I18N_CONF = {
     selectedEntry: '| 选中的条目',
     cloneSelectedAlertTitle: '配置克隆',
     cloneSelectedAlertContent: '请选择要克隆的配置',
+    delSelectedAlertTitle: '配置删除',
+    delSelectedAlertContent: '请选择要删除的配置',
+    delSuccessMsg: '删除成功',
   },
   NewConfig: {
     newListingMain: '新建配置',
