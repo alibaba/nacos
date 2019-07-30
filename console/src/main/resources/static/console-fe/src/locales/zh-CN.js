@@ -289,6 +289,8 @@ const I18N_CONF = {
     target: '目标空间：',
     selectNamespace: '请选择命名空间',
     selectedEntry: '| 选中的条目',
+    cloneSelectedAlertTitle: '配置克隆',
+    cloneSelectedAlertContent: '请选择要克隆的配置',
   },
   NewConfig: {
     newListingMain: '新建配置',
