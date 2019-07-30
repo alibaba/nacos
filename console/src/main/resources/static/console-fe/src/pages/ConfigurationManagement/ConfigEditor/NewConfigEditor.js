@@ -124,7 +124,7 @@ class ConfigEditor extends React.Component {
     this.monacoEditor = null;
     const options = {
       value,
-      language: this.state.configType,
+      language,
       codeLens: true,
       selectOnLineNumbers: true,
       roundedSelection: false,
