@@ -291,6 +291,8 @@ const I18N_CONF = {
     target: 'Target:',
     selectNamespace: 'Select Namespace',
     selectedEntry: '| Selected Entry',
+    cloneSelectedAlertTitle: 'Clone config',
+    cloneSelectedAlertContent: 'please select the configuration to clone',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',

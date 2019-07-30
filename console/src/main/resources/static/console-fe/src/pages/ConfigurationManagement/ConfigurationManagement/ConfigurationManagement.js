@@ -100,6 +100,10 @@ class ConfigurationManagement extends React.Component {
       contentList: [],
       isAdvancedQuery: false,
       isCheckAll: false,
+      rowSelection: {
+        onChange: this.configDataTableOnChange.bind(this),
+        selectedRowKeys: [],
+      },
     };
     const obj = {
       dataId: this.dataId || '',
@@ -250,6 +254,10 @@ class ConfigurationManagement extends React.Component {
       });
     }
     this.getData();
+    configsTableSelected.clear();
+    const { rowSelection } = this.state;
+    rowSelection.selectedRowKeys = [];
+    this.setState({ rowSelection });
   }
 
   getData(pageNo = 1, clearSelect = true) {
@@ -704,8 +712,8 @@ class ConfigurationManagement extends React.Component {
     self.field.setValue('cloneTargetSpace', undefined);
     if (configsTableSelected.size === 0) {
       Dialog.alert({
-        title: locale.exportSelectedAlertTitle,
-        content: locale.exportSelectedAlertContent,
+        title: locale.cloneSelectedAlertTitle,
+        content: locale.cloneSelectedAlertContent,
       });
       return;
     }
@@ -1024,22 +1032,14 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
-  configsTableOnSelect(selected, record, records) {
-    if (selected) {
-      configsTableSelected.set(record.id, record);
-    } else {
-      configsTableSelected.delete(record.id);
-    }
-  }
-
-  configsTableOnSelectAll(selected, records) {
-    if (selected) {
-      records.forEach((record, i) => {
-        configsTableSelected.set(record.id, record);
-      });
-    } else {
-      configsTableSelected.clear();
-    }
+  configDataTableOnChange(ids, records) {
+    const { rowSelection } = this.state;
+    rowSelection.selectedRowKeys = ids;
+    this.setState({ rowSelection });
+    configsTableSelected.clear();
+    ids.forEach((id, i) => {
+      configsTableSelected.set(id, id);
+    });
   }
 
   render() {
@@ -1239,10 +1239,7 @@ class ConfigurationManagement extends React.Component {
                   fixedHeader
                   maxBodyHeight={400}
                   ref={'dataTable'}
-                  rowSelection={{
-                    onSelect: this.configsTableOnSelect,
-                    onSelectAll: this.configsTableOnSelectAll,
-                  }}
+                  rowSelection={this.state.rowSelection}
                 >
                   <Table.Column title={'Data Id'} dataIndex={'dataId'} />
                   <Table.Column title={'Group'} dataIndex={'group'} />
