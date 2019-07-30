@@ -104,7 +104,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
 
     @PostConstruct
-    public void init() throws Exception {
+    public void init() {
         GlobalExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -154,6 +154,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void remove(String key) throws NacosException {
         onRemove(key);
+        listeners.remove(key);
     }
 
     @Override
@@ -185,8 +186,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         if (!listeners.containsKey(key)) {
             return;
         }
-
-        listeners.remove(key);
 
         notifier.addTask(key, ApplyAction.DELETE);
     }
@@ -322,6 +321,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         if (!listeners.containsKey(key)) {
             listeners.put(key, new CopyOnWriteArrayList<>());
         }
+
+        if (listeners.get(key).contains(listener)) {
+            return;
+        }
+
         listeners.get(key).add(listener);
     }
 

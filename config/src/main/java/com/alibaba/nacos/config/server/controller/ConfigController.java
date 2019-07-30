@@ -36,6 +36,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -225,6 +226,32 @@ public class ConfigController {
             ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
         EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
         return true;
+    }
+
+    /**
+     * @author klw
+     * @Description: delete configuration based on multiple config ids
+     * @Date 2019/7/5 10:26
+     * @Param [request, response, dataId, group, tenant, tag]
+     * @return java.lang.Boolean
+     */
+    @RequestMapping(params = "delType=ids", method = RequestMethod.DELETE)
+    @ResponseBody
+    public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
+                                 @RequestParam(value = "ids")List<Long> ids) {
+        String clientIp = RequestUtil.getRemoteIp(request);
+        final Timestamp time = TimeUtils.getCurrentTime();
+        List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
+        if(!CollectionUtils.isEmpty(configInfoList)){
+            for(ConfigInfo configInfo : configInfoList) {
+                ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
+                    configInfo.getTenant(), null, time.getTime(), clientIp,
+                    ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
+                EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
+                    configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
+            }
+        }
+        return ResultBuilder.buildSuccessResult(true);
     }
 
     @RequestMapping(value = "/catalog", method = RequestMethod.GET)

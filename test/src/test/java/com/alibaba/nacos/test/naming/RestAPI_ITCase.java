@@ -232,6 +232,32 @@ public class RestAPI_ITCase {
         namingServiceDelete(serviceName);
     }
 
+    @Test
+    public void testInvalidNamespace() {
+
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("protectThreshold", "0.6")
+                .appendParam("namespaceId", "..invalid-namespace")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is4xxClientError());
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("protectThreshold", "0.6")
+                .appendParam("namespaceId", "/invalid-namespace")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is4xxClientError());
+
+    }
+
     private void namingServiceDelete(String serviceName) {
         //delete service
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
