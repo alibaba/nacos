@@ -68,5 +68,14 @@
                 </configuration>
             </plugin>
         </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>nacos-version.txt</include>
+                </includes>
+            </resource>
+        </resources>
     </build>
 </project>
