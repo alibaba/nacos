@@ -58,7 +58,7 @@ class ServiceList extends React.Component {
       currentPage: 1,
       keyword: '',
       dataSource: [],
-      withInstances: true,
+      hasIpCount: true,
     };
     this.field = new Field(this);
   }
@@ -78,8 +78,9 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword, withInstances } = this.state;
+    const { currentPage, pageSize, keyword, withInstances = false, hasIpCount } = this.state;
     const parameter = [
+      `hasIpCount=${hasIpCount}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
@@ -171,7 +172,13 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const { keyword, nowNamespaceName, nowNamespaceId, withInstances = false } = this.state;
+    const {
+      keyword,
+      nowNamespaceName,
+      nowNamespaceId,
+      withInstances = false,
+      hasIpCount,
+    } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -222,11 +229,9 @@ class ServiceList extends React.Component {
                 </FormItem>
                 <Form.Item label={`${hiddenEmptyService}:`}>
                   <Switch
-                    checked={withInstances}
-                    onChange={withInstances =>
-                      this.setState({ withInstances, currentPage: 1 }, () =>
-                        this.queryServiceList()
-                      )
+                    checked={hasIpCount}
+                    onChange={hasIpCount =>
+                      this.setState({ hasIpCount, currentPage: 1 }, () => this.queryServiceList())
                     }
                   />
                 </Form.Item>
