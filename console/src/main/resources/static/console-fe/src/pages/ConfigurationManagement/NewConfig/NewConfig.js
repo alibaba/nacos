@@ -365,10 +365,10 @@ class NewConfig extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /[@#\$%\^&\*]+/g;
+    const chartReg = /[@#\$%\^&\*\s]+/g;
 
     if (chartReg.test(value)) {
-      callback(locale.doNotEnte);
+      callback(locale.doNotEnter);
     } else {
       callback();
     }
