@@ -643,11 +643,11 @@ public class ServiceManager implements RecordListener<Service> {
 
     public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList, boolean hasIpCount) {
 
-        if (chooseServiceMap(namespaceId) == null ) {
+        if (chooseServiceMap(namespaceId) == null) {
             return 0;
         }
 
-        List<Service> matchList = searchServices(namespaceId, StringUtils.isNotBlank(keyword)?".*" + keyword + ".*":null, hasIpCount);
+        List<Service> matchList = searchServices(namespaceId, StringUtils.isNotBlank(keyword) ? ".*" + keyword + ".*" : null, hasIpCount);
 
         if (StringUtils.isNotBlank(containedInstance)) {
 
