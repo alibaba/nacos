@@ -36,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -601,14 +602,18 @@ public class ServiceManager implements RecordListener<Service> {
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
 
-    public List<Service> searchServices(String namespaceId, String regex) {
+    public List<Service> searchServices(String namespaceId, String regex, boolean hasIpCount) {
         List<Service> result = new ArrayList<>();
         for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
             Service service = entry.getValue();
             String key = service.getName() + ":" + ArrayUtils.toString(service.getOwners());
-            if (key.matches(regex)) {
-                result.add(service);
+            if (StringUtils.isBlank(regex) || !key.matches(regex)) {
+                continue;
             }
+            if (hasIpCount && CollectionUtils.isEmpty(service.allIPs())) {
+                continue;
+            }
+            result.add(service);
         }
 
         return result;
@@ -636,19 +641,13 @@ public class ServiceManager implements RecordListener<Service> {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList) {
+    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList, boolean hasIpCount) {
 
-        List<Service> matchList;
-
-        if (chooseServiceMap(namespaceId) == null) {
+        if (chooseServiceMap(namespaceId) == null ) {
             return 0;
         }
 
-        if (StringUtils.isNotBlank(keyword)) {
-            matchList = searchServices(namespaceId, ".*" + keyword + ".*");
-        } else {
-            matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
-        }
+        List<Service> matchList = searchServices(namespaceId, StringUtils.isNotBlank(keyword)?".*" + keyword + ".*":null, hasIpCount);
 
         if (StringUtils.isNotBlank(containedInstance)) {
 
