@@ -153,7 +153,7 @@ public class CatalogController {
             String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
             List<Service> serviceList = new ArrayList<>(8);
-            serviceManager.getPagedService(namespaceId, pageNo, pageSize, keyword, StringUtils.EMPTY, serviceList);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, keyword, StringUtils.EMPTY, serviceList, false);
 
             for (Service service : serviceList) {
                 ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
@@ -259,9 +259,10 @@ public class CatalogController {
         int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
         String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
         String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
+        boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
 
         List<Service> services = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services);
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services, hasIpCount);
 
         if (CollectionUtils.isEmpty(services)) {
             result.put("serviceList", Collections.emptyList());
