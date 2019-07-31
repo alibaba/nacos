@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -74,6 +75,10 @@ public class PersistService {
     private static final String SQL_FIND_ALL_CONFIG_INFO = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
 
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
+
+    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
+
+    private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
 
     /**
      * @author klw
@@ -742,6 +747,42 @@ public class PersistService {
                     throw e;
                 }
                 return Boolean.TRUE;
+            }
+        });
+    }
+
+    /**
+     * @author klw
+     * @Description: delete config info by ids
+     * @Date 2019/7/5 16:45
+     * @Param [ids, srcIp, srcUser]
+     * @return List<ConfigInfo> deleted configInfos
+     */
+    public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+        if(CollectionUtils.isEmpty(ids)){
+            return null;
+        }
+        ids.removeAll(Collections.singleton(null));
+        return tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
+            final Timestamp time = new Timestamp(System.currentTimeMillis());
+
+            @Override
+            public List<ConfigInfo> doInTransaction(TransactionStatus status) {
+                try {
+                    String idsStr = Joiner.on(",").join(ids);
+                    List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
+                    if (!CollectionUtils.isEmpty(configInfoList)) {
+                        removeConfigInfoByIdsAtomic(idsStr);
+                        for(ConfigInfo configInfo : configInfoList){
+                            removeTagByIdAtomic(configInfo.getId());
+                            insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
+                        }
+                    }
+                    return configInfoList;
+                } catch (CannotGetJdbcConnectionException e) {
+                    fatalLog.error("[db-error] " + e.toString(), e);
+                    throw e;
+                }
             }
         });
     }
@@ -2788,6 +2829,37 @@ public class PersistService {
     }
 
     /**
+     * @author klw
+     * @Description: Delete configuration; database atomic operation, minimum SQL action, no business encapsulation
+     * @Date 2019/7/5 16:39
+     * @Param [id]
+     * @return void
+     */
+    private void removeConfigInfoByIdsAtomic(final String ids) {
+        if(StringUtils.isBlank(ids)){
+            return;
+        }
+        StringBuilder sql = new StringBuilder(SQL_DELETE_CONFIG_INFO_BY_IDS);
+        sql.append("id in (");
+        List<Long> paramList = new ArrayList<>();
+        String[] tagArr = ids.split(",");
+        for (int i = 0; i < tagArr.length; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append("?");
+            paramList.add(Long.valueOf(tagArr[i]));
+        }
+        sql.append(") ");
+        try {
+            jt.update(sql.toString(), paramList.toArray());
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    /**
      * 删除配置；数据库原子操作，最小sql动作，无业务封装
      *
      * @param dataId  dataId
@@ -2857,6 +2929,39 @@ public class PersistService {
             return this.jt.queryForObject(
                 "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
                 new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
+            return null;
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    /**
+     * @author klw
+     * @Description: find ConfigInfo by ids
+     * @Date 2019/7/5 16:37
+     * @Param [ids]
+     * @return java.util.List<com.alibaba.nacos.config.server.model.ConfigInfo>
+     */
+    public List<ConfigInfo> findConfigInfosByIds(final String ids) {
+        if(StringUtils.isBlank(ids)){
+            return null;
+        }
+        StringBuilder sql = new StringBuilder(SQL_FIND_CONFIG_INFO_BY_IDS);
+        sql.append("id in (");
+        List<Long> paramList = new ArrayList<>();
+        String[] tagArr = ids.split(",");
+        for (int i = 0; i < tagArr.length; i++) {
+            if (i != 0) {
+                sql.append(", ");
+            }
+            sql.append("?");
+            paramList.add(Long.valueOf(tagArr[i]));
+        }
+        sql.append(") ");
+        try {
+            return this.jt.query(sql.toString(), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
             return null;
         } catch (CannotGetJdbcConnectionException e) {

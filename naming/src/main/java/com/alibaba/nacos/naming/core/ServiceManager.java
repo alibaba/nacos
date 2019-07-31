@@ -143,6 +143,9 @@ public class ServiceManager implements RecordListener<Service> {
 
             if (oldDom != null) {
                 oldDom.update(service);
+                // re-listen to handle the situation when the underlying listener is removed:
+                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), oldDom);
+                consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), oldDom);
             } else {
                 putServiceAndInit(service);
             }
