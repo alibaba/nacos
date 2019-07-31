@@ -301,7 +301,7 @@ const I18N_CONF = {
     newListingMain: 'Create Configuration',
     newListing: 'Create Configuration',
     publishFailed: 'Publish failed. Make sure parameters are entered correctly.',
-    doNotEnte: 'Illegal characters not allowed',
+    doNotEnter: 'Illegal characters not allowed',
     newConfig: 'Data ID cannot be empty.',
     dataIdIsNotEmpty: 'Data ID cannot exceed 255 characters in length',
     groupPlaceholder: 'Enter your group name',
