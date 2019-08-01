@@ -523,7 +523,7 @@
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
-                <version>1.2.47</version>
+                <version>1.2.58</version>
             </dependency>
 
             <!-- javax libs-->
