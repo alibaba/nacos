@@ -684,7 +684,11 @@ public class ServiceManager implements RecordListener<Service> {
         }
 
         if (StringUtils.isNotBlank(serviceName)) {
-            matchList = searchServices(namespaceId, ".*" + serviceName + ".*");
+            StringJoiner regex = new StringJoiner(Constants.SERVICE_INFO_SPLITER);
+            for (String param : serviceName.split(Constants.SERVICE_INFO_SPLITER)) {
+                regex.add(StringUtils.isBlank(param) ? Constants.ANY_PATTERN : Constants.ANY_PATTERN + param + Constants.ANY_PATTERN);
+            }
+            matchList = searchServices(namespaceId, regex.toString());
         } else {
             matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
         }
