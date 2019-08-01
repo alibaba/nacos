@@ -36,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -45,6 +46,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * Core manager storing all services in Nacos
@@ -637,6 +639,7 @@ public class ServiceManager implements RecordListener<Service> {
         Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());
     }
 
+
     public List<Service> searchServices(String namespaceId, String regex) {
         List<Service> result = new ArrayList<>();
         for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
@@ -672,7 +675,7 @@ public class ServiceManager implements RecordListener<Service> {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList) {
+    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList, boolean hasIpCount) {
 
         List<Service> matchList;
 
@@ -684,6 +687,10 @@ public class ServiceManager implements RecordListener<Service> {
             matchList = searchServices(namespaceId, ".*" + keyword + ".*");
         } else {
             matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
+        }
+
+        if (!CollectionUtils.isEmpty(matchList) && hasIpCount) {
+            matchList = matchList.stream().filter(s -> !CollectionUtils.isEmpty(s.allIPs())).collect(Collectors.toList());
         }
 
         if (StringUtils.isNotBlank(containedInstance)) {
