@@ -603,6 +603,9 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public List<Service> searchServices(String namespaceId, String regex, boolean hasIpCount) {
+        if(StringUtils.isBlank(regex) && !hasIpCount){
+            return new ArrayList<>(chooseServiceMap(namespaceId).values());
+        }
         List<Service> result = new ArrayList<>();
         for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
             Service service = entry.getValue();
