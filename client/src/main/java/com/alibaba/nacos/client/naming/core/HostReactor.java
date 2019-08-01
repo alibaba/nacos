@@ -105,6 +105,8 @@ public class HostReactor {
             return oldService;
         }
 
+        boolean changed = false;
+
         if (oldService != null) {
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime()
@@ -157,16 +159,19 @@ public class HostReactor {
             }
 
             if (newHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
                     + serviceInfo.getName() + " -> " + JSON.toJSONString(newHosts));
             }
 
             if (remvHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
                     + serviceInfo.getName() + " -> " + JSON.toJSONString(remvHosts));
             }
 
             if (modHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
                     + serviceInfo.getName() + " -> " + JSON.toJSONString(modHosts));
             }
@@ -189,8 +194,10 @@ public class HostReactor {
 
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
-        NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
-            " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+        if (changed) {
+            NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
+                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+        }
 
         return serviceInfo;
     }
