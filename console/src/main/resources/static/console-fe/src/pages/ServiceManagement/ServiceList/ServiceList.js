@@ -25,6 +25,7 @@ import {
   Dialog,
   Message,
   ConfigProvider,
+  Switch,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
@@ -60,6 +61,7 @@ class ServiceList extends React.Component {
         serviceName: '',
         groupName: '',
       },
+      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -79,8 +81,9 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, search, withInstances = false } = this.state;
+    const { currentPage, pageSize, search, withInstances = false, hasIpCount } = this.state;
     const parameter = [
+      `hasIpCount=${hasIpCount}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
@@ -167,6 +170,7 @@ class ServiceList extends React.Component {
       serviceNamePlaceholder,
       groupName,
       groupNamePlaceholder,
+      hiddenEmptyService,
       query,
       create,
       operation,
@@ -174,7 +178,7 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const { search, nowNamespaceName, nowNamespaceId } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -234,6 +238,17 @@ class ServiceList extends React.Component {
                     }
                   />
                 </FormItem>
+                <Form.Item label={`${hiddenEmptyService}:`}>
+                  <Switch
+                    checked={hasIpCount}
+                    onChange={hasIpCount =>
+                      this.setState({ hasIpCount, currentPage: 1 }, () => {
+                        localStorage.setItem('hasIpCount', hasIpCount);
+                        this.queryServiceList();
+                      })
+                    }
+                  />
+                </Form.Item>
                 <FormItem label="">
                   <Button
                     type="primary"
