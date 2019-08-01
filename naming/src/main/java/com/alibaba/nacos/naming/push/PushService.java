@@ -275,7 +275,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             size += clientConcurrentMap.size();
         }
 
-        Loggers.PUSH.info("[NACOS-PUSH] clientMap size: {}", size);
+        if (Loggers.PUSH.isDebugEnabled()) {
+            Loggers.PUSH.debug("[NACOS-PUSH] clientMap size: {}", size);
+        }
 
     }
 

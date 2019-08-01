@@ -43,4 +43,8 @@ public class CustomUserDetailsServiceImpl implements UserDetailsService {
         }
         return new CustomUserDetails(user);
     }
+
+    public void updateUserPassword(String username, String password) throws Exception {
+        persistService.updateUserPassword(username, password);
+    }
 }

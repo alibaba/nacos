@@ -88,8 +88,8 @@ public class HealthCheckCommon {
                     }
                     Map<String, String> params = new HashMap<>(10);
                     params.put("result", JSON.toJSONString(list));
-                    if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                        Loggers.DEBUG_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
+                    if (Loggers.SRV_LOG.isDebugEnabled()) {
+                        Loggers.SRV_LOG.debug("[HEALTH-SYNC] server: {}, healthCheckResults: {}",
                             server, JSON.toJSONString(list));
                     }
 

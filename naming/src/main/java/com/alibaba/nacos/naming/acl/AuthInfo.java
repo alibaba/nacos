@@ -25,7 +25,8 @@ public class AuthInfo {
 
     private String appKey;
 
-    public AuthInfo() {}
+    public AuthInfo() {
+    }
 
     public AuthInfo(String operator, String appKey) {
         this.operator = operator;
@@ -36,8 +37,8 @@ public class AuthInfo {
         try {
             String[] byteStrs = auth.split(",");
             byte[] bytes = new byte[byteStrs.length];
-            for(int i = 0; i < byteStrs.length; i++) {
-                bytes[i] = (byte)(~(Short.parseShort(byteStrs[i])));
+            for (int i = 0; i < byteStrs.length; i++) {
+                bytes[i] = (byte) (~(Short.parseShort(byteStrs[i])));
             }
 
             String contentStr = new String(bytes, encoding);
