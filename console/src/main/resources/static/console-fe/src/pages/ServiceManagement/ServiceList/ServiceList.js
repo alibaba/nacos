@@ -58,7 +58,7 @@ class ServiceList extends React.Component {
       currentPage: 1,
       keyword: '',
       dataSource: [],
-      hasIpCount: true,
+      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -231,7 +231,10 @@ class ServiceList extends React.Component {
                   <Switch
                     checked={hasIpCount}
                     onChange={hasIpCount =>
-                      this.setState({ hasIpCount, currentPage: 1 }, () => this.queryServiceList())
+                      this.setState({ hasIpCount, currentPage: 1 }, () => {
+                        localStorage.setItem('hasIpCount', hasIpCount);
+                        this.queryServiceList();
+                      })
                     }
                   />
                 </Form.Item>
