@@ -375,7 +375,7 @@ public class ServerListManager {
 
     private void checkDistroHeartbeat() {
 
-        Loggers.EPHEMERAL.debug("check distro heartbeat.");
+        Loggers.SRV_LOG.debug("check distro heartbeat.");
 
         List<Server> servers = distroConfig.get(LOCALHOST_SITE);
         if (CollectionUtils.isEmpty(servers)) {
