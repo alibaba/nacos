@@ -282,27 +282,35 @@ public class ServiceManager implements RecordListener<Service> {
             return;
         }
 
+        boolean changed = false;
+
         List<Instance> instances = service.allIPs();
         for (Instance instance : instances) {
 
-            Boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIPAddr()));
+            boolean valid = Boolean.parseBoolean(ipsMap.get(instance.toIPAddr()));
             if (valid != instance.isHealthy()) {
+                changed = true;
                 instance.setHealthy(valid);
-                Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}",
+                Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}{}",
                     serviceName, (instance.isHealthy() ? "ENABLED" : "DISABLED"),
                     instance.getIp(), instance.getPort(), instance.getClusterName());
             }
         }
 
-        pushService.serviceChanged(service);
+        if (changed) {
+            pushService.serviceChanged(service);
+        }
+
         StringBuilder stringBuilder = new StringBuilder();
         List<Instance> allIps = service.allIPs();
         for (Instance instance : allIps) {
             stringBuilder.append(instance.toIPAddr()).append("_").append(instance.isHealthy()).append(",");
         }
 
-        Loggers.EVT_LOG.info("[IP-UPDATED] namespace: {}, service: {}, ips: {}",
-            service.getNamespaceId(), service.getName(), stringBuilder.toString());
+        if (changed && Loggers.EVT_LOG.isDebugEnabled()) {
+            Loggers.EVT_LOG.debug("[HEALTH-STATUS-UPDATED] namespace: {}, service: {}, ips: {}",
+                service.getNamespaceId(), service.getName(), stringBuilder.toString());
+        }
 
     }
 
