@@ -302,7 +302,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
         @Override
         public void run() {
-            defaultLog.info("check master db.");
+            if (defaultLog.isDebugEnabled()) {
+                defaultLog.debug("check master db.");
+            }
             boolean isFound = false;
 
             int index = -1;
@@ -339,7 +341,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
         @Override
         public void run() {
-            defaultLog.info("check db health.");
+            if (defaultLog.isDebugEnabled()) {
+                defaultLog.debug("check db health.");
+            }
             String sql = "SELECT * FROM config_info_beta WHERE id = 1";
 
             for (int i = 0; i < testJTList.size(); i++) {
