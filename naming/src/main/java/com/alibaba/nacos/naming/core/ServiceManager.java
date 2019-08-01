@@ -648,7 +648,6 @@ public class ServiceManager implements RecordListener<Service> {
             if (key.matches(regex)) {
                 result.add(service);
             }
-            result.add(service);
         }
 
         return result;
