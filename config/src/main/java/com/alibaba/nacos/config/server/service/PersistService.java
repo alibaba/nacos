@@ -3246,6 +3246,20 @@ public class PersistService {
         }
     }
 
+    /**
+     * 更新用户密码
+     */
+    public void updateUserPassword(String username, String password) {
+        try {
+            jt.update(
+                "UPDATE users SET password = ? WHERE username=?",
+                password, username);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
 
     private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
