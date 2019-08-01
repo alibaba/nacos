@@ -641,19 +641,12 @@ public class ServiceManager implements RecordListener<Service> {
 
 
     public List<Service> searchServices(String namespaceId, String regex) {
-        return searchServices(namespaceId, regex, null);
-    }
-
-    public List<Service> searchServices(String namespaceId, String regex, String groupName) {
         List<Service> result = new ArrayList<>();
         for (Map.Entry<String, Service> entry : chooseServiceMap(namespaceId).entrySet()) {
             Service service = entry.getValue();
-            if(StringUtils.isNotEmpty(groupName)&&!groupName.equals(service.getGroupName())){
-                continue;
-            }
             String key = service.getName() + ":" + ArrayUtils.toString(service.getOwners());
-            if(StringUtils.isNotEmpty(regex)&&!key.matches(regex)){
-                continue;
+            if (key.matches(regex)) {
+                result.add(service);
             }
             result.add(service);
         }
