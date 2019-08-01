@@ -172,13 +172,7 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const {
-      keyword,
-      nowNamespaceName,
-      nowNamespaceId,
-      withInstances = false,
-      hasIpCount,
-    } = this.state;
+    const { keyword, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
