@@ -87,8 +87,8 @@ class ServiceList extends React.Component {
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
-      `serviceName=${search.serviceName}`,
-      `groupName=${search.groupName}`,
+      `serviceNameParam=${search.serviceName}`,
+      `groupNameParam=${search.groupName}`,
     ];
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
