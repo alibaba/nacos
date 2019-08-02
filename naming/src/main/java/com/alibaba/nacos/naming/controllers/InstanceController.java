@@ -376,6 +376,7 @@ public class InstanceController {
                 Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
             }
             result.put("name", serviceName);
+            result.put("clusters", clusters);
             result.put("hosts", new JSONArray());
             return result;
         }
