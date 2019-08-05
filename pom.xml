@@ -21,7 +21,7 @@
     <inceptionYear>2018</inceptionYear>
     <groupId>com.alibaba.nacos</groupId>
     <artifactId>nacos-all</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Alibaba NACOS ${project.version}</name>
@@ -523,7 +523,7 @@
             <dependency>
                 <groupId>com.alibaba</groupId>
                 <artifactId>fastjson</artifactId>
-                <version>1.2.47</version>
+                <version>1.2.58</version>
             </dependency>
 
             <!-- javax libs-->

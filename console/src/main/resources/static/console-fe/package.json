@@ -26,6 +26,7 @@
     "url": "git+https://github.com/alibaba/nacos.git"
   },
   "devDependencies": {
+    "@alifd/next-theme-loader": "^1.3.1",
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.2.2",
     "@babel/plugin-proposal-decorators": "^7.2.3",
@@ -33,7 +34,7 @@
     "@babel/runtime": "^7.2.0",
     "babel-eslint": "^10.0.1",
     "babel-loader": "^8.0.4",
-    "babel-plugin-import": "^1.11.0",
+    "babel-plugin-import": "^1.12.0",
     "babel-preset-react-app": "^6.1.0",
     "clean-webpack-plugin": "^0.1.19",
     "copy-webpack-plugin": "^4.6.0",
@@ -63,7 +64,7 @@
     "webpack-dev-server": "^3.1.13"
   },
   "dependencies": {
-    "@alifd/next": "^1.11.10",
+    "@alifd/next": "^1.15.12",
     "axios": "^0.18.0",
     "jquery": "^3.3.1",
     "moment": "^2.23.0",
