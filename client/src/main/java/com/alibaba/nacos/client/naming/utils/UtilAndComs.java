@@ -50,6 +50,9 @@ public class UtilAndComs {
 
     public static final String SERVER_ADDR_IP_SPLITER = ":";
 
+    /**
+     * cpu内核数量大于1  则为核数/2  否则为1
+     */
     public static final int DEFAULT_CLIENT_BEAT_THREAD_COUNT = Runtime.getRuntime()
         .availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2
         : 1;

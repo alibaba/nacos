@@ -84,29 +84,73 @@ public class NacosNamingService implements NamingService {
         init(properties);
     }
 
+    /**
+     * 初始化
+     * @param properties
+     */
     private void init(Properties properties) {
+        /**
+         * 初始化名称空间进行命名
+         */
         namespace = InitUtils.initNamespaceForNaming(properties);
+        /**
+         * 初始化服务器地址
+         */
         initServerAddr(properties);
+        /**
+         * 初始化WebRootContext
+         */
         InitUtils.initWebRootContext();
+        /**
+         * 初始化cache路径
+         */
         initCacheDir();
+        /**
+         * 初始化LogName
+         */
         initLogName(properties);
 
+        /**
+         * 事件分发
+         */
         eventDispatcher = new EventDispatcher();
+        /**
+         * 初始化NamingProxy
+         */
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
+        /**
+         * 设置服务器端口
+         */
         serverProxy.setProperties(properties);
+        /**
+         * 心跳Reactor
+         */
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
 
+    /**
+     * 客户端心跳线程数
+     * @param properties
+     * @return
+     */
     private int initClientBeatThreadCount(Properties properties) {
         if (properties == null) {
             return UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT;
         }
 
+        /**
+         * NAMING_CLIENT_BEAT_THREAD_COUNT为空   则取DEFAULT_CLIENT_BEAT_THREAD_COUNT
+         */
         return NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
             UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
     }
 
+    /**
+     * 设置Polling的线程数
+     * @param properties
+     * @return
+     */
     private int initPollingThreadCount(Properties properties) {
         if (properties == null) {
 
@@ -117,8 +161,17 @@ public class NacosNamingService implements NamingService {
             UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
+    /**
+     * 是否加载缓存
+     * @param properties
+     * @return
+     */
     private boolean isLoadCacheAtStart(Properties properties) {
         boolean loadCacheAtStart = false;
+
+        /**
+         * 获取NAMING_LOAD_CACHE_AT_START对应的值
+         */
         if (properties != null && StringUtils.isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
             loadCacheAtStart = BooleanUtils.toBoolean(
                 properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
@@ -127,14 +180,30 @@ public class NacosNamingService implements NamingService {
         return loadCacheAtStart;
     }
 
+    /**
+     * 初始化服务器地址
+     * @param properties
+     */
     private void initServerAddr(Properties properties) {
         serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+
+        /**
+         * 初始化endpoint
+         */
         endpoint = InitUtils.initEndpoint(properties);
+
+        /**
+         * 如果endpoint不为空   则设置serverList为空
+         */
         if (StringUtils.isNotEmpty(endpoint)) {
             serverList = "";
         }
     }
 
+    /**
+     * 初始化LogName
+     * @param properties
+     */
     private void initLogName(Properties properties) {
         logName = System.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME);
         if (StringUtils.isEmpty(logName)) {
@@ -147,6 +216,9 @@ public class NacosNamingService implements NamingService {
         }
     }
 
+    /**
+     * 初始化cache路径
+     */
     private void initCacheDir() {
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {

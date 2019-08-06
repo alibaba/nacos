@@ -62,6 +62,14 @@ public class HostReactor {
         this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
+    /**
+     *
+     * @param eventDispatcher
+     * @param serverProxy
+     * @param cacheDir
+     * @param loadCacheAtStart
+     * @param pollingThreadCount
+     */
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
 
@@ -78,6 +86,9 @@ public class HostReactor {
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
+        /**
+         * 加载缓存文件中的数据到map
+         */
         if (loadCacheAtStart) {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
         } else {
@@ -85,7 +96,14 @@ public class HostReactor {
         }
 
         this.updatingMap = new ConcurrentHashMap<String, Object>();
+        /**
+         * 容错
+         */
         this.failoverReactor = new FailoverReactor(this, cacheDir);
+
+        /**
+         *
+         */
         this.pushReceiver = new PushReceiver(this);
     }
 
@@ -97,9 +115,17 @@ public class HostReactor {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * 处理数据
+     * @param json
+     * @return
+     */
     public ServiceInfo processServiceJSON(String json) {
         ServiceInfo serviceInfo = JSON.parseObject(json, ServiceInfo.class);
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
+        /**
+         * 校验
+         */
         if (serviceInfo.getHosts() == null || !serviceInfo.validate()) {
             //empty or error push, just ignore
             return oldService;
@@ -108,7 +134,6 @@ public class HostReactor {
         boolean changed = false;
 
         if (oldService != null) {
-
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime()
                     + ", new-t: " + serviceInfo.getLastRefTime());
@@ -116,36 +141,63 @@ public class HostReactor {
 
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
 
+            /**
+             * 获取oldHostMap中的地址信息
+             */
             Map<String, Instance> oldHostMap = new HashMap<String, Instance>(oldService.getHosts().size());
             for (Instance host : oldService.getHosts()) {
                 oldHostMap.put(host.toInetAddr(), host);
             }
 
+            /**
+             * 获取serviceInfo中的地址信息
+             */
             Map<String, Instance> newHostMap = new HashMap<String, Instance>(serviceInfo.getHosts().size());
             for (Instance host : serviceInfo.getHosts()) {
                 newHostMap.put(host.toInetAddr(), host);
             }
 
+            /**
+             * 变化的地址
+             */
             Set<Instance> modHosts = new HashSet<Instance>();
+            /**
+             * 新增的地址
+             */
             Set<Instance> newHosts = new HashSet<Instance>();
+            /**
+             * 删除的地址
+             */
             Set<Instance> remvHosts = new HashSet<Instance>();
 
             List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
                 newHostMap.entrySet());
+            /**
+             * 比对newHostMap和oldHostMap   获取新增或者修改的地址
+             */
             for (Map.Entry<String, Instance> entry : newServiceHosts) {
                 Instance host = entry.getValue();
                 String key = entry.getKey();
+                /**
+                 * 修改的地址
+                 */
                 if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(),
                     oldHostMap.get(key).toString())) {
                     modHosts.add(host);
                     continue;
                 }
 
+                /**
+                 * 新增的地址
+                 */
                 if (!oldHostMap.containsKey(key)) {
                     newHosts.add(host);
                 }
             }
 
+            /**
+             * 比对newHostMap和oldHostMap   获取删除的地址
+             */
             for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
                 Instance host = entry.getValue();
                 String key = entry.getKey();
@@ -153,6 +205,9 @@ public class HostReactor {
                     continue;
                 }
 
+                /**
+                 * 删除的地址
+                 */
                 if (!newHostMap.containsKey(key)) {
                     remvHosts.add(host);
                 }
@@ -180,7 +235,13 @@ public class HostReactor {
             serviceInfo.setJsonFromServer(json);
 
             if (newHosts.size() > 0 || remvHosts.size() > 0 || modHosts.size() > 0) {
+                /**
+                 * 通知监听器   服务有变化
+                 */
                 eventDispatcher.serviceChanged(serviceInfo);
+                /**
+                 * 将数据从内存写入磁盘
+                 */
                 DiskCache.write(serviceInfo, cacheDir);
             }
 
@@ -189,8 +250,14 @@ public class HostReactor {
             NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " + JSON
                 .toJSONString(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
+            /**
+             * 通知监听器   服务有变化
+             */
             eventDispatcher.serviceChanged(serviceInfo);
             serviceInfo.setJsonFromServer(json);
+            /**
+             * 将数据从内存写入磁盘
+             */
             DiskCache.write(serviceInfo, cacheDir);
         }
 

@@ -44,6 +44,9 @@ public class PushReceiver implements Runnable {
     public PushReceiver(HostReactor hostReactor) {
         try {
             this.hostReactor = hostReactor;
+            /**
+             * UDP 协议
+             */
             udpSocket = new DatagramSocket();
 
             executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -70,14 +73,23 @@ public class PushReceiver implements Runnable {
                 byte[] buffer = new byte[UDP_MSS];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
+                /**
+                 * 接受数据
+                 */
                 udpSocket.receive(packet);
 
                 String json = new String(IoUtils.tryDecompress(packet.getData()), "UTF-8").trim();
                 NAMING_LOGGER.info("received push data: " + json + " from " + packet.getAddress().toString());
 
+                /**
+                 * json反序列化
+                 */
                 PushPacket pushPacket = JSON.parseObject(json, PushPacket.class);
                 String ack;
                 if ("dom".equals(pushPacket.type) || "service".equals(pushPacket.type)) {
+                    /**
+                     * 处理接受数据
+                     */
                     hostReactor.processServiceJSON(pushPacket.data);
 
                     // send ack to server
@@ -98,6 +110,9 @@ public class PushReceiver implements Runnable {
                         + "\", \"data\":" + "\"\"}";
                 }
 
+                /**
+                 * 返回ack
+                 */
                 udpSocket.send(new DatagramPacket(ack.getBytes(Charset.forName("UTF-8")),
                     ack.getBytes(Charset.forName("UTF-8")).length, packet.getSocketAddress()));
             } catch (Exception e) {

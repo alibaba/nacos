@@ -39,9 +39,17 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class DiskCache {
 
+    /**
+     *
+     * @param dom
+     * @param dir
+     */
     public static void write(ServiceInfo dom, String dir) {
 
         try {
+            /**
+             * 确保dir存在
+             */
             makeSureCacheDirExists(dir);
 
 
@@ -53,6 +61,10 @@ public class DiskCache {
                 }
             }
 
+
+            /**
+             * 准备数据
+             */
             StringBuilder keyContentBuffer = new StringBuilder("");
 
             String json = dom.getJsonFromServer();
@@ -64,6 +76,9 @@ public class DiskCache {
             keyContentBuffer.append(json);
 
             //Use the concurrent API to ensure the consistency.
+            /**
+             * 向file写入数据
+             */
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(), Charset.defaultCharset().toString());
 
         } catch (Throwable e) {
@@ -75,16 +90,27 @@ public class DiskCache {
         return System.getProperty("line.separator");
     }
 
+    /**
+     * 读取缓存目录  并封装到map中
+     * @param cacheDir
+     * @return
+     */
     public static Map<String, ServiceInfo> read(String cacheDir) {
         Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
 
         BufferedReader reader = null;
         try {
+            /**
+             * 查询cacheDir下的文件
+             */
             File[] files = makeSureCacheDirExists(cacheDir).listFiles();
             if (files == null || files.length == 0) {
                 return domMap;
             }
 
+            /**
+             * 遍历文件列表
+             */
             for (File file : files) {
                 if (!file.isFile()) {
                     continue;
@@ -92,6 +118,9 @@ public class DiskCache {
 
                 String fileName = URLDecoder.decode(file.getName(), "UTF-8");
 
+                /**
+                 * 排除以  不以@@meta  或者  以@@special-url  结尾的文件
+                 */
                 if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName.endsWith(
                     Constants.SERVICE_INFO_SPLITER + "special-url"))) {
                     ServiceInfo dom = new ServiceInfo(fileName);
@@ -101,6 +130,9 @@ public class DiskCache {
                     ServiceInfo newFormat = null;
 
                     try {
+                        /**
+                         * 获取文件内容
+                         */
                         String dataString = ConcurrentDiskUtil.getFileContent(file,
                             Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
@@ -112,8 +144,14 @@ public class DiskCache {
                                     continue;
                                 }
 
+                                /**
+                                 * 将json内容转换为ServiceInfo
+                                 */
                                 newFormat = JSON.parseObject(json, ServiceInfo.class);
 
+                                /**
+                                 * 名称为空 则取ip
+                                 */
                                 if (StringUtils.isEmpty(newFormat.getName())) {
                                     ips.add(JSON.parseObject(json, Instance.class));
                                 }
@@ -132,6 +170,12 @@ public class DiskCache {
                             //ignore
                         }
                     }
+
+                    /**
+                     * 获取文件名称或获取文件内容转换的ServiceInfo
+                     * dom——》文件名称
+                     * newFormat——》文件内容
+                     */
                     if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils.isEmpty(
                         newFormat.getHosts())) {
                         domMap.put(dom.getKey(), newFormat);
@@ -148,8 +192,16 @@ public class DiskCache {
         return domMap;
     }
 
+    /**
+     * 确保dir目录存在
+     * @param dir
+     * @return
+     */
     private static File makeSureCacheDirExists(String dir) {
         File cacheDir = new File(dir);
+        /**
+         * dir不存在  则创建
+         */
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
             throw new IllegalStateException("failed to create cache dir: " + dir);
         }

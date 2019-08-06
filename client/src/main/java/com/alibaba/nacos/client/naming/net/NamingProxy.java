@@ -32,7 +32,6 @@ import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
-import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.util.HttpMethod;
@@ -71,17 +70,32 @@ public class NamingProxy {
 
     private Properties properties;
 
+    /**
+     * 初始化
+     * @param namespaceId
+     * @param endpoint
+     * @param serverList
+     */
     public NamingProxy(String namespaceId, String endpoint, String serverList) {
 
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
         if (StringUtils.isNotEmpty(serverList)) {
+            /**
+             * 填充集群地址
+             */
             this.serverList = Arrays.asList(serverList.split(","));
+            /**
+             * 单机服务
+             */
             if (this.serverList.size() == 1) {
                 this.nacosDomain = serverList;
             }
         }
 
+        /**
+         * 初始化   刷新集群地址
+         */
         initRefreshSrvIfNeed();
     }
 
@@ -90,6 +104,9 @@ public class NamingProxy {
             return;
         }
 
+        /**
+         * 单线程调度任务
+         */
         ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -103,25 +120,44 @@ public class NamingProxy {
         executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
             public void run() {
+                /**
+                 * 刷新集群地址
+                 */
                 refreshSrvIfNeed();
             }
         }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
+        /**
+         * 刷新集群地址
+         */
         refreshSrvIfNeed();
     }
 
+    /**
+     * 从Endpoint获取集群地址
+     * @return
+     */
     public List<String> getServerListFromEndpoint() {
 
         try {
+            /**
+             * Endpoint地址
+             */
             String urlString = "http://" + endpoint + "/nacos/serverlist";
             List<String> headers = builderHeaders();
 
+            /**
+             * 访问
+             */
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
             if (HttpURLConnection.HTTP_OK != result.code) {
                 throw new IOException("Error while requesting: " + urlString + "'. Server returned: "
                     + result.code);
             }
 
+            /**
+             * 获取集群地址
+             */
             String content = result.content;
             List<String> list = new ArrayList<String>();
             for (String line : IoUtils.readLines(new StringReader(content))) {
@@ -139,6 +175,9 @@ public class NamingProxy {
         return null;
     }
 
+    /**
+     * 刷新集群地址
+     */
     private void refreshSrvIfNeed() {
         try {
 
@@ -147,20 +186,32 @@ public class NamingProxy {
                 return;
             }
 
+            /**
+             * 上次刷新时间与当前时间的间隔   小于vipSrvRefInterMillis
+             */
             if (System.currentTimeMillis() - lastSrvRefTime < vipSrvRefInterMillis) {
                 return;
             }
 
+            /**
+             * 从Endpoint获取集群地址
+             */
             List<String> list = getServerListFromEndpoint();
 
             if (CollectionUtils.isEmpty(list)) {
                 throw new Exception("Can not acquire Nacos list");
             }
 
+            /**
+             * 比较两个集合元素是否一致
+             */
             if (!CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
                 NAMING_LOGGER.info("[SERVER-LIST] server list is updated: " + list);
             }
 
+            /**
+             * 更新serversFromEndpoint   为新获取的地址
+             */
             serversFromEndpoint = list;
             lastSrvRefTime = System.currentTimeMillis();
         } catch (Throwable e) {
@@ -482,17 +533,18 @@ public class NamingProxy {
     private void checkSignature(Map<String, String> params) {
         String ak = getAccessKey();
         String sk = getSecretKey();
-        params.put("app", AppNameUtils.getAppName());
         if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
             return;
         }
 
         try {
+            String app = System.getProperty("project.name");
             String signData = getSignData(params.get("serviceName"));
             String signature = SignUtil.sign(signData, sk);
             params.put("signature", signature);
             params.put("data", signData);
             params.put("ak", ak);
+            params.put("app", app);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -542,8 +594,15 @@ public class NamingProxy {
         });
     }
 
+    /**
+     * 设置服务器端口
+     * @param properties
+     */
     public void setProperties(Properties properties) {
         this.properties = properties;
+        /**
+         * 设置服务端口
+         */
         setServerPort(DEFAULT_SERVER_PORT);
     }
 
@@ -551,14 +610,22 @@ public class NamingProxy {
         return namespaceId;
     }
 
+    /**
+     * 设置服务器端口
+     * @param serverPort
+     */
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
 
         String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
         if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
+
+            /**
+             * 如果系统变量中有设置服务端口   则更新
+             */
             this.serverPort = Integer.parseInt(sp);
         }
     }
-    
+
 }
 

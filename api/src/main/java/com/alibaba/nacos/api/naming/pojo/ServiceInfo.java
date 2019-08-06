@@ -63,12 +63,19 @@ public class ServiceInfo {
         this.allIPs = allIPs;
     }
 
+    /**
+     * 根据key  填充name和clusters
+     * @param key
+     */
     public ServiceInfo(String key) {
 
         int maxIndex = 2;
         int clusterIndex = 1;
         int serviceNameIndex = 0;
 
+        /**
+         * 按@@分割
+         */
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
         if (keys.length >= maxIndex) {
             this.name = keys[serviceNameIndex];
@@ -143,12 +150,19 @@ public class ServiceInfo {
         return new ArrayList<Instance>(hosts);
     }
 
+    /**
+     * 校验
+     * @return
+     */
     public boolean validate() {
         if (isAllIPs()) {
             return true;
         }
 
         List<Instance> validHosts = new ArrayList<Instance>();
+        /**
+         * 循环地址
+         */
         for (Instance host : hosts) {
             if (!host.isHealthy()) {
                 continue;
@@ -171,11 +185,19 @@ public class ServiceInfo {
         this.jsonFromServer = jsonFromServer;
     }
 
+    /**
+     * name@@clusters
+     * @return
+     */
     @JSONField(serialize = false)
     public String getKey() {
         return getKey(name, clusters);
     }
 
+    /**
+     * name@@clusters   name为UTF-8
+     * @return
+     */
     @JSONField(serialize = false)
     public String getKeyEncoded() {
         try {
@@ -201,6 +223,12 @@ public class ServiceInfo {
         return serviceInfo;
     }
 
+    /**
+     * name@@clusters
+     * @param name
+     * @param clusters
+     * @return
+     */
     @JSONField(serialize = false)
     public static String getKey(String name, String clusters) {
 

@@ -40,9 +40,17 @@ public class BeatReactor {
         this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
     }
 
+    /**
+     * 构造BeatReactor
+     * @param serverProxy
+     * @param threadCount
+     */
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
 
+        /**
+         * 调度任务
+         */
         executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {

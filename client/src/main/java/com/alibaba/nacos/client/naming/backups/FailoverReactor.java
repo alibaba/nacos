@@ -42,8 +42,16 @@ public class FailoverReactor {
 
     private HostReactor hostReactor;
 
+    /**
+     * 容错
+     * @param hostReactor
+     * @param cacheDir
+     */
     public FailoverReactor(HostReactor hostReactor, String cacheDir) {
         this.hostReactor = hostReactor;
+        /**
+         * 容错路径  C:\Users\Administrator/nacos/naming/quickStart/failover
+         */
         this.failoverDir = cacheDir + "/failover";
         this.init();
     }
@@ -64,8 +72,14 @@ public class FailoverReactor {
 
     public void init() {
 
+        /**
+         * 5000毫秒   将容灾策略从磁盘读取到内存中
+         */
         executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 
+        /**
+         * 24小时  每隔24小时，把内存中所有的服务数据，写一遍到磁盘中 failoverDir目录下
+         */
         executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
 
         // backup file on startup if failover directory is empty.
@@ -75,11 +89,20 @@ public class FailoverReactor {
                 try {
                     File cacheDir = new File(failoverDir);
 
+                    /**
+                     * 检查failoverDir目录是否存在  不存在则创建
+                     */
                     if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                         throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                     }
 
+                    /**
+                     * 检查failoverDir下的文件
+                     */
                     File[] files = cacheDir.listFiles();
+                    /**
+                     * 为空则
+                     */
                     if (files == null || files.length <= 0) {
                         new DiskFileWriter().run();
                     }
@@ -111,17 +134,29 @@ public class FailoverReactor {
                     return;
                 }
 
+                /**
+                 * 获取文件最后一次更改时间
+                 */
                 long modified = switchFile.lastModified();
 
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
+                    /**
+                     * 获取文件内容   failoverDir下的 UtilAndComs.FAILOVER_SWITCH
+                     */
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
                         Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
+                        /**
+                         * 分割
+                         */
                         List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeparator()));
 
                         for (String line : lines) {
                             String line1 = line.trim();
+                            /**
+                             * 开启容灾
+                             */
                             if ("1".equals(line1)) {
                                 switchParams.put("failover-mode", "true");
                                 NAMING_LOGGER.info("failover-mode is on");
@@ -144,6 +179,9 @@ public class FailoverReactor {
 
     class FailoverFileReader implements Runnable {
 
+        /**
+         * 将容灾策略从硬盘中读取到内存中
+         */
         @Override
         public void run() {
             Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
@@ -151,6 +189,9 @@ public class FailoverReactor {
             BufferedReader reader = null;
             try {
 
+                /**
+                 * 查看文件夹
+                 */
                 File cacheDir = new File(failoverDir);
                 if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                     throw new IllegalStateException("failed to create cache dir: " + failoverDir);
@@ -161,6 +202,9 @@ public class FailoverReactor {
                     return;
                 }
 
+                /**
+                 * 便利文件
+                 */
                 for (File file : files) {
                     if (!file.isFile()) {
                         continue;
@@ -173,6 +217,9 @@ public class FailoverReactor {
                     ServiceInfo dom = new ServiceInfo(file.getName());
 
                     try {
+                        /**
+                         * 读取文件内容
+                         */
                         String dataString = ConcurrentDiskUtil.getFileContent(file,
                             Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
@@ -180,6 +227,9 @@ public class FailoverReactor {
                         String json;
                         if ((json = reader.readLine()) != null) {
                             try {
+                                /**
+                                 * 将内容转换为ServiceInfo
+                                 */
                                 dom = JSON.parseObject(json, ServiceInfo.class);
                             } catch (Exception e) {
                                 NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
@@ -197,6 +247,10 @@ public class FailoverReactor {
                             //ignore
                         }
                     }
+
+                    /**
+                     * 地址列表不为空  则缓存到内存中
+                     */
                     if (!CollectionUtils.isEmpty(dom.getHosts())) {
                         domMap.put(dom.getKey(), dom);
                     }
@@ -205,6 +259,9 @@ public class FailoverReactor {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
 
+            /**
+             * 更新
+             */
             if (domMap.size() > 0) {
                 serviceMap = domMap;
             }
@@ -217,6 +274,9 @@ public class FailoverReactor {
             Map<String, ServiceInfo> map = hostReactor.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
+                /**
+                 * 过滤特殊数据
+                 */
                 if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(
                     serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY)
                     || StringUtils.equals(serviceInfo.getName(), "00-00---000-ENV_CONFIGS-000---00-00")

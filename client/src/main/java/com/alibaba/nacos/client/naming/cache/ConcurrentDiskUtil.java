@@ -49,6 +49,7 @@ public class ConcurrentDiskUtil {
 
     /**
      * get file content
+     * 获取文件内容
      *
      * @param file        file
      * @param charsetName charsetName
@@ -65,9 +66,16 @@ public class ConcurrentDiskUtil {
             int i = 0;
             do {
                 try {
+                    /**
+                     * 锁
+                     */
                     rlock = fcin.tryLock(0L, Long.MAX_VALUE, true);
                 } catch (Exception e) {
                     ++i;
+                    /**
+                     * 获取失败次数大于RETRY_COUNT次   抛出异常
+                     * 小于RETRY_COUNT则重试
+                     */
                     if (i > RETRY_COUNT) {
                         NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
                         throw new IOException("read " + file.getAbsolutePath()
@@ -133,8 +141,14 @@ public class ConcurrentDiskUtil {
             int i = 0;
             do {
                 try {
+                    /**
+                     * 锁
+                     */
                     lock = channel.tryLock();
                 } catch (Exception e) {
+                    /**
+                     * 重试
+                     */
                     ++i;
                     if (i > RETRY_COUNT) {
                         NAMING_LOGGER.error("[NA] write {} fail;retryed time:{}", file.getName(), i);
@@ -146,6 +160,9 @@ public class ConcurrentDiskUtil {
                 }
             } while (null == lock);
 
+            /**
+             * 写入数据
+             */
             ByteBuffer sendBuffer = ByteBuffer.wrap(content
                 .getBytes(charsetName));
             while (sendBuffer.hasRemaining()) {

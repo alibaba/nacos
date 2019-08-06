@@ -53,6 +53,9 @@ public class EventDispatcher {
             }
         });
 
+        /**
+         * 事件通知
+         */
         executor.execute(new Notifier());
     }
 
@@ -97,6 +100,10 @@ public class EventDispatcher {
         return serviceInfos;
     }
 
+    /**
+     * 通知监听器   服务有变化
+     * @param serviceInfo
+     */
     public void serviceChanged(ServiceInfo serviceInfo) {
         if (serviceInfo == null) {
             return;
@@ -111,6 +118,9 @@ public class EventDispatcher {
             while (true) {
                 ServiceInfo serviceInfo = null;
                 try {
+                    /**
+                     * 存入BlockingQueue
+                     */
                     serviceInfo = changedServices.poll(5, TimeUnit.MINUTES);
                 } catch (Exception ignore) {
                 }
@@ -120,11 +130,17 @@ public class EventDispatcher {
                 }
 
                 try {
+                    /**
+                     * 获取监听器
+                     */
                     List<EventListener> listeners = observerMap.get(serviceInfo.getKey());
 
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
+                            /**
+                             * 事件通知
+                             */
                             listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
                         }
                     }
