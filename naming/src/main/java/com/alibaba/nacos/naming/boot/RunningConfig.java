@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.boot;
 
 import com.alibaba.nacos.naming.misc.Loggers;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -44,6 +45,10 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
 
         serverPort = event.getWebServer().getPort();
         contextPath = servletContext.getContextPath();
+        if (StringUtils.isEmpty(contextPath)) {
+            // set the root context path
+            contextPath = "/";
+        }
     }
 
     public static int getServerPort() {
