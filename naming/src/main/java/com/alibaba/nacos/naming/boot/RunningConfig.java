@@ -16,8 +16,6 @@
 package com.alibaba.nacos.naming.boot;
 
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
@@ -54,9 +52,6 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
 
     public static String getContextPath() {
 
-        if (StringUtils.isBlank(contextPath)) {
-            return UtilsAndCommons.NACOS_SERVER_CONTEXT;
-        }
         return contextPath;
     }
 }
