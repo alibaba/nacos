@@ -209,10 +209,23 @@ public class Instance {
         return getMetaDataByKeyWithDefault(PreservedMetadataKeys.IP_DELETE_TIMEOUT, Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
 
+    /**
+     *
+     * @param key
+     * @param defaultValue
+     * @return
+     */
     private long getMetaDataByKeyWithDefault( String key, long defaultValue) {
+        /**
+         * 没有元数据  则直接返回默认值
+         */
         if (getMetadata() == null || getMetadata().isEmpty()) {
             return defaultValue;
         }
+
+        /**
+         * 有元数据  则感觉key 返回对应得value
+         */
         String value = getMetadata().get(key);
         if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
             return Long.valueOf(value);

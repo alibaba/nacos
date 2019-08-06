@@ -254,6 +254,7 @@ public class HostReactor {
              * 通知监听器   服务有变化
              */
             eventDispatcher.serviceChanged(serviceInfo);
+
             serviceInfo.setJsonFromServer(json);
             /**
              * 将数据从内存写入磁盘

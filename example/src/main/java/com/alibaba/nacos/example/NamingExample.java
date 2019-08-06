@@ -33,7 +33,7 @@ public class NamingExample {
 
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "192.168.50.65:8848,192.168.50.64:8848,192.168.50.63:8848");
-        properties.setProperty("namespace", System.getProperty("namespace"));
+        properties.setProperty("namespace", "NamingExample");
 
         NamingService naming = NamingFactory.createNamingService(properties);
 

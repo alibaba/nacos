@@ -23,6 +23,12 @@ import com.alibaba.nacos.api.common.Constants;
  */
 public class NamingUtils {
 
+    /**
+     * groupName@@serviceName
+     * @param serviceName
+     * @param groupName
+     * @return
+     */
     public static String getGroupedName(String serviceName, String groupName) {
         return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
     }

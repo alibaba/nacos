@@ -126,6 +126,10 @@ public class NacosNamingService implements NamingService {
          * 心跳Reactor
          */
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
+
+        /**
+         *
+         */
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
     }
 
@@ -236,11 +240,31 @@ public class NacosNamingService implements NamingService {
         registerInstance(serviceName, groupName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }
 
+    /**
+     * 注册实例
+     * @param serviceName name of service
+     * @param ip          instance ip
+     * @param port        instance port
+     * @param clusterName instance cluster name
+     * @throws NacosException
+     */
     @Override
     public void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
+        /**
+         * 默认组名
+         */
         registerInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
 
+    /**
+     * 注册实例
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param ip          instance ip
+     * @param port        instance port
+     * @param clusterName instance cluster name
+     * @throws NacosException
+     */
     @Override
     public void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
 
@@ -261,8 +285,14 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
+        /**
+         * 临时节点
+         */
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
+            /**
+             * groupName@@serviceName
+             */
             beatInfo.setServiceName(NamingUtils.getGroupedName(serviceName, groupName));
             beatInfo.setIp(instance.getIp());
             beatInfo.setPort(instance.getPort());
@@ -270,6 +300,10 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
+
+            /**
+             *
+             */
             long instanceInterval = instance.getInstanceHeartBeatInterval();
             beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
