@@ -52,7 +52,7 @@ public class NamingConfig {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();
 
         registration.setFilter(authFilter());
-        registration.addUrlPatterns("/api/*", "/raft/*");
+        registration.addUrlPatterns("/v1/ns/*");
         registration.setName("authFilter");
         registration.setOrder(5);
 

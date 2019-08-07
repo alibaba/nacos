@@ -341,9 +341,6 @@ class MainLayout extends React.Component {
         });
         return;
       }
-      this.setState({
-        noChild: !!nowNavObj.dontUseChild,
-      });
       const { parentServiceName } = nowNavObj;
 
       const parentNav = this.oneLevelNavArr[parentServiceName];
@@ -391,7 +388,11 @@ class MainLayout extends React.Component {
   refreshNav() {
     const { navList } = this.state;
     const { location, history, functionMode } = this.props;
-    const [configUrl, serviceUrl, clusterUrl] = ['/configurationManagement', '/serviceManagement', '/clusterManagement'];
+    const [configUrl, serviceUrl, clusterUrl] = [
+      '/configurationManagement',
+      '/serviceManagement',
+      '/clusterManagement',
+    ];
     this.setState(
       {
         navList: navList.map(item => {
