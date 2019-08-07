@@ -74,7 +74,7 @@ public class DistroController {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         if (StringUtils.isBlank(entity)) {
-            Loggers.EPHEMERAL.error("[onSync] receive empty entity!");
+            Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
 

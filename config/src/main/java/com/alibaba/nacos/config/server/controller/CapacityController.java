@@ -45,7 +45,9 @@ public class CapacityController {
     private final CapacityService capacityService;
 
     @Autowired
-    public CapacityController(CapacityService capacityService) {this.capacityService = capacityService;}
+    public CapacityController(CapacityService capacityService) {
+        this.capacityService = capacityService;
+    }
 
     @ResponseBody
     @RequestMapping(method = RequestMethod.GET)

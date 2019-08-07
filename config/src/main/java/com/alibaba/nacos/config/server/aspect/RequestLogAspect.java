@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
+import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
@@ -61,7 +61,7 @@ public class RequestLogAspect {
 
     /**
      * publishSingle
-     * */
+     */
     @Around(CLIENT_INTERFACE_PUBLISH_SINGLE_CONFIG)
     public Object interfacePublishSingle(ProceedingJoinPoint pjp, HttpServletRequest request,
                                          HttpServletResponse response, String dataId, String group, String tenant,
@@ -73,7 +73,7 @@ public class RequestLogAspect {
 
     /**
      * removeAll
-     * */
+     */
     @Around(CLIENT_INTERFACE_REMOVE_ALL_CONFIG)
     public Object interfaceRemoveAll(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
                                      String dataId, String group, String tenant) throws Throwable {
