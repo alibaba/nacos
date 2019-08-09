@@ -32,6 +32,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -106,7 +107,7 @@ public class DistroController {
     }
 
     @RequestMapping(value = "/datum", method = RequestMethod.GET)
-    public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity get(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         String keys = JSON.parseObject(entity).getString("keys");
@@ -119,7 +120,9 @@ public class DistroController {
             }
             datumMap.put(key, datum);
         }
-        response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));
+
+        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
+        return ResponseEntity.ok(content);
     }
 
     @RequestMapping(value = "/datums", method = RequestMethod.GET)
