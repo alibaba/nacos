@@ -544,9 +544,11 @@ public class ServiceManager implements RecordListener<Service> {
             currentInstances.put(instance.toIPAddr(), instance);
         }
 
-        Map<String, Instance> instanceMap = null;
+        Map<String, Instance> instanceMap;
         if (datum != null) {
             instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
+        } else {
+            instanceMap = new HashMap<>(ips.length);
         }
 
         for (Instance instance : ips) {
