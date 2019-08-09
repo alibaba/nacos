@@ -69,7 +69,7 @@ public class DistroController {
     private SwitchDomain switchDomain;
 
     @RequestMapping(value = "/datum", method = RequestMethod.PUT)
-    public String onSyncDatum(HttpServletRequest request) throws Exception {
+    public ResponseEntity onSyncDatum(HttpServletRequest request) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
@@ -92,18 +92,18 @@ public class DistroController {
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
         }
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
-    public String syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         Map<String, String> dataMap =
             serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
             });
         consistencyService.onReceiveChecksums(dataMap, source);
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     @RequestMapping(value = "/datum", method = RequestMethod.GET)
@@ -126,7 +126,8 @@ public class DistroController {
     }
 
     @RequestMapping(value = "/datums", method = RequestMethod.GET)
-    public void getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8));
+    public ResponseEntity getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
+        return ResponseEntity.ok(content);
     }
 }
