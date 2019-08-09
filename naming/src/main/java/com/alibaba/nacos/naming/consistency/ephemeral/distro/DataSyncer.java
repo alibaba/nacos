@@ -88,52 +88,42 @@ public class DataSyncer {
             return;
         }
 
-        GlobalExecutor.submitDataSync(new Runnable() {
-            @Override
-            public void run() {
+        GlobalExecutor.submitDataSync(() -> {
+            // 1. check the server
+            if (getServers() == null || getServers().isEmpty()) {
+                Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
+                return;
+            }
 
-                try {
-                    if (getServers() == null || getServers().isEmpty()) {
-                        Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
-                        return;
-                    }
+            List<String> keys = task.getKeys();
+            if (Loggers.EPHEMERAL.isDebugEnabled()) {
+                Loggers.EPHEMERAL.debug("sync keys: {}", keys);
+            }
 
-                    List<String> keys = task.getKeys();
+            // 2. get the datums by keys and check the datum is empty or not
+            Map<String, Datum> datumMap = dataStore.batchGet(keys);
+            if (datumMap == null || datumMap.isEmpty()) {
+                // clear all flags of this task:
+                for (String key : keys) {
+                    taskMap.remove(buildKey(key, task.getTargetServer()));
+                }
+                return;
+            }
 
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("sync keys: {}", keys);
-                    }
-
-                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
-
-                    if (datumMap == null || datumMap.isEmpty()) {
-                        // clear all flags of this task:
-                        for (String key : task.getKeys()) {
-                            taskMap.remove(buildKey(key, task.getTargetServer()));
-                        }
-                        return;
-                    }
-
-                    byte[] data = serializer.serialize(datumMap);
-
-                    long timestamp = System.currentTimeMillis();
-                    boolean success = NamingProxy.syncData(data, task.getTargetServer());
-                    if (!success) {
-                        SyncTask syncTask = new SyncTask();
-                        syncTask.setKeys(task.getKeys());
-                        syncTask.setRetryCount(task.getRetryCount() + 1);
-                        syncTask.setLastExecuteTime(timestamp);
-                        syncTask.setTargetServer(task.getTargetServer());
-                        retrySync(syncTask);
-                    } else {
-                        // clear all flags of this task:
-                        for (String key : task.getKeys()) {
-                            taskMap.remove(buildKey(key, task.getTargetServer()));
-                        }
-                    }
-
-                } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("sync data failed.", e);
+            byte[] data = serializer.serialize(datumMap);
+            long timestamp = System.currentTimeMillis();
+            boolean success = NamingProxy.syncData(data, task.getTargetServer());
+            if (!success) {
+                SyncTask syncTask = new SyncTask();
+                syncTask.setKeys(task.getKeys());
+                syncTask.setRetryCount(task.getRetryCount() + 1);
+                syncTask.setLastExecuteTime(timestamp);
+                syncTask.setTargetServer(task.getTargetServer());
+                retrySync(syncTask);
+            } else {
+                // clear all flags of this task:
+                for (String key : task.getKeys()) {
+                    taskMap.remove(buildKey(key, task.getTargetServer()));
                 }
             }
         }, delay);
@@ -149,7 +139,6 @@ public class DataSyncer {
             return;
         }
 
-        // TODO may choose other retry policy.
         submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
 
@@ -164,10 +153,6 @@ public class DataSyncer {
 
             try {
 
-                if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                    Loggers.EPHEMERAL.debug("server list is: {}", getServers());
-                }
-
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
@@ -175,7 +160,11 @@ public class DataSyncer {
                         continue;
                     }
 
-                    keyChecksums.put(key, dataStore.get(key).value.getChecksum());
+                    Datum datum = dataStore.get(key);
+                    if (datum == null) {
+                        continue;
+                    }
+                    keyChecksums.put(key, datum.value.getChecksum());
                 }
 
                 if (keyChecksums.isEmpty()) {

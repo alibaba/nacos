@@ -38,7 +38,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +68,7 @@ public class DistroController {
     private SwitchDomain switchDomain;
 
     @RequestMapping(value = "/datum", method = RequestMethod.PUT)
-    public String onSyncDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String onSyncDatum(HttpServletRequest request) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
@@ -101,7 +100,7 @@ public class DistroController {
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         Map<String, String> dataMap =
             serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
-        });
+            });
         consistencyService.onReceiveChecksums(dataMap, source);
         return "ok";
     }
@@ -114,7 +113,11 @@ public class DistroController {
         String keySplitter = ",";
         Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {
-            datumMap.put(key, consistencyService.get(key));
+            Datum datum = consistencyService.get(key);
+            if (datum == null) {
+                continue;
+            }
+            datumMap.put(key, datum);
         }
         response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));
     }

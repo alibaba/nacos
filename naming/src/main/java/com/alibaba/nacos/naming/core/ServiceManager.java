@@ -537,20 +537,17 @@ public class ServiceManager implements RecordListener<Service> {
 
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
-        Map<String, Instance> oldInstanceMap = new HashMap<>(16);
         List<Instance> currentIPs = service.allIPs(ephemeral);
-        Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
+        Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
 
         for (Instance instance : currentIPs) {
-            map.put(instance.toIPAddr(), instance);
-        }
-        if (datum != null) {
-            oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
+            currentInstances.put(instance.toIPAddr(), instance);
         }
 
-        // use HashMap for deep copy:
-        HashMap<String, Instance> instanceMap = new HashMap<>(oldInstanceMap.size());
-        instanceMap.putAll(oldInstanceMap);
+        Map<String, Instance> instanceMap = null;
+        if (datum != null) {
+            instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
+        }
 
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
