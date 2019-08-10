@@ -143,7 +143,7 @@ public class ApiController extends InstanceController {
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
         return doSrvIPXT(namespaceId, new String[]{serviceName},
-            agent, clusterMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly).getJSONObject(0);
+            agent, clusterMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly, false).getJSONObject(0);
     }
 
     @CanDistro

@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
@@ -50,13 +51,13 @@ import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
 public class NamingMultiGroup_ITCase {
 
 
-    private String groupName_1 = "groupName_1";
-    private String groupName_2 = "groupName_2";
-    private String groupName_3 = "groupName_3";
+    private String groupName_1 = "groupName_1_" + ThreadLocalRandom.current().nextInt();
+    private String groupName_2 = "groupName_2_" + ThreadLocalRandom.current().nextInt();
+    private String groupName_3 = "groupName_3_" + ThreadLocalRandom.current().nextInt();
 
-    private String cluster_1 = "cluster1";
-    private String cluster_2 = "cluster2";
-    private String cluster_3 = "cluster3";
+    private String cluster_1 = "cluster1" + ThreadLocalRandom.current().nextInt();
+    private String cluster_2 = "cluster2" + ThreadLocalRandom.current().nextInt();
+    private String cluster_3 = "cluster3" + ThreadLocalRandom.current().nextInt();
 
     private NamingService naming;
     @LocalServerPort
@@ -92,7 +93,9 @@ public class NamingMultiGroup_ITCase {
 
         TimeUnit.SECONDS.sleep(1);
 
-        List<Instance> instances = naming.getAllInstancesMultiGroup(serviceName, new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)), clusterMap, true);
+        List<Instance> instances = naming.getAllInstancesMultiGroup(serviceName,
+            new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)),
+            clusterMap, true, false);
 
         Assert.assertEquals(3, instances.size());
 
@@ -112,12 +115,32 @@ public class NamingMultiGroup_ITCase {
 
         TimeUnit.SECONDS.sleep(1);
 
-        List<Instance> instances = naming.selectInstancesMultiGroup(serviceName, new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)), clusterMap, true, true);
+        List<Instance> instances = naming.selectInstancesMultiGroup(serviceName,
+            new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)),
+            clusterMap, true, true, false);
 
         Assert.assertEquals(3, instances.size());
+    }
 
-        naming.deregisterInstance(serviceName, groupName_2, "2.2.2.2", TEST_PORT);
+    @Test
+    public void selectHealthyInstancesMultiGroupWithFindBack() throws Exception {
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, groupName_1, "1.1.1.1", TEST_PORT, cluster_1);
+        naming.registerInstance(serviceName, groupName_2, "2.2.2.2", TEST_PORT, cluster_2);
+        naming.registerInstance(serviceName, groupName_3, "3.3.3.3", TEST_PORT, cluster_3);
 
+        Map<String, List<String>> clusterMap = new HashMap<>();
+        clusterMap.put(NamingUtils.getGroupedName(serviceName, groupName_1), new ArrayList<>(Arrays.asList(cluster_1)));
+        clusterMap.put(NamingUtils.getGroupedName(serviceName, groupName_2), new ArrayList<>(Arrays.asList(cluster_2)));
+        clusterMap.put(NamingUtils.getGroupedName(serviceName, groupName_3), new ArrayList<>(Arrays.asList(cluster_3)));
+
+        TimeUnit.SECONDS.sleep(1);
+
+        List<Instance> instances = naming.selectInstancesMultiGroup(serviceName,
+            new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)),
+            clusterMap, true, true, true);
+
+        Assert.assertEquals(1, instances.size());
     }
 
     @Test
@@ -134,10 +157,31 @@ public class NamingMultiGroup_ITCase {
 
         TimeUnit.SECONDS.sleep(1);
 
-        Instance instance = naming.selectOneHealthyInstanceMultiGroup(serviceName, new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)), clusterMap, true);
-
+        Instance instance = naming.selectOneHealthyInstanceMultiGroup(serviceName,
+            new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)),
+            clusterMap, true, false);
         Assert.assertNotNull(instance);
+    }
 
+    @Test
+    public void selectOneHealthyInstancesMultiGroupWithFindBack() throws Exception {
+        String serviceName = randomDomainName();
+        naming.registerInstance(serviceName, groupName_1, "1.1.1.1", TEST_PORT, cluster_1);
+        naming.registerInstance(serviceName, groupName_2, "2.2.2.2", TEST_PORT, cluster_2);
+        naming.registerInstance(serviceName, groupName_3, "3.3.3.3", TEST_PORT, cluster_3);
+
+        Map<String, List<String>> clusterMap = new HashMap<>();
+        clusterMap.put(NamingUtils.getGroupedName(serviceName, groupName_1), new ArrayList<>(Arrays.asList(cluster_1)));
+        clusterMap.put(NamingUtils.getGroupedName(serviceName, groupName_2), new ArrayList<>(Arrays.asList(cluster_2)));
+        clusterMap.put(NamingUtils.getGroupedName(serviceName, groupName_3), new ArrayList<>(Arrays.asList(cluster_3)));
+
+        TimeUnit.SECONDS.sleep(1);
+
+        Instance instance = naming.selectOneHealthyInstanceMultiGroup(serviceName,
+            new ArrayList<>(Arrays.asList(groupName_1, groupName_2, groupName_3)),
+            clusterMap, true, true);
+        Assert.assertNotNull(instance);
+        Assert.assertEquals(NamingUtils.getGroupName(instance.getServiceName()), groupName_1);
     }
 
 }

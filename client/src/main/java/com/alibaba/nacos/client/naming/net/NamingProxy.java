@@ -297,7 +297,7 @@ public class NamingProxy {
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 
-    public String queryListMultiGroup(String serviceNames, Map<String, String> clusterMap, int udpPort, boolean healthyOnly)
+    public String queryListMultiGroup(String serviceNames, Map<String, String> clusterMap, int udpPort, boolean healthyOnly, boolean findBack)
         throws NacosException {
 
         final Map<String, String> params = new HashMap<String, String>(8);
@@ -307,6 +307,7 @@ public class NamingProxy {
         params.put("udpPort", String.valueOf(udpPort));
         params.put("clientIP", NetUtils.localIP());
         params.put("healthyOnly", String.valueOf(healthyOnly));
+        params.put("findBack", String.valueOf(findBack));
 
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list/multiGroup", params, HttpMethod.GET);
     }
@@ -573,6 +574,6 @@ public class NamingProxy {
             this.serverPort = Integer.parseInt(sp);
         }
     }
-    
+
 }
 

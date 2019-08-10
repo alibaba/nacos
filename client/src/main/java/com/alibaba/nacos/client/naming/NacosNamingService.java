@@ -297,7 +297,7 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException {
+    public List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
         Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
@@ -308,9 +308,9 @@ public class NacosNamingService implements NamingService {
             serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
         }
         if (subscribe) {
-            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap);
+            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap, findBack);
         } else {
-            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap);
+            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap, findBack);
         }
         List<Instance> result = new ArrayList<Instance>(serviceInfos.size());
         for (ServiceInfo serviceInfo : serviceInfos) {
@@ -370,7 +370,7 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe) throws NacosException {
+    public List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe, boolean findBack) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
         Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
@@ -381,9 +381,9 @@ public class NacosNamingService implements NamingService {
             serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
         }
         if (subscribe) {
-            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap);
+            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap, findBack);
         } else {
-            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap);
+            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap, findBack);
         }
         return selectInstances(healthy, serviceInfos.toArray(new ServiceInfo[0]));
     }
@@ -436,7 +436,7 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException {
+    public Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
         Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
@@ -447,9 +447,9 @@ public class NacosNamingService implements NamingService {
             serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
         }
         if (subscribe) {
-            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap);
+            serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap, findBack);
         } else {
-            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap);
+            serviceInfos = hostReactor.getServiceInfosDirectlyFromServer(StringUtils.join(serviceNames, ","), clusterMap, findBack);
         }
         return Balancer.RandomByWeight.selectHost(serviceInfos.toArray(new ServiceInfo[0]));
     }

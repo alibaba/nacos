@@ -211,8 +211,8 @@ public class HostReactor {
         return null;
     }
 
-    public List<ServiceInfo> getServiceInfosDirectlyFromServer(final String serviceNames, final Map<String, String> clusterMap) throws NacosException {
-        String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, 0, false);
+    public List<ServiceInfo> getServiceInfosDirectlyFromServer(final String serviceNames, final Map<String, String> clusterMap, boolean findBack) throws NacosException {
+        String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, 0, false, findBack);
         if (StringUtils.isNotEmpty(result)) {
             return JSON.parseArray(result, ServiceInfo.class);
         }
@@ -257,7 +257,7 @@ public class HostReactor {
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
-    public List<ServiceInfo> getServiceInfos(final String serviceNames, final Map<String, String> clusterMap) {
+    public List<ServiceInfo> getServiceInfos(final String serviceNames, final Map<String, String> clusterMap, final boolean findBack) {
 
         final String[] names = serviceNames.split(",");
         final List<ServiceInfo> serviceInfos = new LinkedList<ServiceInfo>();
@@ -276,7 +276,11 @@ public class HostReactor {
                     }
                     scheduleUpdateIfAbsent(serviceName, clusters);
                     find[0] = true;
-                    serviceInfos.add(serviceInfoMap.get(key));
+                    // If open the findBack, find a stop immediately after the query
+                    if (findBack) {
+                        serviceInfos.add(serviceInfoMap.get(key));
+                        return;
+                    }
                 }
             }
         };
@@ -284,8 +288,9 @@ public class HostReactor {
         queryWork.run();
 
         if (find[0] == false) {
-            CountDownLatch latch = new CountDownLatch(names.length);
-            updateServicesNow(serviceNames, clusterMap, latch);
+            int cnt = findBack ? 1 : names.length;
+            CountDownLatch latch = new CountDownLatch(cnt);
+            updateServicesNow(serviceNames, clusterMap, latch, findBack);
             try {
                 latch.await(UPDATE_HOLD_INTERVAL, TimeUnit.MILLISECONDS);
                 queryWork.run();
@@ -331,9 +336,9 @@ public class HostReactor {
         }
     }
 
-    public void updateServicesNow(String serviceNames, Map<String, String> clusterMap, CountDownLatch latch) {
+    public void updateServicesNow(final String serviceNames, final Map<String, String> clusterMap, final CountDownLatch latch, final boolean findBack) {
         try {
-            String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, pushReceiver.getUDPPort(), false);
+            String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, pushReceiver.getUDPPort(), false, findBack);
             List<String> jsons = JSON.parseArray(result, String.class);
             for (String json : jsons) {
                 if (StringUtils.isNotEmpty(json)) {

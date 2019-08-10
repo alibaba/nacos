@@ -248,10 +248,11 @@ public interface NamingService {
      * @param groupNames    list of groupName
      * @param clusters      list cluster of group
      * @param subscribe     if subscribe the service
+     * @param findBack      Whether to find the strategy
      * @return A list of qualified instance
      * @throws NacosException
      */
-    List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException;
+    List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException;
 
     /**
      * Get qualified instances of service
@@ -353,10 +354,11 @@ public interface NamingService {
      * @param clusters    list cluster of group
      * @param healthy     a flag to indicate returning healthy or unhealthy instances
      * @param subscribe   if subscribe the service
+     * @param findBack    Whether to find the strategy
      * @return A qualified list of instance
      * @throws NacosException
      */
-    List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe) throws NacosException;
+    List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe, boolean findBack) throws NacosException;
 
     /**
      * Select one healthy instance of service using predefined load balance strategy
@@ -443,16 +445,19 @@ public interface NamingService {
     Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters, boolean subscribe) throws NacosException;
 
     /**
-     * Select one healthy instance of service from multi group and cluster using predefined load balance strategy
+     * Select one healthy instance of service from multi group and cluster using predefined load balance
+     * strategy. if <code>findBack</code> is <value>true</value>, In accordance with the order of the
+     * groupName lookup service, as long as find return immediately
      *
      * @param serviceName   name of service
      * @param groupNames    a list of group should the instance belongs to
      * @param clusters      list cluster of group
      * @param subscribe     if subscribe the service
+     * @param findBack      Whether to find the strategy
      * @return qualified instance
      * @throws NacosException
      */
-    Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe) throws NacosException;
+    Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException;
 
     /**
      * Subscribe service to receive events of instances alteration

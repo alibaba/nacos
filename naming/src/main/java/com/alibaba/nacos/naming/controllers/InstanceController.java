@@ -83,7 +83,7 @@ public class InstanceController {
             try {
                 result = doSrvIPXT(client.getNamespaceId(), new String[]{client.getServiceName()}, client.getAgent(),
                     clusters, client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
-                    false, StringUtils.EMPTY, StringUtils.EMPTY, false).getJSONObject(0);
+                    false, StringUtils.EMPTY, StringUtils.EMPTY, false, false).getJSONObject(0);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("PUSH-SERVICE: service is not modified", e);
             }
@@ -174,7 +174,7 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, new String[]{serviceName}, agent, clusterMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly).getJSONObject(0);
+        return doSrvIPXT(namespaceId, new String[]{serviceName}, agent, clusterMap, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly, false).getJSONObject(0);
     }
 
     @RequestMapping(value = "/list/multiGroup", method = RequestMethod.GET)
@@ -200,8 +200,9 @@ public class InstanceController {
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
+        boolean findBack = Boolean.parseBoolean(WebUtils.optional(request, "findBack", "false"));
 
-        return doSrvIPXT(namespaceId, serviceNames.split(","), agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, serviceNames.split(","), agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly, findBack);
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
@@ -401,14 +402,13 @@ public class InstanceController {
     }
 
     public JSONArray doSrvIPXT(String namespaceId, String[] serviceNames, String agent, Map<String, String> clusterMap, String clientIP, int udpPort,
-                                String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
+                                String env, boolean isCheck, String app, String tid, boolean healthyOnly, boolean findBack) throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONArray array = new JSONArray();
         for (String serviceName : serviceNames) {
             String clusters = clusterMap.getOrDefault(serviceName, StringUtils.EMPTY);
             JSONObject result = new JSONObject();
-
             Service service = serviceManager.getService(namespaceId, serviceName);
 
             if (service == null) {
@@ -567,6 +567,11 @@ public class InstanceController {
             result.put("clusters", clusters);
             result.put("env", env);
             result.put("metadata", service.getMetadata());
+            if (findBack) {
+                JSONArray findBackArray = new JSONArray();
+                findBackArray.add(result);
+                return findBackArray;
+            }
             array.add(result);
         }
         return array;
