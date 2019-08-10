@@ -252,7 +252,7 @@ public interface NamingService {
      * @return A list of qualified instance
      * @throws NacosException
      */
-    List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException;
+    List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, List<List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException;
 
     /**
      * Get qualified instances of service
@@ -358,7 +358,7 @@ public interface NamingService {
      * @return A qualified list of instance
      * @throws NacosException
      */
-    List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe, boolean findBack) throws NacosException;
+    List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, List<List<String>> clusters, boolean healthy, boolean subscribe, boolean findBack) throws NacosException;
 
     /**
      * Select one healthy instance of service using predefined load balance strategy
@@ -457,7 +457,7 @@ public interface NamingService {
      * @return qualified instance
      * @throws NacosException
      */
-    Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException;
+    Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, List<List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException;
 
     /**
      * Subscribe service to receive events of instances alteration

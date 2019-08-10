@@ -262,12 +262,14 @@ class ConfigEditor extends React.Component {
   stopBeta() {
     const { locale } = this.props;
     const { dataId, group } = this.state.form;
+    const tenant = getParams('namespace');
     return request
       .delete('v1/cs/configs', {
         params: {
           beta: true,
           dataId,
           group,
+          tenant,
         },
       })
       .then(res => {

@@ -19,7 +19,6 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
-import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -35,11 +34,17 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.*;
+import com.alibaba.nacos.client.utils.StringUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -297,15 +302,20 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException {
+    public List<Instance> getAllInstancesMultiGroup(String serviceName, List<String> groupNames, List<List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
         Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
-        for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
-            clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
-        }
+        int index = 0;
         for (String groupName : groupNames) {
-            serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
+            String name = NamingUtils.getGroupedName(serviceName, groupName);
+            serviceNames.add(name);
+            List<String> clusterList = null;
+            if (index < clusters.size()) {
+                clusterList = clusters.get(index);
+                index ++;
+            }
+            clusterMap.put(name, StringUtils.join(clusterList, ","));
         }
         if (subscribe) {
             serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap, findBack);
@@ -370,15 +380,20 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean healthy, boolean subscribe, boolean findBack) throws NacosException {
+    public List<Instance> selectInstancesMultiGroup(String serviceName, List<String> groupNames, List<List<String>> clusters, boolean healthy, boolean subscribe, boolean findBack) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
         Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
-        for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
-            clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
-        }
+        int index = 0;
         for (String groupName : groupNames) {
-            serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
+            String name = NamingUtils.getGroupedName(serviceName, groupName);
+            serviceNames.add(name);
+            List<String> clusterList = null;
+            if (index < clusters.size()) {
+                clusterList = clusters.get(index);
+                index ++;
+            }
+            clusterMap.put(name, StringUtils.join(clusterList, ","));
         }
         if (subscribe) {
             serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap, findBack);
@@ -436,15 +451,20 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, Map<String, List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException {
+    public Instance selectOneHealthyInstanceMultiGroup(String serviceName, List<String> groupNames, List<List<String>> clusters, boolean subscribe, boolean findBack) throws NacosException {
         List<ServiceInfo> serviceInfos;
         List<String> serviceNames = new LinkedList<String>();
         Map<String, String> clusterMap = new HashMap<String, String>(groupNames.size());
-        for (Map.Entry<String, List<String>> entry : clusters.entrySet()) {
-            clusterMap.put(entry.getKey(), StringUtils.join(entry.getValue(), ","));
-        }
+        int index = 0;
         for (String groupName : groupNames) {
-            serviceNames.add(NamingUtils.getGroupedName(serviceName, groupName));
+            String name = NamingUtils.getGroupedName(serviceName, groupName);
+            serviceNames.add(name);
+            List<String> clusterList = null;
+            if (index < clusters.size()) {
+                clusterList = clusters.get(index);
+                index ++;
+            }
+            clusterMap.put(name, StringUtils.join(clusterList, ","));
         }
         if (subscribe) {
             serviceInfos = hostReactor.getServiceInfos(StringUtils.join(serviceNames, ","), clusterMap, findBack);
