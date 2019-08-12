@@ -15,12 +15,14 @@
  */
 package com.alibaba.nacos.client.naming.utils;
 
+import com.alibaba.nacos.common.util.VersionUtils;
+
 /**
  * @author xuanyin.zy
  */
 public class UtilAndComs {
 
-    public static final String VERSION = "Nacos-Java-Client:v1.0.1";
+    public static final String VERSION = "Nacos-Java-Client:v" + VersionUtils.VERSION;
 
     public static String WEB_CONTEXT = "/nacos";
 
@@ -55,4 +57,9 @@ public class UtilAndComs {
     public static final int DEFAULT_POLLING_THREAD_COUNT = Runtime.getRuntime()
         .availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2
         : 1;
+
+    public static final String HTTP = "http://";
+
+    public static final String HTTPS = "https://";
+
 }

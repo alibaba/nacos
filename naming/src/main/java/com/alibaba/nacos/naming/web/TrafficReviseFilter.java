@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.common.util.HttpMethod;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -28,8 +27,6 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Map;
 
 /**

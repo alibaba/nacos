@@ -17,16 +17,19 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.console.security.CustomUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -43,6 +46,8 @@ public class AuthController {
     private JwtTokenUtils jwtTokenUtils;
     @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
+    private CustomUserDetailsServiceImpl userDetailsService;
 
     /**
      * Whether the Nacos is in broken states or not, and cannot recover except by being restarted
@@ -78,5 +83,34 @@ public class AuthController {
             rr.setMessage("Login failed");
             return rr;
         }
+    }
+
+    @ResponseBody
+    @RequestMapping(value = "password", method = RequestMethod.PUT)
+    public RestResult<String> updatePassword(HttpServletRequest request, HttpServletResponse response,
+                                             @RequestParam(value = "oldPassword", required = true) String oldPassword,
+                                             @RequestParam(value = "newPassword", required = true) String newPassword) throws Exception {
+
+        RestResult<String> rr = new RestResult<String>();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = ((UserDetails) principal).getUsername();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        String password = userDetails.getPassword();
+
+        // TODO: throw out more fine grained exceptions
+        try {
+            if (PasswordEncoderUtil.matches(oldPassword, password)) {
+                userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
+                rr.setCode(200);
+                rr.setMessage("Update password success");
+            } else {
+                rr.setCode(401);
+                rr.setMessage("Old password is invalid");
+            }
+        } catch (Exception e) {
+            rr.setCode(500);
+            rr.setMessage("Update userpassword failed");
+        }
+        return rr;
     }
 }

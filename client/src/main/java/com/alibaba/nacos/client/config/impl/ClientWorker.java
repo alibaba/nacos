@@ -82,10 +82,20 @@ public class ClientWorker {
         }
     }
 
-    public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) {
+    public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        for (Listener listener : listeners) {
+            cache.addListener(listener);
+        }
+    }
+
+    public void addTenantListenersWithContent(String dataId, String group, String content, List<? extends Listener> listeners) throws NacosException {
+        group = null2defaultGroup(group);
+        String tenant = agent.getTenant();
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        cache.setContent(content);
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
@@ -161,13 +171,12 @@ public class ClientWorker {
         return cache;
     }
 
-    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) {
+    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
             return cache;
         }
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
         synchronized (cacheMap) {
             CacheData cacheFromMap = getCache(dataId, group, tenant);
             // multiple listeners on the same dataid+group and race condition,so
@@ -177,6 +186,13 @@ public class ClientWorker {
                 cache = cacheFromMap;
                 // reset so that server not hang this check
                 cache.setInitializing(true);
+            } else {
+                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                // fix issue # 1317
+                if (enableRemoteSyncConfig) {
+                    String content = getServerConfig(dataId, group, tenant, 3000L);
+                    cache.setContent(content);
+                }
             }
 
             Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
@@ -221,7 +237,7 @@ public class ClientWorker {
                 "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
                 dataId, group, tenant);
             LOGGER.error(message, e);
-            throw new NacosException(NacosException.SERVER_ERROR, e.getMessage());
+            throw new NacosException(NacosException.SERVER_ERROR, e);
         }
 
         switch (result.code) {
@@ -289,7 +305,6 @@ public class ClientWorker {
             cacheData.setContent(content);
             LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
                 agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-            return;
         }
     }
 
@@ -457,10 +472,12 @@ public class ClientWorker {
 
     private void init(Properties properties) {
 
-        timeout = Math.max(NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT)),
+        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
             Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
-        taskPenaltyTime = NumberUtils.toInt(String.valueOf(properties.get(PropertyKeyConst.CONFIG_RETRY_TIME)), Constants.CONFIG_RETRY_TIME);
+        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+
+        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
     }
 
     class LongPollingRunnable implements Runnable {
@@ -559,4 +576,5 @@ public class ClientWorker {
     private long timeout;
     private double currentLongingTaskCount = 0;
     private int taskPenaltyTime;
+    private boolean enableRemoteSyncConfig = false;
 }

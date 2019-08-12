@@ -19,7 +19,6 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -43,9 +42,6 @@ public class PerformanceLoggerThread {
     private ServiceManager serviceManager;
 
     @Autowired
-    private SwitchDomain switchDomain;
-
-    @Autowired
     private PushService pushService;
 
     @Autowired
@@ -62,34 +58,15 @@ public class PerformanceLoggerThread {
     });
 
     private static final long PERIOD = 5 * 60;
-    private static final long HEALTH_CHECK_PERIOD = 5 * 60;
 
     @PostConstruct
     public void init() {
         start();
     }
 
-    private void freshHealthCheckSwitch() {
-        Loggers.SRV_LOG.info("[HEALTH-CHECK] health check is {}", switchDomain.isHealthCheckEnabled());
-    }
-
-    class HealthCheckSwitchTask implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                freshHealthCheckSwitch();
-            } catch (Exception ignore) {
-
-            }
-        }
-    }
-
     private void start() {
         PerformanceLogTask task = new PerformanceLogTask();
         executor.scheduleWithFixedDelay(task, 30, PERIOD, TimeUnit.SECONDS);
-        executor.scheduleWithFixedDelay(new HealthCheckSwitchTask(), 30, HEALTH_CHECK_PERIOD, TimeUnit.SECONDS);
-
     }
 
     @Scheduled(cron = "0 0 0 * * ?")
@@ -102,7 +79,7 @@ public class PerformanceLoggerThread {
     }
 
     @Scheduled(cron = "0/15 * * * * ?")
-    public void collectmetrics() {
+    public void collectMetrics() {
         int serviceCount = serviceManager.getServiceCount();
         MetricsMonitor.getDomCountMonitor().set(serviceCount);
 
@@ -134,7 +111,6 @@ public class PerformanceLoggerThread {
             try {
                 int serviceCount = serviceManager.getServiceCount();
                 int ipCount = serviceManager.getInstanceCount();
-                long maxPushMaxCost = getMaxPushCost();
                 long maxPushCost = getMaxPushCost();
                 long avgPushCost = getAvgPushCost();
 

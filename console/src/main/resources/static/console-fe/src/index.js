@@ -30,6 +30,7 @@ import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
 
 import Login from './pages/Login';
 import Namespace from './pages/NameSpace';
+import Password from './pages/Password';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
 import Configdetail from './pages/ConfigurationManagement/ConfigDetail';
@@ -41,7 +42,9 @@ import ListeningToQuery from './pages/ConfigurationManagement/ListeningToQuery';
 import ConfigurationManagement from './pages/ConfigurationManagement/ConfigurationManagement';
 import ServiceList from './pages/ServiceManagement/ServiceList';
 import ServiceDetail from './pages/ServiceManagement/ServiceDetail';
+import SubscriberList from './pages/ServiceManagement/SubscriberList';
 import ClusterNodeList from './pages/ClusterManagement/ClusterNodeList';
+import Welcome from './pages/Welcome/Welcome';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
@@ -69,8 +72,10 @@ const store = createStore(
 );
 
 const MENU = [
-  { path: '/', exact: true, render: () => <Redirect to="/configurationManagement" /> },
+  { path: '/', exact: true, render: () => <Redirect to="/welcome" /> },
+  { path: '/welcome', component: Welcome },
   { path: '/namespace', component: Namespace },
+  { path: '/password', component: Password },
   { path: '/newconfig', component: Newconfig },
   { path: '/configsync', component: Configsync },
   { path: '/configdetail', component: Configdetail },
@@ -82,6 +87,7 @@ const MENU = [
   { path: '/configurationManagement', component: ConfigurationManagement },
   { path: '/serviceManagement', component: ServiceList },
   { path: '/serviceDetail', component: ServiceDetail },
+  { path: '/subscriberList', component: SubscriberList },
   { path: '/clusterManagement', component: ClusterNodeList },
 ];
 

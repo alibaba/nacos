@@ -19,6 +19,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.NamingApp;
 import org.junit.Assert;
@@ -119,7 +120,7 @@ public class RegisterInstance_ITCase {
 
         String serviceName = randomDomainName();
 
-        System.err.println(serviceName);
+        System.out.println(serviceName);
 
         naming.registerInstance(serviceName, TEST_IP_4_DOM_1, TEST_PORT, TEST_NEW_CLUSTER_4_DOM_1);
 
@@ -127,7 +128,7 @@ public class RegisterInstance_ITCase {
 
         List<Instance> instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         Assert.assertTrue(instances.get(0).getInstanceId().contains(serviceName));
         //Assert.assertEquals(instances2.get(0).getService().getName(), serviceName);
         Assert.assertEquals(instances.get(0).getIp(), TEST_IP_4_DOM_1);
@@ -209,5 +210,37 @@ public class RegisterInstance_ITCase {
         Assert.assertEquals(1, instances.size());
         Assert.assertEquals("1.0", instances.get(0).getMetadata().get("version"));
         Assert.assertEquals("prod", instances.get(0).getMetadata().get("env"));
+    }
+
+    @Test
+    public void regServiceWithTTL() throws Exception {
+
+        String serviceName = randomDomainName();
+        System.out.println(serviceName);
+
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.2");
+        instance.setPort(9999);
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put(PreservedMetadataKeys.HEART_BEAT_INTERVAL, "3");
+        metadata.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "6");
+        metadata.put(PreservedMetadataKeys.IP_DELETE_TIMEOUT, "9");
+        instance.setMetadata(metadata);
+
+        naming.registerInstance(serviceName, instance);
+
+        TimeUnit.SECONDS.sleep(3);
+
+        List<Instance> instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(1, instances.size());
+
+        naming.deregisterInstance(serviceName, instance);
+
+        TimeUnit.SECONDS.sleep(12);
+
+        instances = naming.getAllInstances(serviceName);
+
+        Assert.assertEquals(0, instances.size());
     }
 }

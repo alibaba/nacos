@@ -71,9 +71,8 @@ public class DiskCache {
         }
     }
 
-    public static String getLineSeperator() {
-        String lineSeparator = System.getProperty("line.separator");
-        return lineSeparator;
+    public static String getLineSeparator() {
+        return System.getProperty("line.separator");
     }
 
     public static Map<String, ServiceInfo> read(String cacheDir) {
@@ -82,7 +81,7 @@ public class DiskCache {
         BufferedReader reader = null;
         try {
             File[] files = makeSureCacheDirExists(cacheDir).listFiles();
-            if (files == null) {
+            if (files == null || files.length == 0) {
                 return domMap;
             }
 

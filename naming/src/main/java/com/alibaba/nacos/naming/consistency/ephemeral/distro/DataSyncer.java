@@ -75,8 +75,8 @@ public class DataSyncer {
                 String key = iterator.next();
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("sync already in process, key: {}", key);
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("sync already in process, key: {}", key);
                     }
                     iterator.remove();
                 }
@@ -100,8 +100,8 @@ public class DataSyncer {
 
                     List<String> keys = task.getKeys();
 
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("sync keys: {}", keys);
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("sync keys: {}", keys);
                     }
 
                     Map<String, Datum> datumMap = dataStore.batchGet(keys);
@@ -133,7 +133,7 @@ public class DataSyncer {
                     }
 
                 } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("sync data failed.", e);
+                    Loggers.DISTRO.error("sync data failed.", e);
                 }
             }
         }, delay);
@@ -164,8 +164,8 @@ public class DataSyncer {
 
             try {
 
-                if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                    Loggers.EPHEMERAL.debug("server list is: {}", getServers());
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("server list is: {}", getServers());
                 }
 
                 // send local timestamps to other servers:
@@ -182,18 +182,18 @@ public class DataSyncer {
                     return;
                 }
 
-                if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                    Loggers.EPHEMERAL.debug("sync checksums: {}", keyChecksums);
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
 
                 for (Server member : getServers()) {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
-                    NamingProxy.syncChecksums(keyChecksums, member.getKey());
+                    NamingProxy.syncCheckSums(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
-                Loggers.EPHEMERAL.error("timed sync task failed.", e);
+                Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
     }

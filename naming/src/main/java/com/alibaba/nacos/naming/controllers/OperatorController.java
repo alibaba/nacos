@@ -29,17 +29,13 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.SwitchEntry;
-import com.alibaba.nacos.naming.misc.SwitchManager;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.pojo.ClusterStateView;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.NeedAuth;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.autoconfigure.metrics.MetricsProperties;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
@@ -56,7 +52,7 @@ import java.util.List;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator")
+@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
 
     @Autowired
@@ -222,6 +218,14 @@ public class OperatorController {
     public String serverStatus(HttpServletRequest request) {
         String serverStatus = WebUtils.required(request, "serverStatus");
         serverListManager.onReceiveServerStatus(serverStatus);
+        return "ok";
+    }
+
+    @RequestMapping(value = "/log", method = RequestMethod.PUT)
+    public String setLogLevel(HttpServletRequest request) {
+        String logName = WebUtils.required(request, "logName");
+        String logLevel = WebUtils.required(request, "logLevel");
+        Loggers.setLogLevel(logName, logLevel);
         return "ok";
     }
 

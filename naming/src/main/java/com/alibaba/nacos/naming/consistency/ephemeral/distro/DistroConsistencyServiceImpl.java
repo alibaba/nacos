@@ -19,7 +19,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.ServerMode;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
@@ -105,14 +104,14 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private Map<String, String> syncChecksumTasks = new ConcurrentHashMap<>(16);
 
     @PostConstruct
-    public void init() throws Exception {
+    public void init() {
         GlobalExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 try {
                     load();
                 } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("load data failed.", e);
+                    Loggers.DISTRO.error("load data failed.", e);
                 }
             }
         });
@@ -128,15 +127,15 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         // size = 1 means only myself in the list, we need at least one another server alive:
         while (serverListManager.getHealthyServers().size() <= 1) {
             Thread.sleep(1000L);
-            Loggers.EPHEMERAL.info("waiting server list init...");
+            Loggers.DISTRO.info("waiting server list init...");
         }
 
         for (Server server : serverListManager.getHealthyServers()) {
             if (NetUtils.localServer().equals(server.getKey())) {
                 continue;
             }
-            if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                Loggers.EPHEMERAL.debug("sync from " + server);
+            if (Loggers.DISTRO.isDebugEnabled()) {
+                Loggers.DISTRO.debug("sync from " + server);
             }
             // try sync data from remote server:
             if (syncAllDataFromRemote(server)) {
@@ -155,6 +154,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void remove(String key) throws NacosException {
         onRemove(key);
+        listeners.remove(key);
     }
 
     @Override
@@ -187,8 +187,6 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
 
-        listeners.remove(key);
-
         notifier.addTask(key, ApplyAction.DELETE);
     }
 
@@ -196,7 +194,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
         if (syncChecksumTasks.containsKey(server)) {
             // Already in process of this server:
-            Loggers.EPHEMERAL.warn("sync checksum task already in process with {}", server);
+            Loggers.DISTRO.warn("sync checksum task already in process with {}", server);
             return;
         }
 
@@ -209,7 +207,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
                 if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
                     // this key should not be sent from remote server:
-                    Loggers.EPHEMERAL.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
+                    Loggers.DISTRO.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
                     // abort the procedure:
                     return;
                 }
@@ -231,7 +229,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 }
             }
 
-            Loggers.EPHEMERAL.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
+            if (Loggers.DISTRO.isDebugEnabled()) {
+                Loggers.DISTRO.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
+            }
 
             for (String key : toRemoveKeys) {
                 onRemove(key);
@@ -245,7 +245,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 byte[] result = NamingProxy.getData(toUpdateKeys, server);
                 processData(result);
             } catch (Exception e) {
-                Loggers.EPHEMERAL.error("get data from " + server + " failed!", e);
+                Loggers.DISTRO.error("get data from " + server + " failed!", e);
             }
         } finally {
             // Remove this 'in process' flag:
@@ -261,7 +261,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             processData(data);
             return true;
         } catch (Exception e) {
-            Loggers.EPHEMERAL.error("sync full data from " + server + " failed!", e);
+            Loggers.DISTRO.error("sync full data from " + server + " failed!", e);
             return false;
         }
     }
@@ -279,7 +279,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     // pretty sure the service not exist:
                     if (switchDomain.isDefaultInstanceEphemeral()) {
                         // create empty service
-                        Loggers.EPHEMERAL.info("creating service {}", entry.getKey());
+                        Loggers.DISTRO.info("creating service {}", entry.getKey());
                         Service service = new Service();
                         String serviceName = KeyBuilder.getServiceName(entry.getKey());
                         String namespaceId = KeyBuilder.getNamespace(entry.getKey());
@@ -299,7 +299,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                 if (!listeners.containsKey(entry.getKey())) {
                     // Should not happen:
-                    Loggers.EPHEMERAL.warn("listener of {} not found.", entry.getKey());
+                    Loggers.DISTRO.warn("listener of {} not found.", entry.getKey());
                     continue;
                 }
 
@@ -308,7 +308,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                         listener.onChange(entry.getKey(), entry.getValue().value);
                     }
                 } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while execute listener of key: {}", entry.getKey(), e);
+                    Loggers.DISTRO.error("[NACOS-DISTRO] error while execute listener of key: {}", entry.getKey(), e);
                     continue;
                 }
 
@@ -323,6 +323,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         if (!listeners.containsKey(key)) {
             listeners.put(key, new CopyOnWriteArrayList<>());
         }
+
+        if (listeners.get(key).contains(listener)) {
+            return;
+        }
+
         listeners.get(key).add(listener);
     }
 
@@ -371,7 +376,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
         @Override
         public void run() {
-            Loggers.EPHEMERAL.info("distro notifier started");
+            Loggers.DISTRO.info("distro notifier started");
 
             while (true) {
                 try {
@@ -408,16 +413,16 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                                 continue;
                             }
                         } catch (Throwable e) {
-                            Loggers.EPHEMERAL.error("[NACOS-DISTRO] error while notifying listener of key: {}", datumKey, e);
+                            Loggers.DISTRO.error("[NACOS-DISTRO] error while notifying listener of key: {}", datumKey, e);
                         }
                     }
 
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}, action: {}",
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("[NACOS-DISTRO] datum change notified, key: {}, listener count: {}, action: {}",
                             datumKey, count, action.name());
                     }
                 } catch (Throwable e) {
-                    Loggers.EPHEMERAL.error("[NACOS-DISTRO] Error while handling notifying task", e);
+                    Loggers.DISTRO.error("[NACOS-DISTRO] Error while handling notifying task", e);
                 }
             }
         }

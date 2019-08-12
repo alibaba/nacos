@@ -17,7 +17,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.0.1</version>
+        <version>1.1.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -90,6 +90,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.keran213539</groupId>
+            <artifactId>commonOkHttp</artifactId>
             <scope>test</scope>
         </dependency>
 
