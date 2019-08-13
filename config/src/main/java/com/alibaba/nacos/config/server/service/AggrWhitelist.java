@@ -15,8 +15,10 @@
  */
 package com.alibaba.nacos.config.server.service;
 
-import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import com.alibaba.nacos.config.server.utils.RegexParser;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.stereotype.Service;
 
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -24,15 +26,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.stereotype.Service;
-
-import com.alibaba.nacos.config.server.utils.RegexParser;
-
+import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * 聚合数据白名单。
+ *
  * @author Nacos
  */
 @Service
@@ -63,7 +62,7 @@ public class AggrWhitelist {
             return;
         }
         defaultLog.warn("[aggr-dataIds] {}", content);
-        
+
         try {
             List<String> lines = IOUtils.readLines(new StringReader(content));
             compile(lines);
@@ -87,11 +86,11 @@ public class AggrWhitelist {
     static public List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }
-    
+
     // =======================
 
     static public final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
 
     static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<List<Pattern>>(
-            new ArrayList<Pattern>());
+        new ArrayList<Pattern>());
 }

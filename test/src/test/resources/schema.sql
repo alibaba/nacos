@@ -6,7 +6,7 @@ CREATE TABLE config_info (
   group_id varchar(128) NOT NULL,
   tenant_id varchar(128) default '',
   app_name varchar(128),
-  content LONG VARCHAR NOT NULL,
+  content CLOB,
   md5 varchar(32) DEFAULT NULL,
   gmt_create timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
@@ -31,7 +31,7 @@ CREATE TABLE his_config_info (
   group_id varchar(128) NOT NULL,
   tenant_id varchar(128) default '',
   app_name varchar(128),
-  content LONG VARCHAR NOT NULL,
+  content CLOB,
   md5 varchar(32) DEFAULT NULL,
   gmt_create timestamp NOT NULL DEFAULT '2010-05-05 00:00:00.000',
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00.000',
@@ -51,7 +51,7 @@ CREATE TABLE config_info_beta (
   group_id varchar(128) NOT NULL,
   tenant_id varchar(128) default '',
   app_name varchar(128),
-  content LONG VARCHAR NOT NULL,
+  content CLOB,
   beta_ips varchar(1024),
   md5 varchar(32) DEFAULT NULL,
   gmt_create timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
@@ -68,7 +68,7 @@ CREATE TABLE config_info_tag (
   tenant_id varchar(128) default '',
   tag_id varchar(128) NOT NULL,
   app_name varchar(128),
-  content LONG VARCHAR NOT NULL,
+  content CLOB,
   md5 varchar(32) DEFAULT NULL,
   gmt_create timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
@@ -84,7 +84,7 @@ CREATE TABLE config_info_aggr (
   tenant_id varchar(128) default '',
   datum_id varchar(255) NOT NULL,
   app_name varchar(128),
-  content LONG VARCHAR NOT NULL,
+  content CLOB,
   gmt_modified timestamp NOT NULL DEFAULT '2010-05-05 00:00:00',
   constraint configinfoaggr_id_key PRIMARY KEY (id),
   constraint uk_configinfoaggr_datagrouptenantdatum UNIQUE (data_id,group_id,tenant_id,datum_id));
@@ -159,3 +159,17 @@ CREATE TABLE tenant_capacity (
   constraint tenant_capacity_id_key PRIMARY KEY (id),
   constraint uk_tenant_id UNIQUE (tenant_id));
 
+CREATE TABLE users (
+	username varchar(50) NOT NULL PRIMARY KEY,
+	password varchar(500) NOT NULL,
+	enabled boolean NOT NULL
+);
+
+CREATE TABLE roles (
+	username varchar(50) NOT NULL,
+	role varchar(50) NOT NULL
+);
+
+INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
+
+INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');

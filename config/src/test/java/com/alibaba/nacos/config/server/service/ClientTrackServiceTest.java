@@ -15,18 +15,13 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.utils.GroupKey2;
 import org.junit.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-
-import com.alibaba.nacos.config.server.service.ClientTrackService;
-import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.utils.GroupKey2;
-
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -44,7 +39,7 @@ public class ClientTrackServiceTest {
         String group = "online";
         String groupKey = GroupKey2.getKey(dataId, group);
         String md5 = "xxxxxxxxxxxxx";
-        
+
         ConfigService.updateMd5(groupKey, md5, System.currentTimeMillis());
 
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
@@ -53,7 +48,7 @@ public class ClientTrackServiceTest {
         Assert.assertEquals(true, ClientTrackService.isClientUptodate(clientIp).get(groupKey));
         Assert.assertEquals(1, ClientTrackService.subscribeClientCount());
         Assert.assertEquals(1, ClientTrackService.subscriberCount());
-        
+
         //服务端数据更新
         ConfigService.updateMd5(groupKey, md5 + "111", System.currentTimeMillis());
         Assert.assertEquals(false, ClientTrackService.isClientUptodate(clientIp).get(groupKey));

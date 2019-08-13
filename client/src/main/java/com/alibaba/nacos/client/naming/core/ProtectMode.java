@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class ProtectMode {
 

@@ -15,46 +15,45 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import java.io.IOException;
 
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.DeserializationConfig.Feature;
-import org.codehaus.jackson.type.JavaType;
-import org.codehaus.jackson.type.TypeReference;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.io.InputStream;
+
 
 /**
  * json util
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JSONUtils {
 
     static ObjectMapper mapper = new ObjectMapper();
-    
+
     static {
-    	mapper.disable(Feature.FAIL_ON_UNKNOWN_PROPERTIES);
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
-	public static String serializeObject(Object o) throws IOException {
-		return mapper.writeValueAsString(o);
-	}
+    public static String serializeObject(Object o) throws IOException {
+        return mapper.writeValueAsString(o);
+    }
 
     public static Object deserializeObject(String s, Class<?> clazz) throws IOException {
         return mapper.readValue(s, clazz);
     }
 
-    public static Object deserializeObject(String s, TypeReference<?> typeReference)
-            throws IOException {
+    public static <T> T deserializeObject(String s, TypeReference<T> typeReference)
+        throws IOException {
         return mapper.readValue(s, typeReference);
     }
 
-    public static JavaType getCollectionType(Class<?> collectionClass, Class<?>... elementClasses) {
-        return mapper.getTypeFactory().constructParametricType(collectionClass, elementClasses);
-    }
-
-    public static Object deserializeCollection(String s, JavaType type) throws IOException {
-        return mapper.readValue(s, type);
+    public static <T> T deserializeObject(InputStream src, TypeReference<?> typeReference)
+        throws IOException {
+        return mapper.readValue(src, typeReference);
     }
 
 }

@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.client.naming.utils;
 
+import com.alibaba.nacos.client.utils.StringUtils;
+
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -27,10 +29,10 @@ public class NetUtils {
     public static String localIP() {
         try {
             if (!StringUtils.isEmpty(LOCAL_IP)) {
-               return LOCAL_IP;
+                return LOCAL_IP;
             }
 
-            String ip = System.getProperty("com.taobao.vipserver.localIP", InetAddress.getLocalHost().getHostAddress());
+            String ip = System.getProperty("com.alibaba.nacos.client.naming.local.ip", InetAddress.getLocalHost().getHostAddress());
 
             return LOCAL_IP = ip;
         } catch (UnknownHostException e) {

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <springProperty scope="context" name="logPath" source="nacos.logs.path" defaultValue="${user.home}/nacos/logs"/>
+    <property name="LOG_HOME" value="${logPath}"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <include resource="META-INF/logback/nacos-included.xml"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+           <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="rootFile"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/nacos.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/nacos.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <MaxHistory>15</MaxHistory>
+            <totalSizeCap>512MB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <root>
+        <level value="INFO"/>
+        <appender-ref ref="rootFile"/>
+    </root>
+
+    <springProfile name="standalone">
+
+        <logger name="org.springframework">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </logger>
+
+        <logger name="org.apache.catalina.startup.DigesterFactory">
+            <appender-ref ref="CONSOLE"/>
+            <level value="INFO"/>
+        </logger>
+
+        <logger name="org.apache.catalina.util.LifecycleBase">
+            <appender-ref ref="CONSOLE"/>
+            <level value="ERROR"/>
+        </logger>
+
+        <logger name="org.apache.coyote.http11.Http11NioProtocol">
+            <appender-ref ref="CONSOLE"/>
+            <level value="WARN"/>
+        </logger>
+
+        <logger name="org.apache.tomcat.util.net.NioSelectorPool">
+            <appender-ref ref="CONSOLE"/>
+            <level value="WARN"/>
+        </logger>
+
+    </springProfile>
+
+    <logger name="com.alibaba.nacos.core.listener.StartingSpringApplicationRunListener">
+        <appender-ref ref="CONSOLE"/>
+        <level value="INFO"/>
+    </logger>
+</configuration>

@@ -17,6 +17,8 @@ package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
 
+import java.util.Map;
+
 /**
  * Metrics info of server
  *
@@ -30,16 +32,19 @@ public class RsInfo {
     private double mem;
     private int port;
     private String ip;
-    private String dom;
+    private String serviceName;
     private String ak;
     private String cluster;
+    private double weight;
+    private boolean ephemeral = true;
+    private Map<String, String> metadata;
 
-    public String getDom() {
-        return dom;
+    public String getServiceName() {
+        return serviceName;
     }
 
-    public void setDom(String dom) {
-        this.dom = dom;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public String getAk() {
@@ -114,6 +119,31 @@ public class RsInfo {
         this.mem = mem;
     }
 
+    public double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(double weight) {
+        this.weight = weight;
+    }
+
+    public boolean isEphemeral() {
+        return ephemeral;
+    }
+
+    public void setEphemeral(boolean ephemeral) {
+        this.ephemeral = ephemeral;
+    }
+
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
+    }
+
+    @Override
     public String toString() {
         return JSON.toJSONString(this);
     }
