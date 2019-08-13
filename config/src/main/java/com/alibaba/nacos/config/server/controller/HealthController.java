@@ -45,7 +45,9 @@ public class HealthController {
     private String heathWarnStr = "WARN";
 
     @Autowired
-    public HealthController(DynamicDataSource dynamicDataSource) {this.dynamicDataSource = dynamicDataSource;}
+    public HealthController(DynamicDataSource dynamicDataSource) {
+        this.dynamicDataSource = dynamicDataSource;
+    }
 
     @PostConstruct
     public void init() {

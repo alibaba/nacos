@@ -177,7 +177,8 @@ public class RaftStore {
                     instancesDatum.key = key;
                     instancesDatum.value = new Instances();
                     instancesDatum.value.setInstanceList(JSON.parseObject(jsonObject.getString("value"),
-                        new TypeReference<List<Instance>>(){}));
+                        new TypeReference<List<Instance>>() {
+                        }));
                     if (!instancesDatum.value.getInstanceList().isEmpty()) {
                         for (Instance instance : instancesDatum.value.getInstanceList()) {
                             instance.setEphemeral(false);

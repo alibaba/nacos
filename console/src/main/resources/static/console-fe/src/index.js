@@ -30,6 +30,7 @@ import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
 
 import Login from './pages/Login';
 import Namespace from './pages/NameSpace';
+import Password from './pages/Password';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
 import Configdetail from './pages/ConfigurationManagement/ConfigDetail';
@@ -74,6 +75,7 @@ const MENU = [
   { path: '/', exact: true, render: () => <Redirect to="/welcome" /> },
   { path: '/welcome', component: Welcome },
   { path: '/namespace', component: Namespace },
+  { path: '/password', component: Password },
   { path: '/newconfig', component: Newconfig },
   { path: '/configsync', component: Configsync },
   { path: '/configdetail', component: Configdetail },
