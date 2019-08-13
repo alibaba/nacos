@@ -15,14 +15,14 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
-
 import com.alibaba.nacos.config.server.constant.Constants;
+
+import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 
 /**
  * Content utils
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ContentUtils {
 
@@ -42,7 +42,6 @@ public class ContentUtils {
         }
     }
 
-
     public static String getContentIdentity(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -50,7 +49,6 @@ public class ContentUtils {
         }
         return content.substring(0, index);
     }
-
 
     public static String getContent(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
@@ -63,13 +61,12 @@ public class ContentUtils {
     public static String truncateContent(String content) {
         if (content == null) {
             return "";
-        }
-        else if (content.length() <= LIMIT_CONTENT_SIZE) {
+        } else if (content.length() <= LIMIT_CONTENT_SIZE) {
             return content;
-        }
-        else {
-			return content.substring(0, 100) + "...";
+        } else {
+            return content.substring(0, 100) + "...";
         }
     }
+
     private final static int LIMIT_CONTENT_SIZE = 100;
 }

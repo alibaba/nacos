@@ -19,7 +19,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.NamingApp;
-import org.junit.After;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +28,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -46,35 +45,24 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
 public class SelectOneHealthyInstance_ITCase {
 
     private NamingService naming;
-    private ServerSocket localServer1 = null;
-    private ServerSocket localServer2 = null;
-    private ServerSocket localServer3 = null;
     @LocalServerPort
     private int port;
     @Before
     public void init() throws Exception{
+        NamingBase.prepareServer(port);
         if (naming == null) {
-            TimeUnit.SECONDS.sleep(10);
+            //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1"+":"+port);
         }
-
-        localServer1 = new ServerSocket(60000);
-        localServer2 = new ServerSocket(60001);
-        localServer3 = new ServerSocket(60002);
-    }
-
-    @After
-    public void stopLocalServer() throws Exception{
-        if (localServer1 != null) {
-            localServer1.close();
-        }
-        if (localServer2 != null) {
-            localServer2.close();
-        }
-        if (localServer3 != null) {
-            localServer3.close();
+        while (true) {
+            if (!"UP".equals(naming.getServerStatus())) {
+                Thread.sleep(1000L);
+                continue;
+            }
+            break;
         }
     }
+
 
     /**
      * 获取一个健康的Instance
@@ -100,7 +88,7 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -119,7 +107,7 @@ public class SelectOneHealthyInstance_ITCase {
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1"));
 
-        Assert.assertTrue(instance.getIp() != "1.1.1.1");
+        Assert.assertNotSame("1.1.1.1", instance.getIp());
         Assert.assertTrue(instance.getPort() != 60002);
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
@@ -133,7 +121,7 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 
     /**
@@ -150,7 +138,7 @@ public class SelectOneHealthyInstance_ITCase {
 
         TimeUnit.SECONDS.sleep(2);
         Instance instance = naming.selectOneHealthyInstance(serviceName, Arrays.asList("c1", "c2"));
-        Assert.assertTrue(instance.getIp() != "1.1.1.1");
+        Assert.assertNotSame("1.1.1.1", instance.getIp());
 
         List<Instance> instancesGet = naming.getAllInstances(serviceName);
 
@@ -163,6 +151,6 @@ public class SelectOneHealthyInstance_ITCase {
             }
         }
 
-        Assert.assertTrue(false);
+        Assert.fail();
     }
 }

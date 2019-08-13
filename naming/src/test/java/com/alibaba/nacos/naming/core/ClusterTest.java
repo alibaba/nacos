@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.core;
 
-import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckConfig;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class ClusterTest {
 
@@ -33,12 +33,10 @@ public class ClusterTest {
     @Before
     public void before() {
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.domain.1");
+        Service service = new Service();
+        service.setName("nacos.service.1");
 
-        cluster = new Cluster();
-        cluster.setName("nacos-cluster-1");
-        cluster.setDom(domain);
+        cluster = new Cluster("nacos-cluster-1", service);
         cluster.setDefCkport(80);
         cluster.setDefIPPort(8080);
     }
@@ -46,27 +44,24 @@ public class ClusterTest {
 
     @Test
     public void updateCluster() {
+        Service service = new Service();
+        service.setName("nacos.service.2");
 
-        Cluster newCluster = new Cluster();
+        Cluster newCluster = new Cluster("nacos-cluster-1", service);
         newCluster.setDefCkport(8888);
         newCluster.setDefIPPort(9999);
-        AbstractHealthCheckConfig.Http healthCheckConfig = new AbstractHealthCheckConfig.Http();
+        AbstractHealthChecker.Http healthCheckConfig = new AbstractHealthChecker.Http();
         healthCheckConfig.setPath("/nacos-path-1");
         healthCheckConfig.setExpectedResponseCode(500);
         healthCheckConfig.setHeaders("Client-Version:nacos-test-1");
         newCluster.setHealthChecker(healthCheckConfig);
 
-        VirtualClusterDomain domain = new VirtualClusterDomain();
-        domain.setName("nacos.domain.2");
-
-        newCluster.setDom(domain);
-
         cluster.update(newCluster);
 
         Assert.assertEquals(8888, cluster.getDefCkport());
         Assert.assertEquals(9999, cluster.getDefIPPort());
-        Assert.assertTrue(cluster.getHealthChecker() instanceof AbstractHealthCheckConfig.Http);
-        AbstractHealthCheckConfig.Http httpHealthCheck = (AbstractHealthCheckConfig.Http)(cluster.getHealthChecker());
+        Assert.assertTrue(cluster.getHealthChecker() instanceof AbstractHealthChecker.Http);
+        AbstractHealthChecker.Http httpHealthCheck = (AbstractHealthChecker.Http) (cluster.getHealthChecker());
         Assert.assertEquals("/nacos-path-1", httpHealthCheck.getPath());
         Assert.assertEquals(500, httpHealthCheck.getExpectedResponseCode());
         Assert.assertEquals("Client-Version:nacos-test-1", httpHealthCheck.getHeaders());
@@ -75,21 +70,21 @@ public class ClusterTest {
     @Test
     public void updateIps() {
 
-        IpAddress ipAddress1 = new IpAddress();
-        ipAddress1.setIp("1.1.1.1");
-        ipAddress1.setPort(1234);
+        Instance instance1 = new Instance();
+        instance1.setIp("1.1.1.1");
+        instance1.setPort(1234);
 
-        IpAddress ipAddress2 = new IpAddress();
-        ipAddress2.setIp("1.1.1.1");
-        ipAddress2.setPort(2345);
+        Instance instance2 = new Instance();
+        instance2.setIp("1.1.1.1");
+        instance2.setPort(2345);
 
-        List<IpAddress> list = new ArrayList<>();
-        list.add(ipAddress1);
-        list.add(ipAddress2);
+        List<Instance> list = new ArrayList<>();
+        list.add(instance1);
+        list.add(instance2);
 
         cluster.updateIPs(list, false);
 
-        List<IpAddress> ips = cluster.allIPs();
+        List<Instance> ips = cluster.allIPs();
         Assert.assertNotNull(ips);
         Assert.assertEquals(2, ips.size());
         Assert.assertEquals("1.1.1.1", ips.get(0).getIp());
@@ -97,4 +92,25 @@ public class ClusterTest {
         Assert.assertEquals("1.1.1.1", ips.get(1).getIp());
         Assert.assertEquals(2345, ips.get(1).getPort());
     }
+
+    @Test
+    public void testValidate() {
+        Service service = new Service("nacos.service.2");
+        cluster = new Cluster("nacos-cluster-1", service);
+        cluster.validate();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateClusterNameNull() {
+        Service service = new Service("nacos.service.2");
+        cluster = new Cluster(null, service);
+        cluster.validate();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testValidateServiceNull() {
+        cluster = new Cluster("nacos-cluster-1", null);
+        cluster.validate();
+    }
+
 }

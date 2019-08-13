@@ -15,36 +15,25 @@
  */
 package com.alibaba.nacos.client.config.utils;
 
-import java.io.BufferedReader;
-import java.io.CharArrayWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import com.alibaba.nacos.api.common.Constants;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.alibaba.nacos.client.config.common.Constants;
-
-
 /**
  * IO Util
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class IOUtils {
 
     static public String toString(InputStream input, String encoding) throws IOException {
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
-                : toString(new InputStreamReader(input, encoding));
+            : toString(new InputStreamReader(input, encoding));
     }
-    
+
     static public String toString(Reader reader) throws IOException {
         CharArrayWriter sw = new CharArrayWriter();
         copy(reader, sw);
@@ -54,7 +43,7 @@ public class IOUtils {
     static public long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1 << 12];
         long count = 0;
-        for (int n = 0; (n = input.read(buffer)) >= 0;) {
+        for (int n = 0; (n = input.read(buffer)) >= 0; ) {
             output.write(buffer, 0, n);
             count += n;
         }
@@ -68,7 +57,7 @@ public class IOUtils {
         BufferedReader reader = toBufferedReader(input);
         List<String> list = new ArrayList<String>();
         String line = null;
-        for (;;) {
+        for (; ; ) {
             line = reader.readLine();
             if (null != line) {
                 list.add(line);
@@ -80,8 +69,8 @@ public class IOUtils {
     }
 
     static private BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(
-                reader);
+        return reader instanceof BufferedReader ? (BufferedReader)reader : new BufferedReader(
+            reader);
     }
 
     public static void delete(File fileOrDir) throws IOException {
@@ -91,14 +80,16 @@ public class IOUtils {
 
         if (fileOrDir.isDirectory()) {
             cleanDirectory(fileOrDir);
+        } else {
+            if (fileOrDir.exists()) {
+                boolean isDeleteOk = fileOrDir.delete();
+                if (!isDeleteOk) {
+                    throw new IOException("delete fail");
+                }
+            }
         }
-
-		boolean isDeleteOk = fileOrDir.delete();
-		if (!isDeleteOk) {
-			throw new IOException("delete fail");
-		}
     }
-    
+
     /**
      * 清理目录下的内容
      */
@@ -114,10 +105,10 @@ public class IOUtils {
         }
 
         File[] files = directory.listFiles();
-		/**
-		 * null if security restricted
-		 */
-		if (files == null) {
+        /**
+         * null if security restricted
+         */
+        if (files == null) {
             throw new IOException("Failed to list contents of " + directory);
         }
 
@@ -136,7 +127,7 @@ public class IOUtils {
     }
 
     public static void writeStringToFile(File file, String data, String encoding)
-            throws IOException {
+        throws IOException {
         OutputStream os = null;
         try {
             os = new FileOutputStream(file);

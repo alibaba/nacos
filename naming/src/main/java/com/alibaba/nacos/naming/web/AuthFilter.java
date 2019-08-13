@@ -15,9 +15,11 @@
  */
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.acl.AuthChecker;
-import com.alibaba.nacos.naming.misc.Switch;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -28,20 +30,22 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.AccessControlException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
-
 public class AuthFilter implements Filter {
+
+    private static final String[] NAMESPACE_FORBIDDEN_STRINGS = new String[]{"..", "/"};
 
     @Autowired
     private AuthChecker authChecker;
 
-    private static ConcurrentMap<String, Method> methodCache = new
-            ConcurrentHashMap<String, Method>();
+    @Autowired
+    private SwitchDomain switchDomain;
+
+    @Autowired
+    private FilterBase filterBase;
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
@@ -57,25 +61,23 @@ public class AuthFilter implements Filter {
 
         try {
             String path = new URI(req.getRequestURI()).getPath();
-            String target = getMethodName(path);
-
-            Method method = methodCache.get(target);
+            Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
-                if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-                    method = RaftCommands.class.getMethod(target, HttpServletRequest.class, HttpServletResponse.class);
-                } else {
-                    method = ApiCommands.class.getMethod(target, HttpServletRequest.class);
-                }
-                methodCache.put(target, method);
+                throw new NoSuchMethodException();
             }
 
-            if (method.isAnnotationPresent(NeedAuth.class) && !Switch.isEnableAuthentication()) {
+            if (method.isAnnotationPresent(NeedAuth.class) && !switchDomain.isEnableAuthentication()) {
+                // leave it empty.
+            }
 
-                if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-                    authChecker.doRaftAuth(req);
-                } else {
-                    authChecker.doAuth(req.getParameterMap(), req);
+            // Check namespace:
+            String namespaceId = req.getParameter(CommonParams.NAMESPACE_ID);
+
+            if (StringUtils.isNotBlank(namespaceId)) {
+
+                if (namespaceId.contains(NAMESPACE_FORBIDDEN_STRINGS[0]) || namespaceId.contains(NAMESPACE_FORBIDDEN_STRINGS[1])) {
+                    throw new IllegalArgumentException("forbidden namespace: " + namespaceId);
                 }
             }
 
@@ -85,9 +87,12 @@ public class AuthFilter implements Filter {
         } catch (NoSuchMethodException e) {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "no such api");
             return;
+        } catch (IllegalArgumentException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, UtilsAndCommons.getAllExceptionMsg(e));
+            return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
+                "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
             return;
         }
         filterChain.doFilter(req, resp);
@@ -96,15 +101,5 @@ public class AuthFilter implements Filter {
     @Override
     public void destroy() {
 
-    }
-
-    static protected String getMethodName(String path) throws Exception {
-        String target = path.substring(path.lastIndexOf("/") + 1).trim();
-
-        if (StringUtils.isEmpty(target)) {
-            throw new IllegalArgumentException("URL target required");
-        }
-
-        return target;
     }
 }

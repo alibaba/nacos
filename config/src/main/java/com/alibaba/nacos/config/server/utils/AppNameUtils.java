@@ -19,9 +19,8 @@ import java.io.File;
 
 /**
  * App util
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class AppNameUtils {
 
@@ -35,38 +34,34 @@ public class AppNameUtils {
     private static final String SERVER_JETTY = "jetty";
     private static final String SERVER_TOMCAT = "tomcat";
     private static final String SERVER_UNKNOWN = "unknown server";
-    
-	public static String getAppName() {
-		String appName = null;
 
-		appName = getAppNameByProjectName();
-		if (appName != null) {
-			return appName;
-		}
+    public static String getAppName() {
+        String appName = null;
 
-		appName = getAppNameByServerHome();
-		if (appName != null) {
-			return appName;
-		}
+        appName = getAppNameByProjectName();
+        if (appName != null) {
+            return appName;
+        }
 
-		return "unknown";
-	}
+        appName = getAppNameByServerHome();
+        if (appName != null) {
+            return appName;
+        }
 
+        return "unknown";
+    }
 
     private static String getAppNameByProjectName() {
         return System.getProperty(PARAM_MARKING_PROJECT);
     }
 
-
     private static String getAppNameByServerHome() {
         String serverHome = null;
         if (SERVER_JBOSS.equals(getServerType())) {
             serverHome = System.getProperty(PARAM_MARKING_JBOSS);
-        }
-        else if (SERVER_JETTY.equals(getServerType())) {
+        } else if (SERVER_JETTY.equals(getServerType())) {
             serverHome = System.getProperty(PARAM_MARKING_JETTY);
-        }
-        else if (SERVER_TOMCAT.equals(getServerType())) {
+        } else if (SERVER_TOMCAT.equals(getServerType())) {
             serverHome = System.getProperty(PARAM_MARKING_TOMCAT);
         }
 
@@ -81,14 +76,11 @@ public class AppNameUtils {
         String serverType = null;
         if (System.getProperty(PARAM_MARKING_JBOSS) != null) {
             serverType = SERVER_JBOSS;
-        }
-        else if (System.getProperty(PARAM_MARKING_JETTY) != null) {
+        } else if (System.getProperty(PARAM_MARKING_JETTY) != null) {
             serverType = SERVER_JETTY;
-        }
-        else if (System.getProperty(PARAM_MARKING_TOMCAT) != null) {
+        } else if (System.getProperty(PARAM_MARKING_TOMCAT) != null) {
             serverType = SERVER_TOMCAT;
-        }
-        else {
+        } else {
             serverType = SERVER_UNKNOWN;
         }
         return serverType;

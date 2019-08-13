@@ -15,86 +15,88 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import ch.qos.logback.classic.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.joran.spi.JoranException;
 
 /**
  * log util
- * @author Nacos
  *
+ * @author Nacos
  */
 public class LogUtil {
-	
-	static {
-		LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-		lc.reset();
-
-		JoranConfigurator configurator = new JoranConfigurator();
-
-		String nacosDir = System.getProperty("nacos.home");
-		if (StringUtils.isBlank(nacosDir)) {
-			configurator.setContext(lc);
-			try {
-				configurator.doConfigure(LogUtil.class.getResource("/nacos-config-logback.xml"));
-			} catch (JoranException e) {
-				System.err.println("init logger fail by nacos-config-logback.xml");
-			}
-		} else {
-			configurator.setContext(lc);
-			try {
-				configurator.doConfigure(nacosDir + "/conf/nacos-logback.xml");
-			} catch (JoranException e) {
-				System.err.println("init logger fail by " + nacosDir + "/conf/nacos-logback.xml");
-			}
-		}
-	}
 
     /**
      * 默认的日志
      */
-    static public final Logger defaultLog = LoggerFactory.getLogger("com.alibaba.nacos.config.startLog");
+    public static  final Logger defaultLog = LoggerFactory.getLogger("com.alibaba.nacos.config.startLog");
 
     /**
      * 致命错误，需要告警
      */
-    static public final Logger fatalLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.fatal");
+    public static final Logger fatalLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.fatal");
 
     /**
      * 客户端GET方法获取数据的日志
      */
-    static public final Logger pullLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.pullLog");
+    public static final Logger pullLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.pullLog");
 
-    static public final Logger pullCheckLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.pullCheckLog");
+    public static final Logger pullCheckLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.pullCheckLog");
     /**
      * 从DB dump数据的日志
      */
-    static public final Logger dumpLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.dumpLog");
+    public static final Logger dumpLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.dumpLog");
 
-    static public final Logger memoryLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.monitorLog");
+    public static final Logger memoryLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.monitorLog");
 
-    static public final Logger clientLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.clientLog");
+    public static final Logger clientLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.clientLog");
 
-    static public final Logger sdkLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.sdkLog");
+    public static final Logger traceLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.traceLog");
 
-    static public final Logger traceLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.traceLog");
+    public static final Logger notifyLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.notifyLog");
 
-    static public final Logger aclLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.aclLog");
+    public static void setLogLevel(String logName, String level) {
 
-    static public final Logger notifyLog = LoggerFactory
-            .getLogger("com.alibaba.nacos.config.notifyLog");
-    
-    static public final Logger appCollectorLog =  LoggerFactory
-            .getLogger("com.alibaba.nacos.config.appCollectorLog");
+        switch (logName) {
+            case "config-server":
+                ((ch.qos.logback.classic.Logger) defaultLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-fatal":
+                ((ch.qos.logback.classic.Logger) fatalLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-pull":
+                ((ch.qos.logback.classic.Logger) pullLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-pull-check":
+                ((ch.qos.logback.classic.Logger) pullCheckLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-dump":
+                ((ch.qos.logback.classic.Logger) dumpLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-memory":
+                ((ch.qos.logback.classic.Logger) memoryLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-client-request":
+                ((ch.qos.logback.classic.Logger) clientLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-trace":
+                ((ch.qos.logback.classic.Logger) traceLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-notify":
+                ((ch.qos.logback.classic.Logger) notifyLog).setLevel(Level.valueOf(level));
+                break;
+            default:
+                break;
+        }
+
+    }
+
 }

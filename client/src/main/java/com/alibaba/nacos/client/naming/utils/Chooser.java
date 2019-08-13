@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author dungu.zpf
+ * @author nkorange
  */
 public class Chooser<K, T> {
 
@@ -72,7 +72,6 @@ public class Chooser<K, T> {
         this.ref = ref;
     }
 
-
     public K getUniqueKey() {
         return uniqueKey;
     }
@@ -106,7 +105,7 @@ public class Chooser<K, T> {
 
                 double weight = item.weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
-                if (!(weight > 0)) {
+                if (weight <= 0) {
                     continue;
                 }
 
@@ -125,7 +124,7 @@ public class Chooser<K, T> {
             for (Pair<T> item : itemsWithWeight) {
                 double singleWeight = item.weight();
                 //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
-                if (!(singleWeight > 0)) {
+                if (singleWeight <= 0) {
                     continue;
                 }
                 exactWeights[index++] = singleWeight / originWeightSum;
@@ -139,9 +138,11 @@ public class Chooser<K, T> {
             }
 
             double doublePrecisionDelta = 0.0001;
-            if (index != 0 && !(Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
-                throw new IllegalStateException("Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
+
+            if (index == 0 || (Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
+                return;
             }
+            throw new IllegalStateException("Cumulative Weight caculate wrong , the sum of probabilities does not equals 1.");
         }
 
         @Override

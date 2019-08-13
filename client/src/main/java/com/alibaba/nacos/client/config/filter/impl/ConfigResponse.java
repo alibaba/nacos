@@ -23,56 +23,55 @@ import com.alibaba.nacos.api.config.filter.IConfigResponse;
 
 /**
  * Config Response
- * 
- * @author Nacos
  *
+ * @author Nacos
  */
 public class ConfigResponse implements IConfigResponse {
 
-	private Map<String, Object> param = new HashMap<String, Object>();
+    private Map<String, Object> param = new HashMap<String, Object>();
 
-	private IConfigContext configContext = new ConfigContext();
+    private IConfigContext configContext = new ConfigContext();
 
-	public String getTenant() {
-		return (String) param.get("tenant");
-	}
+    public String getTenant() {
+        return (String)param.get("tenant");
+    }
 
-	public void setTenant(String tenant) {
-		param.put("tenant", tenant);
-	}
+    public void setTenant(String tenant) {
+        param.put("tenant", tenant);
+    }
 
-	public String getDataId() {
-		return (String) param.get("dataId");
-	}
+    public String getDataId() {
+        return (String)param.get("dataId");
+    }
 
-	public void setDataId(String dataId) {
-		param.put("dataId", dataId);
-	}
+    public void setDataId(String dataId) {
+        param.put("dataId", dataId);
+    }
 
-	public String getGroup() {
-		return (String) param.get("group");
-	}
+    public String getGroup() {
+        return (String)param.get("group");
+    }
 
-	public void setGroup(String group) {
-		param.put("group", group);
-	}
+    public void setGroup(String group) {
+        param.put("group", group);
+    }
 
-	public String getContent() {
-		return (String) param.get("content");
-	}
+    public String getContent() {
+        return (String)param.get("content");
+    }
 
-	public void setContent(String content) {
-		param.put("content", content);
-	}
+    public void setContent(String content) {
+        param.put("content", content);
+    }
 
-	@Override
-	public Object getParameter(String key) {
-		return param.get(key);
-	}
+    @Override
+    public Object getParameter(String key) {
+        return param.get(key);
+    }
 
-	@Override
-	public IConfigContext getConfigContext() {
-		return configContext;
-	}
+    @Override
+    public IConfigContext getConfigContext() {
+        return configContext;
+    }
 
 }

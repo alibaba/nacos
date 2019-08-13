@@ -15,10 +15,7 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import org.apache.commons.lang.CharUtils;
-import org.apache.commons.lang.NullArgumentException;
-
-
+import org.apache.commons.lang3.CharUtils;
 
 /**
  * 用于ConfigCenter可支持的通配字符通配判定以及标准正则转换的通用类
@@ -28,19 +25,17 @@ import org.apache.commons.lang.NullArgumentException;
  */
 public class RegexParser {
 
-	private final static char QUESTION_MARK = '?';
+    private final static char QUESTION_MARK = '?';
 
     /**
-     * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br>
-     * '*'替换为 ‘.*’ '?'替换为'{n}'，n为连续?的个数; <br>
-     * 其他非字母或数字的特殊字符前均添加'\'.
+     * 替换输入字符串中非正则特殊字符为标准正则表达式字符串; <br> '*'替换为 ‘.*’ '?'替换为'{n}'，n为连续?的个数; <br> 其他非字母或数字的特殊字符前均添加'\'.
      *
      * @param regex
      * @return
      */
     static public String regexFormat(String regex) {
         if (regex == null) {
-            throw new NullArgumentException("regex string can't be null");
+            throw new NullPointerException("regex string can't be null");
         }
         StringBuffer result = new StringBuffer();
         result.append("^");
@@ -75,8 +70,4 @@ public class RegexParser {
         return (regex.contains("?") || regex.contains("*"));
     }
 
-    public static void main(String[] args) {
-        String str = "com.taobao.uic.*";
-        System.out.println(str + " -> " + regexFormat(str));
-    }
 }

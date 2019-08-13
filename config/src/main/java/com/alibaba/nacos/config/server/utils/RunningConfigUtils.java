@@ -15,16 +15,16 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
-import javax.servlet.ServletContext;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.ServletContext;
+
 /**
  * Running config
- * @author dungu.zpf
+ * @author nkorange
  */
 @Component
 public class RunningConfigUtils implements ApplicationListener<WebServerInitializedEvent> {
@@ -32,7 +32,7 @@ public class RunningConfigUtils implements ApplicationListener<WebServerInitiali
     private static int serverPort;
 
     private static String contextPath;
-    
+
     private static String clusterName = "serverlist";
 
 	@Autowired
@@ -52,7 +52,7 @@ public class RunningConfigUtils implements ApplicationListener<WebServerInitiali
     public static String getContextPath() {
         return contextPath;
     }
-    
+
     public static String getClusterName() {
 		return clusterName;
 	}
@@ -64,5 +64,5 @@ public class RunningConfigUtils implements ApplicationListener<WebServerInitiali
 	public static void setContextPath(String contextPath) {
 		RunningConfigUtils.contextPath = contextPath;
 	}
-    
+
 }

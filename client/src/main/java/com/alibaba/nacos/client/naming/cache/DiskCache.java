@@ -16,32 +16,36 @@
 package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.core.Domain;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.LogUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
+import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
+import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
  * @author xuanyin
  */
 public class DiskCache {
 
-    public static void write(Domain dom, String dir) {
+    public static void write(ServiceInfo dom, String dir) {
 
         try {
             makeSureCacheDirExists(dir);
 
-            File file = new File(dir, dom.getKey());
+
+            File file = new File(dir, dom.getKeyEncoded());
             if (!file.exists()) {
                 // add another !file.exists() to avoid conflicted creating-new-file from multi-instances
                 if (!file.createNewFile() && !file.exists()) {
@@ -63,22 +67,21 @@ public class DiskCache {
             ConcurrentDiskUtil.writeFileContent(file, keyContentBuffer.toString(), Charset.defaultCharset().toString());
 
         } catch (Throwable e) {
-            LogUtils.LOG.error("NA", "failed to write cache for dom:" + dom.getName(), e);
+            NAMING_LOGGER.error("[NA] failed to write cache for dom:" + dom.getName(), e);
         }
     }
 
-    public static String getLineSeperator() {
-        String lineSeparator = System.getProperty("line.separator");
-        return lineSeparator;
+    public static String getLineSeparator() {
+        return System.getProperty("line.separator");
     }
 
-    public static Map<String, Domain> read(String cacheDir) {
-        Map<String, Domain> domMap = new HashMap<String, Domain>(16);
+    public static Map<String, ServiceInfo> read(String cacheDir) {
+        Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
 
         BufferedReader reader = null;
         try {
             File[] files = makeSureCacheDirExists(cacheDir).listFiles();
-            if (files == null) {
+            if (files == null || files.length == 0) {
                 return domMap;
             }
 
@@ -87,15 +90,19 @@ public class DiskCache {
                     continue;
                 }
 
-                if (!(file.getName().endsWith(Domain.SPLITER + "meta") || file.getName().endsWith(Domain.SPLITER + "special-url"))) {
-                    Domain dom = new Domain(file.getName());
+                String fileName = URLDecoder.decode(file.getName(), "UTF-8");
+
+                if (!(fileName.endsWith(Constants.SERVICE_INFO_SPLITER + "meta") || fileName.endsWith(
+                    Constants.SERVICE_INFO_SPLITER + "special-url"))) {
+                    ServiceInfo dom = new ServiceInfo(fileName);
                     List<Instance> ips = new ArrayList<Instance>();
                     dom.setHosts(ips);
 
-                    Domain newFormat = null;
+                    ServiceInfo newFormat = null;
 
                     try {
-                        String dataString = ConcurrentDiskUtil.getFileContent(file, Charset.defaultCharset().toString());
+                        String dataString = ConcurrentDiskUtil.getFileContent(file,
+                            Charset.defaultCharset().toString());
                         reader = new BufferedReader(new StringReader(dataString));
 
                         String json;
@@ -105,17 +112,17 @@ public class DiskCache {
                                     continue;
                                 }
 
-                                newFormat = JSON.parseObject(json, Domain.class);
+                                newFormat = JSON.parseObject(json, ServiceInfo.class);
 
                                 if (StringUtils.isEmpty(newFormat.getName())) {
                                     ips.add(JSON.parseObject(json, Instance.class));
                                 }
                             } catch (Throwable e) {
-                                LogUtils.LOG.error("NA", "error while parsing cache file: " + json, e);
+                                NAMING_LOGGER.error("[NA] error while parsing cache file: " + json, e);
                             }
                         }
                     } catch (Exception e) {
-                        LogUtils.LOG.error("NA", "failed to read cache for dom: " + file.getName(), e);
+                        NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
                         try {
                             if (reader != null) {
@@ -125,7 +132,8 @@ public class DiskCache {
                             //ignore
                         }
                     }
-                    if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils.isEmpty(newFormat.getHosts())) {
+                    if (newFormat != null && !StringUtils.isEmpty(newFormat.getName()) && !CollectionUtils.isEmpty(
+                        newFormat.getHosts())) {
                         domMap.put(dom.getKey(), newFormat);
                     } else if (!CollectionUtils.isEmpty(dom.getHosts())) {
                         domMap.put(dom.getKey(), dom);
@@ -134,7 +142,7 @@ public class DiskCache {
 
             }
         } catch (Throwable e) {
-            LogUtils.LOG.error("NA", "failed to read cache file", e);
+            NAMING_LOGGER.error("[NA] failed to read cache file", e);
         }
 
         return domMap;

@@ -16,77 +16,89 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.alibaba.nacos.naming.core.Domain;
-import com.alibaba.nacos.naming.healthcheck.AbstractHealthCheckConfig;
+import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.naming.healthcheck.JsonAdapter;
+import com.alibaba.nacos.naming.selector.Selector;
+import com.alibaba.nacos.naming.selector.SelectorJsonAdapter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
+
+import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
 /**
  * @author nacos
+ * @author jifengnan
  */
 public class UtilsAndCommons {
 
-    private static final String NACOS_CONF_DIR_PATH = System.getProperty("user.home") + "/conf";
-
-    private static final String NACOS_CONF_FILE_NAME = "cluster.conf";
-
-    private static String NACOS_CONF_FILE = NACOS_CONF_DIR_PATH + File.separator + NACOS_CONF_FILE_NAME;
+    // ********************** Nacos HTTP Context ************************ \\
 
     public static final String NACOS_SERVER_CONTEXT = "/nacos";
 
     public static final String NACOS_SERVER_VERSION = "/v1";
 
-    public static final String NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+    public static final String DEFAULT_NACOS_NAMING_CONTEXT = NACOS_SERVER_VERSION + "/ns";
+
+    public static final String NACOS_NAMING_CONTEXT = DEFAULT_NACOS_NAMING_CONTEXT;
+
+    public static final String NACOS_NAMING_CATALOG_CONTEXT = "/catalog";
 
     public static final String NACOS_NAMING_INSTANCE_CONTEXT = "/instance";
 
+    public static final String NACOS_NAMING_SERVICE_CONTEXT = "/service";
+
+    public static final String NACOS_NAMING_CLUSTER_CONTEXT = "/cluster";
+
+    public static final String NACOS_NAMING_HEALTH_CONTEXT = "/health";
+
     public static final String NACOS_NAMING_RAFT_CONTEXT = "/raft";
+
+    public static final String NACOS_NAMING_PARTITION_CONTEXT = "/distro";
+
+    public static final String NACOS_NAMING_OPERATOR_CONTEXT = "/operator";
+
+    // ********************** Nacos HTTP Context ************************ //
 
     public static final String NACOS_SERVER_HEADER = "Nacos-Server";
 
-    public static final String NACOS_VERSION = "1.0";
+    public static final String NACOS_VERSION = "1.0.1";
 
     public static final String SUPER_TOKEN = "xy";
 
-    public static final String DOMAINS_DATA_ID = "com.alibaba.nacos.naming.domains.meta";
+    public static final String DOMAINS_DATA_ID_PRE = "com.alibaba.nacos.naming.domains.meta.";
 
     public static final String IPADDRESS_DATA_ID_PRE = "com.alibaba.nacos.naming.iplist.";
 
-    static public final String NODE_TAG_IP_PRE = "com.alibaba.nacos.naming.tag.iplist.";
+    public static final String SWITCH_DOMAIN_NAME = "00-00---000-NACOS_SWITCH_DOMAIN-000---00-00";
 
-    public static final String TAG_DOMAINS_DATA_ID = "com.alibaba.nacos.naming.domains.tag.meta";
+    public static final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
 
-    static public final String CIDR_REGEX = "[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}/[0-9]+";
-
-    static public final String UNKNOWN_SITE = "unknown";
-
-    static public final String UNKNOWN_HOST = "unknown";
+    public static final String UNKNOWN_SITE = "unknown";
 
     public static final String DEFAULT_CLUSTER_NAME = "DEFAULT";
 
-    static public final String RAFT_DOM_PRE = "meta";
-    static public final String RAFT_IPLIST_PRE = "iplist.";
-    static public final String RAFT_TAG_DOM_PRE = "tag.meta";
-    static public final String RAFT_TAG_IPLIST_PRE = "tag.iplist.";
+    public static final String LOCALHOST_SITE = UtilsAndCommons.UNKNOWN_SITE;
+
+    public static final int RAFT_PUBLISH_TIMEOUT = 5000;
 
     public static final String SERVER_VERSION = NACOS_SERVER_HEADER + ":" + NACOS_VERSION;
 
     public static final String SELF_SERVICE_CLUSTER_ENV = "naming_self_service_cluster_ips";
 
-    public static final boolean STANDALONE_MODE = Boolean.parseBoolean(System.getProperty("nacos.standalone", "false"));
-
     public static final String CACHE_KEY_SPLITER = "@@@@";
 
     public static final String LOCAL_HOST_IP = "127.0.0.1";
 
-    public static final String CLUSTER_CONF_IP_SPLITER = ":";
+    public static final String IP_PORT_SPLITER = ":";
 
     public static final int MAX_PUBLISH_WAIT_TIME_MILLIS = 5000;
 
@@ -96,26 +108,38 @@ public class UtilsAndCommons {
 
     public static final String API_SET_ALL_WEIGHTS = "/api/setWeight4AllIPs";
 
-    public static final String API_DOM_SERVE_STATUS = "/api/domServeStatus";
-
-    public static final String API_IP_FOR_DOM = "/api/ip4Dom";
-
     public static final String API_DOM = "/api/dom";
 
-    public static final ScheduledExecutorService SERVER_STATUS_EXECUTOR;
+    public static final String NAMESPACE_SERVICE_CONNECTOR = "##";
 
-    public static final ScheduledExecutorService DOMAIN_SYNCHRONIZATION_EXECUTOR;
+    public static final String UPDATE_INSTANCE_ACTION_ADD = "add";
 
-    public static final ScheduledExecutorService DOMAIN_UPDATE_EXECUTOR;
+    public static final String UPDATE_INSTANCE_ACTION_REMOVE = "remove";
+
+    public static final String DATA_BASE_DIR = NACOS_HOME + File.separator + "data" + File.separator + "naming";
+
+    public static final String NUMBER_PATTERN = "^\\d+$";
+
+    public static final ScheduledExecutorService SERVICE_SYNCHRONIZATION_EXECUTOR;
+
+    public static final ScheduledExecutorService SERVICE_UPDATE_EXECUTOR;
 
     public static final ScheduledExecutorService INIT_CONFIG_EXECUTOR;
 
+    public static final Executor RAFT_PUBLISH_EXECUTOR;
+
     static {
+
         // custom serializer and deserializer for fast-json
         SerializeConfig.getGlobalInstance()
-                .put(AbstractHealthCheckConfig.class, AbstractHealthCheckConfig.JsonAdapter.getInstance());
+            .put(AbstractHealthChecker.class, JsonAdapter.getInstance());
         ParserConfig.getGlobalInstance()
-                .putDeserializer(AbstractHealthCheckConfig.class, AbstractHealthCheckConfig.JsonAdapter.getInstance());
+            .putDeserializer(AbstractHealthChecker.class, JsonAdapter.getInstance());
+
+        SerializeConfig.getGlobalInstance()
+            .put(Selector.class, SelectorJsonAdapter.getInstance());
+        ParserConfig.getGlobalInstance()
+            .putDeserializer(Selector.class, SelectorJsonAdapter.getInstance());
 
         // write null values, otherwise will cause compatibility issues
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullStringAsEmpty.getMask();
@@ -124,36 +148,30 @@ public class UtilsAndCommons {
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteMapNullValue.getMask();
         JSON.DEFAULT_GENERATE_FEATURE |= SerializerFeature.WriteNullNumberAsZero.getMask();
 
-        String nacosHome = System.getProperty("nacos.home");
-
-        if (StringUtils.isNotBlank(nacosHome)) {
-            NACOS_CONF_FILE = nacosHome + File.separator + "conf" + File.separator + NACOS_CONF_FILE_NAME;
-        }
-
-        DOMAIN_SYNCHRONIZATION_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        SERVICE_SYNCHRONIZATION_EXECUTOR
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("nacos.naming.domains.worker");
+                t.setName("nacos.naming.service.worker");
                 t.setDaemon(true);
                 return t;
             }
         });
 
-        DOMAIN_UPDATE_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        SERVICE_UPDATE_EXECUTOR
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("nacos.naming.domains.update.processor");
+                t.setName("nacos.naming.service.update.processor");
                 t.setDaemon(true);
                 return t;
             }
         });
 
         INIT_CONFIG_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -163,12 +181,12 @@ public class UtilsAndCommons {
             }
         });
 
-        SERVER_STATUS_EXECUTOR
-                = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        RAFT_PUBLISH_EXECUTOR
+            = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
-                t.setName("nacos.naming.status.worker");
+                t.setName("nacos.naming.raft.publisher");
                 t.setDaemon(true);
                 return t;
             }
@@ -188,17 +206,70 @@ public class UtilsAndCommons {
         return strBuilder.toString();
     }
 
-    public static String getConfFile() {
-        return NACOS_CONF_FILE;
+    public static String getSwitchDomainKey() {
+        return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
 
+    public static Map<String, String> parseMetadata(String metadata) throws NacosException {
 
-    public static String getIPListStoreKey(Domain dom) {
-        return UtilsAndCommons.IPADDRESS_DATA_ID_PRE + dom.getName();
+        Map<String, String> metadataMap = new HashMap<>(16);
+
+        if (StringUtils.isBlank(metadata)) {
+            return metadataMap;
+        }
+
+        try {
+            metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>() {
+            });
+        } catch (Exception e) {
+            String[] datas = metadata.split(",");
+            if (datas.length > 0) {
+                for (String data : datas) {
+                    String[] kv = data.split("=");
+                    if (kv.length != 2) {
+                        throw new NacosException(NacosException.INVALID_PARAM, "metadata format incorrect:" + metadata);
+                    }
+                    metadataMap.put(kv[0], kv[1]);
+                }
+            }
+        }
+
+        return metadataMap;
     }
 
-    public static String getDomStoreKey(Domain dom) {
-        return UtilsAndCommons.DOMAINS_DATA_ID + "." + dom.getName();
+    public static String assembleFullServiceName(String namespaceId, String serviceName) {
+        return namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + serviceName;
+    }
+
+    /**
+     * Provide a number between 0(inclusive) and {@code upperLimit}(exclusive) for the given {@code string},
+     * the number will be nearly uniform distribution.
+     * <p>
+     * <p>
+     *
+     * e.g. Assume there's an array which contains some IP of the servers provide the same service,
+     * the caller name can be used to choose the server to achieve load balance.
+     * <blockquote><pre>
+     *     String[] serverIps = new String[10];
+     *     int index = shakeUp("callerName", serverIps.length);
+     *     String targetServerIp = serverIps[index];
+     * </pre></blockquote>
+     *
+     * @param string     a string. the number 0 will be returned if it's null
+     * @param upperLimit the upper limit of the returned number, must be a positive integer, which means > 0
+     * @return a number between 0(inclusive) and upperLimit(exclusive)
+     * @throws IllegalArgumentException if the upper limit equals or less than 0
+     * @since 1.0.0
+     * @author jifengnan
+     */
+    public static int shakeUp(String string, int upperLimit) {
+        if (upperLimit < 1) {
+            throw new IllegalArgumentException("upper limit must be greater than 0");
+        }
+        if (string == null) {
+            return 0;
+        }
+        return (string.hashCode() & Integer.MAX_VALUE) % upperLimit;
     }
 
 }
