@@ -245,7 +245,7 @@ public class NamingProxy {
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
         /**
-         * 发送http请求
+         * 发送http请求   /instance
          */
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
@@ -345,6 +345,15 @@ public class NamingProxy {
         reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.PUT);
     }
 
+    /**
+     * 向服务端查询实例
+     * @param serviceName
+     * @param clusters
+     * @param udpPort
+     * @param healthyOnly
+     * @return
+     * @throws NacosException
+     */
     public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)
         throws NacosException {
 
@@ -356,6 +365,9 @@ public class NamingProxy {
         params.put("clientIP", NetUtils.localIP());
         params.put("healthyOnly", String.valueOf(healthyOnly));
 
+        /**
+         * 向服务端查询实例    /instance/list
+         */
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 

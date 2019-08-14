@@ -269,7 +269,7 @@ public class NacosNamingService implements NamingService {
     public void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
 
         /**
-         * init
+         * init  Instance
          */
         Instance instance = new Instance();
         instance.setIp(ip);
@@ -368,6 +368,12 @@ public class NacosNamingService implements NamingService {
         serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 
+    /**
+     * 获取serviceName对应的实例
+     * @param serviceName name of service
+     * @return
+     * @throws NacosException
+     */
     @Override
     public List<Instance> getAllInstances(String serviceName) throws NacosException {
         return getAllInstances(serviceName, new ArrayList<String>());
@@ -388,6 +394,13 @@ public class NacosNamingService implements NamingService {
         return getAllInstances(serviceName, groupName, new ArrayList<String>(), subscribe);
     }
 
+    /**
+     * 获取serviceName对应的实例
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @return
+     * @throws NacosException
+     */
     @Override
     public List<Instance> getAllInstances(String serviceName, List<String> clusters) throws NacosException {
         return getAllInstances(serviceName, clusters, true);
@@ -398,12 +411,32 @@ public class NacosNamingService implements NamingService {
         return getAllInstances(serviceName, groupName, clusters, true);
     }
 
+    /**
+     * 获取serviceName对应的实例
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param subscribe   if subscribe the service
+     * @return
+     * @throws NacosException
+     */
     @Override
     public List<Instance> getAllInstances(String serviceName, List<String> clusters, boolean subscribe)
         throws NacosException {
+        /**
+         * 默认groupName
+         */
         return getAllInstances(serviceName, Constants.DEFAULT_GROUP, clusters, subscribe);
     }
 
+    /**
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param clusters    list of cluster
+     * @param subscribe   if subscribe the service
+     * @return
+     * @throws NacosException
+     */
     @Override
     public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters, boolean subscribe) throws NacosException {
 
@@ -411,6 +444,9 @@ public class NacosNamingService implements NamingService {
         if (subscribe) {
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
+            /**
+             * 直接向服务端查询实例
+             */
             serviceInfo = hostReactor.getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         }
         List<Instance> list;

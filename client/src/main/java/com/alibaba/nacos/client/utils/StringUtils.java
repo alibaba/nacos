@@ -79,6 +79,12 @@ public class StringUtils {
         return null;
     }
 
+    /**
+     * 将集合转换为以separator间隔的字符串
+     * @param collection
+     * @param separator
+     * @return
+     */
     public static String join(Collection collection, String separator) {
         if (collection == null) {
             return null;

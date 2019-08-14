@@ -262,6 +262,9 @@ public class HostReactor {
             DiskCache.write(serviceInfo, cacheDir);
         }
 
+        /**
+         * prometheus监控
+         */
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
         if (changed) {
@@ -272,6 +275,12 @@ public class HostReactor {
         return serviceInfo;
     }
 
+    /**
+     * 从本地缓存中获取serviceInfo
+     * @param serviceName
+     * @param clusters
+     * @return
+     */
     private ServiceInfo getServiceInfo0(String serviceName, String clusters) {
 
         String key = ServiceInfo.getKey(serviceName, clusters);
@@ -279,7 +288,17 @@ public class HostReactor {
         return serviceInfoMap.get(key);
     }
 
+    /**
+     * 向服务端查询实例
+     * @param serviceName
+     * @param clusters
+     * @return
+     * @throws NacosException
+     */
     public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
+        /**
+         * 向服务端查询实例
+         */
         String result = serverProxy.queryList(serviceName, clusters, 0, false);
         if (StringUtils.isNotEmpty(result)) {
             return JSON.parseObject(result, ServiceInfo.class);
@@ -287,31 +306,68 @@ public class HostReactor {
         return null;
     }
 
+    /**
+     * 从本地缓存中获取serviceInfo
+     * @param serviceName
+     * @param clusters
+     * @return
+     */
     public ServiceInfo getServiceInfo(final String serviceName, final String clusters) {
 
         NAMING_LOGGER.debug("failover-mode: " + failoverReactor.isFailoverSwitch());
+
+        /**
+         * serviceName@@clusters
+         */
         String key = ServiceInfo.getKey(serviceName, clusters);
+
+        /**
+         * 开启了容灾   则从容灾策略中获取
+         */
         if (failoverReactor.isFailoverSwitch()) {
             return failoverReactor.getService(key);
         }
 
+        /**
+         * 从本地缓存中获取serviceInfo
+         */
         ServiceInfo serviceObj = getServiceInfo0(serviceName, clusters);
 
+        /**
+         * 缓存中没有
+         */
         if (null == serviceObj) {
             serviceObj = new ServiceInfo(serviceName, clusters);
 
             serviceInfoMap.put(serviceObj.getKey(), serviceObj);
 
+            /**
+             * 设置更新标志
+             */
             updatingMap.put(serviceName, new Object());
+
+            /**
+             * 立即更新
+             */
             updateServiceNow(serviceName, clusters);
+
+            /**
+             * 更新结束  删除标志
+             */
             updatingMap.remove(serviceName);
 
         } else if (updatingMap.containsKey(serviceName)) {
+            /**
+             * 有其他线程在执行更新操作   且没有执行结束    所有updatingMap中含有serviceName
+             */
 
             if (UPDATE_HOLD_INTERVAL > 0) {
                 // hold a moment waiting for update finish
                 synchronized (serviceObj) {
                     try {
+                        /**
+                         * 等待其他线程更新操作结果
+                         */
                         serviceObj.wait(UPDATE_HOLD_INTERVAL);
                     } catch (InterruptedException e) {
                         NAMING_LOGGER.error("[getServiceInfo] serviceName:" + serviceName + ", clusters:" + clusters, e);
@@ -320,11 +376,19 @@ public class HostReactor {
             }
         }
 
+        /**
+         * 调度更新
+         */
         scheduleUpdateIfAbsent(serviceName, clusters);
 
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
+    /**
+     * 调度更新
+     * @param serviceName
+     * @param clusters
+     */
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -335,18 +399,35 @@ public class HostReactor {
                 return;
             }
 
+            /**
+             * 设置更新任务
+             */
             ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, clusters));
             futureMap.put(ServiceInfo.getKey(serviceName, clusters), future);
         }
     }
 
+    /**
+     * 立即更新
+     * @param serviceName
+     * @param clusters
+     */
     public void updateServiceNow(String serviceName, String clusters) {
+        /**
+         * 从本地缓存中获取serviceInfo
+         */
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
 
+            /**
+             * 向服务端查询实例
+             */
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
 
             if (StringUtils.isNotEmpty(result)) {
+                /**
+                 * 处理数据
+                 */
                 processServiceJSON(result);
             }
         } catch (Exception e) {

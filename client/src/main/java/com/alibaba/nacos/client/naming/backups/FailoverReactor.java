@@ -290,11 +290,23 @@ public class FailoverReactor {
         }
     }
 
+    /**
+     * 是否开启了容灾开关
+     * @return
+     */
     public boolean isFailoverSwitch() {
         return Boolean.parseBoolean(switchParams.get("failover-mode"));
     }
 
+    /**
+     * 从容灾策略中获取ServiceInfo
+     * @param key
+     * @return
+     */
     public ServiceInfo getService(String key) {
+        /**
+         * 从缓存中获取ServiceInfo
+         */
         ServiceInfo serviceInfo = serviceMap.get(key);
 
         if (serviceInfo == null) {
