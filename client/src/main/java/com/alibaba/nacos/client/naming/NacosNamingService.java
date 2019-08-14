@@ -251,7 +251,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
         /**
-         * 默认组名
+         * 采用默认组名
          */
         registerInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
@@ -268,6 +268,9 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
 
+        /**
+         * init
+         */
         Instance instance = new Instance();
         instance.setIp(ip);
         instance.setPort(port);
@@ -282,11 +285,18 @@ public class NacosNamingService implements NamingService {
         registerInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
 
+    /**
+     * 注册实例
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instance    instance to register
+     * @throws NacosException
+     */
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
 
         /**
-         * 临时节点
+         * 默认为临时节点
          */
         if (instance.isEphemeral()) {
             BeatInfo beatInfo = new BeatInfo();
@@ -302,14 +312,20 @@ public class NacosNamingService implements NamingService {
             beatInfo.setScheduled(false);
 
             /**
-             *
+             * 心跳间隔
              */
             long instanceInterval = instance.getInstanceHeartBeatInterval();
             beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
+            /**
+             * 临时节点   需要不断的向nacos发送心跳
+             */
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
 
+        /**
+         * 注册服务
+         */
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
     }
 

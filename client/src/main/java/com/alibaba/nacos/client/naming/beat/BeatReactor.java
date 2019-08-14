@@ -42,6 +42,7 @@ public class BeatReactor {
 
     /**
      * 构造BeatReactor
+     *
      * @param serverProxy
      * @param threadCount
      */
@@ -62,10 +63,27 @@ public class BeatReactor {
         });
     }
 
+    /**
+     * 心跳调度
+     *
+     * @param serviceName
+     * @param beatInfo
+     */
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
+        /**
+         * key=serviceName#ip#port
+         */
         dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+
+        /**
+         * 设置一次性调度任务   间隔为beatInfo.getPeriod()   毫秒级
+         */
         executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
+
+        /**
+         * prometheus监控
+         */
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
@@ -79,6 +97,14 @@ public class BeatReactor {
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
+    /**
+     * serviceName#ip#port
+     *
+     * @param serviceName
+     * @param ip
+     * @param port
+     * @return
+     */
     private String buildKey(String serviceName, String ip, int port) {
         return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER
             + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;
@@ -97,8 +123,15 @@ public class BeatReactor {
             if (beatInfo.isStopped()) {
                 return;
             }
+            /**
+             * 发送心跳
+             */
             long result = serverProxy.sendBeat(beatInfo);
             long nextTime = result > 0 ? result : beatInfo.getPeriod();
+
+            /**
+             * 设置下一次调度执行
+             */
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }

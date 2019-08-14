@@ -29,7 +29,7 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
  */
 public class NamingExample {
 
-    public static void main(String[] args) throws NacosException {
+    public static void main(String[] args) throws NacosException, InterruptedException {
 
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "192.168.50.65:8848,192.168.50.64:8848,192.168.50.63:8848");
@@ -41,18 +41,21 @@ public class NamingExample {
 
         naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
-        System.out.println(naming.getAllInstances("nacos.test.3"));
+        System.out.println("1----------------" + naming.getAllInstances("nacos.test.3"));
 
-        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
+//        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
-        System.out.println(naming.getAllInstances("nacos.test.3"));
+        System.out.println("2----------------" + naming.getAllInstances("nacos.test.3"));
 
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override
             public void onEvent(Event event) {
-                System.out.println(((NamingEvent)event).getServiceName());
-                System.out.println(((NamingEvent)event).getInstances());
+                System.out.println(((NamingEvent) event).getServiceName());
+                System.out.println(((NamingEvent) event).getInstances());
             }
         });
+
+
+        Thread.sleep(Integer.MAX_VALUE);
     }
 }

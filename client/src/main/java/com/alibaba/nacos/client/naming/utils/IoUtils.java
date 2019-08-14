@@ -32,6 +32,12 @@ import static org.apache.commons.lang3.CharEncoding.UTF_8;
  */
 public class IoUtils {
 
+    /**
+     * 解析流里面的内容
+     * @param input
+     * @param encoding
+     * @return
+     */
     static public String toString(InputStream input, String encoding) {
 
         try {

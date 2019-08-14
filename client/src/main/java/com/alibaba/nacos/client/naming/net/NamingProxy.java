@@ -219,6 +219,13 @@ public class NamingProxy {
         }
     }
 
+    /**
+     * 注册服务
+     * @param serviceName
+     * @param groupName
+     * @param instance
+     * @throws NacosException
+     */
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
 
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
@@ -237,6 +244,9 @@ public class NamingProxy {
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
+        /**
+         * 发送http请求
+         */
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.POST);
 
     }
@@ -349,6 +359,11 @@ public class NamingProxy {
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
 
+    /**
+     * 发送心跳
+     * @param beatInfo
+     * @return
+     */
     public long sendBeat(BeatInfo beatInfo) {
         try {
             if (NAMING_LOGGER.isDebugEnabled()) {
@@ -358,7 +373,17 @@ public class NamingProxy {
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(CommonParams.NAMESPACE_ID, namespaceId);
             params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());
+
+            /**
+             * 发送心跳
+             * 服务名为 UtilAndComs.NACOS_URL_BASE + "/instance/beat"
+             * put方式
+             */
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/beat", params, HttpMethod.PUT);
+
+            /**
+             * 返回值
+             */
             JSONObject jsonObject = JSON.parseObject(result);
 
             if (jsonObject != null) {
@@ -428,13 +453,27 @@ public class NamingProxy {
         return reqAPI(api, params, snapshot);
     }
 
+    /**
+     * 发送http请求
+     * @param api
+     * @param params
+     * @param method
+     * @return
+     * @throws NacosException
+     */
     public String reqAPI(String api, Map<String, String> params, String method) throws NacosException {
 
+        /**
+         * nacos集群地址
+         */
         List<String> snapshot = serversFromEndpoint;
         if (!CollectionUtils.isEmpty(serverList)) {
             snapshot = serverList;
         }
 
+        /**
+         * 发送http请求
+         */
         return reqAPI(api, params, snapshot, method);
     }
 
@@ -442,26 +481,56 @@ public class NamingProxy {
         return callServer(api, params, curServer, HttpMethod.GET);
     }
 
+    /**
+     * 发送http请求
+     * @param api
+     * @param params
+     * @param curServer  nacos服务器地址
+     * @param method
+     * @return
+     * @throws NacosException
+     */
     public String callServer(String api, Map<String, String> params, String curServer, String method)
         throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
+        /**
+         * 验签
+         */
         checkSignature(params);
+        /**
+         * 默认header部分
+         */
         List<String> headers = builderHeaders();
 
+        /**
+         * 请求路径
+         */
         String url;
         if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+            /**
+             * 路径中包含http或https
+             */
             url = curServer + api;
         } else {
+            /**
+             * 不包含http或https
+             */
             if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
                 curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
             }
             url = HttpClient.getPrefix() + curServer + api;
         }
 
+        /**
+         * 发送http请求
+         */
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
 
+        /**
+         * prometheus监控
+         */
         MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(result.code))
             .observe(end - start);
 
@@ -482,8 +551,19 @@ public class NamingProxy {
         return reqAPI(api, params, servers, HttpMethod.GET);
     }
 
+    /**
+     * 发送http请求
+     * @param api
+     * @param params
+     * @param servers
+     * @param method
+     * @return
+     */
     public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) {
 
+        /**
+         * 设置NAMESPACE
+         */
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
 
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
@@ -492,14 +572,23 @@ public class NamingProxy {
 
         Exception exception = new Exception();
 
+        /**
+         * 按集群地址发送
+         */
         if (servers != null && !servers.isEmpty()) {
 
             Random random = new Random(System.currentTimeMillis());
             int index = random.nextInt(servers.size());
 
             for (int i = 0; i < servers.size(); i++) {
+                /**
+                 * 随机选取集群中的一台机器
+                 */
                 String server = servers.get(index);
                 try {
+                    /**
+                     * 发送http请求
+                     */
                     return callServer(api, params, server, method);
                 } catch (NacosException e) {
                     exception = e;
@@ -509,6 +598,9 @@ public class NamingProxy {
                     NAMING_LOGGER.error("request {} failed.", server, e);
                 }
 
+                /**
+                 * 切换到下一台
+                 */
                 index = (index + 1) % servers.size();
             }
 
@@ -516,6 +608,9 @@ public class NamingProxy {
                 + exception.getMessage());
         }
 
+        /**
+         * 向nacosDomain地址发送请求
+         */
         for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
             try {
                 return callServer(api, params, nacosDomain);
@@ -530,9 +625,17 @@ public class NamingProxy {
 
     }
 
+    /**
+     * 验签
+     * @param params
+     */
     private void checkSignature(Map<String, String> params) {
         String ak = getAccessKey();
         String sk = getSecretKey();
+
+        /**
+         * 没有设置ak和sk   直接返回
+         */
         if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
             return;
         }
@@ -540,6 +643,9 @@ public class NamingProxy {
         try {
             String app = System.getProperty("project.name");
             String signData = getSignData(params.get("serviceName"));
+            /**
+             * 签名算法
+             */
             String signature = SignUtil.sign(signData, sk);
             params.put("signature", signature);
             params.put("data", signData);
@@ -550,6 +656,10 @@ public class NamingProxy {
         }
     }
 
+    /**
+     * http的header
+     * @return
+     */
     public List<String> builderHeaders() {
         List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
             "User-Agent", UtilAndComs.VERSION,

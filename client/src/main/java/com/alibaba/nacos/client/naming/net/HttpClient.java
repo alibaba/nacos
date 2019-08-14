@@ -65,19 +65,45 @@ public class HttpClient {
         return request(url, headers, paramValues, encoding, "GET");
     }
 
+    /**
+     * http请求
+     *
+     * @param url
+     * @param headers
+     * @param paramValues
+     * @param encoding
+     * @param method
+     * @return
+     */
     public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
+            /**
+             * 对参数编码
+             */
             String encodedContent = encodingParams(paramValues, encoding);
+
+            /**
+             * 将encodedContent加入到url
+             */
             url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
+            /**
+             * 创建链接
+             */
             conn = (HttpURLConnection) new URL(url).openConnection();
 
+            /**
+             * 设置header
+             */
             setHeaders(conn, headers, encoding);
             conn.setConnectTimeout(CON_TIME_OUT_MILLIS);
             conn.setReadTimeout(TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
+            /**
+             * post或者put请求    将请求参数  设置到输出流中
+             */
             if (POST.equals(method) || PUT.equals(method)) {
                 // fix: apache http nio framework must set some content to request body
                 byte[] b = encodedContent.getBytes();
@@ -86,8 +112,15 @@ public class HttpClient {
                 conn.getOutputStream().flush();
                 conn.getOutputStream().close();
             }
+            /**
+             * 链接nacos服务器   发送http请求
+             */
             conn.connect();
             NAMING_LOGGER.debug("Request from server: " + url);
+
+            /**
+             * 处理结果
+             */
             return getResult(conn);
         } catch (Exception e) {
             try {
@@ -110,10 +143,21 @@ public class HttpClient {
         }
     }
 
+    /**
+     * 处理服务器返回结果
+     *
+     * @param conn
+     * @return
+     * @throws IOException
+     */
     private static HttpResult getResult(HttpURLConnection conn) throws IOException {
         int respCode = conn.getResponseCode();
 
         InputStream inputStream;
+
+        /**
+         * 成功应答与异常应答
+         */
         if (HttpURLConnection.HTTP_OK == respCode
             || HttpURLConnection.HTTP_NOT_MODIFIED == respCode
             || Constants.WRITE_REDIRECT_CODE == respCode) {
@@ -122,6 +166,9 @@ public class HttpClient {
             inputStream = conn.getErrorStream();
         }
 
+        /**
+         * 获取应答的header
+         */
         Map<String, String> respHeaders = new HashMap<String, String>(conn.getHeaderFields().size());
         for (Map.Entry<String, List<String>> entry : conn.getHeaderFields().entrySet()) {
             respHeaders.put(entry.getKey(), entry.getValue().get(0));
@@ -159,6 +206,13 @@ public class HttpClient {
         return charset;
     }
 
+    /**
+     * 设置header
+     *
+     * @param conn
+     * @param headers
+     * @param encoding
+     */
     private static void setHeaders(HttpURLConnection conn, List<String> headers, String encoding) {
         if (null != headers) {
             for (Iterator<String> iter = headers.iterator(); iter.hasNext(); ) {
@@ -171,6 +225,14 @@ public class HttpClient {
         conn.addRequestProperty("Accept-Charset", encoding);
     }
 
+    /**
+     * 对参数编码
+     *
+     * @param params
+     * @param encoding
+     * @return
+     * @throws UnsupportedEncodingException
+     */
     private static String encodingParams(Map<String, String> params, String encoding)
         throws UnsupportedEncodingException {
         if (null == params || params.isEmpty()) {
@@ -180,6 +242,9 @@ public class HttpClient {
         params.put("encoding", encoding);
         StringBuilder sb = new StringBuilder();
 
+        /**
+         * 对参数按encoding进行编码
+         */
         for (Map.Entry<String, String> entry : params.entrySet()) {
             if (StringUtils.isEmpty(entry.getValue())) {
                 continue;
@@ -190,6 +255,9 @@ public class HttpClient {
             sb.append("&");
         }
 
+        /**
+         * 删除最后一位  &
+         */
         if (sb.length() > 0) {
             sb = sb.deleteCharAt(sb.length() - 1);
         }
