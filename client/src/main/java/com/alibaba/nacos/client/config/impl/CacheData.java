@@ -16,7 +16,9 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.AbstractSharedListener;
+import com.alibaba.nacos.client.config.listener.impl.ConfigChangeListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -60,6 +62,7 @@ public class CacheData {
     }
 
     public void setContent(String newContent) {
+        this.lastContent = this.content;
         this.content = newContent;
         this.md5 = getMd5String(content);
     }
@@ -188,6 +191,15 @@ public class CacheData {
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
+
+                    if (listener instanceof ConfigChangeListener) {
+                        if (dataId.endsWith(ConfigType.YAML.getType()) || dataId.endsWith(ConfigType.YML.getType())
+                            || dataId.endsWith(ConfigType.PROPERTIES.getType())) {
+                            // compare lastContent and content
+                            ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content);
+                            ((ConfigChangeListener)listener).receiveConfigChange(event);
+                        }
+                    }
                     listenerWrap.lastCallMd5 = md5;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
                         listener);
@@ -279,6 +291,7 @@ public class CacheData {
      * last modify time
      */
     private volatile long localConfigLastModified;
+    private volatile String lastContent;
     private volatile String content;
     private int taskId;
     private volatile boolean isInitializing = true;
