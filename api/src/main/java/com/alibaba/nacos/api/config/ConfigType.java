@@ -50,7 +50,12 @@ public enum ConfigType {
     /**
      * config type is "yaml"
      */
-    YAML("yaml");
+    YAML("yaml"),
+
+    /**
+     * config type is "yaml"
+     */
+    YML("yml");
 
     String type;
 
