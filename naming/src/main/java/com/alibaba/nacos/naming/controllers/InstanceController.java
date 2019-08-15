@@ -234,8 +234,8 @@ public class InstanceController {
 
         String clusterName = clientBeat.getCluster();
 
-        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
+        if (Loggers.SRV_LOG.isDebugEnabled()) {
+            Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
@@ -372,10 +372,11 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
             }
             result.put("name", serviceName);
+            result.put("clusters", clusters);
             result.put("hosts", new JSONArray());
             return result;
         }
@@ -412,8 +413,8 @@ public class InstanceController {
 
         if (CollectionUtils.isEmpty(srvedIPs)) {
 
-            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
             }
 
             if (clientInfo.type == ClientInfo.ClientType.JAVA &&

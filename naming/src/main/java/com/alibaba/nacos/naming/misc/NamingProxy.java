@@ -54,7 +54,7 @@ public class NamingProxy {
                     @Override
                     public Object onCompleted(Response response) throws Exception {
                         if (HttpURLConnection.HTTP_OK != response.getStatusCode()) {
-                            Loggers.EPHEMERAL.error("failed to req API: {}, code: {}, msg: {}",
+                            Loggers.DISTRO.error("failed to req API: {}, code: {}, msg: {}",
                                 "http://" + server + RunningConfig.getContextPath() +
                                     UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL,
                                 response.getStatusCode(), response.getResponseBody());
@@ -64,13 +64,13 @@ public class NamingProxy {
 
                     @Override
                     public void onThrowable(Throwable t) {
-                        Loggers.EPHEMERAL.error("failed to req API:" + "http://" + server
+                        Loggers.DISTRO.error("failed to req API:" + "http://" + server
                             + RunningConfig.getContextPath()
                             + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL, t);
                     }
                 });
         } catch (Exception e) {
-            Loggers.EPHEMERAL.warn("NamingProxy", e);
+            Loggers.DISTRO.warn("NamingProxy", e);
         }
     }
 

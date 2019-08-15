@@ -75,8 +75,8 @@ public class DataSyncer {
                 String key = iterator.next();
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("sync already in process, key: {}", key);
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("sync already in process, key: {}", key);
                     }
                     iterator.remove();
                 }
@@ -95,10 +95,11 @@ public class DataSyncer {
                 return;
             }
 
-            List<String> keys = task.getKeys();
-            if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                Loggers.EPHEMERAL.debug("sync keys: {}", keys);
-            }
+                    List<String> keys = task.getKeys();
+
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("sync keys: {}", keys);
+                    }
 
             // 2. get the datums by keys and check the datum is empty or not
             Map<String, Datum> datumMap = dataStore.batchGet(keys);
@@ -110,20 +111,26 @@ public class DataSyncer {
                 return;
             }
 
-            byte[] data = serializer.serialize(datumMap);
-            long timestamp = System.currentTimeMillis();
-            boolean success = NamingProxy.syncData(data, task.getTargetServer());
-            if (!success) {
-                SyncTask syncTask = new SyncTask();
-                syncTask.setKeys(task.getKeys());
-                syncTask.setRetryCount(task.getRetryCount() + 1);
-                syncTask.setLastExecuteTime(timestamp);
-                syncTask.setTargetServer(task.getTargetServer());
-                retrySync(syncTask);
-            } else {
-                // clear all flags of this task:
-                for (String key : task.getKeys()) {
-                    taskMap.remove(buildKey(key, task.getTargetServer()));
+                    byte[] data = serializer.serialize(datumMap);
+
+                    long timestamp = System.currentTimeMillis();
+                    boolean success = NamingProxy.syncData(data, task.getTargetServer());
+                    if (!success) {
+                        SyncTask syncTask = new SyncTask();
+                        syncTask.setKeys(task.getKeys());
+                        syncTask.setRetryCount(task.getRetryCount() + 1);
+                        syncTask.setLastExecuteTime(timestamp);
+                        syncTask.setTargetServer(task.getTargetServer());
+                        retrySync(syncTask);
+                    } else {
+                        // clear all flags of this task:
+                        for (String key : task.getKeys()) {
+                            taskMap.remove(buildKey(key, task.getTargetServer()));
+                        }
+                    }
+
+                } catch (Exception e) {
+                    Loggers.DISTRO.error("sync data failed.", e);
                 }
             }
         }, delay);
@@ -139,6 +146,7 @@ public class DataSyncer {
             return;
         }
 
+        // TODO may choose other retry policy.
         submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
 
@@ -152,6 +160,10 @@ public class DataSyncer {
         public void run() {
 
             try {
+
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("server list is: {}", getServers());
+                }
 
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
@@ -171,8 +183,8 @@ public class DataSyncer {
                     return;
                 }
 
-                if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                    Loggers.EPHEMERAL.debug("sync checksums: {}", keyChecksums);
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
 
                 for (Server member : getServers()) {
@@ -182,7 +194,7 @@ public class DataSyncer {
                     NamingProxy.syncCheckSums(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
-                Loggers.EPHEMERAL.error("timed sync task failed.", e);
+                Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
     }
