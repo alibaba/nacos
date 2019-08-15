@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.misc.*;
 import org.apache.commons.lang3.StringUtils;
@@ -93,8 +94,8 @@ public class TaskDispatcher {
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
-                    if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                        Loggers.EPHEMERAL.debug("got key: {}", key);
+                    if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
+                        Loggers.DISTRO.debug("got key: {}", key);
                     }
 
                     if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
@@ -124,7 +125,7 @@ public class TaskDispatcher {
                             syncTask.setTargetServer(member.getKey());
 
                             if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                                Loggers.EPHEMERAL.debug("add sync task. task server is {}, and key size {}", syncTask.getTargetServer(), keys.size());
+                                Loggers.EPHEMERAL.debug("add sync task: {}", JSON.toJSONString(syncTask));
                             }
 
                             dataSyncer.submit(syncTask, 0);
@@ -134,7 +135,7 @@ public class TaskDispatcher {
                     }
 
                 } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("dispatch sync task failed.", e);
+                    Loggers.DISTRO.error("dispatch sync task failed.", e);
                 }
             }
         }
