@@ -124,8 +124,8 @@ public class TaskDispatcher {
                             syncTask.setKeys(keys);
                             syncTask.setTargetServer(member.getKey());
 
-                            if (Loggers.EPHEMERAL.isDebugEnabled() && StringUtils.isNotBlank(key)) {
-                                Loggers.EPHEMERAL.debug("add sync task: {}", JSON.toJSONString(syncTask));
+                            if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
+                                Loggers.DISTRO.debug("add sync task: {}", JSON.toJSONString(syncTask));
                             }
 
                             dataSyncer.submit(syncTask, 0);
