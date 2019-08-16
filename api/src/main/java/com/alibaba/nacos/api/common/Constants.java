@@ -163,5 +163,4 @@ public class Constants {
 
     public static final String NUMBER_PATTERN = "^\\d+$";
 
-    public static final String COMMA_DIVISION = ",";
 }

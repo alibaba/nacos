@@ -57,4 +57,5 @@ public interface Constants {
     String PREFER_HOSTNAME_OVER_IP = "nacos.inetutils.prefer-hostname-over-ip";
     String SYSTEM_PREFER_HOSTNAME_OVER_IP = "nacos.preferHostnameOverIp";
     String WEN_CONTEXT_PATH = "server.servlet.context-path";
+    String COMMA_DIVISION = ",";
 }

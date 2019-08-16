@@ -142,7 +142,7 @@ public class SystemUtils {
                 int multiIndex = instance.indexOf(",");
                 if (multiIndex > 0) {
                     // support the format: ip1:port,ip2:port  # multi inline
-                    for (String ins : instance.split("[,]")) {
+                    for (String ins : instance.split(Constants.COMMA_DIVISION)) {
                         instanceList.add(ins);
                     }
                 } else {
