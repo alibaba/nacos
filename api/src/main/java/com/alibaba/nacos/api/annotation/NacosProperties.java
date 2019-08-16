@@ -57,6 +57,11 @@ public @interface NacosProperties {
     String SECRET_KEY = "secret-key";
 
     /**
+     * The property name of "ram-role-name"
+     */
+    String RAM_ROLE_NAME = "ram-role-name";
+
+    /**
      * The property name of "server-addr"
      */
     String SERVER_ADDR = "server-addr";
@@ -115,6 +120,11 @@ public @interface NacosProperties {
      * The placeholder of endpoint, the value is <code>"${nacos.secret-key:}"</code>
      */
     String SECRET_KEY_PLACEHOLDER = "${" + PREFIX + SECRET_KEY + ":}";
+
+    /**
+     * The placeholder of ramRoleName, the value is <code>"${nacos.ram-role-name:}"</code>
+     */
+    String RAM_ROLE_NAME_PLACEHOLDER = "${" + PREFIX + RAM_ROLE_NAME + ":}";
 
     /**
      * The placeholder of endpoint, the value is <code>${nacos.server-addr:}"</code>
@@ -187,6 +197,14 @@ public @interface NacosProperties {
      * @see #SECRET_KEY_PLACEHOLDER
      */
     String secretKey() default SECRET_KEY_PLACEHOLDER;
+
+    /**
+     * The property of "ram-role-name"
+     *
+     * @return empty as default value
+     * @see #RAM_ROLE_NAME_PLACEHOLDER
+     */
+    String ramRoleName() default RAM_ROLE_NAME_PLACEHOLDER;
 
     /**
      * The property of "server-addr"
