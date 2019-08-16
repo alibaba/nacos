@@ -15,14 +15,17 @@
  */
 package com.alibaba.nacos.example;
 
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.locks.LockSupport;
 
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.client.config.impl.ConfigChangeEvent;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.client.config.listener.impl.ConfigChangeListener;
+import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.api.exception.NacosException;
+import org.springframework.lang.Nullable;
+import org.springframework.util.StringUtils;
+import org.yaml.snakeyaml.Yaml;
 
 /**
  * Config service example
@@ -33,14 +36,16 @@ public class ConfigExample {
 
     public static void main(String[] args) throws NacosException, InterruptedException {
         String serverAddr = "localhost";
-        String dataId = "redis.properties";
-        String group = "multi-data-ids";
+        String dataId = "zhang.yml";
+        String group = "DEFAULT_GROUP";
         Properties properties = new Properties();
         properties.put("serverAddr", serverAddr);
+        properties.put("namespace", "");
         ConfigService configService = NacosFactory.createConfigService(properties);
         String content = configService.getConfig(dataId, group, 5000);
+
         System.out.println(content);
-        configService.addListener(dataId, group, new ConfigChangeListener() {
+        configService.addListener(dataId, group, new AbstractConfigChangeListener() {
 
             @Override
             public void receiveConfigChange(final ConfigChangeEvent event) {
@@ -65,4 +70,6 @@ public class ConfigExample {
 //        Thread.sleep(300000);
 
     }
+
+
 }

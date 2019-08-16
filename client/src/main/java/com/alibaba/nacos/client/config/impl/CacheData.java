@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.AbstractSharedListener;
-import com.alibaba.nacos.client.config.listener.impl.ConfigChangeListener;
+import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.alibaba.nacos.client.config.impl.ConfigChangeEvent.*;
 
 /**
  * Listner Management
@@ -192,14 +194,13 @@ public class CacheData {
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
 
-                    if (listener instanceof ConfigChangeListener) {
-                        if (dataId.endsWith(ConfigType.YAML.getType()) || dataId.endsWith(ConfigType.YML.getType())
-                            || dataId.endsWith(ConfigType.PROPERTIES.getType())) {
-                            // compare lastContent and content
-                            ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content);
-                            ((ConfigChangeListener)listener).receiveConfigChange(event);
-                        }
+                    if (listener instanceof AbstractConfigChangeListener &&
+                        (dataId.endsWith(YAML_SUFFIX) || dataId.endsWith(YML_SUFFIX) || dataId.endsWith(PROPERTIES_SUFFIX))) {
+                        // compare lastContent and content
+                        ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content);
+                        ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
                     }
+
                     listenerWrap.lastCallMd5 = md5;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
                         listener);
