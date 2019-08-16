@@ -87,6 +87,12 @@ public class BeatReactor {
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
+    /**
+     * 移除心跳
+     * @param serviceName
+     * @param ip
+     * @param port
+     */
     public void removeBeatInfo(String serviceName, String ip, int port) {
         NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
         BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
@@ -94,6 +100,10 @@ public class BeatReactor {
             return;
         }
         beatInfo.setStopped(true);
+
+        /**
+         * prometheus监控
+         */
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
@@ -121,6 +131,9 @@ public class BeatReactor {
         @Override
         public void run() {
             if (beatInfo.isStopped()) {
+                /**
+                 * 直接返回  不再设置下一次调度任务
+                 */
                 return;
             }
             /**

@@ -251,11 +251,20 @@ public class NamingProxy {
 
     }
 
+    /**
+     * 注销
+     * @param serviceName
+     * @param instance
+     * @throws NacosException
+     */
     public void deregisterService(String serviceName, Instance instance) throws NacosException {
 
         NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}",
             namespaceId, serviceName, instance);
 
+        /**
+         * 组织参数
+         */
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, serviceName);
@@ -264,6 +273,9 @@ public class NamingProxy {
         params.put("port", String.valueOf(instance.getPort()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
 
+        /**
+         * 发起http请求
+         */
         reqAPI(UtilAndComs.NACOS_URL_INSTANCE, params, HttpMethod.DELETE);
     }
 

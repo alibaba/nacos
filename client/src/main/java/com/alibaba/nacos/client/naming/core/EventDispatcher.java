@@ -59,33 +59,64 @@ public class EventDispatcher {
         executor.execute(new Notifier());
     }
 
+    /**
+     * 监听
+     * @param serviceInfo
+     * @param clusters
+     * @param listener
+     */
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
 
         NAMING_LOGGER.info("[LISTENER] adding " + serviceInfo.getName() + " with " + clusters + " to listener map");
+        /**
+         * 集合
+         */
         List<EventListener> observers = Collections.synchronizedList(new ArrayList<EventListener>());
         observers.add(listener);
 
+        /**
+         * 存入缓存
+         */
         observers = observerMap.putIfAbsent(ServiceInfo.getKey(serviceInfo.getName(), clusters), observers);
         if (observers != null) {
             observers.add(listener);
         }
 
+        /**
+         * 新增监听任务
+         */
         serviceChanged(serviceInfo);
     }
 
+    /**
+     * 取消监听
+     * @param serviceName
+     * @param clusters
+     * @param listener
+     */
     public void removeListener(String serviceName, String clusters, EventListener listener) {
 
         NAMING_LOGGER.info("[LISTENER] removing " + serviceName + " with " + clusters + " from listener map");
 
+        /**
+         * 获取key对应得所有监听
+         */
         List<EventListener> observers = observerMap.get(ServiceInfo.getKey(serviceName, clusters));
         if (observers != null) {
             Iterator<EventListener> iter = observers.iterator();
             while (iter.hasNext()) {
                 EventListener oldListener = iter.next();
+                /**
+                 * 移除对应得EventListener
+                 */
                 if (oldListener.equals(listener)) {
                     iter.remove();
                 }
             }
+
+            /**
+             * 监听器全部取消   则移除缓存中得任务
+             */
             if (observers.isEmpty()) {
                 observerMap.remove(ServiceInfo.getKey(serviceName, clusters));
             }
@@ -101,7 +132,7 @@ public class EventDispatcher {
     }
 
     /**
-     * 通知监听器   服务有变化
+     * 通知监听器   新增监听任务
      * @param serviceInfo
      */
     public void serviceChanged(ServiceInfo serviceInfo) {

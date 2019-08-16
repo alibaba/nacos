@@ -340,11 +340,31 @@ public class NacosNamingService implements NamingService {
         deregisterInstance(serviceName, groupName, ip, port, Constants.DEFAULT_CLUSTER_NAME);
     }
 
+    /**
+     * 注销
+     * @param serviceName name of service
+     * @param ip          instance ip
+     * @param port        instance port
+     * @param clusterName instance cluster name
+     * @throws NacosException
+     */
     @Override
     public void deregisterInstance(String serviceName, String ip, int port, String clusterName) throws NacosException {
+        /**
+         * 默认组名
+         */
         deregisterInstance(serviceName, Constants.DEFAULT_GROUP, ip, port, clusterName);
     }
 
+    /**
+     * 注销
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param ip          instance ip
+     * @param port        instance port
+     * @param clusterName instance cluster name
+     * @throws NacosException
+     */
     @Override
     public void deregisterInstance(String serviceName, String groupName, String ip, int port, String clusterName) throws NacosException {
         Instance instance = new Instance();
@@ -352,6 +372,9 @@ public class NacosNamingService implements NamingService {
         instance.setPort(port);
         instance.setClusterName(clusterName);
 
+        /**
+         * 注销
+         */
         deregisterInstance(serviceName, groupName, instance);
     }
 
@@ -360,11 +383,28 @@ public class NacosNamingService implements NamingService {
         deregisterInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
 
+    /**
+     * 注销
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instance    instance information
+     * @throws NacosException
+     */
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        /**
+         * 临时节点
+         */
         if (instance.isEphemeral()) {
+            /**
+             * 移除心跳
+             */
             beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
         }
+
+        /**
+         * 通知服务器  注销
+         */
         serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 
@@ -557,6 +597,12 @@ public class NacosNamingService implements NamingService {
         }
     }
 
+    /**
+     * 订阅
+     * @param serviceName name of service
+     * @param listener    event listener
+     * @throws NacosException
+     */
     @Override
     public void subscribe(String serviceName, EventListener listener) throws NacosException {
         subscribe(serviceName, new ArrayList<String>(), listener);
@@ -567,13 +613,31 @@ public class NacosNamingService implements NamingService {
         subscribe(serviceName, groupName, new ArrayList<String>(), listener);
     }
 
+    /**
+     * 订阅
+     * @param serviceName name of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException
+     */
     @Override
     public void subscribe(String serviceName, List<String> clusters, EventListener listener) throws NacosException {
         subscribe(serviceName, Constants.DEFAULT_GROUP, clusters, listener);
     }
 
+    /**
+     * 订阅
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param clusters    list of cluster
+     * @param listener    event listener
+     * @throws NacosException
+     */
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener) throws NacosException {
+        /**
+         * 监听
+         */
         eventDispatcher.addListener(hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
             StringUtils.join(clusters, ",")), StringUtils.join(clusters, ","), listener);
     }
