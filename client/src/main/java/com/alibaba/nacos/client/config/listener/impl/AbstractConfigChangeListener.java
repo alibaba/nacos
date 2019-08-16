@@ -19,12 +19,11 @@ import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.client.config.impl.ConfigChangeEvent;
 
 /**
- * ConfigChangeListener
+ * AbstractConfigChangeListener
  *
  * @author rushsky518
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class ConfigChangeListener extends AbstractListener {
+public abstract class AbstractConfigChangeListener extends AbstractListener {
     /**
      * handle config change
      * @param event

@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.config.ConfigType;
+import com.alibaba.nacos.client.utils.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import java.util.*;
 public class ConfigChangeEvent {
     private Map<String, ConfigChangeItem> result;
 
-    public ConfigChangeEvent(String dataId, String oldContent, String content) {
+    public ConfigChangeEvent(String dataId, String oldContent, String content) throws IOException {
         init(dataId, oldContent, content);
     }
 
@@ -42,33 +42,41 @@ public class ConfigChangeEvent {
         return result.values();
     }
 
-    private void init(String dataId, String oldContent, String content) {
+    private void init(String dataId, String oldContent, String content) throws IOException {
         result = new HashMap<String, ConfigChangeItem>(32);
 
-        if (dataId.endsWith(ConfigType.PROPERTIES.getType())) {
-            Properties oldProp = new Properties();
-            Properties newProp = new Properties();
-            try {
-                oldProp.load(new StringReader(oldContent));
-                newProp.load(new StringReader(content));
-                filterData(oldProp, newProp);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+        if (dataId.endsWith(PROPERTIES_SUFFIX)) {
+            Properties oldProps = new Properties();
+            Properties newProps = new Properties();
 
-        if (dataId.endsWith(ConfigType.YML.getType()) || dataId.endsWith(ConfigType.YAML.getType())) {
-            Yaml oldYaml = new Yaml();
-            Yaml newYaml = new Yaml();
-            Map<String, Object> oldMap = oldYaml.load(oldContent);
-            Map<String, Object> newMap = newYaml.load(content);
+            if (!StringUtils.isBlank(oldContent)) {
+                oldProps.load(new StringReader(oldContent));
+            }
+            if (!StringUtils.isBlank(content)) {
+                newProps.load(new StringReader(content));
+            }
+
+            filterData(oldProps, newProps);
+        } else if (dataId.endsWith(YML_SUFFIX) || dataId.endsWith(YAML_SUFFIX)) {
+            Map<String, Object> oldMap = Collections.emptyMap();
+            Map<String, Object> newMap = Collections.emptyMap();
+
+            if (!StringUtils.isBlank(oldContent)) {
+                oldMap =  (new Yaml()).load(oldContent);
+                oldMap = getFlattenedMap(oldMap);
+            }
+            if (!StringUtils.isBlank(content)) {
+                newMap = (new Yaml()).load(content);
+                newMap = getFlattenedMap(newMap);
+            }
 
             filterData(oldMap, newMap);
         }
     }
 
     private void filterData(Map oldMap, Map newMap) {
-        for (Iterator<Map.Entry<String, Object>> entryItr = oldMap.entrySet().iterator(); entryItr.hasNext();) {
+        for (@SuppressWarnings("unchecked") Iterator<Map.Entry<String, Object>> entryItr =
+             oldMap.entrySet().iterator(); entryItr.hasNext();) {
             Map.Entry<String, Object> e = entryItr.next();
             ConfigChangeItem cci = null;
             if (newMap.containsKey(e.getKey()))  {
@@ -85,7 +93,8 @@ public class ConfigChangeEvent {
             result.put(e.getKey(), cci);
         }
 
-        for (Iterator<Map.Entry<String, Object>> entryItr = newMap.entrySet().iterator(); entryItr.hasNext();) {
+        for (@SuppressWarnings("unchecked") Iterator<Map.Entry<String, Object>> entryItr =
+             newMap.entrySet().iterator(); entryItr.hasNext();) {
             Map.Entry<String, Object> e = entryItr.next();
             if (!oldMap.containsKey(e.getKey())) {
                 ConfigChangeItem cci = new ConfigChangeItem(e.getKey(), null, e.getValue().toString());
@@ -95,5 +104,48 @@ public class ConfigChangeEvent {
         }
     }
 
+    private final Map<String, Object> getFlattenedMap(Map<String, Object> source) {
+        Map<String, Object> result = new LinkedHashMap<String, Object>(128);
+        buildFlattenedMap(result, source, null);
+        return result;
+    }
+
+    private void buildFlattenedMap(Map<String, Object> result, Map<String, Object> source, String path) {
+        for (Iterator<Map.Entry<String, Object>> itr = source.entrySet().iterator(); itr.hasNext(); ) {
+            Map.Entry<String, Object> e = itr.next();
+            String key = e.getKey();
+            if (StringUtils.isNotBlank(path)) {
+                if (e.getKey().startsWith("[")) {
+                    key = path + key;
+                } else {
+                    key = path + '.' + key;
+                }
+            }
+            if (e.getValue() instanceof String) {
+                result.put(key, e.getValue());
+            } else if (e.getValue() instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = (Map<String, Object>) e.getValue();
+                buildFlattenedMap(result, map, key);
+            } else if (e.getValue() instanceof Collection) {
+                @SuppressWarnings("unchecked")
+                Collection<Object> collection = (Collection<Object>) e.getValue();
+                if (collection.isEmpty()) {
+                    result.put(key, "");
+                } else {
+                    int count = 0;
+                    for (Object object : collection) {
+                        buildFlattenedMap(result, Collections.singletonMap("[" + (count++) + "]", object), key);
+                    }
+                }
+            } else {
+                result.put(key, (e.getValue() != null ? e.getValue() : ""));
+            }
+        }
+    }
+
+    static final String PROPERTIES_SUFFIX = ".properties";
+    static final String YAML_SUFFIX = ".ymal";
+    static final String YML_SUFFIX = ".yml";
 }
 
