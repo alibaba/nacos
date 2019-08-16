@@ -75,8 +75,7 @@ public class ConfigChangeEvent {
     }
 
     private void filterData(Map oldMap, Map newMap) {
-        for (@SuppressWarnings("unchecked") Iterator<Map.Entry<String, Object>> entryItr =
-             oldMap.entrySet().iterator(); entryItr.hasNext();) {
+        for (Iterator<Map.Entry<String, Object>> entryItr = oldMap.entrySet().iterator(); entryItr.hasNext();) {
             Map.Entry<String, Object> e = entryItr.next();
             ConfigChangeItem cci = null;
             if (newMap.containsKey(e.getKey()))  {
@@ -93,8 +92,7 @@ public class ConfigChangeEvent {
             result.put(e.getKey(), cci);
         }
 
-        for (@SuppressWarnings("unchecked") Iterator<Map.Entry<String, Object>> entryItr =
-             newMap.entrySet().iterator(); entryItr.hasNext();) {
+        for (Iterator<Map.Entry<String, Object>> entryItr = newMap.entrySet().iterator(); entryItr.hasNext();) {
             Map.Entry<String, Object> e = entryItr.next();
             if (!oldMap.containsKey(e.getKey())) {
                 ConfigChangeItem cci = new ConfigChangeItem(e.getKey(), null, e.getValue().toString());

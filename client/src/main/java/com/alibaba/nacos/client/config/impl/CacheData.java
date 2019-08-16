@@ -194,8 +194,7 @@ public class CacheData {
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
 
-                    if (listener instanceof AbstractConfigChangeListener &&
-                        (dataId.endsWith(YAML_SUFFIX) || dataId.endsWith(YML_SUFFIX) || dataId.endsWith(PROPERTIES_SUFFIX))) {
+                    if (listener instanceof AbstractConfigChangeListener) {
                         // compare lastContent and content
                         ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content);
                         ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
