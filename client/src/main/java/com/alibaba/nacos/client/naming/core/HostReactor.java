@@ -111,6 +111,11 @@ public class HostReactor {
         return serviceInfoMap;
     }
 
+    /**
+     * 设置一次性调度任务
+     * @param task
+     * @return
+     */
     public synchronized ScheduledFuture<?> addTask(UpdateTask task) {
         return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
@@ -441,8 +446,16 @@ public class HostReactor {
         }
     }
 
+    /**
+     * 刷新数据   但没有后续操作
+     * @param serviceName
+     * @param clusters
+     */
     public void refreshOnly(String serviceName, String clusters) {
         try {
+            /**
+             * 向服务端查询实例
+             */
             serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
@@ -462,23 +475,44 @@ public class HostReactor {
         @Override
         public void run() {
             try {
+                /**
+                 * 缓存中获取
+                 */
                 ServiceInfo serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
 
                 if (serviceObj == null) {
+                    /**
+                     * 立即更新
+                     */
                     updateServiceNow(serviceName, clusters);
+                    /**
+                     * 下次调度
+                     */
                     executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
                     return;
                 }
 
+                /**
+                 * 比较上次应答时间
+                 */
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
+                    /**
+                     * 立即更新
+                     */
                     updateServiceNow(serviceName, clusters);
                     serviceObj = serviceInfoMap.get(ServiceInfo.getKey(serviceName, clusters));
                 } else {
                     // if serviceName already updated by push, we should not override it
                     // since the push data may be different from pull through force push
+                    /**
+                     * 只刷新
+                     */
                     refreshOnly(serviceName, clusters);
                 }
 
+                /**
+                 * 下次任务
+                 */
                 executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
 
                 lastRefTime = serviceObj.getLastRefTime();

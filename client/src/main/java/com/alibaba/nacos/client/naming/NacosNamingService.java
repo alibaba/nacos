@@ -442,6 +442,9 @@ public class NacosNamingService implements NamingService {
 
         ServiceInfo serviceInfo;
         if (subscribe) {
+            /**
+             * 从本地缓存中查询实例
+             */
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName), StringUtils.join(clusters, ","));
         } else {
             /**
