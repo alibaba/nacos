@@ -16,9 +16,11 @@
 package com.alibaba.nacos.example;
 
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.concurrent.locks.LockSupport;
 
 import com.alibaba.nacos.api.NacosFactory;
+import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.client.config.impl.ConfigChangeEvent;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
@@ -50,6 +52,19 @@ public class ConfigExample {
             @Override
             public void receiveConfigChange(final ConfigChangeEvent event) {
                 System.out.println(event.getChangeItems());
+            }
+        });
+
+        configService.addListener(dataId, group, new Listener() {
+
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println(configInfo);
             }
         });
 
