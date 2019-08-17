@@ -15,7 +15,15 @@
  */
 package com.alibaba.nacos.config.server.configuration;
 
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.env.PropertySource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.ResourcePatternResolver;
+
+import static org.springframework.core.io.support.ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX;
 
 /**
  * Nacos Config {@link Configuration} includes required Spring components.
@@ -25,4 +33,21 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class NacosConfigConfiguration {
+
+    /**
+     * The resource location pattern of Nacos default {@link PropertySource}
+     *
+     * @see ResourcePatternResolver#CLASSPATH_ALL_URL_PREFIX
+     */
+    public static final String RESOURCE_LOCATION_PATTERN = CLASSPATH_ALL_URL_PREFIX
+        + "META-INF/nacos-default.properties";
+
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer properties() {
+        PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer = new PropertySourcesPlaceholderConfigurer();
+        YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
+        yaml.setResources(new ClassPathResource(RESOURCE_LOCATION_PATTERN));
+        propertySourcesPlaceholderConfigurer.setProperties(yaml.getObject());
+        return propertySourcesPlaceholderConfigurer;
+    }
 }
