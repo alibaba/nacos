@@ -40,7 +40,7 @@ public class NacosConfigConfiguration {
      * @see ResourcePatternResolver#CLASSPATH_ALL_URL_PREFIX
      */
     public static final String RESOURCE_LOCATION_PATTERN = CLASSPATH_ALL_URL_PREFIX
-        + "META-INF/nacos-default.properties";
+        + "META-INF/nacosConfigDataSource.yaml";
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer properties() {
