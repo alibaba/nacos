@@ -135,21 +135,21 @@ public class ConfigSubService {
 
     public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = null;
-        if (sampleCollectResult.getLisentersGroupkeyStatus() == null
-            || sampleCollectResult.getLisentersGroupkeyStatus().isEmpty()) {
-            lisentersGroupkeyStatus = new HashMap<String, String>(10);
+        Map<String, String> listenersGrouperStatus = null;
+        if (sampleCollectResult.getListenersGroupkeyStatus() == null
+            || sampleCollectResult.getListenersGroupkeyStatus().isEmpty()) {
+            listenersGrouperStatus = new HashMap<String, String>(10);
         } else {
-            lisentersGroupkeyStatus = sampleCollectResult.getLisentersGroupkeyStatus();
+            listenersGrouperStatus = sampleCollectResult.getListenersGroupkeyStatus();
         }
 
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
-            for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
-                lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
+            Map<String, String> listenersGrouperStatusTap = sampleResult.getListenersGroupkeyStatus();
+            for (Map.Entry<String, String> entry : listenersGrouperStatusTap.entrySet()) {
+                listenersGrouperStatus.put(entry.getKey(), entry.getValue());
             }
         }
-        mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        mergeResult.setListenersGroupkeyStatus(listenersGrouperStatus);
         return mergeResult;
     }
 

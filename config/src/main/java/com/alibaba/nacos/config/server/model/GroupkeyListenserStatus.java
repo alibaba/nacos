@@ -32,7 +32,7 @@ public class GroupkeyListenserStatus implements Serializable {
 
     private int collectStatus;
 
-    private Map<String, String> lisentersGroupkeyStatus;
+    private Map<String, String> listenersGrouperStatus;
 
     public int getCollectStatus() {
         return collectStatus;
@@ -42,12 +42,12 @@ public class GroupkeyListenserStatus implements Serializable {
         this.collectStatus = collectStatus;
     }
 
-    public Map<String, String> getLisentersGroupkeyStatus() {
-        return lisentersGroupkeyStatus;
+    public Map<String, String> getListenersGrouperStatus() {
+        return listenersGrouperStatus;
     }
 
-    public void setLisentersGroupkeyStatus(
-        Map<String, String> lisentersGroupkeyStatus) {
-        this.lisentersGroupkeyStatus = lisentersGroupkeyStatus;
+    public void setListenersGrouperStatus(
+        Map<String, String> listenersGrouperStatus) {
+        this.listenersGrouperStatus = listenersGrouperStatus;
     }
 }
