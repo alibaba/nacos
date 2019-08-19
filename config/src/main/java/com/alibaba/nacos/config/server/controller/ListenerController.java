@@ -65,8 +65,8 @@ public class ListenerController {
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
         Map<String, String> configMd5Status = new HashMap<String, String>(100);
-        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            Map<String, String> status = collectSampleResult.getLisentersGroupkeyStatus();
+        if (collectSampleResult.getListenersGrouperStatus() != null) {
+            Map<String, String> status = collectSampleResult.getListenersGrouperStatus();
             for (Map.Entry<String, String> config : status.entrySet()) {
                 if (!StringUtils.isBlank(tenant)) {
                     if (config.getKey().contains(tenant)) {
@@ -84,7 +84,7 @@ public class ListenerController {
                     }
                 }
             }
-            gls.setLisentersGroupkeyStatus(configMd5Status);
+            gls.setListenersGrouperStatus(configMd5Status);
         }
 
         return gls;

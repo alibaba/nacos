@@ -282,8 +282,8 @@ public class ConfigController {
         SampleResult collectSampleResult = configSubService.getCollectSampleResult(dataId, group, tenant, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
-        if (collectSampleResult.getLisentersGroupkeyStatus() != null) {
-            gls.setLisentersGroupkeyStatus(collectSampleResult.getLisentersGroupkeyStatus());
+        if (collectSampleResult.getListenersGrouperStatus() != null) {
+            gls.setListenersGrouperStatus(collectSampleResult.getListenersGrouperStatus());
         }
         return gls;
     }

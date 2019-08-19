@@ -78,30 +78,30 @@ public class LongPollingService extends AbstractEventListener {
     public SampleResult getSubscribleInfo(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> listenersGrouperStatus = new HashMap<String, String>(50);
 
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.clientMd5Map.containsKey(groupKey)) {
-                lisentersGroupkeyStatus.put(clientLongPolling.ip, clientLongPolling.clientMd5Map.get(groupKey));
+                listenersGrouperStatus.put(clientLongPolling.ip, clientLongPolling.clientMd5Map.get(groupKey));
             }
         }
-        sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        sampleResult.setListenersGrouperStatus(listenersGrouperStatus);
         return sampleResult;
     }
 
     public SampleResult getSubscribleInfoByIp(String clientIp) {
         SampleResult sampleResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> listenersGrouperStatus = new HashMap<String, String>(50);
 
         for (ClientLongPolling clientLongPolling : allSubs) {
             if (clientLongPolling.ip.equals(clientIp)) {
                 // 一个ip可能有多个监听
-                if (!lisentersGroupkeyStatus.equals(clientLongPolling.clientMd5Map)) {
-                    lisentersGroupkeyStatus.putAll(clientLongPolling.clientMd5Map);
+                if (!listenersGrouperStatus.equals(clientLongPolling.clientMd5Map)) {
+                    listenersGrouperStatus.putAll(clientLongPolling.clientMd5Map);
                 }
             }
         }
-        sampleResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        sampleResult.setListenersGrouperStatus(listenersGrouperStatus);
         return sampleResult;
     }
 
@@ -113,14 +113,14 @@ public class LongPollingService extends AbstractEventListener {
      */
     public SampleResult mergeSampleResult(List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
-        Map<String, String> lisentersGroupkeyStatus = new HashMap<String, String>(50);
+        Map<String, String> listenersGrouperStatus = new HashMap<String, String>(50);
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> lisentersGroupkeyStatusTmp = sampleResult.getLisentersGroupkeyStatus();
-            for (Map.Entry<String, String> entry : lisentersGroupkeyStatusTmp.entrySet()) {
-                lisentersGroupkeyStatus.put(entry.getKey(), entry.getValue());
+            Map<String, String> listenersGrouperStatusTap = sampleResult.getListenersGrouperStatus();
+            for (Map.Entry<String, String> entry : listenersGrouperStatusTap.entrySet()) {
+                listenersGrouperStatus.put(entry.getKey(), entry.getValue());
             }
         }
-        mergeResult.setLisentersGroupkeyStatus(lisentersGroupkeyStatus);
+        mergeResult.setListenersGrouperStatus(listenersGrouperStatus);
         return mergeResult;
     }
 
@@ -168,13 +168,13 @@ public class LongPollingService extends AbstractEventListener {
 
     public SampleResult getCollectSubscribleInfoByIp(String ip) {
         SampleResult sampleResult = new SampleResult();
-        sampleResult.setLisentersGroupkeyStatus(new HashMap<String, String>(50));
+        sampleResult.setListenersGrouperStatus(new HashMap<String, String>(50));
         for (int i = 0; i < SAMPLE_TIMES; i++) {
             SampleResult sampleTmp = getSubscribleInfoByIp(ip);
             if (sampleTmp != null) {
-                if (sampleTmp.getLisentersGroupkeyStatus() != null
-                    && !sampleResult.getLisentersGroupkeyStatus().equals(sampleTmp.getLisentersGroupkeyStatus())) {
-                    sampleResult.getLisentersGroupkeyStatus().putAll(sampleTmp.getLisentersGroupkeyStatus());
+                if (sampleTmp.getListenersGrouperStatus() != null
+                    && !sampleResult.getListenersGrouperStatus().equals(sampleTmp.getListenersGrouperStatus())) {
+                    sampleResult.getListenersGrouperStatus().putAll(sampleTmp.getListenersGrouperStatus());
                 }
             }
             if (i < SAMPLE_TIMES - 1) {
