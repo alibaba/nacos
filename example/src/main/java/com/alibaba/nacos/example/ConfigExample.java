@@ -15,19 +15,13 @@
  */
 package com.alibaba.nacos.example;
 
-import java.util.*;
+import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.concurrent.locks.LockSupport;
 
 import com.alibaba.nacos.api.NacosFactory;
-import com.alibaba.nacos.api.config.listener.Listener;
-import com.alibaba.nacos.client.config.impl.ConfigChangeEvent;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
+import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import org.springframework.lang.Nullable;
-import org.springframework.util.StringUtils;
-import org.yaml.snakeyaml.Yaml;
 
 /**
  * Config service example
@@ -38,53 +32,39 @@ public class ConfigExample {
 
     public static void main(String[] args) throws NacosException, InterruptedException {
         String serverAddr = "localhost";
-        String dataId = "zhang.yml";
+        String dataId = "test";
         String group = "DEFAULT_GROUP";
         Properties properties = new Properties();
         properties.put("serverAddr", serverAddr);
-        properties.put("namespace", "");
         ConfigService configService = NacosFactory.createConfigService(properties);
         String content = configService.getConfig(dataId, group, 5000);
-
         System.out.println(content);
-        configService.addListener(dataId, group, new AbstractConfigChangeListener() {
-
-            @Override
-            public void receiveConfigChange(final ConfigChangeEvent event) {
-                System.out.println(event.getChangeItems());
-            }
-        });
-
         configService.addListener(dataId, group, new Listener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println("receive:" + configInfo);
+            }
 
             @Override
             public Executor getExecutor() {
                 return null;
             }
-
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-                System.out.println(configInfo);
-            }
         });
 
-        LockSupport.park();
-//        boolean isPublishOk = configService.publishConfig(dataId, group, "content");
-//        System.out.println(isPublishOk);
-//
-//        Thread.sleep(3000);
-//        content = configService.getConfig(dataId, group, 5000);
-//        System.out.println(content);
-//
-//        boolean isRemoveOk = configService.removeConfig(dataId, group);
-//        System.out.println(isRemoveOk);
-//        Thread.sleep(3000);
-//
-//        content = configService.getConfig(dataId, group, 5000);
-//        System.out.println(content);
-//        Thread.sleep(300000);
+        boolean isPublishOk = configService.publishConfig(dataId, group, "content");
+        System.out.println(isPublishOk);
+
+        Thread.sleep(3000);
+        content = configService.getConfig(dataId, group, 5000);
+        System.out.println(content);
+
+        boolean isRemoveOk = configService.removeConfig(dataId, group);
+        System.out.println(isRemoveOk);
+        Thread.sleep(3000);
+
+        content = configService.getConfig(dataId, group, 5000);
+        System.out.println(content);
+        Thread.sleep(300000);
 
     }
-
-
 }
