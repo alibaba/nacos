@@ -143,7 +143,7 @@ public class ConfigChangeEvent {
     }
 
     static final String PROPERTIES_SUFFIX = ".properties";
-    static final String YAML_SUFFIX = ".ymal";
+    static final String YAML_SUFFIX = ".yaml";
     static final String YML_SUFFIX = ".yml";
 }
 
