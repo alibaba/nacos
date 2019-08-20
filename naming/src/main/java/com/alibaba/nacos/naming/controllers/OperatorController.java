@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -90,7 +90,6 @@ public class OperatorController {
         boolean detail = Boolean.parseBoolean(WebUtils.optional(request, "detail", "false"));
         boolean reset = Boolean.parseBoolean(WebUtils.optional(request, "reset", "false"));
 
-        List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
         int failedPushCount = pushService.getFailedPushCount();
         result.put("succeed", pushService.getTotalPush() - failedPushCount);
         result.put("total", pushService.getTotalPush());
@@ -103,12 +102,9 @@ public class OperatorController {
 
         JSONArray dataArray = new JSONArray();
         if (detail) {
+            List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
             for (PushService.Receiver.AckEntry entry : failedPushes) {
-                try {
-                    dataArray.add(new String(entry.origin.getData(), "UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    dataArray.add("[encoding failure]");
-                }
+                dataArray.add(new String(entry.origin.getData(), StandardCharsets.UTF_8));
             }
             result.put("data", dataArray);
         }
