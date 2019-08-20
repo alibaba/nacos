@@ -27,6 +27,10 @@ public class NetUtils {
 
     private static String serverAddress = null;
 
+    /**
+     * 获取本机ip：端口
+     * @return
+     */
     public static String localServer() {
         return getLocalAddress() + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
     }

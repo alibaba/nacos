@@ -66,20 +66,37 @@ public class ServerListManager {
 
     private Synchronizer synchronizer = new ServerStatusSynchronizer();
 
+    /**
+     * 注册监听
+     * @param listener
+     */
     public void listen(ServerChangeListener listener) {
         listeners.add(listener);
     }
 
     @PostConstruct
     public void init() {
+        /**
+         * 集群列表变化
+         */
         GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
+        /**
+         *
+         */
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
     }
 
+    /**
+     * 获得nacos集群列表
+     * @return
+     */
     private List<Server> refreshServerList() {
 
         List<Server> result = new ArrayList<>();
 
+        /**
+         * 单点模式
+         */
         if (STANDALONE_MODE) {
             Server server = new Server();
             server.setIp(NetUtils.getLocalAddress());
@@ -90,6 +107,9 @@ public class ServerListManager {
 
         List<String> serverList = new ArrayList<>();
         try {
+            /**
+             * 读取cluster.conf中的集群列表
+             */
             serverList = readClusterConf();
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("failed to get config: " + CLUSTER_CONF_FILE_PATH, e);
@@ -100,6 +120,9 @@ public class ServerListManager {
         }
 
         //use system env
+        /**
+         * 集群信息为空   则读取系统中的环境变量
+         */
         if (CollectionUtils.isEmpty(serverList)) {
             serverList = SystemUtils.getIPsBySystemEnv(UtilsAndCommons.SELF_SERVICE_CLUSTER_ENV);
             if (Loggers.SRV_LOG.isDebugEnabled()) {
@@ -107,6 +130,9 @@ public class ServerListManager {
             }
         }
 
+        /**
+         * 遍历集群信息   获取Server
+         */
         if (CollectionUtils.isNotEmpty(serverList)) {
 
             for (int i = 0; i < serverList.size(); i++) {
@@ -132,6 +158,11 @@ public class ServerListManager {
         return result;
     }
 
+    /**
+     * 集群列表中是否有当前地址
+     * @param s
+     * @return
+     */
     public boolean contains(String s) {
         for (Server server : servers) {
             if (server.getKey().equals(s)) {
@@ -166,6 +197,10 @@ public class ServerListManager {
         return distroConfig;
     }
 
+    /**
+     * 接受集群内节点状态
+     * @param configInfo  unknown#192.168.56.1:8848#1566292196551#6
+     */
     public synchronized void onReceiveServerStatus(String configInfo) {
 
         Loggers.SRV_LOG.info("receive config info: {}", configInfo);
@@ -194,21 +229,37 @@ public class ServerListManager {
             server.setServePort(Integer.parseInt(params[1].split(UtilsAndCommons.IP_PORT_SPLITER)[1]));
             server.setLastRefTime(Long.parseLong(params[2]));
 
+            /**
+             * 集群列表中是否包括当前地址
+             */
             if (!contains(server.getKey())) {
                 throw new IllegalArgumentException("server: " + server.getKey() + " is not in serverlist");
             }
 
+            /**
+             * 上次心跳时间
+             */
             Long lastBeat = distroBeats.get(server.getKey());
             long now = System.currentTimeMillis();
             if (null != lastBeat) {
+                /**
+                 * 服务是否Alive
+                 */
                 server.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
             }
+            /**
+             * 设置distroBeats
+             */
             distroBeats.put(server.getKey(), now);
 
             Date date = new Date(Long.parseLong(params[2]));
             server.setLastRefTimeStr(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date));
 
             server.setWeight(params.length == 4 ? Integer.parseInt(params[3]) : 1);
+
+            /**
+             * 根据site查询匹配得集合
+             */
             List<Server> list = distroConfig.get(server.getSite());
             if (list == null || list.size() <= 0) {
                 list = new ArrayList<>();
@@ -286,6 +337,9 @@ public class ServerListManager {
         @Override
         public void run() {
             try {
+                /**
+                 * 获得nacos集群列表
+                 */
                 List<Server> refreshedServers = refreshServerList();
                 List<Server> oldServers = servers;
 
@@ -296,6 +350,9 @@ public class ServerListManager {
 
                 boolean changed = false;
 
+                /**
+                 * 新旧集群列表比较   获取新增的Server
+                 */
                 List<Server> newServers = (List<Server>) CollectionUtils.subtract(refreshedServers, oldServers);
                 if (CollectionUtils.isNotEmpty(newServers)) {
                     servers.addAll(newServers);
@@ -303,6 +360,9 @@ public class ServerListManager {
                     Loggers.RAFT.info("server list is updated, new: {} servers: {}", newServers.size(), newServers);
                 }
 
+                /**
+                 * 移除被遗弃的server
+                 */
                 List<Server> deadServers = (List<Server>) CollectionUtils.subtract(oldServers, refreshedServers);
                 if (CollectionUtils.isNotEmpty(deadServers)) {
                     servers.removeAll(deadServers);
@@ -310,7 +370,13 @@ public class ServerListManager {
                     Loggers.RAFT.info("server list is updated, dead: {}, servers: {}", deadServers.size(), deadServers);
                 }
 
+                /**
+                 * 集群列表有变化  发送通知
+                 */
                 if (changed) {
+                    /**
+                     * 发送通知
+                     */
                     notifyListeners();
                 }
 
@@ -331,6 +397,9 @@ public class ServerListManager {
                     return;
                 }
 
+                /**
+                 * 检查心跳
+                 */
                 checkDistroHeartbeat();
 
                 int weight = Runtime.getRuntime().availableProcessors() / 2;
@@ -339,9 +408,15 @@ public class ServerListManager {
                 }
 
                 long curTime = System.currentTimeMillis();
+                /**
+                 * unknown#192.168.56.1:8848#1566292196551#6
+                 */
                 String status = LOCALHOST_SITE + "#" + NetUtils.localServer() + "#" + curTime + "#" + weight + "\r\n";
 
                 //send status to itself
+                /**
+                 * 发送本地节点状态
+                 */
                 onReceiveServerStatus(status);
 
                 List<Server> allServers = getServers();
@@ -373,10 +448,16 @@ public class ServerListManager {
         }
     }
 
+    /**
+     * 检查其他节点发送的心跳
+     */
     private void checkDistroHeartbeat() {
 
         Loggers.SRV_LOG.debug("check distro heartbeat.");
 
+        /**
+         * 获取状态为unknown的节点
+         */
         List<Server> servers = distroConfig.get(LOCALHOST_SITE);
         if (CollectionUtils.isEmpty(servers)) {
             return;
@@ -385,10 +466,17 @@ public class ServerListManager {
         List<Server> newHealthyList = new ArrayList<>(servers.size());
         long now = System.currentTimeMillis();
         for (Server s: servers) {
+            /**
+             * 节点上一次的心跳时间
+             */
             Long lastBeat = distroBeats.get(s.getKey());
             if (null == lastBeat) {
                 continue;
             }
+
+            /**
+             * 间隔时间是否大于失效时间
+             */
             s.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
         }
 
@@ -404,10 +492,16 @@ public class ServerListManager {
 
             for (int i = 0; i < server.getWeight() + server.getAdWeight(); i++) {
 
+                /**
+                 * 所有的节点
+                 */
                 if (!allLocalSiteSrvs.contains(server.getKey())) {
                     allLocalSiteSrvs.add(server.getKey());
                 }
 
+                /**
+                 * 有正常心跳的节点
+                 */
                 if (server.isAlive() && !newHealthyList.contains(server)) {
                     newHealthyList.add(server);
                 }
@@ -415,8 +509,15 @@ public class ServerListManager {
         }
 
         Collections.sort(newHealthyList);
+
+        /**
+         * 健康心跳的节点的比率
+         */
         float curRatio = (float) newHealthyList.size() / allLocalSiteSrvs.size();
 
+        /**
+         * autoDisabledHealthCheck  &&  健康心跳节点比率大于distroThreshold  &&  时间间隔大于一分钟
+         */
         if (autoDisabledHealthCheck
             && curRatio > switchDomain.getDistroThreshold()
             && System.currentTimeMillis() - lastHealthServerMillis > STABLE_PERIOD) {
@@ -429,6 +530,9 @@ public class ServerListManager {
             autoDisabledHealthCheck = false;
         }
 
+        /**
+         * 集合不同
+         */
         if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
             // for every change disable healthy check for some while
             if (switchDomain.isHealthCheckEnabled()) {
@@ -442,7 +546,14 @@ public class ServerListManager {
                 lastHealthServerMillis = System.currentTimeMillis();
             }
 
+            /**
+             * 更新healthyServers
+             */
             healthyServers = newHealthyList;
+
+            /**
+             * 发送通知
+             */
             notifyListeners();
         }
     }

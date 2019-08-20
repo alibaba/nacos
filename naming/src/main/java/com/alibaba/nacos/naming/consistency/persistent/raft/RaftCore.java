@@ -124,8 +124,14 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
+        /**
+         * 读取cacheDir下的文件   并添加通知任务
+         */
         raftStore.loadDatums(notifier, datums);
 
+        /**
+         * 设置当前term
+         */
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
@@ -141,7 +147,14 @@ public class RaftCore {
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
+        /**
+         * 选举
+         */
         GlobalExecutor.registerMasterElection(new MasterElection());
+
+        /**
+         * 心跳
+         */
         GlobalExecutor.registerHeartbeat(new HeartBeat());
 
         Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
@@ -912,17 +925,31 @@ public class RaftCore {
 
         private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<>(1024 * 1024);
 
+        /**
+         * 新增任务
+         * @param datumKey
+         * @param action
+         */
         public void addTask(String datumKey, ApplyAction action) {
 
+            /**
+             * 已有该任务  且ApplyAction为CHANGE
+             */
             if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
                 return;
             }
+            /**
+             * CHANGE时，services保存datumKey
+             */
             if (action == ApplyAction.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
 
             Loggers.RAFT.info("add task {}", datumKey);
 
+            /**
+             * 存入队列
+             */
             tasks.add(Pair.with(datumKey, action));
         }
 
@@ -946,16 +973,25 @@ public class RaftCore {
                     String datumKey = (String) pair.getValue0();
                     ApplyAction action = (ApplyAction) pair.getValue1();
 
+                    /**
+                     * 移除datumKey对应得任务
+                     */
                     services.remove(datumKey);
 
                     Loggers.RAFT.info("remove task {}", datumKey);
 
                     int count = 0;
 
+                    /**
+                     * com.alibaba.nacos.naming.domains.meta.
+                     */
                     if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
 
                         if (KeyBuilder.matchServiceMetaKey(datumKey) && !KeyBuilder.matchSwitchKey(datumKey)) {
 
+                            /**
+                             * 遍历服务   并根据action进行通知
+                             */
                             for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                                 try {
                                     if (action == ApplyAction.CHANGE) {
@@ -976,6 +1012,9 @@ public class RaftCore {
                         continue;
                     }
 
+                    /**
+                     * 遍历datumKey对应得监听器   并根据action进行通知
+                     */
                     for (RecordListener listener : listeners.get(datumKey)) {
 
                         count++;

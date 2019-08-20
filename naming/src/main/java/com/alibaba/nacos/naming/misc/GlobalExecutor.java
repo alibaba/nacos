@@ -123,10 +123,18 @@ public class GlobalExecutor {
             PARTITION_DATA_TIMED_SYNC_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * 选举
+     * @param runnable
+     */
     public static void registerMasterElection(Runnable runnable) {
         executorService.scheduleAtFixedRate(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * 集群列表变化
+     * @param runnable
+     */
     public static void registerServerListUpdater(Runnable runnable) {
         executorService.scheduleAtFixedRate(runnable, 0, NACOS_SERVER_LIST_REFRESH_INTERVAL, TimeUnit.MILLISECONDS);
     }
@@ -139,6 +147,10 @@ public class GlobalExecutor {
         executorService.scheduleAtFixedRate(runnable, 0, SERVER_STATUS_UPDATE_PERIOD, TimeUnit.MILLISECONDS);
     }
 
+    /**
+     * 心跳
+     * @param runnable
+     */
     public static void registerHeartbeat(Runnable runnable) {
         executorService.scheduleWithFixedDelay(runnable, 0, TICK_PERIOD_MS, TimeUnit.MILLISECONDS);
     }

@@ -48,6 +48,13 @@ public class KeyBuilder {
             + serviceName;
     }
 
+    /**
+     * 创建节点
+     * @param namespaceId
+     * @param serviceName
+     * @param ephemeral  true  临时节点；  false   持久化节点
+     * @return
+     */
     public static String buildInstanceListKey(String namespaceId, String serviceName, boolean ephemeral) {
         return ephemeral ? buildEphemeralInstanceListKey(namespaceId, serviceName) :
             buildPersistentInstanceListKey(namespaceId, serviceName);
@@ -118,18 +125,30 @@ public class KeyBuilder {
 
     public static String getNamespace(String key) {
 
+        /**
+         * switch
+         */
         if (matchSwitchKey(key)) {
             return StringUtils.EMPTY;
         }
 
+        /**
+         * 元数据
+         */
         if (matchServiceMetaKey(key)) {
             return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(SERVICE_META_KEY_PREFIX.length());
         }
 
+        /**
+         * 临时节点
+         */
         if (matchEphemeralInstanceListKey(key)) {
             return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length() + EPHEMERAL_KEY_PREFIX.length());
         }
 
+        /**
+         * 持久化节点
+         */
         if (matchInstanceListKey(key)) {
             return key.split(NAMESPACE_KEY_CONNECTOR)[0].substring(INSTANCE_LIST_KEY_PREFIX.length());
         }

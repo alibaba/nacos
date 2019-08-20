@@ -119,21 +119,39 @@ public class SystemUtils {
         return NACOS_HOME + File.separator + "conf" + File.separator + "cluster.conf";
     }
 
+    /**
+     * 读取cluster.conf中的集群列表
+     * @return
+     * @throws IOException
+     */
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
         Reader reader = null;
 
         try {
+            /**
+             * 读取cluster.conf文件
+             */
             reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
                 StandardCharsets.UTF_8);
+            /**
+             * 按行分割
+             */
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {
                 String instance = line.trim();
+                /**
+                 * 以#开头
+                 */
                 if (instance.startsWith(comment)) {
                     // # it is ip
                     continue;
                 }
+
+                /**
+                 * 信息中包含#   则截取#之前的内容
+                 */
                 if (instance.contains(comment)) {
                     // 192.168.71.52:8848 # Instance A
                     instance = instance.substring(0, instance.indexOf(comment));

@@ -115,6 +115,10 @@ public class Server implements Comparable<Server> {
         this.lastRefTimeStr = lastRefTimeStr;
     }
 
+    /**
+     * ip:port
+     * @return
+     */
     public String getKey() {
         return ip + UtilsAndCommons.IP_PORT_SPLITER + servePort;
     }

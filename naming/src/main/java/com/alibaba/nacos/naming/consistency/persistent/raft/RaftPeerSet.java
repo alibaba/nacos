@@ -77,6 +77,9 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
 
     @PostConstruct
     public void init() {
+        /**
+         * 注册监听
+         */
         serverListManager.listen(this);
     }
 
@@ -256,12 +259,19 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.containsKey(remote.ip);
     }
 
+    /**
+     * 集群内服务列表变化通知
+     * @param latestMembers
+     */
     @Override
     public void onChangeServerList(List<Server> latestMembers) {
 
         Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
         for (Server member : latestMembers) {
 
+            /**
+             * ip已存在
+             */
             if (peers.containsKey(member.getKey())) {
                 tmpPeers.put(member.getKey(), peers.get(member.getKey()));
                 continue;
@@ -271,14 +281,23 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
             raftPeer.ip = member.getKey();
 
             // first time meet the local server:
+            /**
+             * 本机  则设置term
+             */
             if (NetUtils.localServer().equals(member.getKey())) {
                 raftPeer.term.set(localTerm.get());
             }
 
+            /**
+             * 新增ip
+             */
             tmpPeers.put(member.getKey(), raftPeer);
         }
 
         // replace raft peer set:
+        /**
+         * 替换原有peers
+         */
         peers = tmpPeers;
 
         if (RunningConfig.getServerPort() > 0) {
