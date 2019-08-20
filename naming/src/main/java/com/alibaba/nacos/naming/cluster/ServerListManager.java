@@ -222,6 +222,9 @@ public class ServerListManager {
                 continue;
             }
 
+            /**
+             * 存储心跳数据
+             */
             Server server = new Server();
 
             server.setSite(params[0]);
@@ -271,6 +274,9 @@ public class ServerListManager {
                 String serverId = s.getKey() + "_" + s.getSite();
                 String newServerId = server.getKey() + "_" + server.getSite();
 
+                /**
+                 * 集合中的server和心跳上送的server key和site的组合 是否相同
+                 */
                 if (serverId.equals(newServerId)) {
                     if (s.isAlive() != server.isAlive() || s.getWeight() != server.getWeight()) {
                         Loggers.SRV_LOG.warn("server beat out of date, current: {}, last: {}",
@@ -282,10 +288,16 @@ public class ServerListManager {
                 tmpServerList.add(s);
             }
 
+            /**
+             * tmpServerList中需要包含server
+             */
             if (!tmpServerList.contains(server)) {
                 tmpServerList.add(server);
             }
 
+            /**
+             * 更新distroConfig中  site对应的集合
+             */
             distroConfig.put(server.getSite(), tmpServerList);
         }
         liveSites.addAll(distroConfig.keySet());
@@ -419,8 +431,14 @@ public class ServerListManager {
                  */
                 onReceiveServerStatus(status);
 
+                /**
+                 * 获取集群中的节点列表
+                 */
                 List<Server> allServers = getServers();
 
+                /**
+                 * 集群中不包含本机地址
+                 */
                 if (!contains(NetUtils.localServer())) {
                     Loggers.SRV_LOG.error("local ip is not in serverlist, ip: {}, serverlist: {}", NetUtils.localServer(), allServers);
                     return;
@@ -435,6 +453,9 @@ public class ServerListManager {
                         Message msg = new Message();
                         msg.setData(status);
 
+                        /**
+                         * 向集群中的其他节点发送信息
+                         */
                         synchronizer.send(server.getKey(), msg);
 
                     }

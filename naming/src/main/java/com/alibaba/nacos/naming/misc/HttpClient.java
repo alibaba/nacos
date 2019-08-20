@@ -118,6 +118,14 @@ public class HttpClient {
         }
     }
 
+    /**
+     * 异步
+     * @param url
+     * @param headers
+     * @param paramValues
+     * @param handler
+     * @throws Exception
+     */
     public static void asyncHttpGet(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.GET);
     }
@@ -130,8 +138,23 @@ public class HttpClient {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.DELETE);
     }
 
+    /**
+     * 异步
+     * @param url
+     * @param headers
+     * @param paramValues
+     * @param handler
+     * @param method
+     * @throws Exception
+     */
     public static void asyncHttpRequest(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler, String method) throws Exception {
+        /**
+         * url后面加上参数
+         */
         if (!MapUtils.isEmpty(paramValues)) {
+            /**
+             * 将params  转换为key=value&key=value&key=value&形式
+             */
             String encodedContent = encodingParams(paramValues, "UTF-8");
             url += (null == encodedContent) ? "" : ("?" + encodedContent);
         }
@@ -155,6 +178,9 @@ public class HttpClient {
                 throw new RuntimeException("not supported method:" + method);
         }
 
+        /**
+         * 处理header部分
+         */
         if (!CollectionUtils.isEmpty(headers)) {
             for (String header : headers) {
                 builder.setHeader(header.split("=")[0], header.split("=")[1]);
@@ -163,6 +189,9 @@ public class HttpClient {
 
         builder.setHeader("Accept-Charset", "UTF-8");
 
+        /**
+         * 执行http访问
+         */
         if (handler != null) {
             builder.execute(handler);
         } else {
@@ -453,6 +482,13 @@ public class HttpClient {
         conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
     }
 
+    /**
+     * 将params  转换为key=value&key=value&key=value&形式
+     * @param params
+     * @param encoding
+     * @return
+     * @throws UnsupportedEncodingException
+     */
     public static String encodingParams(Map<String, String> params, String encoding)
             throws UnsupportedEncodingException {
         StringBuilder sb = new StringBuilder();

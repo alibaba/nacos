@@ -30,12 +30,20 @@ import java.util.Map;
  * @author nacos
  */
 public class ServerStatusSynchronizer implements Synchronizer {
+    /**
+     * 向其他节点上报本地服务状态
+     * @param serverIP target server address
+     * @param msg      message to send
+     */
     @Override
     public void send(final String serverIP, Message msg) {
         if (StringUtils.isEmpty(serverIP)) {
             return;
         }
 
+        /**
+         * 上送参数
+         */
         final Map<String, String> params = new HashMap<String, String>(2);
 
         params.put("serverStatus", msg.getData());
@@ -49,9 +57,21 @@ public class ServerStatusSynchronizer implements Synchronizer {
         }
 
         try {
+            /**
+             * 异步发送
+             */
             HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler() {
+                /**
+                 * 异步执行后的回调
+                 * @param response
+                 * @return
+                 * @throws Exception
+                 */
                 @Override
                 public Integer onCompleted(Response response) throws Exception {
+                    /**
+                     * 失败返回1   成功返回0
+                     */
                     if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                         Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}",
                             serverIP);
