@@ -488,6 +488,7 @@ const I18N_CONF = {
     more: '更多高级选项',
     home: '归属应用：',
     actionType: '操作类型：',
+    format: '配置格式:',
     configuration: '配置内容：',
     back: '返回',
     rollbackSuccessful: '回滚成功',

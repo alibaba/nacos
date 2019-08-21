@@ -76,7 +76,7 @@ public class PersistService {
 
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
 
-    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ";
+    private static final String SQL_FIND_CONFIG_INFO_BY_IDS = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema FROM config_info WHERE ";
 
     private static final String SQL_DELETE_CONFIG_INFO_BY_IDS = "DELETE FROM config_info WHERE ";
 
@@ -449,6 +449,7 @@ public class PersistService {
             configHistoryInfo.setOpType(rs.getString("op_type"));
             configHistoryInfo.setCreatedTime(rs.getTimestamp("gmt_create"));
             configHistoryInfo.setLastModifiedTime(rs.getTimestamp("gmt_modified"));
+            configHistoryInfo.setType(rs.getString("type"));
             return configHistoryInfo;
         }
     }
@@ -508,7 +509,8 @@ public class PersistService {
                     String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                     addConfiTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
-                    insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
+                    String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
+                    insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I",type);
                     if (notify) {
                         EventDispatcher.fireEvent(
                             new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
@@ -599,7 +601,8 @@ public class PersistService {
                         addConfiTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant());
                     }
-                    insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
+                    String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
+                    insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U",type);
                     if (notify) {
                         EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
@@ -736,11 +739,11 @@ public class PersistService {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 try {
-                    ConfigInfo configInfo = findConfigInfo(dataId, group, tenant);
+                    ConfigAllInfo configInfo = findConfigAllInfo(dataId, group, tenant);
                     if (configInfo != null) {
                         removeConfigInfoAtomic(dataId, group, tenant, srcIp, srcUser);
                         removeTagByIdAtomic(configInfo.getId());
-                        insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
+                        insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D",configInfo.getType());
                     }
                 } catch (CannotGetJdbcConnectionException e) {
                     fatalLog.error("[db-error] " + e.toString(), e);
@@ -758,24 +761,24 @@ public class PersistService {
      * @Param [ids, srcIp, srcUser]
      * @return List<ConfigInfo> deleted configInfos
      */
-    public List<ConfigInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
+    public List<ConfigAllInfo> removeConfigInfoByIds(final List<Long> ids, final String srcIp, final String srcUser) {
         if(CollectionUtils.isEmpty(ids)){
             return null;
         }
         ids.removeAll(Collections.singleton(null));
-        return tjt.execute(new TransactionCallback<List<ConfigInfo>>() {
+        return tjt.execute(new TransactionCallback<List<ConfigAllInfo>>() {
             final Timestamp time = new Timestamp(System.currentTimeMillis());
 
             @Override
-            public List<ConfigInfo> doInTransaction(TransactionStatus status) {
+            public List<ConfigAllInfo> doInTransaction(TransactionStatus status) {
                 try {
                     String idsStr = Joiner.on(",").join(ids);
-                    List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
+                    List<ConfigAllInfo> configInfoList = findConfigInfosByIds(idsStr);
                     if (!CollectionUtils.isEmpty(configInfoList)) {
                         removeConfigInfoByIdsAtomic(idsStr);
-                        for(ConfigInfo configInfo : configInfoList){
+                        for(ConfigAllInfo configInfo : configInfoList){
                             removeTagByIdAtomic(configInfo.getId());
-                            insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D");
+                            insertConfigHistoryAtomic(configInfo.getId(), configInfo, srcIp, srcUser, time, "D",configInfo.getType());
                         }
                     }
                     return configInfoList;
@@ -2944,7 +2947,7 @@ public class PersistService {
      * @Param [ids]
      * @return java.util.List<com.alibaba.nacos.config.server.model.ConfigInfo>
      */
-    public List<ConfigInfo> findConfigInfosByIds(final String ids) {
+    public List<ConfigAllInfo> findConfigInfosByIds(final String ids) {
         if(StringUtils.isBlank(ids)){
             return null;
         }
@@ -2961,7 +2964,7 @@ public class PersistService {
         }
         sql.append(") ");
         try {
-            return this.jt.query(sql.toString(), paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+            return this.jt.query(sql.toString(), paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -3049,17 +3052,18 @@ public class PersistService {
      * @param srcUser    user
      * @param time       time
      * @param ops        ops type
+     * @param type       config type
      */
     private void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
-                                           final Timestamp time, String ops) {
+                                           final Timestamp time, String ops, String type) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
         try {
             jt.update(
-                "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_modified,op_type) VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_modified,op_type,type) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                 id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
-                md5Tmp, srcIp, srcUser, time, ops);
+                md5Tmp, srcIp, srcUser, time, ops,type);
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -3141,7 +3145,7 @@ public class PersistService {
 
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
         String sqlFetchRows
-            = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM his_config_info WHERE nid = ?";
+            = "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified,type FROM his_config_info WHERE nid = ?";
         try {
             ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows, new Object[]{nid},
                 HISTORY_DETAIL_ROW_MAPPER);

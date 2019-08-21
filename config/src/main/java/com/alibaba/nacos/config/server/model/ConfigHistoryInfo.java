@@ -40,6 +40,7 @@ public class ConfigHistoryInfo {
     private String tenant;
     private String appName;
     private String md5;
+    private String type;
 
     public long getId() {
         return id;
@@ -143,6 +144,14 @@ public class ConfigHistoryInfo {
 
     public void setMd5(String md5) {
         this.md5 = md5;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     private String content;

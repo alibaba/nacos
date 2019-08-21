@@ -87,6 +87,7 @@ class ConfigRollback extends React.Component {
           self.field.setValue('group', data.group);
           self.field.setValue('md5', data.md5);
           self.field.setValue('envName', envName);
+          self.field.setValue('type', data.type);
           self.setState({
             envName,
           });
@@ -139,6 +140,7 @@ class ConfigRollback extends React.Component {
           group: self.group,
           content: self.field.getValue('content'),
           tenant: self.tenant,
+          type: self.field.getValue('type'),
         };
 
         let url = 'v1/cs/configs';
@@ -192,6 +194,9 @@ class ConfigRollback extends React.Component {
             </FormItem>
             <FormItem label={locale.home} {...formItemLayout}>
               <Input htmlType="text" readOnly {...init('appName')} />
+            </FormItem>
+            <FormItem label={locale.format} {...formItemLayout}>
+              <Input htmlType="text" readOnly {...init('type')} />
             </FormItem>
           </div>
           <FormItem label={locale.actionType} required {...formItemLayout}>

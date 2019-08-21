@@ -490,6 +490,7 @@ const I18N_CONF = {
     more: 'Advanced Options',
     home: 'Application:',
     actionType: 'Action Type:',
+    format: 'Format:',
     configuration: 'Configuration Content:',
     back: 'Back',
     rollbackSuccessful: 'Rollback Successful',
