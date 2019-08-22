@@ -263,8 +263,7 @@ public class CatalogController {
         String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
         String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
         String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-            StringUtils.EMPTY :
-            groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
         String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
         boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
