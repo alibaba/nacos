@@ -3059,11 +3059,13 @@ public class PersistService {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
+        // type add default value
+        String typeTmp = StringUtils.isEmpty(type) ? FileTypeEnum.TEXT.getFileType() : type;
         try {
             jt.update(
                 "INSERT INTO his_config_info (id,data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_modified,op_type,type) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
                 id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(),
-                md5Tmp, srcIp, srcUser, time, ops,type);
+                md5Tmp, srcIp, srcUser, time, ops,typeTmp);
         } catch (DataAccessException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
