@@ -269,10 +269,10 @@ public class ServiceController {
 
         Map<String, List<Service>> services = new HashMap<>(16);
         if (StringUtils.isNotBlank(namespaceId)) {
-            services.put(namespaceId, serviceManager.searchServices(namespaceId, ".*" + expr + ".*"));
+            services.put(namespaceId, serviceManager.searchServices(namespaceId, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
         } else {
             for (String namespace : serviceManager.getAllNamespaces()) {
-                services.put(namespace, serviceManager.searchServices(namespace, ".*" + expr + ".*"));
+                services.put(namespace, serviceManager.searchServices(namespace, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
             }
         }
 
