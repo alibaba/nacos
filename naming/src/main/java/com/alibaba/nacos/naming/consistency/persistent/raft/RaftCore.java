@@ -375,22 +375,40 @@ public class RaftCore {
         @Override
         public void run() {
             try {
-
                 if (!peers.isReady()) {
                     return;
                 }
 
+
+                /**
+                 * 获取本地节点
+                 */
                 RaftPeer local = peers.local();
+                /**
+                 * 递减   相当于随机时间后发起选举
+                 */
                 local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
 
+                /**
+                 * 只有小于等于0时  才发起选举
+                 */
+                System.out.println("local.leaderDueMs=="+local.leaderDueMs);
                 if (local.leaderDueMs > 0) {
                     return;
                 }
 
+                System.out.println(3333333);
+                System.out.println("选举nleader" + JSON.toJSONString(getLeader()));
                 // reset timeout
+                /**
+                 * 重置时间   即下次发起选举得间隔
+                 */
                 local.resetLeaderDue();
                 local.resetHeartbeatDue();
 
+                /**
+                 * 投票
+                 */
                 sendVote();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while master election {}", e);
@@ -398,23 +416,39 @@ public class RaftCore {
 
         }
 
+        /**
+         * 投票
+         */
         public void sendVote() {
 
+            /**
+             * 本地节点
+             */
             RaftPeer local = peers.get(NetUtils.localServer());
             Loggers.RAFT.info("leader timeout, start voting,leader: {}, term: {}",
                 JSON.toJSONString(getLeader()), local.term);
 
             peers.reset();
 
+            /**
+             * 选期+1   选举自己   修改节点为CANDIDATE
+             */
             local.term.incrementAndGet();
             local.voteFor = local.ip;
             local.state = RaftPeer.State.CANDIDATE;
 
             Map<String, String> params = new HashMap<>(1);
             params.put("vote", JSON.toJSONString(local));
+
+            /**
+             * 向集群中得其他节点发起投票
+             */
             for (final String server : peers.allServersWithoutMySelf()) {
                 final String url = buildURL(server, API_VOTE);
                 try {
+                    /**
+                     * 异步请求
+                     */
                     HttpClient.asyncHttpPost(url, null, params, new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
@@ -427,6 +461,9 @@ public class RaftCore {
 
                             Loggers.RAFT.info("received approve from peer: {}", JSON.toJSONString(peer));
 
+                            /**
+                             * 评选
+                             */
                             peers.decideLeader(peer);
 
                             return 0;
@@ -439,26 +476,53 @@ public class RaftCore {
         }
     }
 
+    /**
+     * 处理其他节点发送得投票
+     *
+     * @param remote
+     * @return
+     */
     public RaftPeer receivedVote(RaftPeer remote) {
+        /**
+         * 非集群中得节点
+         */
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
 
+        /**
+         * 本机节点
+         */
         RaftPeer local = peers.get(NetUtils.localServer());
+        /**
+         * 远端得term小于等于本地得term
+         */
         if (remote.term.get() <= local.term.get()) {
             String msg = "received illegitimate vote" +
                 ", voter-term:" + remote.term + ", votee-term:" + local.term;
 
             Loggers.RAFT.info(msg);
+            /**
+             * 本地voteFor为空  则设置voteFor等于本机ip
+             */
             if (StringUtils.isEmpty(local.voteFor)) {
                 local.voteFor = local.ip;
             }
 
+            /**
+             * 通知远端    本地得选票投给了谁
+             */
             return local;
         }
 
+        /**
+         * 重置本地投票时间
+         */
         local.resetLeaderDue();
 
+        /**
+         * 修改本地选举配置
+         */
         local.state = RaftPeer.State.FOLLOWER;
         local.voteFor = remote.ip;
         local.term.set(remote.term.get());
@@ -848,7 +912,17 @@ public class RaftCore {
         return peers.isLeader(NetUtils.localServer());
     }
 
+    /**
+     * 请求路径
+     *
+     * @param ip
+     * @param api
+     * @return
+     */
     public static String buildURL(String ip, String api) {
+        /**
+         * ip地址不包含端口时   添加端口
+         */
         if (!ip.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
             ip = ip + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
         }
@@ -927,6 +1001,7 @@ public class RaftCore {
 
         /**
          * 新增任务
+         *
          * @param datumKey
          * @param action
          */

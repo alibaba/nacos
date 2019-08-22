@@ -109,6 +109,11 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peer;
     }
 
+    /**
+     * ip对应得节点是否为leader
+     * @param ip
+     * @return
+     */
     public boolean isLeader(String ip) {
         if (STANDALONE_MODE) {
             return true;
@@ -126,10 +131,17 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.keySet();
     }
 
+    /**
+     * 集群中得其他节点
+     * @return
+     */
     public Set<String> allServersWithoutMySelf() {
         Set<String> servers = new HashSet<String>(peers.keySet());
 
         // exclude myself
+        /**
+         * 排除自身
+         */
         servers.remove(local().ip);
 
         return servers;
@@ -143,30 +155,65 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.size();
     }
 
+    /**
+     * 选举leader
+     * @param candidate
+     * @return
+     */
     public RaftPeer decideLeader(RaftPeer candidate) {
+        /**
+         * 更新peers中得RaftPeer信息   主要是voteFor
+         */
         peers.put(candidate.ip, candidate);
 
         SortedBag ips = new TreeBag();
         int maxApproveCount = 0;
         String maxApprovePeer = null;
         for (RaftPeer peer : peers.values()) {
+            /**
+             * 未投票节点
+             */
             if (StringUtils.isEmpty(peer.voteFor)) {
                 continue;
             }
 
+            /**
+             * 累计各节点得票数
+             */
             ips.add(peer.voteFor);
+            /**
+             * 计算每一轮选举提名最多得节点
+             */
             if (ips.getCount(peer.voteFor) > maxApproveCount) {
+                /**
+                 * 票数
+                 */
                 maxApproveCount = ips.getCount(peer.voteFor);
+                /**
+                 * 提名最多得节点
+                 */
                 maxApprovePeer = peer.voteFor;
             }
         }
 
+        /**
+         * 获得合法票数
+         */
         if (maxApproveCount >= majorityCount()) {
+            /**
+             * 选举出的leader节点   并修改节点得状态
+             */
             RaftPeer peer = peers.get(maxApprovePeer);
             peer.state = RaftPeer.State.LEADER;
 
+            /**
+             * 修改本机对应得leader
+             */
             if (!Objects.equals(leader, peer)) {
                 leader = peer;
+                /**
+                 * 发布事件   nacos没有监听   留待接入方接听
+                 */
                 applicationContext.publishEvent(new LeaderElectFinishedEvent(this, leader));
                 Loggers.RAFT.info("{} has become the LEADER", leader.ip);
             }
@@ -213,8 +260,19 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return update(candidate);
     }
 
+    /**
+     * 获取本地节点信息
+     * @return
+     */
     public RaftPeer local() {
+        /**
+         * 本地节点对应得RaftPeer
+         */
         RaftPeer peer = peers.get(NetUtils.localServer());
+
+        /**
+         * standalone模式  且peer为null
+         */
         if (peer == null && SystemUtils.STANDALONE_MODE) {
             RaftPeer localPeer = new RaftPeer();
             localPeer.ip = NetUtils.localServer();
@@ -234,14 +292,27 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return peers.get(server);
     }
 
+    /**
+     * 合法票数
+     * @return
+     */
     public int majorityCount() {
         return peers.size() / 2 + 1;
     }
 
+    /**
+     * 重置
+     */
     public void reset() {
 
+        /**
+         * 本机对应得leader为null
+         */
         leader = null;
 
+        /**
+         * 集群内所有节点得选举对象为null
+         */
         for (RaftPeer peer : peers.values()) {
             peer.voteFor = null;
         }

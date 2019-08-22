@@ -282,6 +282,9 @@ public class ServerListManager {
                         Loggers.SRV_LOG.warn("server beat out of date, current: {}, last: {}",
                             JSON.toJSONString(server), JSON.toJSONString(s));
                     }
+                    /**
+                     * 以新数据为准
+                     */
                     tmpServerList.add(server);
                     continue;
                 }
@@ -446,6 +449,9 @@ public class ServerListManager {
 
                 if (allServers.size() > 0 && !NetUtils.localServer().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
                     for (com.alibaba.nacos.naming.cluster.servers.Server server : allServers) {
+                        /**
+                         * 排除本机地址
+                         */
                         if (server.getKey().equals(NetUtils.localServer())) {
                             continue;
                         }

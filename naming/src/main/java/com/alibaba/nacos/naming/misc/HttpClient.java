@@ -119,7 +119,7 @@ public class HttpClient {
     }
 
     /**
-     * 异步
+     * 异步  get
      * @param url
      * @param headers
      * @param paramValues
@@ -130,10 +130,27 @@ public class HttpClient {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.GET);
     }
 
+    /**
+     * 异步  post
+     * @param url
+     * @param headers
+     * @param paramValues
+     * @param handler
+     * @throws Exception
+     */
     public static void asyncHttpPost(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.POST);
     }
 
+
+    /**
+     * 异步  delete
+     * @param url
+     * @param headers
+     * @param paramValues
+     * @param handler
+     * @throws Exception
+     */
     public static void asyncHttpDelete(String url, List<String> headers, Map<String, String> paramValues, AsyncCompletionHandler handler) throws Exception {
         asyncHttpRequest(url, headers, paramValues, handler, HttpMethod.DELETE);
     }
@@ -190,7 +207,7 @@ public class HttpClient {
         builder.setHeader("Accept-Charset", "UTF-8");
 
         /**
-         * 执行http访问
+         * http访问
          */
         if (handler != null) {
             builder.execute(handler);

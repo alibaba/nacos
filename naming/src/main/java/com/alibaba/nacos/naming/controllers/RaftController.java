@@ -70,10 +70,20 @@ public class RaftController {
     @Autowired
     private RaftCore raftCore;
 
+    /**
+     * 处理其他节点发送得投票
+     * @param request
+     * @param response
+     * @return
+     * @throws Exception
+     */
     @NeedAuth
     @RequestMapping(value = "/vote", method = RequestMethod.POST)
     public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
+        /**
+         * 处理其他节点发送得投票
+         */
         RaftPeer peer = raftCore.receivedVote(
             JSON.parseObject(WebUtils.required(request, "vote"), RaftPeer.class));
 

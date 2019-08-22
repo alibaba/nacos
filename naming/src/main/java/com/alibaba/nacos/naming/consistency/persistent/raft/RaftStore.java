@@ -106,6 +106,9 @@ public class RaftStore {
      * @throws Exception
      */
     public synchronized Properties loadMeta() throws Exception {
+        /**
+         * C:\Users\Administrator\nacos\data\naming\meta.properties
+         */
         File metaFile = new File(metaFileName);
         if (!metaFile.exists() && !metaFile.getParentFile().mkdirs() && !metaFile.createNewFile()) {
             throw new IllegalStateException("failed to create meta file: " + metaFile.getAbsolutePath());
@@ -249,6 +252,11 @@ public class RaftStore {
         }
     }
 
+    /**
+     * 将datum写入对应namespaceId下得文件文件
+     * @param datum
+     * @throws Exception
+     */
     public synchronized void write(final Datum datum) throws Exception {
 
         /**
@@ -312,6 +320,9 @@ public class RaftStore {
                 String oldFormatKey =
                     datum.key.replace(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER, StringUtils.EMPTY);
 
+                /**
+                 * 删除文件
+                 */
                 cacheFile = new File(cacheDir + File.separator + namespaceId + File.separator + encodeFileName(oldFormatKey));
                 if (cacheFile.exists() && !cacheFile.delete()) {
                     Loggers.RAFT.error("[RAFT-DELETE] failed to delete old format datum: {}, value: {}",
