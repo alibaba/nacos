@@ -379,7 +379,6 @@ public class RaftCore {
                     return;
                 }
 
-
                 /**
                  * 获取本地节点
                  */
@@ -397,8 +396,6 @@ public class RaftCore {
                     return;
                 }
 
-                System.out.println(3333333);
-                System.out.println("选举nleader" + JSON.toJSONString(getLeader()));
                 // reset timeout
                 /**
                  * 重置时间   即下次发起选举得间隔
@@ -541,14 +538,26 @@ public class RaftCore {
                     return;
                 }
 
+                /**
+                 * 本机节点
+                 */
                 RaftPeer local = peers.local();
+                /**
+                 * 递减
+                 */
                 local.heartbeatDueMs -= GlobalExecutor.TICK_PERIOD_MS;
                 if (local.heartbeatDueMs > 0) {
                     return;
                 }
 
+                /**
+                 * 重置
+                 */
                 local.resetHeartbeatDue();
 
+                /**
+                 * 发送心跳
+                 */
                 sendBeat();
             } catch (Exception e) {
                 Loggers.RAFT.warn("[RAFT] error while sending beat {}", e);
@@ -556,8 +565,16 @@ public class RaftCore {
 
         }
 
+        /**
+         * 发送心跳
+         * @throws IOException
+         * @throws InterruptedException
+         */
         public void sendBeat() throws IOException, InterruptedException {
             RaftPeer local = peers.local();
+            /**
+             * 只有leader  且 模式不为STANDALONE_MODE   才能发送心跳
+             */
             if (local.state != RaftPeer.State.LEADER && !STANDALONE_MODE) {
                 return;
             }
@@ -566,6 +583,9 @@ public class RaftCore {
                 Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
             }
 
+            /**
+             * 重置选举得随机数
+             */
             local.resetLeaderDue();
 
             // build data
