@@ -153,8 +153,7 @@ public class CatalogController {
             String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
             String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
             String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-                StringUtils.EMPTY :
-                groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
+                StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
             List<Service> serviceList = new ArrayList<>(8);
             serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, serviceList, false);
