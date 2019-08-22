@@ -159,7 +159,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         try {
             AbstractTask oldTask = tasks.put(type, task);
-            //添加任务要通知
+            // 添加任务要通知
             this.notEmpty.notifyAll();
             MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {
