@@ -76,7 +76,10 @@ public final class TaskManager implements TaskManagerMBean {
     public TaskManager() {
         this(null);
     }
-
+    public TaskManager( String name,TaskProcessor defaultTaskProcessor) {
+        this(name);
+        this.defaultTaskProcessor = defaultTaskProcessor;
+    }
     public AbstractTask getTask(String type) {
         return this.tasks.get(type);
     }
