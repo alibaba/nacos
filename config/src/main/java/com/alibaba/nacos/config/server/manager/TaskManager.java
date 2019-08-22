@@ -110,7 +110,7 @@ public final class TaskManager implements TaskManagerMBean {
     public void await() throws InterruptedException {
         this.lock.lock();
         try {
-            while (!this.isEmpty()) {
+            while (this.isEmpty()) {
                 this.notEmpty.await();
             }
         } finally {
@@ -122,7 +122,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         boolean isawait = false;
         try {
-            while (!this.isEmpty()) {
+            while (this.isEmpty()) {
                 isawait = this.notEmpty.await(timeout, unit);
             }
             return isawait;
@@ -159,6 +159,8 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         try {
             AbstractTask oldTask = tasks.put(type, task);
+            //添加任务要通知
+            this.notEmpty.notifyAll();
             MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {
                 task.merge(oldTask);
@@ -217,10 +219,13 @@ public final class TaskManager implements TaskManagerMBean {
             }
         }
 
+        //任务集合空了,就执行等待
         if (tasks.isEmpty()) {
             this.lock.lock();
             try {
-                this.notEmpty.signalAll();
+                this.notEmpty.await();
+            } catch (InterruptedException e) {
+
             } finally {
                 this.lock.unlock();
             }
