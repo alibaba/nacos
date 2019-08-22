@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.acl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -52,12 +53,7 @@ public class AuthChecker {
             return;
         }
 
-        String agent = req.getHeader("Client-Version");
-        if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
-            return;
-        }
-
-        agent = req.getHeader("User-Agent");
+        String agent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
         if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
             return;
         }
