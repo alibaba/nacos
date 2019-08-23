@@ -90,6 +90,13 @@ public class RaftController {
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 
+    /**
+     * follower接受leader心跳
+     * @param request
+     * @param response
+     * @return
+     * @throws Exception
+     */
     @NeedAuth
     @RequestMapping(value = "/beat", method = RequestMethod.POST)
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {

@@ -551,7 +551,7 @@ public class RaftCore {
                 }
 
                 /**
-                 * 重置
+                 * 重置心跳
                  */
                 local.resetHeartbeatDue();
 
@@ -584,11 +584,14 @@ public class RaftCore {
             }
 
             /**
-             * 重置选举得随机数
+             * 重置本机选举得随机数
              */
             local.resetLeaderDue();
 
             // build data
+            /**
+             * 组装数据
+             */
             JSONObject packet = new JSONObject();
             packet.put("peer", local);
 
@@ -621,6 +624,9 @@ public class RaftCore {
 
             String content = JSON.toJSONString(params);
 
+            /**
+             * 压缩
+             */
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             GZIPOutputStream gzip = new GZIPOutputStream(out);
             gzip.write(content.getBytes(StandardCharsets.UTF_8));
@@ -634,6 +640,9 @@ public class RaftCore {
                     content.length(), compressedContent.length());
             }
 
+            /**
+             * leader向集群中得其他节点发送心跳
+             */
             for (final String server : peers.allServersWithoutMySelf()) {
                 try {
                     final String url = buildURL(server, API_BEAT);
@@ -643,6 +652,9 @@ public class RaftCore {
                     HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
+                            /**
+                             * 失败得应答
+                             */
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                                 Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}",
                                     response.getResponseBody(), server);
@@ -650,6 +662,9 @@ public class RaftCore {
                                 return 1;
                             }
 
+                            /**
+                             * 修改
+                             */
                             peers.update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
                             if (Loggers.RAFT.isDebugEnabled()) {
                                 Loggers.RAFT.debug("receive beat response from: {}", url);

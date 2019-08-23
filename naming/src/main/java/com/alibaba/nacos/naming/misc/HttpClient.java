@@ -223,12 +223,18 @@ public class HttpClient {
     public static void asyncHttpPostLarge(String url, List<String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
         AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePost(url);
 
+        /**
+         * 处理header部分
+         */
         if (!CollectionUtils.isEmpty(headers)) {
             for (String header : headers) {
                 builder.setHeader(header.split("=")[0], header.split("=")[1]);
             }
         }
 
+        /**
+         * 内容
+         */
         builder.setBody(content);
 
         builder.setHeader("Content-Type", "application/json; charset=UTF-8");
@@ -236,6 +242,9 @@ public class HttpClient {
         builder.setHeader("Accept-Encoding", "gzip");
         builder.setHeader("Content-Encoding", "gzip");
 
+        /**
+         * 发送请求
+         */
         if (handler != null) {
             builder.execute(handler);
         } else {

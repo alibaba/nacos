@@ -104,6 +104,11 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         }
     }
 
+    /**
+     * 修改peers内得节点信息
+     * @param peer
+     * @return
+     */
     public RaftPeer update(RaftPeer peer) {
         peers.put(peer.ip, peer);
         return peer;
