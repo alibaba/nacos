@@ -687,8 +687,17 @@ public class RaftCore {
         }
     }
 
+    /**
+     * follower接受leader心跳
+     * @param beat
+     * @return
+     * @throws Exception
+     */
     public RaftPeer receivedBeat(JSONObject beat) throws Exception {
         final RaftPeer local = peers.local();
+        /**
+         * 还原leader数据
+         */
         final RaftPeer remote = new RaftPeer();
         remote.ip = beat.getJSONObject("peer").getString("ip");
         remote.state = RaftPeer.State.valueOf(beat.getJSONObject("peer").getString("state"));
@@ -697,12 +706,18 @@ public class RaftCore {
         remote.leaderDueMs = beat.getJSONObject("peer").getLongValue("leaderDueMs");
         remote.voteFor = beat.getJSONObject("peer").getString("voteFor");
 
+        /**
+         * 非leader节点发送心跳请求  则拒绝
+         */
         if (remote.state != RaftPeer.State.LEADER) {
             Loggers.RAFT.info("[RAFT] invalid state from master, state: {}, remote peer: {}",
                 remote.state, JSON.toJSONString(remote));
             throw new IllegalArgumentException("invalid state from master, state: " + remote.state);
         }
 
+        /**
+         * 本地term大于leader的term
+         */
         if (local.term.get() > remote.term.get()) {
             Loggers.RAFT.info("[RAFT] out of date beat, beat-from-term: {}, beat-to-term: {}, remote peer: {}, and leaderDueMs: {}"
                 , remote.term.get(), local.term.get(), JSON.toJSONString(remote), local.leaderDueMs);
@@ -710,6 +725,9 @@ public class RaftCore {
                 + ", beat-to-term: " + local.term.get());
         }
 
+        /**
+         * 本地节点角色非follower  则转换为follower
+         */
         if (local.state != RaftPeer.State.FOLLOWER) {
 
             Loggers.RAFT.info("[RAFT] make remote as leader, remote peer: {}", JSON.toJSONString(remote));
@@ -719,9 +737,15 @@ public class RaftCore {
         }
 
         final JSONArray beatDatums = beat.getJSONArray("datums");
+        /**
+         * 重置心跳数据   控制当前节点的心跳数据不小于0   即当前节点不会发起选举和心跳请求
+         */
         local.resetLeaderDue();
         local.resetHeartbeatDue();
 
+        /**
+         * follower设置leader
+         */
         peers.makeLeader(remote);
 
         Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
@@ -972,6 +996,10 @@ public class RaftCore {
         return peers.getLeader();
     }
 
+    /**
+     * 获得集群内所有节点列表
+     * @return
+     */
     public List<RaftPeer> getPeers() {
         return new ArrayList<>(peers.allPeers());
     }

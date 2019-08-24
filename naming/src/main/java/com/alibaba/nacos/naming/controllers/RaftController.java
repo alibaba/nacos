@@ -101,6 +101,9 @@ public class RaftController {
     @RequestMapping(value = "/beat", method = RequestMethod.POST)
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
+        /**
+         * 解析请求对象
+         */
         String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
@@ -113,12 +116,24 @@ public class RaftController {
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 
+    /**
+     * 远程节点发送leader变更通知
+     * @param request
+     * @param response
+     * @return
+     */
     @NeedAuth
     @RequestMapping(value = "/peer", method = RequestMethod.GET)
     public JSONObject getPeer(HttpServletRequest request, HttpServletResponse response) {
+        /**
+         * 获得集群内所有节点列表
+         */
         List<RaftPeer> peers = raftCore.getPeers();
         RaftPeer peer = null;
 
+        /**
+         * 获取当前节点信息
+         */
         for (RaftPeer peer1 : peers) {
             if (StringUtils.equals(peer1.ip, NetUtils.localServer())) {
                 peer = peer1;
@@ -130,6 +145,9 @@ public class RaftController {
             peer.ip = NetUtils.localServer();
         }
 
+        /**
+         * 返回
+         */
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 

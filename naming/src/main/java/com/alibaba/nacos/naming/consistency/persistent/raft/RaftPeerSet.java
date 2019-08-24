@@ -152,6 +152,10 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return servers;
     }
 
+    /**
+     * 获得集群内所有节点列表
+     * @return
+     */
     public Collection<RaftPeer> allPeers() {
         return peers.values();
     }
@@ -227,7 +231,16 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         return leader;
     }
 
+    /**
+     * follower设置leader
+     *
+     * @param candidate
+     * @return
+     */
     public RaftPeer makeLeader(RaftPeer candidate) {
+        /**
+         * 更换leader
+         */
         if (!Objects.equals(leader, candidate)) {
             leader = candidate;
             applicationContext.publishEvent(new MakeLeaderEvent(this, leader));
@@ -235,8 +248,14 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                 leader.ip, JSON.toJSONString(local()), JSON.toJSONString(leader));
         }
 
+        /**
+         * 遍历集群内节点
+         */
         for (final RaftPeer peer : peers.values()) {
             Map<String, String> params = new HashMap<>(1);
+            /**
+             * 通知节点之前认证的leader   并接受leader节点的最新信息
+             */
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
                     String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);
@@ -250,6 +269,9 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                                 return 1;
                             }
 
+                            /**
+                             * 修改之前leader信息
+                             */
                             update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
 
                             return 0;
@@ -262,6 +284,9 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
             }
         }
 
+        /**
+         * 修改leader节点信息
+         */
         return update(candidate);
     }
 
