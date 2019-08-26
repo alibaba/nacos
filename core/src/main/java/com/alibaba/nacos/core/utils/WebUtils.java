@@ -26,6 +26,12 @@ import java.nio.charset.StandardCharsets;
  */
 public class WebUtils {
 
+    /**
+     * 从req中获取key对应的值  并进行编码
+     * @param req
+     * @param key
+     * @return
+     */
     public static String required(HttpServletRequest req, String key) {
         String value = req.getParameter(key);
         if (StringUtils.isEmpty(value)) {

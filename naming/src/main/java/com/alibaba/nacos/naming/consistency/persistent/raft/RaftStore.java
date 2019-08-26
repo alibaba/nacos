@@ -51,8 +51,14 @@ public class RaftStore {
 
     private Properties meta = new Properties();
 
+    /**
+     * C:\Users\Administrator\nacos\data\naming\meta.properties
+     */
     private String metaFileName = UtilsAndCommons.DATA_BASE_DIR + File.separator + "meta.properties";
 
+    /**
+     * C:\Users\Administrator\nacos\data\naming\data
+     */
     private String cacheDir = UtilsAndCommons.DATA_BASE_DIR + File.separator + "data";
 
     /**
@@ -67,6 +73,8 @@ public class RaftStore {
         long start = System.currentTimeMillis();
         /**
          * 遍历cacheDir下得文件集合
+         *
+         * C:\Users\Administrator\nacos\data\naming\data
          */
         for (File cache : listCaches()) {
             /**
@@ -253,21 +261,21 @@ public class RaftStore {
     }
 
     /**
-     * 将datum写入对应namespaceId下得文件文件
+     * 将datum写入对应key下得文件文件
      * @param datum
      * @throws Exception
      */
     public synchronized void write(final Datum datum) throws Exception {
 
         /**
-         * 获取namespaceId
+         * 获取key
          */
         String namespaceId = KeyBuilder.getNamespace(datum.key);
 
         File cacheFile;
 
         /**
-         * 获取namespaceId对应得文件
+         * 获取key对应得文件
          */
         if (StringUtils.isNotBlank(namespaceId)) {
             cacheFile = new File(cacheDir + File.separator + namespaceId + File.separator + encodeFileName(datum.key));
@@ -347,6 +355,10 @@ public class RaftStore {
         return cacheDir.listFiles();
     }
 
+    /**
+     * 删除Datum对应的文件
+     * @param datum
+     */
     public void delete(Datum datum) {
 
         // datum key contains namespace info:
@@ -362,12 +374,25 @@ public class RaftStore {
         }
     }
 
+    /**
+     * 更新meat数据
+     * @param term
+     * @throws Exception
+     */
     public void updateTerm(long term) throws Exception {
+        /**
+         * 获取元数据文件
+         * C:\Users\Administrator\nacos\data\naming\meta.properties
+         */
         File file = new File(metaFileName);
         if (!file.exists() && !file.getParentFile().mkdirs() && !file.createNewFile()) {
             throw new IllegalStateException("failed to create meta file");
         }
 
+        /**
+         * 读取文件中的数据
+         * 并更新 meta
+         */
         try (FileOutputStream outStream = new FileOutputStream(file)) {
             // write meta
             meta.setProperty("term", String.valueOf(term));

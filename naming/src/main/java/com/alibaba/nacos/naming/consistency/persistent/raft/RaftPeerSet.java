@@ -83,6 +83,10 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         serverListManager.listen(this);
     }
 
+    /**
+     * 返回leader
+     * @return
+     */
     public RaftPeer getLeader() {
         if (STANDALONE_MODE) {
             return local();
@@ -166,7 +170,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
 
     /**
      * 选举leader
-     * @param candidate
+     * @param candidate  remote节点
      * @return
      */
     public RaftPeer decideLeader(RaftPeer candidate) {
@@ -254,7 +258,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         for (final RaftPeer peer : peers.values()) {
             Map<String, String> params = new HashMap<>(1);
             /**
-             * 通知节点之前认证的leader   并接受leader节点的最新信息
+             * 获取前leader节点的实时信息
              */
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
@@ -270,7 +274,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
                             }
 
                             /**
-                             * 修改之前leader信息
+                             * 修改前leader节点的实时信息
                              */
                             update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
 
@@ -285,7 +289,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         }
 
         /**
-         * 修改leader节点信息
+         * 修改现在leader节点信息
          */
         return update(candidate);
     }

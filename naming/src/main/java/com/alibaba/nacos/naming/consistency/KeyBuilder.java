@@ -68,18 +68,40 @@ public class KeyBuilder {
         return SERVICE_META_KEY_PREFIX + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
 
+    /**
+     * com.alibaba.nacos.naming.iplist.ephemeral.开始
+     * @param key
+     * @return
+     */
     public static boolean matchEphemeralInstanceListKey(String key) {
         return key.startsWith(INSTANCE_LIST_KEY_PREFIX + EPHEMERAL_KEY_PREFIX);
     }
 
+    /**
+     * 以com.alibaba.nacos.naming.iplist.开始
+     * 或者以iplist.开始
+     * @param key
+     * @return
+     */
     public static boolean matchInstanceListKey(String key) {
         return key.startsWith(INSTANCE_LIST_KEY_PREFIX) || key.startsWith(BRIEF_INSTANCE_LIST_KEY_PREFIX);
     }
 
+    /**
+     * 以com.alibaba.nacos.naming.domains.meta.开始
+     * 或者以meta.开始
+     * @param key
+     * @return
+     */
     public static boolean matchServiceMetaKey(String key) {
         return key.startsWith(SERVICE_META_KEY_PREFIX) || key.startsWith(BRIEF_SERVICE_META_KEY_PREFIX);
     }
 
+    /**
+     * 00-00---000-NACOS_SWITCH_DOMAIN-000---00-00结尾
+     * @param key
+     * @return
+     */
     public static boolean matchSwitchKey(String key) {
         return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }
@@ -113,11 +135,25 @@ public class KeyBuilder {
         return BRIEF_SERVICE_META_KEY_PREFIX + key.split(SERVICE_META_KEY_PREFIX)[1];
     }
 
+    /**
+     * INSTANCE_LIST_KEY_PREFIX = "com.alibaba.nacos.naming.iplist."
+     * BRIEF_INSTANCE_LIST_KEY_PREFIX = "iplist."
+     *
+     * @param key
+     * @return com.alibaba.nacos.naming. + key
+     */
     public static String detailInstanceListkey(String key) {
         return INSTANCE_LIST_KEY_PREFIX.substring(0, INSTANCE_LIST_KEY_PREFIX.indexOf(BRIEF_INSTANCE_LIST_KEY_PREFIX))
             + key;
     }
 
+    /**
+     * SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta."
+     * BRIEF_SERVICE_META_KEY_PREFIX = "meta."
+     *
+     * @param key
+     * @return com.alibaba.nacos.naming.domains. + key
+     */
     public static String detailServiceMetaKey(String key) {
         return SERVICE_META_KEY_PREFIX.substring(0, SERVICE_META_KEY_PREFIX.indexOf(BRIEF_SERVICE_META_KEY_PREFIX))
             + key;

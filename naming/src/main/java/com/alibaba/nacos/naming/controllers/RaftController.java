@@ -109,6 +109,10 @@ public class RaftController {
         value = URLDecoder.decode(value, "UTF-8");
 
         JSONObject json = JSON.parseObject(value);
+
+        /**
+         * 获取beat对应得内容
+         */
         JSONObject beat = JSON.parseObject(json.getString("beat"));
 
         RaftPeer peer = raftCore.receivedBeat(beat);
@@ -201,6 +205,13 @@ public class RaftController {
         return "ok";
     }
 
+    /**
+     * leader接受follower请求    返回对应的Datum集合
+     * @param request
+     * @param response
+     * @return
+     * @throws Exception
+     */
     @NeedAuth
     @RequestMapping(value = "/datum", method = RequestMethod.GET)
     public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -208,11 +219,17 @@ public class RaftController {
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
+        /**
+         * 获取request中kyes对应的值
+         */
         String keysString = WebUtils.required(request, "keys");
         keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
 
+        /**
+         * 轮询keys   获取对应的Datum集合
+         */
         for (String key : keys) {
             Datum datum = raftCore.getDatum(key);
             datums.add(datum);

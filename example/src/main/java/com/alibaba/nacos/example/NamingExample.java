@@ -33,7 +33,7 @@ public class NamingExample {
 
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "192.168.50.65:8848,192.168.50.64:8848,192.168.50.63:8848");
-        properties.setProperty("namespace", "3c758c4d-43de-41bb-b75a-920471a52d76");
+//        properties.setProperty("namespace", "3c758c4d-43de-41bb-b75a-920471a52d76");
 
         /**
          * 初始化

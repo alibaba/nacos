@@ -390,6 +390,7 @@ public class RaftCore {
 
                 /**
                  * 只有小于等于0时  才发起选举
+                 * leader会不断发送心跳   重置follower得leaderDueMs  从而阻断follower发起选举
                  */
                 System.out.println("local.leaderDueMs=="+local.leaderDueMs);
                 if (local.leaderDueMs > 0) {
@@ -417,7 +418,6 @@ public class RaftCore {
          * 投票
          */
         public void sendVote() {
-
             /**
              * 本地节点
              */
@@ -607,8 +607,14 @@ public class RaftCore {
                     JSONObject element = new JSONObject();
 
                     if (KeyBuilder.matchServiceMetaKey(datum.key)) {
+                        /**
+                         * 元数据
+                         */
                         element.put("key", KeyBuilder.briefServiceMetaKey(datum.key));
                     } else if (KeyBuilder.matchInstanceListKey(datum.key)) {
+                        /**
+                         * 节点
+                         */
                         element.put("key", KeyBuilder.briefInstanceListkey(datum.key));
                     }
                     element.put("timestamp", datum.timestamp);
@@ -689,7 +695,7 @@ public class RaftCore {
 
     /**
      * follower接受leader心跳
-     * @param beat
+     * @param beat  包含peer和datums  两种数据
      * @return
      * @throws Exception
      */
@@ -736,6 +742,9 @@ public class RaftCore {
             local.voteFor = remote.ip;
         }
 
+        /**
+         * leader传送的datums数据
+         */
         final JSONArray beatDatums = beat.getJSONArray("datums");
         /**
          * 重置心跳数据   控制当前节点的心跳数据不小于0   即当前节点不会发起选举和心跳请求
@@ -744,10 +753,14 @@ public class RaftCore {
         local.resetHeartbeatDue();
 
         /**
-         * follower设置leader
+         * 设置leader
          */
         peers.makeLeader(remote);
 
+
+        /**
+         * 本地的datums数据
+         */
         Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
 
         for (Map.Entry<String, Datum> entry : datums.entrySet()) {
@@ -762,13 +775,22 @@ public class RaftCore {
                 Loggers.RAFT.debug("[RAFT] received beat with {} keys, RaftCore.datums' size is {}, remote server: {}, term: {}, local term: {}",
                     beatDatums.size(), datums.size(), remote.ip, remote.term, local.term);
             }
+            /**
+             * 轮询leader的datums数据
+             */
             for (Object object : beatDatums) {
                 processedCount = processedCount + 1;
 
                 JSONObject entry = (JSONObject) object;
+                /**
+                 * leader上送的key
+                 */
                 String key = entry.getString("key");
                 final String datumKey;
 
+                /**
+                 * 转换
+                 */
                 if (KeyBuilder.matchServiceMetaKey(key)) {
                     datumKey = KeyBuilder.detailServiceMetaKey(key);
                 } else if (KeyBuilder.matchInstanceListKey(key)) {
@@ -778,19 +800,31 @@ public class RaftCore {
                     continue;
                 }
 
+                /**
+                 * leader上送的timestamp
+                 */
                 long timestamp = entry.getLong("timestamp");
 
                 receivedKeysMap.put(datumKey, 1);
 
                 try {
+                    /**
+                     * 本地包含leader数据key  &&  本地timestamp大于等于leader的timestamp   &&  处理的数据小于leader传送的数据
+                     */
                     if (datums.containsKey(datumKey) && datums.get(datumKey).timestamp.get() >= timestamp && processedCount < beatDatums.size()) {
                         continue;
                     }
 
+                    /**
+                     * 本地不包含leader数据key  ||  本地timestamp小于leader的timestamp
+                     */
                     if (!(datums.containsKey(datumKey) && datums.get(datumKey).timestamp.get() >= timestamp)) {
                         batch.add(datumKey);
                     }
 
+                    /**
+                     * 至少50条记录才处理   或者   数据已经轮询完
+                     */
                     if (batch.size() < 50 && processedCount < beatDatums.size()) {
                         continue;
                     }
@@ -805,7 +839,13 @@ public class RaftCore {
                         , getLeader().ip, batch.size(), processedCount, beatDatums.size(), datums.size());
 
                     // update datum entry
+                    /**
+                     * 向leader发起请求   获取keys对应的Datum集合
+                     */
                     String url = buildURL(remote.ip, API_GET) + "?keys=" + URLEncoder.encode(keys, "UTF-8");
+                    /**
+                     * 向leader发送get请求
+                     */
                     HttpClient.asyncHttpGet(url, null, null, new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
@@ -813,6 +853,9 @@ public class RaftCore {
                                 return 1;
                             }
 
+                            /**
+                             * leader返回得对应请求中keys的Datum集合
+                             */
                             List<JSONObject> datumList = JSON.parseObject(response.getResponseBody(), new TypeReference<List<JSONObject>>() {
                             });
 
@@ -821,14 +864,23 @@ public class RaftCore {
                                 Datum newDatum = null;
                                 try {
 
+                                    /**
+                                     * 本地Datum
+                                     */
                                     Datum oldDatum = getDatum(datumJson.getString("key"));
 
+                                    /**
+                                     * leader对应Datum的timestamp  小于等于  本地Datum的timestamp
+                                     */
                                     if (oldDatum != null && datumJson.getLongValue("timestamp") <= oldDatum.timestamp.get()) {
                                         Loggers.RAFT.info("[NACOS-RAFT] timestamp is smaller than that of mine, key: {}, remote: {}, local: {}",
                                             datumJson.getString("key"), datumJson.getLongValue("timestamp"), oldDatum.timestamp);
                                         continue;
                                     }
 
+                                    /**
+                                     * 元数据
+                                     */
                                     if (KeyBuilder.matchServiceMetaKey(datumJson.getString("key"))) {
                                         Datum<Service> serviceDatum = new Datum<>();
                                         serviceDatum.key = datumJson.getString("key");
@@ -838,6 +890,9 @@ public class RaftCore {
                                         newDatum = serviceDatum;
                                     }
 
+                                    /**
+                                     * 节点列表
+                                     */
                                     if (KeyBuilder.matchInstanceListKey(datumJson.getString("key"))) {
                                         Datum<Instances> instancesDatum = new Datum<>();
                                         instancesDatum.key = datumJson.getString("key");
@@ -852,13 +907,31 @@ public class RaftCore {
                                         continue;
                                     }
 
+                                    /**
+                                     * 将newDatum写入对应的缓存文件
+                                     */
                                     raftStore.write(newDatum);
 
+                                    /**
+                                     * 更新缓存中的对应
+                                     */
                                     datums.put(newDatum.key, newDatum);
+
+                                    /**
+                                     * 新增通知任务
+                                     */
                                     notifier.addTask(newDatum.key, ApplyAction.CHANGE);
 
+                                    /**
+                                     * 重置
+                                     */
                                     local.resetLeaderDue();
 
+                                    /**
+                                     * 本地和leader传送的term差距在100以内   则同时更新缓存中本地节点和leader节点的term为返回的leader
+                                     *
+                                     * 差距在100之外   则更新缓存中本地节点的term增加100
+                                     */
                                     if (local.term.get() + 100 > remote.term.get()) {
                                         getLeader().term.set(remote.term.get());
                                         local.term.set(getLeader().term.get());
@@ -866,6 +939,9 @@ public class RaftCore {
                                         local.term.addAndGet(100);
                                     }
 
+                                    /**
+                                     * 更新缓存中的元数据
+                                     */
                                     raftStore.updateTerm(local.term.get());
 
                                     Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
@@ -890,6 +966,9 @@ public class RaftCore {
 
             }
 
+            /**
+             * 删除receivedKeysMap中  value为0的数据
+             */
             List<String> deadKeys = new ArrayList<>();
             for (Map.Entry<String, Integer> entry : receivedKeysMap.entrySet()) {
                 if (entry.getValue() == 0) {
@@ -897,6 +976,9 @@ public class RaftCore {
                 }
             }
 
+            /**
+             * 删除数据
+             */
             for (String deadKey : deadKeys) {
                 try {
                     deleteDatum(deadKey);
@@ -992,6 +1074,10 @@ public class RaftCore {
         return datums.get(key);
     }
 
+    /**
+     * 返回leader
+     * @return
+     */
     public RaftPeer getLeader() {
         return peers.getLeader();
     }
@@ -1034,14 +1120,28 @@ public class RaftCore {
 
     }
 
+    /**
+     * 删除key对应的Datum
+     * @param key
+     */
     private void deleteDatum(String key) {
         Datum deleted;
         try {
+            /**
+             * 删除缓存中  key对应的Datum
+             */
             deleted = datums.remove(URLDecoder.decode(key, "UTF-8"));
             if (deleted != null) {
+                /**
+                 * 物理删除
+                 */
                 raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
+
+            /**
+             * 删除通知
+             */
             notifier.addTask(URLDecoder.decode(key, "UTF-8"), ApplyAction.DELETE);
         } catch (UnsupportedEncodingException e) {
             Loggers.RAFT.warn("datum key decode failed: {}", key);

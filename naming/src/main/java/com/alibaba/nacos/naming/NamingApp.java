@@ -29,6 +29,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class NamingApp {
 
     public static void main(String[] args) {
+
+        System.setProperty("nacos.server.ip", "192.168.50.39");
         SpringApplication.run(NamingApp.class, args);
     }
 }
