@@ -218,15 +218,30 @@ public class InstanceController {
 
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
 
+        /**
+         * 获取namespaceId
+         */
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
+        /**
+         * 获取beat
+         */
         String beat = WebUtils.required(request, "beat");
+        /**
+         * json反序列化   BeatInfo和RsInfo  部分参数相同
+         */
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
 
+        /**
+         * 非临时节点   立即返回
+         */
         if (!switchDomain.isDefaultInstanceEphemeral() && !clientBeat.isEphemeral()) {
             return result;
         }
 
+        /**
+         * 集群名称默认DEFAULT
+         */
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }

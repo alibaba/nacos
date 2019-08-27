@@ -49,18 +49,34 @@ public class WebUtils {
         return value.trim();
     }
 
+    /**
+     * 获得req中key对应的value  若为空则返回defaultValue
+     * @param req
+     * @param key
+     * @param defaultValue
+     * @return
+     */
     public static String optional(HttpServletRequest req, String key, String defaultValue) {
 
+        /**
+         * 请求参数中没有key  或者  对应key的数组第一个元素为null
+         */
         if (!req.getParameterMap().containsKey(key) || req.getParameterMap().get(key)[0] == null) {
             return defaultValue;
         }
 
         String value = req.getParameter(key);
 
+        /**
+         * key对应的value为空
+         */
         if (StringUtils.isBlank(value)) {
             return defaultValue;
         }
 
+        /**
+         * 编码
+         */
         String encoding = req.getParameter("encoding");
         if (!StringUtils.isEmpty(encoding)) {
             try {
