@@ -214,6 +214,11 @@ public class OperatorController {
         return result;
     }
 
+    /**
+     * 接受集群内节点状态
+     * @param request
+     * @return
+     */
     @RequestMapping("/server/status")
     public String serverStatus(HttpServletRequest request) {
         String serverStatus = WebUtils.required(request, "serverStatus");

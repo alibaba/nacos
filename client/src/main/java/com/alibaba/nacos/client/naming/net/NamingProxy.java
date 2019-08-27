@@ -194,7 +194,7 @@ public class NamingProxy {
             }
 
             /**
-             * 从Endpoint获取集群地址
+             * 从Endpoint获取集群地址   动态获取   类似于rmq的nameserver集群地址
              */
             List<String> list = getServerListFromEndpoint();
 

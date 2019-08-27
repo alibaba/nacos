@@ -122,6 +122,7 @@ public class NacosNamingService implements NamingService {
          * 设置服务器端口
          */
         serverProxy.setProperties(properties);
+
         /**
          * 心跳Reactor
          */
@@ -226,6 +227,9 @@ public class NacosNamingService implements NamingService {
     private void initCacheDir() {
         cacheDir = System.getProperty("com.alibaba.nacos.naming.cache.dir");
         if (StringUtils.isEmpty(cacheDir)) {
+            /**
+             * C:\Users\Administrator/nacos/naming/public
+             */
             cacheDir = System.getProperty("user.home") + "/nacos/naming/" + namespace;
         }
     }

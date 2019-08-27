@@ -392,7 +392,6 @@ public class RaftCore {
                  * 只有小于等于0时  才发起选举
                  * leader会不断发送心跳   重置follower得leaderDueMs  从而阻断follower发起选举
                  */
-                System.out.println("local.leaderDueMs=="+local.leaderDueMs);
                 if (local.leaderDueMs > 0) {
                     return;
                 }
