@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -71,7 +71,7 @@ public class TrafficReviseFilter implements Filter {
         }
 
         // requests from peer server should be let pass:
-        String agent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
+        String agent = WebUtils.getUserAgent(req);
 
         if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
             filterChain.doFilter(req, resp);
