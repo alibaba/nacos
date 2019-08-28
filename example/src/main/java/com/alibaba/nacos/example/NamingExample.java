@@ -35,33 +35,18 @@ public class NamingExample {
         properties.setProperty("serverAddr", "192.168.50.39:8848");
 //        properties.setProperty("namespace", "3c758c4d-43de-41bb-b75a-920471a52d76");
 
-        /**
-         * 初始化
-         */
         NamingService naming = NamingFactory.createNamingService(properties);
 
-        /**
-         * 注册
-         */
         naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
 
         naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
-        /**
-         * 查询实例
-         */
         System.out.println("1----------------" + naming.getAllInstances("nacos.test.3"));
 
-        /**
-         * 注销
-         */
         naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
         System.out.println("2----------------" + naming.getAllInstances("nacos.test.3"));
 
-        /**
-         * 订阅
-         */
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override
             public void onEvent(Event event) {

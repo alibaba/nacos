@@ -138,6 +138,8 @@ public class BeatReactor {
             }
             /**
              * 发送心跳
+             * 发送心跳
+             * 发送心跳
              */
             long result = serverProxy.sendBeat(beatInfo);
             long nextTime = result > 0 ? result : beatInfo.getPeriod();
