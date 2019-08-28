@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -570,26 +571,26 @@ public class ConfigController {
         }
 
         ids.removeAll(Collections.singleton(null));
-        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4Export(null,null, null, null, ids);
+        List<ConfigAllInfo> queryedDataList = persistService.findConfigAllInfoByIds(ids);
 
         if(queryedDataList == null || queryedDataList.isEmpty()){
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
 
-        List<ConfigInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
-
-        for(ConfigInfo ci : queryedDataList){
+        String tenant = namespace;
+        List<ConfigInfo> configInfoList4Clone = queryedDataList.stream().map(configAllInfo -> {
             ConfigInfo ci4save = new ConfigInfo();
-            ci4save.setTenant(namespace);
-            ci4save.setGroup(ci.getGroup());
-            ci4save.setDataId(ci.getDataId());
-            ci4save.setContent(ci.getContent());
-            if(StringUtils.isNotBlank(ci.getAppName())){
-                ci4save.setAppName(ci.getAppName());
+            ci4save.setTenant(tenant);
+            ci4save.setGroup(configAllInfo.getGroup());
+            ci4save.setDataId(configAllInfo.getDataId());
+            ci4save.setContent(configAllInfo.getContent());
+            if(StringUtils.isNotBlank(configAllInfo.getAppName())){
+                ci4save.setAppName(configAllInfo.getAppName());
             }
-            configInfoList4Clone.add(ci4save);
-        }
+            ci4save.setType(configAllInfo.getType());
+            return ci4save;
+        }).collect(Collectors.toList());
 
         if (configInfoList4Clone.isEmpty()) {
             failedData.put("succCount", 0);
