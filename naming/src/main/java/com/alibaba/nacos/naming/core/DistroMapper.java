@@ -63,6 +63,11 @@ public class DistroMapper implements ServerChangeListener {
             && cluster.contains(instance);
     }
 
+    /**
+     * 查看本地服务是否可用
+     * @param serviceName
+     * @return
+     */
     public boolean responsible(String serviceName) {
         if (!switchDomain.isDistroEnabled() || SystemUtils.STANDALONE_MODE) {
             return true;
@@ -73,22 +78,45 @@ public class DistroMapper implements ServerChangeListener {
             return false;
         }
 
+        /**
+         * 第一次出现的位置
+         */
         int index = healthyList.indexOf(NetUtils.localServer());
+        /**
+         * 最后一次出现的位置
+         */
         int lastIndex = healthyList.lastIndexOf(NetUtils.localServer());
         if (lastIndex < 0 || index < 0) {
             return true;
         }
 
+        /**
+         * 使用healthyList中的target位置的nacos处理当前请求
+         */
         int target = distroHash(serviceName) % healthyList.size();
+
+        /**
+         * 通常在healthyList   当前节点只会出现一次
+         * 所以只有 target == index == lastIndex时  才会返回true   即用当前节点处理请求
+         * 否则使用其他节点处理请求
+         */
         return target >= index && target <= lastIndex;
     }
 
+    /**
+     * 根据serviceName对应的hash  选择转发的节点
+     * @param serviceName
+     * @return
+     */
     public String mapSrv(String serviceName) {
         if (CollectionUtils.isEmpty(healthyList) || !switchDomain.isDistroEnabled()) {
             return NetUtils.localServer();
         }
 
         try {
+            /**
+             * 根据serviceName对应的hash  选择转发的节点
+             */
             return healthyList.get(distroHash(serviceName) % healthyList.size());
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("distro mapper failed, return localhost: " + NetUtils.localServer(), e);
@@ -97,6 +125,11 @@ public class DistroMapper implements ServerChangeListener {
         }
     }
 
+    /**
+     * 获取serviceName对应的hash
+     * @param serviceName
+     * @return
+     */
     public int distroHash(String serviceName) {
         return Math.abs(serviceName.hashCode() % Integer.MAX_VALUE);
     }
@@ -106,6 +139,10 @@ public class DistroMapper implements ServerChangeListener {
 
     }
 
+    /**
+     * 更新nacos集群内   健康节点列表
+     * @param latestReachableMembers
+     */
     @Override
     public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
 

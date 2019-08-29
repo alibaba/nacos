@@ -552,6 +552,7 @@ public class NamingProxy {
         /**
          * 发送http请求
          */
+        System.out.println("应用访问nacos集群，url="+url);
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
 

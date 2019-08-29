@@ -210,6 +210,12 @@ public class UtilsAndCommons {
         return UtilsAndCommons.DOMAINS_DATA_ID_PRE + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
 
+    /**
+     * 转换元数据
+     * @param metadata
+     * @return
+     * @throws NacosException
+     */
     public static Map<String, String> parseMetadata(String metadata) throws NacosException {
 
         Map<String, String> metadataMap = new HashMap<>(16);
@@ -219,6 +225,9 @@ public class UtilsAndCommons {
         }
 
         try {
+            /**
+             * json反序列化
+             */
             metadataMap = JSON.parseObject(metadata, new TypeReference<Map<String, String>>() {
             });
         } catch (Exception e) {

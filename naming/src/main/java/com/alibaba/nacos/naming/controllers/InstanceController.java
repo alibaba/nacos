@@ -90,13 +90,22 @@ public class InstanceController {
         }
     };
 
-    @CanDistro
+    /**
+     * 应用注册
+     * @param request
+     * @return
+     * @throws Exception
+     */
+//    @CanDistro
     @RequestMapping(value = "", method = RequestMethod.POST)
     public String register(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
+        /**
+         * 应用注册
+         */
         serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
     }
@@ -317,18 +326,30 @@ public class InstanceController {
         return result;
     }
 
+    /**
+     * 将请求数据中的内存   构建Instance
+     * @param request
+     * @return
+     * @throws Exception
+     */
     private Instance parseInstance(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String app = WebUtils.optional(request, "app", "DEFAULT");
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
 
+        /**
+         * 将请求数据中的内存   构建Instance
+         */
         Instance instance = getIPAddress(request);
         instance.setApp(app);
         instance.setServiceName(serviceName);
         instance.setInstanceId(instance.generateInstanceId());
         instance.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
+            /**
+             * 元数据
+             */
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
@@ -339,6 +360,11 @@ public class InstanceController {
         return instance;
     }
 
+    /**
+     * 将请求数据中的内存   构建Instance
+     * @param request
+     * @return
+     */
     private Instance getIPAddress(HttpServletRequest request) {
 
         String ip = WebUtils.required(request, "ip");

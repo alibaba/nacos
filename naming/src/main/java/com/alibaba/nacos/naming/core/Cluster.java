@@ -93,9 +93,19 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         this.defIPPort = defIPPort;
     }
 
+    /**
+     * 获取所有节点
+     * @return
+     */
     public List<Instance> allIPs() {
         List<Instance> allInstances = new ArrayList<>();
+        /**
+         * 持久化节点
+         */
         allInstances.addAll(persistentInstances);
+        /**
+         * 临时节点
+         */
         allInstances.addAll(ephemeralInstances);
         return allInstances;
     }

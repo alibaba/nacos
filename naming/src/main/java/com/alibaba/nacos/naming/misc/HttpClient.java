@@ -91,20 +91,43 @@ public class HttpClient {
         return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "GET");
     }
 
+    /**
+     * 发送http请求
+     * @param url
+     * @param headers
+     * @param paramValues
+     * @param connectTimeout
+     * @param readTimeout
+     * @param encoding
+     * @param method
+     * @return
+     */
     public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
+            /**
+             * 将params  转换为key=value&key=value&key=value&形式
+             */
             String encodedContent = encodingParams(paramValues, encoding);
             url += (null == encodedContent) ? "" : ("?" + encodedContent);
 
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(connectTimeout);
             conn.setReadTimeout(readTimeout);
+            /**
+             * post   get等
+             */
             conn.setRequestMethod(method);
 
             conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
             conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
+            /**
+             * 处理header
+             */
             setHeaders(conn, headers, encoding);
+            /**
+             * 发送请求
+             */
             conn.connect();
 
             return getResult(conn);
@@ -444,6 +467,12 @@ public class HttpClient {
         }
     }
 
+    /**
+     * 返回http相应
+     * @param conn
+     * @return
+     * @throws IOException
+     */
     private static HttpResult getResult(HttpURLConnection conn) throws IOException {
         int respCode = conn.getResponseCode();
 
@@ -494,6 +523,12 @@ public class HttpClient {
         return charset;
     }
 
+    /**
+     * 处理header
+     * @param conn
+     * @param headers
+     * @param encoding
+     */
     private static void setHeaders(HttpURLConnection conn, List<String> headers, String encoding) {
         if (null != headers) {
             for (Iterator<String> iter = headers.iterator(); iter.hasNext(); ) {

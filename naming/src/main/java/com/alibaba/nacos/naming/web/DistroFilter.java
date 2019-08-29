@@ -59,11 +59,22 @@ public class DistroFilter implements Filter {
 
     }
 
+    /**
+     * 当前节点不可用时   路由到集群中的其他节点处理请求
+     * @param servletRequest
+     * @param servletResponse
+     * @param filterChain
+     * @throws IOException
+     * @throws ServletException
+     */
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
+        /**
+         * 获取uri /nacos/v1/ns/raft/beat
+         */
         String urlString = req.getRequestURI();
 
         if (StringUtils.isNotBlank(req.getQueryString())) {
@@ -77,6 +88,10 @@ public class DistroFilter implements Filter {
             if (StringUtils.isBlank(serviceName)) {
                 serviceName = req.getParameter("dom");
             }
+
+            /**
+             * controller处理请求使用的方法
+             */
             Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
@@ -95,8 +110,14 @@ public class DistroFilter implements Filter {
             }
 
             // proxy request to other server if necessary:
+            /**
+             * 方法有CanDistro注解   &&  不使用当前节点处理数据
+             */
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
 
+                /**
+                 * 使用其他nacos节点处理数据
+                 */
                 String userAgent = req.getHeader("User-Agent");
 
                 if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
@@ -107,6 +128,9 @@ public class DistroFilter implements Filter {
                     return;
                 }
 
+                /**
+                 * header
+                 */
                 List<String> headerList = new ArrayList<>(16);
                 Enumeration<String> headers = req.getHeaderNames();
                 while (headers.hasMoreElements()) {
@@ -114,6 +138,10 @@ public class DistroFilter implements Filter {
                     headerList.add(headerName);
                     headerList.add(req.getHeader(headerName));
                 }
+
+                /**
+                 * 向其他节点转发请求
+                 */
                 HttpClient.HttpResult result =
                     HttpClient.request("http://" + distroMapper.mapSrv(groupedServiceName) + urlString, headerList,
                         StringUtils.isBlank(req.getQueryString()) ? HttpClient.translateParameterMap(req.getParameterMap()) : new HashMap<>(2)

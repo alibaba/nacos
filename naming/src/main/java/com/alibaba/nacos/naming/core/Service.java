@@ -251,6 +251,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     }
 
+    /**
+     * 初始化
+     */
     public void init() {
 
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
@@ -268,9 +271,16 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         HealthCheckReactor.cancelCheck(clientBeatCheckTask);
     }
 
+    /**
+     * 获取在nacos注册的所有节点
+     * @return
+     */
     public List<Instance> allIPs() {
         List<Instance> allIPs = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            /**
+             * 获取Cluster对应的节点
+             */
             allIPs.addAll(entry.getValue().allIPs());
         }
 
@@ -312,6 +322,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return JSON.toJSONString(this);
     }
 
+    /**
+     * 将server转成string
+     * @return
+     */
     @JSONField(serialize = false)
     public String getServiceString() {
         Map<Object, Object> serviceObject = new HashMap<Object, Object>(10);
@@ -320,7 +334,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         serviceObject.put("name", service.getName());
 
         List<Instance> ips = service.allIPs();
+        /**
+         * 不健康的实例数
+         */
         int invalidIPCount = 0;
+        /**
+         * 总实例数
+         */
         int ipCount = 0;
         for (Instance ip : ips) {
             if (!ip.isHealthy()) {
@@ -436,10 +456,19 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return checksum;
     }
 
+    /**
+     * 重新计算checksum
+     */
     public synchronized void recalculateChecksum() {
+        /**
+         * 获取在nacos注册的所有节点
+         */
         List<Instance> ips = allIPs();
 
         StringBuilder ipsString = new StringBuilder();
+        /**
+         * 将server转成string
+         */
         ipsString.append(getServiceString());
 
         if (Loggers.SRV_LOG.isDebugEnabled()) {
@@ -450,6 +479,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             Collections.sort(ips);
         }
 
+        /**
+         * Instance转String
+         */
         for (Instance ip : ips) {
             String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_"
                 + ip.isHealthy() + "_" + ip.getClusterName();
@@ -457,6 +489,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             ipsString.append(",");
         }
 
+        /**
+         * md5加密
+         */
         try {
             String result;
             try {

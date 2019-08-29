@@ -396,30 +396,67 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
     }
 
+    /**
+     *
+     * @param namespaceId
+     * @param serviceName
+     * @param local
+     * @throws NacosException
+     */
     public void createEmptyService(String namespaceId, String serviceName, boolean local) throws NacosException {
         createServiceIfAbsent(namespaceId, serviceName, local, null);
     }
 
+    /**
+     *
+     * @param namespaceId
+     * @param serviceName
+     * @param local
+     * @param cluster
+     * @throws NacosException
+     */
     public void createServiceIfAbsent(String namespaceId, String serviceName, boolean local, Cluster cluster) throws NacosException {
+        /**
+         * 缓存中查询服务是否存在
+         */
         Service service = getService(namespaceId, serviceName);
+
+        /**
+         *
+         */
         if (service == null) {
 
             Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
+            /**
+             * 生成新service
+             */
             service = new Service();
             service.setName(serviceName);
             service.setNamespaceId(namespaceId);
             service.setGroupName(NamingUtils.getGroupName(serviceName));
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
+            /**
+             * 重新计算checksum
+             */
             service.recalculateChecksum();
             if (cluster != null) {
                 cluster.setService(service);
                 service.getClusterMap().put(cluster.getName(), cluster);
             }
+            /**
+             * 校验
+             */
             service.validate();
             if (local) {
+                /**
+                 * 临时节点
+                 */
                 putServiceAndInit(service);
             } else {
+                /**
+                 * 持久化节点
+                 */
                 addOrReplaceService(service);
             }
         }
@@ -461,6 +498,9 @@ public class ServiceManager implements RecordListener<Service> {
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
+        /**
+         * service不存在则新建
+         */
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
         Service service = getService(namespaceId, serviceName);
@@ -609,10 +649,19 @@ public class ServiceManager implements RecordListener<Service> {
         return instanceMap;
     }
 
+    /**
+     * 本地缓存查询服务是否存在
+     * @param namespaceId
+     * @param serviceName
+     * @return
+     */
     public Service getService(String namespaceId, String serviceName) {
         if (serviceMap.get(namespaceId) == null) {
             return null;
         }
+        /**
+         * 通过namespaceId和serviceName   查询服务
+         */
         return chooseServiceMap(namespaceId).get(serviceName);
     }
 
@@ -620,6 +669,10 @@ public class ServiceManager implements RecordListener<Service> {
         return getService(namespaceId, serviceName) != null;
     }
 
+    /**
+     * 将service存入缓存
+     * @param service
+     */
     public void putService(Service service) {
         if (!serviceMap.containsKey(service.getNamespaceId())) {
             synchronized (putServiceLock) {
@@ -631,8 +684,19 @@ public class ServiceManager implements RecordListener<Service> {
         serviceMap.get(service.getNamespaceId()).put(service.getName(), service);
     }
 
+    /**
+     * 临时节点
+     * @param service
+     * @throws NacosException
+     */
     private void putServiceAndInit(Service service) throws NacosException {
+        /**
+         * 存入缓存
+         */
         putService(service);
+        /**
+         * 初始化
+         */
         service.init();
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
