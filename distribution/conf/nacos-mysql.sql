@@ -137,6 +137,7 @@ CREATE TABLE `his_config_info` (
   `src_ip` varchar(20) DEFAULT NULL,
   `op_type` char(10) DEFAULT NULL,
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
+   type varchar(64) DEFAULT 'text' COMMENT '配置格式',
   PRIMARY KEY (`nid`),
   KEY `idx_gmt_create` (`gmt_create`),
   KEY `idx_gmt_modified` (`gmt_modified`),
