@@ -64,7 +64,7 @@ public class DistroMapper implements ServerChangeListener {
     }
 
     /**
-     * 查看本地服务是否可用
+     * 是否由本地节点执行操作
      * @param serviceName
      * @return
      */

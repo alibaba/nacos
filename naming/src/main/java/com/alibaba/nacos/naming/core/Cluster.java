@@ -110,6 +110,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return allInstances;
     }
 
+    /**
+     * 是否获取nacos上的临时节点
+     * @param ephemeral true:临时节点   false:持久化节点
+     * @return
+     */
     public List<Instance> allIPs(boolean ephemeral) {
         return ephemeral ? new ArrayList<>(ephemeralInstances) : new ArrayList<>(persistentInstances);
     }

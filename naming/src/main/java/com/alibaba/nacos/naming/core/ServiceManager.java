@@ -422,7 +422,7 @@ public class ServiceManager implements RecordListener<Service> {
         Service service = getService(namespaceId, serviceName);
 
         /**
-         *
+         * 没有则新建
          */
         if (service == null) {
 
@@ -436,6 +436,7 @@ public class ServiceManager implements RecordListener<Service> {
             service.setGroupName(NamingUtils.getGroupName(serviceName));
             // now validate the service. if failed, exception will be thrown
             service.setLastModifiedMillis(System.currentTimeMillis());
+
             /**
              * 重新计算checksum
              */

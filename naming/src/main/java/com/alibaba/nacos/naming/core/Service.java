@@ -287,9 +287,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return allIPs;
     }
 
+    /**
+     * 是否获取nacos上的临时节点
+     * @param ephemeral true:临时节点   false:持久化节点
+     * @return
+     */
     public List<Instance> allIPs(boolean ephemeral) {
         List<Instance> allIPs = new ArrayList<>();
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
+            /**
+             * 依照ephemeral  获取节点
+             */
             allIPs.addAll(entry.getValue().allIPs(ephemeral));
         }
 
@@ -333,6 +341,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         serviceObject.put("name", service.getName());
 
+        /**
+         * 获取在nacos注册的所有节点
+         */
         List<Instance> ips = service.allIPs();
         /**
          * 不健康的实例数

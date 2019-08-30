@@ -67,22 +67,40 @@ public class ClientBeatCheckTask implements Runnable {
     @Override
     public void run() {
         try {
+            /**
+             * 是否由本地节点执行
+             */
             if (!getDistroMapper().responsible(service.getName())) {
                 return;
             }
 
+            /**
+             * 获取所有的临时节点
+             */
             List<Instance> instances = service.allIPs(true);
 
             // first set health status of instances:
             for (Instance instance : instances) {
+                /**
+                 * 超时 设置为不健康的实例
+                 */
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getInstanceHeartBeatTimeOut()) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
+                            /**
+                             * 不健康的实例
+                             */
                             instance.setHealthy(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
                                 instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
                                 UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
+                            /**
+                             * 发布ServiceChangeEvent
+                             */
                             getPushService().serviceChanged(service);
+                            /**
+                             * 发布InstanceHeartbeatTimeoutEvent   留待二次开发时间
+                             */
                             SpringContext.getAppContext().publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
                     }
@@ -94,12 +112,18 @@ public class ClientBeatCheckTask implements Runnable {
             }
 
             // then remove obsolete instances:
+            /**
+             * 删除废弃的instances
+             */
             for (Instance instance : instances) {
 
                 if (instance.isMarked()) {
                     continue;
                 }
 
+                /**
+                 * 超时  则删除
+                 */
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
@@ -114,6 +138,10 @@ public class ClientBeatCheckTask implements Runnable {
     }
 
 
+    /**
+     * 删除实例
+     * @param instance
+     */
     private void deleteIP(Instance instance) {
 
         try {
@@ -129,6 +157,9 @@ public class ClientBeatCheckTask implements Runnable {
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
 
             // delete instance asynchronously:
+            /**
+             * 删除操作
+             */
             HttpClient.asyncHttpDelete(url, null, null, new AsyncCompletionHandler() {
                 @Override
                 public Object onCompleted(Response response) throws Exception {
