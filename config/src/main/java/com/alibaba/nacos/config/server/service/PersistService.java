@@ -52,7 +52,6 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
@@ -73,7 +72,7 @@ public class PersistService {
 
     private DataSourceService dataSourceService;
 
-    private static final String SQL_FIND_ALL_CONFIG_INFO = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
+    private static final String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
 
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
 
@@ -3042,34 +3041,6 @@ public class PersistService {
     }
 
     /**
-     * Find ConfigAllInfo by ids
-     *
-     * @param ids ids
-     * @return ConfigAllInfo
-     */
-    public List<ConfigAllInfo> findConfigAllInfoByIds(final List<Long> ids) {
-        if(CollectionUtils.isEmpty(ids)) {
-            return Collections.emptyList();
-        }
-
-        String[] array = new String[ids.size()];
-        Arrays.fill(array, "?");
-
-        String sql = "SELECT ID,data_id,group_id,tenant_id,app_name,content,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,type,c_schema FROM config_info " +
-            "WHERE id IN (" + String.join(",", array) + ")";
-
-        try {
-            List<Map<String, Object>> maps = this.jt.queryForList(sql, ids.toArray());
-            return maps.stream().map(this::convertConfigAllInfo).collect(Collectors.toList());
-        } catch (EmptyResultDataAccessException e) { // 表明数据不存在, 返回null
-            return Collections.emptyList();
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
-    }
-
-    /**
      * 更新变更记录；数据库原子操作，最小sql动作，无业务封装
      *
      * @param id         id
@@ -3325,37 +3296,6 @@ public class PersistService {
         return configs;
     }
 
-    private ConfigAllInfo convertConfigAllInfo(Map<String, Object> map) {
-        if (map == null) {
-            return null;
-        }
-        ConfigAllInfo configAllInfo = new ConfigAllInfo();
-        configAllInfo.setId((long) map.get("id"));
-        configAllInfo.setDataId((String) map.get("data_id"));
-        configAllInfo.setGroup((String) map.get("group_id"));
-        configAllInfo.setTenant((String) map.get("tenant_id"));
-        configAllInfo.setAppName((String) map.get("app_name"));
-        configAllInfo.setContent((String) map.get("content"));
-        configAllInfo.setMd5((String) map.get("md5"));
-        configAllInfo.setCreateTime(((Timestamp) map.get("gmt_create")).getTime());
-        configAllInfo.setModifyTime(((Timestamp) map.get("gmt_modified")).getTime());
-        configAllInfo.setCreateUser((String) map.get("src_user"));
-        configAllInfo.setCreateIp((String) map.get("src_ip"));
-        configAllInfo.setDesc((String) map.get("c_desc"));
-        configAllInfo.setUse((String) map.get("c_use"));
-        configAllInfo.setEffect((String) map.get("effect"));
-        configAllInfo.setType((String) map.get("type"));
-        configAllInfo.setSchema((String) map.get("c_schema"));
-
-        List<String> configTagList = this.selectTagByConfig(configAllInfo.getDataId(), configAllInfo.getGroup(),
-            configAllInfo.getTenant());
-
-        if (!CollectionUtils.isEmpty(configTagList)) {
-            configAllInfo.setConfigTags(String.join(",", configTagList.toArray(new String[0])));
-        }
-        return configAllInfo;
-    }
-
     /**
      * 获取所有的配置的Md5值，通过分页方式获取。
      *
@@ -3479,7 +3419,7 @@ public class PersistService {
      * @param group
      * @return Collection of ConfigInfo objects
      */
-    public List<ConfigInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
+    public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
                                                      final String appName, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         StringBuilder where = new StringBuilder(" where ");
@@ -3511,7 +3451,7 @@ public class PersistService {
             }
         }
         try {
-            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -3548,7 +3488,7 @@ public class PersistService {
             if (StringUtils.isBlank(type)) {
                 // simple judgment of file type based on suffix
                 if (configInfo.getDataId().contains(SPOT)) {
-                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toLowerCase();
+                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toUpperCase();
                     try {
                         type = FileTypeEnum.valueOf(extName).getFileType();
                     } catch (Exception ex) {

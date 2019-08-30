@@ -50,7 +50,6 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -436,7 +435,7 @@ public class ConfigController {
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
-        List<ConfigInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
+        List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
         for(ConfigInfo ci : dataList){
@@ -571,26 +570,27 @@ public class ConfigController {
         }
 
         ids.removeAll(Collections.singleton(null));
-        List<ConfigAllInfo> queryedDataList = persistService.findConfigAllInfoByIds(ids);
+        List<ConfigAllInfo> queryedDataList = persistService.findAllConfigInfo4Export(null,null, null, null, ids);
 
         if(queryedDataList == null || queryedDataList.isEmpty()){
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
 
-        String tenant = namespace;
-        List<ConfigInfo> configInfoList4Clone = queryedDataList.stream().map(configAllInfo -> {
+        List<ConfigInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
+
+        for(ConfigInfo ci : queryedDataList){
             ConfigInfo ci4save = new ConfigInfo();
-            ci4save.setTenant(tenant);
-            ci4save.setGroup(configAllInfo.getGroup());
-            ci4save.setDataId(configAllInfo.getDataId());
-            ci4save.setContent(configAllInfo.getContent());
-            if(StringUtils.isNotBlank(configAllInfo.getAppName())){
-                ci4save.setAppName(configAllInfo.getAppName());
+            ci4save.setTenant(namespace);
+            ci4save.setType(ci.getType());
+            ci4save.setGroup(ci.getGroup());
+            ci4save.setDataId(ci.getDataId());
+            ci4save.setContent(ci.getContent());
+            if(StringUtils.isNotBlank(ci.getAppName())){
+                ci4save.setAppName(ci.getAppName());
             }
-            ci4save.setType(configAllInfo.getType());
-            return ci4save;
-        }).collect(Collectors.toList());
+            configInfoList4Clone.add(ci4save);
+        }
 
         if (configInfoList4Clone.isEmpty()) {
             failedData.put("succCount", 0);
