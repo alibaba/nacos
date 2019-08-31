@@ -3466,7 +3466,7 @@ public class PersistService {
      * failData: import failed data (only with abort for the same configs)
      * skipData: data skipped at import  (only with skip for the same configs)
      */
-    public Map<String, Object> batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
+    public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
                                                    Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws NacosException {
         int succCount = 0;
         int skipCount = 0;
@@ -3474,7 +3474,7 @@ public class PersistService {
         List<Map<String, String>> skipData = null;
 
         for (int i = 0; i < configInfoList.size(); i++) {
-            ConfigInfo configInfo = configInfoList.get(i);
+            ConfigAllInfo configInfo = configInfoList.get(i);
             try {
                 ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {

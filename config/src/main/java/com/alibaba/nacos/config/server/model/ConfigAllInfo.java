@@ -97,12 +97,10 @@ public class ConfigAllInfo extends ConfigInfo {
         this.effect = effect;
     }
 
-    @Override
     public String getType() {
         return type;
     }
 
-    @Override
     public void setType(String type) {
         this.type = type;
     }
