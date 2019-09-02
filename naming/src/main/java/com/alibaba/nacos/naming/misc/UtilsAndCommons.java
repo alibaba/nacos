@@ -246,6 +246,13 @@ public class UtilsAndCommons {
         return metadataMap;
     }
 
+    /**
+     * namespaceId##serviceName
+     *
+     * @param namespaceId
+     * @param serviceName
+     * @return
+     */
     public static String assembleFullServiceName(String namespaceId, String serviceName) {
         return namespaceId + UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR + serviceName;
     }

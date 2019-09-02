@@ -256,6 +256,10 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     public void init() {
 
+        /**
+         * 检查不健康的实例  并发出ServiceChangeEvent
+         * 检查待删除的实例
+         */
         HealthCheckReactor.scheduleCheck(clientBeatCheckTask);
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {

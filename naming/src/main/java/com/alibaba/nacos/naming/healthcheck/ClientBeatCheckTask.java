@@ -95,11 +95,11 @@ public class ClientBeatCheckTask implements Runnable {
                                 instance.getIp(), instance.getPort(), instance.getClusterName(), service.getName(),
                                 UtilsAndCommons.LOCALHOST_SITE, instance.getInstanceHeartBeatTimeOut(), instance.getLastBeat());
                             /**
-                             * 发布ServiceChangeEvent
+                             * 发布ServiceChangeEvent  udp通知？
                              */
                             getPushService().serviceChanged(service);
                             /**
-                             * 发布InstanceHeartbeatTimeoutEvent   留待二次开发时间
+                             * 发布InstanceHeartbeatTimeoutEvent   留待二次开发
                              */
                             SpringContext.getAppContext().publishEvent(new InstanceHeartbeatTimeoutEvent(this, instance));
                         }
@@ -127,6 +127,9 @@ public class ClientBeatCheckTask implements Runnable {
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
                     Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.getName(), JSON.toJSONString(instance));
+                    /**
+                     * 删除实例
+                     */
                     deleteIP(instance);
                 }
             }
@@ -153,6 +156,9 @@ public class ClientBeatCheckTask implements Runnable {
                 .appendParam("serviceName", service.getName())
                 .appendParam("namespaceId", service.getNamespaceId());
 
+            /**
+             * 向本机发起删除交易
+             */
             String url = "http://127.0.0.1:" + RunningConfig.getServerPort() + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance?" + request.toUrl();
 
