@@ -374,8 +374,10 @@ public class ClientWorker {
         }
 
         try {
+            // Client socketTimeout time should be greater than Long-Pulling-Timeout,
+            // avoid due to server end task processing is not timely should not appear error
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
-                agent.getEncode(), timeout);
+                agent.getEncode(), timeout + (long)  Math.floor(timeout >> 1));
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);

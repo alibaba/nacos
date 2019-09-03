@@ -39,20 +39,24 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
 
-    static public List<String> compareMd5(HttpServletRequest request,
-                                          HttpServletResponse response, Map<String, String> clientMd5Map) {
+    static public List<String> compareMd5(String tag, String ip, Map<String, String> clientMd5Map) {
         List<String> changedGroupKeys = new ArrayList<String>();
-        String tag = request.getHeader("Vipserver-Tag");
         for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
             String groupKey = entry.getKey();
             String clientMd5 = entry.getValue();
-            String ip = RequestUtil.getRemoteIp(request);
             boolean isUptodate = ConfigService.isUptodate(groupKey, clientMd5, ip, tag);
             if (!isUptodate) {
                 changedGroupKeys.add(groupKey);
             }
         }
         return changedGroupKeys;
+    }
+
+    static public List<String> compareMd5(HttpServletRequest request,
+                                          HttpServletResponse response, Map<String, String> clientMd5Map) {
+        String tag = request.getHeader("Vipserver-Tag");
+        String ip = RequestUtil.getRemoteIp(request);
+        return compareMd5(tag, ip, clientMd5Map);
     }
 
     static public String compareMd5OldResult(List<String> changedGroupKeys) {

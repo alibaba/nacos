@@ -63,6 +63,9 @@ public class LogUtil {
     public static final Logger notifyLog = LoggerFactory
         .getLogger("com.alibaba.nacos.config.notifyLog");
 
+    public static final Logger publishLog = LoggerFactory
+        .getLogger("com.alibaba.nacos.config.server.publishLog");
+
     public static void setLogLevel(String logName, String level) {
 
         switch (logName) {
@@ -92,6 +95,9 @@ public class LogUtil {
                 break;
             case "config-notify":
                 ((ch.qos.logback.classic.Logger) notifyLog).setLevel(Level.valueOf(level));
+                break;
+            case "config-publish":
+                ((ch.qos.logback.classic.Logger) publishLog).setLevel(Level.valueOf(level));
                 break;
             default:
                 break;

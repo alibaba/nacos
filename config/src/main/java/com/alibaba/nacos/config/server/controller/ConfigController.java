@@ -24,6 +24,7 @@ import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.push.LongPollingService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
@@ -78,12 +79,15 @@ public class ConfigController {
 
     private final transient ConfigSubService configSubService;
 
+    private final LongPollingService publishConfigDataChangeService;
+
     @Autowired
     public ConfigController(ConfigServletInner configServletInner, PersistService persistService,
-                            ConfigSubService configSubService) {
+                            ConfigSubService configSubService, LongPollingService publishConfigDataChangeService) {
         this.inner = configServletInner;
         this.persistService = persistService;
         this.configSubService = configSubService;
+        this.publishConfigDataChangeService = publishConfigDataChangeService;
     }
 
     /**
@@ -290,7 +294,7 @@ public class ConfigController {
         }
 
         // do long-polling
-        inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
+        publishConfigDataChangeService.createWatch(request, response, clientMd5Map, probeModify.length());
     }
 
     /**
