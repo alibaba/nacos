@@ -91,6 +91,12 @@ public class NamingProxy {
             + result.code + " msg: " + result.content);
     }
 
+    /**
+     * 向server节点发起/distro/datums请求
+     * @param server
+     * @return
+     * @throws Exception
+     */
     public static byte[] getAllData(String server) throws Exception {
 
         Map<String, String> params = new HashMap<>(8);

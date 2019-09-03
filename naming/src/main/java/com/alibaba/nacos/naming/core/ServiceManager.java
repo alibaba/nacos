@@ -117,6 +117,11 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+    /**
+     * 元数据 或非Switch
+     * @param key candidate key
+     * @return
+     */
     @Override
     public boolean interests(String key) {
         return KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key);
@@ -504,6 +509,9 @@ public class ServiceManager implements RecordListener<Service> {
          */
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
+        /**
+         * 再次查询缓存
+         */
         Service service = getService(namespaceId, serviceName);
 
         if (service == null) {
@@ -511,6 +519,9 @@ public class ServiceManager implements RecordListener<Service> {
                 "service not found, namespace: " + namespaceId + ", service: " + serviceName);
         }
 
+        /**
+         *
+         */
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
@@ -530,6 +541,14 @@ public class ServiceManager implements RecordListener<Service> {
         addInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
     }
 
+    /**
+     * 向nacos注册实例
+     * @param namespaceId
+     * @param serviceName
+     * @param ephemeral
+     * @param ips
+     * @throws NacosException
+     */
     public void addInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
 
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
@@ -586,6 +605,13 @@ public class ServiceManager implements RecordListener<Service> {
 
     public List<Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
+        /**
+         * 获取service对应得Datum
+         *
+         * 区分临时节点和持久化节点
+         *
+         * DelegateConsistencyServiceImpl
+         */
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
         Map<String, Instance> oldInstanceMap = new HashMap<>(16);
@@ -692,7 +718,7 @@ public class ServiceManager implements RecordListener<Service> {
      */
     private void putServiceAndInit(Service service) throws NacosException {
         /**
-         * 存入缓存
+         * service存入缓存
          */
         putService(service);
         /**

@@ -119,6 +119,12 @@ public class DistroController {
         response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));
     }
 
+    /**
+     * 返回本地的数据
+     * @param request
+     * @param response
+     * @throws Exception
+     */
     @RequestMapping(value = "/datums", method = RequestMethod.GET)
     public void getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
         response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8));

@@ -991,8 +991,16 @@ public class RaftCore {
         return local;
     }
 
+    /**
+     * 添加监听
+     * @param key
+     * @param listener
+     */
     public void listen(String key, RecordListener listener) {
 
+        /**
+         * 添加监听
+         */
         List<RecordListener> listenerList = listeners.get(key);
         if (listenerList != null && listenerList.contains(listener)) {
             return;
@@ -1009,6 +1017,9 @@ public class RaftCore {
 
         // if data present, notify immediately
         for (Datum datum : datums.values()) {
+            /**
+             * key是否满足条件
+             */
             if (!listener.interests(datum.key)) {
                 continue;
             }

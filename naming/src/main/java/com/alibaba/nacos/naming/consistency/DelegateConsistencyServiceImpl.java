@@ -47,8 +47,17 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         mapConsistencyService(key).remove(key);
     }
 
+    /**
+     * 获取key对应得Datum
+     * @param key key of data
+     * @return
+     * @throws NacosException
+     */
     @Override
     public Datum get(String key) throws NacosException {
+        /**
+         * 临时或者持久化
+         */
         return mapConsistencyService(key).get(key);
     }
 
@@ -56,6 +65,9 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     public void listen(String key, RecordListener listener) throws NacosException {
 
         // this special key is listened by both:
+        /**
+         * 元数据
+         */
         if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
             persistentConsistencyService.listen(key, listener);
             ephemeralConsistencyService.listen(key, listener);
@@ -75,6 +87,11 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         return ephemeralConsistencyService.isAvailable() && persistentConsistencyService.isAvailable();
     }
 
+    /**
+     * key对应的节点是临时的还是持久化的
+     * @param key
+     * @return
+     */
     private ConsistencyService mapConsistencyService(String key) {
         return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
     }

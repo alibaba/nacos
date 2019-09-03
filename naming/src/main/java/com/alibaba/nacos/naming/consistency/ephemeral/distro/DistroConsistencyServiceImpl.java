@@ -130,6 +130,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             Loggers.DISTRO.info("waiting server list init...");
         }
 
+        /**
+         * 健康的nacos节点
+         */
         for (Server server : serverListManager.getHealthyServers()) {
             if (NetUtils.localServer().equals(server.getKey())) {
                 continue;
@@ -138,6 +141,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 Loggers.DISTRO.debug("sync from " + server);
             }
             // try sync data from remote server:
+            /**
+             * 向其他nacos节点同步数据
+             */
             if (syncAllDataFromRemote(server)) {
                 initialized = true;
                 return;
@@ -157,6 +163,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         listeners.remove(key);
     }
 
+    /**
+     * 获取临时key对应的Datum
+     * @param key key of data
+     * @return
+     * @throws NacosException
+     */
     @Override
     public Datum get(String key) throws NacosException {
         return dataStore.get(key);
@@ -257,7 +269,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     public boolean syncAllDataFromRemote(Server server) {
 
         try {
+            /**
+             * 获取server对应的数据
+             */
             byte[] data = NamingProxy.getAllData(server.getKey());
+            /**
+             * 处理数据
+             */
             processData(data);
             return true;
         } catch (Exception e) {
@@ -318,6 +336,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
     }
 
+    /**
+     * 在listeners中添加key对应得listener
+     * @param key      key of data
+     * @param listener callback of data change
+     * @throws NacosException
+     */
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {

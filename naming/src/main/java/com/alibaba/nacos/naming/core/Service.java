@@ -264,6 +264,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             entry.getValue().setService(this);
+            /**
+             * HealthCheckTask
+             */
             entry.getValue().init();
         }
     }
