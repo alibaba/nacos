@@ -45,6 +45,8 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 @Component
 public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
+    public static final String TYPE = "MYSQL";
+
     @Autowired
     private HealthCheckCommon healthCheckCommon;
 
@@ -83,7 +85,7 @@ public class MysqlHealthCheckProcessor implements HealthCheckProcessor {
 
     @Override
     public String getType() {
-        return "MYSQL";
+        return TYPE;
     }
 
     @Override
