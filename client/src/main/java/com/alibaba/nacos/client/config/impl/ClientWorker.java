@@ -353,9 +353,10 @@ public class ClientWorker {
     }
 
     /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * From the Server to obtain a list of values change the DataID. In the object
+     * returned only dataId and group is effective. Promise not to return NULL.
      */
-    List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
+    private List<String> checkUpdateConfigStr(String probeUpdateString, boolean isInitializingCacheList) throws IOException {
 
         List<String> params = Arrays.asList(Constants.PROBE_MODIFY_REQUEST, probeUpdateString);
 

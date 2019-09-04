@@ -63,7 +63,7 @@ public class LongPollingService extends AbstractEventListener {
 
     static final String LONG_POLLING_NO_HANG_UP_HEADER = "Long-Pulling-Timeout-No-Hangup";
 
-    private final ScheduledExecutorService scheduler;
+    private final ScheduledExecutorService longPullScheduler;
 
     private final LongPollClientManager clientManager;
 
@@ -74,13 +74,13 @@ public class LongPollingService extends AbstractEventListener {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public LongPollingService(LongPollClientManager clientManager) {
         this.clientManager = clientManager;
-        scheduler = Executors.newScheduledThreadPool(4, r -> {
+        longPullScheduler = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() / 2, r -> {
             Thread t = new Thread(r);
             t.setDaemon(true);
             t.setName("com.alibaba.nacos.LongPolling-" + id.getAndIncrement());
             return t;
         });
-        scheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
+        longPullScheduler.scheduleWithFixedDelay(new StatTask(), 0L, 10L, TimeUnit.SECONDS);
     }
 
     private static boolean isFixedPolling() {
@@ -88,7 +88,7 @@ public class LongPollingService extends AbstractEventListener {
     }
 
     private static boolean isSupportLongPolling(HttpServletRequest req) {
-        return null != req.getHeader(LONG_POLLING_HEADER);
+        return Objects.nonNull(req.getHeader(LONG_POLLING_HEADER));
     }
 
     private static int getFixedPollingInterval() {
@@ -274,7 +274,7 @@ public class LongPollingService extends AbstractEventListener {
         } else {
             if (event instanceof LocalDataChangeEvent) {
                 LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
-                scheduler.execute(new NotifyWatchClient(evt.groupKey, evt.isBeta, evt.betaIps));
+                longPullScheduler.execute(new NotifyWatchClient(evt.groupKey, evt.isBeta, evt.betaIps));
             }
         }
     }
@@ -282,27 +282,22 @@ public class LongPollingService extends AbstractEventListener {
     class NotifyWatchClient implements Runnable {
         @Override
         public void run() {
+            AtomicInteger cnt = new AtomicInteger(0);
             try {
-                AtomicInteger cnt = new AtomicInteger(0);
                 ConfigService.getContentBetaMd5(groupKey);
                 long finishWorkCnt = clientManager.queryWatchClientByGroupKey(groupKey)
                     .stream()
                     .filter(this::canNotify)
                     .peek(watchClient -> {
-                        try {
-                            String respString = MD5Util.compareMd5ResultString(Collections.singletonList(groupKey));
-                            watchClient.writeResponse(respString);
-                            cnt.incrementAndGet();
-                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                                (System.currentTimeMillis() - changeTime),
-                                "in-advance",
-                                watchClient.getClientIp(),
-                                "polling",
-                                watchClient.getListenCnt(), watchClient.getProbeRequestSize(), groupKey);
-                        } catch (IOException e) {
-                            LogUtil.publishLog.error("[NotifyWatchClient] IOException err : {}", e.getMessage());
-                            watchClient.getContext().complete();
-                        }
+                        getRetainIps().put(watchClient.getClientIp(), System.currentTimeMillis());
+                        watchClient.writeResponse(Collections.singletonList(groupKey));
+                        cnt.incrementAndGet();
+                        LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
+                            (System.currentTimeMillis() - changeTime),
+                            "in-advance",
+                            watchClient.getClientIp(),
+                            "polling",
+                            watchClient.getListenCnt(), watchClient.getProbeRequestSize(), groupKey);
                     })
                     .count();
                 LogUtil.publishLog.info("[NotifyWatchClient] finish publish work : {}, change groupKey is : {}, " +

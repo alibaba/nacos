@@ -62,14 +62,14 @@ public class LongPollClientManager {
         });
     }
 
-    public List<LongPollClientManager.WatchClient> allWatchClient() {
+    List<LongPollClientManager.WatchClient> allWatchClient() {
         return watchClientManager.values()
             .stream()
             .flatMap(stringWatchClientMap -> stringWatchClientMap.values().stream())
             .collect(Collectors.toList());
     }
 
-    public List<LongPollClientManager.WatchClient> queryWatchClientByGroupKey(String groupKey) {
+    List<LongPollClientManager.WatchClient> queryWatchClientByGroupKey(String groupKey) {
         return watchClientManager.entrySet()
             .stream()
             .filter(watchKeyMapEntry -> Objects.equals(watchKeyMapEntry.getKey().groupKey, groupKey))
@@ -78,7 +78,7 @@ public class LongPollClientManager {
             .collect(Collectors.toList());
     }
 
-    public void removeWatchClient(List<WatchClient> watchClients) {
+    private void removeWatchClient(List<WatchClient> watchClients) {
         watchClientManager.values().forEach(watchClientObjectMap -> {
             watchClients.forEach(watchClient -> watchClientObjectMap.remove(watchClient.clientIp));
         });
@@ -96,7 +96,8 @@ public class LongPollClientManager {
 
         private String groupKey;
 
-        private WatchKey() {}
+        private WatchKey() {
+        }
 
         public static WatchKey newInstance() {
             return new WatchKey();
@@ -139,13 +140,14 @@ public class LongPollClientManager {
         private String noHangUpFlag;
         private Map<String, String> clientMd5Map;
 
-        private WatchClient() {}
+        private WatchClient() {
+        }
 
-        public static WatchClient newInstance() {
+        static WatchClient newInstance() {
             return new WatchClient();
         }
 
-        public static WatchClient buildWatchClientFromRequest(LongPollClientManager manager, AsyncContext context, HttpServletRequest request) {
+        static WatchClient buildWatchClientFromRequest(LongPollClientManager manager, AsyncContext context, HttpServletRequest request) {
             WatchClient client = WatchClient.newInstance();
             client.manager = manager;
             client.context = context;
@@ -183,28 +185,31 @@ public class LongPollClientManager {
                 public void onTimeout(AsyncEvent event) throws IOException {
                     // When a timeout occurs, check whether there is a configuration update again,
                     // end the asynchronous servlets, remove self
-                    if (!isFixedPolling()) {
-                        LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-                            (System.currentTimeMillis() - createTime),
-                            "fix", clientIp,
-                            "polling",
-                            clientMd5Map.size(), probeRequestSize);
-                        List<String> changedGroups = MD5Util.compareMd5(tag, clientIp, clientMd5Map);
-                        if (changedGroups.isEmpty()) {
-                            context.complete();
-                        } else {
-                            writeResponse(MD5Util.compareMd5ResultString(changedGroups));
-                        }
-                    } else {
-                        LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
-                            (System.currentTimeMillis() - createTime),
-                            "timeout", WatchClient.this.clientIp,
-                            "polling",
-                            clientMd5Map.size(), probeRequestSize);
-                        WatchClient.this.context.complete();
-                    }
-
                     WatchClient.this.manager.removeWatchClient(Collections.singletonList(WatchClient.this));
+                    try {
+                        if (!isFixedPolling()) {
+                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
+                                (System.currentTimeMillis() - createTime),
+                                "fix", clientIp,
+                                "polling",
+                                clientMd5Map.size(), probeRequestSize);
+                            List<String> changedGroups = MD5Util.compareMd5(tag, clientIp, clientMd5Map);
+                            if (changedGroups.isEmpty()) {
+                                context.complete();
+                            } else {
+                                writeResponse(changedGroups);
+                            }
+                        } else {
+                            LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
+                                (System.currentTimeMillis() - createTime),
+                                "timeout", WatchClient.this.clientIp,
+                                "polling",
+                                clientMd5Map.size(), probeRequestSize);
+                            WatchClient.this.context.complete();
+                        }
+                    } catch (Exception e) {
+                        LogUtil.defaultLog.error("long polling error:" + e.getMessage(), e.getCause());
+                    }
                 }
 
                 @Override
@@ -215,7 +220,8 @@ public class LongPollClientManager {
                 }
 
                 @Override
-                public void onStartAsync(AsyncEvent event) throws IOException {}
+                public void onStartAsync(AsyncEvent event) throws IOException {
+                }
             });
         }
 
@@ -223,16 +229,10 @@ public class LongPollClientManager {
             long start = System.currentTimeMillis();
             List<String> changedGroups = MD5Util.compareMd5(tag, clientIp, clientMd5Map);
             if (!changedGroups.isEmpty()) {
-                try {
-                    String respString = MD5Util.compareMd5ResultString(changedGroups);
-                    writeResponse(respString);
-                    LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
-                        System.currentTimeMillis() - start, "instant", clientIp, "polling",
-                        listenCnt, probeRequestSize, changedGroups.size());
-                } catch (IOException e) {
-                    LogUtil.clientLog.error(e.toString(), e);
-                    context.complete();
-                }
+                writeResponse(changedGroups);
+                LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
+                    System.currentTimeMillis() - start, "instant", clientIp, "polling",
+                    listenCnt, probeRequestSize, changedGroups.size());
             } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(Boolean.TRUE.toString())) {
                 LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
                     clientIp, "polling", listenCnt, probeRequestSize,
@@ -328,14 +328,15 @@ public class LongPollClientManager {
             return clientMd5Map;
         }
 
-        public void writeResponse(String body) {
+        public void writeResponse(List<String> body) {
             HttpServletResponse response = (HttpServletResponse) context.getResponse();
             response.setHeader("Pragma", "no-cache");
             response.setDateHeader("Expires", 0);
             response.setHeader("Cache-Control", "no-cache,no-store");
             response.setStatus(HttpServletResponse.SC_OK);
             try {
-                response.getWriter().println(body);
+                String respString = MD5Util.compareMd5ResultString(body);
+                response.getWriter().println(respString);
                 context.complete();
             } catch (Exception e) {
                 pullLog.error(e.toString(), e);
