@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +83,9 @@ public class ServiceManager implements RecordListener<Service> {
 
     @Autowired
     private PushService pushService;
+
+    @Autowired
+    private RaftPeerSet raftPeerSet;
 
     private final Object putServiceLock = new Object();
 
@@ -230,10 +234,31 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
-    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<RaftPeer> raftPeerList, RaftPeerSet raftPeerSet) {
-
-        List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
-
+    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, List<RaftPeer> raftPeerList) {
+        //reserve for future
+        //List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
+        List<RaftPeer> matchList = new ArrayList<>();
+        RaftPeer localRaftPeer = raftPeerSet.local();
+        matchList.add(localRaftPeer);
+        Set<String> otherServerSet = raftPeerSet.allServersWithoutMySelf();
+        if (null != otherServerSet && otherServerSet.size() > 0) {
+            for (String server: otherServerSet) {
+                String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
+                Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
+                try {
+                    String content = NamingProxy.reqCommon(path, params, server, false);
+                    if (!StringUtils.EMPTY.equals(content)) {
+                        RaftPeer raftPeer = JSONObject.parseObject(content, RaftPeer.class);
+                        if (null != raftPeer) {
+                            matchList.add(raftPeer);
+                        }
+                    }
+                } catch (Exception e) {
+                    Loggers.SRV_LOG.warn("[QUERY-CLUSTER-STATE] Exception while query cluster state from {}, error: {}",
+                        server, e);
+                }
+            }
+        }
         List<RaftPeer> tempList = new ArrayList<>();
         if (StringUtils.isNotBlank(keyword)) {
             for (RaftPeer raftPeer : matchList) {
@@ -263,6 +288,10 @@ public class ServiceManager implements RecordListener<Service> {
         }
 
         return matchList.size();
+    }
+
+    public RaftPeer getMySelfClusterState() {
+        return raftPeerSet.local();
     }
 
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
