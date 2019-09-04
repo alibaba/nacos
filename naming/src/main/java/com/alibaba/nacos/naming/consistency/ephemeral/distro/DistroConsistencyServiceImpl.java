@@ -119,6 +119,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         executor.submit(notifier);
     }
 
+    /**
+     * 初始化加载
+     * @throws Exception
+     */
     public void load() throws Exception {
         if (SystemUtils.STANDALONE_MODE) {
             initialized = true;
@@ -134,6 +138,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          * 健康的nacos节点
          */
         for (Server server : serverListManager.getHealthyServers()) {
+            /**
+             * 过滤掉本机
+             */
             if (NetUtils.localServer().equals(server.getKey())) {
                 continue;
             }
@@ -142,7 +149,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
             // try sync data from remote server:
             /**
-             * 向其他nacos节点同步数据
+             * 向其他nacos节点同步数据   只要有一个节点返回正确数据  就终止循环
              */
             if (syncAllDataFromRemote(server)) {
                 initialized = true;
@@ -284,15 +291,22 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
     }
 
+    /**
+     * 处理其他节点传送的Datum数据
+     * @param data
+     * @throws Exception
+     */
     public void processData(byte[] data) throws Exception {
         if (data.length > 0) {
             Map<String, Datum<Instances>> datumMap =
                 serializer.deserializeMap(data, Instances.class);
 
-
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
                 dataStore.put(entry.getKey(), entry.getValue());
 
+                /**
+                 * 尚未监听
+                 */
                 if (!listeners.containsKey(entry.getKey())) {
                     // pretty sure the service not exist:
                     if (switchDomain.isDefaultInstanceEphemeral()) {
@@ -306,7 +320,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                         service.setGroupName(Constants.DEFAULT_GROUP);
                         // now validate the service. if failed, exception will be thrown
                         service.setLastModifiedMillis(System.currentTimeMillis());
+                        /**
+                         * 重新计算checksum
+                         */
                         service.recalculateChecksum();
+                        /**
+                         * 监听
+                         */
                         listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).get(0)
                             .onChange(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName), service);
                     }

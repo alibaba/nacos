@@ -146,14 +146,26 @@ public class ServiceManager implements RecordListener<Service> {
 
             Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, service);
 
+            /**
+             * 缓存中是否有service
+             */
             Service oldDom = getService(service.getNamespaceId(), service.getName());
 
             if (oldDom != null) {
+                /**
+                 * 更新缓存中的service
+                 */
                 oldDom.update(service);
                 // re-listen to handle the situation when the underlying listener is removed:
+                /**
+                 * 重新监听service
+                 */
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), oldDom);
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), oldDom);
             } else {
+                /**
+                 * 新增节点
+                 */
                 putServiceAndInit(service);
             }
         } catch (Throwable e) {

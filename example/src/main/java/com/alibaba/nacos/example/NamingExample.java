@@ -39,11 +39,11 @@ public class NamingExample {
 
         naming.registerInstance("nacos.test.3", "11.11.11.111", 8888, "TEST1");
 
-//        naming.registerInstance("nacos.test.3", "2.2.2.21", 9999, "DEFAULT");
+        naming.registerInstance("nacos.test.3", "2.2.2.21", 9999, "DEFAULT");
 
         System.out.println("1----------------" + naming.getAllInstances("nacos.test.3"));
 
-        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
+//        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
         System.out.println("2----------------" + naming.getAllInstances("nacos.test.3"));
 

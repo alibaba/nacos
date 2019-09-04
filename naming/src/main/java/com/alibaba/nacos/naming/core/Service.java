@@ -149,6 +149,12 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return KeyBuilder.matchInstanceListKey(key, namespaceId, getName());
     }
 
+    /**
+     *
+     * @param key   target key
+     * @param value data of the key
+     * @throws Exception
+     */
     @Override
     public void onChange(String key, Instances value) throws Exception {
 
@@ -170,8 +176,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             }
         }
 
+        /**
+         *
+         */
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
+        /**
+         * 重新计算checksum
+         */
         recalculateChecksum();
     }
 
@@ -195,6 +207,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 
+    /**
+     *
+     * @param instances
+     * @param ephemeral
+     */
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
         Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
         for (String clusterName : clusterMap.keySet()) {
@@ -429,8 +446,15 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         this.namespaceId = namespaceId;
     }
 
+    /**
+     * 更新缓存中的Service
+     * @param vDom
+     */
     public void update(Service vDom) {
 
+        /**
+         * 更新缓存中的数据
+         */
         if (!StringUtils.equals(token, vDom.getToken())) {
             Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, token: {} -> {}", getName(), token, vDom.getToken());
             token = vDom.getToken();
@@ -460,8 +484,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         setMetadata(vDom.getMetadata());
 
+        /**
+         * 新增或修改Cluster
+         */
         updateOrAddCluster(vDom.getClusterMap().values());
+        /**
+         * 删除Clusters
+         */
         remvDeadClusters(this, vDom);
+        /**
+         * 重新计算checksum
+         */
         recalculateChecksum();
     }
 
@@ -527,13 +560,27 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
+    /**
+     * 新增或修改Cluster
+     * @param clusters
+     */
     private void updateOrAddCluster(Collection<Cluster> clusters) {
+        /**
+         * 判断clusters中的数据是否已经在clusterMap中有对应
+         * 有则修改  无则新增
+         */
         for (Cluster cluster : clusters) {
             Cluster oldCluster = clusterMap.get(cluster.getName());
             if (oldCluster != null) {
                 oldCluster.setService(this);
+                /**
+                 * 更新数据
+                 */
                 oldCluster.update(cluster);
             } else {
+                /**
+                 * 设置HealthCheckTask
+                 */
                 cluster.init();
                 cluster.setService(this);
                 clusterMap.put(cluster.getName(), cluster);
@@ -541,13 +588,27 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
     }
 
+    /**
+     * 移除Clusters
+     * @param oldDom
+     * @param newDom
+     */
     private void remvDeadClusters(Service oldDom, Service newDom) {
         Collection<Cluster> oldClusters = oldDom.getClusterMap().values();
         Collection<Cluster> newClusters = newDom.getClusterMap().values();
+        /**
+         * 过滤oldClusters存在但newClusters不存在的Cluster
+         */
         List<Cluster> deadClusters = (List<Cluster>) CollectionUtils.subtract(oldClusters, newClusters);
         for (Cluster cluster : deadClusters) {
+            /**
+             * 缓存中删除
+             */
             oldDom.getClusterMap().remove(cluster.getName());
 
+            /**
+             * 设置业务删除标志
+             */
             cluster.destroy();
         }
     }
