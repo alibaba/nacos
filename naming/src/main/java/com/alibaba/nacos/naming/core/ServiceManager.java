@@ -235,8 +235,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, List<RaftPeer> raftPeerList) {
-        //reserve for future
-        //List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
+
         List<RaftPeer> matchList = new ArrayList<>();
         RaftPeer localRaftPeer = raftPeerSet.local();
         matchList.add(localRaftPeer);
