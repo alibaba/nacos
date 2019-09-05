@@ -81,7 +81,7 @@ public class ServerListManager {
          */
         GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
         /**
-         *
+         * 集群内成员状态
          */
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
     }
