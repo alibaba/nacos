@@ -57,13 +57,15 @@ public class HostReactor {
     private String cacheDir;
 
     private ScheduledExecutorService executor;
+    
+    private boolean enableOnly;
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT, true);
     }
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
-                       boolean loadCacheAtStart, int pollingThreadCount) {
+                       boolean loadCacheAtStart, int pollingThreadCount, boolean enableOnly) {
 
         executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
@@ -75,6 +77,7 @@ public class HostReactor {
             }
         });
 
+        this.enableOnly = enableOnly;
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
@@ -212,7 +215,7 @@ public class HostReactor {
     }
 
     public ServiceInfo getServiceInfoDirectlyFromServer(final String serviceName, final String clusters) throws NacosException {
-        String result = serverProxy.queryList(serviceName, clusters, 0, false);
+        String result = serverProxy.queryList(serviceName, clusters, 0, false, enableOnly);
         if (StringUtils.isNotEmpty(result)) {
             return JSON.parseObject(result, ServiceInfo.class);
         }
@@ -276,7 +279,7 @@ public class HostReactor {
         ServiceInfo oldService = getServiceInfo0(serviceName, clusters);
         try {
 
-            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+            String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false, enableOnly);
 
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
@@ -294,7 +297,7 @@ public class HostReactor {
 
     public void refreshOnly(String serviceName, String clusters) {
         try {
-            serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+            serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false, enableOnly);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to update serviceName: " + serviceName, e);
         }

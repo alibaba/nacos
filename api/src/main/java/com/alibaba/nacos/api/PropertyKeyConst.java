@@ -59,6 +59,8 @@ public class PropertyKeyConst {
     public final static String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
 
     public final static String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
+    
+    public final static String INSTANCE_ENABLE_ONLY = "enableOnly";
 
     /**
      * Get the key value of some variable value from the system property

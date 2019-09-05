@@ -78,7 +78,7 @@ public class InstanceController {
             try {
                 result = doSrvIPXT(client.getNamespaceId(), client.getServiceName(), client.getAgent(),
                     client.getClusters(), client.getSocketAddr().getAddress().getHostAddress(), 0, StringUtils.EMPTY,
-                    false, StringUtils.EMPTY, StringUtils.EMPTY, false);
+                    false, StringUtils.EMPTY, StringUtils.EMPTY, false, false);
             } catch (Exception e) {
                 Loggers.SRV_LOG.warn("PUSH-SERVICE: service is not modified", e);
             }
@@ -164,8 +164,9 @@ public class InstanceController {
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
+        boolean enableOnly = Boolean.parseBoolean(WebUtils.optional(request, "enableOnly", "true"));
 
-        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly, enableOnly);
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
@@ -365,7 +366,7 @@ public class InstanceController {
     }
 
     public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
-                                String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
+                                String env, boolean isCheck, String app, String tid, boolean healthyOnly, boolean enableOnly) throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
@@ -480,7 +481,8 @@ public class InstanceController {
             for (Instance instance : ips) {
 
                 // remove disabled instance:
-                if (!instance.isEnabled()) {
+            	// 当需要只返回在线的实例的时候，则跳过已经下线disable的实例
+                if (enableOnly && !instance.isEnabled()) {
                     continue;
                 }
 

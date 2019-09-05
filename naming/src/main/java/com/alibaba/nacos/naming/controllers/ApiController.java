@@ -134,9 +134,10 @@ public class ApiController extends InstanceController {
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
+        boolean enableOnly = Boolean.parseBoolean(WebUtils.optional(request, "enableOnly", "true"));
 
         return doSrvIPXT(namespaceId, NamingUtils.getGroupedName(dom, Constants.DEFAULT_GROUP),
-            agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+            agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly, enableOnly);
     }
 
     @CanDistro

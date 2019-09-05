@@ -284,7 +284,7 @@ public class NamingProxy {
         reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.PUT);
     }
 
-    public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)
+    public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly, boolean enableOnly)
         throws NacosException {
 
         final Map<String, String> params = new HashMap<String, String>(8);
@@ -294,6 +294,7 @@ public class NamingProxy {
         params.put("udpPort", String.valueOf(udpPort));
         params.put("clientIP", NetUtils.localIP());
         params.put("healthyOnly", String.valueOf(healthyOnly));
+        params.put("enableOnly", String.valueOf(enableOnly));
 
         return reqAPI(UtilAndComs.NACOS_URL_BASE + "/instance/list", params, HttpMethod.GET);
     }
