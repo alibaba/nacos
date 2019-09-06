@@ -28,6 +28,7 @@ set MODE="standalone"
 set FUNCTION_MODE="all"
 set MODE_INDEX=-1
 set FUNCTION_MODE_INDEX=-1
+set SERVER="nacos-server"
 
 set i=0
 for %%a in (%*) do (
@@ -40,6 +41,7 @@ set i=0
 for %%a in (%*) do (
    if %MODE_INDEX% == !i! ( set MODE="%%a" )
    if %FUNCTION_MODE_INDEX% == !i! ( set FUNCTION_MODE="%%a" )
+   if %SERVER_INDEX% == !i! (set SERVER="%%a")
    set /a i+=1
 )
 
@@ -62,7 +64,7 @@ if %FUNCTION_MODE% == "naming" (
 
 set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb:%BASE_DIR%\plugins\mysql"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-set "JAVA_OPT=%JAVA_OPT% -Dloader.path=%BASE_DIR%/plugins/health -jar %BASE_DIR%\target\nacos-server.jar"
+set "JAVA_OPT=%JAVA_OPT% -Dloader.path=%BASE_DIR%/plugins/health -jar %BASE_DIR%\target\%SERVER%.jar"
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
 set "JAVA_OPT=%JAVA_OPT% --logging.config=%BASE_DIR%/conf/nacos-logback.xml"
 
