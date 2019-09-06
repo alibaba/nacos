@@ -96,6 +96,10 @@ public class DataSyncer {
             }
 
             List<String> keys = task.getKeys();
+
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("try to sync data for this keys {}.", keys);
+            }
             // 2. get the datums by keys and check the datum is empty or not
             Map<String, Datum> datumMap = dataStore.batchGet(keys);
             if (datumMap == null || datumMap.isEmpty()) {

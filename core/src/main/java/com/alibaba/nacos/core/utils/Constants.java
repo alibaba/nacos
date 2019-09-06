@@ -56,6 +56,6 @@ public interface Constants {
     String IP_ADDRESS = "nacos.inetutils.ip-address";
     String PREFER_HOSTNAME_OVER_IP = "nacos.inetutils.prefer-hostname-over-ip";
     String SYSTEM_PREFER_HOSTNAME_OVER_IP = "nacos.preferHostnameOverIp";
-    String WEN_CONTEXT_PATH = "server.servlet.context-path";
+    String WEB_CONTEXT_PATH = "server.servlet.context-path";
     String COMMA_DIVISION = ",";
 }

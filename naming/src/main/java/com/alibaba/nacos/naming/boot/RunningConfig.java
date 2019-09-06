@@ -59,7 +59,7 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     public static String getContextPath() {
 
         if (!isServerInitialized) {
-            String contextPath = PropertyUtil.getProperty(Constants.WEN_CONTEXT_PATH);
+            String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
             if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
                 return StringUtils.EMPTY;
             } else {
