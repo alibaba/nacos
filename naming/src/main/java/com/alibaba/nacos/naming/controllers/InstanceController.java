@@ -317,9 +317,7 @@ public class InstanceController {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        if (!instance.validate()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
-        }
+        instance.validate();
 
         return instance;
     }
