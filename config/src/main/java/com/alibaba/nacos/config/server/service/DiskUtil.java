@@ -48,7 +48,10 @@ public class DiskUtil {
     static final String TENANT_BETA_DIR = File.separator + "data" + File.separator + "tenant-beta-data";
     static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
-    // window 文件名中不能有的特殊符号为    /\:*?"<>|
+    /**
+     *  window 文件名中不能有的特殊符号为    /\:*?"<>|
+     * 
+     */
     static final Pattern REGEX = Pattern.compile("[/:\\*\\?\\\"<>\\|\\\\]");
     static final String REPLACE = "_";
 
