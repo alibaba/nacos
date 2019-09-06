@@ -150,10 +150,13 @@ public class CatalogController {
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
             int pageNo = Integer.parseInt(WebUtils.required(request, "pageNo"));
             int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-            String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
+            String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
+            String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
+            String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
+                StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
             List<Service> serviceList = new ArrayList<>(8);
-            serviceManager.getPagedService(namespaceId, pageNo, pageSize, keyword, StringUtils.EMPTY, serviceList, false);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, serviceList, false);
 
             for (Service service : serviceList) {
                 ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
@@ -257,12 +260,16 @@ public class CatalogController {
 
         int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
+        String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
+        String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
+        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
+            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
+
         String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
         boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
 
         List<Service> services = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, keyword, containedInstance, services, hasIpCount);
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, param, containedInstance, services, hasIpCount);
 
         if (CollectionUtils.isEmpty(services)) {
             result.put("serviceList", Collections.emptyList());
