@@ -97,6 +97,7 @@ const I18N_CONF = {
     pubNoData: 'No results found.',
     columnServiceName: 'Service Name',
     groupName: 'Group Name',
+    groupNamePlaceholder: 'Enter Group Name',
     columnClusterCount: 'Cluster Count',
     columnIpCount: 'Instance Count',
     columnHealthyInstanceCount: 'Healthy Instance Count',
