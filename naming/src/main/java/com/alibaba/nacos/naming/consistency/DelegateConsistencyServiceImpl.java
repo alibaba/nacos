@@ -56,7 +56,7 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     @Override
     public Datum get(String key) throws NacosException {
         /**
-         * 临时或者持久化
+         * 临时(内存)或者持久化
          */
         return mapConsistencyService(key).get(key);
     }

@@ -567,11 +567,17 @@ public class ServiceManager implements RecordListener<Service> {
 
         Service service = getService(namespaceId, serviceName);
 
+        /**
+         * 新增ips后    当前service对应的有效的节点
+         */
         List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
 
         Instances instances = new Instances();
         instances.setInstanceList(instanceList);
 
+        /**
+         * 新增
+         */
         consistencyService.put(key, instances);
     }
 
@@ -615,6 +621,15 @@ public class ServiceManager implements RecordListener<Service> {
         return null;
     }
 
+    /**
+     * 获取service下有效的Instance列表  包含当前新增的Instance
+     * @param service
+     * @param action
+     * @param ephemeral  临时或持久
+     * @param ips
+     * @return
+     * @throws NacosException
+     */
     public List<Instance> updateIpAddresses(Service service, String action, boolean ephemeral, Instance... ips) throws NacosException {
 
         /**
@@ -627,6 +642,9 @@ public class ServiceManager implements RecordListener<Service> {
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
         Map<String, Instance> oldInstanceMap = new HashMap<>(16);
+        /**
+         * 获取service对应的节点  不区分集群
+         */
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
 
@@ -634,6 +652,9 @@ public class ServiceManager implements RecordListener<Service> {
             map.put(instance.toIPAddr(), instance);
         }
         if (datum != null) {
+            /**
+             * 比对数据  返回有效的节点
+             */
             oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
         }
 
@@ -642,7 +663,13 @@ public class ServiceManager implements RecordListener<Service> {
         instanceMap.putAll(oldInstanceMap);
 
         for (Instance instance : ips) {
+            /**
+             * 当前instance对应的集群名称是否为新增
+             */
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
+                /**
+                 * 新增service下的Cluster
+                 */
                 Cluster cluster = new Cluster(instance.getClusterName(), service);
                 cluster.init();
                 service.getClusterMap().put(instance.getClusterName(), cluster);
@@ -663,6 +690,9 @@ public class ServiceManager implements RecordListener<Service> {
                 + JSON.toJSONString(instanceMap.values()));
         }
 
+        /**
+         * 返回service下有效的节点  未必健康
+         */
         return new ArrayList<>(instanceMap.values());
     }
 
@@ -670,10 +700,28 @@ public class ServiceManager implements RecordListener<Service> {
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
     }
 
+    /**
+     * 获取service下有效的Instance列表  包含当前新增的Instance
+     * @param service
+     * @param ephemeral
+     * @param ips
+     * @return
+     * @throws NacosException
+     */
     public List<Instance> addIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+        /**
+         * 新增  UPDATE_INSTANCE_ACTION_ADD
+         */
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, ephemeral, ips);
     }
 
+    /**
+     * 比对数据  以oldInstances中的数据为主  过滤出在map中有对应的有效数据
+     * 节点的Healthy以及LastBeat   以map中的为准
+     * @param oldInstances
+     * @param map
+     * @return
+     */
     private Map<String, Instance> setValid(List<Instance> oldInstances, Map<String, Instance> map) {
 
         Map<String, Instance> instanceMap = new HashMap<>(oldInstances.size());

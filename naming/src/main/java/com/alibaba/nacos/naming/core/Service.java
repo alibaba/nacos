@@ -315,15 +315,18 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     /**
-     * 是否获取nacos上的临时节点
+     * 获取当前server注册到nacos的全部节点
      * @param ephemeral true:临时节点   false:持久化节点
      * @return
      */
     public List<Instance> allIPs(boolean ephemeral) {
         List<Instance> allIPs = new ArrayList<>();
+        /**
+         * 当前server下的Cluster
+         */
         for (Map.Entry<String, Cluster> entry : clusterMap.entrySet()) {
             /**
-             * 依照ephemeral  获取节点
+             * 获取Cluster下的节点
              */
             allIPs.addAll(entry.getValue().allIPs(ephemeral));
         }

@@ -15,8 +15,6 @@
  */
 package com.alibaba.nacos.example;
 
-import java.util.Properties;
-
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
@@ -24,10 +22,12 @@ import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 
+import java.util.Properties;
+
 /**
  * @author nkorange
  */
-public class NamingExample {
+public class NamingExample2 {
 
     public static void main(String[] args) throws NacosException, InterruptedException {
 
@@ -37,30 +37,7 @@ public class NamingExample {
 
         NamingService naming = NamingFactory.createNamingService(properties);
 
-        naming.registerInstance("userProvide", "11.11.11.111", 8887, "TEST1");
-
-        naming.registerInstance("userProvide", "11.11.11.111", 8888, "TEST1");
-
-        naming.registerInstance("videProvide", "11.11.11.111", 8889, "TEST1");
-
-        naming.registerInstance("videProvide", "2.2.2.21", 9999, "DEFAULT");
-
-        naming.registerInstance("videProvide", "5.5.5.5", 9999, "DEFAULT");
-
-        System.out.println("1----------------" + naming.getAllInstances("nacos.test.3"));
-
-//        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
-
-        System.out.println("2----------------" + naming.getAllInstances("nacos.test.3"));
-
-        naming.subscribe("nacos.test.3", new EventListener() {
-            @Override
-            public void onEvent(Event event) {
-                System.out.println(((NamingEvent) event).getServiceName());
-                System.out.println(((NamingEvent) event).getInstances());
-            }
-        });
-
+        naming.registerInstance("videProvide", "8.8.8.8", 8080, "test");
 
         Thread.sleep(Integer.MAX_VALUE);
     }

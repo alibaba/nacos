@@ -158,8 +158,17 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
     }
 
+    /**
+     *
+     * @param key   key of data, this key should be globally unique
+     * @param value value of data
+     * @throws NacosException
+     */
     @Override
     public void put(String key, Record value) throws NacosException {
+        /**
+         * 存入缓存
+         */
         onPut(key, value);
         taskDispatcher.addTask(key);
     }
@@ -181,13 +190,23 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         return dataStore.get(key);
     }
 
+    /**
+     * 缓存key对应的Record
+     * @param key
+     * @param value
+     */
     public void onPut(String key, Record value) {
-
+        /**
+         * 临时节点
+         */
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
             Datum<Instances> datum = new Datum<>();
             datum.value = (Instances) value;
             datum.key = key;
             datum.timestamp.incrementAndGet();
+            /**
+             * 存入缓存
+             */
             dataStore.put(key, datum);
         }
 
@@ -195,6 +214,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
 
+        /**
+         * 新增调度任务
+         */
         notifier.addTask(key, ApplyAction.CHANGE);
     }
 
@@ -346,6 +368,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                 try {
                     for (RecordListener listener : listeners.get(entry.getKey())) {
+                        /**
+                         *
+                         */
                         listener.onChange(entry.getKey(), entry.getValue().value);
                     }
                 } catch (Exception e) {
@@ -406,14 +431,30 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
         private BlockingQueue<Pair> tasks = new LinkedBlockingQueue<Pair>(1024 * 1024);
 
+        /**
+         * 新增调度任务
+         * @param datumKey
+         * @param action
+         */
         public void addTask(String datumKey, ApplyAction action) {
 
+            /**
+             * 变换的任务   有一个key就可以
+             */
             if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
                 return;
             }
+
+            /**
+             * 新增
+             */
             if (action == ApplyAction.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
+
+            /**
+             * 加入队列
+             */
             tasks.add(Pair.with(datumKey, action));
         }
 
