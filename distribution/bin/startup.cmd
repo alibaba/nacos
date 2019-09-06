@@ -26,14 +26,17 @@ set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%/conf/
 
 set MODE="standalone"
 set FUNCTION_MODE="all"
+set SERVER="nacos-server"
 set MODE_INDEX=-1
 set FUNCTION_MODE_INDEX=-1
-set SERVER="nacos-server"
+set SERVER_INDEX=-1
+
 
 set i=0
 for %%a in (%*) do (
    if "%%a" == "-m" ( set /a MODE_INDEX=!i!+1 )
    if "%%a" == "-f" ( set /a FUNCTION_MODE_INDEX=!i!+1 )
+   if "%%a" == "-s" ( set /a SERVER_INDEX=!i!+1 )
    set /a i+=1
 )
 
