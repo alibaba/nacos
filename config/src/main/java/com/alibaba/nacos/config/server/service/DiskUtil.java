@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 
@@ -47,6 +48,9 @@ public class DiskUtil {
     static final String TENANT_BETA_DIR = File.separator + "data" + File.separator + "tenant-beta-data";
     static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
+    // window 文件名中不能有的特殊符号为    /\:*?"<>|
+    static final Pattern REGEX = Pattern.compile("[/:\\*\\?\\\"<>\\|\\\\]");
+    static final String REPLACE = "_";
 
     static public void saveHeartBeatToDisk(String heartBeatTime)
         throws IOException {
@@ -115,10 +119,10 @@ public class DiskUtil {
             file = new File(NACOS_HOME, BASE_DIR);
         } else {
             file = new File(NACOS_HOME, TENANT_BASE_DIR);
-            file = new File(file, tenant);
+            file = new File(file, REGEX.matcher(tenant).replaceAll(REPLACE));
         }
-        file = new File(file, group);
-        file = new File(file, dataId);
+        file = new File(file, REGEX.matcher(group).replaceAll(REPLACE));
+        file = new File(file, REGEX.matcher(dataId).replaceAll(REPLACE));
         return file;
     }
 
@@ -131,10 +135,10 @@ public class DiskUtil {
             file = new File(NACOS_HOME, BETA_DIR);
         } else {
             file = new File(NACOS_HOME, TENANT_BETA_DIR);
-            file = new File(file, tenant);
+            file = new File(file, REGEX.matcher(tenant).replaceAll(REPLACE));
         }
-        file = new File(file, group);
-        file = new File(file, dataId);
+        file = new File(file, REGEX.matcher(group).replaceAll(REPLACE));
+        file = new File(file, REGEX.matcher(dataId).replaceAll(REPLACE));
         return file;
     }
 
@@ -147,11 +151,11 @@ public class DiskUtil {
             file = new File(NACOS_HOME, TAG_DIR);
         } else {
             file = new File(NACOS_HOME, TENANT_TAG_DIR);
-            file = new File(file, tenant);
+            file = new File(file, REGEX.matcher(tenant).replaceAll(REPLACE));
         }
-        file = new File(file, group);
-        file = new File(file, dataId);
-        file = new File(file, tag);
+        file = new File(file, REGEX.matcher(group).replaceAll(REPLACE));
+        file = new File(file, REGEX.matcher(dataId).replaceAll(REPLACE));
+        file = new File(file, REGEX.matcher(tag).replaceAll(REPLACE));
         return file;
     }
 
