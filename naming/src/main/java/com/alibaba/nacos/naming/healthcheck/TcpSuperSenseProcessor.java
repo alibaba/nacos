@@ -43,6 +43,8 @@ import static com.alibaba.nacos.naming.misc.Loggers.SRV_LOG;
 @Component
 public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
+    public static final String TYPE = "TCP";
+
     @Autowired
     private HealthCheckCommon healthCheckCommon;
 
@@ -420,6 +422,6 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
     @Override
     public String getType() {
-        return "TCP";
+        return TYPE;
     }
 }
