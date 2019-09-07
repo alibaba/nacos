@@ -160,6 +160,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         Loggers.SRV_LOG.info("[NACOS-RAFT] datum is changed, key: {}, value: {}", key, value);
 
+        /**
+         * 遍历service下得所有instance列表
+         */
         for (Instance instance : value.getInstanceList()) {
 
             if (instance == null) {
@@ -209,7 +212,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
     /**
      *
-     * @param instances
+     * @param instances   service对应的所有instance列表
      * @param ephemeral
      */
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
