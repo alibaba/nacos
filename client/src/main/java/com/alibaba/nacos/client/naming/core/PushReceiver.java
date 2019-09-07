@@ -16,12 +16,15 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.LifeCycle;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.nio.charset.Charset;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -31,7 +34,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author xuanyin
  */
-public class PushReceiver implements Runnable {
+public class PushReceiver implements Runnable, LifeCycle {
 
     private ScheduledExecutorService executorService;
 
@@ -42,24 +45,31 @@ public class PushReceiver implements Runnable {
     private HostReactor hostReactor;
 
     public PushReceiver(HostReactor hostReactor) {
+        this.hostReactor = hostReactor;
         try {
-            this.hostReactor = hostReactor;
             udpSocket = new DatagramSocket();
-
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.push.receiver");
-                    return thread;
-                }
-            });
-
-            executorService.execute(this);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
+    }
+
+    @Override
+    public void start() throws NacosException {
+        executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                thread.setName("com.alibaba.nacos.naming.push.receiver");
+                return thread;
+            }
+        });
+        executorService.execute(this);
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        executorService.shutdown();
     }
 
     @Override

@@ -1,9 +1,12 @@
 package com.alibaba.nacos.client;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,9 +26,20 @@ public class BeatReactorTest {
     @Mock
     private NamingProxy namingProxy;
 
+    @Before
+    public void before() throws NacosException {
+        namingProxy.start();
+    }
+
+    @After
+    public void after() throws NacosException {
+        namingProxy.destroy();
+    }
+
     @Test
-    public void test() throws NoSuchFieldException, IllegalAccessException, InterruptedException {
+    public void test() throws NoSuchFieldException, IllegalAccessException, InterruptedException, NacosException {
         BeatReactor beatReactor = new BeatReactor(namingProxy);
+        beatReactor.start();
 
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName("test");

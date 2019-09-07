@@ -16,6 +16,8 @@
 package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.LifeCycle;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
@@ -36,19 +38,18 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author nkorange
  */
-public class FailoverReactor {
+public class FailoverReactor implements LifeCycle {
+
+    private static final long DAY_PERIOD_MINUTES = 24 * 60;
 
     private String failoverDir;
 
     private HostReactor hostReactor;
 
-    public FailoverReactor(HostReactor hostReactor, String cacheDir) {
-        this.hostReactor = hostReactor;
-        this.failoverDir = cacheDir + "/failover";
-        this.init();
-    }
-
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
+
+    private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
+
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -59,11 +60,13 @@ public class FailoverReactor {
         }
     });
 
-    private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
-    private static final long DAY_PERIOD_MINUTES = 24 * 60;
+    public FailoverReactor(HostReactor hostReactor, String cacheDir) {
+        this.hostReactor = hostReactor;
+        this.failoverDir = cacheDir + "/failover";
+    }
 
-    public void init() {
-
+    @Override
+    public void start() throws NacosException {
         executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 
         executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
@@ -91,6 +94,11 @@ public class FailoverReactor {
         }, 10000L, TimeUnit.MILLISECONDS);
     }
 
+    @Override
+    public void destroy() throws NacosException {
+        executorService.shutdown();
+    }
+
     public Date addDay(Date date, int num) {
         Calendar startDT = Calendar.getInstance();
         startDT.setTime(date);
@@ -110,16 +118,13 @@ public class FailoverReactor {
                     NAMING_LOGGER.debug("failover switch is not found, " + switchFile.getName());
                     return;
                 }
-
                 long modified = switchFile.lastModified();
-
                 if (lastModifiedMillis < modified) {
                     lastModifiedMillis = modified;
                     String failover = ConcurrentDiskUtil.getFileContent(failoverDir + UtilAndComs.FAILOVER_SWITCH,
                         Charset.defaultCharset().toString());
                     if (!StringUtils.isEmpty(failover)) {
                         List<String> lines = Arrays.asList(failover.split(DiskCache.getLineSeparator()));
-
                         for (String line : lines) {
                             String line1 = line.trim();
                             if ("1".equals(line1)) {
@@ -135,7 +140,6 @@ public class FailoverReactor {
                         switchParams.put("failover-mode", "false");
                     }
                 }
-
             } catch (Throwable e) {
                 NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
             }
@@ -147,31 +151,24 @@ public class FailoverReactor {
         @Override
         public void run() {
             Map<String, ServiceInfo> domMap = new HashMap<String, ServiceInfo>(16);
-
             BufferedReader reader = null;
             try {
-
                 File cacheDir = new File(failoverDir);
                 if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                     throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                 }
-
                 File[] files = cacheDir.listFiles();
                 if (files == null) {
                     return;
                 }
-
                 for (File file : files) {
                     if (!file.isFile()) {
                         continue;
                     }
-
                     if (file.getName().equals(UtilAndComs.FAILOVER_SWITCH)) {
                         continue;
                     }
-
                     ServiceInfo dom = new ServiceInfo(file.getName());
-
                     try {
                         String dataString = ConcurrentDiskUtil.getFileContent(file,
                             Charset.defaultCharset().toString());
@@ -185,7 +182,6 @@ public class FailoverReactor {
                                 NAMING_LOGGER.error("[NA] error while parsing cached dom : " + json, e);
                             }
                         }
-
                     } catch (Exception e) {
                         NAMING_LOGGER.error("[NA] failed to read cache for dom: " + file.getName(), e);
                     } finally {
@@ -204,7 +200,6 @@ public class FailoverReactor {
             } catch (Exception e) {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
-
             if (domMap.size() > 0) {
                 serviceMap = domMap;
             }

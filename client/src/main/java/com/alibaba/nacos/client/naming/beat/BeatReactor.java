@@ -15,26 +15,33 @@
  */
 package com.alibaba.nacos.client.naming.beat;
 
+import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author harold
  */
-public class BeatReactor {
+public class BeatReactor implements LifeCycle {
 
     private ScheduledExecutorService executorService;
 
     private NamingProxy serverProxy;
 
-    public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+    private final int threadCount;
+
+    private final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
+
+    private AtomicInteger threadId = new AtomicInteger(0);
 
     public BeatReactor(NamingProxy serverProxy) {
         this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
@@ -42,21 +49,33 @@ public class BeatReactor {
 
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
+        this.threadCount = threadCount;
+    }
 
+    @Override
+    public void start() throws NacosException {
         executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
                 thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.beat.sender");
+                thread.setName("com.alibaba.nacos.naming.beat.sender-" + threadId.incrementAndGet());
                 return thread;
             }
         });
     }
 
+    @Override
+    public void destroy() throws NacosException {
+        executorService.shutdown();
+    }
+
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
         dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        if (executorService.isShutdown()) {
+            NAMING_LOGGER.info("[BEAT] Heartbeat task thread pool has been closed");
+        }
         executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
@@ -91,6 +110,9 @@ public class BeatReactor {
             }
             long result = serverProxy.sendBeat(beatInfo);
             long nextTime = result > 0 ? result : beatInfo.getPeriod();
+            if (executorService.isShutdown()) {
+                NAMING_LOGGER.info("[BEAT] Heartbeat task thread pool has been closed");
+            }
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }

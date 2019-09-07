@@ -40,6 +40,7 @@ public class ConfigFactory {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
+            vendorImpl.start();
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);

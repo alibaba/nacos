@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -49,7 +50,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author nkorange
  */
-public class NamingProxy {
+public class NamingProxy implements LifeCycle {
 
     private static final int DEFAULT_SERVER_PORT = 8848;
 
@@ -71,8 +72,9 @@ public class NamingProxy {
 
     private Properties properties;
 
-    public NamingProxy(String namespaceId, String endpoint, String serverList) {
+    private ScheduledExecutorService executorService = null;
 
+    public NamingProxy(String namespaceId, String endpoint, String serverList) {
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
         if (StringUtils.isNotEmpty(serverList)) {
@@ -81,8 +83,16 @@ public class NamingProxy {
                 this.nacosDomain = serverList;
             }
         }
+    }
 
+    @Override
+    public void start() throws NacosException {
         initRefreshSrvIfNeed();
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        executorService.shutdown();
     }
 
     private void initRefreshSrvIfNeed() {
@@ -90,7 +100,7 @@ public class NamingProxy {
             return;
         }
 
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
@@ -129,13 +139,10 @@ public class NamingProxy {
                     list.add(line.trim());
                 }
             }
-
             return list;
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return null;
     }
 
@@ -320,7 +327,6 @@ public class NamingProxy {
     }
 
     public boolean serverHealthy() {
-
         try {
             String result = reqAPI(UtilAndComs.NACOS_URL_BASE + "/operator/metrics", new HashMap<String, String>(2));
             JSONObject json = JSON.parseObject(result);
@@ -559,6 +565,6 @@ public class NamingProxy {
             this.serverPort = Integer.parseInt(sp);
         }
     }
-    
+
 }
 

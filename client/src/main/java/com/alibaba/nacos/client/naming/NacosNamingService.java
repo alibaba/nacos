@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
+
     private static final String DEFAULT_PORT = "8080";
     private static final long DEFAULT_HEART_BEAT_INTERVAL = TimeUnit.SECONDS.toMillis(5);
 
@@ -73,29 +74,48 @@ public class NacosNamingService implements NamingService {
 
     private NamingProxy serverProxy;
 
+    private final Properties properties;
+
     public NacosNamingService(String serverList) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
-
-        init(properties);
+        this.properties = properties;
+        init();
     }
 
     public NacosNamingService(Properties properties) {
-        init(properties);
+        this.properties = properties;
+        init();
     }
 
-    private void init(Properties properties) {
+    private void init() {
         namespace = InitUtils.initNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         initCacheDir();
         initLogName(properties);
+    }
 
+    @Override
+    public void start() throws NacosException {
         eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
+
+        eventDispatcher.start();
+        serverProxy.start();
+        beatReactor.start();
+        hostReactor.start();
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        eventDispatcher.destroy();
+        serverProxy.destroy();
+        beatReactor.destroy();
+        hostReactor.destroy();
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -109,7 +129,6 @@ public class NacosNamingService implements NamingService {
 
     private int initPollingThreadCount(Properties properties) {
         if (properties == null) {
-
             return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
         }
 

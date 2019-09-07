@@ -290,6 +290,11 @@ public class ServerHttpAgent implements HttpAgent {
         serverListMgr.start();
     }
 
+    @Override
+    public synchronized void destroy() throws NacosException {
+
+    }
+
     private List<String> getSpasHeaders(List<String> paramValues) throws IOException {
         List<String> newHeaders = new ArrayList<String>();
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权

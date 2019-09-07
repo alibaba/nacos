@@ -57,6 +57,7 @@ public class DeregisterInstance_ITCase {
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            naming.start();
         }
 
         while (true) {

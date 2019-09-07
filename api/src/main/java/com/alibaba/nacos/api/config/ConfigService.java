@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.api.config;
 
+import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -23,7 +24,7 @@ import com.alibaba.nacos.api.exception.NacosException;
  *
  * @author Nacos
  */
-public interface ConfigService {
+public interface ConfigService extends LifeCycle {
 
     /**
      * Get config

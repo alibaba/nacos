@@ -70,9 +70,11 @@ public class NacosConfigService implements ConfigService {
     private ClientWorker worker;
     private String namespace;
     private String encode;
+    private Properties properties;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
     public NacosConfigService(Properties properties) throws NacosException {
+        this.properties = properties;
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
             encode = Constants.ENCODE;
@@ -80,18 +82,29 @@ public class NacosConfigService implements ConfigService {
             encode = encodeTmp.trim();
         }
         initNamespace(properties);
+    }
+
+    @Override
+    public void start() throws NacosException {
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        agent.start();
         worker = new ClientWorker(agent, configFilterChainManager, properties);
+        agent.start();
+        worker.start();
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        agent.destroy();
+        worker.destroy();
     }
 
     private void initNamespace(Properties properties) {
         String namespaceTmp = null;
 
         String isUseCloudNamespaceParsing =
-            properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                    String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+                properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                        System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                                String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
 
         if (Boolean.valueOf(isUseCloudNamespaceParsing)) {
             namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
@@ -162,7 +175,7 @@ public class NacosConfigService implements ConfigService {
         String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
-                dataId, group, tenant, ContentUtils.truncateContent(content));
+                    dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -183,11 +196,11 @@ public class NacosConfigService implements ConfigService {
                 throw ioe;
             }
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
-                agent.getName(), dataId, group, tenant, ioe.toString());
+                    agent.getName(), dataId, group, tenant, ioe.toString());
         }
 
         LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
-            dataId, group, tenant, ContentUtils.truncateContent(content));
+                dataId, group, tenant, ContentUtils.truncateContent(content));
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
         configFilterChainManager.doFilter(null, cr);
@@ -229,11 +242,11 @@ public class NacosConfigService implements ConfigService {
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.code) {
             LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
-                group, tenant, result.code, result.content);
+                    group, tenant, result.code, result.content);
             throw new NacosException(result.code, result.content);
         } else {
             LOGGER.warn("[{}] [remove] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(), dataId,
-                group, tenant, result.code, result.content);
+                    group, tenant, result.code, result.content);
             return false;
         }
     }
@@ -283,21 +296,21 @@ public class NacosConfigService implements ConfigService {
             result = agent.httpPost(url, headers, params, encode, POST_TIMEOUT);
         } catch (IOException ioe) {
             LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId,
-                group, ioe.toString());
+                    group, ioe.toString());
             return false;
         }
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             LOGGER.info("[{}] [publish-single] ok, dataId={}, group={}, tenant={}, config={}", agent.getName(), dataId,
-                group, tenant, ContentUtils.truncateContent(content));
+                    group, tenant, ContentUtils.truncateContent(content));
             return true;
         } else if (HttpURLConnection.HTTP_FORBIDDEN == result.code) {
             LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
-                dataId, group, tenant, result.code, result.content);
+                    dataId, group, tenant, result.code, result.content);
             throw new NacosException(result.code, result.content);
         } else {
             LOGGER.warn("[{}] [publish-single] error, dataId={}, group={}, tenant={}, code={}, msg={}", agent.getName(),
-                dataId, group, tenant, result.code, result.content);
+                    dataId, group, tenant, result.code, result.content);
             return false;
         }
 

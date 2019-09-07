@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -28,19 +29,20 @@ import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
  */
-public class HostReactor {
+public class HostReactor implements LifeCycle {
 
     private static final long DEFAULT_DELAY = 1000L;
 
     private static final long UPDATE_HOLD_INTERVAL = 5000L;
 
-    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>();
+    private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<String, ScheduledFuture<?>>(16);
 
     private Map<String, ServiceInfo> serviceInfoMap;
 
@@ -58,35 +60,56 @@ public class HostReactor {
 
     private ScheduledExecutorService executor;
 
+    private AtomicInteger threadId = new AtomicInteger(0);
+
+    private boolean loadCacheAtStart = false;
+
+    private int pollingThreadCount;
+
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
         this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
+        this.loadCacheAtStart = loadCacheAtStart;
+        this.pollingThreadCount = pollingThreadCount;
+        this.eventDispatcher = eventDispatcher;
+        this.serverProxy = serverProxy;
+        this.cacheDir = cacheDir;
+    }
 
+    @Override
+    public void start() throws NacosException {
         executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
                 thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.client.naming.updater");
+                thread.setName("com.alibaba.nacos.client.naming.updater-" + threadId.incrementAndGet());
                 return thread;
             }
         });
-
-        this.eventDispatcher = eventDispatcher;
-        this.serverProxy = serverProxy;
-        this.cacheDir = cacheDir;
         if (loadCacheAtStart) {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
-
-        this.updatingMap = new ConcurrentHashMap<String, Object>();
+        this.updatingMap = new ConcurrentHashMap<String, Object>(16);
         this.failoverReactor = new FailoverReactor(this, cacheDir);
         this.pushReceiver = new PushReceiver(this);
+
+        // Preparation accordingly
+        failoverReactor.start();
+        pushReceiver.start();
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        executor.shutdown();
+        // Perform corresponding disposal operations
+        failoverReactor.destroy();
+        pushReceiver.destroy();
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {

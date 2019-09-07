@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.api.naming;
 
+import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -29,7 +30,7 @@ import java.util.List;
  *
  * @author nkorange
  */
-public interface NamingService {
+public interface NamingService extends LifeCycle {
 
     /**
      * register a instance to service

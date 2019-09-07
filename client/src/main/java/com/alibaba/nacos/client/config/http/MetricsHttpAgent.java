@@ -29,6 +29,7 @@ import java.util.List;
  * @author Nacos
  */
 public class MetricsHttpAgent implements HttpAgent {
+
     private HttpAgent httpAgent;
 
     public MetricsHttpAgent(HttpAgent httpAgent) {
@@ -38,6 +39,11 @@ public class MetricsHttpAgent implements HttpAgent {
     @Override
     public void start() throws NacosException {
         httpAgent.start();
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        httpAgent.destroy();
     }
 
     @Override
