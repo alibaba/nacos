@@ -568,7 +568,7 @@ public class ServiceManager implements RecordListener<Service> {
         Service service = getService(namespaceId, serviceName);
 
         /**
-         * 新增ips后    当前service对应的有效的节点
+         * 新增ips后    当前service对应的有效的节点  之前的+新增的
          */
         List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
 

@@ -58,6 +58,9 @@ public class TaskDispatcher {
     }
 
     public void addTask(String key) {
+        /**
+         * 根据key取模  选取taskSchedulerList对应的TaskScheduler执行
+         */
         taskSchedulerList.get(UtilsAndCommons.shakeUp(key, cpuCoreCount)).addTask(key);
     }
 
@@ -75,6 +78,10 @@ public class TaskDispatcher {
             this.index = index;
         }
 
+        /**
+         * 新增任务
+         * @param key
+         */
         public void addTask(String key) {
             queue.offer(key);
         }

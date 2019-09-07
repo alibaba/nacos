@@ -167,7 +167,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         /**
-         * 存入缓存
+         * 存入dataStore缓存  并新增调度任务
          */
         onPut(key, value);
         taskDispatcher.addTask(key);
@@ -439,21 +439,21 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         public void addTask(String datumKey, ApplyAction action) {
 
             /**
-             * 变换的任务   有一个key就可以
+             * change   有一个就可以
              */
             if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
                 return;
             }
 
             /**
-             * 新增
+             * CHANGE任务   默认初始值
              */
             if (action == ApplyAction.CHANGE) {
                 services.put(datumKey, StringUtils.EMPTY);
             }
 
             /**
-             * 加入队列
+             * 加入阻塞队列
              */
             tasks.add(Pair.with(datumKey, action));
         }
