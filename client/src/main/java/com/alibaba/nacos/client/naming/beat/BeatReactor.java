@@ -72,9 +72,16 @@ public class BeatReactor implements LifeCycle {
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
-        dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
+        BeatInfo existBeat = null;
+        //fix #1733
+        if ((existBeat = dom2Beat.remove(key)) != null) {
+            existBeat.setStopped(true);
+        }
+        dom2Beat.put(key, beatInfo);
         if (executorService.isShutdown()) {
             NAMING_LOGGER.info("[BEAT] Heartbeat task thread pool has been closed");
+            return;
         }
         executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
