@@ -20,7 +20,9 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.UuidUtils;
+import com.alibaba.nacos.common.util.VersionUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -201,7 +203,7 @@ public class HttpSimpleClient {
                 conn.addRequestProperty(iter.next(), iter.next());
             }
         }
-        conn.addRequestProperty("Client-Version", ParamUtil.getClientVersion());
+        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset=" + encoding);
 
         String ts = String.valueOf(System.currentTimeMillis());
