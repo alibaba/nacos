@@ -139,7 +139,16 @@ public class SystemUtils {
                     instance = instance.substring(0, instance.indexOf(comment));
                     instance = instance.trim();
                 }
-                instanceList.add(instance);
+                int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
+                if (multiIndex > 0) {
+                    // support the format: ip1:port,ip2:port  # multi inline
+                    for (String ins : instance.split(Constants.COMMA_DIVISION)) {
+                        instanceList.add(ins);
+                    }
+                } else {
+                    //support the format: 192.168.71.52:8848
+                    instanceList.add(instance);
+                }
             }
             return instanceList;
         } finally {
