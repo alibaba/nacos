@@ -284,18 +284,8 @@ public class CatalogController {
             serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
             serviceView.setClusterCount(service.getClusterMap().size());
             serviceView.setIpCount(service.allIPs().size());
-
-            // FIXME should be optimized:
-            int validCount = 0;
-            for (Instance instance : service.allIPs()) {
-                if (instance.isHealthy()) {
-                    validCount++;
-                }
-
-            }
-
-            serviceView.setHealthyInstanceCount(validCount);
-
+            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
+            serviceView.setTriggerFlag(service.isTriggerFlag());
             serviceJsonArray.add(serviceView);
         }
 

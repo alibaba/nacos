@@ -172,6 +172,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
+        updateTriggerFlag();
+
         recalculateChecksum();
     }
 
@@ -191,8 +193,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return healthyCount;
     }
 
-    public boolean meetProtectThreshold() {
-        return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
+    public void updateTriggerFlag() {
+        boolean triggerFlag = (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
+        setTriggerFlag(triggerFlag);
     }
 
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
@@ -421,6 +424,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         selector = vDom.getSelector();
 
         setMetadata(vDom.getMetadata());
+
+        updateTriggerFlag();
 
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);
