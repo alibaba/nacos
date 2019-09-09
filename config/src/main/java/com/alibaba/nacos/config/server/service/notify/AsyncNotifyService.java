@@ -218,10 +218,10 @@ public class AsyncNotifyService extends AbstractEventListener {
         public void failed(Exception ex) {
 
             long delayed = System.currentTimeMillis() - task.getLastModified();
-            log.error("[notify-exception] " + task.getDataId() + ", " + task.getGroup() + ", to " + task.target + ", "
-                + ex.toString());
-            log.debug("[notify-exception] " + task.getDataId() + ", " + task.getGroup() + ", to " + task.target + ", "
-                + ex.toString(), ex);
+            log.error("[notify-exception] dataid:{}, group:{}, target:{},cause by: {} ",task.getDataId(),task.getGroup(),task.target,ex.toString());
+            if(log.isDebugEnabled()){
+                log.debug("[notify-exception] dataid:{}, group:{}, target:{},cause by: {} ",task.getDataId(),task.getGroup(),task.target,ex.toString());
+            }
             ConfigTraceService.logNotifyEvent(task.getDataId(),
                 task.getGroup(), task.getTenant(), null, task.getLastModified(),
                 LOCAL_IP,

@@ -27,13 +27,13 @@ public abstract class AbstractSharedListener implements Listener {
     private volatile String dataId;
     private volatile String group;
 
-    final public void fillContext(String dataId, String group) {
+    public final void fillContext(String dataId, String group) {
         this.dataId = dataId;
         this.group = group;
     }
 
     @Override
-    final public void receiveConfigInfo(String configInfo) {
+    public final void receiveConfigInfo(String configInfo) {
         innerReceive(dataId, group, configInfo);
     }
 
