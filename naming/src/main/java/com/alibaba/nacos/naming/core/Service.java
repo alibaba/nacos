@@ -194,6 +194,15 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public void updateTriggerFlag() {
+        if(0 == healthyInstanceCount()) {
+            setTriggerFlag(true);
+            return;
+        }
+        Float compareValue = 0.0F;
+        if(Float.floatToIntBits(compareValue) == getProtectThreshold()) {
+            setTriggerFlag(false);
+            return;
+        }
         boolean triggerFlag = (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
         setTriggerFlag(triggerFlag);
     }
