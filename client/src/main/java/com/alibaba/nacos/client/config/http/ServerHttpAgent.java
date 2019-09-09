@@ -323,7 +323,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         }
         String stsResponse = getSTSResponse();
-        STSCredential stsCredentialTmp = (STSCredential) JSONUtils.deserializeObject(stsResponse,
+        STSCredential stsCredentialTmp = JSONUtils.deserializeObject(stsResponse,
             new TypeReference<STSCredential>() {
             });
         sTSCredential = stsCredentialTmp;

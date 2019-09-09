@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.listener;
-
-import java.util.concurrent.Executor;
+package com.alibaba.nacos.config.server.model;
 
 /**
- * Listener Adapter,use default notify thread
- *
- * @author water.lyl
+ * @author klw
+ * @ClassName: SameConfigPolicy
+ * @Description: processing policy of the same configuration
+ * @date 2019/5/21 10:55
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class AbstractListener implements Listener {
+public enum SameConfigPolicy {
 
     /**
-     * Use default executor
+     * @Description: abort import  on duplicate
      */
-    @Override
-    public Executor getExecutor() {
-        return null;
-    }
+    ABORT,
+
+    /**
+     * @Description: skipping on duplicate
+     */
+    SKIP,
+
+    /**
+     * @Description: overwrite on duplicate
+     */
+    OVERWRITE
 
 }

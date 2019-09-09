@@ -13,24 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.api.config.listener;
-
-import java.util.concurrent.Executor;
+package com.alibaba.nacos.config.server.result.core;
 
 /**
- * Listener Adapter,use default notify thread
- *
- * @author water.lyl
+ * @author klw
+ * @ClassName: IResultCode
+ * @Description: result code enum needs to be implemented this interface
+ * @date 2019/6/28 14:44
  */
-@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class AbstractListener implements Listener {
+public interface IResultCode {
 
     /**
-     * Use default executor
+     * get the result code
+     *
+     * @author klw
+     * @Date 2019/6/28 14:56
+     * @Param []
+     * @return java.lang.String
      */
-    @Override
-    public Executor getExecutor() {
-        return null;
-    }
+    int getCode();
 
+    /**
+     * get the result code's message
+     *
+     * @author klw
+     * @Date 2019/6/28 14:56
+     * @Param []
+     * @return java.lang.String
+     */
+    String getCodeMsg();
 }

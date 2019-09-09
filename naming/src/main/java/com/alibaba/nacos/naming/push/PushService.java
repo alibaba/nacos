@@ -33,6 +33,7 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -512,7 +513,7 @@ public class PushService {
         String dataStr = JSON.toJSONString(data);
 
         try {
-            byte[] dataBytes = dataStr.getBytes("UTF-8");
+            byte[] dataBytes = dataStr.getBytes(StandardCharsets.UTF_8);
             dataBytes = compressIfNecessary(dataBytes);
 
             DatagramPacket packet = new DatagramPacket(dataBytes, dataBytes.length, client.socketAddr);

@@ -407,10 +407,12 @@ public class ServiceController {
             result.put("count", count);
 
             return result;
-        } catch (InterruptedException e) {
-
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("query subscribers failed!", e);
+            result.put("subscribers", new JSONArray());
+            result.put("count", 0);
+            return result;
         }
-        return result;
     }
 
     private List<String> filterInstanceMetadata(String namespaceId, List<String> serviceNames, String key, String value) {
