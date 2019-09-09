@@ -33,7 +33,7 @@ public class MD5 {
     private static final int DIGITS_COUNT = 16;
     private static final int DIGITS_CHAR_SIZE = 32;
 
-    private static Map<Character, Integer> rDigits = Maps.newHashMapWithExpectedSize(16)
+    private static Map<Character, Integer> rDigits = Maps.newHashMapWithExpectedSize(16);
 
     static {
         for (int i = 0; i < digits.length; ++i) {
