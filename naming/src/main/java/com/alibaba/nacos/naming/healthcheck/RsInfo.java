@@ -36,6 +36,7 @@ public class RsInfo {
     private String ak;
     private String cluster;
     private double weight;
+    private boolean enabled;
     private boolean ephemeral = true;
     private Map<String, String> metadata;
 
@@ -127,7 +128,15 @@ public class RsInfo {
         this.weight = weight;
     }
 
-    public boolean isEphemeral() {
+    public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled)	{
+		this.enabled = enabled;
+	}
+
+	public boolean isEphemeral() {
         return ephemeral;
     }
 

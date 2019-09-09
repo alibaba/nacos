@@ -27,6 +27,7 @@ public class BeatInfo {
     private int port;
     private String ip;
     private double weight;
+    private boolean enabled;
     private String serviceName;
     private String cluster;
     private Map<String, String> metadata;
@@ -86,6 +87,14 @@ public class BeatInfo {
     public void setWeight(double weight) {
         this.weight = weight;
     }
+    
+    public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled)	{
+		this.enabled = enabled;
+	}
 
     public boolean isScheduled() {
         return scheduled;

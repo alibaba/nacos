@@ -16,10 +16,15 @@
 package com.alibaba.nacos.client.naming.beat;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.listener.Event;
+import com.alibaba.nacos.api.naming.listener.EventListener;
+import com.alibaba.nacos.api.naming.listener.NamingEvent;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -28,7 +33,7 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 /**
  * @author harold
  */
-public class BeatReactor {
+public class BeatReactor implements EventListener {
 
     private ScheduledExecutorService executorService;
 
@@ -70,7 +75,27 @@ public class BeatReactor {
         beatInfo.setStopped(true);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
-
+    
+    public void changeBeatInfoStatus(List<Instance> list) {
+    	BeatInfo beatInfo;
+		for (Instance in : list) {
+			beatInfo = dom2Beat.get(buildKey(in.getServiceName(), in.getIp(), in.getPort()));
+		   	if (beatInfo != null) {
+		   		beatInfo.setEnabled(in.isEnabled());
+		   		break;
+		   	}
+		}
+    }
+    
+    @Override
+    public void onEvent(Event event)
+    {
+    	if (event instanceof NamingEvent) {
+			List<Instance> list = ((NamingEvent) event).getInstances();
+			changeBeatInfoStatus(list);
+		}
+    }
+    
     private String buildKey(String serviceName, String ip, int port) {
         return serviceName + Constants.NAMING_INSTANCE_ID_SPLITTER
             + ip + Constants.NAMING_INSTANCE_ID_SPLITTER + port;

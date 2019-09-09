@@ -91,9 +91,9 @@ public class NacosNamingService implements NamingService {
         initCacheDir();
         initLogName(properties);
 
-        eventDispatcher = new EventDispatcher();
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
+        eventDispatcher = new EventDispatcher();
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), 
         		initPollingThreadCount(properties), getEnableOnlyFlag(properties));
@@ -207,6 +207,7 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
+            beatInfo.setEnabled(instance.isEnabled());
             long instanceInterval = instance.getInstanceHeartBeatInterval();
             beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
 
@@ -214,6 +215,12 @@ public class NacosNamingService implements NamingService {
         }
 
         serverProxy.registerService(NamingUtils.getGroupedName(serviceName, groupName), groupName, instance);
+        
+        List<String> list = new ArrayList<String>();
+        if (instance.getClusterName() != null) {
+        	list.add(instance.getClusterName());
+        }
+        subscribe(serviceName, groupName, list, beatReactor);
     }
 
 
@@ -252,6 +259,12 @@ public class NacosNamingService implements NamingService {
         if (instance.isEphemeral()) {
             beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(), instance.getPort());
         }
+        
+        List<String> list = new ArrayList<String>();
+        if (instance.getClusterName() != null) {
+        	list.add(instance.getClusterName());
+        }
+        unsubscribe(serviceName, groupName, list, beatReactor);
         serverProxy.deregisterService(NamingUtils.getGroupedName(serviceName, groupName), instance);
     }
 

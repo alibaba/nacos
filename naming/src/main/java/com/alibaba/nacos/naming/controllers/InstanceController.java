@@ -252,6 +252,7 @@ public class InstanceController {
             instance.setServiceName(serviceName);
             instance.setInstanceId(instance.generateInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
+            instance.setEnabled(clientBeat.isEnabled());
 
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
