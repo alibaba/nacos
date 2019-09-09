@@ -69,7 +69,7 @@ public class ServiceView {
         this.healthyInstanceCount = healthyInstanceCount;
     }
 
-    public String isTriggerFlag() {
+    public String getTriggerFlag() {
         return triggerFlag;
     }
 
