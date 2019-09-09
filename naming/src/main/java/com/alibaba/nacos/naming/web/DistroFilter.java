@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -97,7 +98,7 @@ public class DistroFilter implements Filter {
             // proxy request to other server if necessary:
             if (method.isAnnotationPresent(CanDistro.class) && !distroMapper.responsible(groupedServiceName)) {
 
-                String userAgent = req.getHeader("User-Agent");
+                String userAgent = req.getHeader(HttpHeaderConsts.USER_AGENT_HEADER);
 
                 if (StringUtils.isNotBlank(userAgent) && userAgent.contains(UtilsAndCommons.NACOS_SERVER_HEADER)) {
                     // This request is sent from peer server, should not be redirected again:
