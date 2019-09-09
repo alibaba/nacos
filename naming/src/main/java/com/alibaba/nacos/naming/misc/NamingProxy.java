@@ -110,27 +110,24 @@ public class NamingProxy {
     }
 
 
-    public static boolean syncData(byte[] data, String curServer) throws Exception {
+    public static boolean syncData(byte[] data, String curServer) {
+        Map<String, String> headers = new HashMap<>(128);
+        
+        headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
+        headers.put("Accept-Encoding", "gzip,deflate,sdch");
+        headers.put("Connection", "Keep-Alive");
+        headers.put("Content-Encoding", "gzip");
+
         try {
-            Map<String, String> headers = new HashMap<>(128);
-
-            headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
-            headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
-            headers.put("Accept-Encoding", "gzip,deflate,sdch");
-            headers.put("Connection", "Keep-Alive");
-            headers.put("Content-Encoding", "gzip");
-
             HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + curServer + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, headers, data);
-
             if (HttpURLConnection.HTTP_OK == result.code) {
                 return true;
             }
-
             if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
                 return true;
             }
-
             throw new IOException("failed to req API:" + "http://" + curServer
                 + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL + ". code:"
