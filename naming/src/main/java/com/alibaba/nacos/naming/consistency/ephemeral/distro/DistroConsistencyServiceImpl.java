@@ -159,7 +159,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     }
 
     /**
-     *
+     * 新增临时节点
      * @param key   key of data, this key should be globally unique
      * @param value value of data
      * @throws NacosException
@@ -439,7 +439,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         public void addTask(String datumKey, ApplyAction action) {
 
             /**
-             * change   有一个就可以
+             * 任务   有一个就可以
              */
             if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
                 return;
@@ -478,6 +478,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     String datumKey = (String) pair.getValue0();
                     ApplyAction action = (ApplyAction) pair.getValue1();
 
+                    /**
+                     * 移除   这样可以接受下一个change任务
+                     */
                     services.remove(datumKey);
 
                     int count = 0;

@@ -717,6 +717,7 @@ public class ServiceManager implements RecordListener<Service> {
 
     /**
      * 比对数据  以oldInstances中的数据为主  过滤出在map中有对应的有效数据
+     * 即map中存在的数据   但在oldInstances不存在  则不返回
      * 节点的Healthy以及LastBeat   以map中的为准
      * @param oldInstances
      * @param map
