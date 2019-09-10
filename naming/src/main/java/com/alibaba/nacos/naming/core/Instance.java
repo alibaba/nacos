@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -197,7 +198,9 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             ip.setWeight(0.0D);
         }
 
-        if (!ip.validate()) {
+        try {
+            ip.validate();
+        } catch (NacosException e) {
             throw new IllegalArgumentException("malformed ip config: " + json);
         }
 
@@ -298,19 +301,19 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
     }
 
-    public boolean validate() {
+    public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
             Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
             if (!matcher.matches()) {
-                return false;
+                throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: Your IP address is spelled incorrectly");
             }
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
-            return false;
+            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid: The weights range from " +
+                MIN_WEIGHT_VALUE + " to " + MAX_WEIGHT_VALUE);
         }
 
-        return true;
     }
 
     private boolean onlyContainsDigitAndDot() {
