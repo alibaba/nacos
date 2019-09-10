@@ -88,5 +88,6 @@ public class ClientBeatProcessor implements Runnable {
                 }
             }
         }
+        service.updateTriggerFlag();
     }
 }
