@@ -153,7 +153,6 @@ public class DiskCache {
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
             throw new IllegalStateException("failed to create cache dir: " + dir);
         }
-
         return cacheDir;
     }
 }
