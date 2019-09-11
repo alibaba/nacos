@@ -120,7 +120,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     *
+     * 初始化
      */
     public void init() {
         if (inited) {
@@ -205,12 +205,15 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     *
+     * 更新cluster对应的Instance集合
      * @param ips
      * @param ephemeral
      */
     public void updateIPs(List<Instance> ips, boolean ephemeral) {
 
+        /**
+         * 获取当前cluster对应的Instance集合
+         */
         Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
 
         HashMap<String, Instance> oldIPMap = new HashMap<>(toUpdateInstances.size());
@@ -220,7 +223,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         }
 
         /**
-         *
+         * 仅在ips中存在  获取在两者中相同ip:port的Instance集合
          */
         List<Instance> updatedIPs = updatedIPs(ips, oldIPMap.values());
         if (updatedIPs.size() > 0) {
@@ -230,6 +233,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 // do not update the ip validation status of updated ips
                 // because the checker has the most precise result
                 // Only when ip is not marked, don't we update the health status of IP:
+                /**
+                 * 不要更新  待更新Instance集合（ips）中的Instance（ip）对应的验证状态
+                 * 因为checker拥有最精准的结果？？？？？  checker是谁  最精准的结果又是什么？？？
+                 * 只有当前Instance的状态为非marker时   我们才更新其对应的healthy
+                 */
                 if (!ip.isMarked()) {
                     ip.setHealthy(oldIP.isHealthy());
                 }
@@ -247,16 +255,27 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
+        /**
+         * ip:port   仅在ips存在   在oldIPMap中不存在的Instance集合
+         * 即新增的Instance集合
+         */
         List<Instance> newIPs = subtract(ips, oldIPMap.values());
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG.info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}",
                 getService().getName(), getName(), newIPs.size(), newIPs.toString());
 
             for (Instance ip : newIPs) {
+                /**
+                 * 重置
+                 */
                 HealthCheckStatus.reset(ip);
             }
         }
 
+        /**
+         * ip:port   仅在oldIPMap存在   在ips中不存在的Instance集合
+         * 即已经失效（移除）的Instance集合
+         */
         List<Instance> deadIPs = subtract(oldIPMap.values(), ips);
 
         if (deadIPs.size() > 0) {
@@ -264,12 +283,18 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 getService().getName(), getName(), deadIPs.size(), deadIPs.toString());
 
             for (Instance ip : deadIPs) {
+                /**
+                 * 删除
+                 */
                 HealthCheckStatus.remv(ip);
             }
         }
 
         toUpdateInstances = new HashSet<>(ips);
 
+        /**
+         * 当前cluster对应的Instance集合
+         */
         if (ephemeral) {
             ephemeralInstances = toUpdateInstances;
         } else {
@@ -278,7 +303,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     }
 
     /**
-     * 仅在a中的元素   且对应的ip:port在a和b中都有的元素
+     * 仅在a中的元素   且对应的ip:port在a和b中都有的Instance
      *
      * @param a
      * @param b
@@ -372,6 +397,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return new ArrayList<>(instanceMap.values());
     }
 
+    /**
+     * ip:port  仅在a中有   在b中没有的Instance集合
+     * @param a
+     * @param b
+     * @return
+     */
     public List<Instance> subtract(Collection<Instance> a, Collection<Instance> b) {
         Map<String, Instance> mapa = new HashMap<>(b.size());
         for (Instance o : b) {

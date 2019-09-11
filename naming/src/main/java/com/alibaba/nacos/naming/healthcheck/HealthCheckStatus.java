@@ -35,6 +35,10 @@ public class HealthCheckStatus {
 
     private static ConcurrentMap<String, HealthCheckStatus> statusMap = new ConcurrentHashMap<>();
 
+    /**
+     * 重置
+     * @param instance
+     */
     public static void reset(Instance instance) {
         statusMap.put(buildKey(instance), new HealthCheckStatus());
     }
@@ -49,10 +53,19 @@ public class HealthCheckStatus {
         return statusMap.get(key);
     }
 
+    /**
+     * 移除
+     * @param instance
+     */
     public static void remv(Instance instance) {
         statusMap.remove(buildKey(instance));
     }
 
+    /**
+     * serviceName：clusterName：datumKey
+     * @param instance
+     * @return
+     */
     private static String buildKey(Instance instance) {
         try {
 

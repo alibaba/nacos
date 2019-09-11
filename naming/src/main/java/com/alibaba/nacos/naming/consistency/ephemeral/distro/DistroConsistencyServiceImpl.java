@@ -205,7 +205,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             datum.key = key;
             datum.timestamp.incrementAndGet();
             /**
-             * 存入缓存
+             * 存入缓存 新增或修改
              */
             dataStore.put(key, datum);
         }
@@ -489,6 +489,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                         continue;
                     }
 
+                    /**
+                     * 遍历datumKey对应的监听器
+                     */
                     for (RecordListener listener : listeners.get(datumKey)) {
 
                         count++;

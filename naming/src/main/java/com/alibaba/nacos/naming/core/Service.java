@@ -216,6 +216,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * @param ephemeral
      */
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
+        /**
+         * 当前service下的cluster
+         */
         Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
         for (String clusterName : clusterMap.keySet()) {
             ipMap.put(clusterName, new ArrayList<>());
@@ -228,24 +231,42 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     continue;
                 }
 
+                /**
+                 * instance对应的ClusterName为空   则默认为DEFAULT
+                 */
                 if (StringUtils.isEmpty(instance.getClusterName())) {
                     instance.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
 
+                /**
+                 * instance的ClusterName在clusterMap中没有对应  则新增
+                 */
                 if (!clusterMap.containsKey(instance.getClusterName())) {
                     Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                         instance.getClusterName(), instance.toJSON());
                     Cluster cluster = new Cluster(instance.getClusterName(), this);
+                    /**
+                     * 初始化   ？？？？
+                     */
                     cluster.init();
+                    /**
+                     * 存入clusterMap
+                     */
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
 
+                /**
+                 * 在ipMap也没有对应时   再次新增
+                 */
                 List<Instance> clusterIPs = ipMap.get(instance.getClusterName());
                 if (clusterIPs == null) {
                     clusterIPs = new LinkedList<>();
                     ipMap.put(instance.getClusterName(), clusterIPs);
                 }
 
+                /**
+                 * 将instance存入ClusterName对应的ipMap中
+                 */
                 clusterIPs.add(instance);
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + instance, e);
@@ -256,7 +277,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             //make every ip mine
             List<Instance> entryIPs = entry.getValue();
             /**
-             *
+             * 对clusterMap下的Cluster   执行updateIPs
              */
             clusterMap.get(entry.getKey()).updateIPs(entryIPs, ephemeral);
         }
