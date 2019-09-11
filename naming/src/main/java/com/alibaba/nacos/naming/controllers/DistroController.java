@@ -32,13 +32,13 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +69,7 @@ public class DistroController {
     private SwitchDomain switchDomain;
 
     @RequestMapping(value = "/datum", method = RequestMethod.PUT)
-    public String onSyncDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity onSyncDatum(HttpServletRequest request) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
@@ -92,35 +92,42 @@ public class DistroController {
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
         }
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
-    public String syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String source = WebUtils.required(request, "source");
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         Map<String, String> dataMap =
             serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
-        });
+            });
         consistencyService.onReceiveChecksums(dataMap, source);
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
     @RequestMapping(value = "/datum", method = RequestMethod.GET)
-    public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public ResponseEntity get(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         String keys = JSON.parseObject(entity).getString("keys");
         String keySplitter = ",";
         Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {
-            datumMap.put(key, consistencyService.get(key));
+            Datum datum = consistencyService.get(key);
+            if (datum == null) {
+                continue;
+            }
+            datumMap.put(key, datum);
         }
-        response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));
+
+        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
+        return ResponseEntity.ok(content);
     }
 
     @RequestMapping(value = "/datums", method = RequestMethod.GET)
-    public void getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8));
+    public ResponseEntity getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
+        return ResponseEntity.ok(content);
     }
 }
