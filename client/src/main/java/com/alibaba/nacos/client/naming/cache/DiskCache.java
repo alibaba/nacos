@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -38,6 +40,8 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xuanyin
  */
 public class DiskCache {
+
+    private static Lock DIR_MK_LOCK = new ReentrantLock();
 
     public static void write(ServiceInfo dom, String dir) {
 
@@ -150,8 +154,18 @@ public class DiskCache {
 
     private static File makeSureCacheDirExists(String dir) {
         File cacheDir = new File(dir);
-        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            throw new IllegalStateException("failed to create cache dir: " + dir);
+        //Reducing the cost of taking lock
+        if (!cacheDir.exists()) {
+            try {
+                DIR_MK_LOCK.lock();
+                //Double check for avoiding conflicted
+                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                    throw new IllegalStateException("failed to create cache dir: " + dir);
+                }
+            } finally {
+                DIR_MK_LOCK.unlock();
+            }
+
         }
 
         return cacheDir;
