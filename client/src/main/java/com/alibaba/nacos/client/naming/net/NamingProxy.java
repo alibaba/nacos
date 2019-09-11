@@ -35,8 +35,10 @@ import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
+import com.alibaba.nacos.common.util.VersionUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -499,8 +501,9 @@ public class NamingProxy {
     }
 
     public List<String> builderHeaders() {
-        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-            "User-Agent", UtilAndComs.VERSION,
+        List<String> headers = Arrays.asList(
+            HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+            HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
             "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
