@@ -296,16 +296,9 @@ public class HostReactor {
 
         queryWork.run();
 
-        if (find[0] == false) {
-            int cnt = findBack ? 1 : names.length;
-            CountDownLatch latch = new CountDownLatch(cnt);
-            updateServicesNow(serviceNames, clusterMap, latch, findBack);
-            try {
-                latch.await(UPDATE_HOLD_INTERVAL, TimeUnit.MILLISECONDS);
-                queryWork.run();
-            } catch (InterruptedException e) {
-                NAMING_LOGGER.error("[getServiceInfo] serviceNames:" + serviceNames + ", clusters:" + JSON.toJSONString(clusterMap), e);
-            }
+        if (!find[0]) {
+            updateServicesNow(serviceNames, clusterMap, findBack);
+            queryWork.run();
         }
 
         return serviceInfos;
@@ -346,7 +339,7 @@ public class HostReactor {
         }
     }
 
-    public void updateServicesNow(final String serviceNames, final Map<String, String> clusterMap, final CountDownLatch latch, final boolean findBack) {
+    public void updateServicesNow(final String serviceNames, final Map<String, String> clusterMap, final boolean findBack) {
         try {
             String result = serverProxy.queryListMultiGroup(serviceNames, clusterMap, pushReceiver.getUDPPort(), false, findBack);
             List<String> jsons = JSON.parseArray(result, String.class);
@@ -354,7 +347,6 @@ public class HostReactor {
                 if (StringUtils.isNotEmpty(json)) {
                     processServiceJSON(json);
                 }
-                latch.countDown();
             }
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] failed to update serviceNames: " + serviceNames, e);

@@ -131,10 +131,7 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
-        String agent = request.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = request.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(request);
 
         ClientInfo clientInfo = new ClientInfo(agent);
 
@@ -154,10 +151,7 @@ public class InstanceController {
             Constants.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String agent = request.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = request.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
 
         Map<String, String> clusterMap = new HashMap<>(1);
@@ -354,9 +348,7 @@ public class InstanceController {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        if (!instance.validate()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
-        }
+        instance.validate();
 
         return instance;
     }

@@ -547,20 +547,19 @@ public class ServiceManager implements RecordListener<Service> {
 
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
-        Map<String, Instance> oldInstanceMap = new HashMap<>(16);
         List<Instance> currentIPs = service.allIPs(ephemeral);
-        Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
+        Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
 
         for (Instance instance : currentIPs) {
-            map.put(instance.toIPAddr(), instance);
-        }
-        if (datum != null) {
-            oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
+            currentInstances.put(instance.toIPAddr(), instance);
         }
 
-        // use HashMap for deep copy:
-        HashMap<String, Instance> instanceMap = new HashMap<>(oldInstanceMap.size());
-        instanceMap.putAll(oldInstanceMap);
+        Map<String, Instance> instanceMap;
+        if (datum != null) {
+            instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
+        } else {
+            instanceMap = new HashMap<>(ips.length);
+        }
 
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
@@ -675,7 +674,7 @@ public class ServiceManager implements RecordListener<Service> {
         return serviceMap.get(namespaceId);
     }
 
-    public int getPagedService(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<Service> serviceList, boolean hasIpCount) {
+    public int getPagedService(String namespaceId, int startPage, int pageSize, String param, String containedInstance, List<Service> serviceList, boolean hasIpCount) {
 
         List<Service> matchList;
 
@@ -683,8 +682,12 @@ public class ServiceManager implements RecordListener<Service> {
             return 0;
         }
 
-        if (StringUtils.isNotBlank(keyword)) {
-            matchList = searchServices(namespaceId, ".*" + keyword + ".*");
+        if (StringUtils.isNotBlank(param)) {
+            StringJoiner regex = new StringJoiner(Constants.SERVICE_INFO_SPLITER);
+            for (String s : param.split(Constants.SERVICE_INFO_SPLITER)) {
+                regex.add(StringUtils.isBlank(s) ? Constants.ANY_PATTERN : Constants.ANY_PATTERN + s + Constants.ANY_PATTERN);
+            }
+            matchList = searchServices(namespaceId, regex.toString());
         } else {
             matchList = new ArrayList<>(chooseServiceMap(namespaceId).values());
         }

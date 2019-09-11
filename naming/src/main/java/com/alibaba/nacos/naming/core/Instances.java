@@ -39,9 +39,16 @@ import java.util.Map;
  */
 public class Instances implements Record {
 
-    private String cachedChecksum;
+    private static MessageDigest MESSAGE_DIGEST;
 
-    private long lastCalculateTime = 0L;
+    static {
+        try {
+            MESSAGE_DIGEST = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
+            MESSAGE_DIGEST = null;
+        }
+    }
 
     private List<Instance> instanceList = new ArrayList<>();
 
@@ -61,15 +68,12 @@ public class Instances implements Record {
     @Override
     @JSONField(serialize = false)
     public String getChecksum() {
-        recalculateChecksum();
-        return cachedChecksum;
+
+        return recalculateChecksum();
     }
 
-    public String getCachedChecksum() {
-        return cachedChecksum;
-    }
-
-    private void recalculateChecksum() {
+    private String recalculateChecksum() {
+        String checksum;
         StringBuilder sb = new StringBuilder();
         Collections.sort(instanceList);
         for (Instance ip : instanceList) {
@@ -78,16 +82,14 @@ public class Instances implements Record {
             sb.append(string);
             sb.append(",");
         }
-        MessageDigest md5;
-        try {
-            md5 = MessageDigest.getInstance("MD5");
-            cachedChecksum =
-                new BigInteger(1, md5.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
-        } catch (NoSuchAlgorithmException e) {
-            Loggers.SRV_LOG.error("error while calculating checksum(md5) for instances", e);
-            cachedChecksum = RandomStringUtils.randomAscii(32);
+
+        if (MESSAGE_DIGEST != null) {
+            checksum =
+                new BigInteger(1, MESSAGE_DIGEST.digest((sb.toString()).getBytes(Charset.forName("UTF-8")))).toString(16);
+        } else {
+            checksum = RandomStringUtils.randomAscii(32);
         }
-        lastCalculateTime = System.currentTimeMillis();
+        return checksum;
     }
 
     public String convertMap2String(Map<String, String> map) {

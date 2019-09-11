@@ -16,6 +16,8 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.util.VersionUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
@@ -43,8 +45,8 @@ public class NamingProxy {
         try {
             Map<String, String> headers = new HashMap<>(128);
 
-            headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
-            headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
+            headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+            headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
             headers.put("Connection", "Keep-Alive");
 
             HttpClient.asyncHttpPutLarge("http://" + server + RunningConfig.getContextPath()
@@ -108,27 +110,24 @@ public class NamingProxy {
     }
 
 
-    public static boolean syncData(byte[] data, String curServer) throws Exception {
+    public static boolean syncData(byte[] data, String curServer) {
+        Map<String, String> headers = new HashMap<>(128);
+        
+        headers.put(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        headers.put(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
+        headers.put("Accept-Encoding", "gzip,deflate,sdch");
+        headers.put("Connection", "Keep-Alive");
+        headers.put("Content-Encoding", "gzip");
+
         try {
-            Map<String, String> headers = new HashMap<>(128);
-
-            headers.put("Client-Version", UtilsAndCommons.SERVER_VERSION);
-            headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
-            headers.put("Accept-Encoding", "gzip,deflate,sdch");
-            headers.put("Connection", "Keep-Alive");
-            headers.put("Content-Encoding", "gzip");
-
             HttpClient.HttpResult result = HttpClient.httpPutLarge("http://" + curServer + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL, headers, data);
-
             if (HttpURLConnection.HTTP_OK == result.code) {
                 return true;
             }
-
             if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
                 return true;
             }
-
             throw new IOException("failed to req API:" + "http://" + curServer
                 + RunningConfig.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + DATA_ON_SYNC_URL + ". code:"
@@ -141,8 +140,9 @@ public class NamingProxy {
 
     public static String reqAPI(String api, Map<String, String> params, String curServer) throws Exception {
         try {
-            List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
-                "User-Agent", UtilsAndCommons.SERVER_VERSION,
+            List<String> headers = Arrays.asList(
+                HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+                HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch",
                 "Connection", "Keep-Alive",
                 "Content-Encoding", "gzip");
@@ -175,8 +175,9 @@ public class NamingProxy {
 
     public static String reqAPI(String api, Map<String, String> params, String curServer, boolean isPost) throws Exception {
         try {
-            List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
-                "User-Agent", UtilsAndCommons.SERVER_VERSION,
+            List<String> headers = Arrays.asList(
+                HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+                HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION,
                 "Accept-Encoding", "gzip,deflate,sdch",
                 "Connection", "Keep-Alive",
                 "Content-Encoding", "gzip");

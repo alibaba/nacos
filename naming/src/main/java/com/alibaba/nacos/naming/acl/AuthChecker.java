@@ -52,12 +52,7 @@ public class AuthChecker {
             return;
         }
 
-        String agent = req.getHeader("Client-Version");
-        if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
-            return;
-        }
-
-        agent = req.getHeader("User-Agent");
+        String agent = WebUtils.getUserAgent(req);
         if (StringUtils.startsWith(agent, UtilsAndCommons.NACOS_SERVER_HEADER)) {
             return;
         }
