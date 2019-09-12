@@ -70,12 +70,12 @@ public class HealthCheckTask implements Runnable {
 
         try {
             /**
-             * 本地节点执行   且
+             * 本地节点执行   且允许健康检查
              */
             if (distroMapper.responsible(cluster.getService().getName()) &&
                 switchDomain.isHealthCheckEnabled(cluster.getService().getName())) {
                 /**
-                 * ？？？？？
+                 * 默认tcp处理方式
                  */
                 healthCheckProcessor.process(this);
                 if (Loggers.EVT_LOG.isDebugEnabled()) {

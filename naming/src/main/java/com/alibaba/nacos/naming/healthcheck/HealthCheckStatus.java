@@ -43,9 +43,17 @@ public class HealthCheckStatus {
         statusMap.put(buildKey(instance), new HealthCheckStatus());
     }
 
+    /**
+     * 获取当前Instance对应的HealthCheckStatus
+     * @param instance
+     * @return
+     */
     public static HealthCheckStatus get(Instance instance) {
         String key = buildKey(instance);
 
+        /**
+         * 没有则新增
+         */
         if (!statusMap.containsKey(key)) {
             statusMap.putIfAbsent(key, new HealthCheckStatus());
         }

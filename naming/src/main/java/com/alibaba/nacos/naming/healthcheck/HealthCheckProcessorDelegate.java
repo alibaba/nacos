@@ -46,7 +46,9 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
 
     @Override
     public void process(HealthCheckTask task) {
-
+        /**
+         * 根据task中的协议  选取对应的处理器
+         */
         String type = task.getCluster().getHealthChecker().getType();
         HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
         if(processor == null){

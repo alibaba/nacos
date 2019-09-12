@@ -37,7 +37,7 @@ public class NamingExample2 {
 
         NamingService naming = NamingFactory.createNamingService(properties);
 
-        naming.registerInstance("videProvide", "8.8.8.8", 8080, "test");
+        naming.registerInstance("videProvide", "8.8.8.8", 8080, "test324");
 
         Thread.sleep(Integer.MAX_VALUE);
     }

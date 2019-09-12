@@ -105,6 +105,9 @@ public class TcpSuperSenseProcessor implements HealthCheckProcessor, Runnable {
 
     @Override
     public void process(HealthCheckTask task) {
+        /**
+         * cluster下的持久化节点
+         */
         List<Instance> ips = task.getCluster().allIPs(false);
 
         if (CollectionUtils.isEmpty(ips)) {
