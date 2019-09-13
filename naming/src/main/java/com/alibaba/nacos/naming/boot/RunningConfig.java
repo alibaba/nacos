@@ -15,8 +15,9 @@
  */
 package com.alibaba.nacos.naming.boot;
 
+import com.alibaba.nacos.core.utils.Constants;
+import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
@@ -38,6 +39,8 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
     @Autowired
     private ServletContext servletContext;
 
+    private static volatile boolean isServerInitialized = false;
+
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
 
@@ -46,6 +49,7 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
 
         serverPort = event.getWebServer().getPort();
         contextPath = servletContext.getContextPath();
+        isServerInitialized = true;
     }
 
     public static int getServerPort() {
@@ -54,8 +58,13 @@ public class RunningConfig implements ApplicationListener<WebServerInitializedEv
 
     public static String getContextPath() {
 
-        if (StringUtils.isBlank(contextPath)) {
-            return UtilsAndCommons.NACOS_SERVER_CONTEXT;
+        if (!isServerInitialized) {
+            String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
+            if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
+                return StringUtils.EMPTY;
+            } else {
+                return contextPath;
+            }
         }
         return contextPath;
     }
