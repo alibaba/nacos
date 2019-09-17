@@ -137,6 +137,12 @@ public class DataSyncer {
         server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
         if (!getServers().contains(server)) {
             // if server is no longer in healthy server list, ignore this task:
+            //fix #1665 remove existing tasks
+            if (syncTask.getKeys() != null) {
+                for (String key : syncTask.getKeys()) {
+                    taskMap.remove(buildKey(key, syncTask.getTargetServer()));
+                }
+            }
             return;
         }
 
