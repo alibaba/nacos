@@ -35,8 +35,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.http.HttpServletRequest;
-
 import static org.mockito.ArgumentMatchers.any;
 
 /**
@@ -75,14 +73,14 @@ public class HealthControllerTest {
         String url = "/v1/console/health/readiness";
 
         Mockito.when(persistService.configInfoCount(any(String.class))).thenReturn(0);
-        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenReturn(new JSONObject());
+        Mockito.when(apiCommands.metrics()).thenReturn(new JSONObject());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(url);
         Assert.assertEquals(200, mockmvc.perform(builder).andReturn().getResponse().getStatus());
 
         // Config and Naming are not in readiness
         Mockito.when(persistService.configInfoCount(any(String.class))).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
-        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenThrow(
+        Mockito.when(apiCommands.metrics()).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
         builder = MockMvcRequestBuilders.get(url);
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
@@ -92,14 +90,14 @@ public class HealthControllerTest {
         // Config is not in readiness
         Mockito.when(persistService.configInfoCount(any(String.class))).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
-        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenReturn(new JSONObject());
+        Mockito.when(apiCommands.metrics()).thenReturn(new JSONObject());
         response = mockmvc.perform(builder).andReturn().getResponse();
         Assert.assertEquals(500, response.getStatus());
         Assert.assertEquals("Config is not in readiness", response.getContentAsString());
 
         // Naming is not in readiness
         Mockito.when(persistService.configInfoCount(any(String.class))).thenReturn(0);
-        Mockito.when(apiCommands.metrics(any(HttpServletRequest.class))).thenThrow(
+        Mockito.when(apiCommands.metrics()).thenThrow(
             new RuntimeException("HealthControllerTest.testReadiness"));
         builder = MockMvcRequestBuilders.get(url);
         response = mockmvc.perform(builder).andReturn().getResponse();
