@@ -34,6 +34,99 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class DataStore {
 
+    /**
+     * {
+     * 	"dataMap": {
+     * 		"com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@userProvide": {
+     * 			"key": "com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@userProvide",
+     * 			"timestamp": 1,
+     * 			"value": {
+     * 				"cachedChecksum": "",
+     * 				"instanceList": [{
+     * 					"app": "DEFAULT",
+     * 					"clusterName": "TEST1",
+     * 					"enabled": true,
+     * 					"ephemeral": true,
+     * 					"healthy": true,
+     * 					"instanceHeartBeatInterval": 5000,
+     * 					"instanceHeartBeatTimeOut": 15000,
+     * 					"instanceId": "11.11.11.111#8887#TEST1#DEFAULT_GROUP@@userProvide",
+     * 					"ip": "11.11.11.111",
+     * 					"ipDeleteTimeout": 30000,
+     * 					"lastBeat": 1568717072650,
+     * 					"marked": false,
+     * 					"metadata": {},
+     * 					"port": 8887,
+     * 					"serviceName": "DEFAULT_GROUP@@userProvide",
+     * 					"tenant": "",
+     * 					"weight": 1.0
+     *                                }]* 			}
+     *        },
+     * 		"com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@videProvide": {
+     * 			"key": "com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@videProvide",
+     * 			"timestamp": 1,
+     * 			"value": {
+     * 				"cachedChecksum": "",
+     * 				"instanceList": [{
+     * 					"app": "DEFAULT",
+     * 					"clusterName": "DEFAULT",
+     * 					"enabled": true,
+     * 					"ephemeral": true,
+     * 					"healthy": true,
+     * 					"instanceHeartBeatInterval": 5000,
+     * 					"instanceHeartBeatTimeOut": 15000,
+     * 					"instanceId": "2.2.2.21#9999#DEFAULT#DEFAULT_GROUP@@videProvide",
+     * 					"ip": "2.2.2.21",
+     * 					"ipDeleteTimeout": 30000,
+     * 					"lastBeat": 1568717072679,
+     * 					"marked": false,
+     * 					"metadata": {},
+     * 					"port": 9999,
+     * 					"serviceName": "DEFAULT_GROUP@@videProvide",
+     * 					"tenant": "",
+     * 					"weight": 1.0
+     *                }, {
+     * 					"app": "DEFAULT",
+     * 					"clusterName": "DEFAULT",
+     * 					"enabled": true,
+     * 					"ephemeral": true,
+     * 					"healthy": true,
+     * 					"instanceHeartBeatInterval": 5000,
+     * 					"instanceHeartBeatTimeOut": 15000,
+     * 					"instanceId": "5.5.5.5#9999#DEFAULT#DEFAULT_GROUP@@videProvide",
+     * 					"ip": "5.5.5.5",
+     * 					"ipDeleteTimeout": 30000,
+     * 					"lastBeat": 1568717072683,
+     * 					"marked": false,
+     * 					"metadata": {},
+     * 					"port": 9999,
+     * 					"serviceName": "DEFAULT_GROUP@@videProvide",
+     * 					"tenant": "",
+     * 					"weight": 1.0
+     *                }, {
+     * 					"app": "DEFAULT",
+     * 					"clusterName": "TEST1",
+     * 					"enabled": true,
+     * 					"ephemeral": true,
+     * 					"healthy": true,
+     * 					"instanceHeartBeatInterval": 5000,
+     * 					"instanceHeartBeatTimeOut": 15000,
+     * 					"instanceId": "11.11.11.111#8889#TEST1#DEFAULT_GROUP@@videProvide",
+     * 					"ip": "11.11.11.111",
+     * 					"ipDeleteTimeout": 30000,
+     * 					"lastBeat": 1568717072674,
+     * 					"marked": false,
+     * 					"metadata": {},
+     * 					"port": 8889,
+     * 					"serviceName": "DEFAULT_GROUP@@videProvide",
+     * 					"tenant": "",
+     * 					"weight": 1.0
+     *                }]
+     *            }
+     *        }* 	},
+     * 	"instanceCount": 4
+     * }
+     */
     private Map<String, Datum> dataMap = new ConcurrentHashMap<>(1024);
 
     public void put(String key, Datum value) {

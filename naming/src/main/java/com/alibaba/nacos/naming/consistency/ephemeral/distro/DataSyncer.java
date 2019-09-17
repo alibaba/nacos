@@ -61,6 +61,9 @@ public class DataSyncer {
 
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
 
+    /**
+     * 定时运行TimedSync
+     */
     @PostConstruct
     public void init() {
         startTimedSync();
@@ -171,6 +174,9 @@ public class DataSyncer {
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
+                    /**
+                     * 是否由本机节点执行操作
+                     */
                     if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
                         continue;
                     }
@@ -186,7 +192,13 @@ public class DataSyncer {
                     Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
 
+                /**
+                 * 遍历所有健康的service
+                 */
                 for (Server member : getServers()) {
+                    /**
+                     * 过滤本地节点
+                     */
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
@@ -198,6 +210,10 @@ public class DataSyncer {
         }
     }
 
+    /**
+     * 健康的service
+     * @return
+     */
     public List<Server> getServers() {
         return serverListManager.getHealthyServers();
     }

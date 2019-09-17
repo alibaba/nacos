@@ -170,6 +170,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
          * 存入dataStore缓存  并新增调度任务
          */
         onPut(key, value);
+
+        /**
+         *
+         */
         taskDispatcher.addTask(key);
     }
 

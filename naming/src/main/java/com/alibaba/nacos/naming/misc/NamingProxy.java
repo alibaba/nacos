@@ -38,6 +38,11 @@ public class NamingProxy {
 
     private static final String TIMESTAMP_SYNC_URL = "/distro/checksum";
 
+    /**
+     * 同步CheckSums
+     * @param checksumMap
+     * @param server 接收方地址  192.168.50.63:8848
+     */
     public static void syncCheckSums(Map<String, String> checksumMap, String server) {
 
         try {
@@ -47,6 +52,9 @@ public class NamingProxy {
             headers.put("User-Agent", UtilsAndCommons.SERVER_VERSION);
             headers.put("Connection", "Keep-Alive");
 
+            /**
+             * /distro/checksum
+             */
             HttpClient.asyncHttpPutLarge("http://" + server + RunningConfig.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + TIMESTAMP_SYNC_URL + "?source=" + NetUtils.localServer(),
                 headers, JSON.toJSONBytes(checksumMap),
