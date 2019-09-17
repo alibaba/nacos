@@ -82,6 +82,13 @@ public class NamingProxy {
         }
     }
 
+    /**
+     * 向server节点发起/distro/datum请求  获取keys对应的Datum
+     * @param keys
+     * @param server
+     * @return
+     * @throws Exception
+     */
     public static byte[] getData(List<String> keys, String server) throws Exception {
 
         Map<String, String> params = new HashMap<>(8);

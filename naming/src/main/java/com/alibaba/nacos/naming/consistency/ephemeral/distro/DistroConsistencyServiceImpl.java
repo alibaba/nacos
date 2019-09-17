@@ -224,6 +224,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         notifier.addTask(key, ApplyAction.CHANGE);
     }
 
+    /**
+     * 移除当前key
+     * @param key
+     */
     public void onRemove(String key) {
 
         dataStore.remove(key);
@@ -232,17 +236,26 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
 
+        /**
+         * 通知
+         */
         notifier.addTask(key, ApplyAction.DELETE);
     }
 
     public void onReceiveChecksums(Map<String, String> checksumMap, String server) {
 
+        /**
+         * server已被锁定    正在处理
+         */
         if (syncChecksumTasks.containsKey(server)) {
             // Already in process of this server:
             Loggers.DISTRO.warn("sync checksum task already in process with {}", server);
             return;
         }
 
+        /**
+         * 加锁
+         */
         syncChecksumTasks.put(server, "1");
 
         try {
@@ -250,25 +263,43 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             List<String> toUpdateKeys = new ArrayList<>();
             List<String> toRemoveKeys = new ArrayList<>();
             for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
+                /**
+                 * 是否由本地节点处理
+                 */
                 if (distroMapper.responsible(KeyBuilder.getServiceName(entry.getKey()))) {
                     // this key should not be sent from remote server:
                     Loggers.DISTRO.error("receive responsible key timestamp of " + entry.getKey() + " from " + server);
                     // abort the procedure:
                     return;
                 }
+                /**
+                 * 本地不包含当前key  ||  本地key对应的数据为null  ||  本地key对应的Checksum和请求数据不同
+                 */
                 if (!dataStore.contains(entry.getKey()) ||
                     dataStore.get(entry.getKey()).value == null ||
                     !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {
+                    /**
+                     * key对应的数据待更新
+                     */
                     toUpdateKeys.add(entry.getKey());
                 }
             }
 
+            /**
+             * 遍历本地dataStore
+             */
             for (String key : dataStore.keys()) {
 
+                /**
+                 * 根据路由规则  当前key对应的节点   不是当前server
+                 */
                 if (!server.equals(distroMapper.mapSrv(KeyBuilder.getServiceName(key)))) {
                     continue;
                 }
 
+                /**
+                 * 最新数据中  不包含本地key   则key待移除
+                 */
                 if (!checksumMap.containsKey(key)) {
                     toRemoveKeys.add(key);
                 }
@@ -278,6 +309,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 Loggers.DISTRO.info("to remove keys: {}, to update keys: {}, source: {}", toRemoveKeys, toUpdateKeys, server);
             }
 
+            /**
+             * 移除key
+             */
             for (String key : toRemoveKeys) {
                 onRemove(key);
             }
@@ -287,13 +321,22 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
 
             try {
+                /**
+                 * 向server发起请求  查询toUpdateKeys中的key   对应的Datum
+                 */
                 byte[] result = NamingProxy.getData(toUpdateKeys, server);
+                /**
+                 * 处理server节点返回的Datum
+                 */
                 processData(result);
             } catch (Exception e) {
                 Loggers.DISTRO.error("get data from " + server + " failed!", e);
             }
         } finally {
             // Remove this 'in process' flag:
+            /**
+             * 解锁
+             */
             syncChecksumTasks.remove(server);
         }
 

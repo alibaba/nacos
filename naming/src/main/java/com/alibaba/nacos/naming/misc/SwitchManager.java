@@ -279,6 +279,10 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
 
     }
 
+    /**
+     * 更新SwitchDomain
+     * @param newSwitchDomain
+     */
     public void update(SwitchDomain newSwitchDomain) {
         switchDomain.setMasters(newSwitchDomain.getMasters());
         switchDomain.setAdWeightMap(newSwitchDomain.getAdWeightMap());
@@ -324,6 +328,12 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
         return KeyBuilder.matchSwitchKey(key);
     }
 
+    /**
+     * 更新SwitchDomain
+     * @param key   target key
+     * @param domain
+     * @throws Exception
+     */
     @Override
     public void onChange(String key, SwitchDomain domain) throws Exception {
         update(domain);

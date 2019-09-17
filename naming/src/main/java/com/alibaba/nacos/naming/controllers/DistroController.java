@@ -95,25 +95,54 @@ public class DistroController {
         return "ok";
     }
 
+    /**
+     * 接受其他节点的checksum数据
+     * @param request
+     * @param response
+     * @return
+     * @throws Exception
+     */
     @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
     public String syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        /**
+         * 请求节点地址
+         */
         String source = WebUtils.required(request, "source");
+        /**
+         * 传送数据
+         */
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         Map<String, String> dataMap =
             serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
         });
+
+        /**
+         * 处理其他节点的checksum
+         */
         consistencyService.onReceiveChecksums(dataMap, source);
         return "ok";
     }
 
+    /**
+     * 获取请求对象中  keys对应的Datum
+     * @param request
+     * @param response
+     * @throws Exception
+     */
     @RequestMapping(value = "/datum", method = RequestMethod.GET)
     public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
+        /**
+         * 请求体为key的集合   key1，key2，key3，key4。。。
+         */
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
         String keys = JSON.parseObject(entity).getString("keys");
         String keySplitter = ",";
         Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {
+            /**
+             * 缓存中  key对应的Datum  放入datumMap
+             */
             datumMap.put(key, consistencyService.get(key));
         }
         response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));

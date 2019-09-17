@@ -337,6 +337,14 @@ public class HttpClient {
         }
     }
 
+    /**
+     * put方式  传送较大数据
+     * @param url
+     * @param headers
+     * @param content
+     * @param handler
+     * @throws Exception
+     */
     public static void asyncHttpPutLarge(String url, Map<String, String> headers, byte[] content, AsyncCompletionHandler handler) throws Exception {
         AsyncHttpClient.BoundRequestBuilder builder = asyncHttpClient.preparePut(url);
 
