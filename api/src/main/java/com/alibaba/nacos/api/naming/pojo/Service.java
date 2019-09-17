@@ -35,11 +35,6 @@ public class Service {
     private String name;
 
     /**
-     * service protect threshold trigger flag
-     */
-    private boolean triggerFlag = false;
-
-    /**
      * protect threshold
      */
     private float protectThreshold = 0.0F;
@@ -107,19 +102,10 @@ public class Service {
         this.metadata.put(key, value);
     }
 
-    public boolean isTriggerFlag() {
-        return triggerFlag;
-    }
-
-    public void setTriggerFlag(boolean triggerFlag) {
-        this.triggerFlag = triggerFlag;
-    }
-
     @Override
     public String toString() {
         return "Service{" +
             "name='" + name + '\'' +
-            "triggerFlag='" + triggerFlag + '\'' +
             ", protectThreshold=" + protectThreshold +
             ", appName='" + appName + '\'' +
             ", groupName='" + groupName + '\'' +

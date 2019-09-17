@@ -285,7 +285,7 @@ public class CatalogController {
             serviceView.setClusterCount(service.getClusterMap().size());
             serviceView.setIpCount(service.allIPs().size());
             serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
-            serviceView.setTriggerFlag(service.isTriggerFlag()?"True":"False");
+            serviceView.setTriggerFlag(service.triggerFlag()?"true":"false");
             serviceJsonArray.add(serviceView);
         }
 
