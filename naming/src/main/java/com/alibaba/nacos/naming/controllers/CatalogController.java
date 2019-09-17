@@ -33,18 +33,15 @@ import com.alibaba.nacos.naming.pojo.IpAddressInfo;
 import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author nkorange
@@ -56,12 +53,12 @@ public class CatalogController {
     @Autowired
     protected ServiceManager serviceManager;
 
-    @RequestMapping(value = "/service")
-    public JSONObject serviceDetail(HttpServletRequest request) throws Exception {
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+    @GetMapping("/service")
+    public JSONObject serviceDetail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                                    String serviceName) throws NacosException {
+
         Service detailedService = serviceManager.getService(namespaceId, serviceName);
+
         if (detailedService == null) {
             throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
@@ -97,14 +94,12 @@ public class CatalogController {
     }
 
     @RequestMapping(value = "/instances")
-    public JSONObject instanceList(HttpServletRequest request) throws Exception {
+    public JSONObject instanceList(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                                   @RequestParam String serviceName,
+                                   @RequestParam String clusterName,
+                                   @RequestParam(name = "pageNo") int page,
+                                   @RequestParam int pageSize) throws NacosException {
 
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
-        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -139,19 +134,19 @@ public class CatalogController {
         return result;
     }
 
-    @RequestMapping(value = "/services", method = RequestMethod.GET)
-    public Object listDetail(HttpServletRequest request) {
-
-        boolean withInstances = Boolean.parseBoolean(WebUtils.optional(request, "withInstances", "true"));
+    @GetMapping("/services")
+    public Object listDetail(@RequestParam(required = false) boolean withInstances,
+                             @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                             @RequestParam(required = false) int pageNo,
+                             @RequestParam(required = false) int pageSize,
+                             @RequestParam(name = "serviceNameParam", defaultValue = StringUtils.EMPTY) String serviceName,
+                             @RequestParam(name = "groupNameParam", defaultValue = StringUtils.EMPTY) String groupName,
+                             @RequestParam(name = "instance", defaultValue = StringUtils.EMPTY) String containedInstance,
+                             @RequestParam(required = false) boolean hasIpCount
+                             ) {
 
         if (withInstances) {
-            String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-                Constants.DEFAULT_NAMESPACE_ID);
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
-            int pageNo = Integer.parseInt(WebUtils.required(request, "pageNo"));
-            int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-            String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
-            String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
             String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
                 StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
@@ -171,9 +166,49 @@ public class CatalogController {
             }
 
             return serviceDetailInfoList;
-        } else {
-            return serviceList(request);
         }
+
+        JSONObject result = new JSONObject();
+
+        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
+            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
+
+        List<Service> services = new ArrayList<>();
+
+        int total = serviceManager.getPagedService(namespaceId, pageNo - 1, pageSize, param, containedInstance, services, hasIpCount);
+
+        if (CollectionUtils.isEmpty(services)) {
+            result.put("serviceList", Collections.emptyList());
+            result.put("count", 0);
+            return result;
+        }
+
+        JSONArray serviceJsonArray = new JSONArray();
+        for (Service service : services) {
+            ServiceView serviceView = new ServiceView();
+            serviceView.setName(NamingUtils.getServiceName(service.getName()));
+            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
+            serviceView.setClusterCount(service.getClusterMap().size());
+            serviceView.setIpCount(service.allIPs().size());
+
+            // FIXME should be optimized:
+            int validCount = 0;
+            for (Instance instance : service.allIPs()) {
+                if (instance.isHealthy()) {
+                    validCount++;
+                }
+
+            }
+
+            serviceView.setHealthyInstanceCount(validCount);
+
+            serviceJsonArray.add(serviceView);
+        }
+
+        result.put("serviceList", serviceJsonArray);
+        result.put("count", total);
+
+        return result;
     }
 
     @RequestMapping("/rt/service")
@@ -215,7 +250,7 @@ public class CatalogController {
      * @return
      */
     private Map<String, ClusterInfo> getStringClusterInfoMap(Service service) {
-        Map<String, ClusterInfo> clusterInfoMap = new HashedMap();
+        Map<String, ClusterInfo> clusterInfoMap = new HashMap<>(8);
 
         service.getClusterMap().forEach((clusterName, cluster) -> {
 
@@ -250,59 +285,6 @@ public class CatalogController {
 
         });
         return ipAddressInfos;
-    }
-
-    private JSONObject serviceList(HttpServletRequest request) {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        JSONObject result = new JSONObject();
-
-        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
-        String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
-        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
-
-        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
-        boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
-
-        List<Service> services = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, param, containedInstance, services, hasIpCount);
-
-        if (CollectionUtils.isEmpty(services)) {
-            result.put("serviceList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
-        }
-
-        JSONArray serviceJsonArray = new JSONArray();
-        for (Service service : services) {
-            ServiceView serviceView = new ServiceView();
-            serviceView.setName(NamingUtils.getServiceName(service.getName()));
-            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
-            serviceView.setClusterCount(service.getClusterMap().size());
-            serviceView.setIpCount(service.allIPs().size());
-
-            // FIXME should be optimized:
-            int validCount = 0;
-            for (Instance instance : service.allIPs()) {
-                if (instance.isHealthy()) {
-                    validCount++;
-                }
-
-            }
-
-            serviceView.setHealthyInstanceCount(validCount);
-
-            serviceJsonArray.add(serviceView);
-        }
-
-        result.put("serviceList", serviceJsonArray);
-        result.put("count", total);
-
-        return result;
     }
 
 }

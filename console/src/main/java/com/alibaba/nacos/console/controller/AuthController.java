@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.console.security.CustomUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
-
 import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +29,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -56,11 +54,8 @@ public class AuthController {
      * Nacos is in broken states.
      */
 
-    @ResponseBody
-    @RequestMapping(value = "login", method = RequestMethod.POST)
-    public RestResult<String> login(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
+    @PostMapping("login")
+    public RestResult<String> login(@RequestParam String username, @RequestParam String password, HttpServletResponse response) {
 
         // 通过用户名和密码创建一个 Authentication 认证对象，实现类为 UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
@@ -85,11 +80,9 @@ public class AuthController {
         }
     }
 
-    @ResponseBody
-    @RequestMapping(value = "password", method = RequestMethod.PUT)
-    public RestResult<String> updatePassword(HttpServletRequest request, HttpServletResponse response,
-                                             @RequestParam(value = "oldPassword", required = true) String oldPassword,
-                                             @RequestParam(value = "newPassword", required = true) String newPassword) throws Exception {
+    @PutMapping("password")
+    public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
+                                             @RequestParam(value = "newPassword") String newPassword) {
 
         RestResult<String> rr = new RestResult<String>();
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
