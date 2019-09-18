@@ -430,8 +430,6 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         setMetadata(vDom.getMetadata());
 
-        updateTriggerFlag();
-
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);
         recalculateChecksum();
