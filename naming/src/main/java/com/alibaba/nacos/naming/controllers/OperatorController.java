@@ -37,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -173,7 +172,6 @@ public class OperatorController {
     public JSONObject distroStatus(@RequestParam(defaultValue = "view") String action) {
 
         JSONObject result = new JSONObject();
-        String action = WebUtils.optional(request, "action", "view");
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
             result.put("status", serverListManager.getDistroConfig());
@@ -220,13 +218,10 @@ public class OperatorController {
                              @RequestParam(defaultValue = StringUtils.EMPTY) String keyword) {
 
         JSONObject result = new JSONObject();
-        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
         List<RaftPeer> raftPeerLists = new ArrayList<>();
 
-        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, raftPeerLists);
+        int total = serviceManager.getPagedClusterState(namespaceId, pageNo - 1, pageSize, keyword, raftPeerLists);
 
         if (CollectionUtils.isEmpty(raftPeerLists)) {
             result.put("clusterStateList", Collections.emptyList());
