@@ -215,6 +215,47 @@ public class NamingProxy {
         return StringUtils.EMPTY;
     }
 
+    public static String reqCommon(String path, Map<String, String> params, String curServer, boolean isPost) throws Exception {
+        try {
+            List<String> headers = Arrays.asList("Client-Version", UtilsAndCommons.SERVER_VERSION,
+                "User-Agent", UtilsAndCommons.SERVER_VERSION,
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "Content-Encoding", "gzip");
+
+
+            HttpClient.HttpResult result;
+
+            if (!curServer.contains(UtilsAndCommons.IP_PORT_SPLITER)) {
+                curServer = curServer + UtilsAndCommons.IP_PORT_SPLITER + RunningConfig.getServerPort();
+            }
+
+            if (isPost) {
+                result = HttpClient.httpPost("http://" + curServer + RunningConfig.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path, headers, params);
+            } else {
+                result = HttpClient.httpGet("http://" + curServer + RunningConfig.getContextPath()
+                    + UtilsAndCommons.NACOS_NAMING_CONTEXT + path, headers, params);
+            }
+
+            if (HttpURLConnection.HTTP_OK == result.code) {
+                return result.content;
+            }
+
+            if (HttpURLConnection.HTTP_NOT_MODIFIED == result.code) {
+                return StringUtils.EMPTY;
+            }
+
+            throw new IOException("failed to req API:" + "http://" + curServer
+                + RunningConfig.getContextPath()
+                + UtilsAndCommons.NACOS_NAMING_CONTEXT + path + ". code:"
+                + result.code + " msg: " + result.content);
+        } catch (Exception e) {
+            Loggers.SRV_LOG.warn("NamingProxy", e);
+        }
+        return StringUtils.EMPTY;
+    }
+
     public static class Request {
 
         private Map<String, String> params = new HashMap<>(8);

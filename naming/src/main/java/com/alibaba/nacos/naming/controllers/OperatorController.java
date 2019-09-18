@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
@@ -23,7 +24,6 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,9 +75,6 @@ public class OperatorController {
 
     @Autowired
     private RaftCore raftCore;
-
-    @Autowired
-    private RaftPeerSet raftPeerSet;
 
     @RequestMapping("/push/state")
     public JSONObject pushState(@RequestParam(required = false) boolean detail, @RequestParam(required = false) boolean reset) {
@@ -175,6 +173,7 @@ public class OperatorController {
     public JSONObject distroStatus(@RequestParam(defaultValue = "view") String action) {
 
         JSONObject result = new JSONObject();
+        String action = WebUtils.optional(request, "action", "view");
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
             result.put("status", serverListManager.getDistroConfig());
@@ -218,14 +217,16 @@ public class OperatorController {
     public Object listStates(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                              @RequestParam int pageNo,
                              @RequestParam int pageSize,
-                             @RequestParam(defaultValue = StringUtils.EMPTY) String keyword,
-                             @RequestParam(defaultValue = StringUtils.EMPTY) String instance) {
+                             @RequestParam(defaultValue = StringUtils.EMPTY) String keyword) {
 
         JSONObject result = new JSONObject();
+        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
+        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
 
         List<RaftPeer> raftPeerLists = new ArrayList<>();
 
-        int total = serviceManager.getPagedClusterState(namespaceId, pageNo - 1, pageSize, keyword, instance, raftPeerLists, raftPeerSet);
+        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, raftPeerLists);
 
         if (CollectionUtils.isEmpty(raftPeerLists)) {
             result.put("clusterStateList", Collections.emptyList());
@@ -247,5 +248,14 @@ public class OperatorController {
         result.put("clusterStateList", clusterStateJsonArray);
         result.put("count", total);
         return result;
+    }
+
+    @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
+    public JSONObject getClusterStates() {
+
+        RaftPeer peer = serviceManager.getMySelfClusterState();
+
+        return JSON.parseObject(JSON.toJSONString(peer));
+
     }
 }
