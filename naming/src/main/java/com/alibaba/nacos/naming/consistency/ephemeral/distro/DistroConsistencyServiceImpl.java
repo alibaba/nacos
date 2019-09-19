@@ -372,7 +372,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
                 /**
-                 * 存储Datum
+                 * 新增或更新Datum
                  */
                 dataStore.put(entry.getKey(), entry.getValue());
 
@@ -397,7 +397,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                          */
                         service.recalculateChecksum();
                         /**
-                         * 监听  SERVICE_META_KEY_PREFIX
+                         * 监听  metadata
                          */
                         listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).get(0)
                             .onChange(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName), service);

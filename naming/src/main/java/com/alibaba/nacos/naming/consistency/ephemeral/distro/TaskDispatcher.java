@@ -105,6 +105,9 @@ public class TaskDispatcher {
                         Loggers.DISTRO.debug("got key: {}", key);
                     }
 
+                    /**
+                     * 没有健康的nacos节点
+                     */
                     if (dataSyncer.getServers() == null || dataSyncer.getServers().isEmpty()) {
                         continue;
                     }
@@ -120,10 +123,16 @@ public class TaskDispatcher {
                     keys.add(key);
                     dataSize++;
 
+                    /**
+                     * 同步key的累计次数=1000  ||   当前时间距离lastDispatchTime间隔大于2000ms
+                     */
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
                         for (Server member : dataSyncer.getServers()) {
+                            /**
+                             * 过滤本机
+                             */
                             if (NetUtils.localServer().equals(member.getKey())) {
                                 continue;
                             }

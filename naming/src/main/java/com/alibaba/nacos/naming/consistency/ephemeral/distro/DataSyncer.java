@@ -76,6 +76,9 @@ public class DataSyncer {
             Iterator<String> iterator = task.getKeys().iterator();
             while (iterator.hasNext()) {
                 String key = iterator.next();
+                /**
+                 * 将key存入taskMap后   移除当前key
+                 */
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
                     if (Loggers.DISTRO.isDebugEnabled()) {
@@ -96,19 +99,31 @@ public class DataSyncer {
             public void run() {
 
                 try {
+                    /**
+                     * 没有健康的nacos集群节点
+                     */
                     if (getServers() == null || getServers().isEmpty()) {
                         Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
                         return;
                     }
 
+                    /**
+                     * 没有被移除的key
+                     */
                     List<String> keys = task.getKeys();
 
                     if (Loggers.DISTRO.isDebugEnabled()) {
                         Loggers.DISTRO.debug("sync keys: {}", keys);
                     }
 
+                    /**
+                     * 批量获取keys对应的Datum
+                     */
                     Map<String, Datum> datumMap = dataStore.batchGet(keys);
 
+                    /**
+                     * 在taskMap中移除key
+                     */
                     if (datumMap == null || datumMap.isEmpty()) {
                         // clear all flags of this task:
                         for (String key : task.getKeys()) {
@@ -120,6 +135,9 @@ public class DataSyncer {
                     byte[] data = serializer.serialize(datumMap);
 
                     long timestamp = System.currentTimeMillis();
+                    /**
+                     *
+                     */
                     boolean success = NamingProxy.syncData(data, task.getTargetServer());
                     if (!success) {
                         SyncTask syncTask = new SyncTask();
@@ -211,13 +229,19 @@ public class DataSyncer {
     }
 
     /**
-     * 健康的service
+     * 健康的nacos集群节点
      * @return
      */
     public List<Server> getServers() {
         return serverListManager.getHealthyServers();
     }
 
+    /**
+     * key@@@@targetServer
+     * @param key
+     * @param targetServer
+     * @return
+     */
     public String buildKey(String key, String targetServer) {
         return key + UtilsAndCommons.CACHE_KEY_SPLITER + targetServer;
     }

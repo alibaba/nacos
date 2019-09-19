@@ -149,6 +149,11 @@ public class DataStore {
         return dataMap.containsKey(key);
     }
 
+    /**
+     * 批量获取key对应的Datum  存入map
+     * @param keys
+     * @return
+     */
     public Map<String, Datum> batchGet(List<String> keys) {
         Map<String, Datum> map = new HashMap<>(128);
         for (String key : keys) {

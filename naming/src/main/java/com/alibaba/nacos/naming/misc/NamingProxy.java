@@ -129,6 +129,13 @@ public class NamingProxy {
     }
 
 
+    /**
+     * 向curServer发送    /distro/datum   put请求
+     * @param data
+     * @param curServer
+     * @return
+     * @throws Exception
+     */
     public static boolean syncData(byte[] data, String curServer) throws Exception {
         try {
             Map<String, String> headers = new HashMap<>(128);
