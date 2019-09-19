@@ -237,7 +237,7 @@ public class ServiceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
+        float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
@@ -269,10 +269,10 @@ public class ServiceController {
 
         Map<String, List<Service>> services = new HashMap<>(16);
         if (StringUtils.isNotBlank(namespaceId)) {
-            services.put(namespaceId, serviceManager.searchServices(namespaceId, ".*" + expr + ".*"));
+            services.put(namespaceId, serviceManager.searchServices(namespaceId, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
         } else {
             for (String namespace : serviceManager.getAllNamespaces()) {
-                services.put(namespace, serviceManager.searchServices(namespace, ".*" + expr + ".*"));
+                services.put(namespace, serviceManager.searchServices(namespace, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
             }
         }
 
