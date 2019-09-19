@@ -94,10 +94,13 @@ public class HealthCheckTask implements Runnable {
                     this.setCheckRTLastLast(this.getCheckRTLast());
 
                     Cluster cluster = this.getCluster();
-                    Loggers.CHECK_RT.info("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
-                        cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
-                        this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
-                        this.getCheckRTLast(), diff);
+
+                    if (Loggers.CHECK_RT.isDebugEnabled()) {
+                        Loggers.CHECK_RT.debug("{}:{}@{}->normalized: {}, worst: {}, best: {}, last: {}, diff: {}",
+                            cluster.getService().getName(), cluster.getName(), cluster.getHealthChecker().getType(),
+                            this.getCheckRTNormalized(), this.getCheckRTWorst(), this.getCheckRTBest(),
+                            this.getCheckRTLast(), diff);
+                    }
                 }
             }
         }

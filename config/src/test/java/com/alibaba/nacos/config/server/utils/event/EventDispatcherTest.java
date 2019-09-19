@@ -15,16 +15,14 @@
  */
 package com.alibaba.nacos.config.server.utils.event;
 
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
+import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
-
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
-import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
