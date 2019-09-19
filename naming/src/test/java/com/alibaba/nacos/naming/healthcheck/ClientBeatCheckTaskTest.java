@@ -1,8 +1,9 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
-import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.core.*;
+import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.push.PushService;
 import org.junit.Assert;
@@ -13,10 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;

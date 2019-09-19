@@ -33,7 +33,7 @@ public interface Constants {
      */
     String STANDALONE_MODE_PROPERTY_NAME = "nacos.standalone";
 
-        /**
+    /**
      * The System property name of  Function mode
      */
     String FUNCTION_MODE_PROPERTY_NAME = "nacos.functionMode";
@@ -43,6 +43,11 @@ public interface Constants {
      */
     String PREFER_HOSTNAME_OVER_IP_PROPERTY_NAME = "nacos.preferHostnameOverIp";
 
+    /**
+     * the root context path
+     */
+    String ROOT_WEB_CONTEXT_PATH = "/";
+
     String NACOS_SERVER_IP = "nacos.server.ip";
 
     String USE_ONLY_SITE_INTERFACES = "nacos.inetutils.use-only-site-local-interfaces";
@@ -51,4 +56,6 @@ public interface Constants {
     String IP_ADDRESS = "nacos.inetutils.ip-address";
     String PREFER_HOSTNAME_OVER_IP = "nacos.inetutils.prefer-hostname-over-ip";
     String SYSTEM_PREFER_HOSTNAME_OVER_IP = "nacos.preferHostnameOverIp";
+    String WEB_CONTEXT_PATH = "server.servlet.context-path";
+    String COMMA_DIVISION = ",";
 }

@@ -435,7 +435,7 @@ public class ConfigController {
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false)List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
-        List<ConfigInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
+        List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
         for(ConfigInfo ci : dataList){
@@ -482,7 +482,7 @@ public class ConfigController {
                 return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
             }
         }
-        List<ConfigInfo> configInfoList = null;
+        List<ConfigAllInfo> configInfoList = null;
         try {
             ZipUtils.UnZipResult unziped = ZipUtils.unzip(file.getBytes());
             ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
@@ -516,7 +516,7 @@ public class ConfigController {
                             + "~" + tempDataId.substring(tempDataId.lastIndexOf(".") + 1);
                     }
                     String metaDataId = group + "." + tempDataId + ".app";
-                    ConfigInfo ci = new ConfigInfo();
+                    ConfigAllInfo ci = new ConfigAllInfo();
                     ci.setTenant(namespace);
                     ci.setGroup(group);
                     ci.setDataId(dataId);
@@ -570,18 +570,19 @@ public class ConfigController {
         }
 
         ids.removeAll(Collections.singleton(null));
-        List<ConfigInfo> queryedDataList = persistService.findAllConfigInfo4Export(null,null, null, null, ids);
+        List<ConfigAllInfo> queryedDataList = persistService.findAllConfigInfo4Export(null,null, null, null, ids);
 
         if(queryedDataList == null || queryedDataList.isEmpty()){
             failedData.put("succCount", 0);
             return ResultBuilder.buildResult(ResultCodeEnum.DATA_EMPTY, failedData);
         }
 
-        List<ConfigInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
+        List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
 
-        for(ConfigInfo ci : queryedDataList){
-            ConfigInfo ci4save = new ConfigInfo();
+        for(ConfigAllInfo ci : queryedDataList){
+            ConfigAllInfo ci4save = new ConfigAllInfo();
             ci4save.setTenant(namespace);
+            ci4save.setType(ci.getType());
             ci4save.setGroup(ci.getGroup());
             ci4save.setDataId(ci.getDataId());
             ci4save.setContent(ci.getContent());

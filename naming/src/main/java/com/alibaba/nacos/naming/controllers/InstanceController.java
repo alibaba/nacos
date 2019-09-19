@@ -126,10 +126,7 @@ public class InstanceController {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
-        String agent = request.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = request.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(request);
 
         ClientInfo clientInfo = new ClientInfo(agent);
 
@@ -149,10 +146,7 @@ public class InstanceController {
             Constants.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String agent = request.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = request.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
@@ -234,8 +228,8 @@ public class InstanceController {
 
         String clusterName = clientBeat.getCluster();
 
-        if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-            Loggers.DEBUG_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
+        if (Loggers.SRV_LOG.isDebugEnabled()) {
+            Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
@@ -317,9 +311,7 @@ public class InstanceController {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        if (!instance.validate()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
-        }
+        instance.validate();
 
         return instance;
     }
@@ -372,10 +364,11 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
             }
             result.put("name", serviceName);
+            result.put("clusters", clusters);
             result.put("hosts", new JSONArray());
             return result;
         }
@@ -412,8 +405,8 @@ public class InstanceController {
 
         if (CollectionUtils.isEmpty(srvedIPs)) {
 
-            if (Loggers.DEBUG_LOG.isDebugEnabled()) {
-                Loggers.DEBUG_LOG.debug("no instance to serve for service: " + serviceName);
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
             }
 
             if (clientInfo.type == ClientInfo.ClientType.JAVA &&
