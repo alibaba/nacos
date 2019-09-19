@@ -25,6 +25,7 @@ import {
   Dialog,
   Message,
   ConfigProvider,
+  Switch,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
@@ -57,6 +58,7 @@ class ServiceList extends React.Component {
       currentPage: 1,
       keyword: '',
       dataSource: [],
+      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -71,15 +73,14 @@ class ServiceList extends React.Component {
 
   openEditServiceDialog() {
     try {
-      this.editServiceDialog.current.getInstance()
-        .show(this.state.service);
-    } catch (error) {
-    }
+      this.editServiceDialog.current.getInstance().show(this.state.service);
+    } catch (error) {}
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword, withInstances = false } = this.state;
+    const { currentPage, pageSize, keyword, withInstances = false, hasIpCount } = this.state;
     const parameter = [
+      `hasIpCount=${hasIpCount}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
@@ -119,8 +120,7 @@ class ServiceList extends React.Component {
    *
    */
   showSampleCode(record) {
-    this.showcode.current.getInstance()
-      .openDialog(record);
+    this.showcode.current.getInstance().openDialog(record);
   }
 
   deleteService(service) {
@@ -157,7 +157,6 @@ class ServiceList extends React.Component {
 
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
 
-
   render() {
     const { locale = {} } = this.props;
     const {
@@ -165,6 +164,7 @@ class ServiceList extends React.Component {
       serviceList,
       serviceName,
       serviceNamePlaceholder,
+      hiddenEmptyService,
       query,
       create,
       operation,
@@ -172,7 +172,7 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const { keyword, nowNamespaceName, nowNamespaceId } = this.state;
+    const { keyword, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -221,6 +221,17 @@ class ServiceList extends React.Component {
                     }
                   />
                 </FormItem>
+                <Form.Item label={`${hiddenEmptyService}:`}>
+                  <Switch
+                    checked={hasIpCount}
+                    onChange={hasIpCount =>
+                      this.setState({ hasIpCount, currentPage: 1 }, () => {
+                        localStorage.setItem('hasIpCount', hasIpCount);
+                        this.queryServiceList();
+                      })
+                    }
+                  />
+                </Form.Item>
                 <FormItem label="">
                   <Button
                     type="primary"
@@ -266,8 +277,9 @@ class ServiceList extends React.Component {
                       <a
                         onClick={() =>
                           this.props.history.push(
-                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`,
-                          )}
+                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`
+                          )
+                        }
                         style={{ marginRight: 5 }}
                       >
                         {detail}
@@ -277,10 +289,7 @@ class ServiceList extends React.Component {
                         {sampleCode}
                       </a>
                       <span style={{ marginRight: 5 }}>|</span>
-                      <a
-                        onClick={() => this.deleteService(record)}
-                        style={{ marginRight: 5 }}
-                      >
+                      <a onClick={() => this.deleteService(record)} style={{ marginRight: 5 }}>
                         {deleteAction}
                       </a>
                     </div>
@@ -290,10 +299,11 @@ class ServiceList extends React.Component {
             </Col>
           </Row>
           {this.state.total > this.state.pageSize && (
-            <div style={{
-              marginTop: 10,
-              textAlign: 'right',
-            }}
+            <div
+              style={{
+                marginTop: 10,
+                textAlign: 'right',
+              }}
             >
               <Pagination
                 current={this.state.currentPage}
