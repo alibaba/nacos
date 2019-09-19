@@ -177,9 +177,9 @@ public class DataSyncer {
                     /**
                      * 是否由本机节点执行操作
                      */
-                    if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
-                        continue;
-                    }
+//                    if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
+//                        continue;
+//                    }
 
                     keyChecksums.put(key, dataStore.get(key).value.getChecksum());
                 }
