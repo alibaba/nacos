@@ -192,15 +192,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
     }
 
     public boolean triggerFlag() {
-        if(0 == healthyInstanceCount()) {
-            return true;
-        }
-        Float compareValue = 0.0F;
-        if(Float.floatToIntBits(compareValue) == getProtectThreshold()) {
-            return false;
-        }
-        boolean triggerFlag = (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
-        return triggerFlag;
+        return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
