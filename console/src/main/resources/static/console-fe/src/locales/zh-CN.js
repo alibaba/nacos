@@ -101,6 +101,7 @@ const I18N_CONF = {
     columnClusterCount: '集群数目',
     columnIpCount: '实例数',
     columnHealthyInstanceCount: '健康实例数',
+    columnTriggerFlag: '触发保护阈值',
     operation: '操作',
     detail: '详情',
     sampleCode: '示例代码',
