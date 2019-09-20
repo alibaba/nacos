@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
@@ -49,6 +50,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Operation for operators
@@ -220,13 +222,36 @@ public class OperatorController {
 
     /**
      * update the static file cluster.conf
-     * @param clusterHosts
+     * @param hosts
      * @return clusterHosts in the static file cluster.conf
      */
-    @RequestMapping(value = "/servers", method = RequestMethod.PUT)
-    public String updateServerList(@RequestParam("clusterHosts") List<String> clusterHosts) throws Exception {
+    @RequestMapping(value = "/servers/add", method = RequestMethod.POST)
+    public List<String> clusterAddNode(@RequestParam("hosts") List<String> hosts) throws Exception {
+        List<String> clusterHosts = SystemUtils.readClusterConf();
+        for (String host : hosts){
+            if(!clusterHosts.contains(host)){
+                clusterHosts.add(host);
+            }
+        }
         serverListManager.updateServers(clusterHosts);
-        return "ok";
+        return clusterHosts;
+    }
+
+    /**
+     * update the static file cluster.conf
+     * @param hosts
+     * @return clusterHosts in the static file cluster.conf
+     */
+    @RequestMapping(value = "/servers/remove", method = RequestMethod.DELETE)
+    public List<String> clusterRemoveNode(@RequestParam("hosts") List<String> hosts) throws Exception {
+        List<String> clusterHosts = SystemUtils.readClusterConf();
+        for (String host : hosts){
+            if(!clusterHosts.contains(host)){
+                clusterHosts.remove(host);
+            }
+        }
+        serverListManager.updateServers(clusterHosts);
+        return clusterHosts;
     }
 
     @RequestMapping("/server/status")
