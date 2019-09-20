@@ -77,7 +77,8 @@ public class DataSyncer {
             while (iterator.hasNext()) {
                 String key = iterator.next();
                 /**
-                 * 将key存入taskMap后   移除当前key
+                 * 在taskMap中有key的对应  则在task.getKeys()中删除当前key
+                 * 如果没有对应的key，则在taskMap新增  com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@userProvide
                  */
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
@@ -122,7 +123,7 @@ public class DataSyncer {
                     Map<String, Datum> datumMap = dataStore.batchGet(keys);
 
                     /**
-                     * 在taskMap中移除key
+                     * dataStore已经没有keys的对应  在taskMap中移除key
                      */
                     if (datumMap == null || datumMap.isEmpty()) {
                         // clear all flags of this task:
@@ -136,10 +137,13 @@ public class DataSyncer {
 
                     long timestamp = System.currentTimeMillis();
                     /**
-                     *
+                     * 向TargetServer  发送datumMap数据
                      */
                     boolean success = NamingProxy.syncData(data, task.getTargetServer());
                     if (!success) {
+                        /**
+                         * 失败则重试
+                         */
                         SyncTask syncTask = new SyncTask();
                         syncTask.setKeys(task.getKeys());
                         syncTask.setRetryCount(task.getRetryCount() + 1);
@@ -148,6 +152,9 @@ public class DataSyncer {
                         retrySync(syncTask);
                     } else {
                         // clear all flags of this task:
+                        /**
+                         * 成功则移除taskMap
+                         */
                         for (String key : task.getKeys()) {
                             taskMap.remove(buildKey(key, task.getTargetServer()));
                         }
@@ -160,17 +167,27 @@ public class DataSyncer {
         }, delay);
     }
 
+    /**
+     * 重试
+     * @param syncTask
+     */
     public void retrySync(SyncTask syncTask) {
 
         Server server = new Server();
         server.setIp(syncTask.getTargetServer().split(":")[0]);
         server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
+        /**
+         * syncTask的TargetServer是否是健康的nacos节点
+         */
         if (!getServers().contains(server)) {
             // if server is no longer in healthy server list, ignore this task:
             return;
         }
 
         // TODO may choose other retry policy.
+        /**
+         * 重试   间隔5000ms
+         */
         submit(syncTask, partitionConfig.getSyncRetryDelay());
     }
 

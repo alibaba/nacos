@@ -98,6 +98,9 @@ public class TaskDispatcher {
 
                 try {
 
+                    /**
+                     * com.alibaba.nacos.naming.iplist.ephemeral.public##DEFAULT_GROUP@@userProvide
+                     */
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
                         TimeUnit.MILLISECONDS);
 
@@ -129,6 +132,9 @@ public class TaskDispatcher {
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
                         (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
+                        /**
+                         * 健康的nacos集群节点
+                         */
                         for (Server member : dataSyncer.getServers()) {
                             /**
                              * 过滤本机
@@ -146,6 +152,9 @@ public class TaskDispatcher {
 
                             dataSyncer.submit(syncTask, 0);
                         }
+                        /**
+                         * 记录最后一次lastDispatchTime  并重置dataSize
+                         */
                         lastDispatchTime = System.currentTimeMillis();
                         dataSize = 0;
                     }

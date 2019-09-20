@@ -414,7 +414,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     /**
-     *
+     * 新增service
      * @param namespaceId
      * @param serviceName
      * @param local

@@ -172,7 +172,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         onPut(key, value);
 
         /**
-         *
+         * taskDispatcher调度
          */
         taskDispatcher.addTask(key);
     }
@@ -416,7 +416,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 try {
                     for (RecordListener listener : listeners.get(entry.getKey())) {
                         /**
-                         *
+                         * metadata对应的是serviceManager
                          */
                         listener.onChange(entry.getKey(), entry.getValue().value);
                     }

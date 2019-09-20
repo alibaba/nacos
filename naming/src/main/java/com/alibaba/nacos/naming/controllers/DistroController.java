@@ -68,9 +68,19 @@ public class DistroController {
     @Autowired
     private SwitchDomain switchDomain;
 
+    /**
+     * 接受其他节点发送的datum
+     * @param request
+     * @param response
+     * @return
+     * @throws Exception
+     */
     @RequestMapping(value = "/datum", method = RequestMethod.PUT)
     public String onSyncDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
+        /**
+         * 其他节点的datum
+         */
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
         if (StringUtils.isBlank(entity)) {
@@ -78,17 +88,28 @@ public class DistroController {
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
 
+        /**
+         * 反序列化
+         */
         Map<String, Datum<Instances>> dataMap =
             serializer.deserializeMap(entity.getBytes(), Instances.class);
+
 
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());
+                /**
+                 * 本地节点没有namespaceId和serviceName对应的service  则新增
+                 */
                 if (!serviceManager.containService(namespaceId, serviceName)
                     && switchDomain.isDefaultInstanceEphemeral()) {
                     serviceManager.createEmptyService(namespaceId, serviceName, true);
                 }
+
+                /**
+                 * 缓存key对应的value（Record）
+                 */
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
         }
@@ -124,7 +145,7 @@ public class DistroController {
     }
 
     /**
-     * 获取请求对象中  keys对应的Datum
+     * 其他nacos节点向本机查询keys对应的Datum
      * @param request
      * @param response
      * @throws Exception

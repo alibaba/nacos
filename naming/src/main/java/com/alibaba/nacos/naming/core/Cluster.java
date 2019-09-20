@@ -224,6 +224,8 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
         /**
          * 仅在ips中存在  获取在两者中相同ip:port的Instance集合
+         * 仅在ips中存在  获取在两者中相同ip:port的Instance集合
+         * 仅在ips中存在  获取在两者中相同ip:port的Instance集合
          */
         List<Instance> updatedIPs = updatedIPs(ips, oldIPMap.values());
         if (updatedIPs.size() > 0) {

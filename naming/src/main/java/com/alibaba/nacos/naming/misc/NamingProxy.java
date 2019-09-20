@@ -130,7 +130,7 @@ public class NamingProxy {
 
 
     /**
-     * 向curServer发送    /distro/datum   put请求
+     * 向curServer（nacos节点）发送    /distro/datum   put请求
      * @param data
      * @param curServer
      * @return

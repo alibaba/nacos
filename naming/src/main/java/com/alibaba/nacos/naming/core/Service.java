@@ -278,6 +278,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
             List<Instance> entryIPs = entry.getValue();
             /**
              * 对clusterMap下的Cluster   执行updateIPs
+             * 对clusterMap下的Cluster   执行updateIPs
+             * 对clusterMap下的Cluster   执行updateIPs
              */
             clusterMap.get(entry.getKey()).updateIPs(entryIPs, ephemeral);
         }
