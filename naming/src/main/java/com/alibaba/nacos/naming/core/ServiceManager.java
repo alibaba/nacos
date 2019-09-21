@@ -523,17 +523,22 @@ public class ServiceManager implements RecordListener<Service> {
 
         Service service = getService(namespaceId, serviceName);
 
-        List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
+        synchronized (service) {
+            List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
 
-        Instances instances = new Instances();
-        instances.setInstanceList(instanceList);
+            Instances instances = new Instances();
+            instances.setInstanceList(instanceList);
 
-        consistencyService.put(key, instances);
+            consistencyService.put(key, instances);
+        }
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
         Service service = getService(namespaceId, serviceName);
-        removeInstance(namespaceId, serviceName, ephemeral, service, ips);
+
+        synchronized (service) {
+            removeInstance(namespaceId, serviceName, ephemeral, service, ips);
+        }
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Service service, Instance... ips) throws NacosException {
