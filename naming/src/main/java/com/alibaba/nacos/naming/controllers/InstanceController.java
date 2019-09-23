@@ -91,7 +91,7 @@ public class InstanceController {
     };
 
     /**
-     * 应用注册
+     * 服务注册
      * @param request
      * @return
      * @throws Exception
@@ -104,7 +104,7 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
         /**
-         * 应用注册
+         * 服务注册
          */
         serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
@@ -151,6 +151,12 @@ public class InstanceController {
         return "ok";
     }
 
+    /**
+     * 查询
+     * @param request
+     * @return
+     * @throws Exception
+     */
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     public JSONObject list(HttpServletRequest request) throws Exception {
 
@@ -163,7 +169,13 @@ public class InstanceController {
             agent = request.getHeader("User-Agent");
         }
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
+        /**
+         * 请求地址
+         */
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
+        /**
+         * udp端口
+         */
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
         String env = WebUtils.optional(request, "env", StringUtils.EMPTY);
         boolean isCheck = Boolean.parseBoolean(WebUtils.optional(request, "isCheck", "false"));
@@ -172,6 +184,9 @@ public class InstanceController {
 
         String tenant = WebUtils.optional(request, "tid", StringUtils.EMPTY);
 
+        /**
+         * 是否只获取健康的服务列表
+         */
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
         return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
@@ -219,7 +234,13 @@ public class InstanceController {
         throw new NacosException(NacosException.NOT_FOUND, "no matched ip found!");
     }
 
-    @CanDistro
+    /**
+     * 接受服务注册端心跳   1、接受当前服务注册的心跳    2、重新路由时   则依据心跳数据  执行服务注册操作
+     * @param request
+     * @return
+     * @throws Exception
+     */
+//    @CanDistro
     @RequestMapping(value = "/beat", method = RequestMethod.PUT)
     public JSONObject beat(HttpServletRequest request) throws Exception {
 
@@ -234,10 +255,12 @@ public class InstanceController {
             Constants.DEFAULT_NAMESPACE_ID);
         /**
          * 获取beat
+         * {"cluster":"DEFAULT","ip":"2.2.2.21","metadata":{},"period":5000,"port":9999,"scheduled":false,"serviceName":"DEFAULT_GROUP@@videProvide","stopped":false,"weight":1.0}
          */
         String beat = WebUtils.required(request, "beat");
         /**
          * json反序列化   BeatInfo和RsInfo  部分参数相同
+         * {"ak":"","cluster":"DEFAULT","cpu":0.0,"ephemeral":true,"ip":"2.2.2.21","load":0.0,"mem":0.0,"metadata":{},"port":9999,"qps":0.0,"rt":0.0,"serviceName":"DEFAULT_GROUP@@videProvide","weight":1.0}
          */
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
 
@@ -262,6 +285,10 @@ public class InstanceController {
             Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
+        /**
+         * 获取Instance  即满足条件的Instance是否已经注册
+         * 即当请求路由到当前nacos节点时   节点是否已经包含注册信息   没有则执行注册操作
+         */
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
             clientBeat.getPort());
 
@@ -276,15 +303,24 @@ public class InstanceController {
             instance.setInstanceId(instance.generateInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
+            /**
+             * 当前nacos节点 没有心跳相关的服务   则依据心跳数据执行注册操作
+             */
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
 
+        /**
+         * 本地缓存查询服务是否存在
+         */
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
             throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
         }
 
+        /**
+         * 处理心跳请求
+         */
         service.processClientBeat(clientBeat);
         result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
         return result;
@@ -399,17 +435,41 @@ public class InstanceController {
         return instance;
     }
 
+    /**
+     * 检查Service是否可用
+     * @param service
+     * @throws Exception
+     */
     public void checkIfDisabled(Service service) throws Exception {
         if (!service.getEnabled()) {
             throw new Exception("service is disabled now.");
         }
     }
 
+    /**
+     *
+     * @param namespaceId
+     * @param serviceName
+     * @param agent
+     * @param clusters
+     * @param clientIP
+     * @param udpPort
+     * @param env
+     * @param isCheck
+     * @param app
+     * @param tid
+     * @param healthyOnly
+     * @return
+     * @throws Exception
+     */
     public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
+        /**
+         * 本地缓存查询服务是否存在
+         */
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
@@ -422,13 +482,22 @@ public class InstanceController {
             return result;
         }
 
+        /**
+         * 检查Service是否可用
+         */
         checkIfDisabled(service);
 
         long cacheMillis = switchDomain.getDefaultCacheMillis();
 
         // now try to enable the push
         try {
+            /**
+             * 是否支持udp推送
+             */
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
+                /**
+                 * 新增PushClient
+                 */
                 pushService.addClient(namespaceId, serviceName,
                     clusters,
                     agent,
@@ -445,6 +514,9 @@ public class InstanceController {
 
         List<Instance> srvedIPs;
 
+        /**
+         * 查询clusters下的所有Instance  临时与持久化
+         */
         srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
 
         // filter ips using selector:
@@ -481,6 +553,9 @@ public class InstanceController {
         ipMap.put(Boolean.TRUE, new ArrayList<>());
         ipMap.put(Boolean.FALSE, new ArrayList<>());
 
+        /**
+         * 分别获取健康的Instance列表和不健康的Instance列表
+         */
         for (Instance ip : srvedIPs) {
             ipMap.get(ip.isHealthy()).add(ip);
         }
@@ -489,8 +564,19 @@ public class InstanceController {
             result.put("reachProtectThreshold", false);
         }
 
+        /**
+         * 健康保护阈值
+         */
         double threshold = service.getProtectThreshold();
 
+        /**
+         * 为了防止因过多实例 (Instance) 不健康导致流量全部流向健康实例 (Instance) ，
+         * 继而造成流量压力把健康 健康实例 (Instance) 压垮并形成雪崩效应，
+         * 应将健康保护阈值定义为一个 0 到 1 之间的浮点数。
+         * 当域名健康实例 (Instance) 占总服务实例 (Instance) 的比例小于该值时，
+         * 无论实例 (Instance) 是否健康，都会将这个实例 (Instance) 返回给客户端。
+         * 这样做虽然损失了一部分流量，但是保证了集群的剩余健康实例 (Instance) 能正常工作。
+         */
         if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
@@ -509,18 +595,28 @@ public class InstanceController {
             return new JSONObject();
         }
 
+
         JSONArray hosts = new JSONArray();
 
         for (Map.Entry<Boolean, List<Instance>> entry : ipMap.entrySet()) {
             List<Instance> ips = entry.getValue();
 
+            /**
+             * 仅健康节点  &&  当前节点状态健康
+             */
             if (healthyOnly && !entry.getKey()) {
                 continue;
             }
 
+            /**
+             * 返回给客户端的Instance列表
+             */
             for (Instance instance : ips) {
 
                 // remove disabled instance:
+                /**
+                 * instance不可用
+                 */
                 if (!instance.isEnabled()) {
                     continue;
                 }
@@ -551,6 +647,9 @@ public class InstanceController {
             }
         }
 
+        /**
+         * 返回数据
+         */
         result.put("hosts", hosts);
         if (clientInfo.type == ClientInfo.ClientType.JAVA &&
             clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {

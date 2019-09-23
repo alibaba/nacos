@@ -47,11 +47,11 @@ public class NamingExample {
 
         naming.registerInstance("videProvide", "5.5.5.5", 9999, "DEFAULT");
 
-        System.out.println("1----------------" + naming.getAllInstances("nacos.test.3"));
+        System.out.println("1----------------" + naming.getAllInstances("userProvide"));
 
 //        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
 
-        System.out.println("2----------------" + naming.getAllInstances("nacos.test.3"));
+        System.out.println("2----------------" + naming.getAllInstances("videProvide"));
 
         naming.subscribe("nacos.test.3", new EventListener() {
             @Override

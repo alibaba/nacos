@@ -352,7 +352,7 @@ public class HostReactor {
             updatingMap.put(serviceName, new Object());
 
             /**
-             * 立即更新
+             * 向nacos集群查询查询
              */
             updateServiceNow(serviceName, clusters);
 
@@ -413,7 +413,7 @@ public class HostReactor {
     }
 
     /**
-     * 立即更新
+     * 向nacos集群查询查询
      * @param serviceName
      * @param clusters
      */

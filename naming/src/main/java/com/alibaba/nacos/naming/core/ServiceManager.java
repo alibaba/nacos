@@ -598,7 +598,19 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.put(key, instances);
     }
 
+    /**
+     * 获取Instance
+     * @param namespaceId
+     * @param serviceName
+     * @param cluster
+     * @param ip
+     * @param port
+     * @return
+     */
     public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port) {
+        /**
+         * 本地缓存查询服务是否存在
+         */
         Service service = getService(namespaceId, serviceName);
         if (service == null) {
             return null;
@@ -607,11 +619,17 @@ public class ServiceManager implements RecordListener<Service> {
         List<String> clusters = new ArrayList<>();
         clusters.add(cluster);
 
+        /**
+         * 依照cluster名称  查询其下的所有Instance
+         */
         List<Instance> ips = service.allIPs(clusters);
         if (ips == null || ips.isEmpty()) {
             return null;
         }
 
+        /**
+         * 比对ip和port   Instance是否已存在
+         */
         for (Instance instance : ips) {
             if (instance.getIp().equals(ip) && instance.getPort() == port) {
                 return instance;

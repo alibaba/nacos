@@ -100,10 +100,17 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         this.ipDeleteTimeout = ipDeleteTimeout;
     }
 
+    /**
+     * 处理心跳
+     * @param rsInfo
+     */
     public void processClientBeat(final RsInfo rsInfo) {
         ClientBeatProcessor clientBeatProcessor = new ClientBeatProcessor();
         clientBeatProcessor.setService(this);
         clientBeatProcessor.setRsInfo(rsInfo);
+        /**
+         * 定时任务
+         */
         HealthCheckReactor.scheduleNow(clientBeatProcessor);
     }
 
@@ -360,6 +367,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return allIPs;
     }
 
+    /**
+     * 查询clusters下的所有Instance  临时与持久化
+     * @param clusters
+     * @return
+     */
     public List<Instance> allIPs(List<String> clusters) {
         List<Instance> allIPs = new ArrayList<>();
         for (String cluster : clusters) {
@@ -368,17 +380,31 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 continue;
             }
 
+            /**
+             * 查询clusters下的所有Instance  临时与持久化
+             */
             allIPs.addAll(clusterObj.allIPs());
         }
 
         return allIPs;
     }
 
+    /**
+     * 查询clusters下的所有Instance  临时与持久化
+     * @param clusters
+     * @return
+     */
     public List<Instance> srvIPs(List<String> clusters) {
+        /**
+         * clusters为空  则填充clusterMap的值
+         */
         if (CollectionUtils.isEmpty(clusters)) {
             clusters = new ArrayList<>();
             clusters.addAll(clusterMap.keySet());
         }
+        /**
+         * 查询clusters下的所有Instance  临时与持久化
+         */
         return allIPs(clusters);
     }
 

@@ -209,6 +209,17 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         PushService.totalPush = totalPush;
     }
 
+    /**
+     * 新增PushClient
+     * @param namespaceId
+     * @param serviceName
+     * @param clusters
+     * @param agent
+     * @param socketAddr
+     * @param dataSource
+     * @param tenant
+     * @param app
+     */
     public void addClient(String namespaceId,
                           String serviceName,
                           String clusters,
@@ -229,9 +240,16 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         addClient(client);
     }
 
+    /**
+     * 新增PushClient
+     * @param client
+     */
     public static void addClient(PushClient client) {
         // client is stored by key 'serviceName' because notify event is driven by serviceName change
         String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getServiceName());
+        /**
+         * serviceKey是否在clientMap存在   不存在则新增
+         */
         ConcurrentMap<String, PushClient> clients =
             clientMap.get(serviceKey);
         if (clients == null) {
@@ -239,6 +257,9 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             clients = clientMap.get(serviceKey);
         }
 
+        /**
+         * clients中是否有PushClient的对应  没有则新增   有则刷新lastRefTime
+         */
         PushClient oldClient = clients.get(client.toString());
         if (oldClient != null) {
             oldClient.refresh();
@@ -326,12 +347,20 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         this.applicationContext.publishEvent(new ServiceChangeEvent(this, service));
     }
 
+    /**
+     * 是否支持udp推送
+     * @param agent
+     * @return
+     */
     public boolean canEnablePush(String agent) {
 
         if (!switchDomain.isPushEnabled()) {
             return false;
         }
 
+        /**
+         * 判断客户端语言 并初始化version
+         */
         ClientInfo clientInfo = new ClientInfo(agent);
 
         if (ClientInfo.ClientType.JAVA == clientInfo.type

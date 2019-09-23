@@ -27,9 +27,16 @@ public class ClientInfo {
     public Version version = Version.unknownVersion();
     public ClientType type = ClientType.UNKNOWN;
 
+    /**
+     * 构造
+     * @param userAgent
+     */
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
 
+        /**
+         * java客户端
+         */
         if (versionStr.startsWith(ClientTypeDescription.JAVA_CLIENT)) {
             type = ClientType.JAVA;
 
