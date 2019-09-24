@@ -95,10 +95,16 @@ public class BeatReactor {
      */
     public void removeBeatInfo(String serviceName, String ip, int port) {
         NAMING_LOGGER.info("[BEAT] removing beat: {}:{}:{} from beat map.", serviceName, ip, port);
+        /**
+         * 移除并获得key对应的BeatInfo
+         */
         BeatInfo beatInfo = dom2Beat.remove(buildKey(serviceName, ip, port));
         if (beatInfo == null) {
             return;
         }
+        /**
+         * 设置BeatInfo停止
+         */
         beatInfo.setStopped(true);
 
         /**
@@ -130,6 +136,9 @@ public class BeatReactor {
 
         @Override
         public void run() {
+            /**
+             * deregisterInstance  会设置beatInfo状态为停止   阻断发送心跳
+             */
             if (beatInfo.isStopped()) {
                 /**
                  * 直接返回  不再设置下一次调度任务

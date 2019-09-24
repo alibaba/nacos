@@ -91,7 +91,7 @@ public class InstanceController {
     };
 
     /**
-     * 服务注册
+     * Instance注册
      * @param request
      * @return
      * @throws Exception
@@ -104,26 +104,41 @@ public class InstanceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
 
         /**
-         * 服务注册
+         * Instance注册
          */
         serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         return "ok";
     }
 
-    @CanDistro
+    /**
+     * Instance注销
+     * @param request
+     * @return
+     * @throws Exception
+     */
+//    @CanDistro
     @RequestMapping(value = "", method = RequestMethod.DELETE)
     public String deregister(HttpServletRequest request) throws Exception {
+        /**
+         * 获得待注销的instance
+         */
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
+        /**
+         * 本地缓存查询服务是否存在
+         */
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
             Loggers.SRV_LOG.warn("remove instance from non-exist service: {}", serviceName);
             return "ok";
         }
 
+        /**
+         * 注销
+         */
         serviceManager.removeInstance(namespaceId, serviceName, instance.isEphemeral(), instance);
 
         return "ok";
@@ -397,7 +412,7 @@ public class InstanceController {
     }
 
     /**
-     * 将请求数据中的内存   构建Instance
+     * 将请求数据中的参数   构建Instance
      * @param request
      * @return
      */

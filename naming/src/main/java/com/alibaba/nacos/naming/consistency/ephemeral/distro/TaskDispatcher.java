@@ -150,6 +150,9 @@ public class TaskDispatcher {
                                 Loggers.DISTRO.debug("add sync task: {}", JSON.toJSONString(syncTask));
                             }
 
+                            /**
+                             *
+                             */
                             dataSyncer.submit(syncTask, 0);
                         }
                         /**

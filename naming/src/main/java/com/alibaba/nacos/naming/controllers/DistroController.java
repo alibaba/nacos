@@ -79,7 +79,7 @@ public class DistroController {
     public String onSyncDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         /**
-         * 其他节点的datum
+         * 接收其他节点的datum
          */
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
 
@@ -170,7 +170,7 @@ public class DistroController {
     }
 
     /**
-     * 返回本地的数据
+     * 返回本地的dataStore中的dataMap
      * @param request
      * @param response
      * @throws Exception

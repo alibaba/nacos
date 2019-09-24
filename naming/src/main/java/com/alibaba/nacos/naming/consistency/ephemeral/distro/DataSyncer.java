@@ -212,9 +212,9 @@ public class DataSyncer {
                     /**
                      * 是否由本机节点执行操作
                      */
-//                    if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
-//                        continue;
-//                    }
+                    if (!distroMapper.responsible(KeyBuilder.getServiceName(key))) {
+                        continue;
+                    }
 
                     keyChecksums.put(key, dataStore.get(key).value.getChecksum());
                 }
@@ -237,6 +237,10 @@ public class DataSyncer {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
+
+                    /**
+                     * 向member发送当前keyChecksums   如果member发现本地keyChecksums不一致   则会向当前节点查询最新的Datum
+                     */
                     NamingProxy.syncCheckSums(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {

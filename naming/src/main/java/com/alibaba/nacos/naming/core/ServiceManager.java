@@ -581,15 +581,38 @@ public class ServiceManager implements RecordListener<Service> {
         consistencyService.put(key, instances);
     }
 
+    /**
+     * 注销
+     * @param namespaceId
+     * @param serviceName
+     * @param ephemeral
+     * @param ips
+     * @throws NacosException
+     */
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
         Service service = getService(namespaceId, serviceName);
+        /**
+         * 注销
+         */
         removeInstance(namespaceId, serviceName, ephemeral, service, ips);
     }
 
+    /**
+     * 注销
+     * @param namespaceId
+     * @param serviceName
+     * @param ephemeral
+     * @param service
+     * @param ips
+     * @throws NacosException
+     */
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Service service, Instance... ips) throws NacosException {
 
         String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
 
+        /**
+         * 移除ips后  剩余的Instance列表
+         */
         List<Instance> instanceList = substractIpAddresses(service, ephemeral, ips);
 
         Instances instances = new Instances();
@@ -640,9 +663,9 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     /**
-     * 获取service下有效的Instance列表  包含当前新增的Instance
+     * 获取service下有效的Instance列表  包含当前新增的Instance或移除当前待注销的Instance
      * @param service
-     * @param action
+     * @param action 新增或移除
      * @param ephemeral  临时或持久
      * @param ips
      * @return
@@ -695,6 +718,9 @@ public class ServiceManager implements RecordListener<Service> {
                     instance.getClusterName(), instance.toJSON());
             }
 
+            /**
+             * 新增/删除操作
+             */
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
@@ -714,7 +740,18 @@ public class ServiceManager implements RecordListener<Service> {
         return new ArrayList<>(instanceMap.values());
     }
 
+    /**
+     * 注销    移除ips后  剩余的Instance列表
+     * @param service
+     * @param ephemeral
+     * @param ips
+     * @return
+     * @throws NacosException
+     */
     public List<Instance> substractIpAddresses(Service service, boolean ephemeral, Instance... ips) throws NacosException {
+        /**
+         * remove操作  移除ips后  剩余的Instance列表
+         */
         return updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE, ephemeral, ips);
     }
 

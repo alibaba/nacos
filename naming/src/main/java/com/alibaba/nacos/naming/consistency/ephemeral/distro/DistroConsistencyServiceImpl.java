@@ -486,7 +486,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         public void addTask(String datumKey, ApplyAction action) {
 
             /**
-             * 任务   有一个就可以
+             * CHANGE任务   有一个就可以
              */
             if (services.containsKey(datumKey) && action == ApplyAction.CHANGE) {
                 return;

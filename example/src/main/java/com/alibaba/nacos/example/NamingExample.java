@@ -49,7 +49,7 @@ public class NamingExample {
 
         System.out.println("1----------------" + naming.getAllInstances("userProvide"));
 
-//        naming.deregisterInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
+        naming.deregisterInstance("videProvide", "5.5.5.5", 9999, "DEFAULT");
 
         System.out.println("2----------------" + naming.getAllInstances("videProvide"));
 
