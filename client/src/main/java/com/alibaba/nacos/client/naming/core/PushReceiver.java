@@ -74,7 +74,7 @@ public class PushReceiver implements Runnable {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
                 /**
-                 * 接受数据
+                 * 接受数据  udp协议
                  */
                 udpSocket.receive(packet);
 

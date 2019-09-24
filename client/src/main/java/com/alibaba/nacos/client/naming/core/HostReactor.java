@@ -112,7 +112,7 @@ public class HostReactor {
     }
 
     /**
-     * 设置一次性调度任务
+     * 设置调度任务
      * @param task
      * @return
      */
@@ -413,7 +413,7 @@ public class HostReactor {
     }
 
     /**
-     * 向nacos集群查询查询
+     * 向nacos集群查询
      * @param serviceName
      * @param clusters
      */
