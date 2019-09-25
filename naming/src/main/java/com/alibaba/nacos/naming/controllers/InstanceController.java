@@ -26,7 +26,7 @@ import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -311,9 +311,7 @@ public class InstanceController {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
 
-        if (!instance.validate()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "instance format invalid:" + instance);
-        }
+        instance.validate();
 
         return instance;
     }

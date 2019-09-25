@@ -124,6 +124,10 @@ public class NacosException extends Exception {
      */
     public static final int NO_RIGHT = 403;
     /**
+     *  not found
+     */
+    public static final int NOT_FOUND = 404;
+    /**
      * conflict（写并发冲突）
      */
     public static final int CONFLICT = 409;

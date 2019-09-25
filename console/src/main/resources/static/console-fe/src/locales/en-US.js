@@ -101,6 +101,7 @@ const I18N_CONF = {
     columnClusterCount: 'Cluster Count',
     columnIpCount: 'Instance Count',
     columnHealthyInstanceCount: 'Healthy Instance Count',
+    columnTriggerFlag: 'Trigger Protection Threshold',
     operation: 'Operation',
     detail: 'Details',
     sampleCode: 'Code Example',
