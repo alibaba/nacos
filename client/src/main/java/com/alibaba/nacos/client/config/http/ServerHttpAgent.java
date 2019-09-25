@@ -43,6 +43,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Server Agent
@@ -52,6 +53,9 @@ import java.util.concurrent.Callable;
 public class ServerHttpAgent implements HttpAgent {
 
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
+
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -287,12 +291,16 @@ public class ServerHttpAgent implements HttpAgent {
 
     @Override
     public synchronized void start() throws NacosException {
-        serverListMgr.start();
+        if (started.compareAndSet(false, true)) {
+            serverListMgr.start();
+        }
     }
 
     @Override
     public synchronized void destroy() throws NacosException {
+        if (destroyed.compareAndSet(false, true)) {
 
+        }
     }
 
     private List<String> getSpasHeaders(List<String> paramValues) throws IOException {

@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -32,6 +33,10 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author harold
  */
 public class BeatReactor implements LifeCycle {
+
+    private final AtomicBoolean started = new AtomicBoolean(false);
+
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     private ScheduledExecutorService executorService;
 
@@ -54,20 +59,24 @@ public class BeatReactor implements LifeCycle {
 
     @Override
     public void start() throws NacosException {
-        executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.beat.sender-" + threadId.incrementAndGet());
-                return thread;
-            }
-        });
+        if (started.compareAndSet(false, true)) {
+            executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r);
+                    thread.setDaemon(true);
+                    thread.setName("com.alibaba.nacos.naming.beat.sender-" + threadId.incrementAndGet());
+                    return thread;
+                }
+            });
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executorService.shutdown();
+        if (destroyed.compareAndSet(false, true)) {
+            executorService.shutdown();
+        }
     }
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {

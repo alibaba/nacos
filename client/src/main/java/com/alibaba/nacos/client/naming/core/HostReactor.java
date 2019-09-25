@@ -29,6 +29,7 @@ import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -66,6 +67,9 @@ public class HostReactor implements LifeCycle {
 
     private int pollingThreadCount;
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
         this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
@@ -81,35 +85,39 @@ public class HostReactor implements LifeCycle {
 
     @Override
     public void start() throws NacosException {
-        executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.client.naming.updater-" + threadId.incrementAndGet());
-                return thread;
+        if (started.compareAndSet(false, true)) {
+            executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r);
+                    thread.setDaemon(true);
+                    thread.setName("com.alibaba.nacos.client.naming.updater-" + threadId.incrementAndGet());
+                    return thread;
+                }
+            });
+            if (loadCacheAtStart) {
+                this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+            } else {
+                this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
             }
-        });
-        if (loadCacheAtStart) {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
-        } else {
-            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
-        }
-        this.updatingMap = new ConcurrentHashMap<String, Object>(16);
-        this.failoverReactor = new FailoverReactor(this, cacheDir);
-        this.pushReceiver = new PushReceiver(this);
+            this.updatingMap = new ConcurrentHashMap<String, Object>(16);
+            this.failoverReactor = new FailoverReactor(this, cacheDir);
+            this.pushReceiver = new PushReceiver(this);
 
-        // Preparation accordingly
-        failoverReactor.start();
-        pushReceiver.start();
+            // Preparation accordingly
+            failoverReactor.start();
+            pushReceiver.start();
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executor.shutdown();
-        // Perform corresponding disposal operations
-        failoverReactor.destroy();
-        pushReceiver.destroy();
+        if (destroyed.compareAndSet(false, true)) {
+            executor.shutdown();
+            // Perform corresponding disposal operations
+            failoverReactor.destroy();
+            pushReceiver.destroy();
+        }
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {

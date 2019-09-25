@@ -43,6 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author nkorange
@@ -76,6 +77,9 @@ public class NacosNamingService implements NamingService {
 
     private final Properties properties;
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     public NacosNamingService(String serverList) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
@@ -98,24 +102,28 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void start() throws NacosException {
-        eventDispatcher = new EventDispatcher();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        serverProxy.setProperties(properties);
-        beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
+        if (started.compareAndSet(false, true)) {
+            eventDispatcher = new EventDispatcher();
+            serverProxy = new NamingProxy(namespace, endpoint, serverList);
+            serverProxy.setProperties(properties);
+            beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
+            hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
 
-        eventDispatcher.start();
-        serverProxy.start();
-        beatReactor.start();
-        hostReactor.start();
+            eventDispatcher.start();
+            serverProxy.start();
+            beatReactor.start();
+            hostReactor.start();
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        eventDispatcher.destroy();
-        serverProxy.destroy();
-        beatReactor.destroy();
-        hostReactor.destroy();
+        if (destroyed.compareAndSet(false, true)) {
+            eventDispatcher.destroy();
+            serverProxy.destroy();
+            beatReactor.destroy();
+            hostReactor.destroy();
+        }
     }
 
     private int initClientBeatThreadCount(Properties properties) {

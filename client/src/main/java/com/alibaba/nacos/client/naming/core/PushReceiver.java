@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -44,6 +45,9 @@ public class PushReceiver implements Runnable, LifeCycle {
 
     private HostReactor hostReactor;
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     public PushReceiver(HostReactor hostReactor) {
         this.hostReactor = hostReactor;
         try {
@@ -55,21 +59,25 @@ public class PushReceiver implements Runnable, LifeCycle {
 
     @Override
     public void start() throws NacosException {
-        executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                thread.setName("com.alibaba.nacos.naming.push.receiver");
-                return thread;
-            }
-        });
-        executorService.execute(this);
+        if (started.compareAndSet(false, true)) {
+            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r);
+                    thread.setDaemon(true);
+                    thread.setName("com.alibaba.nacos.naming.push.receiver");
+                    return thread;
+                }
+            });
+            executorService.execute(this);
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executorService.shutdown();
+        if (destroyed.compareAndSet(false, true)) {
+            executorService.shutdown();
+        }
     }
 
     @Override

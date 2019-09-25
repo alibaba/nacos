@@ -32,6 +32,7 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -50,6 +51,9 @@ public class FailoverReactor implements LifeCycle {
 
     private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -67,36 +71,40 @@ public class FailoverReactor implements LifeCycle {
 
     @Override
     public void start() throws NacosException {
-        executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
+        if (started.compareAndSet(false, true)) {
+            executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 
-        executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
+            executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
 
-        // backup file on startup if failover directory is empty.
-        executorService.schedule(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    File cacheDir = new File(failoverDir);
+            // backup file on startup if failover directory is empty.
+            executorService.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        File cacheDir = new File(failoverDir);
 
-                    if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                        throw new IllegalStateException("failed to create cache dir: " + failoverDir);
+                        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
+                            throw new IllegalStateException("failed to create cache dir: " + failoverDir);
+                        }
+
+                        File[] files = cacheDir.listFiles();
+                        if (files == null || files.length <= 0) {
+                            new DiskFileWriter().run();
+                        }
+                    } catch (Throwable e) {
+                        NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
                     }
 
-                    File[] files = cacheDir.listFiles();
-                    if (files == null || files.length <= 0) {
-                        new DiskFileWriter().run();
-                    }
-                } catch (Throwable e) {
-                    NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
                 }
-
-            }
-        }, 10000L, TimeUnit.MILLISECONDS);
+            }, 10000L, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executorService.shutdown();
+        if (destroyed.compareAndSet(false, true)) {
+            executorService.shutdown();
+        }
     }
 
     public Date addDay(Date date, int num) {

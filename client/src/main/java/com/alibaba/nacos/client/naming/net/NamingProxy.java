@@ -46,6 +46,7 @@ import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -76,6 +77,9 @@ public class NamingProxy implements LifeCycle {
 
     private ScheduledExecutorService executorService = null;
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     public NamingProxy(String namespaceId, String endpoint, String serverList) {
         this.namespaceId = namespaceId;
         this.endpoint = endpoint;
@@ -89,12 +93,16 @@ public class NamingProxy implements LifeCycle {
 
     @Override
     public void start() throws NacosException {
-        initRefreshSrvIfNeed();
+        if (started.compareAndSet(false, true)) {
+            initRefreshSrvIfNeed();
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executorService.shutdown();
+        if (destroyed.compareAndSet(false, true)) {
+            executorService.shutdown();
+        }
     }
 
     private void initRefreshSrvIfNeed() {

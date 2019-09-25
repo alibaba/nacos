@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -61,6 +62,9 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 public class ClientWorker implements LifeCycle {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
+
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     private ScheduledExecutorService executor;
     private ScheduledExecutorService executorService;
@@ -91,50 +95,55 @@ public class ClientWorker implements LifeCycle {
     @Override
     public void start() throws NacosException {
 
-        // Initialize the timeout parameter
-        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
-                Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+        if (started.compareAndSet(false, true)) {
 
-        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+            // Initialize the timeout parameter
+            timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+                    Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
-        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+            taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
-        executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
+            enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
 
-        executorService = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName() + "-" + threadId.incrementAndGet());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+            executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r);
+                    t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
+                    t.setDaemon(true);
+                    return t;
                 }
-            }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
+            });
+
+            executorService = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread t = new Thread(r);
+                    t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName() + "-" + threadId.incrementAndGet());
+                    t.setDaemon(true);
+                    return t;
+                }
+            });
+
+            executor.scheduleWithFixedDelay(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        checkConfigInfo();
+                    } catch (Throwable e) {
+                        LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+                    }
+                }
+            }, 1L, 10L, TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executor.shutdown();
-        executorService.shutdown();
+        if (destroyed.compareAndSet(false, true)) {
+            executor.shutdown();
+            executorService.shutdown();
+        }
     }
 
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {

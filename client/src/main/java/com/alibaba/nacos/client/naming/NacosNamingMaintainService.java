@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author liaochuntao
@@ -49,6 +50,9 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     private Properties properties;
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     public NacosNamingMaintainService(String serverList) {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
@@ -63,14 +67,18 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     @Override
     public void start() throws NacosException {
-        serverProxy = new NamingProxy(namespace, endpoint, serverList);
-        serverProxy.setProperties(properties);
-        serverProxy.start();
+        if (started.compareAndSet(false, true)) {
+            serverProxy = new NamingProxy(namespace, endpoint, serverList);
+            serverProxy.setProperties(properties);
+            serverProxy.start();
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        serverProxy.destroy();
+        if (destroyed.compareAndSet(false, true)) {
+            serverProxy.destroy();
+        }
     }
 
     private void init() {

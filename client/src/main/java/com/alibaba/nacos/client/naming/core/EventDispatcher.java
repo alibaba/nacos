@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -43,24 +44,31 @@ public class EventDispatcher implements LifeCycle {
     private ConcurrentMap<String, List<EventListener>> observerMap
         = new ConcurrentHashMap<String, List<EventListener>>();
 
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
     public EventDispatcher() {}
 
     @Override
     public void start() throws NacosException {
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
-                thread.setDaemon(true);
-                return thread;
-            }
-        });
-        executor.execute(new Notifier());
+        if (started.compareAndSet(false, true)) {
+            executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            });
+            executor.execute(new Notifier());
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        executor.shutdown();
+        if (destroyed.compareAndSet(false, true)) {
+            executor.shutdown();
+        }
     }
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {

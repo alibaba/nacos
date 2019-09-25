@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Config Impl
@@ -53,6 +54,10 @@ import java.util.concurrent.Callable;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosConfigService implements ConfigService {
+
+    private final AtomicBoolean started = new AtomicBoolean(false);
+
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     private static final Logger LOGGER = LogUtils.logger(NacosConfigService.class);
 
@@ -86,16 +91,20 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public void start() throws NacosException {
-        agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-        worker = new ClientWorker(agent, configFilterChainManager, properties);
-        agent.start();
-        worker.start();
+        if (started.compareAndSet(false, true)) {
+            agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+            worker = new ClientWorker(agent, configFilterChainManager, properties);
+            agent.start();
+            worker.start();
+        }
     }
 
     @Override
     public void destroy() throws NacosException {
-        agent.destroy();
-        worker.destroy();
+        if (destroyed.compareAndSet(false, true)) {
+            agent.destroy();
+            worker.destroy();
+        }
     }
 
     private void initNamespace(Properties properties) {
