@@ -18,6 +18,8 @@ package com.alibaba.nacos.naming.consistency;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
+import com.alibaba.nacos.naming.consistency.weak.WeakConsistencyService;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,12 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
+
+    @Autowired
+    private WeakConsistencyService weakConsistencyService;
+
+    @Autowired
+    private GlobalConfig globalConfig;
 
     @Override
     public void put(String key, Record value) throws NacosException {
@@ -59,6 +67,7 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
         if (KeyBuilder.SERVICE_META_KEY_PREFIX.equals(key)) {
             persistentConsistencyService.listen(key, listener);
             ephemeralConsistencyService.listen(key, listener);
+            weakConsistencyService.listen(key,listener);
             return;
         }
 
@@ -76,6 +85,15 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     }
 
     private ConsistencyService mapConsistencyService(String key) {
-        return KeyBuilder.matchEphemeralKey(key) ? ephemeralConsistencyService : persistentConsistencyService;
+        if (KeyBuilder.matchEphemeralKey(key)) {
+            return ephemeralConsistencyService;
+        } else {
+            if (globalConfig.isTreeProtocolEnabled()) {
+                if (KeyBuilder.matchInstanceListKey(key) || KeyBuilder.matchServiceMetaKey(key)) {
+                    return weakConsistencyService;
+                }
+            }
+            return persistentConsistencyService;
+        }
     }
 }

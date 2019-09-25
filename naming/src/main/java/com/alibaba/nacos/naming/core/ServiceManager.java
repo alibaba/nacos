@@ -144,7 +144,7 @@ public class ServiceManager implements RecordListener<Service> {
                 service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
             }
 
-            Loggers.RAFT.info("[RAFT-NOTIFIER] datum is changed, key: {}, value: {}", key, service);
+            Loggers.SRV_LOG.info("[NACOS-CONSISTENCY] datum is changed, key: {}, value: {}", key, service);
 
             Service oldDom = getService(service.getNamespaceId(), service.getName());
 
@@ -166,7 +166,7 @@ public class ServiceManager implements RecordListener<Service> {
         String namespace = KeyBuilder.getNamespace(key);
         String name = KeyBuilder.getServiceName(key);
         Service service = chooseServiceMap(namespace).get(name);
-        Loggers.RAFT.info("[RAFT-NOTIFIER] datum is deleted, key: {}", key);
+        Loggers.SRV_LOG.info("[NACOS-CONSISTENCY] datum is deleted, key: {}", key);
 
         // check again:
         if (service != null && !service.allIPs().isEmpty()) {

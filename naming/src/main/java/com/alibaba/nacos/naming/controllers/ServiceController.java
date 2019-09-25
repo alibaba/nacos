@@ -311,6 +311,8 @@ public class ServiceController {
                         Loggers.SRV_LOG.debug("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
                             serviceName, serverIP, checksum, service.getChecksum());
                     }
+                    Loggers.SRV_LOG.info("checksum of {} is not consistent, remote: {}, checksum: {}, local: {}",
+                        serviceName, serverIP, checksum, service.getChecksum());
                     serviceManager.addUpdatedService2Queue(checksums.namespaceId, serviceName, serverIP, checksum);
                 }
             }
