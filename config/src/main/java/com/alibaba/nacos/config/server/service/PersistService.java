@@ -16,7 +16,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
-import com.alibaba.nacos.config.server.exception.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
@@ -72,7 +72,7 @@ public class PersistService {
 
     private DataSourceService dataSourceService;
 
-    private static final String SQL_FIND_ALL_CONFIG_INFO = "select data_id,group_id,tenant_id,app_name,content,type from config_info";
+    private static final String SQL_FIND_ALL_CONFIG_INFO = "select id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,src_ip,c_desc,c_use,effect,c_schema from config_info";
 
     private static final String SQL_TENANT_INFO_COUNT_BY_TENANT_ID = "select count(1) from tenant_info where tenant_id = ?";
 
@@ -3419,7 +3419,7 @@ public class PersistService {
      * @param group
      * @return Collection of ConfigInfo objects
      */
-    public List<ConfigInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
+    public List<ConfigAllInfo> findAllConfigInfo4Export(final String dataId, final String group, final String tenant,
                                                      final String appName, final List<Long> ids) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         StringBuilder where = new StringBuilder(" where ");
@@ -3451,7 +3451,7 @@ public class PersistService {
             }
         }
         try {
-            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_INFO_ROW_MAPPER);
+            return this.jt.query(SQL_FIND_ALL_CONFIG_INFO + where, paramList.toArray(), CONFIG_ALL_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -3466,7 +3466,7 @@ public class PersistService {
      * failData: import failed data (only with abort for the same configs)
      * skipData: data skipped at import  (only with skip for the same configs)
      */
-    public Map<String, Object> batchInsertOrUpdate(List<ConfigInfo> configInfoList, String srcUser, String srcIp,
+    public Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
                                                    Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy) throws NacosException {
         int succCount = 0;
         int skipCount = 0;
@@ -3474,7 +3474,7 @@ public class PersistService {
         List<Map<String, String>> skipData = null;
 
         for (int i = 0; i < configInfoList.size(); i++) {
-            ConfigInfo configInfo = configInfoList.get(i);
+            ConfigAllInfo configInfo = configInfoList.get(i);
             try {
                 ParamUtils.checkParam(configInfo.getDataId(), configInfo.getGroup(), "datumId", configInfo.getContent());
             } catch (NacosException e) {
@@ -3484,14 +3484,16 @@ public class PersistService {
             ConfigInfo configInfo2Save = new ConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                 configInfo.getTenant(), configInfo.getAppName(), configInfo.getContent());
 
-            // simple judgment of file type based on suffix
-            String type = null;
-            if (configInfo.getDataId().contains(SPOT)) {
-                String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toLowerCase();
-                try {
-                    type = FileTypeEnum.valueOf(extName).getFileType();
-                } catch (Exception ex) {
-                    type = FileTypeEnum.TEXT.getFileType();
+            String type = configInfo.getType();
+            if (StringUtils.isBlank(type)) {
+                // simple judgment of file type based on suffix
+                if (configInfo.getDataId().contains(SPOT)) {
+                    String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toUpperCase();
+                    try {
+                        type = FileTypeEnum.valueOf(extName).getFileType();
+                    } catch (Exception ex) {
+                        type = FileTypeEnum.TEXT.getFileType();
+                    }
                 }
             }
             if (configAdvanceInfo == null) {

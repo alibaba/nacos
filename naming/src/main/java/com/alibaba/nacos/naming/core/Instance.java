@@ -331,11 +331,14 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
             Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
             if (!matcher.matches()) {
                 throw new IllegalArgumentException(String.format("IP(%s) or port(%d) format is invalid", getIp(), getPort()));
+
             }
         }
 
         if (getWeight() > MAX_WEIGHT_VALUE || getWeight() < MIN_WEIGHT_VALUE) {
-            throw new IllegalArgumentException(String.format("Illegal weight value: %f", getWeight()));
+            throw new IllegalArgumentException(
+                String.format("Illegal weight value: %f, the legal value range should be %.1f - %.1f", getWeight(),
+                    MIN_WEIGHT_VALUE, MAX_WEIGHT_VALUE));
         }
     }
 

@@ -56,8 +56,11 @@ class ServiceList extends React.Component {
       total: 0,
       pageSize: 10,
       currentPage: 1,
-      keyword: '',
       dataSource: [],
+      search: {
+        serviceName: '',
+        groupName: '',
+      },
       hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
     this.field = new Field(this);
@@ -78,13 +81,14 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, keyword, withInstances = false, hasIpCount } = this.state;
+    const { currentPage, pageSize, search, withInstances = false, hasIpCount } = this.state;
     const parameter = [
       `hasIpCount=${hasIpCount}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
-      `keyword=${keyword}`,
+      `serviceNameParam=${search.serviceName}`,
+      `groupNameParam=${search.groupName}`,
     ];
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
@@ -164,6 +168,8 @@ class ServiceList extends React.Component {
       serviceList,
       serviceName,
       serviceNamePlaceholder,
+      groupName,
+      groupNamePlaceholder,
       hiddenEmptyService,
       query,
       create,
@@ -172,7 +178,7 @@ class ServiceList extends React.Component {
       sampleCode,
       deleteAction,
     } = locale;
-    const { keyword, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -214,8 +220,19 @@ class ServiceList extends React.Component {
                   <Input
                     placeholder={serviceNamePlaceholder}
                     style={{ width: 200 }}
-                    value={keyword}
-                    onChange={keyword => this.setState({ keyword })}
+                    value={search.serviceName}
+                    onChange={serviceName => this.setState({ search: { ...search, serviceName } })}
+                    onPressEnter={() =>
+                      this.setState({ currentPage: 1 }, () => this.queryServiceList())
+                    }
+                  />
+                </FormItem>
+                <FormItem label={groupName}>
+                  <Input
+                    placeholder={groupNamePlaceholder}
+                    style={{ width: 200 }}
+                    value={search.groupName}
+                    onChange={groupName => this.setState({ search: { ...search, groupName } })}
                     onPressEnter={() =>
                       this.setState({ currentPage: 1 }, () => this.queryServiceList())
                     }
@@ -264,6 +281,7 @@ class ServiceList extends React.Component {
                   title={locale.columnHealthyInstanceCount}
                   dataIndex="healthyInstanceCount"
                 />
+                <Column title={locale.columnTriggerFlag} dataIndex="triggerFlag" />
                 <Column
                   title={operation}
                   align="center"

@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.core.*;
-import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -243,7 +243,7 @@ public class ServiceController {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
+        float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
@@ -275,10 +275,10 @@ public class ServiceController {
 
         Map<String, List<Service>> services = new HashMap<>(16);
         if (StringUtils.isNotBlank(namespaceId)) {
-            services.put(namespaceId, serviceManager.searchServices(namespaceId, ".*" + expr + ".*"));
+            services.put(namespaceId, serviceManager.searchServices(namespaceId, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
         } else {
             for (String namespace : serviceManager.getAllNamespaces()) {
-                services.put(namespace, serviceManager.searchServices(namespace, ".*" + expr + ".*"));
+                services.put(namespace, serviceManager.searchServices(namespace, Constants.ANY_PATTERN + expr + Constants.ANY_PATTERN));
             }
         }
 

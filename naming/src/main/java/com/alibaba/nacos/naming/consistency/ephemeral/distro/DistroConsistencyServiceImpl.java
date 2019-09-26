@@ -211,6 +211,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     // abort the procedure:
                     return;
                 }
+
                 if (!dataStore.contains(entry.getKey()) ||
                     dataStore.get(entry.getKey()).value == null ||
                     !dataStore.get(entry.getKey()).value.getChecksum().equals(entry.getValue())) {

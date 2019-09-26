@@ -235,7 +235,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return healthyCount;
     }
 
-    public boolean meetProtectThreshold() {
+    public boolean triggerFlag() {
         return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 

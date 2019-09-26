@@ -22,8 +22,15 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
+
 import com.alibaba.nacos.naming.core.*;
 import com.alibaba.nacos.naming.exception.NacosException;
+
+import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
+
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -129,10 +136,7 @@ public class InstanceController {
     @CanDistro
     @RequestMapping(value = "", method = RequestMethod.PUT)
     public String update(HttpServletRequest request) throws Exception {
-        String agent = request.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = request.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(request);
 
         ClientInfo clientInfo = new ClientInfo(agent);
 
@@ -152,10 +156,7 @@ public class InstanceController {
             Constants.DEFAULT_NAMESPACE_ID);
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        String agent = request.getHeader("Client-Version");
-        if (StringUtils.isBlank(agent)) {
-            agent = request.getHeader("User-Agent");
-        }
+        String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));
