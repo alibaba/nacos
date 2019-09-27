@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -41,6 +41,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -78,9 +79,6 @@ public class OperatorController {
 
     @Autowired
     private RaftCore raftCore;
-
-    @Autowired
-    private RaftPeerSet raftPeerSet;
 
     @RequestMapping("/push/state")
     public JSONObject pushState(HttpServletRequest request) {
@@ -238,11 +236,10 @@ public class OperatorController {
         int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
         int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
         String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
-        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
 
         List<RaftPeer> raftPeerLists = new ArrayList<>();
 
-        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, containedInstance, raftPeerLists,  raftPeerSet);
+        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, raftPeerLists);
 
         if (CollectionUtils.isEmpty(raftPeerLists)) {
             result.put("clusterStateList", Collections.emptyList());
@@ -264,5 +261,14 @@ public class OperatorController {
         result.put("clusterStateList", clusterStateJsonArray);
         result.put("count", total);
         return result;
+    }
+
+    @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
+    public JSONObject getClusterStates() {
+
+        RaftPeer peer = serviceManager.getMySelfClusterState();
+
+        return JSON.parseObject(JSON.toJSONString(peer));
+
     }
 }

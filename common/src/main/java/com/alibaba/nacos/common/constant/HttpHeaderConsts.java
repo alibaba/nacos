@@ -13,30 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.utils;
-
-import org.apache.commons.lang3.time.FastDateFormat;
-
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.Date;
+package com.alibaba.nacos.common.constant;
 
 /**
- * Time util
+ * Nacos header constants
  *
- * @author Nacos
+ * @author ly
  */
-public class TimeUtils {
+public interface HttpHeaderConsts {
 
-    public static Timestamp getCurrentTime() {
-        Date date = new Date();
-        return new Timestamp(date.getTime());
-    }
+    String CLIENT_VERSION_HEADER = "Client-Version";
+    String USER_AGENT_HEADER = "User-Agent";
 
-     public static String getCurrentTimeStr() {
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        FastDateFormat format = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss");
-        return format.format(c.getTime());
-    }
 }

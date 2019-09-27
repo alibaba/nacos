@@ -162,6 +162,7 @@ public class Constants {
     public static final String NULL_STRING = "null";
 
     public static final String NUMBER_PATTERN = "^\\d+$";
-
+  
     public static final String ANY_PATTERN = ".*";
+
 }

@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +83,9 @@ public class ServiceManager implements RecordListener<Service> {
 
     @Autowired
     private PushService pushService;
+
+    @Autowired
+    private RaftPeerSet raftPeerSet;
 
     private final Object putServiceLock = new Object();
 
@@ -230,10 +234,30 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
-    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, String containedInstance, List<RaftPeer> raftPeerList, RaftPeerSet raftPeerSet) {
+    public int getPagedClusterState(String namespaceId, int startPage, int pageSize, String keyword, List<RaftPeer> raftPeerList) {
 
-        List<RaftPeer> matchList = new ArrayList<>(raftPeerSet.allPeers());
-
+        List<RaftPeer> matchList = new ArrayList<>();
+        RaftPeer localRaftPeer = raftPeerSet.local();
+        matchList.add(localRaftPeer);
+        Set<String> otherServerSet = raftPeerSet.allServersWithoutMySelf();
+        if (null != otherServerSet && otherServerSet.size() > 0) {
+            for (String server: otherServerSet) {
+                String path =  UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT + "/state";
+                Map<String, String> params = Maps.newHashMapWithExpectedSize(2);
+                try {
+                    String content = NamingProxy.reqCommon(path, params, server, false);
+                    if (!StringUtils.EMPTY.equals(content)) {
+                        RaftPeer raftPeer = JSONObject.parseObject(content, RaftPeer.class);
+                        if (null != raftPeer) {
+                            matchList.add(raftPeer);
+                        }
+                    }
+                } catch (Exception e) {
+                    Loggers.SRV_LOG.warn("[QUERY-CLUSTER-STATE] Exception while query cluster state from {}, error: {}",
+                        server, e);
+                }
+            }
+        }
         List<RaftPeer> tempList = new ArrayList<>();
         if (StringUtils.isNotBlank(keyword)) {
             for (RaftPeer raftPeer : matchList) {
@@ -263,6 +287,10 @@ public class ServiceManager implements RecordListener<Service> {
         }
 
         return matchList.size();
+    }
+
+    public RaftPeer getMySelfClusterState() {
+        return raftPeerSet.local();
     }
 
     public void updatedHealthStatus(String namespaceId, String serviceName, String serverIP) {
@@ -495,17 +523,22 @@ public class ServiceManager implements RecordListener<Service> {
 
         Service service = getService(namespaceId, serviceName);
 
-        List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
+        synchronized (service) {
+            List<Instance> instanceList = addIpAddresses(service, ephemeral, ips);
 
-        Instances instances = new Instances();
-        instances.setInstanceList(instanceList);
+            Instances instances = new Instances();
+            instances.setInstanceList(instanceList);
 
-        consistencyService.put(key, instances);
+            consistencyService.put(key, instances);
+        }
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Instance... ips) throws NacosException {
         Service service = getService(namespaceId, serviceName);
-        removeInstance(namespaceId, serviceName, ephemeral, service, ips);
+
+        synchronized (service) {
+            removeInstance(namespaceId, serviceName, ephemeral, service, ips);
+        }
     }
 
     public void removeInstance(String namespaceId, String serviceName, boolean ephemeral, Service service, Instance... ips) throws NacosException {
@@ -547,20 +580,19 @@ public class ServiceManager implements RecordListener<Service> {
 
         Datum datum = consistencyService.get(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), ephemeral));
 
-        Map<String, Instance> oldInstanceMap = new HashMap<>(16);
         List<Instance> currentIPs = service.allIPs(ephemeral);
-        Map<String, Instance> map = new ConcurrentHashMap<>(currentIPs.size());
+        Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
 
         for (Instance instance : currentIPs) {
-            map.put(instance.toIPAddr(), instance);
-        }
-        if (datum != null) {
-            oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
+            currentInstances.put(instance.toIPAddr(), instance);
         }
 
-        // use HashMap for deep copy:
-        HashMap<String, Instance> instanceMap = new HashMap<>(oldInstanceMap.size());
-        instanceMap.putAll(oldInstanceMap);
+        Map<String, Instance> instanceMap;
+        if (datum != null) {
+            instanceMap = setValid(((Instances) datum.value).getInstanceList(), currentInstances);
+        } else {
+            instanceMap = new HashMap<>(ips.length);
+        }
 
         for (Instance instance : ips) {
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {

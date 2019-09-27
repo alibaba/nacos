@@ -157,7 +157,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 sqlFileIn = new FileInputStream(file);
             }
 
-            StringBuffer sqlSb = new StringBuffer();
+            StringBuilder sqlSb = new StringBuilder();
             byte[] buff = new byte[1024];
             int byteRead = 0;
             while ((byteRead = sqlFileIn.read(buff)) != -1) {

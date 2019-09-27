@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
@@ -284,18 +284,8 @@ public class CatalogController {
             serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
             serviceView.setClusterCount(service.getClusterMap().size());
             serviceView.setIpCount(service.allIPs().size());
-
-            // FIXME should be optimized:
-            int validCount = 0;
-            for (Instance instance : service.allIPs()) {
-                if (instance.isHealthy()) {
-                    validCount++;
-                }
-
-            }
-
-            serviceView.setHealthyInstanceCount(validCount);
-
+            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
+            serviceView.setTriggerFlag(service.triggerFlag()?"true":"false");
             serviceJsonArray.add(serviceView);
         }
 
