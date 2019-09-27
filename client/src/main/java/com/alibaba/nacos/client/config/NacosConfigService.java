@@ -101,7 +101,7 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             agent.destroy();
             worker.destroy();
         }
@@ -332,6 +332,16 @@ public class NacosConfigService implements ConfigService {
         } else {
             return "DOWN";
         }
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 
 }

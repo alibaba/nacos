@@ -140,7 +140,7 @@ public class ClientWorker implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executor.shutdown();
             executorService.shutdown();
         }
@@ -604,5 +604,15 @@ public class ClientWorker implements LifeCycle {
 
     private void setHealthServer(boolean isHealthServer) {
         this.isHealthServer = isHealthServer;
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 }

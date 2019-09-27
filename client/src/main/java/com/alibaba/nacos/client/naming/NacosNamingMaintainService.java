@@ -76,7 +76,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             serverProxy.destroy();
         }
     }
@@ -188,6 +188,16 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     @Override
     public void updateService(Service service, AbstractSelector selector) throws NacosException {
         serverProxy.updateService(service, selector);
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 
 }

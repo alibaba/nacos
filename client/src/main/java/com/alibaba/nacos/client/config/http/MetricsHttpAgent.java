@@ -37,6 +37,16 @@ public class MetricsHttpAgent implements HttpAgent {
     }
 
     @Override
+    public boolean isStart() {
+        return httpAgent.isStart();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return httpAgent.isDestroy();
+    }
+
+    @Override
     public void start() throws NacosException {
         httpAgent.start();
     }

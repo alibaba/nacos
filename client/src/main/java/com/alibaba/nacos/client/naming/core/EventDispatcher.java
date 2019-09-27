@@ -66,7 +66,7 @@ public class EventDispatcher implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executor.shutdown();
         }
     }
@@ -146,5 +146,15 @@ public class EventDispatcher implements LifeCycle {
         ExecutorService oldExecutor = this.executor;
         this.executor = executor;
         oldExecutor.shutdown();
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 }

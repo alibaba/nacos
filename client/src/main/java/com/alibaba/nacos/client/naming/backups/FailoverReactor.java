@@ -54,15 +54,7 @@ public class FailoverReactor implements LifeCycle {
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
-    private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(Runnable r) {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.failover");
-            return thread;
-        }
-    });
+    private ScheduledExecutorService executorService;
 
     public FailoverReactor(HostReactor hostReactor, String cacheDir) {
         this.hostReactor = hostReactor;
@@ -72,6 +64,15 @@ public class FailoverReactor implements LifeCycle {
     @Override
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
+            executorService= Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
+                @Override
+                public Thread newThread(Runnable r) {
+                    Thread thread = new Thread(r);
+                    thread.setDaemon(true);
+                    thread.setName("com.alibaba.nacos.naming.failover");
+                    return thread;
+                }
+            });
             executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 
             executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
@@ -102,7 +103,7 @@ public class FailoverReactor implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executorService.shutdown();
         }
     }
@@ -246,5 +247,15 @@ public class FailoverReactor implements LifeCycle {
         }
 
         return serviceInfo;
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 }

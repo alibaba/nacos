@@ -118,7 +118,7 @@ public class NacosNamingService implements NamingService {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             eventDispatcher.destroy();
             serverProxy.destroy();
             beatReactor.destroy();
@@ -514,5 +514,15 @@ public class NacosNamingService implements NamingService {
 
     public BeatReactor getBeatReactor() {
         return beatReactor;
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 }

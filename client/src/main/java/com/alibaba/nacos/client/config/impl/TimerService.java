@@ -15,34 +15,70 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.LifeCycle;
+import com.alibaba.nacos.api.exception.NacosException;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Time Service
  *
  * @author Nacos
  */
-public class TimerService {
+public class TimerService implements LifeCycle {
 
-    static public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
-                                                            long delay, TimeUnit unit) {
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+
+    private static final TimerService singleton = new TimerService();
+
+    public static TimerService getSingleton() {
+        return singleton;
+    }
+
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
+                                                     long delay, TimeUnit unit) {
         return scheduledExecutor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    static ScheduledExecutorService scheduledExecutor = Executors
-        .newSingleThreadScheduledExecutor(new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Timer");
-                t.setDaemon(true);
-                return t;
-            }
-        });
+    private ScheduledExecutorService scheduledExecutor;
 
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
+    }
+
+    @Override
+    public void start() throws NacosException {
+        if (started.compareAndSet(false, true)) {
+            scheduledExecutor = Executors
+                    .newSingleThreadScheduledExecutor(new ThreadFactory() {
+                        @Override
+                        public Thread newThread(Runnable r) {
+                            Thread t = new Thread(r);
+                            t.setName("com.alibaba.nacos.client.Timer");
+                            t.setDaemon(true);
+                            return t;
+                        }
+                    });
+        }
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
+            scheduledExecutor.shutdown();
+        }
+    }
 }

@@ -75,7 +75,7 @@ public class PushReceiver implements Runnable, LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executorService.shutdown();
         }
     }
@@ -132,5 +132,15 @@ public class PushReceiver implements Runnable, LifeCycle {
 
     public int getUDPPort() {
         return udpSocket.getLocalPort();
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 }

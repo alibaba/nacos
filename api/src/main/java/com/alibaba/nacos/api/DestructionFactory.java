@@ -30,6 +30,8 @@ public class DestructionFactory {
             public void run() {
                 try {
                     lifeCycle.destroy();
+                    // just for test
+                    System.out.println("finish destroy");
                 } catch (NacosException e) {
                     throw new RuntimeException(e);
                 }

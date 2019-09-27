@@ -26,7 +26,9 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -44,11 +46,14 @@ import org.slf4j.Logger;
  *
  * @author Nacos
  */
-public class ServerListManager {
+public class ServerListManager implements LifeCycle {
 
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
     private static final String HTTPS = "https://";
     private static final String HTTP = "http://";
+
+    private final AtomicBoolean started = new AtomicBoolean(false);
+    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     public ServerListManager() {
         isFixed = false;
@@ -213,31 +218,54 @@ public class ServerListManager {
         return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
-    public synchronized void start() throws NacosException {
+    @Override
+    public void start() throws NacosException {
 
-        if (isStarted || isFixed) {
-            return;
-        }
+        if (started.compareAndSet(false, true)) {
 
-        GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
-        for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
-            getServersTask.run();
-            try {
-                this.wait((i + 1) * 100L);
-            } catch (Exception e) {
-                LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
+            TimerService.getSingleton().start();
+
+            if (isStarted || isFixed) {
+                return;
             }
-        }
 
-        if (serverUrls.isEmpty()) {
-            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
-                addressServerUrl);
-            throw new NacosException(NacosException.SERVER_ERROR,
-                "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
-        }
+            GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
+            for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
+                getServersTask.run();
+                try {
+                    this.wait((i + 1) * 100L);
+                } catch (Exception e) {
+                    LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
+                }
+            }
 
-        TimerService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
-        isStarted = true;
+            if (serverUrls.isEmpty()) {
+                LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
+                        addressServerUrl);
+                throw new NacosException(NacosException.SERVER_ERROR,
+                        "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
+            }
+
+            TimerService.getSingleton().scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
+            isStarted = true;
+        }
+    }
+
+    @Override
+    public void destroy() throws NacosException {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
+            TimerService.getSingleton().destroy();
+        }
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 
     Iterator<String> iterator() {
@@ -399,9 +427,9 @@ public class ServerListManager {
     private String name;
     private String namespace = "";
     private String tenant = "";
-    static public final String DEFAULT_NAME = "default";
-    static public final String CUSTOM_NAME = "custom";
-    static public final String FIXED_NAME = "fixed";
+    private static final String DEFAULT_NAME = "default";
+    private static final String CUSTOM_NAME = "custom";
+    private static final String FIXED_NAME = "fixed";
     private int initServerlistRetryTimes = 5;
     /**
      * Connection timeout and socket timeout with other servers

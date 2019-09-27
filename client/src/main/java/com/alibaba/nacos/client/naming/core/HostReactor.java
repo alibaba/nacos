@@ -112,7 +112,7 @@ public class HostReactor implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executor.shutdown();
             // Perform corresponding disposal operations
             failoverReactor.destroy();
@@ -369,5 +369,15 @@ public class HostReactor implements LifeCycle {
             }
 
         }
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 }

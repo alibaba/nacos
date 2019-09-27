@@ -25,6 +25,20 @@ import com.alibaba.nacos.api.exception.NacosException;
 public interface LifeCycle {
 
     /**
+     * The success of start-up
+     *
+     * @return start label
+     */
+    boolean isStart();
+
+    /**
+     * The success of destroy
+     *
+     * @return destroy label
+     */
+    boolean isDestroy();
+
+    /**
      * The service start
      *
      * @throws NacosException

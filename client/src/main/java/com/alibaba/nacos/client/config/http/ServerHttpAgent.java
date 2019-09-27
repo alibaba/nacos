@@ -298,8 +298,8 @@ public class ServerHttpAgent implements HttpAgent {
 
     @Override
     public synchronized void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
-
+        if (isStart() && destroyed.compareAndSet(false, true)) {
+            serverListMgr.destroy();
         }
     }
 
@@ -401,6 +401,16 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public String getEncode() {
         return encode;
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

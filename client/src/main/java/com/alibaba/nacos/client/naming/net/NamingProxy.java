@@ -100,7 +100,7 @@ public class NamingProxy implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executorService.shutdown();
         }
     }
@@ -575,6 +575,16 @@ public class NamingProxy implements LifeCycle {
         if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
+    }
+
+    @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
     }
 
 }

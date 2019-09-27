@@ -58,6 +58,16 @@ public class BeatReactor implements LifeCycle {
     }
 
     @Override
+    public boolean isStart() {
+        return started.get();
+    }
+
+    @Override
+    public boolean isDestroy() {
+        return destroyed.get();
+    }
+
+    @Override
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
             executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
@@ -74,7 +84,7 @@ public class BeatReactor implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (destroyed.compareAndSet(false, true)) {
+        if (isStart() && destroyed.compareAndSet(false, true)) {
             executorService.shutdown();
         }
     }
