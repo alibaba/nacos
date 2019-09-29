@@ -31,6 +31,7 @@ import java.net.UnknownHostException;
 public class Config {
 
     public static void main(String[] args) throws UnknownHostException {
+        System.setProperty("nacos.server.ip", "192.168.50.39");
         SpringApplication.run(Config.class, args);
     }
 }
