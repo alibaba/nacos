@@ -106,16 +106,17 @@ public class NacosNamingService implements NamingService {
          */
         initCacheDir();
         /**
-         * 初始化LogName
+         * 初始化LogName  默认naming.log
          */
         initLogName(properties);
 
         /**
-         * 事件分发
+         * 事件监听   当客户端监听的nacos集群上的Instance发生变化   这里负责在客户端层次通知
          */
         eventDispatcher = new EventDispatcher();
+
         /**
-         * 初始化NamingProxy
+         * 初始化NamingProxy   负责发送http请求
          */
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         /**
@@ -190,6 +191,9 @@ public class NacosNamingService implements NamingService {
      * @param properties
      */
     private void initServerAddr(Properties properties) {
+        /**
+         * 访问的nacos集群地址
+         */
         serverList = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
 
         /**

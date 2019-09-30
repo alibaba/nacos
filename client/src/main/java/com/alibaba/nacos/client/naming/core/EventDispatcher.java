@@ -143,6 +143,9 @@ public class EventDispatcher {
         changedServices.add(serviceInfo);
     }
 
+    /**
+     * 事件通知
+     */
     private class Notifier implements Runnable {
         @Override
         public void run() {

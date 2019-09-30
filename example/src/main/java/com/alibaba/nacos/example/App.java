@@ -29,8 +29,8 @@ import com.alibaba.nacos.api.naming.NamingService;
 public class App {
     public static void main(String[] args) throws NacosException {
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", "192.168.50.65:8848,192.168.50.64:8848,192.168.50.63:8848");
-        properties.setProperty("namespace", "quickStart");
+        properties.setProperty("serverAddr", "127.0.0.1:8848");
+//        properties.setProperty("namespace", "quickStart");
         NamingService naming = NamingFactory.createNamingService(properties);
         naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
         naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");

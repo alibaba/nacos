@@ -23,6 +23,11 @@ import java.util.concurrent.Callable;
  */
 public class TemplateUtils {
 
+    /**
+     * source不为空  则执行Runnable
+     * @param source
+     * @param runnable
+     */
     public static void stringNotEmptyAndThenExecute(String source, Runnable runnable) {
 
         if (StringUtils.isNotEmpty(source)) {

@@ -69,6 +69,7 @@ public class KeyBuilder {
     }
 
     /**
+     * 是否临时节点
      * com.alibaba.nacos.naming.iplist.ephemeral.开始
      * @param key
      * @return

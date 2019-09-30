@@ -68,6 +68,9 @@ public class InitUtils {
             });
         }
 
+        /**
+         * 获取系统环境变量的namespace
+         */
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
             public String call() {
@@ -77,10 +80,16 @@ public class InitUtils {
             }
         });
 
+        /**
+         * 获取properties中的namespace
+         */
         if (StringUtils.isEmpty(tmpNamespace) && properties != null) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
 
+        /**
+         * tmpNamespace为空  则取默认值  public
+         */
         tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, new Callable<String>() {
             @Override
             public String call() {
@@ -92,7 +101,15 @@ public class InitUtils {
 
     public static void initWebRootContext() {
         // support the web context with ali-yun if the app deploy by EDAS
+
+        /**
+         * 系统变量
+         */
         final String webContext = System.getProperty(SystemPropertyKeyConst.NAMING_WEB_CONTEXT);
+
+        /**
+         * webContext不为空  则执行Runnable
+         */
         TemplateUtils.stringNotEmptyAndThenExecute(webContext, new Runnable() {
             @Override
             public void run() {
