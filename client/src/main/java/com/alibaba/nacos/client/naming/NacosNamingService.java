@@ -120,7 +120,7 @@ public class NacosNamingService implements NamingService {
          */
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         /**
-         * 设置服务器端口
+         * 设置服务器端口   默认8848
          */
         serverProxy.setProperties(properties);
 

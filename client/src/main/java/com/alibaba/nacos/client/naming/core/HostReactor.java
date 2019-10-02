@@ -102,7 +102,7 @@ public class HostReactor {
         this.failoverReactor = new FailoverReactor(this, cacheDir);
 
         /**
-         *
+         * udp接收数据
          */
         this.pushReceiver = new PushReceiver(this);
     }

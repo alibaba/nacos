@@ -755,12 +755,12 @@ public class NamingProxy {
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
 
+        /**
+         * 如果系统变量中有设置服务端口   则更新
+         */
         String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
         if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
 
-            /**
-             * 如果系统变量中有设置服务端口   则更新
-             */
             this.serverPort = Integer.parseInt(sp);
         }
     }

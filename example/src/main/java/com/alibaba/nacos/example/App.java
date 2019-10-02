@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.naming.NamingService;
  * @author xxc
  */
 public class App {
-    public static void main(String[] args) throws NacosException {
+    public static void main(String[] args) throws Exception {
         Properties properties = new Properties();
         properties.setProperty("serverAddr", "127.0.0.1:8848");
 //        properties.setProperty("namespace", "quickStart");
@@ -35,5 +35,7 @@ public class App {
         naming.registerInstance("nacos.test.3", "11.11.11.11", 8888, "TEST1");
         naming.registerInstance("nacos.test.3", "2.2.2.2", 9999, "DEFAULT");
         System.out.println(naming.getAllInstances("nacos.test.3"));
+
+        Thread.sleep(Integer.MAX_VALUE);
     }
 }
