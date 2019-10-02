@@ -16,9 +16,9 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.junit.Assert;
 import org.junit.Before;
