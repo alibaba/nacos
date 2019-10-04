@@ -1223,6 +1223,7 @@ public class RaftCore {
 
                     /**
                      * 移除datumKey对应得任务
+                     * datumKey不存在则抛出异常
                      */
                     services.remove(datumKey);
 
@@ -1231,14 +1232,18 @@ public class RaftCore {
                     int count = 0;
 
                     /**
-                     * com.alibaba.nacos.naming.domains.meta.
+                     * 当前listeners中有meta类的   &&  datumKey符合meta  &&  datumKey不符合Switch
+                     * 则将listeners中  所有key为SERVICE_META_KEY_PREFIX的监听器   先处理一次
                      */
                     if (listeners.containsKey(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
 
+                        /**
+                         * meta 而非Switch
+                         */
                         if (KeyBuilder.matchServiceMetaKey(datumKey) && !KeyBuilder.matchSwitchKey(datumKey)) {
 
                             /**
-                             * 遍历服务   并根据action进行通知
+                             * 遍历服务（meta类）   并根据action进行通知
                              */
                             for (RecordListener listener : listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX)) {
                                 try {

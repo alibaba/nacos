@@ -94,7 +94,7 @@ public class NamingProxy {
         }
 
         /**
-         * 初始化   刷新集群地址
+         * 初始化   刷新集群地址   类似rmq    动态获取nacos集群地址  而不是配置文件中配置
          */
         initRefreshSrvIfNeed();
     }
@@ -194,7 +194,7 @@ public class NamingProxy {
             }
 
             /**
-             * 从Endpoint获取集群地址   动态获取   类似于rmq的nameserver集群地址
+             * 从Endpoint获取集群地址   动态获取   类似于rmq的nameserver动态集群地址
              */
             List<String> list = getServerListFromEndpoint();
 
