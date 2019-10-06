@@ -221,6 +221,9 @@ public class OperatorController {
      */
     @RequestMapping("/server/status")
     public String serverStatus(HttpServletRequest request) {
+        /**
+         * unknown#192.168.56.1:8848#1566292196551#6
+         */
         String serverStatus = WebUtils.required(request, "serverStatus");
         serverListManager.onReceiveServerStatus(serverStatus);
         return "ok";

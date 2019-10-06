@@ -343,6 +343,7 @@ public class RaftStore {
 
     /**
      * 获取cacheDir路径下得文件集合
+     * C:\Users\Administrator\nacos\data\naming\data
      * @return
      * @throws Exception
      */

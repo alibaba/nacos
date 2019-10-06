@@ -48,8 +48,14 @@ public class ServerListManager {
 
     private List<ServerChangeListener> listeners = new ArrayList<>();
 
+    /**
+     * 集群内所有的节点列表
+     */
     private List<Server> servers = new ArrayList<>();
 
+    /**
+     * 集群内所有健康的节点列表
+     */
     private List<Server> healthyServers = new ArrayList<>();
 
     private Map<String, List<Server>> distroConfig = new ConcurrentHashMap<>();
@@ -67,7 +73,7 @@ public class ServerListManager {
     private Synchronizer synchronizer = new ServerStatusSynchronizer();
 
     /**
-     * 注册监听
+     * 注册监听   集群内节点的变化
      * @param listener
      */
     public void listen(ServerChangeListener listener) {
@@ -77,11 +83,11 @@ public class ServerListManager {
     @PostConstruct
     public void init() {
         /**
-         * 集群列表变化
+         * 配置文件对应的集群列表有变化
          */
         GlobalExecutor.registerServerListUpdater(new ServerListUpdater());
         /**
-         * 集群内成员状态
+         * 根据心跳判断集群内成员状态
          */
         GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
     }
@@ -180,6 +186,9 @@ public class ServerListManager {
         return healthyServers;
     }
 
+    /**
+     * nacos集群内的节点有变化（节点地址发生变化   节点本身出现故障以及恢复）
+     */
     private void notifyListeners() {
 
         GlobalExecutor.notifyServerListChange(new Runnable() {
@@ -223,7 +232,7 @@ public class ServerListManager {
             }
 
             /**
-             * 存储心跳数据
+             * 存储节点数据   ip  端口   状态   上次心跳时间
              */
             Server server = new Server();
 
@@ -233,7 +242,7 @@ public class ServerListManager {
             server.setLastRefTime(Long.parseLong(params[2]));
 
             /**
-             * 集群列表中是否包括当前地址
+             * 集群列表不包括当前地址
              */
             if (!contains(server.getKey())) {
                 throw new IllegalArgumentException("server: " + server.getKey() + " is not in serverlist");
@@ -261,7 +270,7 @@ public class ServerListManager {
             server.setWeight(params.length == 4 ? Integer.parseInt(params[3]) : 1);
 
             /**
-             * 根据site查询匹配得集合
+             * 查询和server对应的site相同状态的节点列表
              */
             List<Server> list = distroConfig.get(server.getSite());
             if (list == null || list.size() <= 0) {
@@ -413,7 +422,8 @@ public class ServerListManager {
                 }
 
                 /**
-                 * 检查心跳
+                 * 通过检查心跳   判断集群内的节点是否alive   有变化时   发送通知
+                 * 节点心跳的记录  是由onReceiveServerStatus来完成的
                  */
                 checkDistroHeartbeat();
 
@@ -430,7 +440,7 @@ public class ServerListManager {
 
                 //send status to itself
                 /**
-                 * 发送本地节点状态
+                 * 处理本地节点状态
                  */
                 onReceiveServerStatus(status);
 
@@ -447,6 +457,9 @@ public class ServerListManager {
                     return;
                 }
 
+                /**
+                 * 向集群中的其他节点发送status
+                 */
                 if (allServers.size() > 0 && !NetUtils.localServer().contains(UtilsAndCommons.LOCAL_HOST_IP)) {
                     for (com.alibaba.nacos.naming.cluster.servers.Server server : allServers) {
                         /**
@@ -460,7 +473,7 @@ public class ServerListManager {
                         msg.setData(status);
 
                         /**
-                         * 向集群中的其他节点发送信息
+                         * 向集群中的其他节点发送status
                          */
                         synchronizer.send(server.getKey(), msg);
 
@@ -502,7 +515,7 @@ public class ServerListManager {
             }
 
             /**
-             * 间隔时间是否大于失效时间
+             * 当前节点是否alive
              */
             s.setAlive(now - lastBeat < switchDomain.getDistroServerExpiredMillis());
         }
@@ -511,6 +524,9 @@ public class ServerListManager {
         List<String> allLocalSiteSrvs = new ArrayList<>();
         for (Server server : servers) {
 
+            /**
+             * 端口为0   则忽略
+             */
             if (server.getKey().endsWith(":0")) {
                 continue;
             }
@@ -527,7 +543,7 @@ public class ServerListManager {
                 }
 
                 /**
-                 * 有正常心跳的节点
+                 * alive的节点
                  */
                 if (server.isAlive() && !newHealthyList.contains(server)) {
                     newHealthyList.add(server);
@@ -558,7 +574,7 @@ public class ServerListManager {
         }
 
         /**
-         * 集合不同
+         * 集群内健康（alive）的节点发生变化
          */
         if (!CollectionUtils.isEqualCollection(healthyServers, newHealthyList)) {
             // for every change disable healthy check for some while

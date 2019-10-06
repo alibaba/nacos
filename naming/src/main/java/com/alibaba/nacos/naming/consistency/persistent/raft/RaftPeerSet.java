@@ -78,7 +78,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     @PostConstruct
     public void init() {
         /**
-         * 注册监听
+         * 注册监听  集群内节点的变化
          */
         serverListManager.listen(this);
     }
@@ -365,7 +365,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     /**
-     * 集群内服务列表变化通知
+     * 集群内节点列表变化通知   更新集群内节点列表
      * @param latestMembers
      */
     @Override

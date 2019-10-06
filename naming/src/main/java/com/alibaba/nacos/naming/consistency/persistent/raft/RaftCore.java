@@ -120,6 +120,9 @@ public class RaftCore {
 
         Loggers.RAFT.info("initializing Raft sub-system");
 
+        /**
+         * 调度任务   监听
+         */
         executor.submit(notifier);
 
         long start = System.currentTimeMillis();
@@ -130,7 +133,7 @@ public class RaftCore {
         raftStore.loadDatums(notifier, datums);
 
         /**
-         * 设置当前term
+         * 设置当前term   默认为0
          */
         setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
@@ -491,7 +494,7 @@ public class RaftCore {
          */
         RaftPeer local = peers.get(NetUtils.localServer());
         /**
-         * 远端得term小于等于本地得term
+         * 远端得term小于等于本地得term  拒绝
          */
         if (remote.term.get() <= local.term.get()) {
             String msg = "received illegitimate vote" +
@@ -511,6 +514,9 @@ public class RaftCore {
             return local;
         }
 
+        /**
+         * 本地term小于远端  则认为远端为leader
+         */
         /**
          * 重置本地投票时间
          */
