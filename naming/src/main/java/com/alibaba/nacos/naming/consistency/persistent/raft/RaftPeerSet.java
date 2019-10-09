@@ -253,12 +253,12 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
         }
 
         /**
-         * 遍历集群内节点
+         * 获取前leader节点的实时信息
          */
         for (final RaftPeer peer : peers.values()) {
             Map<String, String> params = new HashMap<>(1);
             /**
-             * 获取前leader节点的实时信息
+             * 上一个leader节点
              */
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {

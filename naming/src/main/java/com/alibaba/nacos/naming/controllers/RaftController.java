@@ -115,6 +115,9 @@ public class RaftController {
          */
         JSONObject beat = JSON.parseObject(json.getString("beat"));
 
+        /**
+         * 接受leader心跳并处理
+         */
         RaftPeer peer = raftCore.receivedBeat(beat);
 
         return JSON.parseObject(JSON.toJSONString(peer));

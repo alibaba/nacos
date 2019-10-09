@@ -708,6 +708,9 @@ public class RaftCore {
      * @throws Exception
      */
     public RaftPeer receivedBeat(JSONObject beat) throws Exception {
+        /**
+         * 获取本地节点信息
+         */
         final RaftPeer local = peers.local();
         /**
          * 还原leader数据
