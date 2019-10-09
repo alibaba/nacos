@@ -606,6 +606,9 @@ public class RaftCore {
                 Loggers.RAFT.info("[SEND-BEAT-ONLY] {}", String.valueOf(switchDomain.isSendBeatOnly()));
             }
 
+            /**
+             * leader将本地的meta信息和注册的instance也传送给follower
+             */
             if (!switchDomain.isSendBeatOnly()) {
                 for (Datum datum : datums.values()) {
 
@@ -664,7 +667,7 @@ public class RaftCore {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
                             /**
-                             * 失败得应答
+                             * follower应答失败
                              */
                             if (response.getStatusCode() != HttpURLConnection.HTTP_OK) {
                                 Loggers.RAFT.error("NACOS-RAFT beat failed: {}, peer: {}",
