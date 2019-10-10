@@ -262,6 +262,9 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
              */
             if (!Objects.equals(peer, candidate) && peer.state == RaftPeer.State.LEADER) {
                 try {
+                    /**
+                     * 查询上一个leader节点的信息
+                     */
                     String url = RaftCore.buildURL(peer.ip, RaftCore.API_GET_PEER);
                     HttpClient.asyncHttpGet(url, null, params, new AsyncCompletionHandler<Integer>() {
                         @Override

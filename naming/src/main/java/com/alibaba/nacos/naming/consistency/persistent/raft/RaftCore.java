@@ -764,13 +764,13 @@ public class RaftCore {
         local.resetHeartbeatDue();
 
         /**
-         * 设置leader
+         * 更换leader  并向之前leader节点发送请求   查询最新的节点数据
          */
         peers.makeLeader(remote);
 
 
         /**
-         * 本地的datums数据
+         * 本地的datums数据   value为0的key为本地数据   value为1的key为leader中有的数据
          */
         Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
 
@@ -816,11 +816,14 @@ public class RaftCore {
                  */
                 long timestamp = entry.getLong("timestamp");
 
+                /**
+                 * 存储leader中对应的datumKey
+                 */
                 receivedKeysMap.put(datumKey, 1);
 
                 try {
                     /**
-                     * 本地包含leader数据key  &&  本地timestamp大于等于leader的timestamp   &&  处理的数据小于leader传送的数据
+                     * 本地包含leader数据key  &&  本地timestamp大于等于leader的timestamp   &&  leader传送的数据没有全部遍历
                      */
                     if (datums.containsKey(datumKey) && datums.get(datumKey).timestamp.get() >= timestamp && processedCount < beatDatums.size()) {
                         continue;
@@ -876,7 +879,7 @@ public class RaftCore {
                                 try {
 
                                     /**
-                                     * 本地Datum
+                                     * key对应的本地Datum
                                      */
                                     Datum oldDatum = getDatum(datumJson.getString("key"));
 
@@ -902,7 +905,7 @@ public class RaftCore {
                                     }
 
                                     /**
-                                     * 节点列表
+                                     * instance列表
                                      */
                                     if (KeyBuilder.matchInstanceListKey(datumJson.getString("key"))) {
                                         Datum<Instances> instancesDatum = new Datum<>();
@@ -1092,6 +1095,11 @@ public class RaftCore {
         return "http://" + ip + RunningConfig.getContextPath() + api;
     }
 
+    /**
+     * 获取key对应的Datum
+     * @param key
+     * @return
+     */
     public Datum<?> getDatum(String key) {
         return datums.get(key);
     }
