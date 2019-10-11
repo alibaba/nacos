@@ -170,9 +170,9 @@ public class NacosConfigService implements ConfigService {
         }
 
         try {
-            content = worker.getServerConfig(dataId, group, tenant, timeoutMs);
+            String[] ct = worker.getServerConfig(dataId, group, tenant, timeoutMs);
 
-            cr.setContent(content);
+            cr.setContent(ct[0]);
 
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
