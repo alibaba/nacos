@@ -124,7 +124,7 @@ public class RaftController {
     }
 
     /**
-     * 远程节点发送leader变更通知
+     * 查询当前节点信息
      * @param request
      * @param response
      * @return

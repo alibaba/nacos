@@ -942,7 +942,7 @@ public class RaftCore {
                                     local.resetLeaderDue();
 
                                     /**
-                                     * 本地和leader传送的term差距在100以内   则同时更新缓存中本地节点和leader节点的term为返回的leader
+                                     * 本地和leader的term差距在100以内   则同时更新缓存中本地节点和leader节点的term为返回的leader
                                      *
                                      * 差距在100之外   则更新缓存中本地节点的term增加100
                                      */
@@ -972,6 +972,9 @@ public class RaftCore {
                         }
                     });
 
+                    /**
+                     * 重置
+                     */
                     batch.clear();
 
                 } catch (Exception e) {
@@ -981,7 +984,7 @@ public class RaftCore {
             }
 
             /**
-             * 删除receivedKeysMap中  value为0的数据
+             * 删除receivedKeysMap中  value为0的数据  即leader中没有的数据
              */
             List<String> deadKeys = new ArrayList<>();
             for (Map.Entry<String, Integer> entry : receivedKeysMap.entrySet()) {
