@@ -27,6 +27,7 @@ public class RandomUtils {
     private static Random rd = new Random();
     private static int UNICODE_START = 19968;
     private static int UNICODE_END = 40864;
+    private static final String  STRING_POOL = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private RandomUtils() {
     }
@@ -132,13 +133,12 @@ public class RandomUtils {
     }
 
     public static String getRandomString(int length) {
-        StringBuffer buffer = new StringBuffer("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Random random = new Random();
-        int range = buffer.length();
+        int range = STRING_POOL.length();
 
         for(int i = 0; i < length; ++i) {
-            sb.append(buffer.charAt(random.nextInt(range)));
+            sb.append(STRING_POOL.charAt(random.nextInt(range)));
         }
 
         return sb.toString();

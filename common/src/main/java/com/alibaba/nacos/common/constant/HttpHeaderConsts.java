@@ -13,27 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.healthcheck;
-
-import org.springframework.stereotype.Component;
+package com.alibaba.nacos.common.constant;
 
 /**
- * Health checker that does nothing
+ * Nacos header constants
  *
- * @author nkorange
- * @since 1.0.0
+ * @author ly
  */
-@Component
-public class NoneHealthCheckProcessor implements HealthCheckProcessor {
+public interface HttpHeaderConsts {
 
-    public static final String TYPE = "NONE";
+    String CLIENT_VERSION_HEADER = "Client-Version";
+    String USER_AGENT_HEADER = "User-Agent";
 
-    @Override
-    public void process(HealthCheckTask task) {
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
-    }
 }

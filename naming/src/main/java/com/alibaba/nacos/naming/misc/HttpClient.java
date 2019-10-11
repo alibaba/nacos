@@ -15,7 +15,9 @@
  */
 package com.alibaba.nacos.naming.misc;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
+import com.alibaba.nacos.common.util.VersionUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -102,8 +104,6 @@ public class HttpClient {
             conn.setReadTimeout(readTimeout);
             conn.setRequestMethod(method);
 
-            conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
-            conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
             setHeaders(conn, headers, encoding);
             conn.connect();
 
@@ -449,8 +449,8 @@ public class HttpClient {
         conn.addRequestProperty("Content-Type", "application/x-www-form-urlencoded;charset="
                 + encoding);
         conn.addRequestProperty("Accept-Charset", encoding);
-        conn.addRequestProperty("Client-Version", UtilsAndCommons.SERVER_VERSION);
-        conn.addRequestProperty("User-Agent", UtilsAndCommons.SERVER_VERSION);
+        conn.addRequestProperty(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION);
+        conn.addRequestProperty(HttpHeaderConsts.USER_AGENT_HEADER, UtilsAndCommons.SERVER_VERSION);
     }
 
     public static String encodingParams(Map<String, String> params, String encoding)
