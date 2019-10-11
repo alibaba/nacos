@@ -30,8 +30,8 @@ import java.util.*;
 public class ConfigChangeEvent {
     private Map<String, ConfigChangeItem> result;
 
-    public ConfigChangeEvent(String dataId, String oldContent, String content) throws IOException {
-        init(dataId, oldContent, content);
+    public ConfigChangeEvent(String dataId, String oldContent, String content, String type) throws IOException {
+        init(dataId, oldContent, content, type);
     }
 
     public ConfigChangeItem getChangeItem(String key) {
@@ -42,10 +42,10 @@ public class ConfigChangeEvent {
         return result.values();
     }
 
-    private void init(String dataId, String oldContent, String content) throws IOException {
+    private void init(String dataId, String oldContent, String content, String type) throws IOException {
         result = new HashMap<String, ConfigChangeItem>(32);
 
-        if (dataId.endsWith(PROPERTIES_SUFFIX)) {
+        if (dataId.endsWith(PROPERTIES_SUFFIX) || PROPERTIES_SUFFIX.equalsIgnoreCase(type)) {
             Properties oldProps = new Properties();
             Properties newProps = new Properties();
 
@@ -57,7 +57,8 @@ public class ConfigChangeEvent {
             }
 
             filterData(oldProps, newProps);
-        } else if (dataId.endsWith(YML_SUFFIX) || dataId.endsWith(YAML_SUFFIX)) {
+        } else if (dataId.endsWith(YML_SUFFIX) || dataId.endsWith(YAML_SUFFIX)
+            || YAML_SUFFIX.equalsIgnoreCase(type)) {
             Map<String, Object> oldMap = Collections.emptyMap();
             Map<String, Object> newMap = Collections.emptyMap();
 
@@ -142,8 +143,8 @@ public class ConfigChangeEvent {
         }
     }
 
-    static final String PROPERTIES_SUFFIX = ".properties";
-    static final String YAML_SUFFIX = ".yaml";
-    static final String YML_SUFFIX = ".yml";
+    static final String PROPERTIES_SUFFIX = "properties";
+    static final String YAML_SUFFIX = "yaml";
+    static final String YML_SUFFIX = "yml";
 }
 

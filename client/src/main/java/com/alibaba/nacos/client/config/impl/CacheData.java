@@ -66,6 +66,14 @@ public class CacheData {
         this.md5 = getMd5String(content);
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     /**
      * Add listener
      * if CacheData already set new content, Listener should init lastCallMd5 by CacheData.md5
@@ -160,12 +168,12 @@ public class CacheData {
     void checkListenerMd5() {
         for (ManagerListenerWrap wrap : listeners) {
             if (!md5.equals(wrap.lastCallMd5)) {
-                safeNotifyListener(dataId, group, content, md5, wrap);
+                safeNotifyListener(dataId, group, content, type, md5, wrap);
             }
         }
     }
 
-    private void safeNotifyListener(final String dataId, final String group, final String content,
+    private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
                                     final String md5, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
 
@@ -193,7 +201,7 @@ public class CacheData {
 
                     if (listener instanceof AbstractConfigChangeListener) {
                         // compare lastContent and content
-                        ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content);
+                        ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content, type);
                         ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
                     }
 
@@ -292,6 +300,7 @@ public class CacheData {
     private volatile String content;
     private int taskId;
     private volatile boolean isInitializing = true;
+    private String type;
 }
 
 class ManagerListenerWrap {
