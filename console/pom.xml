@@ -43,6 +43,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-istio</artifactId>
+        </dependency>
+
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
         <dependency>

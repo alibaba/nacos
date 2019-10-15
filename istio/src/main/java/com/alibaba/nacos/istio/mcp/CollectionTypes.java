@@ -2,6 +2,8 @@ package com.alibaba.nacos.istio.mcp;
 
 
 /**
+ * The collection types supported by Nacos
+ *
  * @author nkorange
  * @since 1.1.4
  */
