@@ -93,7 +93,7 @@ public class ServerListManager {
     }
 
     /**
-     * 获得nacos集群列表
+     * 读取cluster.conf获得nacos集群列表
      * @return
      */
     private List<Server> refreshServerList() {
@@ -362,7 +362,7 @@ public class ServerListManager {
         public void run() {
             try {
                 /**
-                 * 获得nacos集群列表
+                 * 读取cluster.conf获得nacos集群列表
                  */
                 List<Server> refreshedServers = refreshServerList();
                 List<Server> oldServers = servers;
