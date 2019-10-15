@@ -1,13 +1,17 @@
 package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.mcp.ResourceSourceGrpc;
 import io.grpc.*;
 import org.springframework.stereotype.Service;
 
 import java.net.SocketAddress;
 
-
+/**
+ * Interceptor for MCP server
+ *
+ * @author nkorange
+ * @since 1.1.4
+ */
 @Service
 public class McpServerIntercepter implements ServerInterceptor {
 
@@ -22,10 +26,6 @@ public class McpServerIntercepter implements ServerInterceptor {
         String methodName = call.getMethodDescriptor().getFullMethodName();
 
         Loggers.MAIN.info("remote address: {}, method: {}", address, methodName);
-
-        if ((ResourceSourceGrpc.SERVICE_NAME + "/" + INTERCEPTE_METHOD_NAME).equals(methodName)) {
-
-        }
 
         return next.startCall(call, headers);
     }

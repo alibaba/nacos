@@ -1,5 +1,6 @@
 package com.alibaba.nacos.istio.mcp;
 
+import com.alibaba.nacos.istio.misc.Loggers;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.ServerInterceptors;
@@ -11,13 +12,18 @@ import java.io.IOException;
 
 
 /**
+ * Nacos MCP server
+ * <p>
+ * This MCP serves as a ResourceSource defined by Istio.
+ *
  * @author nkorange
  * @since 1.1.4
  */
 @Service
 public class NacosMcpServer {
 
-    private int port = 18848;
+    private final int port = 18848;
+
     private Server server;
 
     @Autowired
@@ -29,14 +35,14 @@ public class NacosMcpServer {
     @PostConstruct
     public void start() throws IOException {
 
-        System.out.println("Starting Nacos MCP server...");
+        Loggers.MAIN.info("MCP server, starting Nacos MCP server...");
 
         server = ServerBuilder.forPort(port)
             .addService(ServerInterceptors.intercept(nacosMcpService, intercepter))
             .build();
         server.start();
 
-        Runtime.getRuntime().addShutdownHook(new Thread(){
+        Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
 

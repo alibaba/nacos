@@ -202,6 +202,11 @@
                         <ruleset>rulesets/java/ali-set.xml</ruleset>
                     </rulesets>
                     <printFailingErrors>true</printFailingErrors>
+                    <excludes>
+                        <exclude>**/istio/model/mcp/*.java</exclude>
+                        <exclude>**/istio/model/naming/*.java</exclude>
+                        <exclude>**/istio/model/*.java</exclude>
+                    </excludes>
                 </configuration>
                 <executions>
                     <execution>
@@ -437,6 +442,7 @@
         <module>distribution</module>
         <module>console</module>
         <module>cmdb</module>
+        <module>istio</module>
     </modules>
 
     <!-- 所有的子项目默认依赖 -->
@@ -516,6 +522,12 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-example</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-istio</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -703,7 +715,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>4.0.42.Final</version>
+                <version>4.1.31.Final</version>
             </dependency>
 
             <dependency>
@@ -715,7 +727,7 @@
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>19.0</version>
+                <version>22.0</version>
             </dependency>
 
             <dependency>
@@ -729,6 +741,27 @@
                 <artifactId>commonOkHttp</artifactId>
                 <version>0.4.1</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-netty</artifactId>
+                <version>1.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-protobuf</artifactId>
+                <version>1.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-stub</artifactId>
+                <version>1.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.api.grpc</groupId>
+                <artifactId>proto-google-common-protos</artifactId>
+                <version>1.17.0</version>
             </dependency>
 
         </dependencies>

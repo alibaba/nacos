@@ -54,6 +54,8 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
         @Override
         public void run() {
 
+            boolean changed = false;
+
             // Query all services to see if any of them have changes:
             Set<String> namespaces = serviceManager.getAllNamespaces();
 
@@ -75,9 +77,15 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
                     }
 
                     // Update the resource:
+                    changed = true;
                     resourceMap.put(convertedName, convertService(service));
                     checksumMap.put(convertedName, service.getChecksum());
                 }
+            }
+
+            if (!changed) {
+                // If no service changed, just return:
+                return;
             }
 
             Resources resources = Resources.newBuilder()
