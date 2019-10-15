@@ -1,19 +1,19 @@
 package com.alibaba.nacos.istio.mcp;
 
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.model.Port;
 import com.alibaba.nacos.istio.model.mcp.*;
 import com.alibaba.nacos.istio.model.naming.ServiceEntry;
 import com.google.protobuf.Any;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author nkorange
@@ -22,120 +22,139 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
 
-    private Map<String, StreamObserver<Resources>> connnections = new ConcurrentHashMap<>();
+    private AtomicInteger connectIdGenerator = new AtomicInteger(0);
+
+    private Map<Integer, StreamObserver<Resources>> connnections = new ConcurrentHashMap<>();
 
     public NacosMcpService() {
-        super();
+
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
+                try {
 
-                for (; ; ) {
-                    try {
-                        Thread.sleep(5000L);
+                    while (true) {
+                        TimeUnit.SECONDS.sleep(10L);
+
                         if (connnections.isEmpty()) {
                             continue;
                         }
                         for (StreamObserver<Resources> observer : connnections.values()) {
                             observer.onNext(generateResources());
                         }
-
-                    } catch (Exception e) {
-
                     }
+
+                } catch (Exception e) {
+
                 }
             }
         });
+
         thread.start();
     }
 
     public Resources generateResources() {
 
-        String serviceName = "java.mock.1";
-        int endpointCount = 10;
+        try {
 
-        ServiceEntry.Builder serviceEntryBuilder = ServiceEntry.newBuilder()
-            .setResolution(ServiceEntry.Resolution.STATIC)
-            .setLocation(ServiceEntry.Location.MESH_INTERNAL)
-            .setHosts(0, serviceName + ".nacos")
-            .setPorts(0, Port.newBuilder().setNumber(8080).setName("http").setProtocol("HTTP").build());
+            String serviceName = "java.mock.1";
+            int endpointCount = 10;
 
-        for (int i = 0; i < endpointCount; i++) {
-            ServiceEntry.Endpoint endpoint =
-                ServiceEntry.Endpoint.newBuilder()
-                    .setAddress("10.10.10." + i)
-                    .setWeight(1)
-                    .putPorts("http", 8080)
-                    .putLabels("app", "nacos-istio")
-                    .build();
-            serviceEntryBuilder.addEndpoints(endpoint);
-        }
+            ServiceEntry.Builder serviceEntryBuilder = ServiceEntry.newBuilder()
+                .setResolution(ServiceEntry.Resolution.STATIC)
+                .setLocation(ServiceEntry.Location.MESH_INTERNAL)
+                .addHosts(serviceName + ".nacos")
+                .addPorts(Port.newBuilder().setNumber(8080).setName("http").setProtocol("HTTP").build());
 
-        ServiceEntry serviceEntry = serviceEntryBuilder.build();
+            for (int i = 0; i < endpointCount; i++) {
+                ServiceEntry.Endpoint endpoint =
+                    ServiceEntry.Endpoint.newBuilder()
+                        .setAddress("10.10.10." + i)
+                        .setWeight(1)
+                        .putPorts("http", 8080)
+                        .putLabels("app", "nacos-istio")
+                        .build();
+                serviceEntryBuilder.addEndpoints(endpoint);
+            }
 
-        Any any = Any.newBuilder()
-            .setValue(serviceEntry.toByteString())
-            .setTypeUrl(ServiceEntry.class.getCanonicalName())
-            .build();
+            ServiceEntry serviceEntry = serviceEntryBuilder.build();
 
-        Metadata metadata = Metadata.newBuilder().setName("nacos/" + serviceName).build();
-        metadata.getAnnotationsMap().put("virtual", "1");
+            Any any = Any.newBuilder()
+                .setValue(serviceEntry.toByteString())
+                .setTypeUrl("type.googleapis.com/istio.networking.v1alpha3.ServiceEntry")
+                .build();
 
-        Resource resource = Resource.newBuilder()
-            .setBody(any)
-            .setMetadata(metadata)
-            .build();
+            Metadata metadata = Metadata.newBuilder()
+                .setName("nacos/" + serviceName)
+                .putAnnotations("virtual", "1")
+                .build();
 
-        Resources resources = Resources.newBuilder()
-            .addResources(resource)
-            .setCollection(CollectionTypes.SERVICE_ENTRY)
-            .setNonce(String.valueOf(System.currentTimeMillis()))
-            .build();
+            Resource resource = Resource.newBuilder()
+                .setBody(any)
+                .setMetadata(metadata)
+                .build();
 
-        Loggers.MAIN.info("generated resources: {}", JSON.toJSONString(resource));
+            Resources resources = Resources.newBuilder()
+                .addResources(resource)
+                .setCollection(CollectionTypes.SERVICE_ENTRY)
+                .setNonce(String.valueOf(System.currentTimeMillis()))
+                .build();
 
-        return resources;
-    }
+            Loggers.MAIN.info("generated resources: {}", resources);
 
-    public void addConnection(String id, StreamObserver<Resources> observer) {
-        if (!connnections.containsKey(id)) {
-            connnections.put(id, observer);
+            return resources;
+        } catch (Exception e) {
+
+            Loggers.MAIN.error("", e);
+            return null;
         }
     }
 
     @Override
     public StreamObserver<RequestResources> establishResourceStream(StreamObserver<Resources> responseObserver) {
 
-        Loggers.MAIN.info("new connection incoming...");
+        int id = connectIdGenerator.incrementAndGet();
+        connnections.put(id, responseObserver);
 
         return new StreamObserver<RequestResources>() {
+
+            private int connectionId = id;
 
             @Override
             public void onNext(RequestResources value) {
 
-                String nonce = value.getResponseNonce();
-                List<Integer> list = new LinkedList<>();
-
                 Loggers.MAIN.info("receiving request, sink: {}, type: {}", value.getSinkNode(), value.getCollection());
 
-                // Return empty resources for other types:
-                if (!CollectionTypes.SERVICE_ENTRY.equals(value.getCollection())) {
+                if (value.getErrorDetail() != null && value.getErrorDetail().getCode() != 0) {
 
-                    Resources resources = Resources.newBuilder()
-                        .setCollection(value.getCollection())
-                        .build();
-
-                    responseObserver.onNext(resources);
+                    Loggers.MAIN.error("NACK error code: {}, message: {}", value.getErrorDetail().getCode()
+                        , value.getErrorDetail().getMessage());
                     return;
                 }
 
-                addConnection(value.getSinkNode().getId(), responseObserver);
+                if (StringUtils.isNotBlank(value.getResponseNonce())) {
+                    // This is a response:
+                    Loggers.MAIN.info("ACK nonce: {}, type: {}", value.getResponseNonce(), value.getCollection());
+                    return;
+                }
+
+                if (!CollectionTypes.SERVICE_ENTRY.equals(value.getCollection())) {
+                    // Return empty resources for other types:
+                    Resources resources = Resources.newBuilder()
+                        .setCollection(value.getCollection())
+                        .setNonce(String.valueOf(System.currentTimeMillis()))
+                        .build();
+
+                    responseObserver.onNext(resources);
+                } else {
+                    responseObserver.onNext(generateResources());
+                }
             }
 
             @Override
             public void onError(Throwable t) {
-                Loggers.MAIN.error("", t);
-                responseObserver.onError(t);
+                Loggers.MAIN.error("stream error.", t);
+                connnections.remove(connectionId);
             }
 
             @Override
