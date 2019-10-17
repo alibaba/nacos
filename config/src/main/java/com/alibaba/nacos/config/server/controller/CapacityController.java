@@ -41,6 +41,12 @@ import javax.servlet.http.HttpServletResponse;
 @RequestMapping(Constants.CAPACITY_CONTROLLER_PATH)
 public class CapacityController {
 
+
+
+
+
+
+    private int a=1;
     private static final Logger log = LoggerFactory.getLogger(CapacityController.class);
 
     private final CapacityService capacityService;
