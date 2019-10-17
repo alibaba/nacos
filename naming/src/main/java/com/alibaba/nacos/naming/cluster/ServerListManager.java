@@ -60,6 +60,9 @@ public class ServerListManager {
 
     private Map<String, List<Server>> distroConfig = new ConcurrentHashMap<>();
 
+    /**
+     * nacos集群内节点最后一次心跳时间   <Key,timestamp>
+     */
     private Map<String, Long> distroBeats = new ConcurrentHashMap<>(16);
 
     private Set<String> liveSites = new HashSet<>();
@@ -225,6 +228,7 @@ public class ServerListManager {
         for (String config : configs) {
             tmpServerList.clear();
             // site:ip:lastReportTime:weight
+            //unknown#192.168.56.1:8848#1566292196551#6
             String[] params = config.split("#");
             if (params.length <= 3) {
                 Loggers.SRV_LOG.warn("received malformed distro map data: {}", config);

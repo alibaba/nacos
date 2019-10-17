@@ -837,7 +837,7 @@ public class RaftCore {
                     }
 
                     /**
-                     * 至少50条记录才处理   或者   数据已经轮询完
+                     * 处理数据小于50条   并且  循环没有结束
                      */
                     if (batch.size() < 50 && processedCount < beatDatums.size()) {
                         continue;
