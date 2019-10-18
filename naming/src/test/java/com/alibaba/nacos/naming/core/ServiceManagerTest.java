@@ -59,6 +59,7 @@ public class ServiceManagerTest extends BaseTest {
         Assert.assertEquals(instance, instanceList.get(0));
         Assert.assertEquals(1, service.getClusterMap().size());
         Assert.assertEquals(new Cluster(instance.getClusterName(), service), service.getClusterMap().get(TEST_CLUSTER_NAME));
+        Assert.assertNotNull(instanceList.get(0).getInstanceIndex());
 
         Datum datam = new Datum();
         datam.key = KeyBuilder.buildInstanceListKey(TEST_NAMESPACE, TEST_SERVICE_NAME, true);
@@ -83,5 +84,23 @@ public class ServiceManagerTest extends BaseTest {
         Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(TEST_NAMESPACE);
         serviceManager.updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, true);
+    }
+
+    @Test
+    public void testEachInstanceHasEachIndex() throws Exception {
+        ReflectionTestUtils.setField(serviceManager, "consistencyService", consistencyService);
+        Service service = new Service(TEST_SERVICE_NAME);
+        service.setNamespaceId(TEST_NAMESPACE);
+        Instance instance1 = new Instance("1.1.1.1", 1);
+        instance1.setClusterName(TEST_CLUSTER_NAME);
+
+        Instance instance2 = new Instance("2.2.2.2", 2);
+        instance1.setClusterName(TEST_CLUSTER_NAME);
+
+        List<Instance> instanceList = serviceManager.updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, true, instance1, instance2);
+        Assert.assertNotNull(instanceList);
+        Assert.assertEquals(2, instanceList.size());
+        Assert.assertNotEquals(instanceList.get(0).getInstanceIndex(), instanceList.get(1).getInstanceIndex());
+
     }
 }
