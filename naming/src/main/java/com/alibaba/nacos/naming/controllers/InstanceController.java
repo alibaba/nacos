@@ -197,6 +197,7 @@ public class InstanceController {
                 result.put("healthy", instance.isHealthy());
                 result.put("metadata", instance.getMetadata());
                 result.put("instanceId", instance.generateInstanceId());
+                result.put("instanceIndex", instance.getInstanceIndex());
                 return result;
             }
         }
@@ -489,6 +490,7 @@ public class InstanceController {
                 ipObj.put("enabled", instance.isEnabled());
                 ipObj.put("weight", instance.getWeight());
                 ipObj.put("clusterName", instance.getClusterName());
+                ipObj.put("instanceIndex", instance.getInstanceIndex());
                 if (clientInfo.type == ClientInfo.ClientType.JAVA &&
                     clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
                     ipObj.put("serviceName", instance.getServiceName());

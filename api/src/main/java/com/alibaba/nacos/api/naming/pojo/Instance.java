@@ -80,6 +80,11 @@ public class Instance {
     private String serviceName;
 
     /**
+     * Instance index in each cluster, which is unique in each cluster.
+     */
+    private Integer instanceIndex;
+
+    /**
      * user extended attributes
      */
     private Map<String, String> metadata = new HashMap<String, String>();
@@ -166,6 +171,14 @@ public class Instance {
 
     public void setEphemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
+    }
+
+    public Integer getInstanceIndex() {
+        return instanceIndex;
+    }
+
+    public void setInstanceIndex(Integer instanceIndex) {
+        this.instanceIndex = instanceIndex;
     }
 
     @Override
