@@ -157,7 +157,7 @@ public class ParamUtil {
             || !PATTERN.matcher(endpointUrl).find()) {
             // skip retrieve from system property and retrieve directly from system env
             String endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrlSource)) {
+            if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
 
@@ -182,8 +182,8 @@ public class ParamUtil {
         });
 
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrlSource)) {
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(defaultEndpointUrl)) {
+        if (StringUtils.isBlank(endpointUrlSource)) {
+            if (StringUtils.isNotBlank(defaultEndpointUrl)) {
                 endpointUrl = defaultEndpointUrl;
             }
         } else {

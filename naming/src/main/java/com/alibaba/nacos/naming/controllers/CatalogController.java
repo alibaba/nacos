@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.exception.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
@@ -285,6 +285,49 @@ public class CatalogController {
 
         });
         return ipAddressInfos;
+    }
+
+    private JSONObject serviceList(HttpServletRequest request) {
+
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        JSONObject result = new JSONObject();
+
+        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
+        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
+        String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
+        String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
+        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
+            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
+
+        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
+        boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
+
+        List<Service> services = new ArrayList<>();
+        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, param, containedInstance, services, hasIpCount);
+
+        if (CollectionUtils.isEmpty(services)) {
+            result.put("serviceList", Collections.emptyList());
+            result.put("count", 0);
+            return result;
+        }
+
+        JSONArray serviceJsonArray = new JSONArray();
+        for (Service service : services) {
+            ServiceView serviceView = new ServiceView();
+            serviceView.setName(NamingUtils.getServiceName(service.getName()));
+            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
+            serviceView.setClusterCount(service.getClusterMap().size());
+            serviceView.setIpCount(service.allIPs().size());
+            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
+            serviceView.setTriggerFlag(service.triggerFlag()?"true":"false");
+            serviceJsonArray.add(serviceView);
+        }
+
+        result.put("serviceList", serviceJsonArray);
+        result.put("count", total);
+
+        return result;
     }
 
 }

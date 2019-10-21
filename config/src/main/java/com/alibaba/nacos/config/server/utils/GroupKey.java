@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 合成dataId+groupId的形式。对dataId和groupId中的保留字符做转义。
  *

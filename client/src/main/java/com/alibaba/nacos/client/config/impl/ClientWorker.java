@@ -28,7 +28,7 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
