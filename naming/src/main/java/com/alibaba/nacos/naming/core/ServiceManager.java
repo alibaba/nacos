@@ -583,13 +583,11 @@ public class ServiceManager implements RecordListener<Service> {
 
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
-        Set<Integer> currentInstanceIndexes = Sets.newHashSet();
+        Set<String> currentInstanceIds = Sets.newHashSet();
 
         for (Instance instance : currentIPs) {
             currentInstances.put(instance.toIPAddr(), instance);
-            if (instance.getInstanceIndex() != null) {
-                currentInstanceIndexes.add(instance.getInstanceIndex());
-            }
+            currentInstanceIds.add(instance.getInstanceId());
         }
 
         Map<String, Instance> instanceMap;
@@ -611,13 +609,7 @@ public class ServiceManager implements RecordListener<Service> {
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
-                // Generate instance index
-                int instanceIndex = 0;
-                while (currentInstanceIndexes.contains(instanceIndex)) {
-                    instanceIndex++;
-                }
-                currentInstanceIndexes.add(instanceIndex);
-                instance.setInstanceIndex(instanceIndex);
+                instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
                 instanceMap.put(instance.getDatumKey(), instance);
             }
 
