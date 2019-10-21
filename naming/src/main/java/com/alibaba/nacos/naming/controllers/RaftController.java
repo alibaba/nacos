@@ -19,6 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -28,7 +29,6 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -153,7 +153,7 @@ public class RaftController {
 
     @NeedAuth
     @GetMapping("/datum")
-    public String get(@RequestParam(name = "keys") String keysString,HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String get(@RequestParam(name = "keys") String keysString, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
@@ -187,7 +187,7 @@ public class RaftController {
 
     @NeedAuth
     @PostMapping("/datum/commit")
-    public String onPublish(@RequestBody JSONObject jsonObject ,HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String onPublish(@RequestBody JSONObject jsonObject, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
@@ -216,7 +216,7 @@ public class RaftController {
 
     @NeedAuth
     @DeleteMapping("/datum/commit")
-    public String onDelete(@RequestBody JSONObject jsonObject,HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String onDelete(@RequestBody JSONObject jsonObject, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
