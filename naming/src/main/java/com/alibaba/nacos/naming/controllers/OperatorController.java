@@ -128,7 +128,7 @@ public class OperatorController {
     }
 
     @GetMapping("/metrics")
-    public JSONObject metrics() {
+    public JSONObject metrics(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
 

@@ -25,6 +25,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  */
@@ -61,9 +63,9 @@ public class HealthController {
      * ready.
      */
     @GetMapping("readiness")
-    public ResponseEntity readiness() {
+    public ResponseEntity readiness(HttpServletRequest request) {
         boolean isConfigReadiness = isConfigReadiness();
-        boolean isNamingReadiness = isNamingReadiness();
+        boolean isNamingReadiness = isNamingReadiness(request);
 
         if (isConfigReadiness && isNamingReadiness) {
             return ResponseEntity.ok().body("OK");
@@ -91,9 +93,9 @@ public class HealthController {
         return false;
     }
 
-    private boolean isNamingReadiness() {
+    private boolean isNamingReadiness(HttpServletRequest request) {
         try {
-            apiCommands.metrics();
+            apiCommands.metrics(request);
             return true;
         } catch (Exception e) {
             logger.error("Naming health check fail.", e);
