@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Cluster;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
@@ -25,7 +26,6 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckTask;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.ClusterInfo;
@@ -143,17 +143,18 @@ public class CatalogController {
                              @RequestParam(name = "groupNameParam", defaultValue = StringUtils.EMPTY) String groupName,
                              @RequestParam(name = "instance", defaultValue = StringUtils.EMPTY) String containedInstance,
                              @RequestParam(required = false) boolean hasIpCount
-                             ) {
+    ) {
+
+        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
+            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
         if (withInstances) {
             List<ServiceDetailInfo> serviceDetailInfoList = new ArrayList<>();
-            String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-                StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
-            List<Service> serviceList = new ArrayList<>(8);
-            serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, serviceList, false);
+            List<Service> services = new ArrayList<>(8);
+            serviceManager.getPagedService(namespaceId, pageNo, pageSize, param, StringUtils.EMPTY, services, false);
 
-            for (Service service : serviceList) {
+            for (Service service : services) {
                 ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
                 serviceDetailInfo.setServiceName(NamingUtils.getServiceName(service.getName()));
                 serviceDetailInfo.setGroupName(NamingUtils.getGroupName(service.getName()));
@@ -169,9 +170,6 @@ public class CatalogController {
         }
 
         JSONObject result = new JSONObject();
-
-        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
 
         List<Service> services = new ArrayList<>();
 
@@ -190,18 +188,8 @@ public class CatalogController {
             serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
             serviceView.setClusterCount(service.getClusterMap().size());
             serviceView.setIpCount(service.allIPs().size());
-
-            // FIXME should be optimized:
-            int validCount = 0;
-            for (Instance instance : service.allIPs()) {
-                if (instance.isHealthy()) {
-                    validCount++;
-                }
-
-            }
-
-            serviceView.setHealthyInstanceCount(validCount);
-
+            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
+            serviceView.setTriggerFlag(service.triggerFlag() ? "true" : "false");
             serviceJsonArray.add(serviceView);
         }
 
@@ -285,49 +273,6 @@ public class CatalogController {
 
         });
         return ipAddressInfos;
-    }
-
-    private JSONObject serviceList(HttpServletRequest request) {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        JSONObject result = new JSONObject();
-
-        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String serviceName = WebUtils.optional(request, "serviceNameParam", StringUtils.EMPTY);
-        String groupName = WebUtils.optional(request, "groupNameParam", StringUtils.EMPTY);
-        String param = StringUtils.isBlank(serviceName) && StringUtils.isBlank(groupName) ?
-            StringUtils.EMPTY : NamingUtils.getGroupedName(serviceName, groupName);
-
-        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
-        boolean hasIpCount = Boolean.parseBoolean(WebUtils.optional(request, "hasIpCount", "false"));
-
-        List<Service> services = new ArrayList<>();
-        int total = serviceManager.getPagedService(namespaceId, page - 1, pageSize, param, containedInstance, services, hasIpCount);
-
-        if (CollectionUtils.isEmpty(services)) {
-            result.put("serviceList", Collections.emptyList());
-            result.put("count", 0);
-            return result;
-        }
-
-        JSONArray serviceJsonArray = new JSONArray();
-        for (Service service : services) {
-            ServiceView serviceView = new ServiceView();
-            serviceView.setName(NamingUtils.getServiceName(service.getName()));
-            serviceView.setGroupName(NamingUtils.getGroupName(service.getName()));
-            serviceView.setClusterCount(service.getClusterMap().size());
-            serviceView.setIpCount(service.allIPs().size());
-            serviceView.setHealthyInstanceCount(service.healthyInstanceCount());
-            serviceView.setTriggerFlag(service.triggerFlag()?"true":"false");
-            serviceJsonArray.add(serviceView);
-        }
-
-        result.put("serviceList", serviceJsonArray);
-        result.put("count", total);
-
-        return result;
     }
 
 }
