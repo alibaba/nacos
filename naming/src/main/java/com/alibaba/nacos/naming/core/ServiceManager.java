@@ -445,9 +445,9 @@ public class ServiceManager implements RecordListener<Service> {
                 service.getClusterMap().put(cluster.getName(), cluster);
             }
             service.validate();
-            if (local) {
-                putServiceAndInit(service);
-            } else {
+
+            putServiceAndInit(service);
+            if (!local) {
                 addOrReplaceService(service);
             }
         }
@@ -470,9 +470,9 @@ public class ServiceManager implements RecordListener<Service> {
             service.getClusterMap().put(cluster.getName(), cluster);
         }
         service.validate();
-        if (local) {
-            putServiceAndInit(service);
-        } else {
+
+        putServiceAndInit(service);
+        if (!local) {
             addOrReplaceService(service);
         }
     }

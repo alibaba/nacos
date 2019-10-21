@@ -9,6 +9,7 @@ import java.util.Collection;
 import static org.junit.Assert.*;
 import static com.alibaba.nacos.client.utils.StringUtils.*;
 
+@Deprecated
 public class StringUtilsTest {
 
     @Test
