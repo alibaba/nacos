@@ -24,7 +24,6 @@ import com.alibaba.nacos.client.utils.StringUtils;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.nio.charset.Charset;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -75,7 +74,7 @@ public class PushReceiver implements Runnable, LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
             executorService.shutdown();
         }
     }
@@ -135,12 +134,12 @@ public class PushReceiver implements Runnable, LifeCycle {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 }

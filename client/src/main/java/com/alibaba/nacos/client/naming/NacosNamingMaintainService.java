@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming;
 
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -70,14 +71,14 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         if (started.compareAndSet(false, true)) {
             serverProxy = new NamingProxy(namespace, endpoint, serverList);
             serverProxy.setProperties(properties);
-            serverProxy.start();
+            LifeCycleHelper.invokeStart(serverProxy);
         }
     }
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
-            serverProxy.destroy();
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
+            LifeCycleHelper.invokeDestroy(serverProxy);
         }
     }
 
@@ -191,12 +192,12 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 

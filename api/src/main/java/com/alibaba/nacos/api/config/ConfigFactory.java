@@ -18,7 +18,7 @@ package com.alibaba.nacos.api.config;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 
-import com.alibaba.nacos.api.DestructionFactory;
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -42,7 +42,7 @@ public class ConfigFactory {
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
             vendorImpl.start();
-            DestructionFactory.registerShutdownHook(vendorImpl);
+            LifeCycleHelper.registerShutdownHook(vendorImpl);
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);

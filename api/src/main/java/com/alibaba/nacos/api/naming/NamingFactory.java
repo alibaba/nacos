@@ -18,7 +18,7 @@ package com.alibaba.nacos.api.naming;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 
-import com.alibaba.nacos.api.DestructionFactory;
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.exception.NacosException;
 
 /**
@@ -34,7 +34,7 @@ public class NamingFactory {
             Constructor constructor = driverImplClass.getConstructor(String.class);
             NamingService vendorImpl = (NamingService)constructor.newInstance(serverList);
             vendorImpl.start();
-            DestructionFactory.registerShutdownHook(vendorImpl);
+            LifeCycleHelper.registerShutdownHook(vendorImpl);
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
@@ -47,7 +47,7 @@ public class NamingFactory {
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             NamingService vendorImpl = (NamingService)constructor.newInstance(properties);
             vendorImpl.start();
-            DestructionFactory.registerShutdownHook(vendorImpl);
+            LifeCycleHelper.registerShutdownHook(vendorImpl);
             return vendorImpl;
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);

@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.alibaba.nacos.api.LifeCycle;
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -223,7 +224,7 @@ public class ServerListManager implements LifeCycle {
 
         if (started.compareAndSet(false, true)) {
 
-            TimerService.getSingleton().start();
+            LifeCycleHelper.invokeStart(TimerService.getSingleton());
 
             if (isStarted || isFixed) {
                 return;
@@ -253,18 +254,18 @@ public class ServerListManager implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
-            TimerService.getSingleton().destroy();
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
+            LifeCycleHelper.invokeDestroy(TimerService.getSingleton());
         }
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 

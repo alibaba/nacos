@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.config.http;
 
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -292,14 +293,14 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public synchronized void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
-            serverListMgr.start();
+            LifeCycleHelper.invokeStart(serverListMgr);
         }
     }
 
     @Override
     public synchronized void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
-            serverListMgr.destroy();
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
+            LifeCycleHelper.invokeDestroy(serverListMgr);
         }
     }
 
@@ -404,12 +405,12 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 

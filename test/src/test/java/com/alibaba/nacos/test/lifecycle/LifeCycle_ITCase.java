@@ -61,9 +61,9 @@ public class LifeCycle_ITCase {
         namingService = NamingFactory.createNamingService(serverAddr);
         configService = NacosFactory.createConfigService(serverAddr);
 
-        Assert.assertTrue(namingMaintainService.isStart());
-        Assert.assertTrue(namingService.isStart());
-        Assert.assertTrue(configService.isStart());
+        Assert.assertTrue(namingMaintainService.isStarted());
+        Assert.assertTrue(namingService.isStarted());
+        Assert.assertTrue(configService.isStarted());
 
     }
 
@@ -76,9 +76,9 @@ public class LifeCycle_ITCase {
         namingService = NamingFactory.createNamingService(serverAddr);
         configService = NacosFactory.createConfigService(serverAddr);
 
-        Assert.assertTrue(namingMaintainService.isDestroy());
-        Assert.assertTrue(namingService.isDestroy());
-        Assert.assertTrue(configService.isDestroy());
+        Assert.assertFalse(namingMaintainService.isDestroyed());
+        Assert.assertFalse(namingService.isDestroyed());
+        Assert.assertFalse(configService.isDestroyed());
 
     }
 
@@ -95,9 +95,9 @@ public class LifeCycle_ITCase {
         namingMaintainService.destroy();
         configService.destroy();
 
-        Assert.assertFalse(namingMaintainService.isDestroy());
-        Assert.assertFalse(namingService.isDestroy());
-        Assert.assertFalse(configService.isDestroy());
+        Assert.assertFalse(namingMaintainService.isDestroyed());
+        Assert.assertFalse(namingService.isDestroyed());
+        Assert.assertFalse(configService.isDestroyed());
     }
 
 }

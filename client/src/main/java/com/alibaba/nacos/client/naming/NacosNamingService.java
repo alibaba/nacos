@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.naming;
 
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -109,20 +110,20 @@ public class NacosNamingService implements NamingService {
             beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
             hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
 
-            eventDispatcher.start();
-            serverProxy.start();
-            beatReactor.start();
-            hostReactor.start();
+            LifeCycleHelper.invokeStart(eventDispatcher);
+            LifeCycleHelper.invokeStart(serverProxy);
+            LifeCycleHelper.invokeStart(beatReactor);
+            LifeCycleHelper.invokeStart(hostReactor);
         }
     }
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
-            eventDispatcher.destroy();
-            serverProxy.destroy();
-            beatReactor.destroy();
-            hostReactor.destroy();
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
+            LifeCycleHelper.invokeDestroy(eventDispatcher);
+            LifeCycleHelper.invokeDestroy(serverProxy);
+            LifeCycleHelper.invokeDestroy(beatReactor);
+            LifeCycleHelper.invokeDestroy(hostReactor);
         }
     }
 
@@ -517,12 +518,12 @@ public class NacosNamingService implements NamingService {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 }

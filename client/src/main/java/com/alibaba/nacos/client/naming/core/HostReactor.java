@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.LifeCycle;
+import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -105,18 +106,18 @@ public class HostReactor implements LifeCycle {
             this.pushReceiver = new PushReceiver(this);
 
             // Preparation accordingly
-            failoverReactor.start();
-            pushReceiver.start();
+            LifeCycleHelper.invokeStart(failoverReactor);
+            LifeCycleHelper.invokeStart(pushReceiver);
         }
     }
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
             executor.shutdown();
             // Perform corresponding disposal operations
-            failoverReactor.destroy();
-            pushReceiver.destroy();
+            LifeCycleHelper.invokeDestroy(failoverReactor);
+            LifeCycleHelper.invokeDestroy(pushReceiver);
         }
     }
 
@@ -372,12 +373,12 @@ public class HostReactor implements LifeCycle {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 }

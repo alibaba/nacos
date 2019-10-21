@@ -66,7 +66,7 @@ public class EventDispatcher implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
             executor.shutdown();
         }
     }
@@ -149,12 +149,12 @@ public class EventDispatcher implements LifeCycle {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 }

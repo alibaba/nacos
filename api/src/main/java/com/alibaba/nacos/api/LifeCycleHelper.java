@@ -22,7 +22,19 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author liaochuntao
  * @date 2019/9/25 10:16 下午
  **/
-public class DestructionFactory {
+public class LifeCycleHelper {
+
+    public static void invokeStart(final LifeCycle lifeCycle) throws NacosException {
+        if (lifeCycle != null) {
+            lifeCycle.start();
+        }
+    }
+
+    public static void invokeDestroy(final LifeCycle lifeCycle) throws NacosException {
+        if (lifeCycle != null) {
+            lifeCycle.destroy();
+        }
+    }
 
     public static void registerShutdownHook(final LifeCycle lifeCycle) {
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -30,7 +42,7 @@ public class DestructionFactory {
             public void run() {
                 try {
                     lifeCycle.destroy();
-                    // just for test
+                    //this sys.out.println just for test
                     System.out.println("finish destroy");
                 } catch (NacosException e) {
                     throw new RuntimeException(e);

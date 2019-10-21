@@ -29,14 +29,14 @@ public interface LifeCycle {
      *
      * @return start label
      */
-    boolean isStart();
+    boolean isStarted();
 
     /**
      * The success of destroy
      *
      * @return destroy label
      */
-    boolean isDestroy();
+    boolean isDestroyed();
 
     /**
      * The service start

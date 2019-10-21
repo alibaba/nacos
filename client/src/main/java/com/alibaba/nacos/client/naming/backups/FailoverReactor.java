@@ -103,7 +103,7 @@ public class FailoverReactor implements LifeCycle {
 
     @Override
     public void destroy() throws NacosException {
-        if (isStart() && destroyed.compareAndSet(false, true)) {
+        if (isStarted() && destroyed.compareAndSet(false, true)) {
             executorService.shutdown();
         }
     }
@@ -250,12 +250,12 @@ public class FailoverReactor implements LifeCycle {
     }
 
     @Override
-    public boolean isStart() {
+    public boolean isStarted() {
         return started.get();
     }
 
     @Override
-    public boolean isDestroy() {
+    public boolean isDestroyed() {
         return destroyed.get();
     }
 }
