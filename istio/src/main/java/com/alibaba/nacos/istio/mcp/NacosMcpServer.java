@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.istio.mcp;
 
+import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
@@ -42,6 +43,9 @@ public class NacosMcpServer {
     private Server server;
 
     @Autowired
+    private IstioConfig istioConfig;
+
+    @Autowired
     private McpServerIntercepter intercepter;
 
     @Autowired
@@ -49,6 +53,10 @@ public class NacosMcpServer {
 
     @PostConstruct
     public void start() throws IOException {
+
+        if (!istioConfig.isMcpServerEnabled()) {
+            return;
+        }
 
         Loggers.MAIN.info("MCP server, starting Nacos MCP server...");
 
@@ -72,9 +80,5 @@ public class NacosMcpServer {
         if (server != null) {
             server.shutdown();
         }
-    }
-
-    public void waitForTerminated() throws InterruptedException {
-        server.awaitTermination();
     }
 }
