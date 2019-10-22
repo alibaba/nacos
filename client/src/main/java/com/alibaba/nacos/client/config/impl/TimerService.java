@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.util.ThreadHelper;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -78,7 +79,7 @@ public class TimerService implements LifeCycle {
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            scheduledExecutor.shutdown();
+            ThreadHelper.invokeShutdown(scheduledExecutor);
         }
     }
 }

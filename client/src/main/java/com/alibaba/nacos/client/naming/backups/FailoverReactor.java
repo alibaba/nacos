@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.util.ThreadHelper;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -104,7 +105,7 @@ public class FailoverReactor implements LifeCycle {
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            executorService.shutdown();
+            ThreadHelper.invokeShutdown(executorService);
         }
     }
 

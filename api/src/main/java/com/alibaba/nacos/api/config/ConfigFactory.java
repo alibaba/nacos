@@ -41,7 +41,7 @@ public class ConfigFactory {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.config.NacosConfigService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             ConfigService vendorImpl = (ConfigService) constructor.newInstance(properties);
-            vendorImpl.start();
+            LifeCycleHelper.invokeStart(vendorImpl);
             LifeCycleHelper.registerShutdownHook(vendorImpl);
             return vendorImpl;
         } catch (Throwable e) {

@@ -29,6 +29,7 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.util.ThreadHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -141,8 +142,8 @@ public class ClientWorker implements LifeCycle {
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            executor.shutdown();
-            executorService.shutdown();
+            ThreadHelper.invokeShutdown(executor);
+            ThreadHelper.invokeShutdown(executorService);
         }
     }
 

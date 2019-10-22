@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.common.util.ThreadHelper;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -85,7 +86,7 @@ public class BeatReactor implements LifeCycle {
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            executorService.shutdown();
+            ThreadHelper.invokeShutdown(executorService);
         }
     }
 

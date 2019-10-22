@@ -37,6 +37,7 @@ import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
+import com.alibaba.nacos.common.util.ThreadHelper;
 import com.alibaba.nacos.common.util.UuidUtils;
 import com.alibaba.nacos.common.util.VersionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -101,7 +102,7 @@ public class NamingProxy implements LifeCycle {
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            executorService.shutdown();
+            ThreadHelper.invokeShutdown(executorService);
         }
     }
 

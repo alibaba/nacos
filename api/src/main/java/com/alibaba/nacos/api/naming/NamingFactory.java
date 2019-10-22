@@ -33,7 +33,7 @@ public class NamingFactory {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
             Constructor constructor = driverImplClass.getConstructor(String.class);
             NamingService vendorImpl = (NamingService)constructor.newInstance(serverList);
-            vendorImpl.start();
+            LifeCycleHelper.invokeStart(vendorImpl);
             LifeCycleHelper.registerShutdownHook(vendorImpl);
             return vendorImpl;
         } catch (Throwable e) {
@@ -46,7 +46,7 @@ public class NamingFactory {
             Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             NamingService vendorImpl = (NamingService)constructor.newInstance(properties);
-            vendorImpl.start();
+            LifeCycleHelper.invokeStart(vendorImpl);
             LifeCycleHelper.registerShutdownHook(vendorImpl);
             return vendorImpl;
         } catch (Throwable e) {
