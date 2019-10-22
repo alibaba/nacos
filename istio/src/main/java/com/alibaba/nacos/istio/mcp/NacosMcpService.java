@@ -18,6 +18,7 @@ package com.alibaba.nacos.istio.mcp;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.model.Port;
 import com.alibaba.nacos.istio.model.mcp.*;
@@ -60,7 +61,13 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     @Autowired
     private ServiceManager serviceManager;
 
+    @Autowired
+    private IstioConfig istioConfig;
+
     public NacosMcpService() {
+        if (!istioConfig.isMcpServerEnabled()) {
+            return;
+        }
         GlobalExecutor.schedule(new McpPushTask(), MCP_PUSH_PERIOD_MILLISECONDS * 2, MCP_PUSH_PERIOD_MILLISECONDS);
     }
 
