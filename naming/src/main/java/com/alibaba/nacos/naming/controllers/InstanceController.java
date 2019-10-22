@@ -15,17 +15,26 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -34,16 +43,13 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
-import java.net.InetSocketAddress;
-import java.util.*;
 
 /**
  * Instance operation controller
@@ -153,7 +159,8 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
+            healthyOnly);
     }
 
     @GetMapping
@@ -190,7 +197,7 @@ public class InstanceController {
                 result.put("weight", instance.getWeight());
                 result.put("healthy", instance.isHealthy());
                 result.put("metadata", instance.getMetadata());
-                result.put("instanceId", instance.generateInstanceId());
+                result.put("instanceId", instance.getInstanceId());
                 return result;
             }
         }
@@ -224,7 +231,8 @@ public class InstanceController {
             Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
-        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(),
+            clientBeat.getIp(),
             clientBeat.getPort());
 
         if (instance == null) {
@@ -235,7 +243,7 @@ public class InstanceController {
             instance.setMetadata(clientBeat.getMetadata());
             instance.setClusterName(clusterName);
             instance.setServiceName(serviceName);
-            instance.setInstanceId(instance.generateInstanceId());
+            instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
             serviceManager.registerInstance(namespaceId, serviceName, instance);
@@ -244,14 +252,14 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "service not found: " + serviceName + "@" + namespaceId);
         }
 
         service.processClientBeat(clientBeat);
         result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
         return result;
     }
-
 
     @RequestMapping("/statuses")
     public JSONObject listWithHealthStatus(@RequestParam String key) throws NacosException {
@@ -295,6 +303,8 @@ public class InstanceController {
         Instance instance = getIPAddress(request);
         instance.setApp(app);
         instance.setServiceName(serviceName);
+        // Generate simple instance id first. This value would be updated according to
+        // INSTANCE_ID_GENERATOR.
         instance.setInstanceId(instance.generateInstanceId());
         instance.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
@@ -346,8 +356,11 @@ public class InstanceController {
         }
     }
 
-    protected JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
-                                 String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
+
+    public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
+                                int udpPort,
+                                String env, boolean isCheck, String app, String tid, boolean healthyOnly)
+        throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
@@ -432,7 +445,7 @@ public class InstanceController {
 
         double threshold = service.getProtectThreshold();
 
-        if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
+        if ((float)ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
             if (isCheck) {
