@@ -320,9 +320,9 @@
 
     <profiles>
         <profile>
-            <id>jdk7</id>
+            <id>jdk8</id>
             <activation>
-                <jdk>[1.7,)</jdk>
+                <jdk>[1.8,)</jdk>
             </activation>
             <!-- Disable doclint under JDK 8 -->
             <reporting>
@@ -703,7 +703,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>4.0.42.Final</version>
+                <version>4.1.42.Final</version>
             </dependency>
 
             <dependency>

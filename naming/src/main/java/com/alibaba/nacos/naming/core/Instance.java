@@ -18,11 +18,14 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.annotation.JSONCreator;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.util.Assert;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -320,13 +323,31 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         return getIp() + "#" + getPort() + "#" + getClusterName() + "#" + getServiceName();
     }
 
+
+    public String generateInstanceId(Set<String> currentInstanceIds) {
+        String instanceIdGenerator = getInstanceIdGenerator();
+        if (Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR.equalsIgnoreCase(instanceIdGenerator)) {
+            return generateSnowflakeInstanceId(currentInstanceIds);
+        } else {
+            return generateInstanceId();
+        }
+    }
+
     /**
-     * Validate current instance.
-     * <p>
-     * The IP format can be ddd.ddd.ddd.ddd or a domain name(nacos.io).
+     * Generate instance id which could be used for snowflake algorithm.
+     * @param currentInstanceIds existing instance ids, which can not be used by new instance.
+     * @return
      */
-    public void validate() {
-        Assert.isTrue(getPort() >= 0, "Port must be greater than or equals to 0");
+    private String generateSnowflakeInstanceId(Set<String> currentInstanceIds) {
+        int id = 0;
+        while (currentInstanceIds.contains(String.valueOf(id))) {
+            id++;
+        }
+        currentInstanceIds.add(String.valueOf(id));
+        return String.valueOf(id);
+    }
+
+    public void validate() throws NacosException {
         if (onlyContainsDigitAndDot()) {
             Matcher matcher = IP_PATTERN.matcher(getIp() + ":" + getPort());
             if (!matcher.matches()) {

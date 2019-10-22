@@ -33,4 +33,6 @@ public class PreservedMetadataKeys {
     public static final String IP_DELETE_TIMEOUT = "preserved.ip.delete.timeout";
 
     public static final String HEART_BEAT_INTERVAL = "preserved.heart.beat.interval";
+
+    public static final String INSTANCE_ID_GENERATOR = "preserved.instance.id.generator";
 }

@@ -36,9 +36,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
@@ -65,28 +63,17 @@ public class ServiceController {
     @Autowired
     private SubscribeManager subscribeManager;
 
-    /**
-     * Create a service.
-     *
-     * @param request the current http request
-     * @return "ok" if the creation is successful
-     * @throws Exception if the service exists
-     */
-    @RequestMapping(value = "", method = RequestMethod.POST)
-    public String create(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-
+    @PostMapping
+    public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                         @RequestParam String serviceName,
+                         @RequestParam(required = false) float protectThreshold,
+                         @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
+                         @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
 
         if (serviceManager.getService(namespaceId, serviceName) != null) {
             throw new IllegalArgumentException("specified service already exists, serviceName : " + serviceName);
         }
 
-        float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
         Map<String, String> metadataMap = new HashMap<>(16);
         if (StringUtils.isNotBlank(metadata)) {
             metadataMap = UtilsAndCommons.parseMetadata(metadata);
@@ -109,28 +96,22 @@ public class ServiceController {
         return "ok";
     }
 
-    @RequestMapping(value = "", method = RequestMethod.DELETE)
-    public String remove(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+    @DeleteMapping
+    public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                         @RequestParam String serviceName) throws Exception {
 
         serviceManager.easyRemoveService(namespaceId, serviceName);
 
         return "ok";
     }
 
-    @RequestMapping(value = "", method = RequestMethod.GET)
-    public JSONObject detail(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+    @GetMapping
+    public JSONObject detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                             @RequestParam String serviceName) throws NacosException {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
-            throw new NacosException(NacosException.NOT_FOUND, "serivce " + serviceName + " is not found!");
+            throw new NacosException(NacosException.NOT_FOUND, "service " + serviceName + " is not found!");
         }
 
         JSONObject res = new JSONObject();
@@ -155,7 +136,7 @@ public class ServiceController {
         return res;
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    @GetMapping("/list")
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
@@ -170,48 +151,37 @@ public class ServiceController {
         JSONObject result = new JSONObject();
 
         if (serviceNameList == null || serviceNameList.isEmpty()) {
-            result.put("doms", new ArrayList<String>(1));
+            result.put("doms", Collections.emptyList());
             result.put("count", 0);
             return result;
         }
 
-        Iterator<String> iterator = serviceNameList.iterator();
-
-        while (iterator.hasNext()) {
-            String serviceName = iterator.next();
-            if (!serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER)) {
-                iterator.remove();
-            }
-        }
+        serviceNameList.removeIf(serviceName -> !serviceName.startsWith(groupName + Constants.SERVICE_INFO_SPLITER));
 
         if (StringUtils.isNotBlank(selectorString)) {
 
             JSONObject selectorJson = JSON.parseObject(selectorString);
-            switch (SelectorType.valueOf(selectorJson.getString("type"))) {
-                case label:
-                    String expression = selectorJson.getString("expression");
-                    if (StringUtils.isBlank(expression)) {
+
+            SelectorType selectorType = SelectorType.valueOf(selectorJson.getString("type"));
+            String expression = selectorJson.getString("expression");
+
+            if (SelectorType.label.equals(selectorType) && StringUtils.isNotBlank(expression)) {
+                expression = StringUtils.deleteWhitespace(expression);
+                // Now we only support the following expression:
+                // INSTANCE.metadata.xxx = 'yyy' or
+                // SERVICE.metadata.xxx = 'yyy'
+                String[] terms = expression.split("=");
+                String[] factors = terms[0].split("\\.");
+                switch (factors[0]) {
+                    case "INSTANCE":
+                        serviceNameList = filterInstanceMetadata(namespaceId, serviceNameList, factors[factors.length - 1], terms[1].replace("'", ""));
                         break;
-                    }
-                    expression = StringUtils.deleteWhitespace(expression);
-                    // Now we only support the following expression:
-                    // INSTANCE.metadata.xxx = 'yyy' or
-                    // SERVICE.metadata.xxx = 'yyy'
-                    String[] terms = expression.split("=");
-                    String[] factors = terms[0].split("\\.");
-                    switch (factors[0]) {
-                        case "INSTANCE":
-                            serviceNameList = filterInstanceMetadata(namespaceId, serviceNameList, factors[factors.length - 1], terms[1].replace("'", ""));
-                            break;
-                        case "SERVICE":
-                            serviceNameList = filterServiceMetadata(namespaceId, serviceNameList, factors[factors.length - 1], terms[1].replace("'", ""));
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                default:
-                    break;
+                    case "SERVICE":
+                        serviceNameList = filterServiceMetadata(namespaceId, serviceNameList, factors[factors.length - 1], terms[1].replace("'", ""));
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -237,15 +207,12 @@ public class ServiceController {
 
     }
 
-    @RequestMapping(value = "", method = RequestMethod.PUT)
-    public String update(HttpServletRequest request) throws Exception {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        float protectThreshold = NumberUtils.toFloat(WebUtils.optional(request, "protectThreshold", "0"));
-        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
-        String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
+    @PutMapping
+    public String update(HttpServletRequest request,@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                         @RequestParam String serviceName,
+                         @RequestParam(required = false) float protectThreshold,
+                         @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
+                         @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {
@@ -267,11 +234,9 @@ public class ServiceController {
     }
 
     @RequestMapping("/names")
-    public JSONObject searchService(HttpServletRequest request) {
-
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, StringUtils.EMPTY);
-        String expr = WebUtils.optional(request, "expr", StringUtils.EMPTY);
-        boolean responsibleOnly = Boolean.parseBoolean(WebUtils.optional(request, "responsibleOnly", "false"));
+    public JSONObject searchService(@RequestParam(defaultValue = StringUtils.EMPTY) String namespaceId,
+                                    @RequestParam(defaultValue = StringUtils.EMPTY) String expr,
+                                    @RequestParam(required = false) boolean responsibleOnly) {
 
         Map<String, List<Service>> services = new HashMap<>(16);
         if (StringUtils.isNotBlank(namespaceId)) {
@@ -300,7 +265,7 @@ public class ServiceController {
         return result;
     }
 
-    @RequestMapping(value = "/status", method = RequestMethod.POST)
+    @PostMapping("/status")
     public String serviceStatus(HttpServletRequest request) throws Exception {
 
         String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
@@ -352,7 +317,7 @@ public class ServiceController {
         return "ok";
     }
 
-    @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
+    @PutMapping("/checksum")
     public JSONObject checksum(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -380,7 +345,7 @@ public class ServiceController {
      * @param request
      * @return
      */
-    @RequestMapping(value = "/subscribers", method = RequestMethod.GET)
+    @GetMapping("/subscribers")
     public JSONObject subscribers(HttpServletRequest request) {
 
         int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));

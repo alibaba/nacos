@@ -15,6 +15,15 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -32,17 +41,12 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
-import java.net.InetSocketAddress;
-import java.util.*;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Instance operation controller
@@ -52,9 +56,6 @@ import java.util.*;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
 public class InstanceController {
-
-    @Autowired
-    private DistroMapper distroMapper;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -71,7 +72,7 @@ public class InstanceController {
     private DataSource pushDataSource = new DataSource() {
 
         @Override
-        public String getData(PushService.PushClient client) throws Exception {
+        public String getData(PushService.PushClient client) {
 
             JSONObject result = new JSONObject();
             try {
@@ -99,7 +100,7 @@ public class InstanceController {
      * @throws Exception if the server for the instance is not found
      */
     @CanDistro
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @PostMapping
     public String register(HttpServletRequest request) throws Exception {
         instanceManager.register(request);
         return "ok";
@@ -113,7 +114,7 @@ public class InstanceController {
      * @throws Exception if the server for the instance is not found
      */
     @CanDistro
-    @RequestMapping(value = "", method = RequestMethod.DELETE)
+    @DeleteMapping
     public String deregister(HttpServletRequest request) throws Exception {
         instanceManager.deregister(request);
         return "ok";
@@ -127,7 +128,7 @@ public class InstanceController {
      * @throws Exception if the server for the instance is not found or the instance is not found
      */
     @CanDistro
-    @RequestMapping(value = "", method = RequestMethod.PUT)
+    @PutMapping
     public String update(HttpServletRequest request) throws Exception {
         String agent = WebUtils.getUserAgent(request);
 
@@ -142,7 +143,7 @@ public class InstanceController {
         return "ok";
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    @GetMapping("/list")
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -162,10 +163,11 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
+            healthyOnly);
     }
 
-    @RequestMapping(value = "", method = RequestMethod.GET)
+    @GetMapping
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -199,7 +201,7 @@ public class InstanceController {
                 result.put("weight", instance.getWeight());
                 result.put("healthy", instance.isHealthy());
                 result.put("metadata", instance.getMetadata());
-                result.put("instanceId", instance.generateInstanceId());
+                result.put("instanceId", instance.getInstanceId());
                 return result;
             }
         }
@@ -215,16 +217,15 @@ public class InstanceController {
      * @throws Exception if the server for the instance is not found
      */
     @CanDistro
-    @RequestMapping(value = "/beat", method = RequestMethod.PUT)
-    public JSONObject beat(HttpServletRequest request) throws Exception {
+    @PutMapping("/beat")
+    public JSONObject beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                           @RequestParam String beat,
+                           @RequestParam String serviceName) throws Exception {
 
         JSONObject result = new JSONObject();
 
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
 
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
 
         if (!switchDomain.isDefaultInstanceEphemeral() && !clientBeat.isEphemeral()) {
@@ -234,7 +235,6 @@ public class InstanceController {
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         String clusterName = clientBeat.getCluster();
 
@@ -242,7 +242,8 @@ public class InstanceController {
             Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
-        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(),
+            clientBeat.getIp(),
             clientBeat.getPort());
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -256,14 +257,17 @@ public class InstanceController {
             instance = new Instance(clientBeat.getIp(), clientBeat.getPort(), cluster);
             instance.setWeight(clientBeat.getWeight());
             instance.setMetadata(clientBeat.getMetadata());
-            instance.setInstanceId(instance.generateInstanceId());
+            instance.setClusterName(clusterName);
+            instance.setServiceName(serviceName);
+            instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
 
         if (service == null) {
-            throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "service not found: " + serviceName + "@" + namespaceId);
         }
 
         service.processClientBeat(clientBeat);
@@ -271,11 +275,8 @@ public class InstanceController {
         return result;
     }
 
-
     @RequestMapping("/statuses")
-    public JSONObject listWithHealthStatus(HttpServletRequest request) throws NacosException {
-
-        String key = WebUtils.required(request, "key");
+    public JSONObject listWithHealthStatus(@RequestParam String key) throws NacosException {
 
         String serviceName;
         String namespaceId;
@@ -307,14 +308,72 @@ public class InstanceController {
         return result;
     }
 
-    public void checkIfDisabled(Service service) throws Exception {
+    private Instance parseInstance(HttpServletRequest request) throws Exception {
+
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String app = WebUtils.optional(request, "app", "DEFAULT");
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+
+        Instance instance = getIPAddress(request);
+        instance.setApp(app);
+        instance.setServiceName(serviceName);
+        // Generate simple instance id first. This value would be updated according to
+        // INSTANCE_ID_GENERATOR.
+        instance.setInstanceId(instance.generateInstanceId());
+        instance.setLastBeat(System.currentTimeMillis());
+        if (StringUtils.isNotEmpty(metadata)) {
+            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+        }
+
+        instance.validate();
+
+        return instance;
+    }
+
+    private Instance getIPAddress(HttpServletRequest request) {
+
+        String ip = WebUtils.required(request, "ip");
+        String port = WebUtils.required(request, "port");
+        String weight = WebUtils.optional(request, "weight", "1");
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
+        boolean healthy = BooleanUtils.toBoolean(WebUtils.optional(request, "healthy", "true"));
+
+        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
+        boolean enabled;
+        if (StringUtils.isBlank(enabledString)) {
+            enabled = BooleanUtils.toBoolean(WebUtils.optional(request, "enable", "true"));
+        } else {
+            enabled = BooleanUtils.toBoolean(enabledString);
+        }
+
+        boolean ephemeral = BooleanUtils.toBoolean(WebUtils.optional(request, "ephemeral",
+            String.valueOf(switchDomain.isDefaultInstanceEphemeral())));
+
+        Instance instance = new Instance();
+        instance.setPort(Integer.parseInt(port));
+        instance.setIp(ip);
+        instance.setWeight(Double.parseDouble(weight));
+        instance.setClusterName(cluster);
+        instance.setHealthy(healthy);
+        instance.setEnabled(enabled);
+        instance.setEphemeral(ephemeral);
+
+        return instance;
+    }
+
+    private void checkIfDisabled(Service service) throws Exception {
         if (!service.getEnabled()) {
             throw new Exception("service is disabled now.");
         }
     }
 
-    public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
-                                String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
+    public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
+                                int udpPort,
+                                String env, boolean isCheck, String app, String tid, boolean healthyOnly)
+        throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
@@ -322,7 +381,7 @@ public class InstanceController {
 
         if (service == null) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
             }
             result.put("name", serviceName);
             result.put("clusters", clusters);
@@ -363,7 +422,7 @@ public class InstanceController {
         if (CollectionUtils.isEmpty(srvedIPs)) {
 
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
             }
 
             if (clientInfo.type == ClientInfo.ClientType.JAVA &&
@@ -399,7 +458,7 @@ public class InstanceController {
 
         double threshold = service.getProtectThreshold();
 
-        if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
+        if ((float)ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
             if (isCheck) {
