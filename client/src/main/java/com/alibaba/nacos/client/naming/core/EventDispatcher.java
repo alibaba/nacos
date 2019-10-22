@@ -136,11 +136,4 @@ public class EventDispatcher {
             }
         }
     }
-
-    public void setExecutor(ExecutorService executor) {
-        ExecutorService oldExecutor = this.executor;
-        this.executor = executor;
-
-        oldExecutor.shutdown();
-    }
 }
