@@ -32,6 +32,7 @@ import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -445,9 +446,9 @@ public class ServiceManager implements RecordListener<Service> {
                 service.getClusterMap().put(cluster.getName(), cluster);
             }
             service.validate();
-            if (local) {
-                putServiceAndInit(service);
-            } else {
+
+            putServiceAndInit(service);
+            if (!local) {
                 addOrReplaceService(service);
             }
         }
@@ -470,9 +471,9 @@ public class ServiceManager implements RecordListener<Service> {
             service.getClusterMap().put(cluster.getName(), cluster);
         }
         service.validate();
-        if (local) {
-            putServiceAndInit(service);
-        } else {
+
+        putServiceAndInit(service);
+        if (!local) {
             addOrReplaceService(service);
         }
     }
@@ -582,9 +583,11 @@ public class ServiceManager implements RecordListener<Service> {
 
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
+        Set<String> currentInstanceIds = Sets.newHashSet();
 
         for (Instance instance : currentIPs) {
             currentInstances.put(instance.toIPAddr(), instance);
+            currentInstanceIds.add(instance.getInstanceId());
         }
 
         Map<String, Instance> instanceMap;
@@ -606,6 +609,7 @@ public class ServiceManager implements RecordListener<Service> {
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
             } else {
+                instance.setInstanceId(instance.generateInstanceId(currentInstanceIds));
                 instanceMap.put(instance.getDatumKey(), instance);
             }
 

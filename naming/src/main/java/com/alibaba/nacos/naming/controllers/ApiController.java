@@ -25,12 +25,12 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -141,10 +141,13 @@ public class ApiController extends InstanceController {
 
     @CanDistro
     @RequestMapping("/clientBeat")
-    public JSONObject clientBeat(HttpServletRequest request) throws Exception {
-        OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
-        requestWrapper.addParameter(CommonParams.SERVICE_NAME,
-            Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + WebUtils.required(request, "dom"));
-        return beat(requestWrapper);
+    public JSONObject clientBeat(HttpServletRequest request,
+                                 @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                                 @RequestParam String beat,
+                                 @RequestParam String dom) throws Exception {
+
+        String serviceName = Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + dom;
+
+        return beat(namespaceId, beat, serviceName);
     }
 }

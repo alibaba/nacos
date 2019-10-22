@@ -17,7 +17,7 @@ package com.alibaba.nacos.client.config.listener.impl;
 
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.IOException;

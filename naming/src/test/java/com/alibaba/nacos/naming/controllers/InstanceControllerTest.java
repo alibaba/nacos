@@ -152,7 +152,7 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void getNullServiceInstances() throws Exception {
         Mockito.when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(null);
-        
+
         MockHttpServletRequestBuilder builder =
             MockMvcRequestBuilders.get(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance/list")
                 .param("serviceName", TEST_SERVICE_NAME);
