@@ -36,10 +36,10 @@ public class TimerService implements LifeCycle {
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
-    private static final TimerService singleton = new TimerService();
+    private static final TimerService SINGLE_TONE = new TimerService();
 
     public static TimerService getSingleton() {
-        return singleton;
+        return SINGLE_TONE;
     }
 
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay,
@@ -47,7 +47,6 @@ public class TimerService implements LifeCycle {
         return scheduledExecutor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private ScheduledExecutorService scheduledExecutor;
 
     @Override
@@ -60,6 +59,7 @@ public class TimerService implements LifeCycle {
         return destroyed.get();
     }
 
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     @Override
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
