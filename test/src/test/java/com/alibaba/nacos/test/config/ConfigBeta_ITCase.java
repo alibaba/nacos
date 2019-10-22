@@ -159,6 +159,7 @@ public class ConfigBeta_ITCase {
      */
     @Test
     public void publishBetaConfig_noBetaIps() throws Exception {
+
         HttpHeaders headers = new HttpHeaders(); //不存在betaIps
 
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
