@@ -17,6 +17,7 @@ package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.net.HttpClient;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
 
@@ -173,7 +174,7 @@ public class NamingBase {
     public static void prepareServer(int localPort, String status) {
         String url = "http://127.0.0.1:" + localPort + "/nacos/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
         List<String> headers = new ArrayList<String>();
-        headers.add("User-Agent");
+        headers.add(HttpHeaderConsts.USER_AGENT_HEADER);
         headers.add("Nacos-Server");
         HttpClient.HttpResult result =
             HttpClient.request(url, headers, new HashMap<String, String>(), "UTF-8", "PUT");

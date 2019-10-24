@@ -50,7 +50,7 @@ public class HealthCheckProcessorDelegate implements HealthCheckProcessor {
         String type = task.getCluster().getHealthChecker().getType();
         HealthCheckProcessor processor = healthCheckProcessorMap.get(type);
         if(processor == null){
-            processor = healthCheckProcessorMap.get("none");
+            processor = healthCheckProcessorMap.get(NoneHealthCheckProcessor.TYPE);
         }
 
         processor.process(task);

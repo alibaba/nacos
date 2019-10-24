@@ -26,12 +26,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class NoneHealthCheckProcessor implements HealthCheckProcessor {
 
+    public static final String TYPE = "NONE";
+
     @Override
     public void process(HealthCheckTask task) {
     }
 
     @Override
     public String getType() {
-        return "NONE";
+        return TYPE;
     }
 }
