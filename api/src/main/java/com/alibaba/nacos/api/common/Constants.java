@@ -162,4 +162,11 @@ public class Constants {
     public static final String NULL_STRING = "null";
 
     public static final String NUMBER_PATTERN = "^\\d+$";
+
+    public static final String ANY_PATTERN = ".*";
+
+    public static final String DEFAULT_INSTANCE_ID_GENERATOR = "simple";
+
+    public static final String SNOWFLAKE_INSTANCE_ID_GENERATOR = "snowflake";
+
 }

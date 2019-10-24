@@ -43,7 +43,7 @@ public class GlobalExecutor {
                 Thread t = new Thread(r);
 
                 t.setDaemon(true);
-                t.setName("com.alibaba.nacos.naming.raft.timer");
+                t.setName("com.alibaba.nacos.naming.timer");
 
                 return t;
             }
@@ -145,6 +145,10 @@ public class GlobalExecutor {
 
     public static void schedule(Runnable runnable, long period) {
         executorService.scheduleAtFixedRate(runnable, 0, period, TimeUnit.MILLISECONDS);
+    }
+
+    public static void schedule(Runnable runnable, long initialDelay, long period) {
+        executorService.scheduleAtFixedRate(runnable, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 
     public static void notifyServerListChange(Runnable runnable) {

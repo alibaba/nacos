@@ -16,10 +16,9 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-
+import com.google.common.collect.Maps;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -31,10 +30,10 @@ import java.util.concurrent.locks.ReentrantLock;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5 {
     private static char[] digits = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-    private final static int DIGITS_COUNT = 16;
-    private final static int DIGITS_CHAR_SIZE = 32;
+    private static final int DIGITS_COUNT = 16;
+    private static final int DIGITS_CHAR_SIZE = 32;
 
-    private static Map<Character, Integer> rDigits = new HashMap<Character, Integer>(16);
+    private static Map<Character, Integer> rDigits = Maps.newHashMapWithExpectedSize(16);
 
     static {
         for (int i = 0; i < digits.length; ++i) {
