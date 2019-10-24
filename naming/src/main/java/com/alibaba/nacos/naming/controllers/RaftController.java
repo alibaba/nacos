@@ -20,6 +20,8 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
@@ -33,6 +35,7 @@ import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.NeedAuth;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +43,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,19 +70,24 @@ public class RaftController {
 
     @NeedAuth
     @PostMapping("/vote")
-    public JSONObject vote(@RequestParam String vote) {
+    public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         RaftPeer peer = raftCore.receivedVote(
-            JSON.parseObject(vote, RaftPeer.class));
+            JSON.parseObject(WebUtils.required(request, "vote"), RaftPeer.class));
 
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 
     @NeedAuth
     @PostMapping("/beat")
-    public JSONObject beat(@RequestBody JSONObject json) throws Exception {
+    public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-        JSONObject beat = json.getJSONObject("beat");
+        String entity = new String(IoUtils.tryDecompress(request.getInputStream()), StandardCharsets.UTF_8);
+        String value = URLDecoder.decode(entity, "UTF-8");
+        value = URLDecoder.decode(value, "UTF-8");
+
+        JSONObject json = JSON.parseObject(value);
+        JSONObject beat = JSON.parseObject(json.getString("beat"));
 
         RaftPeer peer = raftCore.receivedBeat(beat);
 
@@ -87,7 +96,7 @@ public class RaftController {
 
     @NeedAuth
     @GetMapping("/peer")
-    public JSONObject getPeer() {
+    public JSONObject getPeer(HttpServletRequest request, HttpServletResponse response) {
         List<RaftPeer> peers = raftCore.getPeers();
         RaftPeer peer = null;
 
@@ -107,18 +116,23 @@ public class RaftController {
 
     @NeedAuth
     @PutMapping("/datum/reload")
-    public String reloadDatum(@RequestParam String key) {
+    public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        String key = WebUtils.required(request, "key");
         raftCore.loadDatum(key);
         return "ok";
     }
 
     @NeedAuth
     @PostMapping("/datum")
-    public String publish(@RequestBody JSONObject json, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
+
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String value = URLDecoder.decode(entity, "UTF-8");
+        JSONObject json = JSON.parseObject(value);
 
         String key = json.getString("key");
         if (KeyBuilder.matchInstanceListKey(key)) {
@@ -141,24 +155,23 @@ public class RaftController {
 
     @NeedAuth
     @DeleteMapping("/datum")
-    public String delete(@RequestParam String key, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
-
-        raftConsistencyService.remove(key);
+        raftConsistencyService.remove(WebUtils.required(request, "key"));
         return "ok";
     }
 
     @NeedAuth
     @GetMapping("/datum")
-    public String get(@RequestParam(name = "keys") String keysString, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
-
+        String keysString = WebUtils.required(request, "keys");
         keysString = URLDecoder.decode(keysString, "UTF-8");
         String[] keys = keysString.split(",");
         List<Datum> datums = new ArrayList<Datum>();
@@ -172,7 +185,7 @@ public class RaftController {
     }
 
     @GetMapping("/state")
-    public JSONObject state(HttpServletRequest request, HttpServletResponse response) {
+    public JSONObject state(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
@@ -187,15 +200,18 @@ public class RaftController {
 
     @NeedAuth
     @PostMapping("/datum/commit")
-    public String onPublish(@RequestBody JSONObject jsonObject, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String value = URLDecoder.decode(entity, "UTF-8");
+        JSONObject jsonObject = JSON.parseObject(value);
         String key = "key";
 
-        RaftPeer source = jsonObject.getObject("source", RaftPeer.class);
+        RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
         JSONObject datumJson = jsonObject.getJSONObject("datum");
 
         Datum datum = null;
@@ -216,21 +232,26 @@ public class RaftController {
 
     @NeedAuth
     @DeleteMapping("/datum/commit")
-    public String onDelete(@RequestBody JSONObject jsonObject, HttpServletRequest request, HttpServletResponse response) throws Exception {
+    public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         response.setHeader("Content-Type", "application/json; charset=" + getAcceptEncoding(request));
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        Datum datum = jsonObject.getObject("datum", Datum.class);
-        RaftPeer source = jsonObject.getObject("source", RaftPeer.class);
+        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String value = URLDecoder.decode(entity, "UTF-8");
+        value = URLDecoder.decode(value, "UTF-8");
+        JSONObject jsonObject = JSON.parseObject(value);
+
+        Datum datum = JSON.parseObject(jsonObject.getString("datum"), Datum.class);
+        RaftPeer source = JSON.parseObject(jsonObject.getString("source"), RaftPeer.class);
 
         raftConsistencyService.onRemove(datum, source);
         return "ok";
     }
 
     @GetMapping("/leader")
-    public JSONObject getLeader() {
+    public JSONObject getLeader(HttpServletRequest request, HttpServletResponse response) {
 
         JSONObject result = new JSONObject();
         result.put("leader", JSONObject.toJSONString(raftCore.getLeader()));
@@ -238,20 +259,21 @@ public class RaftController {
     }
 
     @GetMapping("/listeners")
-    public JSONObject getAllListeners() {
+    public JSONObject getAllListeners(HttpServletRequest request, HttpServletResponse response) {
 
         JSONObject result = new JSONObject();
         Map<String, List<RecordListener>> listeners = raftCore.getListeners();
 
         JSONArray listenerArray = new JSONArray();
-        listenerArray.addAll(listeners.keySet());
-
+        for (String key : listeners.keySet()) {
+            listenerArray.add(key);
+        }
         result.put("listeners", listenerArray);
 
         return result;
     }
 
-    private static String getAcceptEncoding(HttpServletRequest req) {
+    public static String getAcceptEncoding(HttpServletRequest req) {
         String encode = StringUtils.defaultIfEmpty(req.getHeader("Accept-Charset"), "UTF-8");
         encode = encode.contains(",") ? encode.substring(0, encode.indexOf(",")) : encode;
         return encode.contains(";") ? encode.substring(0, encode.indexOf(";")) : encode;

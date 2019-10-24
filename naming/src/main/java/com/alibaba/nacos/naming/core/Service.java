@@ -424,6 +424,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);
+
+        Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
+
         recalculateChecksum();
     }
 
