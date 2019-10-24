@@ -32,6 +32,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +65,8 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     @Autowired
     private IstioConfig istioConfig;
 
-    public NacosMcpService() {
+    @PostConstruct
+    public void init() {
         if (!istioConfig.isMcpServerEnabled()) {
             return;
         }

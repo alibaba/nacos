@@ -322,7 +322,7 @@ public class ServiceManager implements RecordListener<Service> {
             if (valid != instance.isHealthy()) {
                 changed = true;
                 instance.setHealthy(valid);
-                Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}@{}{}",
+                Loggers.EVT_LOG.info("{} {SYNC} IP-{} : {}:{}@{}",
                     serviceName, (instance.isHealthy() ? "ENABLED" : "DISABLED"),
                     instance.getIp(), instance.getPort(), instance.getClusterName());
             }
@@ -451,30 +451,6 @@ public class ServiceManager implements RecordListener<Service> {
             if (!local) {
                 addOrReplaceService(service);
             }
-        }
-    }
-
-    public void putServiceIfAbsent(Service service, boolean local, Cluster cluster) throws NacosException {
-        final String namespaceId = service.getNamespaceId();
-        final String serviceName = service.getName();
-
-        if (getService(namespaceId, serviceName) != null) {
-            return;
-        }
-
-        Loggers.SRV_LOG.info("creating empty service {}:{}", namespaceId, serviceName);
-        // now validate the service. if failed, exception will be thrown
-        service.setLastModifiedMillis(System.currentTimeMillis());
-        service.recalculateChecksum();
-        if (cluster != null) {
-            cluster.setService(service);
-            service.getClusterMap().put(cluster.getName(), cluster);
-        }
-        service.validate();
-
-        putServiceAndInit(service);
-        if (!local) {
-            addOrReplaceService(service);
         }
     }
 
