@@ -46,7 +46,7 @@ public class SwitchEntry {
     public static final int MIN_PUSH_CACHE_TIME_MIILIS = 10000;
     public static final int MIN_CACHE_TIME_MIILIS = 1000;
     public static final int MIN_SERVICE_SYNC_TIME_MIILIS = 5000;
-    public static final int MIN_SERVER_SYNC_TIME_MIILIS = 15000;
+    public static final int MIN_SERVER_SYNC_TIME_MIILIS = 1000;
 
     public static final String ACTION_ADD = "add";
     public static final String ACTION_REPLACE = "replace";
@@ -60,4 +60,5 @@ public class SwitchEntry {
 
     public static final String OVERRIDDEN_SERVER_STATUS = "overriddenServerStatus";
     public static final String DEFAULT_INSTANCE_EPHEMERAL = "defaultInstanceEphemeral";
+    public static final String DISTRO_SERVER_EXPIRED_MILLIS = "distroServerExpiredMillis";
 }

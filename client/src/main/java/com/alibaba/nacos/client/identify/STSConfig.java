@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.client.identify;
 
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Sts config

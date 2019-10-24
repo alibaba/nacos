@@ -88,52 +88,43 @@ public class DataSyncer {
             return;
         }
 
-        GlobalExecutor.submitDataSync(new Runnable() {
-            @Override
-            public void run() {
+        GlobalExecutor.submitDataSync(() -> {
+            // 1. check the server
+            if (getServers() == null || getServers().isEmpty()) {
+                Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
+                return;
+            }
 
-                try {
-                    if (getServers() == null || getServers().isEmpty()) {
-                        Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
-                        return;
-                    }
+            List<String> keys = task.getKeys();
 
-                    List<String> keys = task.getKeys();
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("try to sync data for this keys {}.", keys);
+            }
+            // 2. get the datums by keys and check the datum is empty or not
+            Map<String, Datum> datumMap = dataStore.batchGet(keys);
+            if (datumMap == null || datumMap.isEmpty()) {
+                // clear all flags of this task:
+                for (String key : keys) {
+                    taskMap.remove(buildKey(key, task.getTargetServer()));
+                }
+                return;
+            }
 
-                    if (Loggers.DISTRO.isDebugEnabled()) {
-                        Loggers.DISTRO.debug("sync keys: {}", keys);
-                    }
+            byte[] data = serializer.serialize(datumMap);
 
-                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
-
-                    if (datumMap == null || datumMap.isEmpty()) {
-                        // clear all flags of this task:
-                        for (String key : task.getKeys()) {
-                            taskMap.remove(buildKey(key, task.getTargetServer()));
-                        }
-                        return;
-                    }
-
-                    byte[] data = serializer.serialize(datumMap);
-
-                    long timestamp = System.currentTimeMillis();
-                    boolean success = NamingProxy.syncData(data, task.getTargetServer());
-                    if (!success) {
-                        SyncTask syncTask = new SyncTask();
-                        syncTask.setKeys(task.getKeys());
-                        syncTask.setRetryCount(task.getRetryCount() + 1);
-                        syncTask.setLastExecuteTime(timestamp);
-                        syncTask.setTargetServer(task.getTargetServer());
-                        retrySync(syncTask);
-                    } else {
-                        // clear all flags of this task:
-                        for (String key : task.getKeys()) {
-                            taskMap.remove(buildKey(key, task.getTargetServer()));
-                        }
-                    }
-
-                } catch (Exception e) {
-                    Loggers.DISTRO.error("sync data failed.", e);
+            long timestamp = System.currentTimeMillis();
+            boolean success = NamingProxy.syncData(data, task.getTargetServer());
+            if (!success) {
+                SyncTask syncTask = new SyncTask();
+                syncTask.setKeys(task.getKeys());
+                syncTask.setRetryCount(task.getRetryCount() + 1);
+                syncTask.setLastExecuteTime(timestamp);
+                syncTask.setTargetServer(task.getTargetServer());
+                retrySync(syncTask);
+            } else {
+                // clear all flags of this task:
+                for (String key : task.getKeys()) {
+                    taskMap.remove(buildKey(key, task.getTargetServer()));
                 }
             }
         }, delay);
@@ -146,6 +137,12 @@ public class DataSyncer {
         server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
         if (!getServers().contains(server)) {
             // if server is no longer in healthy server list, ignore this task:
+            //fix #1665 remove existing tasks
+            if (syncTask.getKeys() != null) {
+                for (String key : syncTask.getKeys()) {
+                    taskMap.remove(buildKey(key, syncTask.getTargetServer()));
+                }
+            }
             return;
         }
 
@@ -175,7 +172,11 @@ public class DataSyncer {
                         continue;
                     }
 
-                    keyChecksums.put(key, dataStore.get(key).value.getChecksum());
+                    Datum datum = dataStore.get(key);
+                    if (datum == null) {
+                        continue;
+                    }
+                    keyChecksums.put(key, datum.value.getChecksum());
                 }
 
                 if (keyChecksums.isEmpty()) {
@@ -196,6 +197,7 @@ public class DataSyncer {
                 Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
+
     }
 
     public List<Server> getServers() {
