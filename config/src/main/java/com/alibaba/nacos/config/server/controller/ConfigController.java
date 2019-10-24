@@ -233,9 +233,9 @@ public class ConfigController {
                                              @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
+        List<ConfigAllInfo> configInfoList = persistService.removeConfigInfoByIds(ids, clientIp, null);
         if (!CollectionUtils.isEmpty(configInfoList)) {
-            for (ConfigInfo configInfo : configInfoList) {
+            for (ConfigAllInfo configInfo : configInfoList) {
                 ConfigTraceService.logPersistenceEvent(configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant(), null, time.getTime(), clientIp,
                     ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
