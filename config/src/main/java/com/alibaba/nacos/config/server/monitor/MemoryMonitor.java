@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.memoryLog;
 
@@ -51,7 +50,7 @@ public class MemoryMonitor {
 
     }
 
-    static final long DELAY_SECONDS = 10;
+    private static final long DELAY_SECONDS = 10;
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
@@ -82,8 +81,6 @@ class PrintMemoryTask implements Runnable {
 
 class NotifyTaskQueueMonitorTask implements Runnable {
     final private AsyncNotifyService notifySingleService;
-    private AtomicInteger notifyTask = new AtomicInteger();
-
 
     NotifyTaskQueueMonitorTask(AsyncNotifyService notifySingleService) {
         this.notifySingleService = notifySingleService;
@@ -92,9 +89,7 @@ class NotifyTaskQueueMonitorTask implements Runnable {
     @Override
     public void run() {
         int size = ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size();
-        memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-            new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(),
-                size});
+        memoryLog.info("toNotifyTaskSize={}", size);
         MetricsMonitor.getNotifyTaskMonitor().set(size);
     }
 }

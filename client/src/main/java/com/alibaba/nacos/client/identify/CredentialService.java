@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.identify;
 
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,6 +85,7 @@ public final class CredentialService implements SpasCredentialLoader {
         LOGGER.info("[{}] {} is freed", appName, this.getClass().getSimpleName());
     }
 
+    @Override
     public Credentials getCredential() {
         Credentials localCredential = credentials;
         if (localCredential.valid()) {

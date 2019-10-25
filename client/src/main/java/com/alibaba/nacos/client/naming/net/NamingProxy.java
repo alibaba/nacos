@@ -32,9 +32,13 @@ import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
+import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
+import com.alibaba.nacos.common.util.VersionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -216,6 +220,7 @@ public class NamingProxy {
         params.put("ip", instance.getIp());
         params.put("port", String.valueOf(instance.getPort()));
         params.put("weight", String.valueOf(instance.getWeight()));
+        params.put("enabled", String.valueOf(instance.isEnabled()));
         params.put("ephemeral", String.valueOf(instance.isEphemeral()));
         params.put("metadata", JSON.toJSONString(instance.getMetadata()));
 
@@ -263,7 +268,6 @@ public class NamingProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
 
         String result = reqAPI(UtilAndComs.NACOS_URL_SERVICE, params, HttpMethod.DELETE);
-        NAMING_LOGGER.info(result);
         return "ok".equals(result);
     }
 
@@ -298,7 +302,9 @@ public class NamingProxy {
 
     public long sendBeat(BeatInfo beatInfo) {
         try {
-            NAMING_LOGGER.info("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
+            if (NAMING_LOGGER.isDebugEnabled()) {
+                NAMING_LOGGER.debug("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
+            }
             Map<String, String> params = new HashMap<String, String>(4);
             params.put("beat", JSON.toJSONString(beatInfo));
             params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -395,12 +401,14 @@ public class NamingProxy {
         List<String> headers = builderHeaders();
 
         String url;
-
-        if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
-            curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
+        if (curServer.startsWith(UtilAndComs.HTTPS) || curServer.startsWith(UtilAndComs.HTTP)) {
+            url = curServer + api;
+        } else {
+            if (!curServer.contains(UtilAndComs.SERVER_ADDR_IP_SPLITER)) {
+                curServer = curServer + UtilAndComs.SERVER_ADDR_IP_SPLITER + serverPort;
+            }
+            url = HttpClient.getPrefix() + curServer + api;
         }
-
-        url = HttpClient.getPrefix() + curServer + api;
 
         HttpClient.HttpResult result = HttpClient.request(url, headers, params, UtilAndComs.ENCODING, method);
         end = System.currentTimeMillis();
@@ -416,8 +424,8 @@ public class NamingProxy {
             return StringUtils.EMPTY;
         }
 
-        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + HttpClient.getPrefix() + curServer
-            + api + ". code:"
+        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:"
+            + curServer + api + ". code:"
             + result.code + " msg: " + result.content);
     }
 
@@ -476,26 +484,26 @@ public class NamingProxy {
     private void checkSignature(Map<String, String> params) {
         String ak = getAccessKey();
         String sk = getSecretKey();
+        params.put("app", AppNameUtils.getAppName());
         if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
             return;
         }
 
         try {
-            String app = System.getProperty("project.name");
             String signData = getSignData(params.get("serviceName"));
             String signature = SignUtil.sign(signData, sk);
             params.put("signature", signature);
             params.put("data", signData);
             params.put("ak", ak);
-            params.put("app", app);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public List<String> builderHeaders() {
-        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-            "User-Agent", UtilAndComs.VERSION,
+        List<String> headers = Arrays.asList(
+            HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+            HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
             "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
@@ -550,10 +558,10 @@ public class NamingProxy {
         this.serverPort = serverPort;
 
         String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
-        if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
+        if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
     }
-
+    
 }
 

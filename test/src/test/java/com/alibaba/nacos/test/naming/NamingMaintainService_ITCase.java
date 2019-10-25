@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+
 /**
  * @author liaochuntao
  * @date 2019-05-07 10:13
@@ -52,7 +54,7 @@ public class NamingMaintainService_ITCase {
     private NamingMaintainService namingMaintainService;
     private NamingService namingService;
     private Instance instance;
-    private Service service;
+    private String serviceName;
 
     @LocalServerPort
     private int port;
@@ -82,13 +84,8 @@ public class NamingMaintainService_ITCase {
         map.put("version", "1.0");
         instance.setMetadata(map);
 
-        service = new Service();
-        service.setName("nacos-api");
-        service.setGroupName(Constants.DEFAULT_GROUP);
-        service.setProtectThreshold(1.0f);
-        Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put("nacos-1", "this is a test metadata");
-        service.setMetadata(metadata);
+        serviceName = randomDomainName();
+
     }
 
     @Test
@@ -96,52 +93,73 @@ public class NamingMaintainService_ITCase {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
+        namingService.registerInstance(serviceName, instance);
         instance.setMetadata(map);
-        namingService.registerInstance("nacos-api", instance);
-        namingMaintainService.updateInstance("nacos-api", instance);
-        List<Instance> instances = namingService.getAllInstances("nacos-api", true);
+        namingMaintainService.updateInstance(serviceName, instance);
+        List<Instance> instances = namingService.getAllInstances(serviceName, true);
 
         Assert.assertEquals(instances.size(), 1);
         System.out.println(instances.get(0));
     }
 
     @Test
-    public void createService() throws NacosException {
+    public void updateInstanceWithDisable() throws NacosException {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("netType", "external-update");
+        map.put("version", "2.0");
+        namingService.registerInstance(serviceName, instance);
+        instance.setMetadata(map);
+        instance.setEnabled(false);
+        namingMaintainService.updateInstance(serviceName, instance);
+        List<Instance> instances = namingService.getAllInstances(serviceName, true);
 
-        ExpressionSelector selector = new ExpressionSelector();
-        selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-
-        System.out.println("service info : " + service);
-        namingMaintainService.createService(service, selector);
-        Service remoteService = namingMaintainService.queryService("nacos-api");
-        System.out.println("remote service info : " + remoteService);
-        Assert.assertEquals(service.toString(), remoteService.toString());
+        Assert.assertEquals(instances.size(), 0);
     }
 
     @Test
-    public void updateService() throws NacosException {
-        Service service = new Service();
-        service.setName("nacos-api");
-        service.setGroupName(Constants.DEFAULT_GROUP);
-        service.setProtectThreshold(1.0f);
-        Map<String, String> metadata = new HashMap<String, String>();
-        metadata.put("nacos-1", "nacos-3-update");
-        service.setMetadata(metadata);
+    public void createAndUpdateService() throws NacosException {
 
-        namingMaintainService.updateService(service, new NoneSelector());
-        Service remoteService = namingMaintainService.queryService("nacos-api");
+        // register service
+        Service preService = new Service();
+        preService.setName(serviceName);
+        preService.setGroupName(Constants.DEFAULT_GROUP);
+        preService.setProtectThreshold(1.0f);
+        Map<String, String> metadata = new HashMap<String, String>();
+        metadata.put(serviceName, "this is a register metadata");
+        preService.setMetadata(metadata);
+        ExpressionSelector selector = new ExpressionSelector();
+        selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
+
+        System.out.println("service info : " + preService);
+        namingMaintainService.createService(preService, selector);
+        Service remoteService = namingMaintainService.queryService(serviceName);
         System.out.println("remote service info : " + remoteService);
-        Assert.assertEquals(service.toString(), remoteService.toString());
+        Assert.assertEquals(preService.toString(), remoteService.toString());
+
+        // update service
+        Service nowService = new Service();
+        nowService.setName(serviceName);
+        nowService.setGroupName(Constants.DEFAULT_GROUP);
+        nowService.setProtectThreshold(1.0f);
+        metadata.clear();
+        metadata.put(serviceName, "this is a update metadata");
+        nowService.setMetadata(metadata);
+
+        namingMaintainService.updateService(nowService, new NoneSelector());
+        remoteService = namingMaintainService.queryService(serviceName);
+        System.out.println("remote service info : " + remoteService);
+        Assert.assertEquals(nowService.toString(), remoteService.toString());
     }
 
     @Test
     public void deleteService() throws NacosException {
-        Assert.assertTrue(namingMaintainService.deleteService("nacos-api"));
-    }
 
-    @Test
-    public void dregInstance() throws NacosException {
-        namingService.deregisterInstance("nacos-api", "127.0.0.1", 8081);
+        Service preService = new Service();
+        preService.setName(serviceName);
+        System.out.println("service info : " + preService);
+        namingMaintainService.createService(preService, new NoneSelector());
+
+        Assert.assertTrue(namingMaintainService.deleteService(serviceName));
     }
 
 }

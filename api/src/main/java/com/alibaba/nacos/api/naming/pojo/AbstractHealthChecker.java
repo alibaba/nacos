@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import com.google.common.base.Objects;
 
 /**
  * @author nkorange
@@ -52,7 +52,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
     /**
      * used to JsonAdapter
      */
-    public void jsonAdapterCallback(SerializeWriter writer){
+    public void jsonAdapterCallback(SerializeWriter writer) {
         // do nothing
     }
 
@@ -138,7 +138,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(path, headers, expectedResponseCode);
+            return Objects.hashCode(path, headers, expectedResponseCode);
         }
 
         @Override
@@ -147,7 +147,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Http other = (Http)obj;
+            Http other = (Http) obj;
 
             if (!strEquals(type, other.getType())) {
                 return false;
@@ -184,7 +184,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(TYPE);
+            return Objects.hashCode(TYPE);
         }
 
         @Override
@@ -193,6 +193,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         }
 
+        @Override
         public Tcp clone() throws CloneNotSupportedException {
             Tcp config = new Tcp();
             config.setType(this.type);
@@ -249,7 +250,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(user, pwd, cmd);
+            return Objects.hashCode(user, pwd, cmd);
         }
 
         @Override
@@ -258,7 +259,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
                 return false;
             }
 
-            Mysql other = (Mysql)obj;
+            Mysql other = (Mysql) obj;
 
             if (!strEquals(user, other.getUser())) {
                 return false;

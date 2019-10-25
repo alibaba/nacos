@@ -27,6 +27,7 @@ public class RandomUtils {
     private static Random rd = new Random();
     private static int UNICODE_START = 19968;
     private static int UNICODE_END = 40864;
+    private static final String  STRING_POOL = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private RandomUtils() {
     }
@@ -38,7 +39,6 @@ public class RandomUtils {
     public static long getLongMoreThanZero() {
         long res;
         for(res = rd.nextLong(); res <= 0L; res = rd.nextLong()) {
-            ;
         }
 
         return res;
@@ -52,7 +52,6 @@ public class RandomUtils {
     public static long getLongMoreThanZeroLessThan(long n) {
         long res;
         for(res = getLongLessThan(n); res <= 0L; res = getLongLessThan(n)) {
-            ;
         }
 
         return res;
@@ -74,7 +73,6 @@ public class RandomUtils {
     public static int getIntegerMoreThanZero() {
         int res;
         for(res = rd.nextInt(); res <= 0; res = rd.nextInt()) {
-            ;
         }
 
         return res;
@@ -88,7 +86,6 @@ public class RandomUtils {
     public static int getIntegerMoreThanZeroLessThan(int n) {
         int res;
         for(res = rd.nextInt(n); res == 0; res = rd.nextInt(n)) {
-            ;
         }
 
         return res;
@@ -136,13 +133,12 @@ public class RandomUtils {
     }
 
     public static String getRandomString(int length) {
-        StringBuffer buffer = new StringBuffer("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Random random = new Random();
-        int range = buffer.length();
+        int range = STRING_POOL.length();
 
         for(int i = 0; i < length; ++i) {
-            sb.append(buffer.charAt(random.nextInt(range)));
+            sb.append(STRING_POOL.charAt(random.nextInt(range)));
         }
 
         return sb.toString();
@@ -273,7 +269,6 @@ public class RandomUtils {
             int[] source = new int[len];
 
             for(int i = min; i < min + len; source[i - min] = i++) {
-                ;
             }
 
             int[] result = new int[n];

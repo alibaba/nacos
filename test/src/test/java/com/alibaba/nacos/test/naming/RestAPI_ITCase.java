@@ -43,8 +43,8 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
-        "server.port=7001"},
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+    "server.port=7001"},
+    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class RestAPI_ITCase {
 
     @LocalServerPort
@@ -71,9 +71,9 @@ public class RestAPI_ITCase {
     public void metrics() throws Exception {
 
         ResponseEntity<String> response = request("/nacos/v1/ns/operator/metrics",
-                Params.newParams()
-                        .done(),
-                String.class);
+            Params.newParams()
+                .done(),
+            String.class);
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
@@ -181,7 +181,7 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         json = JSON.parseObject(response.getBody());
-        Assert.assertEquals(count+1, json.getIntValue("count"));
+        Assert.assertEquals(count + 1, json.getIntValue("count"));
 
         namingServiceDelete(serviceName);
     }
@@ -232,6 +232,32 @@ public class RestAPI_ITCase {
         namingServiceDelete(serviceName);
     }
 
+    @Test
+    public void testInvalidNamespace() {
+
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("protectThreshold", "0.6")
+                .appendParam("namespaceId", "..invalid-namespace")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is4xxClientError());
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("protectThreshold", "0.6")
+                .appendParam("namespaceId", "/invalid-namespace")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is4xxClientError());
+
+    }
+
     private void namingServiceDelete(String serviceName) {
         //delete service
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
@@ -246,20 +272,20 @@ public class RestAPI_ITCase {
         Assert.assertEquals("ok", response.getBody());
     }
 
-    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
+    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
 
         HttpHeaders headers = new HttpHeaders();
 
         HttpEntity<?> entity = new HttpEntity<T>(headers);
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-                .queryParams(params);
+            .queryParams(params);
 
         return this.restTemplate.exchange(
-                builder.toUriString(), HttpMethod.GET, entity, clazz);
+            builder.toUriString(), HttpMethod.GET, entity, clazz);
     }
 
-    private <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
+    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
 
         HttpHeaders headers = new HttpHeaders();
 
@@ -270,52 +296,6 @@ public class RestAPI_ITCase {
 
         return this.restTemplate.exchange(
             builder.toUriString(), httpMethod, entity, clazz);
-    }
-
-    private void prepareData() {
-
-        ResponseEntity<String> responseEntity = request("/nacos/v1/ns/api/regDom",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .appendParam("cktype", "TCP")
-                        .appendParam("token", "abc")
-                        .done(),
-                String.class);
-
-        if (responseEntity.getStatusCode().isError()) {
-            throw new RuntimeException("before test: register domain failed!" + responseEntity.toString());
-        }
-
-        try {
-            Thread.sleep(100L);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        responseEntity = request("/nacos/v1/ns/api/addIP4Dom",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .appendParam("ipList", NamingBase.TEST_IP_4_DOM_1 + ":" + NamingBase.TEST_PORT_4_DOM_1)
-                        .appendParam("token", NamingBase.TEST_TOKEN_4_DOM_1).done(),
-                String.class);
-
-        if (responseEntity.getStatusCode().isError()) {
-            throw new RuntimeException("before test: add ip for domain failed!" + responseEntity.toString());
-        }
-    }
-
-    private void removeData() {
-
-        ResponseEntity<String> responseEntity = request("/nacos/v1/ns/api/remvDom",
-                Params.newParams()
-                        .appendParam("dom", NamingBase.TEST_DOM_1)
-                        .appendParam("token", "abc")
-                        .done(),
-                String.class);
-
-        if (responseEntity.getStatusCode().isError()) {
-            throw new RuntimeException("before test: remove domain failed!" + responseEntity.toString());
-        }
     }
 
 }

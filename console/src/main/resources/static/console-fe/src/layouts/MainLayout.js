@@ -341,9 +341,6 @@ class MainLayout extends React.Component {
         });
         return;
       }
-      this.setState({
-        noChild: !!nowNavObj.dontUseChild,
-      });
       const { parentServiceName } = nowNavObj;
 
       const parentNav = this.oneLevelNavArr[parentServiceName];
@@ -391,7 +388,11 @@ class MainLayout extends React.Component {
   refreshNav() {
     const { navList } = this.state;
     const { location, history, functionMode } = this.props;
-    const [configUrl, serviceUrl] = ['/configurationManagement', '/serviceManagement'];
+    const [configUrl, serviceUrl, clusterUrl] = [
+      '/configurationManagement',
+      '/serviceManagement',
+      '/clusterManagement',
+    ];
     this.setState(
       {
         navList: navList.map(item => {
@@ -407,6 +408,12 @@ class MainLayout extends React.Component {
           ) {
             item.enable = true;
           }
+          if (
+            item.serviceName === 'clusterManagementVirtual' &&
+            (functionMode === null || functionMode === 'cluster')
+          ) {
+            item.enable = true;
+          }
           return item;
         }),
       },
@@ -417,6 +424,9 @@ class MainLayout extends React.Component {
     }
     if (functionMode === 'naming' && location.pathname === configUrl) {
       history.push(serviceUrl);
+    }
+    if (functionMode === 'cluster' && location.pathname === clusterUrl) {
+      history.push(clusterUrl);
     }
   }
 

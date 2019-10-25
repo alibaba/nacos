@@ -62,6 +62,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     private Map<String, String> metadata = new ConcurrentHashMap<>();
 
+    public Cluster() {
+    }
+
     /**
      * Create a cluster.
      * <p>the cluster name cannot be null, and only the arabic numerals, letters and endashes are allowed.
@@ -106,6 +109,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             return;
         }
         checkTask = new HealthCheckTask(this);
+
         HealthCheckReactor.scheduleCheck(checkTask);
         inited = true;
     }
@@ -126,19 +130,21 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     /**
      * Replace the service for the current cluster.
-     * <p>Deprecated because the service shouldn't be replaced.
+     * <p>  the service shouldn't be replaced. so if the service is not empty will nothing to do.
      * (the service fields can be changed, but the service A shouldn't be replaced to service B).
      * If the service of a cluster is required to replace, actually, a new cluster is required.
      *
      * @param service the new service
      */
-    @Deprecated
     public void setService(Service service) {
+        if (this.service != null) {
+            return;
+        }
         this.service = service;
     }
 
     /**
-     * this method has been deprecated, the service name is not allowed to change.
+     * this method has been deprecated, the service name shouldn't be changed.
      *
      * @param serviceName the service name
      * @author jifengnan  2019-04-26
@@ -147,7 +153,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @Deprecated
     @Override
     public void setServiceName(String serviceName) {
-        throw new UnsupportedOperationException("This method has been deprecated, the service name is not allowed to change.");
+        super.setServiceName(serviceName);
     }
 
     /**
@@ -159,7 +165,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      */
     @Override
     public String getServiceName() {
-        return service.getName();
+        if (service != null) {
+            return service.getName();
+        } else {
+            return super.getServiceName();
+        }
     }
 
     @Override
@@ -292,7 +302,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             mapa.put(o.getIp() + ":" + o.getPort(), o);
         }
 
-        List<Instance> result = new ArrayList<Instance>();
+        List<Instance> result = new ArrayList<>();
 
         for (Instance o : a) {
             if (!mapa.containsKey(o.getIp() + ":" + o.getPort())) {
@@ -305,28 +315,16 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-            .append(getName())
-            .append(service)
-            .toHashCode();
+        return Objects.hash(getName());
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Cluster)) {
             return false;
         }
 
-        Cluster cluster = (Cluster) o;
-
-        return new EqualsBuilder()
-            .append(getName(), cluster.getName())
-            .append(service, cluster.service)
-            .isEquals();
+        return getName().equals(((Cluster) obj).getName());
     }
 
     public int getDefCkport() {
