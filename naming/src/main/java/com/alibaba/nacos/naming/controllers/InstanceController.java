@@ -15,15 +15,6 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -43,13 +34,16 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 /**
  * Instance operation controller
@@ -135,6 +129,57 @@ public class InstanceController {
             serviceManager.updateInstance(namespaceId, serviceName, parseInstance(request));
         } else {
             serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
+        }
+        return "ok";
+    }
+
+    @CanDistro
+    @PatchMapping
+    public String patch(HttpServletRequest request) throws Exception {
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String ip = WebUtils.required(request, "ip");
+        String port = WebUtils.required(request, "port");
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, cluster, ip, Integer.parseInt(port));
+
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(metadata)) {
+            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+        }
+        String app = WebUtils.optional(request, "app", "DEFAULT");
+        instance.setApp(app);
+        instance.setLastBeat(System.currentTimeMillis());
+        instance.validate();
+        String weight = WebUtils.optional(request, "weight", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(weight)) {
+            instance.setWeight(Double.parseDouble(weight));
+        }
+        String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(healthy)) {
+            instance.setHealthy(BooleanUtils.toBoolean(healthy));
+        }
+        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(enabledString)) {
+            instance.setEnabled(BooleanUtils.toBoolean(enabledString));
+        }
+        String ephemeral = WebUtils.optional(request, "ephemeral", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(ephemeral)) {
+            instance.setEphemeral(BooleanUtils.toBoolean(ephemeral));
+        }
+
+        String agent = WebUtils.getUserAgent(request);
+
+        ClientInfo clientInfo = new ClientInfo(agent);
+
+        if (clientInfo.type == ClientInfo.ClientType.JAVA &&
+            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
+            serviceManager.updateInstance(namespaceId, serviceName, instance);
+        } else {
+            serviceManager.registerInstance(namespaceId, serviceName, instance);
         }
         return "ok";
     }
