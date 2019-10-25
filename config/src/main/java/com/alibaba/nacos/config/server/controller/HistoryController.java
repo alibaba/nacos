@@ -21,12 +21,11 @@ import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.PersistService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,17 +35,15 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author Nacos
  */
-@Controller
+@RestController
 @RequestMapping(Constants.HISTORY_CONTROLLER_PATH)
 public class HistoryController {
 
     @Autowired
     protected PersistService persistService;
 
-    @RequestMapping(params = "search=accurate", method = RequestMethod.GET)
-    @ResponseBody
-    public Page<ConfigHistoryInfo> listConfigHistory(HttpServletRequest request, HttpServletResponse response,
-                                                     @RequestParam("dataId") String dataId, //
+    @GetMapping(params = "search=accurate")
+    public Page<ConfigHistoryInfo> listConfigHistory(@RequestParam("dataId") String dataId, //
                                                      @RequestParam("group") String group, //
                                                      @RequestParam(value = "tenant", required = false,
                                                          defaultValue = StringUtils.EMPTY) String tenant,
@@ -66,8 +63,7 @@ public class HistoryController {
     /**
      * 查看配置历史信息详情
      */
-    @RequestMapping(method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping
     public ConfigHistoryInfo getConfigHistoryInfo(HttpServletRequest request, HttpServletResponse response,
                                                   @RequestParam("nid") Long nid, ModelMap modelMap) {
         return persistService.detailConfigHistory(nid);
