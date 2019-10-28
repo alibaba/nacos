@@ -207,14 +207,15 @@ public class InstanceController {
 
     @CanDistro
     @PutMapping("/beat")
-    public JSONObject beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                           @RequestParam String beat,
-                           @RequestParam String serviceName) throws Exception {
+    public JSONObject beat(HttpServletRequest request) throws Exception {
 
         JSONObject result = new JSONObject();
 
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
-
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        String beat = WebUtils.required(request, "beat");
         RsInfo clientBeat = JSON.parseObject(beat, RsInfo.class);
 
         if (!switchDomain.isDefaultInstanceEphemeral() && !clientBeat.isEphemeral()) {
@@ -445,7 +446,7 @@ public class InstanceController {
 
         double threshold = service.getProtectThreshold();
 
-        if ((float)ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
+        if ((float) ipMap.get(Boolean.TRUE).size() / srvedIPs.size() <= threshold) {
 
             Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", serviceName);
             if (isCheck) {

@@ -32,6 +32,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.annotation.PostConstruct;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +65,8 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
     @Autowired
     private IstioConfig istioConfig;
 
-    public NacosMcpService() {
+    @PostConstruct
+    public void init() {
         if (!istioConfig.isMcpServerEnabled()) {
             return;
         }
@@ -95,6 +97,11 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
 
                     // Service not changed:
                     if (checksumMap.containsKey(convertedName) && checksumMap.get(convertedName).equals(service.getChecksum())) {
+                        continue;
+                    }
+
+                    if (service.allIPs().isEmpty()) {
+                        resourceMap.remove(convertedName);
                         continue;
                     }
 
@@ -154,9 +161,8 @@ public class NacosMcpService extends ResourceSourceGrpc.ResourceSourceImplBase {
             .setResolution(ServiceEntry.Resolution.STATIC)
             .setLocation(ServiceEntry.Location.MESH_INTERNAL)
             .addHosts(serviceName + "." + SERVICE_NAME_SPLITTER)
-            .addPorts(Port.newBuilder().setNumber(8080).setName("http").setProtocol("HTTP").build());
-
-
+            .addPorts(Port.newBuilder().setNumber(8848).setName("http").setProtocol("HTTP").build());
+        
         for (Instance instance : service.allIPs()) {
 
             if (!instance.isHealthy() || !instance.isEnabled()) {

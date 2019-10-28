@@ -18,11 +18,13 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -32,8 +34,9 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author nkorange
@@ -46,13 +49,16 @@ public class ClusterController {
     protected ServiceManager serviceManager;
 
     @PutMapping
-    public String update( @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                          @RequestParam String clusterName,
-                          @RequestParam String serviceName,
-                          @RequestParam String healthChecker,
-                          @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
-                          @RequestParam String checkPort,
-                          @RequestParam String useInstancePort4Check) throws Exception {
+    public String update(HttpServletRequest request) throws Exception {
+
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String healthChecker = WebUtils.required(request, "healthChecker");
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        String checkPort = WebUtils.required(request, "checkPort");
+        String useInstancePort4Check = WebUtils.required(request, "useInstancePort4Check");
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {

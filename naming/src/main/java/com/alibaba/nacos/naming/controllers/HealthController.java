@@ -17,7 +17,9 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
+import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
@@ -34,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,23 +69,29 @@ public class HealthController {
 
     @CanDistro
     @PutMapping(value = {"", "/instance"})
-    public String update(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                         @RequestParam String serviceName,
-                         @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
-                         @RequestParam String ip,
-                         @RequestParam int port,
-                         @RequestParam(name = "healthy", defaultValue = StringUtils.EMPTY) String healthyString,
-                         @RequestParam(defaultValue = StringUtils.EMPTY) String validString) {
+    public String update(HttpServletRequest request) {
 
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String clusterName = WebUtils.optional(request, CommonParams.CLUSTER_NAME
+            , UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+
+        String ip = WebUtils.required(request, "ip");
+        int port = Integer.parseInt(WebUtils.required(request, "port"));
+
+        boolean valid = false;
+
+        String healthyString = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
         if (StringUtils.isBlank(healthyString)) {
-            healthyString = validString;
+            healthyString = WebUtils.optional(request, "valid", StringUtils.EMPTY);
         }
 
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
 
-        boolean valid = BooleanUtils.toBoolean(healthyString);
+        valid = BooleanUtils.toBoolean(healthyString);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         // Only health check "none" need update health status with api
