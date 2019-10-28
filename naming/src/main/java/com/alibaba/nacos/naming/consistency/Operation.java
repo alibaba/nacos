@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2019 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,11 @@
  */
 package com.alibaba.nacos.naming.consistency;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.annotation.JSONField;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Atomic operation on the key-value store
@@ -56,6 +45,8 @@ public class Operation {
     public void setOperationType(OperationType operationType) {
         this.operationType = operationType;
     }
+
+    public AtomicLong timestamp = new AtomicLong(0L);
 
     public Operation() {
         this.setTargetValue(new ArrayList<>());
