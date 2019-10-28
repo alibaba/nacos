@@ -22,10 +22,7 @@ import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.RecordListener;
+import com.alibaba.nacos.naming.consistency.*;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
@@ -58,6 +55,15 @@ import java.util.concurrent.*;
  */
 @org.springframework.stereotype.Service("distroConsistencyService")
 public class DistroConsistencyServiceImpl implements EphemeralConsistencyService {
+    @Override
+    public boolean supportPerformOperation() {
+        return false;
+    }
+
+    @Override
+    public void performOperation(Operation operation) throws NacosException {
+        throw new NacosException(NacosException.SERVER_ERROR, "This consistency service does not support \"performOperation\"");
+    }
 
     private ScheduledExecutorService executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
         @Override

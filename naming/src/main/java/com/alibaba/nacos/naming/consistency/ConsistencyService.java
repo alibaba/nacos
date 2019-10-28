@@ -83,4 +83,19 @@ public interface ConsistencyService {
      * @return true if available
      */
     boolean isAvailable();
+
+    /**
+     * Tell if the consistency service supports performing an operation on key-value store
+     *
+     * @return true if it supports the "performOperation" call
+     */
+    boolean supportPerformOperation();
+
+    /**
+     * Perform an atomic operation on the key-value store
+     *
+     * @param operation the atomic operation
+     * @throws NacosException
+     */
+    void performOperation(Operation operation) throws NacosException;
 }
