@@ -26,6 +26,10 @@ import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 /**
  * Yet another simple consistency service.
  * A eventually-consistent service which supports performing atomic operation on data store.
@@ -37,6 +41,7 @@ import org.springframework.stereotype.Service;
 public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService {
     private SimpleDataStore dataStore;
     private ConflictResolver conflictResolver;
+    private Map<String, CopyOnWriteArrayList<RecordListener>> listeners;
 
     private SimpleDataStore getDataStore() {
         return dataStore;
@@ -54,6 +59,18 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
     @Autowired
     private void setConflictResolver(ConflictResolver conflictResolver) {
         this.conflictResolver = conflictResolver;
+    }
+
+    private Map<String, CopyOnWriteArrayList<RecordListener>> getListeners() {
+        return listeners;
+    }
+
+    private void setListeners(Map<String, CopyOnWriteArrayList<RecordListener>> listeners) {
+        this.listeners = listeners;
+    }
+
+    public SimpleConsistencyServiceImpl() {
+        this.setListeners(new ConcurrentHashMap<>());
     }
 
     @Override
@@ -80,12 +97,26 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+        if (!this.getListeners().containsKey(key)) {
+            this.getListeners().put(key, new CopyOnWriteArrayList<>());
+        }
+        if (this.getListeners().get(key).contains(listener)) {
+            return;
+        }
+        this.getListeners().get(key).add(listener);
     }
 
     @Override
     public void unlisten(String key, RecordListener listener) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+        if (!this.getListeners().containsKey(key)) {
+            return;
+        }
+        for (RecordListener recordListener : this.getListeners().get(key)) {
+            if (recordListener.equals(listener)) {
+                this.getListeners().get(key).remove(listener);
+                break;
+            }
+        }
     }
 
     @Override
