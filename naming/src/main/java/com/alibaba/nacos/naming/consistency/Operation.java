@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Operation {
     private OperationType operationType;
     private List<Record> targetValue;
+    private Long realTime;
 
     public List<Record> getTargetValue() {
         return targetValue;
@@ -46,7 +47,13 @@ public class Operation {
         this.operationType = operationType;
     }
 
-    public AtomicLong timestamp = new AtomicLong(0L);
+    public Long getRealTime() {
+        return realTime;
+    }
+
+    public void setRealTime(Long realTime) {
+        this.realTime = realTime;
+    }
 
     public Operation() {
         this.setTargetValue(new ArrayList<>());
