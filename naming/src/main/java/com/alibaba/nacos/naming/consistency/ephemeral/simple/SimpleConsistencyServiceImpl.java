@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 @Service("simpleConsistencyService")
 public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService {
     private SimpleDataStore dataStore;
+    private ConflictResolver conflictResolver;
 
     private SimpleDataStore getDataStore() {
         return dataStore;
@@ -44,6 +45,15 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
     @Autowired
     private void setDataStore(SimpleDataStore dataStore) {
         this.dataStore = dataStore;
+    }
+
+    public ConflictResolver getConflictResolver() {
+        return conflictResolver;
+    }
+
+    @Autowired
+    private void setConflictResolver(ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
     }
 
     @Override
@@ -89,7 +99,7 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
     }
 
     @Override
-    public void performOperation(Operation operation) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+    public void performOperation(String key, Operation operation) throws NacosException {
+        this.getConflictResolver().merge(this.getDataStore().get(key), operation);
     }
 }

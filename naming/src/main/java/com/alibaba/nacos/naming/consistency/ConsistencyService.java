@@ -94,8 +94,9 @@ public interface ConsistencyService {
     /**
      * Perform an atomic operation on the key-value store
      *
+     * @param key the key of the data
      * @param operation the atomic operation
      * @throws NacosException
      */
-    void performOperation(Operation operation) throws NacosException;
+    void performOperation(String key, Operation operation) throws NacosException;
 }

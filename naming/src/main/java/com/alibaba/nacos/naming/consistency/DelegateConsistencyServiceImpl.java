@@ -32,12 +32,12 @@ import org.springframework.stereotype.Service;
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
     @Override
     public boolean supportPerformOperation() {
-        return false;
+        return persistentConsistencyService.supportPerformOperation() && ephemeralConsistencyService.supportPerformOperation();
     }
 
     @Override
-    public void performOperation(Operation operation) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "This consistency service does not support \"performOperation\"");
+    public void performOperation(String key, Operation operation) throws NacosException {
+        mapConsistencyService(key).performOperation(key, operation);
     }
 
     @Autowired

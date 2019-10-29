@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
-import com.alibaba.nacos.naming.consistency.Datum;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

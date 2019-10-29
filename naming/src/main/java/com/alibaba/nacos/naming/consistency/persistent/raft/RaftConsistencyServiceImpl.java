@@ -42,7 +42,7 @@ public class RaftConsistencyServiceImpl implements PersistentConsistencyService 
     }
 
     @Override
-    public void performOperation(Operation operation) throws NacosException {
+    public void performOperation(String key, Operation operation) throws NacosException {
         throw new NacosException(NacosException.SERVER_ERROR, "This consistency service does not support \"performOperation\"");
     }
 
