@@ -49,10 +49,11 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
-            Datum<Instances> datum = new Datum<>();
+            SimpleDatum<Instances> datum = new SimpleDatum<Instances>();
             datum.value = (Instances) value;
             datum.key = key;
             datum.timestamp.incrementAndGet();
+            datum.realTime = System.nanoTime();
             this.getDataStore().put(key, datum);
         }
     }

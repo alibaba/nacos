@@ -29,13 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class SimpleDataStore {
-    private Map<String, Datum> dataMap = new ConcurrentHashMap<>(1024);
+    private Map<String, SimpleDatum> dataMap = new ConcurrentHashMap<>(1024);
 
-    public void put(String key, Datum value) {
+    public void put(String key, SimpleDatum value) {
         dataMap.put(key, value);
     }
 
-    public Datum remove(String key) {
+    public SimpleDatum remove(String key) {
         return dataMap.remove(key);
     }
 
@@ -43,7 +43,7 @@ public class SimpleDataStore {
         return dataMap.keySet();
     }
 
-    public Datum get(String key) {
+    public SimpleDatum get(String key) {
         return dataMap.get(key);
     }
 
@@ -51,7 +51,7 @@ public class SimpleDataStore {
         return dataMap.containsKey(key);
     }
 
-    public Map<String, Datum> getDataMap() {
+    public Map<String, SimpleDatum> getDataMap() {
         return dataMap;
     }
 }
