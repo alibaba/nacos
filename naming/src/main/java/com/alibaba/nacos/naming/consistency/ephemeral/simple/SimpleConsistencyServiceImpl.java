@@ -17,34 +17,54 @@ package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.Operation;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
+import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.pojo.Record;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
  * Yet another simple consistency service.
- * A eventually consistent service which supports performing atomic operation on data store.
+ * A eventually-consistent service which supports performing atomic operation on data store.
  * It uses a simple broadcast overlay to synchronize data updates.
  *
  * @author lostcharlie
  */
 @Service("simpleConsistencyService")
 public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService {
+    private SimpleDataStore dataStore;
+
+    private SimpleDataStore getDataStore() {
+        return dataStore;
+    }
+
+    @Autowired
+    private void setDataStore(SimpleDataStore dataStore) {
+        this.dataStore = dataStore;
+    }
+
     @Override
     public void put(String key, Record value) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+        if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
+            Datum<Instances> datum = new Datum<>();
+            datum.value = (Instances) value;
+            datum.key = key;
+            datum.timestamp.incrementAndGet();
+            this.getDataStore().put(key, datum);
+        }
     }
 
     @Override
     public void remove(String key) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+        this.getDataStore().remove(key);
     }
 
     @Override
     public Datum get(String key) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+        return this.getDataStore().get(key);
     }
 
     @Override
