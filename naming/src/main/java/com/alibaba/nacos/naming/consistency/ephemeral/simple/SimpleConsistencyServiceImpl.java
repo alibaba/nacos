@@ -100,6 +100,18 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Override
     public void performOperation(String key, Operation operation) throws NacosException {
-        this.getConflictResolver().merge(this.getDataStore().get(key), operation);
+        if (KeyBuilder.matchEphemeralInstanceListKey(key)) {
+            synchronized (this) {
+                if (!this.getDataStore().contains(key)) {
+                    SimpleDatum<Instances> datum = new SimpleDatum<Instances>();
+                    datum.value = (Instances) new Instances();
+                    datum.key = key;
+                    datum.timestamp.incrementAndGet();
+                    datum.realTime = 0L;
+                    this.getDataStore().put(key, datum);
+                }
+            }
+            this.getConflictResolver().merge(this.getDataStore().get(key), operation);
+        }
     }
 }

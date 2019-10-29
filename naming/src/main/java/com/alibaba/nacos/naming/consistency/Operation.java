@@ -17,10 +17,6 @@ package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.pojo.Record;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
-
 /**
  * Atomic operation on the key-value store
  *
@@ -28,14 +24,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class Operation {
     private OperationType operationType;
-    private List<Record> targetValue;
+    private Record targetValue;
     private Long realTime;
 
-    public List<Record> getTargetValue() {
+    public Record getTargetValue() {
         return targetValue;
     }
 
-    public void setTargetValue(List<Record> targetValue) {
+    public void setTargetValue(Record targetValue) {
         this.targetValue = targetValue;
     }
 
@@ -56,7 +52,7 @@ public class Operation {
     }
 
     public Operation() {
-        this.setTargetValue(new ArrayList<>());
+
     }
 
 }

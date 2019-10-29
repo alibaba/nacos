@@ -21,6 +21,8 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.pojo.Record;
 
+import java.util.List;
+
 /**
  * Union conflict resolver which calculates the union of concurrent "Add" operation.
  * Additionally, if there is a conflict between "Add" and "Remove", it accepts the "Add" operation.
@@ -59,10 +61,10 @@ public class UnionConflictResolver implements ConflictResolver {
             if (toApply.getOperationType() == OperationType.ADD_INSTANCE) {
                 this.doAddInstances(toApply, instances);
             } else if (toApply.getOperationType() == OperationType.REMOVE_INSTANCE) {
-                for (Record toRemove : toApply.getTargetValue()) {
-                    Instance instance = (Instance) toRemove;
-                    if (instances.getInstanceList().contains(instance)) {
-                        instances.getInstanceList().remove(instance);
+                List<Instance> toRemoveList = ((Instances) toApply.getTargetValue()).getInstanceList();
+                for (Instance toRemove : toRemoveList) {
+                    if (instances.getInstanceList().contains(toRemove)) {
+                        instances.getInstanceList().remove(toRemove);
                     }
                 }
             }
@@ -80,10 +82,10 @@ public class UnionConflictResolver implements ConflictResolver {
     }
 
     private void doAddInstances(Operation toApply, Instances instances) {
-        for (Record toAdd : toApply.getTargetValue()) {
-            Instance instance = (Instance) toAdd;
-            if (!(instances.getInstanceList().contains(instance))) {
-                instances.getInstanceList().add(instance);
+        List<Instance> toAddList = ((Instances) toApply.getTargetValue()).getInstanceList();
+        for (Instance toAdd : toAddList) {
+            if (!(instances.getInstanceList().contains(toAdd))) {
+                instances.getInstanceList().add(toAdd);
             }
         }
     }
