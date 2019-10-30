@@ -315,28 +315,16 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
 
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37)
-            .append(getName())
-            .append(service)
-            .toHashCode();
+        return Objects.hash(getName());
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Cluster)) {
             return false;
         }
 
-        Cluster cluster = (Cluster) o;
-
-        return new EqualsBuilder()
-            .append(getName(), cluster.getName())
-            .append(service, cluster.service)
-            .isEquals();
+        return getName().equals(((Cluster) obj).getName());
     }
 
     public int getDefCkport() {

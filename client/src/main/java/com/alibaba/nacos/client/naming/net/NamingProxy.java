@@ -33,12 +33,12 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.utils.AppNameUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
 import com.alibaba.nacos.common.util.VersionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -558,7 +558,7 @@ public class NamingProxy {
         this.serverPort = serverPort;
 
         String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
-        if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
+        if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
     }

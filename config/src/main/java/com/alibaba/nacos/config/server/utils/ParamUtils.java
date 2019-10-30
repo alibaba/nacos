@@ -17,7 +17,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import java.util.Map;
 
-import com.alibaba.nacos.config.server.exception.NacosException;
+import com.alibaba.nacos.api.exception.NacosException;
 
 import org.apache.commons.lang3.StringUtils;
 
