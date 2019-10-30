@@ -36,9 +36,8 @@ public class UnionConflictResolverTest {
         long timeDifference = 1000;
         SimpleDataStore simpleDataStore = new SimpleDataStore();
         UnionConflictResolver unionConflictResolver = new UnionConflictResolver(timeDifference);
-        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl();
+        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl(unionConflictResolver);
         ReflectionTestUtils.setField(simpleConsistencyService, "dataStore", simpleDataStore);
-        ReflectionTestUtils.setField(simpleConsistencyService, "conflictResolver", unionConflictResolver);
 
         Long realTimeOne = System.nanoTime();
         Long realTimeTwo = realTimeOne + 2000L;

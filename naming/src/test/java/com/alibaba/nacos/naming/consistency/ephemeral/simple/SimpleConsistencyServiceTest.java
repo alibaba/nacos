@@ -32,13 +32,12 @@ public class SimpleConsistencyServiceTest {
     @Test
     public void testGet() throws NacosException {
         SimpleDataStore simpleDataStore = new SimpleDataStore();
-        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl();
+        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl(null);
         ReflectionTestUtils.setField(simpleConsistencyService, "dataStore", simpleDataStore);
 
         String namespaceId = UUID.randomUUID().toString();
         String serviceName = UUID.randomUUID().toString();
-        boolean ephemeral = true;
-        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, true);
         Instances value = new Instances();
         value.setInstanceList(new ArrayList<>());
 
@@ -49,13 +48,12 @@ public class SimpleConsistencyServiceTest {
     @Test
     public void testRemove() throws NacosException {
         SimpleDataStore simpleDataStore = new SimpleDataStore();
-        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl();
+        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl(null);
         ReflectionTestUtils.setField(simpleConsistencyService, "dataStore", simpleDataStore);
 
         String namespaceId = UUID.randomUUID().toString();
         String serviceName = UUID.randomUUID().toString();
-        boolean ephemeral = true;
-        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, true);
         Instances value = new Instances();
         value.setInstanceList(new ArrayList<>());
 
