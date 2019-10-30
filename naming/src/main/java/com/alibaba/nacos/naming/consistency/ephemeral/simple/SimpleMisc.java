@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.ephemeral.simple;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * @author satjd
+ * @author lostcharlie
  */
-
-public enum DatumType {
-    /**
-     * Type of message for update datum
-     */
-    UPDATE,
-    /**
-     * Type of message for delete datum
-     */
-    DELETE,
-    /**
-     * Type of message for cluster management(topology change, treeN change etc.)
-     */
-    OPERATION,
+public class SimpleMisc {
+    public static final Logger SIMPLE_LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.naming.simple");
 }

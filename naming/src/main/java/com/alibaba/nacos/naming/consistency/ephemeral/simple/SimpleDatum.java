@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.ephemeral.simple;
+
+import com.alibaba.nacos.naming.consistency.Datum;
 
 /**
- * @author satjd
+ * A simple datum structure which contains real time in nanosecond as timestamp
+ *
+ * @author lostcharlie
  */
-
-public enum DatumType {
-    /**
-     * Type of message for update datum
-     */
-    UPDATE,
-    /**
-     * Type of message for delete datum
-     */
-    DELETE,
-    /**
-     * Type of message for cluster management(topology change, treeN change etc.)
-     */
-    OPERATION,
+public class SimpleDatum<T> extends Datum {
+    public Long realTime;
 }

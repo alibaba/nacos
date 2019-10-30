@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.weak;
 
 /**
- * @author satjd
+ * Type of atomic operations
+ *
+ * @author lostcharlie
  */
-
-public enum DatumType {
+public enum OperationType {
     /**
-     * Type of message for update datum
+     * Register a new service
      */
-    UPDATE,
+    ADD_SERVICE,
     /**
-     * Type of message for delete datum
+     * Add instance to a specific service
      */
-    DELETE,
+    ADD_INSTANCE,
     /**
-     * Type of message for cluster management(topology change, treeN change etc.)
+     * Remove instance from a specific service
      */
-    OPERATION,
+    REMOVE_INSTANCE,
 }

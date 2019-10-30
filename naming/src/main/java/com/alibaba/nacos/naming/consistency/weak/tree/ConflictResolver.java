@@ -15,21 +15,20 @@
  */
 package com.alibaba.nacos.naming.consistency.weak.tree;
 
-/**
- * @author satjd
- */
+import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleDatum;
+import com.alibaba.nacos.naming.consistency.weak.Operation;
 
-public enum DatumType {
+/**
+ * Public interface for a conflict resolver.
+ *
+ * @author lostcharlie
+ */
+public interface ConflictResolver {
     /**
-     * Type of message for update datum
+     * Apply target operation on local data replica and resolve conflicts for concurrent operations
+     *
+     * @param current current value of the datum
+     * @param toApply the operation to apply
      */
-    UPDATE,
-    /**
-     * Type of message for delete datum
-     */
-    DELETE,
-    /**
-     * Type of message for cluster management(topology change, treeN change etc.)
-     */
-    OPERATION,
+    void merge(SimpleDatum current, Operation toApply);
 }
