@@ -69,7 +69,7 @@ public class SimpleConsistencyServiceImpl implements SimpleConsistencyService {
         this.listeners = listeners;
     }
 
-    @Autowired(required = false)
+    @Autowired
     public SimpleConsistencyServiceImpl(ConflictResolver conflictResolver) {
         this.setListeners(new ConcurrentHashMap<>());
         if (conflictResolver == null) {
