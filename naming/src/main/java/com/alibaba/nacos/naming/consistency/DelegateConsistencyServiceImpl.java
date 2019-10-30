@@ -30,15 +30,6 @@ import org.springframework.stereotype.Service;
  */
 @Service("consistencyDelegate")
 public class DelegateConsistencyServiceImpl implements ConsistencyService {
-    @Override
-    public boolean supportPerformOperation() {
-        return persistentConsistencyService.supportPerformOperation() && ephemeralConsistencyService.supportPerformOperation();
-    }
-
-    @Override
-    public void performOperation(String key, Operation operation) throws NacosException {
-        mapConsistencyService(key).performOperation(key, operation);
-    }
 
     @Autowired
     private PersistentConsistencyService persistentConsistencyService;
