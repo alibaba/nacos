@@ -54,7 +54,6 @@ public class SimpleConsistencyServiceImpl implements SimpleConsistencyService {
         return conflictResolver;
     }
 
-    // @Autowired
     private void setConflictResolver(ConflictResolver conflictResolver) {
         this.conflictResolver = conflictResolver;
     }
@@ -67,9 +66,14 @@ public class SimpleConsistencyServiceImpl implements SimpleConsistencyService {
         this.listeners = listeners;
     }
 
-    public SimpleConsistencyServiceImpl() {
+    @Autowired(required = false)
+    public SimpleConsistencyServiceImpl(ConflictResolver conflictResolver) {
         this.setListeners(new ConcurrentHashMap<>());
-        this.setConflictResolver(new UnionConflictResolver(1000));
+        if (conflictResolver == null) {
+            this.setConflictResolver(new UnionConflictResolver(1000));
+        } else {
+            this.setConflictResolver(conflictResolver);
+        }
     }
 
     @Override
