@@ -19,7 +19,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.Operation;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.misc.Loggers;
@@ -36,15 +35,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class RaftConsistencyServiceImpl implements PersistentConsistencyService {
-    @Override
-    public boolean supportPerformOperation() {
-        return false;
-    }
-
-    @Override
-    public void performOperation(String key, Operation operation) throws NacosException {
-        throw new NacosException(NacosException.SERVER_ERROR, "This consistency service does not support \"performOperation\"");
-    }
 
     @Autowired
     private RaftCore raftCore;
