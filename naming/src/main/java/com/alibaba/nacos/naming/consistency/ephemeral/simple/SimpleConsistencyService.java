@@ -17,20 +17,11 @@ package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.ephemeral.simple.Operation;
-import com.alibaba.nacos.naming.pojo.Record;
 
 /**
- * Consistence service for all implementations to derive.
- * <p>
- * We announce this consistency service to decouple the specific consistency implementation with business logic.
- * User should not be aware of what consistency protocol is being used.
- * <p>
- * In this way, we also provide space for user to extend the underlying consistency protocols, as long as they
- * obey our consistency baseline.
+ * Interface for the consistency service which supports performing an atomic operation on local data replica
  *
- * @author nkorange
- * @since 1.0.0
+ * @author lostcharlie
  */
 public interface SimpleConsistencyService extends ConsistencyService {
 

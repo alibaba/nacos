@@ -19,7 +19,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
-import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +36,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * @author lostcharlie
  */
 @Service("simpleConsistencyService")
-public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService {
+public class SimpleConsistencyServiceImpl implements SimpleConsistencyService {
     private SimpleDataStore dataStore;
     private ConflictResolver conflictResolver;
     private Map<String, CopyOnWriteArrayList<RecordListener>> listeners;
@@ -55,7 +54,7 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
         return conflictResolver;
     }
 
-    @Autowired
+    // @Autowired
     private void setConflictResolver(ConflictResolver conflictResolver) {
         this.conflictResolver = conflictResolver;
     }
@@ -70,6 +69,7 @@ public class SimpleConsistencyServiceImpl implements EphemeralConsistencyService
 
     public SimpleConsistencyServiceImpl() {
         this.setListeners(new ConcurrentHashMap<>());
+        this.setConflictResolver(new UnionConflictResolver(1000));
     }
 
     @Override

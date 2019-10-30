@@ -15,15 +15,28 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.simple.controller;
 
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ephemeral.simple.Operation;
+import com.alibaba.nacos.naming.consistency.ephemeral.simple.OperationType;
 import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleConsistencyServiceImpl;
+import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleMisc;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * RESTful web services for "Yet another simple consistency service".
@@ -55,8 +68,25 @@ public class SimpleController {
     }
 
     @GetMapping
-    public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+    public ResponseEntity get(@RequestBody JSONObject body) throws Exception {
+        String keys = body.getString("keys");
+        SimpleMisc.SIMPLE_LOGGER.info("keys: " + keys);
+        String keySplitter = ",";
+        Map<String, Datum> datumMap = new HashMap<>(64);
+        for (String key : keys.split(keySplitter)) {
+            if (this.getConsistencyService() != null) {
+                Datum datum = this.getConsistencyService().get(key);
+                if (datum == null) {
+                    continue;
+                }
+                datumMap.put(key, datum);
+            }
+        }
+        String content = null;
+        if (this.getSerializer() != null) {
+            content = new String(this.getSerializer().serialize(datumMap), StandardCharsets.UTF_8);
+        }
+        return ResponseEntity.ok(content);
     }
 
     @PostMapping("/heartbeat")
