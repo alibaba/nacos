@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
 import com.alibaba.nacos.naming.pojo.Record;
+
+import java.util.UUID;
 
 /**
  * Atomic operation on the key-value store
@@ -23,9 +25,18 @@ import com.alibaba.nacos.naming.pojo.Record;
  * @author lostcharlie
  */
 public class Operation {
+    private UUID uuid;
     private OperationType operationType;
     private Record targetValue;
     private Long realTime;
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
 
     public Record getTargetValue() {
         return targetValue;
@@ -52,7 +63,7 @@ public class Operation {
     }
 
     public Operation() {
-
+        this.setUuid(UUID.randomUUID());
     }
 
 }

@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.controllers;
+package com.alibaba.nacos.naming.consistency.ephemeral.simple.controller;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleConsistencyServiceImpl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,19 +54,34 @@ public class SimpleController {
         this.consistencyService = consistencyService;
     }
 
+    @GetMapping
     public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
         throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
     }
 
+    @PostMapping("/heartbeat")
     public void onHeartbeat(HttpServletRequest request, HttpServletResponse response) throws Exception {
         throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
     }
 
+    @PostMapping("/ack")
     public void onAck(HttpServletRequest request, HttpServletResponse response) throws Exception {
         throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
     }
 
-    public void onUpdate(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @PostMapping("/sync")
+    public void onSync(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+    }
+
+    @PutMapping
+    @PostMapping
+    public void update(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
+    }
+
+    @DeleteMapping
+    public void delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
         throw new NacosException(NacosException.SERVER_ERROR, "NotImplemented");
     }
 }

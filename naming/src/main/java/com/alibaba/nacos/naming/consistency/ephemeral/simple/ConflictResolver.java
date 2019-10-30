@@ -15,9 +15,6 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.consistency.Operation;
-
 /**
  * Public interface for a conflict resolver.
  *

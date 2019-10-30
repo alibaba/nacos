@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency;
+package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
 /**
  * Type of atomic operations

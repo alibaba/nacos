@@ -17,8 +17,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.consistency.Operation;
-import com.alibaba.nacos.naming.consistency.OperationType;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;

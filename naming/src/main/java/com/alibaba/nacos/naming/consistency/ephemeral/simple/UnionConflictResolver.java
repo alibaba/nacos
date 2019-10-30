@@ -15,11 +15,8 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.simple;
 
-import com.alibaba.nacos.naming.consistency.Operation;
-import com.alibaba.nacos.naming.consistency.OperationType;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
-import com.alibaba.nacos.naming.pojo.Record;
 
 import java.util.List;
 
