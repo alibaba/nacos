@@ -150,7 +150,7 @@ public class Instance {
 
     public void addMetadata(String key, String value) {
         if (this.metadata == null) {
-            this.metadata = new HashMap<String, String>();
+            this.metadata = new HashMap<String, String>(4);
         }
         this.metadata.put(key, value);
     }
