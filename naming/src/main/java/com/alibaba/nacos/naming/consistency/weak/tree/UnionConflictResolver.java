@@ -13,8 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.simple;
+package com.alibaba.nacos.naming.consistency.weak.tree;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleDatum;
+import com.alibaba.nacos.naming.consistency.weak.Operation;
+import com.alibaba.nacos.naming.consistency.weak.OperationType;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 

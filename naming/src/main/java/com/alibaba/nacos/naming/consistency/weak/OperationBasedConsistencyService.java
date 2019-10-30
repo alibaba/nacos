@@ -13,18 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.simple;
+package com.alibaba.nacos.naming.consistency.weak;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
-import com.alibaba.nacos.naming.consistency.weak.Operation;
 
 /**
  * Interface for the consistency service which supports performing an atomic operation on local data replica
  *
  * @author lostcharlie
  */
-public interface SimpleConsistencyService extends ConsistencyService {
+public interface OperationBasedConsistencyService extends ConsistencyService {
 
     /**
      * Tell if the consistency service supports performing an operation on key-value store

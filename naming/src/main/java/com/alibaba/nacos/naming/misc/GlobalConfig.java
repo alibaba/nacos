@@ -39,7 +39,7 @@ public class GlobalConfig {
     private long syncRetryDelay = 5000L;
 
     @Value("${nacos.naming.tree.enabled:false}")
-    private boolean treeProtocolEnabled = false;
+    private boolean treeProtocolEnabled = true;
 
     @Value("${nacos.naming.data.warmup:false}")
     private boolean dataWarmup = false;
