@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class GlobalConfig {
+    @Value("${nacos.naming.raft.enabled:true}")
+    private boolean raftProtocolEnabled = true;
 
     @Value("${nacos.naming.distro.taskDispatchPeriod:200}")
     private int taskDispatchPeriod = 2000;
@@ -36,11 +38,22 @@ public class GlobalConfig {
     @Value("${nacos.naming.distro.syncRetryDelay:5000}")
     private long syncRetryDelay = 5000L;
 
+    @Value("${nacos.naming.tree.enabled:false}")
+    private boolean treeProtocolEnabled = false;
+
     @Value("${nacos.naming.data.warmup:false}")
     private boolean dataWarmup = false;
 
     @Value("${nacos.naming.expireInstance:true}")
     private boolean expireInstance = true;
+
+    public boolean isRaftProtocolEnabled() {
+        return raftProtocolEnabled;
+    }
+
+    public void setRaftProtocolEnabled(boolean raftProtocolEnabled) {
+        this.raftProtocolEnabled = raftProtocolEnabled;
+    }
 
     public int getTaskDispatchPeriod() {
         return taskDispatchPeriod;
@@ -60,5 +73,9 @@ public class GlobalConfig {
 
     public boolean isExpireInstance() {
         return expireInstance;
+    }
+
+    public boolean isTreeProtocolEnabled() {
+        return treeProtocolEnabled;
     }
 }

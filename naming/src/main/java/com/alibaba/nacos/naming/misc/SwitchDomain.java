@@ -60,7 +60,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(2);
 
-    private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
+    private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5000);
 
     private boolean disableAddIP = false;
 

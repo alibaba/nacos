@@ -76,6 +76,30 @@
         <appender-ref ref="naming-raft"/>
     </appender>
 
+    <appender name="naming-tree"
+              class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/naming-tree.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/naming-tree.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
+            <maxFileSize>1GB</maxFileSize>
+            <MaxHistory>7</MaxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+        <encoder>
+            <Pattern>%date %level %msg%n%n</Pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="async-naming-tree" class="ch.qos.logback.classic.AsyncAppender">
+        <discardingThreshold>0</discardingThreshold>
+        <queueSize>1024</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="naming-tree"/>
+    </appender>
+
 
     <appender name="naming-distro"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -393,6 +417,10 @@
     <logger name="com.alibaba.nacos.naming.raft" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="async-naming-raft"/>
+    </logger>
+    <logger name="com.alibaba.nacos.naming.tree" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="async-naming-tree"/>
     </logger>
     <logger name="com.alibaba.nacos.naming.distro" additivity="false">
         <level value="INFO"/>
