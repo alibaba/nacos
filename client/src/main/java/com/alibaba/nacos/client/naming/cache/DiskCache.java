@@ -150,8 +150,11 @@ public class DiskCache {
 
     private static File makeSureCacheDirExists(String dir) {
         File cacheDir = new File(dir);
-        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            throw new IllegalStateException("failed to create cache dir: " + dir);
+
+        if (!cacheDir.exists()) {
+            if (!cacheDir.mkdirs() && !cacheDir.exists()) {
+                throw new IllegalStateException("failed to create cache dir: " + dir);
+            }
         }
         return cacheDir;
     }
