@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.weak.tree;
 
-import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleDatum;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.weak.Operation;
 
 /**
@@ -30,5 +30,5 @@ public interface ConflictResolver {
      * @param current current value of the datum
      * @param toApply the operation to apply
      */
-    void merge(SimpleDatum current, Operation toApply);
+    void merge(Datum current, Operation toApply);
 }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.consistency.weak;
 import com.alibaba.nacos.naming.pojo.Record;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Atomic operation on the key-value store
@@ -28,7 +29,7 @@ public class Operation {
     private UUID uuid;
     private OperationType operationType;
     private Record targetValue;
-    private Long realTime;
+    private AtomicLong timestamp;
 
     public UUID getUuid() {
         return uuid;
@@ -54,16 +55,17 @@ public class Operation {
         this.operationType = operationType;
     }
 
-    public Long getRealTime() {
-        return realTime;
+    public AtomicLong getTimestamp() {
+        return timestamp;
     }
 
-    public void setRealTime(Long realTime) {
-        this.realTime = realTime;
+    public void setTimestamp(AtomicLong timestamp) {
+        this.timestamp = timestamp;
     }
 
     public Operation() {
         this.setUuid(UUID.randomUUID());
+        this.setTimestamp(new AtomicLong(0L));
     }
 
 }

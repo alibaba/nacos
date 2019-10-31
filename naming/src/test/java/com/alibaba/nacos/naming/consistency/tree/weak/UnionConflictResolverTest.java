@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.ephemeral.simple;
+package com.alibaba.nacos.naming.consistency.tree.weak;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.weak.Operation;
 import com.alibaba.nacos.naming.consistency.weak.OperationType;
@@ -24,7 +25,6 @@ import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.UUID;
@@ -36,14 +36,11 @@ public class UnionConflictResolverTest {
     @Test
     public void testAddInstance() throws NacosException {
         // Two add operations which are not in a conflicted state.
-        long timeDifference = 1000;
-        SimpleDataStore simpleDataStore = new SimpleDataStore();
-        UnionConflictResolver unionConflictResolver = new UnionConflictResolver(timeDifference);
-        SimpleConsistencyServiceImpl simpleConsistencyService = new SimpleConsistencyServiceImpl(unionConflictResolver);
-        ReflectionTestUtils.setField(simpleConsistencyService, "dataStore", simpleDataStore);
+        long maxTimeDifference = 1000;
+        UnionConflictResolver unionConflictResolver = new UnionConflictResolver(maxTimeDifference);
 
-        Long realTimeOne = System.nanoTime();
-        Long realTimeTwo = realTimeOne + 2000L;
+        long timestampOne = System.nanoTime();
+        long timestampTwo = timestampOne + 2000L;
         String namespaceId = UUID.randomUUID().toString();
         String serviceName = UUID.randomUUID().toString();
         boolean ephemeral = true;
@@ -56,12 +53,17 @@ public class UnionConflictResolverTest {
         Operation operationOne = new Operation();
         operationOne.setOperationType(OperationType.ADD_INSTANCE);
         operationOne.setTargetValue(targetValueOne);
-        operationOne.setRealTime(realTimeOne);
+        operationOne.getTimestamp().set(timestampOne);
 
-        simpleConsistencyService.performOperation(key, operationOne);
-        Assert.assertNotNull(simpleConsistencyService.get(key));
-        Assert.assertEquals(1, ((Instances) simpleConsistencyService.get(key).value).getInstanceList().size());
-        Assert.assertTrue(((Instances) simpleConsistencyService.get(key).value).getInstanceList().contains(one));
+        Datum current = new Datum();
+        current.key = key;
+        current.value = new Instances();
+        current.timestamp.set(0L);
+
+        unionConflictResolver.merge(current, operationOne);
+        Assert.assertNotNull(current.value);
+        Assert.assertEquals(1, ((Instances) current.value).getInstanceList().size());
+        Assert.assertTrue(((Instances) current.value).getInstanceList().contains(one));
 
         Instance two = new Instance("192.168.0.2", 8889);
         Instances targetValueTwo = new Instances();
@@ -70,13 +72,13 @@ public class UnionConflictResolverTest {
         Operation operationTwo = new Operation();
         operationTwo.setOperationType(OperationType.ADD_INSTANCE);
         operationTwo.setTargetValue(targetValueTwo);
-        operationTwo.setRealTime(realTimeTwo);
+        operationTwo.getTimestamp().set(timestampTwo);
 
-        simpleConsistencyService.performOperation(key, operationTwo);
-        Assert.assertNotNull(simpleConsistencyService.get(key));
-        Assert.assertEquals(2, ((Instances) simpleConsistencyService.get(key).value).getInstanceList().size());
-        Assert.assertTrue(((Instances) simpleConsistencyService.get(key).value).getInstanceList().contains(one));
-        Assert.assertTrue(((Instances) simpleConsistencyService.get(key).value).getInstanceList().contains(two));
+        unionConflictResolver.merge(current, operationTwo);
+        Assert.assertNotNull(current.value);
+        Assert.assertEquals(2, ((Instances) current.value).getInstanceList().size());
+        Assert.assertTrue(((Instances) current.value).getInstanceList().contains(one));
+        Assert.assertTrue(((Instances) current.value).getInstanceList().contains(two));
 
     }
 }
