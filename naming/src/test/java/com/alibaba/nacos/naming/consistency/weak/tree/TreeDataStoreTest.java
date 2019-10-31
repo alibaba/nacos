@@ -31,6 +31,39 @@ import java.util.UUID;
  */
 public class TreeDataStoreTest {
     @Test
+    public void testReadDatum() throws Exception {
+        String basePath = System.getProperty("user.dir") + File.separator + "tree-datum-test";
+        TreeDataStore treeDataStore = new TreeDataStore();
+        ReflectionTestUtils.setField(treeDataStore, "basePath", basePath);
+
+        String namespaceId = UUID.randomUUID().toString();
+        String serviceName = UUID.randomUUID().toString();
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, false);
+
+        Instances value = new Instances();
+        Instance instance = new Instance("192.168.0.1", 8888);
+        value.getInstanceList().add(instance);
+        Datum datum = new Datum();
+        datum.key = key;
+        datum.value = value;
+        datum.timestamp.set(0L);
+
+        treeDataStore.write(datum);
+        Assert.assertTrue(new File(basePath).exists());
+        Assert.assertTrue(treeDataStore.getFileName(datum.key).startsWith(basePath));
+        Assert.assertTrue(new File(treeDataStore.getFileName(datum.key)).exists());
+
+        Datum actual = treeDataStore.read(datum.key);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(datum.key, actual.key);
+        Assert.assertEquals(datum.timestamp.get(), actual.timestamp.get());
+        Assert.assertEquals(1, ((Instances) actual.value).getInstanceList().size());
+        Assert.assertTrue(((Instances) actual.value).getInstanceList().contains(instance));
+
+        TreeDataStoreTest.cleanUp(new File(basePath));
+    }
+
+    @Test
     public void testWriteDatum() throws Exception {
         String basePath = System.getProperty("user.dir") + File.separator + "tree-datum-test";
         TreeDataStore treeDataStore = new TreeDataStore();
@@ -57,7 +90,7 @@ public class TreeDataStoreTest {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemoveDatum() throws Exception {
         String basePath = System.getProperty("user.dir") + File.separator + "tree-datum-test";
         TreeDataStore treeDataStore = new TreeDataStore();
         ReflectionTestUtils.setField(treeDataStore, "basePath", basePath);
