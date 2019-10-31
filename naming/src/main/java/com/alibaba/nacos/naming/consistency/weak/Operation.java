@@ -65,6 +65,7 @@ public class Operation {
 
     public Operation() {
         this.setUuid(UUID.randomUUID());
+        this.setTimestamp(new AtomicLong(0L));
     }
 
 }
