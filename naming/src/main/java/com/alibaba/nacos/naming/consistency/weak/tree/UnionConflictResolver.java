@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.consistency.weak.tree;
 
-import com.alibaba.nacos.naming.consistency.ephemeral.simple.SimpleDatum;
+import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.weak.Operation;
 import com.alibaba.nacos.naming.consistency.weak.OperationType;
 import com.alibaba.nacos.naming.core.Instance;
@@ -45,12 +45,12 @@ public class UnionConflictResolver implements ConflictResolver {
     }
 
     @Override
-    public void merge(SimpleDatum current, Operation toApply) {
+    public void merge(Datum current, Operation toApply) {
         if (!(current.value instanceof Instances)) {
             // Only merge instances now
             return;
         }
-        long timeDifference = toApply.getRealTime() - current.realTime;
+        long timeDifference = toApply.getRealTime() - current.timestamp.get();
         if (timeDifference < 0 && (-timeDifference) > this.getMaxTimeDifference()) {
             // Received obsoleted data, discard
             return;
@@ -68,8 +68,7 @@ public class UnionConflictResolver implements ConflictResolver {
                     }
                 }
             }
-            current.timestamp.incrementAndGet();
-            current.realTime = toApply.getRealTime();
+            current.timestamp.set(toApply.getRealTime());
             return;
         } else {
             // Resolve conflict
