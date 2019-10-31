@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.tree.weak;
+package com.alibaba.nacos.naming.consistency.weak.tree;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -43,8 +43,7 @@ public class UnionConflictResolverTest {
         long timestampTwo = timestampOne + 2000L;
         String namespaceId = UUID.randomUUID().toString();
         String serviceName = UUID.randomUUID().toString();
-        boolean ephemeral = true;
-        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, ephemeral);
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, true);
 
         Instance one = new Instance("192.168.0.1", 8888);
         Instances targetValueOne = new Instances();
