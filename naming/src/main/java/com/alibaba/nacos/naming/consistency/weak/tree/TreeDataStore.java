@@ -56,63 +56,69 @@ public class TreeDataStore {
     }
 
     public Datum read(String key) throws IOException {
-        FileChannel fileChannel = null;
-        try {
-            File file = new File(this.getFileName(key));
-            fileChannel = new FileInputStream(file).getChannel();
-            ByteBuffer buffer = ByteBuffer.allocate((int) file.length());
-            fileChannel.read(buffer);
+        synchronized (this.getLock(key)) {
+            FileChannel fileChannel = null;
+            try {
+                File file = new File(this.getFileName(key));
+                fileChannel = new FileInputStream(file).getChannel();
+                ByteBuffer buffer = ByteBuffer.allocate((int) file.length());
+                fileChannel.read(buffer);
 
-            String json = new String(buffer.array(), StandardCharsets.UTF_8);
-            if (StringUtils.isBlank(json)) {
-                return null;
-            }
-            JSONObject jsonObject = JSON.parseObject(json);
-            Datum datum = new Datum();
-            datum.timestamp.set(jsonObject.getLongValue("timestamp"));
-            datum.key = jsonObject.getString("key");
-            // TODO: Pull up the information to higher level. The data store does not need to know the type of the value.
-            if (KeyBuilder.matchInstanceListKey(key)) {
-                datum.value = JSON.parseObject(jsonObject.getString("value"), Instances.class);
-            }
-            return datum;
-        } catch (IOException exception) {
-            MetricsMonitor.getDiskException().increment();
-            throw exception;
-        } finally {
-            if (fileChannel != null) {
-                fileChannel.close();
+                String json = new String(buffer.array(), StandardCharsets.UTF_8);
+                if (StringUtils.isBlank(json)) {
+                    return null;
+                }
+                JSONObject jsonObject = JSON.parseObject(json);
+                Datum datum = new Datum();
+                datum.timestamp.set(jsonObject.getLongValue("timestamp"));
+                datum.key = jsonObject.getString("key");
+                // TODO: Pull up the information to higher level. The data store does not need to know the type of the value.
+                if (KeyBuilder.matchInstanceListKey(key)) {
+                    datum.value = JSON.parseObject(jsonObject.getString("value"), Instances.class);
+                }
+                return datum;
+            } catch (IOException exception) {
+                MetricsMonitor.getDiskException().increment();
+                throw exception;
+            } finally {
+                if (fileChannel != null) {
+                    fileChannel.close();
+                }
             }
         }
     }
 
     public void write(Datum datum) throws IOException {
-        File file = new File(this.getFileName(datum.key));
-        if (!file.exists() && !file.getParentFile().mkdirs() && !file.createNewFile()) {
-            MetricsMonitor.getDiskException().increment();
-            throw new IllegalStateException("can not make file: " + file.getName());
-        }
+        synchronized (this.getLock(datum.key)) {
+            File file = new File(this.getFileName(datum.key));
+            if (!file.exists() && !file.getParentFile().mkdirs() && !file.createNewFile()) {
+                MetricsMonitor.getDiskException().increment();
+                throw new IllegalStateException("can not make file: " + file.getName());
+            }
 
-        FileChannel fileChannel = null;
-        try {
-            ByteBuffer data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes(StandardCharsets.UTF_8));
-            fileChannel = new FileOutputStream(file, false).getChannel();
-            fileChannel.write(data, data.position());
-            fileChannel.force(true);
-        } catch (IOException exception) {
-            MetricsMonitor.getDiskException().increment();
-            throw exception;
-        } finally {
-            if (fileChannel != null) {
-                fileChannel.close();
+            FileChannel fileChannel = null;
+            try {
+                ByteBuffer data = ByteBuffer.wrap(JSON.toJSONString(datum).getBytes(StandardCharsets.UTF_8));
+                fileChannel = new FileOutputStream(file, false).getChannel();
+                fileChannel.write(data, data.position());
+                fileChannel.force(true);
+            } catch (IOException exception) {
+                MetricsMonitor.getDiskException().increment();
+                throw exception;
+            } finally {
+                if (fileChannel != null) {
+                    fileChannel.close();
+                }
             }
         }
     }
 
     public void remove(String key) {
-        File file = new File(this.getFileName(key));
-        if (file.exists() && !file.delete()) {
-            throw new IllegalStateException("failed to delete datum: " + key);
+        synchronized (this.getLock(key)) {
+            File file = new File(this.getFileName(key));
+            if (file.exists() && !file.delete()) {
+                throw new IllegalStateException("failed to delete datum: " + key);
+            }
         }
     }
 
@@ -120,18 +126,24 @@ public class TreeDataStore {
         String namespaceId = KeyBuilder.getNamespace(key);
         String fileName;
         if (StringUtils.isNotBlank(namespaceId)) {
-            fileName = this.getBasePath() + File.separator + namespaceId + File.separator + encodeFileName(key);
+            fileName = this.getBasePath() + File.separator + namespaceId + File.separator + this.encodeFileName(key);
         } else {
-            fileName = this.getBasePath() + File.separator + encodeFileName(key);
+            fileName = this.getBasePath() + File.separator + this.encodeFileName(key);
         }
         return fileName;
     }
 
-    private static String encodeFileName(String fileName) {
+    private String getLock(String key) {
+        return this.getFileName(key).intern();
+    }
+
+    private String encodeFileName(String fileName) {
         return fileName.replace(':', '#');
     }
 
-    private static String decodeFileName(String fileName) {
+    private String decodeFileName(String fileName) {
         return fileName.replace("#", ":");
     }
+
+
 }
