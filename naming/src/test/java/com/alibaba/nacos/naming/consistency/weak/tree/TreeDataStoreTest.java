@@ -50,8 +50,36 @@ public class TreeDataStoreTest {
 
         treeDataStore.write(datum);
         Assert.assertTrue(new File(basePath).exists());
-        Assert.assertTrue(treeDataStore.getFileName(datum).startsWith(basePath));
-        Assert.assertTrue(new File(treeDataStore.getFileName(datum)).exists());
+        Assert.assertTrue(treeDataStore.getFileName(datum.key).startsWith(basePath));
+        Assert.assertTrue(new File(treeDataStore.getFileName(datum.key)).exists());
+
+        TreeDataStoreTest.cleanUp(new File(basePath));
+    }
+
+    @Test
+    public void testRemove() throws Exception {
+        String basePath = System.getProperty("user.dir") + File.separator + "tree-datum-test";
+        TreeDataStore treeDataStore = new TreeDataStore();
+        ReflectionTestUtils.setField(treeDataStore, "basePath", basePath);
+
+        String namespaceId = UUID.randomUUID().toString();
+        String serviceName = UUID.randomUUID().toString();
+        String key = KeyBuilder.buildInstanceListKey(namespaceId, serviceName, false);
+
+        Instances value = new Instances();
+        Instance instance = new Instance("192.168.0.1", 8888);
+        value.getInstanceList().add(instance);
+        Datum datum = new Datum();
+        datum.key = key;
+        datum.value = value;
+        datum.timestamp.set(0L);
+
+        treeDataStore.write(datum);
+        Assert.assertTrue(new File(basePath).exists());
+        Assert.assertTrue(treeDataStore.getFileName(datum.key).startsWith(basePath));
+        Assert.assertTrue(new File(treeDataStore.getFileName(datum.key)).exists());
+        treeDataStore.remove(datum.key);
+        Assert.assertFalse(new File(treeDataStore.getFileName(datum.key)).exists());
 
         TreeDataStoreTest.cleanUp(new File(basePath));
     }

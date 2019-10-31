@@ -20,6 +20,7 @@ import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
@@ -42,6 +43,7 @@ public class TreeDataStore {
         return basePath;
     }
 
+    @Value("${nacos.naming.tree.dataStore.basePath}")
     private void setBasePath(String basePath) {
         this.basePath = basePath;
     }
@@ -51,7 +53,7 @@ public class TreeDataStore {
     }
 
     public void write(Datum datum) throws IOException {
-        File file = new File(this.getFileName(datum));
+        File file = new File(this.getFileName(datum.key));
         if (!file.exists() && !file.getParentFile().mkdirs() && !file.createNewFile()) {
             MetricsMonitor.getDiskException().increment();
             throw new IllegalStateException("can not make file: " + file.getName());
@@ -73,13 +75,20 @@ public class TreeDataStore {
         }
     }
 
-    public String getFileName(Datum datum) {
-        String namespaceId = KeyBuilder.getNamespace(datum.key);
+    public void remove(String key) {
+        File file = new File(this.getFileName(key));
+        if (file.exists() && !file.delete()) {
+            throw new IllegalStateException("failed to delete datum: " + key);
+        }
+    }
+
+    public String getFileName(String key) {
+        String namespaceId = KeyBuilder.getNamespace(key);
         String fileName;
         if (StringUtils.isNotBlank(namespaceId)) {
-            fileName = this.getBasePath() + File.separator + namespaceId + File.separator + encodeFileName(datum.key);
+            fileName = this.getBasePath() + File.separator + namespaceId + File.separator + encodeFileName(key);
         } else {
-            fileName = this.getBasePath() + File.separator + encodeFileName(datum.key);
+            fileName = this.getBasePath() + File.separator + encodeFileName(key);
         }
         return fileName;
     }
