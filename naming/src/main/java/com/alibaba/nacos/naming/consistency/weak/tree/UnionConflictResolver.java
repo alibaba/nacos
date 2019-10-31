@@ -50,7 +50,7 @@ public class UnionConflictResolver implements ConflictResolver {
             // Only merge instances now
             return;
         }
-        long timeDifference = toApply.getRealTime() - current.timestamp.get();
+        long timeDifference = toApply.getTimestamp().get() - current.timestamp.get();
         if (timeDifference < 0 && (-timeDifference) > this.getMaxTimeDifference()) {
             // Received obsoleted data, discard
             return;
@@ -68,7 +68,7 @@ public class UnionConflictResolver implements ConflictResolver {
                     }
                 }
             }
-            current.timestamp.set(toApply.getRealTime());
+            current.timestamp.set(toApply.getTimestamp().get());
             return;
         } else {
             // Resolve conflict

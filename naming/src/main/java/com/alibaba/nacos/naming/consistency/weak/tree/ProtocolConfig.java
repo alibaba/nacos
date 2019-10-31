@@ -24,8 +24,6 @@ import org.springframework.stereotype.Component;
 /**
  * @author satjd
  */
-
-@Configuration
 @Component("protocolConfig")
 public class ProtocolConfig {
     public static final String TREE_API_ON_PUB_PATH = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/tree/datum/onPub";
@@ -94,10 +92,5 @@ public class ProtocolConfig {
 
     public boolean isBatchUpdateEnabled() {
         return batchUpdateEnabled;
-    }
-
-    @Bean
-    public ConflictResolver getConflictResolver() {
-        return new UnionConflictResolver(1000000);
     }
 }
