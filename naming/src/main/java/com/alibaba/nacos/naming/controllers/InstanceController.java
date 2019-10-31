@@ -384,6 +384,7 @@ public class InstanceController {
         // now try to enable the push
         try {
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
+
                 pushService.addClient(namespaceId, serviceName,
                     clusters,
                     agent,
@@ -394,7 +395,7 @@ public class InstanceController {
                 cacheMillis = switchDomain.getPushCacheMillis(serviceName);
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client", e);
+            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
             cacheMillis = switchDomain.getDefaultCacheMillis();
         }
 
