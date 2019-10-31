@@ -17,13 +17,10 @@ package com.alibaba.nacos.naming.consistency.weak.tree;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
-import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.core.Instances;
-import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
+import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -35,7 +32,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * Datum store for tree protocol.
@@ -55,7 +51,7 @@ public class TreeDataStore {
         this.basePath = basePath;
     }
 
-    public Datum read(String key) throws IOException {
+    public Datum read(String key, Class<? extends Record> valueType) throws IOException {
         synchronized (this.getLock(key)) {
             FileChannel fileChannel = null;
             try {
@@ -72,10 +68,7 @@ public class TreeDataStore {
                 Datum datum = new Datum();
                 datum.timestamp.set(jsonObject.getLongValue("timestamp"));
                 datum.key = jsonObject.getString("key");
-                // TODO: Pull up the information to higher level. The data store does not need to know the type of the value.
-                if (KeyBuilder.matchInstanceListKey(key)) {
-                    datum.value = JSON.parseObject(jsonObject.getString("value"), Instances.class);
-                }
+                datum.value = JSON.parseObject(jsonObject.getString("value"), valueType);
                 return datum;
             } catch (IOException exception) {
                 MetricsMonitor.getDiskException().increment();

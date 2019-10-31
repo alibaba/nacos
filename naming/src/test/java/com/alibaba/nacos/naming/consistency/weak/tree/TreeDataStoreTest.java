@@ -53,7 +53,7 @@ public class TreeDataStoreTest {
         Assert.assertTrue(treeDataStore.getFileName(datum.key).startsWith(basePath));
         Assert.assertTrue(new File(treeDataStore.getFileName(datum.key)).exists());
 
-        Datum actual = treeDataStore.read(datum.key);
+        Datum actual = treeDataStore.read(datum.key, Instances.class);
         Assert.assertNotNull(actual);
         Assert.assertEquals(datum.key, actual.key);
         Assert.assertEquals(datum.timestamp.get(), actual.timestamp.get());
