@@ -45,6 +45,7 @@ public class FilterBase {
         initClassMethod(CatalogController.class);
         initClassMethod(HealthController.class);
         initClassMethod(RaftController.class);
+        initClassMethod(TreeController.class);
         initClassMethod(DistroController.class);
         initClassMethod(OperatorController.class);
         initClassMethod(ApiController.class);

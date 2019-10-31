@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.persistent.raft;
+package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.naming.consistency.ApplyAction;
-import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
@@ -47,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
  * @author nacos
  */
 @Component
-public class RaftStore {
+public class DatumFileStore {
 
     private Properties meta = new Properties();
 
@@ -273,6 +271,21 @@ public class RaftStore {
             if (cacheFile.exists() && !cacheFile.delete()) {
                 Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}, value: {}", datum.key, datum.value);
                 throw new IllegalStateException("failed to delete datum: " + datum.key);
+            }
+        }
+    }
+
+    public void deleteByKey(String datumKey) {
+
+        // datum key contains namespace info:
+        String namespaceId = KeyBuilder.getNamespace(datumKey);
+
+        if (StringUtils.isNotBlank(namespaceId)) {
+
+            File cacheFile = new File(cacheDir + File.separator + namespaceId + File.separator + encodeFileName(datumKey));
+            if (cacheFile.exists() && !cacheFile.delete()) {
+                Loggers.RAFT.error("[RAFT-DELETE] failed to delete datum: {}", datumKey);
+                throw new IllegalStateException("failed to delete datum: " + datumKey);
             }
         }
     }

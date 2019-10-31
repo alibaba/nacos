@@ -19,7 +19,7 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftStore;
+import com.alibaba.nacos.naming.consistency.DatumFileStore;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Instances;
 import org.junit.Assert;
@@ -31,14 +31,14 @@ import org.mockito.Spy;
  * @author nkorange
  * @author jifengnan 2019-05-18
  */
-public class RaftStoreTest extends BaseTest {
+public class DatumFileStoreTest extends BaseTest {
 
     @InjectMocks
     @Spy
     public RaftCore raftCore;
 
     @Spy
-    public RaftStore raftStore;
+    public DatumFileStore datumFileStore;
 
     @Test
     public void wrietDatum() throws Exception {
@@ -52,7 +52,7 @@ public class RaftStoreTest extends BaseTest {
         instance = new Instance("2.2.2.2", 2, TEST_CLUSTER_NAME);
         datum.value.getInstanceList().add(instance);
 
-        raftStore.write(datum);
+        datumFileStore.write(datum);
         raftCore.init();
         Datum result = raftCore.getDatum(key);
 

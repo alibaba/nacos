@@ -34,6 +34,8 @@ public class Loggers {
 
     public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.naming.raft");
 
+    public static final Logger TREE = LoggerFactory.getLogger("com.alibaba.nacos.naming.tree");
+
     public static final Logger DISTRO = LoggerFactory.getLogger("com.alibaba.nacos.naming.distro");
 
     public static final Logger PERFORMANCE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
@@ -55,6 +57,9 @@ public class Loggers {
                 break;
             case "naming-raft":
                 ((ch.qos.logback.classic.Logger) RAFT).setLevel(Level.valueOf(level));
+                break;
+            case "naming-tree":
+                ((ch.qos.logback.classic.Logger) TREE).setLevel(Level.valueOf(level));
                 break;
             case "naming-distro":
                 ((ch.qos.logback.classic.Logger) DISTRO).setLevel(Level.valueOf(level));

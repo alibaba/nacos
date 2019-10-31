@@ -22,7 +22,7 @@ import java.util.List;
  */
 @SpringBootTest
 @RunWith(SpringRunner.class)
-public class SubscribeManagerTest extends BaseTest {
+public class SubscriberManagerTest extends BaseTest {
 
     @Mock
     private SubscribeManager subscribeManager;
