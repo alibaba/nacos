@@ -63,13 +63,9 @@ public class UnionConflictResolver implements ConflictResolver {
             } else if (toApply.getOperationType() == OperationType.REMOVE_INSTANCE) {
                 List<Instance> toRemoveList = ((Instances) toApply.getTargetValue()).getInstanceList();
                 for (Instance toRemove : toRemoveList) {
-                    if (instances.getInstanceList().contains(toRemove)) {
-                        instances.getInstanceList().remove(toRemove);
-                    }
+                    instances.getInstanceList().remove(toRemove);
                 }
             }
-            current.timestamp.set(toApply.getTimestamp().get());
-            return;
         } else {
             // Resolve conflict
             Instances instances = (Instances) current.value;
@@ -77,6 +73,9 @@ public class UnionConflictResolver implements ConflictResolver {
                 this.doAddInstances(toApply, instances);
             }
             // Discard conflict removal operation
+        }
+        if (timeDifference > 0) {
+            current.timestamp.set(toApply.getTimestamp().get());
         }
     }
 
