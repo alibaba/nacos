@@ -67,6 +67,9 @@ public class GrowOnlyConflictResolver implements StateBasedConflictResolver {
                     instances.getInstanceList().add(instance);
                 }
             }
+            if (timeDifference > 0) {
+                current.timestamp.set(target.timestamp.get());
+            }
         }
     }
 }

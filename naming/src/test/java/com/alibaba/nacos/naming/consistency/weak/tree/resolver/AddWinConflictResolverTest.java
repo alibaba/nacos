@@ -36,7 +36,7 @@ public class AddWinConflictResolverTest {
     public void testTwoOrderedAddOperations() throws NacosException {
         // Two add operations which are not in a conflicted state.
         long maxTimeDifference = 1000;
-        AddWinConflictResolver unionConflictResolver = new AddWinConflictResolver(maxTimeDifference);
+        AddWinConflictResolver addWinConflictResolver = new AddWinConflictResolver(maxTimeDifference);
 
         long timestampOne = System.nanoTime();
         long timestampTwo = timestampOne + 2000L;
@@ -58,7 +58,7 @@ public class AddWinConflictResolverTest {
         current.value = new Instances();
         current.timestamp.set(0L);
 
-        unionConflictResolver.merge(current, operationOne);
+        addWinConflictResolver.merge(current, operationOne);
         Assert.assertNotNull(current.value);
         Assert.assertEquals(1, ((Instances) current.value).getInstanceList().size());
         Assert.assertTrue(((Instances) current.value).getInstanceList().contains(one));
@@ -72,7 +72,7 @@ public class AddWinConflictResolverTest {
         operationTwo.setTargetValue(targetValueTwo);
         operationTwo.getTimestamp().set(timestampTwo);
 
-        unionConflictResolver.merge(current, operationTwo);
+        addWinConflictResolver.merge(current, operationTwo);
         Assert.assertNotNull(current.value);
         Assert.assertEquals(2, ((Instances) current.value).getInstanceList().size());
         Assert.assertTrue(((Instances) current.value).getInstanceList().contains(one));
@@ -83,7 +83,7 @@ public class AddWinConflictResolverTest {
     public void testTwoConflictAddOperations() throws NacosException {
         // Two add operations which are in a conflicted state.
         long maxTimeDifference = 1000;
-        AddWinConflictResolver unionConflictResolver = new AddWinConflictResolver(maxTimeDifference);
+        AddWinConflictResolver addWinConflictResolver = new AddWinConflictResolver(maxTimeDifference);
 
         long timestampOne = System.nanoTime();
         long timestampTwo = timestampOne;
@@ -105,7 +105,7 @@ public class AddWinConflictResolverTest {
         current.value = new Instances();
         current.timestamp.set(0L);
 
-        unionConflictResolver.merge(current, operationOne);
+        addWinConflictResolver.merge(current, operationOne);
         Assert.assertNotNull(current.value);
         Assert.assertEquals(1, ((Instances) current.value).getInstanceList().size());
         Assert.assertTrue(((Instances) current.value).getInstanceList().contains(one));
@@ -119,7 +119,7 @@ public class AddWinConflictResolverTest {
         operationTwo.setTargetValue(targetValueTwo);
         operationTwo.getTimestamp().set(timestampTwo);
 
-        unionConflictResolver.merge(current, operationTwo);
+        addWinConflictResolver.merge(current, operationTwo);
         Assert.assertNotNull(current.value);
         Assert.assertEquals(2, ((Instances) current.value).getInstanceList().size());
         Assert.assertTrue(((Instances) current.value).getInstanceList().contains(one));
@@ -147,7 +147,7 @@ public class AddWinConflictResolverTest {
 
         // Two remove operations which are in a conflicted state.
         long maxTimeDifference = 1000;
-        AddWinConflictResolver unionConflictResolver = new AddWinConflictResolver(maxTimeDifference);
+        AddWinConflictResolver addWinConflictResolver = new AddWinConflictResolver(maxTimeDifference);
 
         long timestampOne = System.nanoTime();
         long timestampTwo = timestampOne;
@@ -160,13 +160,13 @@ public class AddWinConflictResolverTest {
         operationOne.setTargetValue(targetValueOne);
         operationOne.getTimestamp().set(timestampOne);
 
-        unionConflictResolver.merge(current, operationOne);
+        addWinConflictResolver.merge(current, operationOne);
         Assert.assertNotNull(current.value);
         Assert.assertEquals(1, ((Instances) current.value).getInstanceList().size());
         Assert.assertFalse(((Instances) current.value).getInstanceList().contains(new Instance("192.168.0.1", 8888)));
         Assert.assertTrue(((Instances) current.value).getInstanceList().contains(new Instance("192.168.0.2", 8889)));
 
-        // According to the logic of UnionConflictResolver, the latter removal operation will not be applied.
+        // According to the logic of AddWinConflictResolver, the latter removal operation will not be applied.
         Instances targetValueTwo = new Instances();
         targetValueTwo.setInstanceList(new ArrayList<>());
         targetValueTwo.getInstanceList().add(new Instance("192.168.0.2", 8889));
@@ -175,7 +175,7 @@ public class AddWinConflictResolverTest {
         operationTwo.setTargetValue(targetValueTwo);
         operationTwo.getTimestamp().set(timestampTwo);
 
-        unionConflictResolver.merge(current, operationTwo);
+        addWinConflictResolver.merge(current, operationTwo);
         Assert.assertNotNull(current.value);
         Assert.assertEquals(1, ((Instances) current.value).getInstanceList().size());
         Assert.assertFalse(((Instances) current.value).getInstanceList().contains(new Instance("192.168.0.1", 8888)));
