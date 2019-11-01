@@ -19,12 +19,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -46,9 +48,16 @@ public class TreeDataStore {
         return basePath;
     }
 
-    @Value("${nacos.naming.tree.dataStore.basePath}")
+    @Value("${nacos.naming.tree.dataStore.basePath:null}")
     private void setBasePath(String basePath) {
         this.basePath = basePath;
+    }
+
+    @PostConstruct
+    private void initialize() {
+        if (this.getBasePath() == null || StringUtils.isBlank(this.getBasePath())) {
+            this.setBasePath(UtilsAndCommons.DATA_BASE_DIR + File.separator + "tree" + File.separator + "data");
+        }
     }
 
     public Datum read(String key, Class<? extends Record> valueType) throws IOException {
