@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.weak.tree.resolver;
 
 import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.consistency.weak.Operation;
 
 /**
- * Public interface for a conflict resolver.
+ * Public interface for a state based conflict resolver.
  *
  * @author lostcharlie
  */
-public interface ConflictResolver {
+public interface StateBasedConflictResolver {
     /**
-     * Apply target operation on local data replica and resolve conflicts for concurrent operations
+     * Apply target state on local data replica and resolve conflicts for concurrent updates
      *
      * @param current current value of the datum
-     * @param toApply the operation to apply
+     * @param target target value of the datum
      */
-    void merge(Datum current, Operation toApply);
+    void merge(Datum current, Datum target);
 }

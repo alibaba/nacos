@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.weak.tree.resolver;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -31,12 +31,12 @@ import java.util.UUID;
 /**
  * @author lostcharlie
  */
-public class UnionConflictResolverTest {
+public class AddWinConflictResolverTest {
     @Test
     public void testTwoOrderedAddOperations() throws NacosException {
         // Two add operations which are not in a conflicted state.
         long maxTimeDifference = 1000;
-        UnionConflictResolver unionConflictResolver = new UnionConflictResolver(maxTimeDifference);
+        AddWinConflictResolver unionConflictResolver = new AddWinConflictResolver(maxTimeDifference);
 
         long timestampOne = System.nanoTime();
         long timestampTwo = timestampOne + 2000L;
@@ -83,7 +83,7 @@ public class UnionConflictResolverTest {
     public void testTwoConflictAddOperations() throws NacosException {
         // Two add operations which are in a conflicted state.
         long maxTimeDifference = 1000;
-        UnionConflictResolver unionConflictResolver = new UnionConflictResolver(maxTimeDifference);
+        AddWinConflictResolver unionConflictResolver = new AddWinConflictResolver(maxTimeDifference);
 
         long timestampOne = System.nanoTime();
         long timestampTwo = timestampOne;
@@ -147,7 +147,7 @@ public class UnionConflictResolverTest {
 
         // Two remove operations which are in a conflicted state.
         long maxTimeDifference = 1000;
-        UnionConflictResolver unionConflictResolver = new UnionConflictResolver(maxTimeDifference);
+        AddWinConflictResolver unionConflictResolver = new AddWinConflictResolver(maxTimeDifference);
 
         long timestampOne = System.nanoTime();
         long timestampTwo = timestampOne;
