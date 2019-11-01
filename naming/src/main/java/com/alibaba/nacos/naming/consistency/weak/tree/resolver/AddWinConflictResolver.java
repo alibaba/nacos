@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+package com.alibaba.nacos.naming.consistency.weak.tree.resolver;
 
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.weak.Operation;
@@ -24,12 +24,13 @@ import com.alibaba.nacos.naming.core.Instances;
 import java.util.List;
 
 /**
- * Union conflict resolver which calculates the union of concurrent "Add" operation.
- * Additionally, if there is a conflict between "Add" and "Remove", it accepts the "Add" operation.
+ * An Add-win resolver which guarantee the "Add win" semantics.
+ * Currently, it solves conflicts by calculating union of two sets, and discards removal operations.
+ * Still needs to be improved for a production-ready CRDT (Conflict-free Replicated Data Type).
  *
  * @author lostcharlie
  */
-public class UnionConflictResolver implements ConflictResolver {
+public class AddWinConflictResolver implements OperationBasedConflictResolver {
     private long maxTimeDifference;
 
     public long getMaxTimeDifference() {
@@ -40,7 +41,7 @@ public class UnionConflictResolver implements ConflictResolver {
         this.maxTimeDifference = maxTimeDifference;
     }
 
-    public UnionConflictResolver(long maxTimeDifference) {
+    public AddWinConflictResolver(long maxTimeDifference) {
         this.setMaxTimeDifference(maxTimeDifference);
     }
 
@@ -63,13 +64,9 @@ public class UnionConflictResolver implements ConflictResolver {
             } else if (toApply.getOperationType() == OperationType.REMOVE_INSTANCE) {
                 List<Instance> toRemoveList = ((Instances) toApply.getTargetValue()).getInstanceList();
                 for (Instance toRemove : toRemoveList) {
-                    if (instances.getInstanceList().contains(toRemove)) {
-                        instances.getInstanceList().remove(toRemove);
-                    }
+                    instances.getInstanceList().remove(toRemove);
                 }
             }
-            current.timestamp.set(toApply.getTimestamp().get());
-            return;
         } else {
             // Resolve conflict
             Instances instances = (Instances) current.value;
@@ -77,6 +74,9 @@ public class UnionConflictResolver implements ConflictResolver {
                 this.doAddInstances(toApply, instances);
             }
             // Discard conflict removal operation
+        }
+        if (timeDifference > 0) {
+            current.timestamp.set(toApply.getTimestamp().get());
         }
     }
 
