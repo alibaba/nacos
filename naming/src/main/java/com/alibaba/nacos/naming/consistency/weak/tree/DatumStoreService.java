@@ -16,7 +16,6 @@
 package com.alibaba.nacos.naming.consistency.weak.tree;
 
 import com.alibaba.nacos.naming.consistency.Datum;
-import com.alibaba.nacos.naming.consistency.DatumFileStore;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -36,13 +35,15 @@ public class DatumStoreService {
     private ConcurrentMap<String, Datum> datumCache = new ConcurrentHashMap<>();
 
 
-    /** datumCacheMonitor作为datumCache的monitor对象map */
+    /**
+     * datumCacheMonitor作为datumCache的monitor对象map
+     */
     private ConcurrentMap<String, Object> datumCacheMonitor = new ConcurrentHashMap<>();
 
     private ConcurrentHashMap<String, Long> removedKeysTimestamp = new ConcurrentHashMap<>();
 
     @Autowired
-    DatumFileStore datumFileStore;
+    TreeDataStore treeDataStore;
 
     @PostConstruct
     public void init() {
@@ -74,7 +75,9 @@ public class DatumStoreService {
         return datumCache;
     }
 
-    /** store datum to datumCache */
+    /**
+     * store datum to datumCache
+     */
     public boolean putDatum(Datum datum) {
         try {
             // 不同key之间可以并发put，这里采用一个key一个object的方式来做
@@ -95,7 +98,7 @@ public class DatumStoreService {
                 return true;
             }
         } catch (Exception e) {
-            Loggers.TREE.error("Put datum error. key={},exception:{}",datum.key,e);
+            Loggers.TREE.error("Put datum error. key={},exception:{}", datum.key, e);
             return false;
         }
     }
@@ -114,7 +117,7 @@ public class DatumStoreService {
             removeFromFileSystem(key);
             Datum d = datumCache.remove(key);
             if (d != null) {
-                removedKeysTimestamp.put(key,d.timestamp.longValue());
+                removedKeysTimestamp.put(key, d.timestamp.longValue());
                 return true;
             }
             return false;
@@ -123,12 +126,12 @@ public class DatumStoreService {
 
     private void sinkToFileSystem(Datum datum) throws Exception {
         // sink datum to disk
-        // datumFileStore.write(datum);
+        treeDataStore.write(datum);
     }
 
     private void removeFromFileSystem(String key) {
         // remove file from disk
-        // datumFileStore.deleteByKey(key);
+        treeDataStore.remove(key);
     }
 
 }
