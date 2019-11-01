@@ -20,7 +20,10 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.consistency.*;
+import com.alibaba.nacos.naming.consistency.ApplyAction;
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.*;
@@ -106,7 +109,7 @@ public class RaftCore {
     private RaftProxy raftProxy;
 
     @Autowired
-    private DatumFileStore datumFileStore;
+    private RaftStore raftStore;
 
     public volatile Notifier notifier = new Notifier();
 
@@ -121,9 +124,9 @@ public class RaftCore {
 
         long start = System.currentTimeMillis();
 
-        datumFileStore.loadDatums(notifier, datums);
+        raftStore.loadDatums(notifier, datums);
 
-        setTerm(NumberUtils.toLong(datumFileStore.loadMeta().getProperty("term"), 0L));
+        setTerm(NumberUtils.toLong(raftStore.loadMeta().getProperty("term"), 0L));
 
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
 
@@ -138,13 +141,11 @@ public class RaftCore {
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
-        if (globalConfig.isRaftProtocolEnabled()) {
-            GlobalExecutor.registerMasterElection(new MasterElection());
-            GlobalExecutor.registerHeartbeat(new HeartBeat());
+        GlobalExecutor.registerMasterElection(new MasterElection());
+        GlobalExecutor.registerHeartbeat(new HeartBeat());
 
-            Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
-                GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
-        }
+        Loggers.RAFT.info("timer started: leader timeout ms: {}, heart-beat timeout ms: {}",
+            GlobalExecutor.LEADER_TIMEOUT_MS, GlobalExecutor.HEARTBEAT_INTERVAL_MS);
     }
 
     public Map<String, List<RecordListener>> getListeners() {
@@ -294,7 +295,7 @@ public class RaftCore {
 
         // if data should be persistent, usually this is always true:
         if (KeyBuilder.matchPersistentKey(datum.key)) {
-            datumFileStore.write(datum);
+            raftStore.write(datum);
         }
 
         datums.put(datum.key, datum);
@@ -310,7 +311,7 @@ public class RaftCore {
                 local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
             }
         }
-        datumFileStore.updateTerm(local.term.get());
+        raftStore.updateTerm(local.term.get());
 
         notifier.addTask(datum.key, ApplyAction.CHANGE);
 
@@ -350,7 +351,7 @@ public class RaftCore {
                 local.term.addAndGet(PUBLISH_TERM_INCREASE_COUNT);
             }
 
-            datumFileStore.updateTerm(local.term.get());
+            raftStore.updateTerm(local.term.get());
         }
 
         Loggers.RAFT.info("data removed, key={}, term={}", datumKey, local.term);
@@ -715,7 +716,7 @@ public class RaftCore {
                                         continue;
                                     }
 
-                                    datumFileStore.write(newDatum);
+                                    raftStore.write(newDatum);
 
                                     datums.put(newDatum.key, newDatum);
                                     notifier.addTask(newDatum.key, ApplyAction.CHANGE);
@@ -729,7 +730,7 @@ public class RaftCore {
                                         local.term.addAndGet(100);
                                     }
 
-                                    datumFileStore.updateTerm(local.term.get());
+                                    raftStore.updateTerm(local.term.get());
 
                                     Loggers.RAFT.info("data updated, key: {}, timestamp: {}, from {}, local term: {}",
                                         newDatum.key, newDatum.timestamp, JSON.toJSONString(remote), local.term);
@@ -872,7 +873,7 @@ public class RaftCore {
 
     public void loadDatum(String key) {
         try {
-            Datum datum = datumFileStore.load(key);
+            Datum datum = raftStore.load(key);
             if (datum == null) {
                 return;
             }
@@ -888,7 +889,7 @@ public class RaftCore {
         try {
             deleted = datums.remove(URLDecoder.decode(key, "UTF-8"));
             if (deleted != null) {
-                datumFileStore.delete(deleted);
+                raftStore.delete(deleted);
                 Loggers.RAFT.info("datum deleted, key: {}", key);
             }
             notifier.addTask(URLDecoder.decode(key, "UTF-8"), ApplyAction.DELETE);
