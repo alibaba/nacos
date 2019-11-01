@@ -149,7 +149,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
             // try sync data from remote server:
             /**
-             * 向其他nacos节点同步数据   只要有一个节点返回正确数据  就终止循环
+             * 同步其他nacos节点数据   只要有一个节点返回正确数据  就终止循环
              */
             if (syncAllDataFromRemote(server)) {
                 initialized = true;
@@ -342,11 +342,16 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     }
 
+    /**
+     * 同步Server的数据
+     * @param server
+     * @return
+     */
     public boolean syncAllDataFromRemote(Server server) {
 
         try {
             /**
-             * 获取server对应的数据
+             * 获取server对应的dataStore数据
              */
             byte[] data = NamingProxy.getAllData(server.getKey());
             /**
@@ -367,12 +372,15 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
      */
     public void processData(byte[] data) throws Exception {
         if (data.length > 0) {
+            /**
+             * 反序列化
+             */
             Map<String, Datum<Instances>> datumMap =
                 serializer.deserializeMap(data, Instances.class);
 
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
                 /**
-                 * 新增或更新Datum
+                 * 本地更新远程nacos节点的dataStore
                  */
                 dataStore.put(entry.getKey(), entry.getValue());
 
@@ -397,7 +405,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                          */
                         service.recalculateChecksum();
                         /**
-                         * 监听  metadata
+                         * 监听  metadata  调用ServiceManager
                          */
                         listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).get(0)
                             .onChange(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName), service);
@@ -406,7 +414,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             }
 
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
-
+                /**
+                 * 只更新监听
+                 */
                 if (!listeners.containsKey(entry.getKey())) {
                     // Should not happen:
                     Loggers.DISTRO.warn("listener of {} not found.", entry.getKey());
@@ -416,7 +426,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 try {
                     for (RecordListener listener : listeners.get(entry.getKey())) {
                         /**
-                         * metadata对应的是serviceManager
+                         * 更新监听
                          */
                         listener.onChange(entry.getKey(), entry.getValue().value);
                     }

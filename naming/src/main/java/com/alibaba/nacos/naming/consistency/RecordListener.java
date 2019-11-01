@@ -22,6 +22,12 @@ import com.alibaba.nacos.naming.pojo.Record;
  *
  * @author nacos
  */
+
+/**
+ * SERVICE_META_KEY_PREFIX对应的ServiceManager
+ * SwitchDomainKey对应的SwitchManager
+ * @param <T>
+ */
 public interface RecordListener<T extends Record> {
 
     /**

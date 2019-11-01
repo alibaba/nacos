@@ -151,7 +151,7 @@ public class TaskDispatcher {
                             }
 
                             /**
-                             *
+                             * 执行同步任务
                              */
                             dataSyncer.submit(syncTask, 0);
                         }
