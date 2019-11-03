@@ -20,6 +20,7 @@ import com.alibaba.nacos.client.naming.utils.IoUtils;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -27,6 +28,8 @@ import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 
@@ -50,6 +53,22 @@ public class HttpClient {
     static {
         // limit max redirection
         System.setProperty("http.maxRedirects", "5");
+        // https
+        trustAllHttpsCertificates();
+    }
+
+    private static void trustAllHttpsCertificates() {
+        TrustManager[] trustAllCerts = new TrustManager[1];
+        trustAllCerts[0] = new SSLConfig();
+        try {
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, null);
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+        } catch (NoSuchAlgorithmException e) {
+            NAMING_LOGGER.error("no such algorithn ", e);
+        } catch (KeyManagementException e) {
+            NAMING_LOGGER.error("key management error ", e);
+        }
     }
 
     public static String getPrefix() {
@@ -70,6 +89,16 @@ public class HttpClient {
         try {
             String encodedContent = encodingParams(paramValues, encoding);
             url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
+
+            if (url.startsWith("https://")) {
+                HostnameVerifier hostnameVerifier = new HostnameVerifier() {
+                    @Override
+                    public boolean verify(String urlHostName, SSLSession session) {
+                        return true;
+                    }
+                };
+                HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+            }
 
             conn = (HttpURLConnection) new URL(url).openConnection();
 
