@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.naming.utils.IoUtils;
+import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 
@@ -59,7 +60,7 @@ public class HttpClient {
 
     private static void trustAllHttpsCertificates() {
         TrustManager[] trustAllCerts = new TrustManager[1];
-        trustAllCerts[0] = new SSLConfig();
+        trustAllCerts[0] = new SslConfig();
         try {
             SSLContext sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, trustAllCerts, null);
@@ -90,7 +91,7 @@ public class HttpClient {
             String encodedContent = encodingParams(paramValues, encoding);
             url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
-            if (url.startsWith("https://")) {
+            if (url.startsWith(UtilAndComs.HTTPS)) {
                 HostnameVerifier hostnameVerifier = new HostnameVerifier() {
                     @Override
                     public boolean verify(String urlHostName, SSLSession session) {
