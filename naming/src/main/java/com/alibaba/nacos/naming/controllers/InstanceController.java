@@ -144,16 +144,20 @@ public class InstanceController {
         if (StringUtils.isBlank(cluster)) {
             cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
+
         Instance instance = serviceManager.getInstance(namespaceId, serviceName, cluster, ip, Integer.parseInt(port));
+        if (instance == null) {
+            throw new IllegalArgumentException("instance not found");
+        }
 
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(metadata)) {
             instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
-        String app = WebUtils.optional(request, "app", "DEFAULT");
-        instance.setApp(app);
-        instance.setLastBeat(System.currentTimeMillis());
-        instance.validate();
+        String app = WebUtils.optional(request, "app",  StringUtils.EMPTY);
+        if(StringUtils.isNotBlank(app)){
+            instance.setApp(app);
+        }
         String weight = WebUtils.optional(request, "weight", StringUtils.EMPTY);
         if (StringUtils.isNotBlank(weight)) {
             instance.setWeight(Double.parseDouble(weight));
@@ -166,21 +170,10 @@ public class InstanceController {
         if (StringUtils.isNotBlank(enabledString)) {
             instance.setEnabled(BooleanUtils.toBoolean(enabledString));
         }
-        String ephemeral = WebUtils.optional(request, "ephemeral", StringUtils.EMPTY);
-        if (StringUtils.isNotBlank(ephemeral)) {
-            instance.setEphemeral(BooleanUtils.toBoolean(ephemeral));
-        }
+        instance.setLastBeat(System.currentTimeMillis());
+        instance.validate();
 
-        String agent = WebUtils.getUserAgent(request);
-
-        ClientInfo clientInfo = new ClientInfo(agent);
-
-        if (clientInfo.type == ClientInfo.ClientType.JAVA &&
-            clientInfo.version.compareTo(VersionUtil.parseVersion("1.0.0")) >= 0) {
-            serviceManager.updateInstance(namespaceId, serviceName, instance);
-        } else {
-            serviceManager.registerInstance(namespaceId, serviceName, instance);
-        }
+        serviceManager.updateInstance(namespaceId, serviceName, instance);
         return "ok";
     }
 

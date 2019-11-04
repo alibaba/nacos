@@ -21,6 +21,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.concurrent.*;
+
 /**
  * @author nacos
  */
@@ -29,7 +31,29 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class Nacos {
 
-    public static void main(String[] args) {
-        SpringApplication.run(Nacos.class, args);
+    public static void main(String[] args) throws Exception{
+//        SpringApplication.run(Nacos.class, args);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        Future<String> submit = executorService.submit(new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                Thread.sleep(1000);
+                return "hello world";
+            }
+        });
+        for (int i =0;i<10000;i++){
+            System.out.println(i);
+            Thread.sleep(100);
+            submit.cancel(true);
+            if(submit.isDone()){
+                System.out.println(submit.get());
+                break;
+            }
+            if(submit.isCancelled()){
+                System.out.println("任务已取消");
+                break;
+            }
+        }
+
     }
 }
