@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -199,9 +200,10 @@ public class CacheData {
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
 
+                    // compare lastContent and content
                     if (listener instanceof AbstractConfigChangeListener) {
-                        // compare lastContent and content
-                        ConfigChangeEvent event = new ConfigChangeEvent(dataId, lastContent, content, type);
+                        Map data = ConfigChangeHander.getChangeParserInstance().parseChangeData(lastContent, content, type);
+                        ConfigChangeEvent event = new ConfigChangeEvent(data);
                         ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
                     }
 
