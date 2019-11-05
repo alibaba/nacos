@@ -26,7 +26,6 @@ import java.util.UUID;
 @Component
 public class HybridLogicalClockCoordinator {
     private static final long STEPS = 1;
-    private static final String PROCESS_NAME = UUID.randomUUID().toString();
     private HybridLogicalClock current;
     private long maxOffset;
 
@@ -48,7 +47,7 @@ public class HybridLogicalClockCoordinator {
     }
 
     public HybridLogicalClockCoordinator() {
-        this.setCurrent(new HybridLogicalClock(HybridLogicalClockCoordinator.PROCESS_NAME));
+        this.setCurrent(new HybridLogicalClock(UUID.randomUUID().toString()));
     }
 
     private long getPhysicalTime() {
@@ -67,7 +66,7 @@ public class HybridLogicalClockCoordinator {
             targetLogicalClock = 0;
         }
         this.getCurrent().set(targetWallTime, targetLogicalClock);
-        return new HybridLogicalClock(HybridLogicalClockCoordinator.PROCESS_NAME, targetWallTime, targetLogicalClock);
+        return new HybridLogicalClock(this.getCurrent().getProcessName(), targetWallTime, targetLogicalClock);
     }
 
     public synchronized HybridLogicalClock generateForReceiving(HybridLogicalClock remoteClock) {
@@ -88,11 +87,12 @@ public class HybridLogicalClockCoordinator {
             targetLogicalClock = 0;
         }
         this.getCurrent().set(targetWallTime, targetLogicalClock);
-        return new HybridLogicalClock(HybridLogicalClockCoordinator.PROCESS_NAME, targetWallTime, targetLogicalClock);
+        return new HybridLogicalClock(this.getCurrent().getProcessName(), targetWallTime, targetLogicalClock);
     }
 
     public boolean isHappenBefore(HybridLogicalClock former, HybridLogicalClock latter) {
-        // Currently, it returns true only if the former event happens before the latter event in real time
+        // Currently, for events happen on different processes, it returns true only if the former event
+        // happens before the latter event in real time
         if (former.getProcessName().equals(latter.getProcessName())) {
             return former.smallerThan(latter);
         } else {
