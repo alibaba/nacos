@@ -18,12 +18,15 @@ package com.alibaba.nacos.naming.consistency.weak.tree.hlc;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 /**
  * @author lostcharlie
  */
 @Component
 public class HybridLogicalClockCoordinator {
     private static final long STEPS = 1;
+    private static final String PROCESS_NAME = UUID.randomUUID().toString();
     private HybridLogicalClock current;
     private long maxOffset;
 
@@ -45,7 +48,7 @@ public class HybridLogicalClockCoordinator {
     }
 
     public HybridLogicalClockCoordinator() {
-        this.setCurrent(new HybridLogicalClock());
+        this.setCurrent(new HybridLogicalClock(HybridLogicalClockCoordinator.PROCESS_NAME));
     }
 
     private long getPhysicalTime() {
@@ -64,7 +67,7 @@ public class HybridLogicalClockCoordinator {
             targetLogicalClock = 0;
         }
         this.getCurrent().set(targetWallTime, targetLogicalClock);
-        return new HybridLogicalClock(targetWallTime, targetLogicalClock);
+        return new HybridLogicalClock(HybridLogicalClockCoordinator.PROCESS_NAME, targetWallTime, targetLogicalClock);
     }
 
     public synchronized HybridLogicalClock generateForReceiving(HybridLogicalClock remoteClock) {
@@ -85,14 +88,19 @@ public class HybridLogicalClockCoordinator {
             targetLogicalClock = 0;
         }
         this.getCurrent().set(targetWallTime, targetLogicalClock);
-        return new HybridLogicalClock(targetWallTime, targetLogicalClock);
+        return new HybridLogicalClock(HybridLogicalClockCoordinator.PROCESS_NAME, targetWallTime, targetLogicalClock);
     }
 
     public boolean isHappenBefore(HybridLogicalClock former, HybridLogicalClock latter) {
-        return false;
+        // Currently, it returns true only if the former event happens before the latter event in real time
+        if (former.getProcessName().equals(latter.getProcessName())) {
+            return former.smallerThan(latter);
+        } else {
+            return ((former.getWallTime() + this.getMaxOffset()) < latter.getWallTime());
+        }
     }
 
     public boolean isConcurrent(HybridLogicalClock former, HybridLogicalClock latter) {
-        return false;
+        return (!this.isHappenBefore(former, latter) && !this.isHappenBefore(latter, former));
     }
 }

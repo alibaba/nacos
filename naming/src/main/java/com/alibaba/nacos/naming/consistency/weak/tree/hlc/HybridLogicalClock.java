@@ -23,8 +23,17 @@ package com.alibaba.nacos.naming.consistency.weak.tree.hlc;
  * @author lostcharlie
  */
 public class HybridLogicalClock {
+    private String processName;
     private long wallTime;
     private long logicalClock;
+
+    public String getProcessName() {
+        return processName;
+    }
+
+    private void setProcessName(String processName) {
+        this.processName = processName;
+    }
 
     public long getWallTime() {
         return wallTime;
@@ -42,13 +51,14 @@ public class HybridLogicalClock {
         this.logicalClock = logicalClock;
     }
 
-    public HybridLogicalClock(long wallTime, long logicalClock) {
+    public HybridLogicalClock(String processName, long wallTime, long logicalClock) {
+        this.setProcessName(processName);
         this.setWallTime(wallTime);
         this.setLogicalClock(logicalClock);
     }
 
-    public HybridLogicalClock() {
-        this.set(0, 0);
+    public HybridLogicalClock(String processName) {
+        this(processName, 0, 0);
     }
 
     public void set(long wallTime, long logicalClock) {
