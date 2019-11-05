@@ -23,15 +23,15 @@ package com.alibaba.nacos.naming.consistency.weak.tree.hlc;
  * @author lostcharlie
  */
 public class HybridLogicalClock {
-    private long localWallTime;
+    private long wallTime;
     private long logicalClock;
 
-    public long getLocalWallTime() {
-        return localWallTime;
+    public long getWallTime() {
+        return wallTime;
     }
 
-    private void setLocalWallTime(long localWallTime) {
-        this.localWallTime = localWallTime;
+    private void setWallTime(long wallTime) {
+        this.wallTime = wallTime;
     }
 
     public long getLogicalClock() {
@@ -42,27 +42,25 @@ public class HybridLogicalClock {
         this.logicalClock = logicalClock;
     }
 
-    public HybridLogicalClock(long localWallTime, long logicalClock) {
-        this.setLocalWallTime(localWallTime);
+    public HybridLogicalClock(long wallTime, long logicalClock) {
+        this.setWallTime(wallTime);
         this.setLogicalClock(logicalClock);
     }
 
     public HybridLogicalClock() {
-        long localWallTime = System.currentTimeMillis();
-        long logicalClock = 0;
-        this.set(localWallTime, logicalClock);
+        this.set(0, 0);
     }
 
-    public void set(long localWallTime, long logicalClock) {
-        this.setLocalWallTime(localWallTime);
+    public void set(long wallTime, long logicalClock) {
+        this.setWallTime(wallTime);
         this.setLogicalClock(logicalClock);
     }
 
     public boolean smallerThan(HybridLogicalClock another) {
-        if (this.getLocalWallTime() < another.getLocalWallTime()) {
+        if (this.getWallTime() < another.getWallTime()) {
             return true;
         }
-        if ((this.getLocalWallTime() == another.getLocalWallTime())
+        if ((this.getWallTime() == another.getWallTime())
             && (this.getLogicalClock() < another.getLogicalClock())) {
             return true;
         }

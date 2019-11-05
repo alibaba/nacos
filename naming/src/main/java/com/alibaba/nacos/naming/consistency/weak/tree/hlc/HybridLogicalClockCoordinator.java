@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class HybridLogicalClockCoordinator {
+    private static final long STEPS = 1;
     private HybridLogicalClock current;
     private long maxOffset;
 
@@ -47,12 +48,44 @@ public class HybridLogicalClockCoordinator {
         this.setCurrent(new HybridLogicalClock());
     }
 
-    public synchronized HybridLogicalClock advance() {
-        return null;
+    private long getPhysicalTime() {
+        return System.currentTimeMillis();
     }
 
-    public synchronized HybridLogicalClock adjust(HybridLogicalClock remoteClock) {
-        return null;
+    public synchronized HybridLogicalClock generateForSending() {
+        long currentWallTime = this.getCurrent().getWallTime();
+        long currentLogicalClock = this.getCurrent().getLogicalClock();
+        long currentPhysicalTime = this.getPhysicalTime();
+        long targetWallTime = Math.max(currentWallTime, currentPhysicalTime);
+        long targetLogicalClock;
+        if (targetWallTime == currentWallTime) {
+            targetLogicalClock = currentLogicalClock + HybridLogicalClockCoordinator.STEPS;
+        } else {
+            targetLogicalClock = 0;
+        }
+        this.getCurrent().set(targetWallTime, targetLogicalClock);
+        return new HybridLogicalClock(targetWallTime, targetLogicalClock);
+    }
+
+    public synchronized HybridLogicalClock generateForReceiving(HybridLogicalClock remoteClock) {
+        long currentWallTime = this.getCurrent().getWallTime();
+        long currentLogicalClock = this.getCurrent().getLogicalClock();
+        long remoteWallTime = remoteClock.getWallTime();
+        long remoteLogicalClock = remoteClock.getLogicalClock();
+        long currentPhysicalTime = this.getPhysicalTime();
+        long targetWallTime = Math.max(currentWallTime, Math.max(remoteWallTime, currentPhysicalTime));
+        long targetLogicalClock;
+        if (targetWallTime == currentWallTime && targetWallTime == remoteWallTime) {
+            targetLogicalClock = Math.max(currentLogicalClock, remoteLogicalClock) + HybridLogicalClockCoordinator.STEPS;
+        } else if (targetWallTime == currentWallTime) {
+            targetLogicalClock = currentLogicalClock + HybridLogicalClockCoordinator.STEPS;
+        } else if (targetWallTime == remoteWallTime) {
+            targetLogicalClock = remoteLogicalClock + HybridLogicalClockCoordinator.STEPS;
+        } else {
+            targetLogicalClock = 0;
+        }
+        this.getCurrent().set(targetWallTime, targetLogicalClock);
+        return new HybridLogicalClock(targetWallTime, targetLogicalClock);
     }
 
     public boolean isHappenBefore(HybridLogicalClock former, HybridLogicalClock latter) {
