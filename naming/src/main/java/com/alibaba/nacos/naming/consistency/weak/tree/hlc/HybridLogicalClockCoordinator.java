@@ -92,7 +92,8 @@ public class HybridLogicalClockCoordinator {
 
     public boolean isHappenBefore(HybridLogicalClock former, HybridLogicalClock latter) {
         // Currently, for events happen on different processes, it returns true only if the former event
-        // happens before the latter event in real time
+        // happens before the latter event in real time.
+        // The maximum offset of real time between two nodes is defined in the field "maxOffset".
         if (former.getProcessName().equals(latter.getProcessName())) {
             return former.smallerThan(latter);
         } else {
