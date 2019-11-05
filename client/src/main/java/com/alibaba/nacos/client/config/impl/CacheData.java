@@ -202,7 +202,7 @@ public class CacheData {
 
                     // compare lastContent and content
                     if (listener instanceof AbstractConfigChangeListener) {
-                        Map data = ConfigChangeHander.getChangeParserInstance().parseChangeData(lastContent, content, type);
+                        Map data = ConfigChangeHandler.getChangeParserInstance().parseChangeData(lastContent, content, type);
                         ConfigChangeEvent event = new ConfigChangeEvent(data);
                         ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
                     }
