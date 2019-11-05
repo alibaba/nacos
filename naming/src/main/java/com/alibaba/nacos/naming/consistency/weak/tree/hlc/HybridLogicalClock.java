@@ -16,6 +16,10 @@
 package com.alibaba.nacos.naming.consistency.weak.tree.hlc;
 
 /**
+ * A hybrid logical clock consists of two parts:
+ * - wall time: the maximum physical time it has seen
+ * - logical clock: the logical clock
+ *
  * @author lostcharlie
  */
 public class HybridLogicalClock {
@@ -43,8 +47,25 @@ public class HybridLogicalClock {
         this.setLogicalClock(logicalClock);
     }
 
+    public HybridLogicalClock() {
+        long localWallTime = System.currentTimeMillis();
+        long logicalClock = 0;
+        this.set(localWallTime, logicalClock);
+    }
+
     public void set(long localWallTime, long logicalClock) {
         this.setLocalWallTime(localWallTime);
         this.setLogicalClock(logicalClock);
+    }
+
+    public boolean smallerThan(HybridLogicalClock another) {
+        if (this.getLocalWallTime() < another.getLocalWallTime()) {
+            return true;
+        }
+        if ((this.getLocalWallTime() == another.getLocalWallTime())
+            && (this.getLogicalClock() < another.getLogicalClock())) {
+            return true;
+        }
+        return false;
     }
 }
