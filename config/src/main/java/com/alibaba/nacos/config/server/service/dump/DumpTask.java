@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
-import com.alibaba.nacos.config.server.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -244,7 +244,7 @@ class DumpAllProcessor implements TaskProcessor {
         while (lastMaxId < currentMaxId) {
             Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
                 PAGE_SIZE);
-            if (page != null && page.getPageItems() != null) {
+            if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (PersistService.ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
                     lastMaxId = id > lastMaxId ? id : lastMaxId;

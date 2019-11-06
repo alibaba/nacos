@@ -15,18 +15,26 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -35,18 +43,13 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
-import java.net.InetSocketAddress;
-import java.util.*;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Instance operation controller
@@ -56,9 +59,6 @@ import java.util.*;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/instance")
 public class InstanceController {
-
-    @Autowired
-    private DistroMapper distroMapper;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -72,7 +72,7 @@ public class InstanceController {
     private DataSource pushDataSource = new DataSource() {
 
         @Override
-        public String getData(PushService.PushClient client) throws Exception {
+        public String getData(PushService.PushClient client) {
 
             JSONObject result = new JSONObject();
             try {
@@ -91,7 +91,7 @@ public class InstanceController {
     };
 
     @CanDistro
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @PostMapping
     public String register(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -102,7 +102,7 @@ public class InstanceController {
     }
 
     @CanDistro
-    @RequestMapping(value = "", method = RequestMethod.DELETE)
+    @DeleteMapping
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -121,7 +121,7 @@ public class InstanceController {
     }
 
     @CanDistro
-    @RequestMapping(value = "", method = RequestMethod.PUT)
+    @PutMapping
     public String update(HttpServletRequest request) throws Exception {
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -139,7 +139,7 @@ public class InstanceController {
         return "ok";
     }
 
-    @RequestMapping(value = "/list", method = RequestMethod.GET)
+    @GetMapping("/list")
     public JSONObject list(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -159,10 +159,11 @@ public class InstanceController {
 
         boolean healthyOnly = Boolean.parseBoolean(WebUtils.optional(request, "healthyOnly", "false"));
 
-        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant, healthyOnly);
+        return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
+            healthyOnly);
     }
 
-    @RequestMapping(value = "", method = RequestMethod.GET)
+    @GetMapping
     public JSONObject detail(HttpServletRequest request) throws Exception {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -196,7 +197,7 @@ public class InstanceController {
                 result.put("weight", instance.getWeight());
                 result.put("healthy", instance.isHealthy());
                 result.put("metadata", instance.getMetadata());
-                result.put("instanceId", instance.generateInstanceId());
+                result.put("instanceId", instance.getInstanceId());
                 return result;
             }
         }
@@ -205,13 +206,13 @@ public class InstanceController {
     }
 
     @CanDistro
-    @RequestMapping(value = "/beat", method = RequestMethod.PUT)
+    @PutMapping("/beat")
     public JSONObject beat(HttpServletRequest request) throws Exception {
 
         JSONObject result = new JSONObject();
 
         result.put("clientBeatInterval", switchDomain.getClientBeatInterval());
-
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
         String beat = WebUtils.required(request, "beat");
@@ -224,7 +225,6 @@ public class InstanceController {
         if (StringUtils.isBlank(clientBeat.getCluster())) {
             clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
         }
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
 
         String clusterName = clientBeat.getCluster();
 
@@ -232,7 +232,8 @@ public class InstanceController {
             Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}", clientBeat, serviceName);
         }
 
-        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(), clientBeat.getIp(),
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, clientBeat.getCluster(),
+            clientBeat.getIp(),
             clientBeat.getPort());
 
         if (instance == null) {
@@ -243,7 +244,7 @@ public class InstanceController {
             instance.setMetadata(clientBeat.getMetadata());
             instance.setClusterName(clusterName);
             instance.setServiceName(serviceName);
-            instance.setInstanceId(instance.generateInstanceId());
+            instance.setInstanceId(instance.getInstanceId());
             instance.setEphemeral(clientBeat.isEphemeral());
 
             serviceManager.registerInstance(namespaceId, serviceName, instance);
@@ -252,7 +253,8 @@ public class InstanceController {
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
-            throw new NacosException(NacosException.SERVER_ERROR, "service not found: " + serviceName + "@" + namespaceId);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "service not found: " + serviceName + "@" + namespaceId);
         }
 
         service.processClientBeat(clientBeat);
@@ -260,11 +262,8 @@ public class InstanceController {
         return result;
     }
 
-
     @RequestMapping("/statuses")
-    public JSONObject listWithHealthStatus(HttpServletRequest request) throws NacosException {
-
-        String key = WebUtils.required(request, "key");
+    public JSONObject listWithHealthStatus(@RequestParam String key) throws NacosException {
 
         String serviceName;
         String namespaceId;
@@ -305,6 +304,8 @@ public class InstanceController {
         Instance instance = getIPAddress(request);
         instance.setApp(app);
         instance.setServiceName(serviceName);
+        // Generate simple instance id first. This value would be updated according to
+        // INSTANCE_ID_GENERATOR.
         instance.setInstanceId(instance.generateInstanceId());
         instance.setLastBeat(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(metadata)) {
@@ -350,14 +351,17 @@ public class InstanceController {
         return instance;
     }
 
-    public void checkIfDisabled(Service service) throws Exception {
+    private void checkIfDisabled(Service service) throws Exception {
         if (!service.getEnabled()) {
             throw new Exception("service is disabled now.");
         }
     }
 
-    public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP, int udpPort,
-                                String env, boolean isCheck, String app, String tid, boolean healthyOnly) throws Exception {
+
+    public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
+                                int udpPort,
+                                String env, boolean isCheck, String app, String tid, boolean healthyOnly)
+        throws Exception {
 
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
@@ -365,7 +369,7 @@ public class InstanceController {
 
         if (service == null) {
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
             }
             result.put("name", serviceName);
             result.put("clusters", clusters);
@@ -380,6 +384,7 @@ public class InstanceController {
         // now try to enable the push
         try {
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
+
                 pushService.addClient(namespaceId, serviceName,
                     clusters,
                     agent,
@@ -390,7 +395,7 @@ public class InstanceController {
                 cacheMillis = switchDomain.getPushCacheMillis(serviceName);
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client", e);
+            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
             cacheMillis = switchDomain.getDefaultCacheMillis();
         }
 
@@ -406,7 +411,7 @@ public class InstanceController {
         if (CollectionUtils.isEmpty(srvedIPs)) {
 
             if (Loggers.SRV_LOG.isDebugEnabled()) {
-                Loggers.SRV_LOG.debug("no instance to serve for service: " + serviceName);
+                Loggers.SRV_LOG.debug("no instance to serve for service: {}", serviceName);
             }
 
             if (clientInfo.type == ClientInfo.ClientType.JAVA &&

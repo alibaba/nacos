@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.1.3</version>
+        <version>1.1.4</version>
     </parent>
     <artifactId>nacos-console</artifactId>
     <!--<packaging>war</packaging>-->
@@ -43,6 +43,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-istio</artifactId>
+        </dependency>
+
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
         <dependency>

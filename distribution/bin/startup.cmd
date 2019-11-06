@@ -26,7 +26,7 @@ set CUSTOM_SEARCH_LOCATIONS=%DEFAULT_SEARCH_LOCATIONS%,file:%BASE_DIR%/conf/
 
 set MODE="standalone"
 set FUNCTION_MODE="all"
-set SERVER="nacos-server"
+set SERVER=nacos-server
 set MODE_INDEX=-1
 set FUNCTION_MODE_INDEX=-1
 set SERVER_INDEX=-1

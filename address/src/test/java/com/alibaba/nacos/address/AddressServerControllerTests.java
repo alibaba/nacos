@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.address;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -23,6 +24,7 @@ import java.util.HashMap;
  * @author pbting
  * @date 2019-06-18 2:37 PM
  */
+@Ignore
 public class AddressServerControllerTests {
 
     private static final String PRODUCT_NACOS = "nacos";

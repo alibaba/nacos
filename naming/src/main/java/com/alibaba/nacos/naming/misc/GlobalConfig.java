@@ -19,7 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * Stores some configurations for Partition protocol
+ * Stores some configurations for Distro protocol
  *
  * @author nkorange
  * @since 1.0.0
