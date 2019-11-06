@@ -62,13 +62,13 @@ public class HttpClient {
 
     static {
         AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
-        builder.setMaximumConnectionsTotal(-1);
-        builder.setMaximumConnectionsPerHost(128);
-        builder.setAllowPoolingConnection(true);
-        builder.setFollowRedirects(false);
-        builder.setIdleConnectionTimeoutInMs(TIME_OUT_MILLIS);
-        builder.setConnectionTimeoutInMs(CON_TIME_OUT_MILLIS);
-        builder.setCompressionEnabled(true);
+        builder.setMaxConnections(-1);
+        builder.setMaxConnectionsPerHost(128);
+        builder.setAllowPoolingConnections(true);
+        builder.setFollowRedirect(false);
+        builder.setPooledConnectionIdleTimeout(TIME_OUT_MILLIS);
+        builder.setConnectTimeout(CON_TIME_OUT_MILLIS);
+        builder.setCompressionEnforced(true);
         builder.setIOThreadMultiplier(1);
         builder.setMaxRequestRetry(0);
         builder.setUserAgent(UtilsAndCommons.SERVER_VERSION);
