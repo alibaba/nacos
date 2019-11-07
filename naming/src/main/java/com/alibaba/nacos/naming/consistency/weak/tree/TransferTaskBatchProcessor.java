@@ -36,7 +36,7 @@ import java.util.concurrent.*;
  * @author satjd
  */
 @Component
-public class TransferTaskProcessor implements Runnable{
+public class TransferTaskBatchProcessor implements Runnable{
 
     @Autowired
     private ProtocolConfig protocolConfig;
@@ -53,7 +53,7 @@ public class TransferTaskProcessor implements Runnable{
             Thread t = new Thread(r);
 
             t.setDaemon(true);
-            t.setName("com.alibaba.nacos.naming.tree.subscribemanager.taskprocesser");
+            t.setName("com.alibaba.nacos.naming.tree.subscribemanager.taskprocesser.batch");
 
             return t;
         }
@@ -119,10 +119,11 @@ public class TransferTaskProcessor implements Runnable{
         while (true) {
             TransferTask task = null;
             try {
-                task = taskHolder.poll(0,TimeUnit.MILLISECONDS);
+                task = taskHolder.take();
             } catch (InterruptedException e) {
-                Loggers.TREE.warn("Transfer task processor interrupted.");
+                Loggers.TREE.error(e.toString());
             }
+
             if (task == null) {
                 continue;
             }

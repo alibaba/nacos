@@ -63,13 +63,13 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessor {
         try {
             AsyncHttpClientConfig.Builder builder = new AsyncHttpClientConfig.Builder();
 
-            builder.setMaximumConnectionsTotal(-1);
-            builder.setMaximumConnectionsPerHost(-1);
-            builder.setAllowPoolingConnection(false);
-            builder.setFollowRedirects(false);
-            builder.setIdleConnectionTimeoutInMs(CONNECT_TIMEOUT_MS);
-            builder.setConnectionTimeoutInMs(CONNECT_TIMEOUT_MS);
-            builder.setCompressionEnabled(false);
+            builder.setMaxConnections(-1);
+            builder.setMaxConnectionsPerHost(-1);
+            builder.setAllowPoolingConnections(true);
+            builder.setFollowRedirect(false);
+            builder.setPooledConnectionIdleTimeout(CONNECT_TIMEOUT_MS);
+            builder.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            builder.setCompressionEnforced(true);
             builder.setIOThreadMultiplier(1);
             builder.setMaxRequestRetry(0);
             builder.setUserAgent("VIPServer");

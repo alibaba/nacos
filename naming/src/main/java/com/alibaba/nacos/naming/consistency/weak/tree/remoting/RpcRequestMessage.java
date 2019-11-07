@@ -13,27 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.consistency.weak.tree;
+
+package com.alibaba.nacos.naming.consistency.weak.tree.remoting;
+
+import com.alibaba.nacos.naming.consistency.weak.tree.DatumType;
+
+import java.io.Serializable;
 
 /**
  * @author satjd
  */
+public class RpcRequestMessage implements Serializable {
+    private static final long serialVersionUID = -3294793061959326337L;
 
-public enum DatumType {
-    /**
-     * Type of message for update datum
-     */
-    UPDATE,
-    /**
-     * Type of message for delete datum
-     */
-    DELETE,
-    /**
-     * Type of message for cluster management(topology change, treeN change etc.)
-     */
-    OPERATION,
-    /**
-     * Type of ack message.
-     */
-    ACK
+    public DatumType type;
+
+    public byte[] payload;
 }
