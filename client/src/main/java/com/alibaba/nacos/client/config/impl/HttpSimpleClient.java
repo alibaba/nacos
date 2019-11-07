@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.common.HttpsManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -40,6 +41,10 @@ import java.util.Map;
  * @author Nacos
  */
 public class HttpSimpleClient {
+
+    static {
+        HttpsManager.trustAllHttpsCertificates();
+    }
 
     static public HttpResult httpGet(String url, List<String> headers, List<String> paramValues,
                                      String encoding, long readTimeoutMs, boolean isSSL) throws IOException {
@@ -110,6 +115,7 @@ public class HttpSimpleClient {
         }
         HttpURLConnection conn = null;
         try {
+            HttpsManager.verifieHttpsHostName(url);
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 3000 ? ParamUtil.getConnectTimeout() : 3000);
@@ -166,6 +172,7 @@ public class HttpSimpleClient {
         HttpURLConnection conn = null;
 
         try {
+            HttpsManager.verifieHttpsHostName(url);
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("DELETE");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 100 ? ParamUtil.getConnectTimeout() : 100);

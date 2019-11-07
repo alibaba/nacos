@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.naming.net;
+package com.alibaba.nacos.client.common;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -28,12 +29,14 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public class SslConfig implements TrustManager, X509TrustManager {
     @Override
     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        NAMING_LOGGER.debug(s);
+        NAMING_LOGGER.info("ckeck client trust list {}", Arrays.asList(x509Certificates));
+        NAMING_LOGGER.info("ckeck client trust {}",s);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        NAMING_LOGGER.debug(s);
+        NAMING_LOGGER.info("ckeck server trust list {}", Arrays.asList(x509Certificates));
+        NAMING_LOGGER.info("ckeck server trust {}",s);
     }
 
     @Override
