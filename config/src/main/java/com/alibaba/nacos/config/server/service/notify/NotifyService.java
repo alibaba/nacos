@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.service.ServerListService;
 import org.apache.commons.io.IOUtils;
@@ -82,9 +83,7 @@ public class NotifyService {
             }
             return new HttpResult(respCode, resp);
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
