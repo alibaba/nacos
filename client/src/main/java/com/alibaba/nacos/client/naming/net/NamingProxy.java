@@ -35,9 +35,10 @@ import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.util.HttpMethod;
-import com.alibaba.nacos.common.util.UuidUtils;
-import com.alibaba.nacos.common.util.VersionUtils;
+import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;

@@ -15,7 +15,7 @@
  */
 package com.alibaba.nacos.naming.web;
 
-import com.alibaba.nacos.common.util.HttpMethod;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
