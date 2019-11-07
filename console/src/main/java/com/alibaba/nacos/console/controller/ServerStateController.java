@@ -16,7 +16,7 @@
 package com.alibaba.nacos.console.controller;
 
 
-import com.alibaba.nacos.common.util.VersionUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
