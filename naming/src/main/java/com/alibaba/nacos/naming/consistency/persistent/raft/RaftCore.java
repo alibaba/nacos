@@ -426,7 +426,7 @@ public class RaftCore {
         }
     }
 
-    public RaftPeer receivedVote(RaftPeer remote) {
+    public synchronized RaftPeer receivedVote(RaftPeer remote) {
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
