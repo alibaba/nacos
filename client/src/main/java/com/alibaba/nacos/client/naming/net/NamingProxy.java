@@ -35,9 +35,10 @@ import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.util.HttpMethod;
-import com.alibaba.nacos.common.util.UuidUtils;
-import com.alibaba.nacos.common.util.VersionUtils;
+import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.UuidUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
@@ -429,16 +430,16 @@ public class NamingProxy {
             + result.code + " msg: " + result.content);
     }
 
-    public String reqAPI(String api, Map<String, String> params, List<String> servers) {
+    public String reqAPI(String api, Map<String, String> params, List<String> servers) throws NacosException {
         return reqAPI(api, params, servers, HttpMethod.GET);
     }
 
-    public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) {
+    public String reqAPI(String api, Map<String, String> params, List<String> servers, String method) throws NacosException {
 
         params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
 
         if (CollectionUtils.isEmpty(servers) && StringUtils.isEmpty(nacosDomain)) {
-            throw new IllegalArgumentException("no server available");
+            throw new NacosException(NacosException.INVALID_PARAM, "no server available");
         }
 
         Exception exception = new Exception();
@@ -463,7 +464,7 @@ public class NamingProxy {
                 index = (index + 1) % servers.size();
             }
 
-            throw new IllegalStateException("failed to req API:" + api + " after all servers(" + servers + ") tried: "
+            throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + api + " after all servers(" + servers + ") tried: "
                 + exception.getMessage());
         }
 
@@ -476,7 +477,7 @@ public class NamingProxy {
             }
         }
 
-        throw new IllegalStateException("failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
+        throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
             + exception.getMessage());
 
     }
