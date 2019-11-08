@@ -68,6 +68,12 @@ public class ProtocolConfig {
     @Value("${nacos.naming.tree.param.transferTaskInterval:200}")
     private int transferTaskInterval;
 
+    /**
+     * 传输任务的调度间隔(ms)
+     */
+    @Value("${nacos.naming.tree.bolt.port:8990}")
+    private int boltPort;
+
     public int getTreeParamN() {
         return treeParamN;
     }
@@ -90,5 +96,14 @@ public class ProtocolConfig {
 
     public boolean isBatchUpdateEnabled() {
         return batchUpdateEnabled;
+    }
+
+    public int getBoltPort() {
+        return boltPort;
+    }
+
+    @Bean
+    public ConflictResolver getConflictResolver() {
+        return new UnionConflictResolver(1000000);
     }
 }
