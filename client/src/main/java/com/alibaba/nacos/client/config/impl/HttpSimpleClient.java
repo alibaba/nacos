@@ -17,10 +17,10 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.util.IoUtils;
 import com.alibaba.nacos.common.util.UuidUtils;
 import com.alibaba.nacos.common.util.VersionUtils;
 
@@ -65,12 +65,12 @@ public class HttpSimpleClient {
             conn.connect();
 
             int respCode = conn.getResponseCode();
-            String resp = null;
+            String resp ;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream(), encoding);
+                resp = IoUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream(), encoding);
+                resp = IoUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
@@ -123,12 +123,12 @@ public class HttpSimpleClient {
             conn.getOutputStream().write(encodedContent.getBytes(encoding));
 
             int respCode = conn.getResponseCode();
-            String resp = null;
+            String resp ;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream(), encoding);
+                resp = IoUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream(), encoding);
+                resp = IoUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
@@ -180,9 +180,9 @@ public class HttpSimpleClient {
             String resp = null;
 
             if (HttpURLConnection.HTTP_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream(), encoding);
+                resp = IoUtils.toString(conn.getInputStream(), encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream(), encoding);
+                resp = IoUtils.toString(conn.getErrorStream(), encoding);
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {

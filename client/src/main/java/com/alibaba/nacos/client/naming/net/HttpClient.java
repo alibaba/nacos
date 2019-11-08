@@ -16,7 +16,7 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.naming.utils.IoUtils;
+import com.alibaba.nacos.common.util.IoUtils;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
 

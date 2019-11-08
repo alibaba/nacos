@@ -1,13 +1,13 @@
 package com.alibaba.nacos.client;
 
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.junit.Assert.*;
-import static com.alibaba.nacos.client.utils.StringUtils.*;
 
 @Deprecated
 public class StringUtilsTest {
@@ -53,7 +53,6 @@ public class StringUtilsTest {
 
     @Test
     public void testJoin() {
-        assertNull(join(null, ""));
 
         Collection collection = new ArrayList();
         collection.add("foo");
