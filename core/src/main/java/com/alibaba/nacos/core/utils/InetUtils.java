@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.core.utils;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -26,10 +30,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.alibaba.nacos.core.utils.Constants.*;
 
@@ -108,14 +108,13 @@ public class InetUtils {
         try {
             int lowest = Integer.MAX_VALUE;
             for (Enumeration<NetworkInterface> nics = NetworkInterface
-                .getNetworkInterfaces(); nics.hasMoreElements();) {
+                .getNetworkInterfaces(); nics.hasMoreElements(); ) {
                 NetworkInterface ifc = nics.nextElement();
                 if (ifc.isUp()) {
                     log.info("Testing interface: " + ifc.getDisplayName());
                     if (ifc.getIndex() < lowest || result == null) {
                         lowest = ifc.getIndex();
-                    }
-                    else if (result != null) {
+                    } else if (result != null) {
                         continue;
                     }
 
@@ -134,8 +133,7 @@ public class InetUtils {
                     }
                 }
             }
-        }
-        catch (IOException ex) {
+        } catch (IOException ex) {
             log.error("Cannot get first non-loopback address", ex);
         }
 
@@ -145,8 +143,7 @@ public class InetUtils {
 
         try {
             return InetAddress.getLocalHost();
-        }
-        catch (UnknownHostException e) {
+        } catch (UnknownHostException e) {
             log.warn("Unable to retrieve localhost");
         }
 

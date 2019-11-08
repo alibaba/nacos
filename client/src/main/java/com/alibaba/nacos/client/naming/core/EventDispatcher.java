@@ -125,7 +125,7 @@ public class EventDispatcher {
                     if (!CollectionUtils.isEmpty(listeners)) {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
-                            listener.onEvent(new NamingEvent(serviceInfo.getName(), hosts));
+                            listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
                         }
                     }
 
@@ -135,12 +135,5 @@ public class EventDispatcher {
                 }
             }
         }
-    }
-
-    public void setExecutor(ExecutorService executor) {
-        ExecutorService oldExecutor = this.executor;
-        this.executor = executor;
-
-        oldExecutor.shutdown();
     }
 }

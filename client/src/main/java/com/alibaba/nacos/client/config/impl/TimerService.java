@@ -36,6 +36,7 @@ public class TimerService {
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     static ScheduledExecutorService scheduledExecutor = Executors
         .newSingleThreadScheduledExecutor(new ThreadFactory() {
+            @Override
             public Thread newThread(Runnable r) {
                 Thread t = new Thread(r);
                 t.setName("com.alibaba.nacos.client.Timer");

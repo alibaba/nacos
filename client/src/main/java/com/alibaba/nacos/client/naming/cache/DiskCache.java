@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -71,9 +71,8 @@ public class DiskCache {
         }
     }
 
-    public static String getLineSeperator() {
-        String lineSeparator = System.getProperty("line.separator");
-        return lineSeparator;
+    public static String getLineSeparator() {
+        return System.getProperty("line.separator");
     }
 
     public static Map<String, ServiceInfo> read(String cacheDir) {
@@ -82,7 +81,7 @@ public class DiskCache {
         BufferedReader reader = null;
         try {
             File[] files = makeSureCacheDirExists(cacheDir).listFiles();
-            if (files == null) {
+            if (files == null || files.length == 0) {
                 return domMap;
             }
 
@@ -154,7 +153,6 @@ public class DiskCache {
         if (!cacheDir.exists() && !cacheDir.mkdirs()) {
             throw new IllegalStateException("failed to create cache dir: " + dir);
         }
-
         return cacheDir;
     }
 }

@@ -365,10 +365,10 @@ class NewConfig extends React.Component {
 
   validateChart(rule, value, callback) {
     const { locale = {} } = this.props;
-    const chartReg = /[@#\$%\^&\*]+/g;
+    const chartReg = /[@#\$%\^&\*\s]+/g;
 
     if (chartReg.test(value)) {
-      callback(locale.doNotEnte);
+      callback(locale.doNotEnter);
     } else {
       callback();
     }
@@ -414,7 +414,7 @@ class NewConfig extends React.Component {
         label: 'YAML',
       },
       {
-        value: 'text/html',
+        value: 'html',
         label: 'HTML',
       },
       {
@@ -468,7 +468,7 @@ class NewConfig extends React.Component {
                       message: locale.moreAdvanced,
                     },
                     {
-                      max: 127,
+                      maxLength: 127,
                       message: locale.groupNotEmpty,
                     },
                     { validator: this.validateChart.bind(this) },

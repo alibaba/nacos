@@ -24,7 +24,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
@@ -45,11 +46,11 @@ public class AggrWhitelistTest {
         list.add("com.taobao.tae.AppListOnGrid-*");
         service.compile(list);
 
-        assertEquals(false, service.isAggrDataId("com.abc"));
-        assertEquals(false, service.isAggrDataId("com.taobao.jiuren"));
-        assertEquals(false, service.isAggrDataId("com.taobao.jiurenABC"));
-        assertEquals(true, service.isAggrDataId("com.taobao.jiuren.abc"));
-        assertEquals(true, service.isAggrDataId("NS_NACOS_SUBSCRIPTION_TOPIC_abc"));
-        assertEquals(true, service.isAggrDataId("com.taobao.tae.AppListOnGrid-abc"));
+        assertFalse(service.isAggrDataId("com.abc"));
+        assertFalse(service.isAggrDataId("com.taobao.jiuren"));
+        assertFalse(service.isAggrDataId("com.taobao.jiurenABC"));
+        assertTrue(service.isAggrDataId("com.taobao.jiuren.abc"));
+        assertTrue(service.isAggrDataId("NS_NACOS_SUBSCRIPTION_TOPIC_abc"));
+        assertTrue(service.isAggrDataId("com.taobao.tae.AppListOnGrid-abc"));
     }
 }

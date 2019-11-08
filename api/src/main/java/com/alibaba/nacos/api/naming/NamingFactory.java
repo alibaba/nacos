@@ -34,7 +34,7 @@ public class NamingFactory {
             NamingService vendorImpl = (NamingService)constructor.newInstance(serverList);
             return vendorImpl;
         } catch (Throwable e) {
-            throw new NacosException(-400, e.getMessage());
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
         }
     }
 
@@ -45,7 +45,7 @@ public class NamingFactory {
             NamingService vendorImpl = (NamingService)constructor.newInstance(properties);
             return vendorImpl;
         } catch (Throwable e) {
-            throw new NacosException(-400, e.getMessage());
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
         }
     }
 }

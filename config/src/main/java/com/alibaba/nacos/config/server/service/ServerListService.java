@@ -48,11 +48,9 @@ import java.util.*;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+import static com.alibaba.nacos.core.utils.SystemUtils.*;
 
 /**
  * Serverlist service
@@ -163,7 +161,8 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
     /**
      * serverList has changed
      */
-    static public class ServerlistChangeEvent implements EventDispatcher.Event {}
+    static public class ServerlistChangeEvent implements EventDispatcher.Event {
+    }
 
     private void updateIfChanged(List<String> newList) {
         if (newList.isEmpty()) {
@@ -261,9 +260,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     List<String> lines = IOUtils.readLines(new StringReader(result.content));
                     List<String> ips = new ArrayList<String>(lines.size());
                     for (String serverAddr : lines) {
-                        if (null == serverAddr || serverAddr.trim().isEmpty()) {
-                            continue;
-                        } else {
+                        if (StringUtils.isNotBlank(serverAddr)) {
                             ips.add(getFormatServerAddr(serverAddr));
                         }
                     }

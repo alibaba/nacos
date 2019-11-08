@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.misc;
 import com.alibaba.nacos.naming.boot.RunningConfig;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.Response;
+import org.springframework.util.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.HashMap;
@@ -31,7 +32,7 @@ import java.util.Map;
 public class ServerStatusSynchronizer implements Synchronizer {
     @Override
     public void send(final String serverIP, Message msg) {
-        if (serverIP == null) {
+        if (StringUtils.isEmpty(serverIP)) {
             return;
         }
 
@@ -61,7 +62,7 @@ public class ServerStatusSynchronizer implements Synchronizer {
                 }
             });
         } catch (Exception e) {
-            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: " + serverIP, e);
+            Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
         }
     }
 

@@ -28,11 +28,9 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class SwitchDomain implements Record, Cloneable {
 
-    private String name = UtilsAndCommons.SWITCH_DOMAIN_NAME;
-
     private List<String> masters;
 
-    private Map<String, Integer> adWeightMap = new HashMap<String, Integer>();
+    private Map<String, Integer> adWeightMap = new HashMap<>();
 
     private long defaultPushCacheMillis = TimeUnit.SECONDS.toMillis(10);
 
@@ -41,8 +39,6 @@ public class SwitchDomain implements Record, Cloneable {
     private long defaultCacheMillis = TimeUnit.SECONDS.toMillis(3);
 
     private float distroThreshold = 0.7F;
-
-    private String token = UtilsAndCommons.SUPER_TOKEN;
 
     private boolean healthCheckEnabled = true;
 
@@ -62,7 +58,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     private List<String> incrementalList = new ArrayList<>();
 
-    private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
+    private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(2);
 
     private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
 
@@ -75,7 +71,7 @@ public class SwitchDomain implements Record, Cloneable {
     /**
      * The server is regarded as expired if its two reporting interval is lagger than this variable.
      */
-    private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(30);
+    private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(10);
 
     /**
      * since which version, push can be enabled

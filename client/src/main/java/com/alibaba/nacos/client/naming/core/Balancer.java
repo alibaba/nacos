@@ -40,7 +40,7 @@ public class Balancer {
     public static class RandomByWeight {
 
         public static List<Instance> selectAll(ServiceInfo serviceInfo) {
-            List<Instance> hosts = nothing(serviceInfo);
+            List<Instance> hosts = serviceInfo.getHosts();
 
             if (CollectionUtils.isEmpty(hosts)) {
                 throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
@@ -58,10 +58,6 @@ public class Balancer {
             }
 
             return getHostByRandomWeight(hosts);
-        }
-
-        public static List<Instance> nothing(ServiceInfo serviceInfo) {
-            return serviceInfo.getHosts();
         }
     }
 
@@ -91,7 +87,6 @@ public class Balancer {
         NAMING_LOGGER.debug("for (Host host : hosts)");
         vipChooser.refresh(hostsWithWeight);
         NAMING_LOGGER.debug("vipChooser.refresh");
-        Instance host = vipChooser.randomWithWeight();
-        return host;
+        return vipChooser.randomWithWeight();
     }
 }

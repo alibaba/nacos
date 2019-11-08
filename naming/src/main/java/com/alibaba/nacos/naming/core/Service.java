@@ -78,7 +78,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     private long pushCacheMillis = 0L;
 
-    private Map<String, Cluster> clusterMap = new HashMap<String, Cluster>();
+    private Map<String, Cluster> clusterMap = new HashMap<>();
 
     public Service() {
     }
@@ -191,7 +191,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return healthyCount;
     }
 
-    public boolean meetProtectThreshold() {
+    public boolean triggerFlag() {
         return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 
@@ -215,8 +215,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 if (!clusterMap.containsKey(instance.getClusterName())) {
                     Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                         instance.getClusterName(), instance.toJSON());
-                    Cluster cluster = new Cluster(instance.getClusterName());
-                    cluster.setService(this);
+                    Cluster cluster = new Cluster(instance.getClusterName(), this);
                     cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
@@ -240,7 +239,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
 
         setLastModifiedMillis(System.currentTimeMillis());
-        getPushService().serviceChanged(namespaceId, getName());
+        getPushService().serviceChanged(this);
         StringBuilder stringBuilder = new StringBuilder();
 
         for (Instance instance : allIPs()) {
@@ -425,9 +424,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         updateOrAddCluster(vDom.getClusterMap().values());
         remvDeadClusters(this, vDom);
+
+        Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
+
         recalculateChecksum();
     }
 
+    @Override
     public String getChecksum() {
         if (StringUtils.isEmpty(checksum)) {
             recalculateChecksum();

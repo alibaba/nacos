@@ -17,7 +17,6 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -43,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @DependsOn("serverListManager")
-public class DataSyncer implements ServerChangeListener {
+public class DataSyncer {
 
     @Autowired
     private DataStore dataStore;
@@ -62,11 +61,8 @@ public class DataSyncer implements ServerChangeListener {
 
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
 
-    private List<Server> servers;
-
     @PostConstruct
     public void init() {
-        serverListManager.listen(this);
         startTimedSync();
     }
 
@@ -79,8 +75,8 @@ public class DataSyncer implements ServerChangeListener {
                 String key = iterator.next();
                 if (StringUtils.isNotBlank(taskMap.putIfAbsent(buildKey(key, task.getTargetServer()), key))) {
                     // associated key already exist:
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("sync already in process, key: {}", key);
+                    if (Loggers.DISTRO.isDebugEnabled()) {
+                        Loggers.DISTRO.debug("sync already in process, key: {}", key);
                     }
                     iterator.remove();
                 }
@@ -92,52 +88,43 @@ public class DataSyncer implements ServerChangeListener {
             return;
         }
 
-        GlobalExecutor.submitDataSync(new Runnable() {
-            @Override
-            public void run() {
+        GlobalExecutor.submitDataSync(() -> {
+            // 1. check the server
+            if (getServers() == null || getServers().isEmpty()) {
+                Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
+                return;
+            }
 
-                try {
-                    if (servers == null || servers.isEmpty()) {
-                        Loggers.SRV_LOG.warn("try to sync data but server list is empty.");
-                        return;
-                    }
+            List<String> keys = task.getKeys();
 
-                    List<String> keys = task.getKeys();
+            if (Loggers.SRV_LOG.isDebugEnabled()) {
+                Loggers.SRV_LOG.debug("try to sync data for this keys {}.", keys);
+            }
+            // 2. get the datums by keys and check the datum is empty or not
+            Map<String, Datum> datumMap = dataStore.batchGet(keys);
+            if (datumMap == null || datumMap.isEmpty()) {
+                // clear all flags of this task:
+                for (String key : keys) {
+                    taskMap.remove(buildKey(key, task.getTargetServer()));
+                }
+                return;
+            }
 
-                    if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                        Loggers.EPHEMERAL.debug("sync keys: {}", keys);
-                    }
+            byte[] data = serializer.serialize(datumMap);
 
-                    Map<String, Datum> datumMap = dataStore.batchGet(keys);
-
-                    if (datumMap == null || datumMap.isEmpty()) {
-                        // clear all flags of this task:
-                        for (String key : task.getKeys()) {
-                            taskMap.remove(buildKey(key, task.getTargetServer()));
-                        }
-                        return;
-                    }
-
-                    byte[] data = serializer.serialize(datumMap);
-
-                    long timestamp = System.currentTimeMillis();
-                    boolean success = NamingProxy.syncData(data, task.getTargetServer());
-                    if (!success) {
-                        SyncTask syncTask = new SyncTask();
-                        syncTask.setKeys(task.getKeys());
-                        syncTask.setRetryCount(task.getRetryCount() + 1);
-                        syncTask.setLastExecuteTime(timestamp);
-                        syncTask.setTargetServer(task.getTargetServer());
-                        retrySync(syncTask);
-                    } else {
-                        // clear all flags of this task:
-                        for (String key : task.getKeys()) {
-                            taskMap.remove(buildKey(key, task.getTargetServer()));
-                        }
-                    }
-
-                } catch (Exception e) {
-                    Loggers.EPHEMERAL.error("sync data failed.", e);
+            long timestamp = System.currentTimeMillis();
+            boolean success = NamingProxy.syncData(data, task.getTargetServer());
+            if (!success) {
+                SyncTask syncTask = new SyncTask();
+                syncTask.setKeys(task.getKeys());
+                syncTask.setRetryCount(task.getRetryCount() + 1);
+                syncTask.setLastExecuteTime(timestamp);
+                syncTask.setTargetServer(task.getTargetServer());
+                retrySync(syncTask);
+            } else {
+                // clear all flags of this task:
+                for (String key : task.getKeys()) {
+                    taskMap.remove(buildKey(key, task.getTargetServer()));
                 }
             }
         }, delay);
@@ -148,8 +135,14 @@ public class DataSyncer implements ServerChangeListener {
         Server server = new Server();
         server.setIp(syncTask.getTargetServer().split(":")[0]);
         server.setServePort(Integer.parseInt(syncTask.getTargetServer().split(":")[1]));
-        if (!servers.contains(server)) {
+        if (!getServers().contains(server)) {
             // if server is no longer in healthy server list, ignore this task:
+            //fix #1665 remove existing tasks
+            if (syncTask.getKeys() != null) {
+                for (String key : syncTask.getKeys()) {
+                    taskMap.remove(buildKey(key, syncTask.getTargetServer()));
+                }
+            }
             return;
         }
 
@@ -167,6 +160,11 @@ public class DataSyncer implements ServerChangeListener {
         public void run() {
 
             try {
+
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("server list is: {}", getServers());
+                }
+
                 // send local timestamps to other servers:
                 Map<String, String> keyChecksums = new HashMap<>(64);
                 for (String key : dataStore.keys()) {
@@ -174,44 +172,39 @@ public class DataSyncer implements ServerChangeListener {
                         continue;
                     }
 
-                    keyChecksums.put(key, dataStore.get(key).value.getChecksum());
+                    Datum datum = dataStore.get(key);
+                    if (datum == null) {
+                        continue;
+                    }
+                    keyChecksums.put(key, datum.value.getChecksum());
                 }
 
                 if (keyChecksums.isEmpty()) {
                     return;
                 }
 
-                if (Loggers.EPHEMERAL.isDebugEnabled()) {
-                    Loggers.EPHEMERAL.debug("sync checksums: {}", keyChecksums);
+                if (Loggers.DISTRO.isDebugEnabled()) {
+                    Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
 
-                for (Server member : servers) {
+                for (Server member : getServers()) {
                     if (NetUtils.localServer().equals(member.getKey())) {
                         continue;
                     }
-                    NamingProxy.syncChecksums(keyChecksums, member.getKey());
+                    NamingProxy.syncCheckSums(keyChecksums, member.getKey());
                 }
             } catch (Exception e) {
-                Loggers.EPHEMERAL.error("timed sync task failed.", e);
+                Loggers.DISTRO.error("timed sync task failed.", e);
             }
         }
+
     }
 
     public List<Server> getServers() {
-        return servers;
+        return serverListManager.getHealthyServers();
     }
 
     public String buildKey(String key, String targetServer) {
         return key + UtilsAndCommons.CACHE_KEY_SPLITER + targetServer;
-    }
-
-    @Override
-    public void onChangeServerList(List<Server> latestMembers) {
-
-    }
-
-    @Override
-    public void onChangeHealthyServerList(List<Server> healthServers) {
-        servers = healthServers;
     }
 }
