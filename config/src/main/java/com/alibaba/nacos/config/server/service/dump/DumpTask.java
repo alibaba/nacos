@@ -244,7 +244,7 @@ class DumpAllProcessor implements TaskProcessor {
         while (lastMaxId < currentMaxId) {
             Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
                 PAGE_SIZE);
-            if (page != null && page.getPageItems() != null) {
+            if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (PersistService.ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
                     lastMaxId = id > lastMaxId ? id : lastMaxId;
