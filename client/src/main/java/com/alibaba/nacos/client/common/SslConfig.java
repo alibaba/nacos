@@ -15,28 +15,31 @@
  */
 package com.alibaba.nacos.client.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-
 /**
  * @author James Chen
  */
 public class SslConfig implements TrustManager, X509TrustManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpsManager.class);
+    
     @Override
     public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        NAMING_LOGGER.info("ckeck client trust list {}", Arrays.asList(x509Certificates));
-        NAMING_LOGGER.info("ckeck client trust {}",s);
+        LOGGER.info("ckeck client trust list {}", Arrays.asList(x509Certificates));
+        LOGGER.info("ckeck client trust {}",s);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        NAMING_LOGGER.info("ckeck server trust list {}", Arrays.asList(x509Certificates));
-        NAMING_LOGGER.info("ckeck server trust {}",s);
+        LOGGER.info("ckeck server trust list {}", Arrays.asList(x509Certificates));
+        LOGGER.info("ckeck server trust {}",s);
     }
 
     @Override

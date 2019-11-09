@@ -17,17 +17,18 @@
 package com.alibaba.nacos.client.common;
 
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-
 /**
  * @author James Chen
  */
 public class HttpsManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HttpsManager.class);
 
     public static void trustAllHttpsCertificates() {
         TrustManager[] trustAllCerts = new TrustManager[1];
@@ -37,9 +38,9 @@ public class HttpsManager {
             sslContext.init(null, trustAllCerts, null);
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         } catch (NoSuchAlgorithmException e) {
-            NAMING_LOGGER.error("no such algorithn ", e);
+            LOGGER.error("no such algorithn ", e);
         } catch (KeyManagementException e) {
-            NAMING_LOGGER.error("key management error ", e);
+            LOGGER.error("key management error ", e);
         }
     }
 
