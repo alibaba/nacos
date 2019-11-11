@@ -101,9 +101,4 @@ public class ProtocolConfig {
     public int getBoltPort() {
         return boltPort;
     }
-
-    @Bean
-    public ConflictResolver getConflictResolver() {
-        return new UnionConflictResolver(1000000);
-    }
 }
