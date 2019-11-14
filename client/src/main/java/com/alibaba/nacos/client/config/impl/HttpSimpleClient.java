@@ -115,7 +115,7 @@ public class HttpSimpleClient {
         }
         HttpURLConnection conn = null;
         try {
-            HttpsManager.verifieHttpsHostName(url);
+            HttpsManager.verifyHttpsHostName(url);
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("POST");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 3000 ? ParamUtil.getConnectTimeout() : 3000);
@@ -172,7 +172,7 @@ public class HttpSimpleClient {
         HttpURLConnection conn = null;
 
         try {
-            HttpsManager.verifieHttpsHostName(url);
+            HttpsManager.verifyHttpsHostName(url);
             conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setRequestMethod("DELETE");
             conn.setConnectTimeout(ParamUtil.getConnectTimeout() > 100 ? ParamUtil.getConnectTimeout() : 100);

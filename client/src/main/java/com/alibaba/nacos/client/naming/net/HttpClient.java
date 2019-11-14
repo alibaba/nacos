@@ -74,7 +74,7 @@ public class HttpClient {
             String encodedContent = encodingParams(paramValues, encoding);
             url += (StringUtils.isEmpty(encodedContent)) ? "" : ("?" + encodedContent);
 
-            HttpsManager.verifieHttpsHostName(url);
+            HttpsManager.verifyHttpsHostName(url);
 
             conn = (HttpURLConnection) new URL(url).openConnection();
 

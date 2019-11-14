@@ -44,7 +44,7 @@ public class HttpsManager {
         }
     }
 
-    public static void verifieHttpsHostName(String url) {
+    public static void verifyHttpsHostName(String url) {
 
         if (url.startsWith(UtilAndComs.HTTPS)) {
             HostnameVerifier hostnameVerifier = new HostnameVerifier() {
