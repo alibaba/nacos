@@ -15,27 +15,23 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * 管理控制器。
  *
  * @author Nacos
  */
-@Controller
+@RestController
 @RequestMapping(Constants.OPS_CONTROLLER_PATH)
 public class OpsController {
 
@@ -54,12 +50,17 @@ public class OpsController {
     /**
      * ops call
      */
-    @RequestMapping(value = "/localCache", method = RequestMethod.POST)
-    @ResponseBody
-    public String updateLocalCacheFromStore(HttpServletRequest request, HttpServletResponse respons) {
+    @PostMapping(value = "/localCache")
+    public String updateLocalCacheFromStore() {
         log.info("start to dump all data from store.");
         dumpService.dumpAll();
         log.info("finish to dump all data from store.");
+        return HttpServletResponse.SC_OK + "";
+    }
+
+    @PutMapping(value = "/log")
+    public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
+        LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
     }
 

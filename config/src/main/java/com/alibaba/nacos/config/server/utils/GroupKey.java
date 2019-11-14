@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * 合成dataId+groupId的形式。对dataId和groupId中的保留字符做转义。
  *
@@ -22,37 +24,32 @@ package com.alibaba.nacos.config.server.utils;
  */
 public class GroupKey {
 
-    static public String getKey(String dataId, String group) {
-        StringBuilder sb = new StringBuilder();
-        urlEncode(dataId, sb);
-        sb.append('+');
-        urlEncode(group, sb);
-        return sb.toString();
+    public static String getKey(String dataId, String group) {
+        return doGetKey(dataId, group, "");
     }
 
-    static public String getKeyTenant(String dataId, String group, String tenant) {
+    public static String getKeyTenant(String dataId, String group, String tenant) {
+        return doGetKey(dataId, group, tenant);
+    }
+
+    public static String getKey(String dataId, String group, String datumStr) {
+        return doGetKey(dataId, group, datumStr);
+    }
+
+    private static String doGetKey(String dataId, String group, String datumStr) {
         StringBuilder sb = new StringBuilder();
         urlEncode(dataId, sb);
         sb.append('+');
         urlEncode(group, sb);
-        if (StringUtils.isNotEmpty(tenant)) {
+        if (StringUtils.isNotEmpty(datumStr)) {
             sb.append('+');
-            urlEncode(tenant, sb);
+            urlEncode(datumStr, sb);
         }
+
         return sb.toString();
     }
 
-    static public String getKey(String dataId, String group, String datumStr) {
-        StringBuilder sb = new StringBuilder();
-        urlEncode(dataId, sb);
-        sb.append('+');
-        urlEncode(group, sb);
-        sb.append('+');
-        urlEncode(datumStr, sb);
-        return sb.toString();
-    }
-
-    static public String[] parseKey(String groupKey) {
+    public static String[] parseKey(String groupKey) {
         StringBuilder sb = new StringBuilder();
         String dataId = null;
         String group = null;
@@ -97,7 +94,7 @@ public class GroupKey {
             }
         }
 
-        return new String[] {dataId, group, tenant};
+        return new String[]{dataId, group, tenant};
     }
 
     /**

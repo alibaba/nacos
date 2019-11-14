@@ -32,10 +32,13 @@ import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.utils.*;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.util.HttpMethod;
 import com.alibaba.nacos.common.util.UuidUtils;
+import com.alibaba.nacos.common.util.VersionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -481,26 +484,26 @@ public class NamingProxy {
     private void checkSignature(Map<String, String> params) {
         String ak = getAccessKey();
         String sk = getSecretKey();
+        params.put("app", AppNameUtils.getAppName());
         if (StringUtils.isEmpty(ak) && StringUtils.isEmpty(sk)) {
             return;
         }
 
         try {
-            String app = System.getProperty("project.name");
             String signData = getSignData(params.get("serviceName"));
             String signature = SignUtil.sign(signData, sk);
             params.put("signature", signature);
             params.put("data", signData);
             params.put("ak", ak);
-            params.put("app", app);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public List<String> builderHeaders() {
-        List<String> headers = Arrays.asList("Client-Version", UtilAndComs.VERSION,
-            "User-Agent", UtilAndComs.VERSION,
+        List<String> headers = Arrays.asList(
+            HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+            HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION,
             "Accept-Encoding", "gzip,deflate,sdch",
             "Connection", "Keep-Alive",
             "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
@@ -555,7 +558,7 @@ public class NamingProxy {
         this.serverPort = serverPort;
 
         String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
-        if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(sp)) {
+        if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
     }
