@@ -64,10 +64,10 @@ if %FUNCTION_MODE% == "naming" (
   set "JAVA_OPT=%JAVA_OPT% -Dnacos.functionMode=naming"
 )
 
+set "JAVA_OPT=%JAVA_OPT% -Dloader.path=%BASE_DIR%/plugins/health,%BASE_DIR%/plugins/cmdb,%BASE_DIR%/plugins/mysql"
 
-set "JAVA_OPT=%JAVA_OPT% -Xbootclasspath/a:%BASE_DIR%\plugins\cmdb:%BASE_DIR%\plugins\mysql"
 set "JAVA_OPT=%JAVA_OPT% -Dnacos.home=%BASE_DIR%"
-set "JAVA_OPT=%JAVA_OPT% -Dloader.path=%BASE_DIR%/plugins/health -jar %BASE_DIR%\target\%SERVER%.jar"
+set "JAVA_OPT=%JAVA_OPT% -jar %BASE_DIR%\target\%SERVER%.jar"
 set "JAVA_OPT=%JAVA_OPT% --spring.config.location=%CUSTOM_SEARCH_LOCATIONS%"
 set "JAVA_OPT=%JAVA_OPT% --logging.config=%BASE_DIR%/conf/nacos-logback.xml"
 
