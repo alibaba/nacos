@@ -225,7 +225,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         addClient(client);
     }
 
-    public static void addClient(PushClient client) {
+    public void addClient(PushClient client) {
         // client is stored by key 'serviceName' because notify event is driven by serviceName change
         String serviceKey = UtilsAndCommons.assembleFullServiceName(client.getNamespaceId(), client.getServiceName());
         ConcurrentMap<String, PushClient> clients =
@@ -403,21 +403,18 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             return dataSource;
         }
 
-        public PushClient(InetSocketAddress socketAddr) {
-            this.socketAddr = socketAddr;
-        }
-
         public boolean zombie() {
             return System.currentTimeMillis() - lastRefTime > switchDomain.getPushCacheMillis(serviceName);
         }
 
         @Override
         public String toString() {
-            return "serviceName: " + serviceName
-                + ", clusters: " + clusters
-                + ", ip: " + socketAddr.getAddress().getHostAddress()
-                + ", port: " + socketAddr.getPort()
-                + ", agent: " + agent;
+            StringBuilder sb = new StringBuilder();
+            sb.append("serviceName: ").append(serviceName)
+                .append(", clusters: ").append(clusters)
+                .append(", address: ").append(socketAddr)
+                .append(", agent: ").append(agent);
+            return sb.toString();
         }
 
         public String getAgent() {

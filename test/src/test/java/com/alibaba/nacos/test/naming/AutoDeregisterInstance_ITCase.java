@@ -101,7 +101,7 @@ public class AutoDeregisterInstance_ITCase {
         Assert.assertEquals(1, instances.size());
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c1"));
         Assert.assertEquals(0, instances.size());
@@ -146,6 +146,9 @@ public class AutoDeregisterInstance_ITCase {
      */
     @Test
     public void autoRegDomTest() throws Exception {
+
+        naming = NamingFactory.createNamingService("11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848");
+
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
@@ -156,7 +159,7 @@ public class AutoDeregisterInstance_ITCase {
         List<Instance> instances;
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 2);
+        Assert.assertEquals(2, instances.size());
 
         NacosNamingService namingServiceImpl = (NacosNamingService) naming;
 
@@ -167,7 +170,7 @@ public class AutoDeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 1);
+        Assert.assertEquals(1, instances.size());
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName);
         beatInfo.setIp("127.0.0.1");
@@ -180,7 +183,7 @@ public class AutoDeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 2);
+        Assert.assertEquals(2, instances.size());
     }
 
 
@@ -227,7 +230,7 @@ public class AutoDeregisterInstance_ITCase {
 
         instances = naming.getAllInstances(serviceName);
 
-        Assert.assertEquals(instances.size(), 2);
+        Assert.assertEquals(2, instances.size());
 
         instances = naming.getAllInstances(serviceName, Arrays.asList("c2"));
         Assert.assertEquals(1, instances.size());
