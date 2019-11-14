@@ -612,15 +612,17 @@ public class RaftCore {
 
         peers.makeLeader(remote);
 
-        Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
-
-        for (Map.Entry<String, Datum> entry : datums.entrySet()) {
-            receivedKeysMap.put(entry.getKey(), 0);
-        }
-
-        // now check datums
-        List<String> batch = new ArrayList<>();
         if (!switchDomain.isSendBeatOnly()) {
+
+            Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
+
+            for (Map.Entry<String, Datum> entry : datums.entrySet()) {
+                receivedKeysMap.put(entry.getKey(), 0);
+            }
+
+            // now check datums
+            List<String> batch = new ArrayList<>();
+
             int processedCount = 0;
             if (Loggers.RAFT.isDebugEnabled()) {
                 Loggers.RAFT.debug("[RAFT] received beat with {} keys, RaftCore.datums' size is {}, remote server: {}, term: {}, local term: {}",
