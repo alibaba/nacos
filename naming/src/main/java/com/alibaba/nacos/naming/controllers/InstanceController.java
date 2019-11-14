@@ -15,15 +15,6 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -43,13 +34,16 @@ import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.push.DataSource;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.CanDistro;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 /**
  * Instance operation controller
@@ -136,6 +130,50 @@ public class InstanceController {
         } else {
             serviceManager.registerInstance(namespaceId, serviceName, parseInstance(request));
         }
+        return "ok";
+    }
+
+    @CanDistro
+    @PatchMapping
+    public String patch(HttpServletRequest request) throws Exception {
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        String ip = WebUtils.required(request, "ip");
+        String port = WebUtils.required(request, "port");
+        String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
+        if (StringUtils.isBlank(cluster)) {
+            cluster = WebUtils.optional(request, "cluster", UtilsAndCommons.DEFAULT_CLUSTER_NAME);
+        }
+
+        Instance instance = serviceManager.getInstance(namespaceId, serviceName, cluster, ip, Integer.parseInt(port));
+        if (instance == null) {
+            throw new IllegalArgumentException("instance not found");
+        }
+
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(metadata)) {
+            instance.setMetadata(UtilsAndCommons.parseMetadata(metadata));
+        }
+        String app = WebUtils.optional(request, "app",  StringUtils.EMPTY);
+        if(StringUtils.isNotBlank(app)){
+            instance.setApp(app);
+        }
+        String weight = WebUtils.optional(request, "weight", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(weight)) {
+            instance.setWeight(Double.parseDouble(weight));
+        }
+        String healthy = WebUtils.optional(request, "healthy", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(healthy)) {
+            instance.setHealthy(BooleanUtils.toBoolean(healthy));
+        }
+        String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(enabledString)) {
+            instance.setEnabled(BooleanUtils.toBoolean(enabledString));
+        }
+        instance.setLastBeat(System.currentTimeMillis());
+        instance.validate();
+
+        serviceManager.updateInstance(namespaceId, serviceName, instance);
         return "ok";
     }
 
@@ -384,6 +422,7 @@ public class InstanceController {
         // now try to enable the push
         try {
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
+
                 pushService.addClient(namespaceId, serviceName,
                     clusters,
                     agent,
@@ -394,7 +433,7 @@ public class InstanceController {
                 cacheMillis = switchDomain.getPushCacheMillis(serviceName);
             }
         } catch (Exception e) {
-            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client", e);
+            Loggers.SRV_LOG.error("[NACOS-API] failed to added push client {}, {}:{}", clientInfo, clientIP, udpPort, e);
             cacheMillis = switchDomain.getDefaultCacheMillis();
         }
 
