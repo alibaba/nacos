@@ -16,23 +16,11 @@
 
 package com.alibaba.nacos.test.config;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.api.NacosFactory;
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.Config;
-import com.alibaba.nacos.naming.misc.HttpClient.HttpResult;
-import com.alibaba.nacos.test.naming.NamingBase;
 import com.alibaba.nacos.test.naming.Params;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,9 +31,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity.HeadersBuilder;
+import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -172,6 +159,7 @@ public class ConfigBeta_ITCase {
      */
     @Test
     public void publishBetaConfig_noBetaIps() throws Exception {
+
         HttpHeaders headers = new HttpHeaders(); //不存在betaIps
 
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,

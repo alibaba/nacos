@@ -15,33 +15,26 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.naming.misc.SwitchEntry;
-import com.alibaba.nacos.naming.misc.SwitchManager;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.pojo.ClusterStateView;
 import com.alibaba.nacos.naming.push.PushService;
 import com.alibaba.nacos.naming.web.NeedAuth;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.UnsupportedEncodingException;
@@ -55,7 +48,7 @@ import java.util.List;
  * @author nkorange
  */
 @RestController
-@RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator")
+@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator", UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
 public class OperatorController {
 
     @Autowired
@@ -82,16 +75,10 @@ public class OperatorController {
     @Autowired
     private RaftCore raftCore;
 
-    @Autowired
-    private RaftPeerSet raftPeerSet;
-
     @RequestMapping("/push/state")
-    public JSONObject pushState(HttpServletRequest request) {
+    public JSONObject pushState(@RequestParam(required = false) boolean detail, @RequestParam(required = false) boolean reset) {
 
         JSONObject result = new JSONObject();
-
-        boolean detail = Boolean.parseBoolean(WebUtils.optional(request, "detail", "false"));
-        boolean reset = Boolean.parseBoolean(WebUtils.optional(request, "reset", "false"));
 
         List<PushService.Receiver.AckEntry> failedPushes = PushService.getFailedPushes();
         int failedPushCount = pushService.getFailedPushCount();
@@ -125,24 +112,22 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping(value = "/switches", method = RequestMethod.GET)
+    @GetMapping("/switches")
     public SwitchDomain switches(HttpServletRequest request) {
         return switchDomain;
     }
 
     @NeedAuth
-    @RequestMapping(value = "/switches", method = RequestMethod.PUT)
-    public String updateSwitch(HttpServletRequest request) throws Exception {
-        Boolean debug = Boolean.parseBoolean(WebUtils.optional(request, "debug", "false"));
-        String entry = WebUtils.required(request, "entry");
-        String value = WebUtils.required(request, "value");
+    @PutMapping("/switches")
+    public String updateSwitch(@RequestParam(required = false) boolean debug,
+                               @RequestParam String entry, @RequestParam String value) throws Exception {
 
         switchManager.update(entry, value, debug);
 
         return "ok";
     }
 
-    @RequestMapping(value = "/metrics", method = RequestMethod.GET)
+    @GetMapping("/metrics")
     public JSONObject metrics(HttpServletRequest request) {
 
         JSONObject result = new JSONObject();
@@ -166,11 +151,10 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping(value = "/distro/server", method = RequestMethod.GET)
-    public JSONObject getResponsibleServer4Service(HttpServletRequest request) {
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
-        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+    @GetMapping("/distro/server")
+    public JSONObject getResponsibleServer4Service(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                                                   @RequestParam String serviceName) {
+
         Service service = serviceManager.getService(namespaceId, serviceName);
 
         if (service == null) {
@@ -184,11 +168,10 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping(value = "/distro/status", method = RequestMethod.GET)
-    public JSONObject distroStatus(HttpServletRequest request) {
+    @GetMapping("/distro/status")
+    public JSONObject distroStatus(@RequestParam(defaultValue = "view") String action) {
 
         JSONObject result = new JSONObject();
-        String action = WebUtils.optional(request, "action", "view");
 
         if (StringUtils.equals(SwitchEntry.ACTION_VIEW, action)) {
             result.put("status", serverListManager.getDistroConfig());
@@ -203,10 +186,9 @@ public class OperatorController {
         return result;
     }
 
-    @RequestMapping(value = "/servers", method = RequestMethod.GET)
-    public JSONObject getHealthyServerList(HttpServletRequest request) {
+    @GetMapping("/servers")
+    public JSONObject getHealthyServerList(@RequestParam(required = false) boolean healthy) {
 
-        boolean healthy = Boolean.parseBoolean(WebUtils.optional(request, "healthy", "false"));
         JSONObject result = new JSONObject();
         if (healthy) {
             result.put("servers", serverListManager.getHealthyServers());
@@ -218,26 +200,28 @@ public class OperatorController {
     }
 
     @RequestMapping("/server/status")
-    public String serverStatus(HttpServletRequest request) {
-        String serverStatus = WebUtils.required(request, "serverStatus");
+    public String serverStatus(@RequestParam String serverStatus) {
         serverListManager.onReceiveServerStatus(serverStatus);
         return "ok";
     }
 
-    @RequestMapping(value = "/cluster/states", method = RequestMethod.GET)
-    public Object listStates(HttpServletRequest request) {
+    @PutMapping("/log")
+    public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
+        Loggers.setLogLevel(logName, logLevel);
+        return "ok";
+    }
 
-        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
-            Constants.DEFAULT_NAMESPACE_ID);
+    @GetMapping("/cluster/states")
+    public Object listStates(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+                             @RequestParam int pageNo,
+                             @RequestParam int pageSize,
+                             @RequestParam(defaultValue = StringUtils.EMPTY) String keyword) {
+
         JSONObject result = new JSONObject();
-        int page = Integer.parseInt(WebUtils.required(request, "pageNo"));
-        int pageSize = Integer.parseInt(WebUtils.required(request, "pageSize"));
-        String keyword = WebUtils.optional(request, "keyword", StringUtils.EMPTY);
-        String containedInstance = WebUtils.optional(request, "instance", StringUtils.EMPTY);
 
         List<RaftPeer> raftPeerLists = new ArrayList<>();
 
-        int total = serviceManager.getPagedClusterState(namespaceId, page - 1, pageSize, keyword, containedInstance, raftPeerLists,  raftPeerSet);
+        int total = serviceManager.getPagedClusterState(namespaceId, pageNo - 1, pageSize, keyword, raftPeerLists);
 
         if (CollectionUtils.isEmpty(raftPeerLists)) {
             result.put("clusterStateList", Collections.emptyList());
@@ -246,7 +230,7 @@ public class OperatorController {
         }
 
         JSONArray clusterStateJsonArray = new JSONArray();
-        for(RaftPeer raftPeer: raftPeerLists) {
+        for (RaftPeer raftPeer : raftPeerLists) {
             ClusterStateView clusterStateView = new ClusterStateView();
             clusterStateView.setClusterTerm(raftPeer.term.intValue());
             clusterStateView.setNodeIp(raftPeer.ip);
@@ -259,5 +243,14 @@ public class OperatorController {
         result.put("clusterStateList", clusterStateJsonArray);
         result.put("count", total);
         return result;
+    }
+
+    @RequestMapping(value = "/cluster/state", method = RequestMethod.GET)
+    public JSONObject getClusterStates() {
+
+        RaftPeer peer = serviceManager.getMySelfClusterState();
+
+        return JSON.parseObject(JSON.toJSONString(peer));
+
     }
 }

@@ -15,18 +15,20 @@
  */
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.console.config.WebSecurityConfig;
 import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.console.config.WebSecurityConfig;
+import com.alibaba.nacos.console.security.CustomUserDetailsServiceImpl;
 import com.alibaba.nacos.console.utils.JwtTokenUtils;
-
+import com.alibaba.nacos.console.utils.PasswordEncoderUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import javax.servlet.http.HttpServletRequest;
+
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -42,6 +44,8 @@ public class AuthController {
     private JwtTokenUtils jwtTokenUtils;
     @Autowired
     private AuthenticationManager authenticationManager;
+    @Autowired
+    private CustomUserDetailsServiceImpl userDetailsService;
 
     /**
      * Whether the Nacos is in broken states or not, and cannot recover except by being restarted
@@ -50,11 +54,8 @@ public class AuthController {
      * Nacos is in broken states.
      */
 
-    @ResponseBody
-    @RequestMapping(value = "login", method = RequestMethod.POST)
-    public RestResult<String> login(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
+    @PostMapping("login")
+    public RestResult<String> login(@RequestParam String username, @RequestParam String password, HttpServletResponse response) {
 
         // 通过用户名和密码创建一个 Authentication 认证对象，实现类为 UsernamePasswordAuthenticationToken
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, password);
@@ -77,5 +78,32 @@ public class AuthController {
             rr.setMessage("Login failed");
             return rr;
         }
+    }
+
+    @PutMapping("password")
+    public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
+                                             @RequestParam(value = "newPassword") String newPassword) {
+
+        RestResult<String> rr = new RestResult<String>();
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = ((UserDetails) principal).getUsername();
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        String password = userDetails.getPassword();
+
+        // TODO: throw out more fine grained exceptions
+        try {
+            if (PasswordEncoderUtil.matches(oldPassword, password)) {
+                userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));
+                rr.setCode(200);
+                rr.setMessage("Update password success");
+            } else {
+                rr.setCode(401);
+                rr.setMessage("Old password is invalid");
+            }
+        } catch (Exception e) {
+            rr.setCode(500);
+            rr.setMessage("Update userpassword failed");
+        }
+        return rr;
     }
 }

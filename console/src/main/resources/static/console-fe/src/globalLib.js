@@ -619,6 +619,10 @@ const request = (function(_global) {
           // 跳转至login页
           // TODO: 用 react-router 重写，改造成本比较高，这里先hack
           const url = window.location.href;
+          // TODO: 后端返回细致的错误码，如果原始密码不对 不应该直接跳到登陆页
+          if (url.includes('password')) {
+            return;
+          }
           const base_url = url.split('#')[0];
           window.location = `${base_url}#/login`;
         }
