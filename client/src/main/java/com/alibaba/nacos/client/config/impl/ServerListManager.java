@@ -35,11 +35,11 @@ import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.client.config.utils.IOUtils;
+import com.alibaba.nacos.client.config.utils.ConfigScheduler;
+import com.alibaba.nacos.common.utils.IoUtils;
 
 import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
-
 
 
 /**
@@ -47,14 +47,13 @@ import org.slf4j.Logger;
  *
  * @author Nacos
  */
-public class ServerListManager implements LifeCycle {
+public class ServerListManager {
 
     private static final Logger LOGGER = LogUtils.logger(ServerListManager.class);
     private static final String HTTPS = "https://";
     private static final String HTTP = "http://";
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final ConfigScheduler configScheduler = ConfigScheduler.getInstance();
 
     public ServerListManager() {
         isFixed = false;
@@ -134,7 +133,7 @@ public class ServerListManager implements LifeCycle {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
-            for (String serverAddr: serverAddrsArr) {
+            for (String serverAddr : serverAddrsArr) {
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
@@ -219,54 +218,31 @@ public class ServerListManager implements LifeCycle {
         return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
-    @Override
     public void start() throws NacosException {
 
-        if (started.compareAndSet(false, true)) {
-
-            LifeCycleHelper.invokeStart(TimerService.getSingleton());
-
-            if (isStarted || isFixed) {
-                return;
-            }
-
-            GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
-            for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
-                getServersTask.run();
-                try {
-                    this.wait((i + 1) * 100L);
-                } catch (Exception e) {
-                    LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
-                }
-            }
-
-            if (serverUrls.isEmpty()) {
-                LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
-                        addressServerUrl);
-                throw new NacosException(NacosException.SERVER_ERROR,
-                        "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
-            }
-
-            TimerService.getSingleton().scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
-            isStarted = true;
+        if (isStarted || isFixed) {
+            return;
         }
-    }
 
-    @Override
-    public void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            LifeCycleHelper.invokeDestroy(TimerService.getSingleton());
+        GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
+        for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
+            getServersTask.run();
+            try {
+                this.wait((i + 1) * 100L);
+            } catch (Exception e) {
+                LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
+            }
         }
-    }
 
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
+        if (serverUrls.isEmpty()) {
+            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
+                addressServerUrl);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
+        }
 
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
+        configScheduler.scheduleWithFixedDelayByClientTimer(getServersTask, 0L, 30L, TimeUnit.SECONDS);
+        isStarted = true;
     }
 
     Iterator<String> iterator() {
@@ -334,7 +310,7 @@ public class ServerListManager implements LifeCycle {
                 if (DEFAULT_NAME.equals(name)) {
                     EnvUtil.setSelfEnv(httpResult.headers);
                 }
-                List<String> lines = IOUtils.readLines(new StringReader(httpResult.content));
+                List<String> lines = IoUtils.readLines(new StringReader(httpResult.content));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(serverAddr)) {

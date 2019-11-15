@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -24,12 +23,12 @@ import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.utils.ConfigScheduler;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.util.ThreadHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -48,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -60,15 +58,11 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  *
  * @author Nacos
  */
-public class ClientWorker implements LifeCycle {
+public class ClientWorker {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
-
-    private ScheduledExecutorService executor;
-    private ScheduledExecutorService executorService;
+    private final ConfigScheduler configScheduler = ConfigScheduler.getInstance();
 
     /**
      * groupKey -> cacheData
@@ -91,12 +85,6 @@ public class ClientWorker implements LifeCycle {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
         this.properties = properties;
-    }
-
-    @Override
-    public void start() throws NacosException {
-
-        if (started.compareAndSet(false, true)) {
 
             // Initialize the timeout parameter
             timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
@@ -106,27 +94,7 @@ public class ClientWorker implements LifeCycle {
 
             enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
 
-            executor = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
-
-            executorService = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName() + "-" + threadId.incrementAndGet());
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
-
-            executor.scheduleWithFixedDelay(new Runnable() {
+            configScheduler.scheduleWithFixedDelayByCheckConfigInfoSchedule(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -136,15 +104,6 @@ public class ClientWorker implements LifeCycle {
                     }
                 }
             }, 1L, 10L, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    @Override
-    public void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            ThreadHelper.invokeShutdown(executor);
-            ThreadHelper.invokeShutdown(executorService);
-        }
     }
 
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
@@ -404,11 +363,11 @@ public class ClientWorker implements LifeCycle {
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
-                if (executorService.isShutdown()) {
+                if (configScheduler.isShutdown4LongPollSchedule()) {
                     LOGGER.info("[ClientWorker checkConfigInfo] Task thread pool is closed");
                     return;
                 }
-                executorService.execute(new LongPollingRunnable(i));
+                configScheduler.executeByLongPollSchedule(new LongPollingRunnable(i));
             }
             currentLongingTaskCount = longingTaskCount;
         }
@@ -579,22 +538,22 @@ public class ClientWorker implements LifeCycle {
                 }
                 inInitializingCacheList.clear();
 
-                if (executorService.isShutdown()) {
+                if (configScheduler.isShutdown4LongPollSchedule()) {
                     LOGGER.info("[ClientWorker LongPollingRunnable] Task thread pool is closed");
                     return;
                 }
-                executorService.execute(this);
+                configScheduler.executeByLongPollSchedule(this);
 
             } catch (Throwable e) {
 
-                if (executorService.isShutdown()) {
+                if (configScheduler.isShutdown4LongPollSchedule()) {
                     LOGGER.info("[ClientWorker LongPollingRunnable] Task thread pool is closed");
                     return;
                 }
 
                 // If the rotation training task is abnormal, the next execution time of the task will be punished
                 LOGGER.error("longPolling error : ", e);
-                executorService.schedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
+                configScheduler.scheduldByLongPollSchedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
             }
         }
     }
@@ -607,13 +566,4 @@ public class ClientWorker implements LifeCycle {
         this.isHealthServer = isHealthServer;
     }
 
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
-    }
 }

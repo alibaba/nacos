@@ -17,7 +17,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.util.ThreadHelper;
+import com.alibaba.nacos.common.utils.ThreadHelper;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

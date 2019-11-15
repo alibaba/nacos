@@ -23,7 +23,7 @@ import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
-import com.alibaba.nacos.client.config.utils.IOUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.client.utils.JSONUtils;
@@ -34,6 +34,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -54,9 +55,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ServerHttpAgent implements HttpAgent {
 
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
-
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -107,7 +105,7 @@ public class ServerHttpAgent implements HttpAgent {
             if (serverListMgr.getIterator().hasNext()) {
                 currentServerAddr = serverListMgr.getIterator().next();
             } else {
-                maxRetry --;
+                maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException("[NACOS HTTP-GET] The maximum number of tolerable server reconnection errors has been reached");
                 }
@@ -162,7 +160,7 @@ public class ServerHttpAgent implements HttpAgent {
             if (serverListMgr.getIterator().hasNext()) {
                 currentServerAddr = serverListMgr.getIterator().next();
             } else {
-                maxRetry --;
+                maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException("[NACOS HTTP-POST] The maximum number of tolerable server reconnection errors has been reached");
                 }
@@ -215,7 +213,7 @@ public class ServerHttpAgent implements HttpAgent {
             if (serverListMgr.getIterator().hasNext()) {
                 currentServerAddr = serverListMgr.getIterator().next();
             } else {
-                maxRetry --;
+                maxRetry--;
                 if (maxRetry < 0) {
                     throw new ConnectException("[NACOS HTTP-DELETE] The maximum number of tolerable server reconnection errors has been reached");
                 }
@@ -292,16 +290,7 @@ public class ServerHttpAgent implements HttpAgent {
 
     @Override
     public synchronized void start() throws NacosException {
-        if (started.compareAndSet(false, true)) {
-            LifeCycleHelper.invokeStart(serverListMgr);
-        }
-    }
-
-    @Override
-    public synchronized void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            LifeCycleHelper.invokeDestroy(serverListMgr);
-        }
+        serverListMgr.start();
     }
 
     private List<String> getSpasHeaders(List<String> paramValues) throws IOException {
@@ -363,17 +352,15 @@ public class ServerHttpAgent implements HttpAgent {
             conn.connect();
             respCode = conn.getResponseCode();
             if (HttpURLConnection.HTTP_OK == respCode) {
-                response = IOUtils.toString(conn.getInputStream(), Constants.ENCODE);
+                response = IoUtils.toString(conn.getInputStream(), Constants.ENCODE);
             } else {
-                response = IOUtils.toString(conn.getErrorStream(), Constants.ENCODE);
+                response = IoUtils.toString(conn.getErrorStream(), Constants.ENCODE);
             }
         } catch (IOException e) {
             LOGGER.error("can not get security credentials", e);
             throw e;
         } finally {
-            if (null != conn) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
         if (HttpURLConnection.HTTP_OK == respCode) {
             return response;
@@ -402,16 +389,6 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public String getEncode() {
         return encode;
-    }
-
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
     }
 
     @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")

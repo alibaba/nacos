@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.client.config.http;
 
-import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
@@ -38,23 +37,8 @@ public class MetricsHttpAgent implements HttpAgent {
     }
 
     @Override
-    public boolean isStarted() {
-        return httpAgent.isStarted();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return httpAgent.isDestroyed();
-    }
-
-    @Override
     public void start() throws NacosException {
-        LifeCycleHelper.invokeStart(httpAgent);
-    }
-
-    @Override
-    public void destroy() throws NacosException {
-        LifeCycleHelper.invokeDestroy(httpAgent);
+        httpAgent.start();
     }
 
     @Override

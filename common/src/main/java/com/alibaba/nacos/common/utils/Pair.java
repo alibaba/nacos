@@ -13,27 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.util;
+package com.alibaba.nacos.common.utils;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * @author nkorange
- * @since 0.8.0
+ * @author nacos
  */
-public class HttpMethod {
+public class Pair {
+    private String key;
+    private String value;
 
-    public static final String GET = "GET";
+    public Pair(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
 
-    public static final String HEAD = "HEAD";
+    public Pair() {
+        this(StringUtils.EMPTY, StringUtils.EMPTY);
+    }
 
-    public static final String POST = "POST";
+    public String getKey() {
+        return key;
+    }
 
-    public static final String PUT = "PUT";
+    public void setKey(String key) {
+        this.key = key;
+    }
 
-    public static final String PATCH = "PATCH";
+    public String getValue() {
+        return value;
+    }
 
-    public static final String DELETE = "DELETE";
-
-    public static final String OPTIONS = "OPTIONS";
-
-    public static final String TRACE = "TRACE";
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.naming.utils.IoUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.client.utils.StringUtils;
 import com.alibaba.nacos.common.util.ThreadHelper;
 

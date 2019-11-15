@@ -16,8 +16,9 @@
 package com.alibaba.nacos.naming.misc;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.util.HttpMethod;
-import com.alibaba.nacos.common.util.VersionUtils;
+import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.ning.http.client.AsyncCompletionHandler;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
@@ -112,9 +113,7 @@ public class HttpClient {
             Loggers.SRV_LOG.warn("Exception while request: {}, caused: {}", url, e);
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 

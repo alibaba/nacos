@@ -209,11 +209,14 @@ public class ServiceController {
     }
 
     @PutMapping
-    public String update(HttpServletRequest request,@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
-                         @RequestParam String serviceName,
-                         @RequestParam(required = false) float protectThreshold,
-                         @RequestParam(defaultValue = StringUtils.EMPTY) String metadata,
-                         @RequestParam(defaultValue = StringUtils.EMPTY) String selector) throws Exception {
+    public String update(HttpServletRequest request) throws Exception {
+
+        String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
+            Constants.DEFAULT_NAMESPACE_ID);
+        String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        float protectThreshold = NumberUtils.toFloat(WebUtils.required(request, "protectThreshold"));
+        String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
+        String selector = WebUtils.optional(request, "selector", StringUtils.EMPTY);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
         if (service == null) {

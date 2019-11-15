@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.alibaba.nacos;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.servlet.ServletComponentScan;
-import org.springframework.scheduling.annotation.EnableScheduling;
-
-import java.util.concurrent.*;
+package com.alibaba.nacos.common.utils;
 
 /**
- * @author nacos
+ * @author nkorange
+ * @since 0.8.0
  */
-@SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
-@ServletComponentScan
-@EnableScheduling
-public class Nacos {
+public class HttpMethod {
 
-    public static void main(String[] args) {
-        SpringApplication.run(Nacos.class, args);
-    }
+    public static final String GET = "GET";
+
+    public static final String HEAD = "HEAD";
+
+    public static final String POST = "POST";
+
+    public static final String PUT = "PUT";
+
+    public static final String PATCH = "PATCH";
+
+    public static final String DELETE = "DELETE";
+
+    public static final String OPTIONS = "OPTIONS";
+
+    public static final String TRACE = "TRACE";
 }

@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.client.config.http;
 
-import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 
@@ -28,7 +27,13 @@ import java.util.List;
  *
  * @author Nacos
  */
-public interface HttpAgent extends LifeCycle {
+public interface HttpAgent {
+
+    /**
+     *
+     * @throws NacosException
+     */
+    void start() throws NacosException;
 
     /**
      * invoke http get method

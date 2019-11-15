@@ -13,16 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.util;
 
-import java.util.UUID;
+package com.alibaba.nacos.client.naming.utils;
 
 /**
- * @author nkorange
+ * @author <a href="mailto:liaochuntao@youzan.com">liaochuntao</a>
+ * @Created at 2019-11-12 13:59
  */
-public class UuidUtils {
-
-    public static String generateUuid() {
-        return UUID.randomUUID().toString();
-    }
+public class NamingScheduler {
 }

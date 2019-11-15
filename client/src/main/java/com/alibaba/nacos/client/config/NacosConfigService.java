@@ -31,6 +31,7 @@ import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.utils.ConfigScheduler;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -79,6 +80,8 @@ public class NacosConfigService implements ConfigService {
     private Properties properties;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
+    private final ConfigScheduler configScheduler = ConfigScheduler.getInstance();
+
     public NacosConfigService(Properties properties) throws NacosException {
         this.properties = properties;
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
@@ -94,17 +97,17 @@ public class NacosConfigService implements ConfigService {
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
             agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+            LifeCycleHelper.invokeStart(configScheduler);
+            configScheduler.setAgent(agent);
+            agent.start();
             worker = new ClientWorker(agent, configFilterChainManager, properties);
-            LifeCycleHelper.invokeStart(agent);
-            LifeCycleHelper.invokeStart(worker);
         }
     }
 
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            LifeCycleHelper.invokeDestroy(agent);
-            LifeCycleHelper.invokeDestroy(worker);
+            LifeCycleHelper.invokeDestroy(configScheduler);
         }
     }
 
