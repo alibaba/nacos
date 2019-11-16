@@ -15,7 +15,6 @@
  */
 package com.alibaba.nacos.client.naming;
 
-import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -34,6 +33,7 @@ import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
+import com.alibaba.nacos.client.naming.utils.NamingScheduler;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -80,6 +80,7 @@ public class NacosNamingService implements NamingService {
 
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final NamingScheduler namingScheduler = NamingScheduler.getInstance();
 
     public NacosNamingService(String serverList) {
         Properties properties = new Properties();
@@ -104,26 +105,23 @@ public class NacosNamingService implements NamingService {
     @Override
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
+
+            namingScheduler.initClientBeatThreadCount(properties);
+            namingScheduler.initPollingThreadCount(properties);
+            namingScheduler.start();
+
             eventDispatcher = new EventDispatcher();
             serverProxy = new NamingProxy(namespace, endpoint, serverList);
             serverProxy.setProperties(properties);
-            beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
-            hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
-
-            LifeCycleHelper.invokeStart(eventDispatcher);
-            LifeCycleHelper.invokeStart(serverProxy);
-            LifeCycleHelper.invokeStart(beatReactor);
-            LifeCycleHelper.invokeStart(hostReactor);
+            beatReactor = new BeatReactor(serverProxy);
+            hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties));
         }
     }
 
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            LifeCycleHelper.invokeDestroy(eventDispatcher);
-            LifeCycleHelper.invokeDestroy(serverProxy);
-            LifeCycleHelper.invokeDestroy(beatReactor);
-            LifeCycleHelper.invokeDestroy(hostReactor);
+            namingScheduler.destroy();
         }
     }
 
@@ -134,15 +132,6 @@ public class NacosNamingService implements NamingService {
 
         return NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_CLIENT_BEAT_THREAD_COUNT),
             UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
-    }
-
-    private int initPollingThreadCount(Properties properties) {
-        if (properties == null) {
-            return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
-        }
-
-        return NumberUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
-            UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
     private boolean isLoadCacheAtStart(Properties properties) {

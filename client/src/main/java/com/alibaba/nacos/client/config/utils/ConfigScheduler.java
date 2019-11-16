@@ -22,12 +22,7 @@ import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.common.utils.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ThreadHelper;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -84,28 +79,62 @@ public class ConfigScheduler implements LifeCycle {
         }
     }
 
-    public ScheduledFuture<?> scheduleWithFixedDelayByClientTimer(Runnable command, long initialDelay,
-                                                                  long delay, TimeUnit unit) {
-        needStarted();
-        return clientTimerSchedule.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    public ScheduledExecutorService getClientTimerSchedule() {
+        return clientTimerSchedule;
     }
 
-    public ScheduledFuture<?> scheduleWithFixedDelayByCheckConfigInfoSchedule(Runnable command, long initialDelay,
-                                                                              long delay, TimeUnit unit) {
-        needStarted();
-        return checkConfigInfoSchedule.scheduleWithFixedDelay(command, initialDelay, delay, unit);
+    public ScheduledExecutorService getCheckConfigInfoSchedule() {
+        return checkConfigInfoSchedule;
     }
 
-    public void executeByLongPollSchedule(Runnable runnable) {
-        longPollSchedule.execute(runnable);
+    public ScheduledExecutorService getLongPollSchedule() {
+        return longPollSchedule;
     }
 
-    public ScheduledFuture<?> scheduldByLongPollSchedule(Runnable runnable, long delay, TimeUnit unit) {
-        return longPollSchedule.schedule(runnable, delay, unit);
+    public void submit(ExecutorService executor, Runnable runnable) {
+        if (ThreadHelper.isShutdown(executor)) {
+            return;
+        }
+        executor.submit(runnable);
     }
 
-    public boolean isShutdown4LongPollSchedule() {
-        return longPollSchedule.isShutdown();
+    public void submit(ThreadPoolExecutor executor, Runnable runnable) {
+        if (ThreadHelper.isShutdown(executor)) {
+            return;
+        }
+        executor.submit(runnable);
+    }
+
+    public void execute(ExecutorService executor, Runnable runnable) {
+        if (ThreadHelper.isShutdown(executor)) {
+            return;
+        }
+        executor.execute(runnable);
+    }
+
+    public void execute(ThreadPoolExecutor executor, Runnable runnable) {
+        if (ThreadHelper.isShutdown(executor)) {
+            return;
+        }
+        executor.execute(runnable);
+    }
+
+    public ScheduledFuture<?> schedule(ScheduledExecutorService executor, Runnable runnable, long delay, TimeUnit unit) {
+        if (ThreadHelper.isShutdown(executor)) {
+            return null;
+        }
+        return executor.schedule(runnable, delay, unit);
+    }
+
+    public ScheduledFuture<?> scheduleWithFixedDelay(ScheduledExecutorService executor,
+                                                     Runnable command,
+                                                     long initialDelay,
+                                                     long delay,
+                                                     TimeUnit unit) {
+        if (ThreadHelper.isShutdown(executor)) {
+            return null;
+        }
+        return executor.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     @Override

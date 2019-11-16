@@ -18,7 +18,6 @@ package com.alibaba.nacos.client.naming.net;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.api.LifeCycle;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -36,8 +35,6 @@ import com.alibaba.nacos.client.naming.utils.*;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.common.util.ThreadHelper;
-
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
@@ -48,15 +45,15 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author nkorange
  */
-public class NamingProxy implements LifeCycle {
+public class NamingProxy {
 
     private static final int DEFAULT_SERVER_PORT = 8848;
 
@@ -78,10 +75,7 @@ public class NamingProxy implements LifeCycle {
 
     private Properties properties;
 
-    private ScheduledExecutorService executorService = null;
-
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final NamingScheduler namingScheduler = NamingScheduler.getInstance();
 
     public NamingProxy(String namespaceId, String endpoint, String serverList) {
         this.namespaceId = namespaceId;
@@ -92,20 +86,7 @@ public class NamingProxy implements LifeCycle {
                 this.nacosDomain = serverList;
             }
         }
-    }
-
-    @Override
-    public void start() throws NacosException {
-        if (started.compareAndSet(false, true)) {
-            initRefreshSrvIfNeed();
-        }
-    }
-
-    @Override
-    public void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            ThreadHelper.invokeShutdown(executorService);
-        }
+        initRefreshSrvIfNeed();
     }
 
     private void initRefreshSrvIfNeed() {
@@ -113,22 +94,13 @@ public class NamingProxy implements LifeCycle {
             return;
         }
 
-        executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.naming.serverlist.updater");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                refreshSrvIfNeed();
-            }
-        }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
+        namingScheduler.scheduleWithFixedDelay(namingScheduler.getNamingProxyExecutor(),
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        refreshSrvIfNeed();
+                    }
+                }, 0, vipSrvRefInterMillis, TimeUnit.MILLISECONDS);
 
         refreshSrvIfNeed();
     }
@@ -142,7 +114,7 @@ public class NamingProxy implements LifeCycle {
             HttpClient.HttpResult result = HttpClient.httpGet(urlString, headers, null, UtilAndComs.ENCODING);
             if (HttpURLConnection.HTTP_OK != result.code) {
                 throw new IOException("Error while requesting: " + urlString + "'. Server returned: "
-                    + result.code);
+                        + result.code);
             }
 
             String content = result.content;
@@ -191,7 +163,7 @@ public class NamingProxy implements LifeCycle {
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
 
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}",
-            namespaceId, serviceName, instance);
+                namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(9);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -213,7 +185,7 @@ public class NamingProxy implements LifeCycle {
     public void deregisterService(String serviceName, Instance instance) throws NacosException {
 
         NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}",
-            namespaceId, serviceName, instance);
+                namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -228,7 +200,7 @@ public class NamingProxy implements LifeCycle {
 
     public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}",
-            namespaceId, serviceName, instance);
+                namespaceId, serviceName, instance);
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -247,7 +219,7 @@ public class NamingProxy implements LifeCycle {
 
     public Service queryService(String serviceName, String groupName) throws NacosException {
         NAMING_LOGGER.info("[QUERY-SERVICE] {} query service : {}, {}",
-            namespaceId, serviceName, groupName);
+                namespaceId, serviceName, groupName);
 
         final Map<String, String> params = new HashMap<String, String>(3);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -262,7 +234,7 @@ public class NamingProxy implements LifeCycle {
     public void createService(Service service, AbstractSelector selector) throws NacosException {
 
         NAMING_LOGGER.info("[CREATE-SERVICE] {} creating service : {}",
-            namespaceId, service);
+                namespaceId, service);
 
         final Map<String, String> params = new HashMap<String, String>(6);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -278,7 +250,7 @@ public class NamingProxy implements LifeCycle {
 
     public boolean deleteService(String serviceName, String groupName) throws NacosException {
         NAMING_LOGGER.info("[DELETE-SERVICE] {} deleting service : {} with groupName : {}",
-            namespaceId, serviceName, groupName);
+                namespaceId, serviceName, groupName);
 
         final Map<String, String> params = new HashMap<String, String>(6);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -291,7 +263,7 @@ public class NamingProxy implements LifeCycle {
 
     public void updateService(Service service, AbstractSelector selector) throws NacosException {
         NAMING_LOGGER.info("[UPDATE-SERVICE] {} updating service : {}",
-            namespaceId, service);
+                namespaceId, service);
 
         final Map<String, String> params = new HashMap<String, String>(6);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -305,7 +277,7 @@ public class NamingProxy implements LifeCycle {
     }
 
     public String queryList(String serviceName, String clusters, int udpPort, boolean healthyOnly)
-        throws NacosException {
+            throws NacosException {
 
         final Map<String, String> params = new HashMap<String, String>(8);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -411,7 +383,7 @@ public class NamingProxy implements LifeCycle {
     }
 
     public String callServer(String api, Map<String, String> params, String curServer, String method)
-        throws NacosException {
+            throws NacosException {
         long start = System.currentTimeMillis();
         long end = 0;
         checkSignature(params);
@@ -431,7 +403,7 @@ public class NamingProxy implements LifeCycle {
         end = System.currentTimeMillis();
 
         MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(result.code))
-            .observe(end - start);
+                .observe(end - start);
 
         if (HttpURLConnection.HTTP_OK == result.code) {
             return result.content;
@@ -442,8 +414,8 @@ public class NamingProxy implements LifeCycle {
         }
 
         throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:"
-            + curServer + api + ". code:"
-            + result.code + " msg: " + result.content);
+                + curServer + api + ". code:"
+                + result.code + " msg: " + result.content);
     }
 
     public String reqAPI(String api, Map<String, String> params, List<String> servers) throws NacosException {
@@ -481,7 +453,7 @@ public class NamingProxy implements LifeCycle {
             }
 
             throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:" + api + " after all servers(" + servers + ") tried: "
-                + exception.getMessage());
+                    + exception.getMessage());
         }
 
         for (int i = 0; i < UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT; i++) {
@@ -494,7 +466,7 @@ public class NamingProxy implements LifeCycle {
         }
 
         throw new NacosException(NacosException.SERVER_ERROR, "failed to req API:/api/" + api + " after all servers(" + servers + ") tried: "
-            + exception.getMessage());
+                + exception.getMessage());
 
     }
 
@@ -519,18 +491,18 @@ public class NamingProxy implements LifeCycle {
 
     public List<String> builderHeaders() {
         List<String> headers = Arrays.asList(
-            HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
-            HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION,
-            "Accept-Encoding", "gzip,deflate,sdch",
-            "Connection", "Keep-Alive",
-            "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
+                HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION,
+                HttpHeaderConsts.USER_AGENT_HEADER, UtilAndComs.VERSION,
+                "Accept-Encoding", "gzip,deflate,sdch",
+                "Connection", "Keep-Alive",
+                "RequestId", UuidUtils.generateUuid(), "Request-Module", "Naming");
         return headers;
     }
 
     private static String getSignData(String serviceName) {
         return StringUtils.isNotEmpty(serviceName)
-            ? System.currentTimeMillis() + "@@" + serviceName
-            : String.valueOf(System.currentTimeMillis());
+                ? System.currentTimeMillis() + "@@" + serviceName
+                : String.valueOf(System.currentTimeMillis());
     }
 
     public String getAccessKey() {
@@ -578,16 +550,6 @@ public class NamingProxy implements LifeCycle {
         if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
-    }
-
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
     }
 
 }

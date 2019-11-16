@@ -28,18 +28,15 @@ public class BeatReactorTest {
 
     @Before
     public void before() throws NacosException {
-        namingProxy.start();
     }
 
     @After
     public void after() throws NacosException {
-        namingProxy.destroy();
     }
 
     @Test
     public void test() throws NoSuchFieldException, IllegalAccessException, InterruptedException, NacosException {
         BeatReactor beatReactor = new BeatReactor(namingProxy);
-        beatReactor.start();
 
         BeatInfo beatInfo = new BeatInfo();
         beatInfo.setServiceName("test");

@@ -16,28 +16,20 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.LifeCycle;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.client.naming.utils.NamingScheduler;
 import com.alibaba.nacos.client.utils.StringUtils;
-import com.alibaba.nacos.common.util.ThreadHelper;
+import com.alibaba.nacos.common.utils.IoUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.nio.charset.Charset;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
  */
-public class PushReceiver implements Runnable, LifeCycle {
-
-    private ScheduledExecutorService executorService;
+public class PushReceiver implements Runnable {
 
     private static final int UDP_MSS = 64 * 1024;
 
@@ -45,8 +37,7 @@ public class PushReceiver implements Runnable, LifeCycle {
 
     private HostReactor hostReactor;
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final NamingScheduler namingScheduler = NamingScheduler.getInstance();
 
     public PushReceiver(HostReactor hostReactor) {
         this.hostReactor = hostReactor;
@@ -55,29 +46,11 @@ public class PushReceiver implements Runnable, LifeCycle {
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
+        init();
     }
 
-    @Override
-    public void start() throws NacosException {
-        if (started.compareAndSet(false, true)) {
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.naming.push.receiver");
-                    return thread;
-                }
-            });
-            executorService.execute(this);
-        }
-    }
-
-    @Override
-    public void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            ThreadHelper.invokeShutdown(executorService);
-        }
+    private void init() {
+        namingScheduler.execute(namingScheduler.getPushReceiverExecutor(), this);
     }
 
     @Override
@@ -134,13 +107,4 @@ public class PushReceiver implements Runnable, LifeCycle {
         return udpSocket.getLocalPort();
     }
 
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
-    }
 }

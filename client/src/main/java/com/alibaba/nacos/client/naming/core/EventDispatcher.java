@@ -15,61 +15,39 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.nacos.api.LifeCycle;
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.common.util.ThreadHelper;
+import com.alibaba.nacos.client.naming.utils.NamingScheduler;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
  */
-public class EventDispatcher implements LifeCycle {
-
-    private ExecutorService executor = null;
+public class EventDispatcher {
 
     private BlockingQueue<ServiceInfo> changedServices = new LinkedBlockingQueue<ServiceInfo>();
 
     private ConcurrentMap<String, List<EventListener>> observerMap
         = new ConcurrentHashMap<String, List<EventListener>>();
 
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
+    private final NamingScheduler namingScheduler = NamingScheduler.getInstance();
 
-    public EventDispatcher() {}
-
-    @Override
-    public void start() throws NacosException {
-        if (started.compareAndSet(false, true)) {
-            executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r, "com.alibaba.nacos.naming.client.listener");
-                    thread.setDaemon(true);
-                    return thread;
-                }
-            });
-            executor.execute(new Notifier());
-        }
+    public EventDispatcher() {
+        init();
     }
 
-    @Override
-    public void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            ThreadHelper.invokeShutdown(executor);
-        }
+    private void init() {
+        namingScheduler.execute(namingScheduler.getEventDispatcherExecutor(), new Notifier());
     }
 
     public void addListener(ServiceInfo serviceInfo, String clusters, EventListener listener) {
@@ -147,19 +125,4 @@ public class EventDispatcher implements LifeCycle {
         }
     }
 
-    public void setExecutor(ExecutorService executor) {
-        ExecutorService oldExecutor = this.executor;
-        this.executor = executor;
-        oldExecutor.shutdown();
-    }
-
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
-    }
 }

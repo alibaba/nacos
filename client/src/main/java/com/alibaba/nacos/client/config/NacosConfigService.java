@@ -97,8 +97,8 @@ public class NacosConfigService implements ConfigService {
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
             agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
-            LifeCycleHelper.invokeStart(configScheduler);
             configScheduler.setAgent(agent);
+            LifeCycleHelper.invokeStart(configScheduler);
             agent.start();
             worker = new ClientWorker(agent, configFilterChainManager, properties);
         }

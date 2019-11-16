@@ -241,7 +241,8 @@ public class ServerListManager {
                 "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
         }
 
-        configScheduler.scheduleWithFixedDelayByClientTimer(getServersTask, 0L, 30L, TimeUnit.SECONDS);
+        configScheduler.scheduleWithFixedDelay(configScheduler.getClientTimerSchedule(),
+                getServersTask, 0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
     }
 

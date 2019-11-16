@@ -29,25 +29,18 @@ import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.utils.ThreadHelper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import com.alibaba.nacos.client.utils.TenantUtil;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
@@ -78,7 +71,6 @@ public class ClientWorker {
     private int taskPenaltyTime;
     private boolean enableRemoteSyncConfig = false;
     private Properties properties;
-    private AtomicInteger threadId = new AtomicInteger(0);
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
@@ -86,24 +78,24 @@ public class ClientWorker {
         this.configFilterChainManager = configFilterChainManager;
         this.properties = properties;
 
-            // Initialize the timeout parameter
-            timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
-                    Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+        // Initialize the timeout parameter
+        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+                Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
 
-            taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
 
-            enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
 
-            configScheduler.scheduleWithFixedDelayByCheckConfigInfoSchedule(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        checkConfigInfo();
-                    } catch (Throwable e) {
-                        LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                    }
+        configScheduler.scheduleWithFixedDelay(configScheduler.getCheckConfigInfoSchedule(), new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    checkConfigInfo();
+                } catch (Throwable e) {
+                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
                 }
-            }, 1L, 10L, TimeUnit.MILLISECONDS);
+            }
+        }, 1L, 10L, TimeUnit.MILLISECONDS);
     }
 
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
@@ -261,7 +253,7 @@ public class ClientWorker {
     }
 
     public String getServerConfig(String dataId, String group, String tenant, long readTimeout)
-        throws NacosException {
+            throws NacosException {
         if (StringUtils.isBlank(group)) {
             group = Constants.DEFAULT_GROUP;
         }
@@ -277,8 +269,8 @@ public class ClientWorker {
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
             String message = String.format(
-                "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
-                dataId, group, tenant);
+                    "[%s] [sub-server] get server config exception, dataId=%s, group=%s, tenant=%s", agent.getName(),
+                    dataId, group, tenant);
             LOGGER.error(message, e);
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
@@ -292,21 +284,21 @@ public class ClientWorker {
                 return null;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
-                    "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
-                        + "tenant={}", agent.getName(), dataId, group, tenant);
+                        "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
+                                + "tenant={}", agent.getName(), dataId, group, tenant);
                 throw new NacosException(NacosException.CONFLICT,
-                    "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+                        "data being modified, dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
             case HttpURLConnection.HTTP_FORBIDDEN: {
                 LOGGER.error("[{}] [sub-server-error] no right, dataId={}, group={}, tenant={}", agent.getName(), dataId,
-                    group, tenant);
+                        group, tenant);
                 throw new NacosException(result.code, result.content);
             }
             default: {
                 LOGGER.error("[{}] [sub-server-error]  dataId={}, group={}, tenant={}, code={}", agent.getName(), dataId,
-                    group, tenant, result.code);
+                        group, tenant, result.code);
                 throw new NacosException(result.code,
-                    "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
+                        "http error, code=" + result.code + ",dataId=" + dataId + ",group=" + group + ",tenant=" + tenant);
             }
         }
     }
@@ -326,7 +318,7 @@ public class ClientWorker {
             cacheData.setContent(content);
 
             LOGGER.warn("[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             return;
         }
 
@@ -334,20 +326,20 @@ public class ClientWorker {
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
             LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", agent.getName(),
-                dataId, group, tenant);
+                    dataId, group, tenant);
             return;
         }
 
         // 有变更
         if (cacheData.isUseLocalConfigInfo() && path.exists()
-            && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
+                && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
             String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
             String md5 = MD5.getInstance().getMD5String(content);
             cacheData.setUseLocalConfigInfo(true);
             cacheData.setLocalConfigInfoVersion(path.lastModified());
             cacheData.setContent(content);
             LOGGER.warn("[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
+                    agent.getName(), dataId, group, tenant, md5, ContentUtils.truncateContent(content));
         }
     }
 
@@ -363,11 +355,11 @@ public class ClientWorker {
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // 要判断任务是否在执行 这块需要好好想想。 任务列表现在是无序的。变化过程可能有问题
-                if (configScheduler.isShutdown4LongPollSchedule()) {
+                if (ThreadHelper.isShutdown(configScheduler.getLongPollSchedule())) {
                     LOGGER.info("[ClientWorker checkConfigInfo] Task thread pool is closed");
                     return;
                 }
-                configScheduler.executeByLongPollSchedule(new LongPollingRunnable(i));
+                configScheduler.execute(configScheduler.getLongPollSchedule(), new LongPollingRunnable(i));
             }
             currentLongingTaskCount = longingTaskCount;
         }
@@ -391,7 +383,7 @@ public class ClientWorker {
                 if (cacheData.isInitializing()) {
                     // cacheData 首次出现在cacheMap中&首次check更新
                     inInitializingCacheList
-                        .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
+                            .add(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant));
                 }
             }
         }
@@ -426,7 +418,7 @@ public class ClientWorker {
 
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
-                agent.getEncode(), readTimeoutMs);
+                    agent.getEncode(), readTimeoutMs);
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
@@ -471,7 +463,7 @@ public class ClientWorker {
                     String tenant = keyArr[2];
                     updateList.add(GroupKey.getKeyTenant(dataId, group, tenant));
                     LOGGER.info("[{}] [polling-resp] config changed. dataId={}, group={}, tenant={}", agent.getName(),
-                        dataId, group, tenant);
+                            dataId, group, tenant);
                 } else {
                     LOGGER.error("[{}] [polling-resp] invalid dataIdAndGroup error {}", agent.getName(), dataIdAndGroup);
                 }
@@ -524,40 +516,40 @@ public class ClientWorker {
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                         cache.setContent(content);
                         LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
-                            agent.getName(), dataId, group, tenant, cache.getMd5(),
-                            ContentUtils.truncateContent(content));
+                                agent.getName(), dataId, group, tenant, cache.getMd5(),
+                                ContentUtils.truncateContent(content));
                     } catch (NacosException ioe) {
                         String message = String.format(
-                            "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
-                            agent.getName(), dataId, group, tenant);
+                                "[%s] [get-update] get changed config exception. dataId=%s, group=%s, tenant=%s",
+                                agent.getName(), dataId, group, tenant);
                         LOGGER.error(message, ioe);
                     }
                 }
                 for (CacheData cacheData : cacheDatas) {
                     if (!cacheData.isInitializing() || inInitializingCacheList
-                        .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
+                            .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
                         cacheData.checkListenerMd5();
                         cacheData.setInitializing(false);
                     }
                 }
                 inInitializingCacheList.clear();
 
-                if (configScheduler.isShutdown4LongPollSchedule()) {
+                if (ThreadHelper.isShutdown(configScheduler.getLongPollSchedule())) {
                     LOGGER.info("[ClientWorker LongPollingRunnable] Task thread pool is closed");
                     return;
                 }
-                configScheduler.executeByLongPollSchedule(this);
+                configScheduler.execute(configScheduler.getLongPollSchedule(), this);
 
             } catch (Throwable e) {
 
-                if (configScheduler.isShutdown4LongPollSchedule()) {
+                if (ThreadHelper.isShutdown(configScheduler.getLongPollSchedule())) {
                     LOGGER.info("[ClientWorker LongPollingRunnable] Task thread pool is closed");
                     return;
                 }
 
                 // If the rotation training task is abnormal, the next execution time of the task will be punished
                 LOGGER.error("longPolling error : ", e);
-                configScheduler.scheduldByLongPollSchedule(this, taskPenaltyTime, TimeUnit.MILLISECONDS);
+                configScheduler.schedule(configScheduler.getLongPollSchedule(), this, taskPenaltyTime, TimeUnit.MILLISECONDS);
             }
         }
     }

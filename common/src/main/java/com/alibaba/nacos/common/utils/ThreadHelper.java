@@ -39,4 +39,12 @@ public class ThreadHelper {
         }
     }
 
+    public static boolean isShutdown(ThreadPoolExecutor executor) {
+        return executor == null || executor.isShutdown();
+    }
+
+    public static boolean isShutdown(ExecutorService executor) {
+        return executor == null || executor.isShutdown();
+    }
+
 }

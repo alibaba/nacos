@@ -16,8 +16,6 @@
 package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.api.LifeCycle;
-import com.alibaba.nacos.api.LifeCycleHelper;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -25,21 +23,20 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.common.util.ThreadHelper;
+import com.alibaba.nacos.client.naming.utils.NamingScheduler;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * @author xuanyin
  */
-public class HostReactor implements LifeCycle {
+public class HostReactor {
 
     private static final long DEFAULT_DELAY = 1000L;
 
@@ -61,65 +58,28 @@ public class HostReactor implements LifeCycle {
 
     private String cacheDir;
 
-    private ScheduledExecutorService executor;
-
-    private AtomicInteger threadId = new AtomicInteger(0);
-
     private boolean loadCacheAtStart = false;
 
-    private int pollingThreadCount;
-
-    private final AtomicBoolean started = new AtomicBoolean(false);
-    private final AtomicBoolean destroyed = new AtomicBoolean(false);
-
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
-    }
+    private final NamingScheduler namingScheduler = NamingScheduler.getInstance();
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
-                       boolean loadCacheAtStart, int pollingThreadCount) {
+                       boolean loadCacheAtStart) {
         this.loadCacheAtStart = loadCacheAtStart;
-        this.pollingThreadCount = pollingThreadCount;
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
         this.cacheDir = cacheDir;
+        init();
     }
 
-    @Override
-    public void start() throws NacosException {
-        if (started.compareAndSet(false, true)) {
-            executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread thread = new Thread(r);
-                    thread.setDaemon(true);
-                    thread.setName("com.alibaba.nacos.client.naming.updater-" + threadId.incrementAndGet());
-                    return thread;
-                }
-            });
-            if (loadCacheAtStart) {
-                this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
-            } else {
-                this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
-            }
-            this.updatingMap = new ConcurrentHashMap<String, Object>(16);
-            this.failoverReactor = new FailoverReactor(this, cacheDir);
-            this.pushReceiver = new PushReceiver(this);
-
-            // Preparation accordingly
-            LifeCycleHelper.invokeStart(failoverReactor);
-            LifeCycleHelper.invokeStart(pushReceiver);
+    private void init() {
+        if (loadCacheAtStart) {
+            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(DiskCache.read(this.cacheDir));
+        } else {
+            this.serviceInfoMap = new ConcurrentHashMap<String, ServiceInfo>(16);
         }
-    }
-
-    @Override
-    public void destroy() throws NacosException {
-        if (isStarted() && destroyed.compareAndSet(false, true)) {
-            ThreadHelper.invokeShutdown(executor);
-            // Perform corresponding disposal operations
-            LifeCycleHelper.invokeDestroy(failoverReactor);
-            LifeCycleHelper.invokeDestroy(pushReceiver);
-        }
+        this.updatingMap = new ConcurrentHashMap<String, Object>(16);
+        this.failoverReactor = new FailoverReactor(this, cacheDir);
+        this.pushReceiver = new PushReceiver(this);
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {
@@ -127,7 +87,8 @@ public class HostReactor implements LifeCycle {
     }
 
     public synchronized ScheduledFuture<?> addTask(UpdateTask task) {
-        return executor.schedule(task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+        return namingScheduler.schedule(namingScheduler.getHostReactorExecutor(),
+                task, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
     }
 
     public ServiceInfo processServiceJSON(String json) {
@@ -144,7 +105,7 @@ public class HostReactor implements LifeCycle {
 
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime()
-                    + ", new-t: " + serviceInfo.getLastRefTime());
+                        + ", new-t: " + serviceInfo.getLastRefTime());
             }
 
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
@@ -164,12 +125,12 @@ public class HostReactor implements LifeCycle {
             Set<Instance> remvHosts = new HashSet<Instance>();
 
             List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<Map.Entry<String, Instance>>(
-                newHostMap.entrySet());
+                    newHostMap.entrySet());
             for (Map.Entry<String, Instance> entry : newServiceHosts) {
                 Instance host = entry.getValue();
                 String key = entry.getKey();
                 if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(),
-                    oldHostMap.get(key).toString())) {
+                        oldHostMap.get(key).toString())) {
                     modHosts.add(host);
                     continue;
                 }
@@ -195,19 +156,19 @@ public class HostReactor implements LifeCycle {
             if (newHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(newHosts));
+                        + serviceInfo.getKey() + " -> " + JSON.toJSONString(newHosts));
             }
 
             if (remvHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(remvHosts));
+                        + serviceInfo.getKey() + " -> " + JSON.toJSONString(remvHosts));
             }
 
             if (modHosts.size() > 0) {
                 changed = true;
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
-                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
+                        + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
             }
 
             serviceInfo.setJsonFromServer(json);
@@ -220,7 +181,7 @@ public class HostReactor implements LifeCycle {
         } else {
             changed = true;
             NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " + JSON
-                .toJSONString(serviceInfo.getHosts()));
+                    .toJSONString(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
             serviceInfo.setJsonFromServer(json);
@@ -231,7 +192,7 @@ public class HostReactor implements LifeCycle {
 
         if (changed) {
             NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() +
-                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+                    " -> " + JSON.toJSONString(serviceInfo.getHosts()));
         }
 
         return serviceInfo;
@@ -289,7 +250,6 @@ public class HostReactor implements LifeCycle {
 
         return serviceInfoMap.get(serviceObj.getKey());
     }
-
 
 
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
@@ -352,7 +312,8 @@ public class HostReactor implements LifeCycle {
 
                 if (serviceObj == null) {
                     updateServiceNow(serviceName, clusters);
-                    executor.schedule(this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
+                    namingScheduler.schedule(namingScheduler.getHostReactorExecutor(),
+                            this, DEFAULT_DELAY, TimeUnit.MILLISECONDS);
                     return;
                 }
 
@@ -368,14 +329,14 @@ public class HostReactor implements LifeCycle {
                 lastRefTime = serviceObj.getLastRefTime();
 
                 if (!eventDispatcher.isSubscribed(serviceName, clusters) &&
-                    !futureMap.containsKey(ServiceInfo.getKey(serviceName, clusters))) {
+                        !futureMap.containsKey(ServiceInfo.getKey(serviceName, clusters))) {
                     // abort the update task:
                     NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
                     return;
                 }
 
-                executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
-
+                namingScheduler.schedule(namingScheduler.getHostReactorExecutor(),
+                        this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
 
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
@@ -384,13 +345,4 @@ public class HostReactor implements LifeCycle {
         }
     }
 
-    @Override
-    public boolean isStarted() {
-        return started.get();
-    }
-
-    @Override
-    public boolean isDestroyed() {
-        return destroyed.get();
-    }
 }
