@@ -96,6 +96,9 @@ public class DistroController {
 
 
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
+            /**
+             * 临时Instance
+             */
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
                 String namespaceId = KeyBuilder.getNamespace(entry.getKey());
                 String serviceName = KeyBuilder.getServiceName(entry.getKey());

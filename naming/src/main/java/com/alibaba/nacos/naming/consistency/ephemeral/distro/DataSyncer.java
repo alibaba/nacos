@@ -85,6 +85,10 @@ public class DataSyncer {
                     if (Loggers.DISTRO.isDebugEnabled()) {
                         Loggers.DISTRO.debug("sync already in process, key: {}", key);
                     }
+
+                    /**
+                     * 当前key对应得数据  可能正在重试中  所以这里剔除
+                     */
                     iterator.remove();
                 }
             }
@@ -118,7 +122,7 @@ public class DataSyncer {
                     }
 
                     /**
-                     * 批量获取keys对应的Datum
+                     * 从本地缓存中批量获取keys对应的Datum
                      */
                     Map<String, Datum> datumMap = dataStore.batchGet(keys);
 

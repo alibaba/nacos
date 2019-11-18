@@ -82,13 +82,13 @@ public class ClientBeatCheckTask implements Runnable {
             // first set health status of instances:
             for (Instance instance : instances) {
                 /**
-                 * 超时 设置为不健康的实例
+                 * 心跳超时
                  */
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getInstanceHeartBeatTimeOut()) {
                     if (!instance.isMarked()) {
                         if (instance.isHealthy()) {
                             /**
-                             * 不健康的实例
+                             * 设置为不健康的实例
                              */
                             instance.setHealthy(false);
                             Loggers.EVT_LOG.info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client timeout after {}, last beat: {}",
