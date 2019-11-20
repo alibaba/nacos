@@ -94,6 +94,9 @@ public class ServiceManager implements RecordListener<Service> {
 
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
+            /**
+             * 监听临时节点与持久化节点
+             */
             consistencyService.listen(KeyBuilder.SERVICE_META_KEY_PREFIX, this);
         } catch (NacosException e) {
             Loggers.SRV_LOG.error("listen for service meta change failed!");
@@ -712,6 +715,9 @@ public class ServiceManager implements RecordListener<Service> {
                  * 新增service下的Cluster
                  */
                 Cluster cluster = new Cluster(instance.getClusterName(), service);
+                /**
+                 * HealthCheckTask  执行HealthCheckTask   默认tcp方式
+                 */
                 cluster.init();
                 service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
@@ -719,7 +725,7 @@ public class ServiceManager implements RecordListener<Service> {
             }
 
             /**
-             * 新增/删除操作
+             * 在instanceMap中新增/删除操作
              */
             if (UtilsAndCommons.UPDATE_INSTANCE_ACTION_REMOVE.equals(action)) {
                 instanceMap.remove(instance.getDatumKey());
