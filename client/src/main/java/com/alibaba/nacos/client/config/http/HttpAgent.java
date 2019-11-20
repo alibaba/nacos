@@ -30,8 +30,9 @@ import java.util.List;
 public interface HttpAgent {
 
     /**
-     *
-     * @throws NacosException
+     * start to get nacos ip list
+     * @return Nothing.
+     * @throws NacosException on get ip list error.
      */
     void start() throws NacosException;
 

@@ -28,6 +28,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
+import com.alibaba.nacos.client.naming.utils.NamingScheduler;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
@@ -51,6 +52,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     private Properties properties;
 
+    private final NamingScheduler namingScheduler = NamingScheduler.getInstance();
+
     private final AtomicBoolean started = new AtomicBoolean(false);
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
 
@@ -69,16 +72,16 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     @Override
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
+            LifeCycleHelper.invokeStart(namingScheduler);
             serverProxy = new NamingProxy(namespace, endpoint, serverList);
             serverProxy.setProperties(properties);
-            LifeCycleHelper.invokeStart(serverProxy);
         }
     }
 
     @Override
     public void destroy() throws NacosException {
         if (isStarted() && destroyed.compareAndSet(false, true)) {
-            LifeCycleHelper.invokeDestroy(serverProxy);
+            LifeCycleHelper.invokeDestroy(namingScheduler);
         }
     }
 
