@@ -30,15 +30,15 @@ public class SampleResult implements Serializable {
      */
     private static final long serialVersionUID = 2587823382317389453L;
 
-    private Map<String, String> listenersGrouperStatus;
+    private Map<String, String> listenersGroupkeyStatus;
 
-    public Map<String, String> getListenersGrouperStatus() {
-        return listenersGrouperStatus;
+    public Map<String, String> getListenersGroupkeyStatus() {
+        return listenersGroupkeyStatus;
     }
 
-    public void setListenersGrouperStatus(
-        Map<String, String> listenersGrouperStatus) {
-        this.listenersGrouperStatus = listenersGrouperStatus;
+    public void setListenersGroupkeyStatus(
+        Map<String, String> listenersGroupkeyStatus) {
+        this.listenersGroupkeyStatus = listenersGroupkeyStatus;
     }
 
 }

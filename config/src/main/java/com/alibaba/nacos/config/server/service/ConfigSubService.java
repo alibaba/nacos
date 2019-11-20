@@ -136,20 +136,20 @@ public class ConfigSubService {
     public SampleResult mergeSampleResult(SampleResult sampleCollectResult, List<SampleResult> sampleResults) {
         SampleResult mergeResult = new SampleResult();
         Map<String, String> listenersGrouperStatus = null;
-        if (sampleCollectResult.getListenersGrouperStatus() == null
-            || sampleCollectResult.getListenersGrouperStatus().isEmpty()) {
+        if (sampleCollectResult.getListenersGroupkeyStatus() == null
+            || sampleCollectResult.getListenersGroupkeyStatus().isEmpty()) {
             listenersGrouperStatus = new HashMap<String, String>(10);
         } else {
-            listenersGrouperStatus = sampleCollectResult.getListenersGrouperStatus();
+            listenersGrouperStatus = sampleCollectResult.getListenersGroupkeyStatus();
         }
 
         for (SampleResult sampleResult : sampleResults) {
-            Map<String, String> listenersGrouperStatusTap = sampleResult.getListenersGrouperStatus();
-            for (Map.Entry<String, String> entry : listenersGrouperStatusTap.entrySet()) {
+            Map<String, String> listenersGroupkeyStatus = sampleResult.getListenersGroupkeyStatus();
+            for (Map.Entry<String, String> entry : listenersGroupkeyStatus.entrySet()) {
                 listenersGrouperStatus.put(entry.getKey(), entry.getValue());
             }
         }
-        mergeResult.setListenersGrouperStatus(listenersGrouperStatus);
+        mergeResult.setListenersGroupkeyStatus(listenersGrouperStatus);
         return mergeResult;
     }
 
