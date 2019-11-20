@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
 import com.alibaba.nacos.naming.push.PushService;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -80,6 +81,7 @@ public class SubscribeManager {
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getKey())) {
                     subscriberList.addAll(getSubscribers(serviceName, namespaceId));
+                    continue;
                 }
 
                 HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getKey() + RunningConfig.getContextPath()
@@ -89,14 +91,14 @@ public class SubscribeManager {
                     Subscribers subscribers = (Subscribers) JSONObject.parseObject(result.content, Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }
-                return subscriberList.stream().filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList());
-
             }
+            return CollectionUtils.isNotEmpty(subscriberList) ?
+                subscriberList.stream().filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList())
+                : Collections.EMPTY_LIST;
         } else {
             // local server
             return getSubscribers(serviceName, namespaceId);
         }
-        return Collections.emptyList();
     }
 
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {

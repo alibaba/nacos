@@ -16,9 +16,9 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.client.naming.utils.IoUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.google.common.net.HttpHeaders;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -104,9 +104,7 @@ public class HttpClient {
 
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 

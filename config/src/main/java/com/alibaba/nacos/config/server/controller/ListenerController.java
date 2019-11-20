@@ -22,15 +22,12 @@ import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,22 +36,22 @@ import java.util.Map;
  *
  * @author Nacos
  */
-@Controller
+@RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
 public class ListenerController {
 
     private final ConfigSubService configSubService;
 
     @Autowired
-    public ListenerController(ConfigSubService configSubService) {this.configSubService = configSubService;}
+    public ListenerController(ConfigSubService configSubService) {
+        this.configSubService = configSubService;
+    }
 
     /**
      * 获取客户端订阅配置信息
      */
-    @RequestMapping(method = RequestMethod.GET)
-    @ResponseBody
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
-                                                             @RequestParam("ip") String ip,
+    @GetMapping
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
                                                              @RequestParam(value = "all", required = false) boolean all,
                                                              @RequestParam(value = "tenant", required = false)
                                                                  String tenant,
