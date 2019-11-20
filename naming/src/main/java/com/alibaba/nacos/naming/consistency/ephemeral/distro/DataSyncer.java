@@ -157,7 +157,7 @@ public class DataSyncer {
                     } else {
                         // clear all flags of this task:
                         /**
-                         * 成功则移除taskMap
+                         * 同步成功则移除taskMap
                          */
                         for (String key : task.getKeys()) {
                             taskMap.remove(buildKey(key, task.getTargetServer()));

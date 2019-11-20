@@ -694,7 +694,7 @@ public class ServiceManager implements RecordListener<Service> {
         }
         if (datum != null) {
             /**
-             * 比对数据  返回有效的节点
+             * 以map中的数据为准    更新datum中Instance对应的healthy和lastBeat
              */
             oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
         }
@@ -771,9 +771,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
 
     /**
-     * 比对数据  以oldInstances中的数据为主  过滤出在map中有对应的有效数据
-     * 即map中存在的数据   但在oldInstances不存在  则不返回
-     * 节点的Healthy以及LastBeat   以map中的为准
+     * 以map中的数据为准    更新oldInstances中Instance对应的healthy和lastBeat
      * @param oldInstances
      * @param map
      * @return
@@ -783,6 +781,9 @@ public class ServiceManager implements RecordListener<Service> {
         Map<String, Instance> instanceMap = new HashMap<>(oldInstances.size());
         for (Instance instance : oldInstances) {
             Instance instance1 = map.get(instance.toIPAddr());
+            /**
+             * 更新instance对应的healthy和lastBeat
+             */
             if (instance1 != null) {
                 instance.setHealthy(instance1.isHealthy());
                 instance.setLastBeat(instance1.getLastBeat());

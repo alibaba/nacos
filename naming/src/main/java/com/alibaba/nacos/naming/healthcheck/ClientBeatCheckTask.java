@@ -122,7 +122,7 @@ public class ClientBeatCheckTask implements Runnable {
                 }
 
                 /**
-                 * 超时  则删除
+                 * 超过待删除时间  则删除
                  */
                 if (System.currentTimeMillis() - instance.getLastBeat() > instance.getIpDeleteTimeout()) {
                     // delete instance
