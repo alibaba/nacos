@@ -615,6 +615,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         /**
          * 移除ips后  剩余的Instance列表
+         * instanceList中的数据为最新数据   不仅有新增或删除的操作  而且内部已经更新了Instance对应的healthy和lastBeat
          */
         List<Instance> instanceList = substractIpAddresses(service, ephemeral, ips);
 

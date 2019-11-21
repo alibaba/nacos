@@ -126,6 +126,9 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         if (inited) {
             return;
         }
+        /**
+         * 默认tcp
+         */
         checkTask = new HealthCheckTask(this);
 
         /**
