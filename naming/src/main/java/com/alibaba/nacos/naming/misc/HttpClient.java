@@ -24,7 +24,6 @@ import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.AsyncHttpClientConfig;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.config.RequestConfig;
@@ -46,6 +45,8 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
@@ -252,7 +253,7 @@ public class HttpClient {
                 }
             }
 
-            return new HttpResult(response.getStatusLine().getStatusCode(), IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+            return new HttpResult(response.getStatusLine().getStatusCode(), IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Throwable e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -317,7 +318,7 @@ public class HttpClient {
                 httpPut.setHeader(entry.getKey(), entry.getValue());
             }
 
-            httpPut.setEntity(new StringEntity(new String(content, "UTF-8"), ContentType.create("application/json", "UTF-8")));
+            httpPut.setEntity(new StringEntity(new String(content, StandardCharsets.UTF_8), ContentType.create("application/json", StandardCharsets.UTF_8)));
 
             HttpResponse response = httpClient.execute(httpPut);
             HttpEntity entity = response.getEntity();
@@ -326,7 +327,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -355,7 +356,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -382,7 +383,7 @@ public class HttpClient {
             String charset = headerElements[0].getParameterByName("charset").getValue();
 
             return new HttpResult(response.getStatusLine().getStatusCode(),
-                    IOUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
+                    IoUtils.toString(entity.getContent(), charset), Collections.<String, String>emptyMap());
         } catch (Exception e) {
             return new HttpResult(500, e.toString(), Collections.<String, String>emptyMap());
         }
@@ -409,7 +410,7 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        HttpResult result = new HttpResult(respCode, IOUtils.toString(inputStream, getCharset(conn)), respHeaders);
+        HttpResult result = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
         inputStream.close();
 
         return result;
