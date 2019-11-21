@@ -71,7 +71,7 @@ public class STSConfig {
 
         String cacheSecurityCredentials = System.getProperty("cache.security.credentials");
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
-            setCacheSecurityCredentials(Boolean.valueOf(cacheSecurityCredentials));
+            setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }
     }
 
