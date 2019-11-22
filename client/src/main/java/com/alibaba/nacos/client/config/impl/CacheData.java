@@ -61,10 +61,9 @@ public class CacheData {
         return content;
     }
 
-    public void setContent(String newContent) {
-        this.lastContent = this.content;
-        this.content = newContent;
-        this.md5 = getMd5String(content);
+    public void setContent(String content) {
+        this.content = content;
+        this.md5 = getMd5String(this.content);
     }
 
     public String getType() {
@@ -85,7 +84,7 @@ public class CacheData {
         if (null == listener) {
             throw new IllegalArgumentException("listener is null");
         }
-        ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5);
+        ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5, content);
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
@@ -202,12 +201,13 @@ public class CacheData {
 
                     // compare lastContent and content
                     if (listener instanceof AbstractConfigChangeListener) {
-                        Map data = ConfigChangeHandler.getChangeParserInstance().parseChangeData(lastContent, content, type);
+                        Map data = ConfigChangeHandler.getChangeParserInstance().parseChangeData(listenerWrap.lastContent, content, type);
                         ConfigChangeEvent event = new ConfigChangeEvent(data);
                         ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
                     }
 
                     listenerWrap.lastCallMd5 = md5;
+                    listenerWrap.lastContent = content;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
                         listener);
                 } catch (NacosException de) {
@@ -298,7 +298,6 @@ public class CacheData {
      * last modify time
      */
     private volatile long localConfigLastModified;
-    private volatile String lastContent;
     private volatile String content;
     private int taskId;
     private volatile boolean isInitializing = true;
@@ -308,14 +307,16 @@ public class CacheData {
 class ManagerListenerWrap {
     final Listener listener;
     String lastCallMd5 = CacheData.getMd5String(null);
+    String lastContent = null;
 
     ManagerListenerWrap(Listener listener) {
         this.listener = listener;
     }
 
-    ManagerListenerWrap(Listener listener, String md5) {
+    ManagerListenerWrap(Listener listener, String md5, String lastContent) {
         this.listener = listener;
         this.lastCallMd5 = md5;
+        this.lastContent = lastContent;
     }
 
     @Override
