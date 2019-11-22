@@ -32,7 +32,7 @@ public class NamingExample {
     public static void main(String[] args) throws NacosException, InterruptedException {
 
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", "192.168.50.39:8848");
+        properties.setProperty("serverAddr", "192.168.50.63:8848");
 //        properties.setProperty("namespace", "3c758c4d-43de-41bb-b75a-920471a52d76");
 
         NamingService naming = NamingFactory.createNamingService(properties);
