@@ -709,7 +709,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         for (Instance instance : ips) {
             /**
-             * 当前instance对应的集群名称是否为新增
+             * 当前instance对应的集群为新增
              */
             if (!service.getClusterMap().containsKey(instance.getClusterName())) {
                 /**
@@ -720,6 +720,9 @@ public class ServiceManager implements RecordListener<Service> {
                  * HealthCheckTask  执行HealthCheckTask   默认tcp方式
                  */
                 cluster.init();
+                /**
+                 * 缓存新集群
+                 */
                 service.getClusterMap().put(instance.getClusterName(), cluster);
                 Loggers.SRV_LOG.warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                     instance.getClusterName(), instance.toJSON());
@@ -846,9 +849,13 @@ public class ServiceManager implements RecordListener<Service> {
          */
         putService(service);
         /**
-         * 初始化
+         * 初始化  clientBeatCheckTask以及Cluster的init
          */
         service.init();
+
+        /**
+         * 添加监听
+         */
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
         consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
         Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJSON());

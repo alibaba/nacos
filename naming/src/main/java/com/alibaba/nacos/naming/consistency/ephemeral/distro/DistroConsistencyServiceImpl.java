@@ -405,7 +405,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                          */
                         service.recalculateChecksum();
                         /**
-                         * 监听  metadata  调用ServiceManager
+                         * 监听  metadata  调用ServiceManager   并向listeners添加新的监听
                          */
                         listeners.get(KeyBuilder.SERVICE_META_KEY_PREFIX).get(0)
                             .onChange(KeyBuilder.buildServiceMetaKey(namespaceId, serviceName), service);
