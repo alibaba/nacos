@@ -35,7 +35,6 @@ import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.web.NeedAuth;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -130,7 +129,7 @@ public class RaftController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         JSONObject json = JSON.parseObject(value);
 
@@ -206,7 +205,7 @@ public class RaftController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
         String key = "key";
@@ -238,7 +237,7 @@ public class RaftController {
         response.setHeader("Cache-Control", "no-cache");
         response.setHeader("Content-Encode", "gzip");
 
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
+        String entity = IoUtils.toString(request.getInputStream(), "UTF-8");
         String value = URLDecoder.decode(entity, "UTF-8");
         value = URLDecoder.decode(value, "UTF-8");
         JSONObject jsonObject = JSON.parseObject(value);
