@@ -167,12 +167,12 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void put(String key, Record value) throws NacosException {
         /**
-         * 存入dataStore缓存  并新增调度任务
+         * 存入dataStore缓存  并新增调度任务执行RecordListener得监听
          */
         onPut(key, value);
 
         /**
-         * taskDispatcher调度
+         * taskDispatcher调度   执行dataStore得同步
          */
         taskDispatcher.addTask(key);
     }
@@ -219,7 +219,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
 
         /**
-         * 新增调度任务
+         * 新增调度任务   执行RecordListener得监听
          */
         notifier.addTask(key, ApplyAction.CHANGE);
     }

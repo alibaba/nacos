@@ -167,7 +167,7 @@ public class ServiceManager implements RecordListener<Service> {
                 consistencyService.listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), oldDom);
             } else {
                 /**
-                 * 新增节点
+                 * 新增节点  并添加对service得监听
                  */
                 putServiceAndInit(service);
             }
