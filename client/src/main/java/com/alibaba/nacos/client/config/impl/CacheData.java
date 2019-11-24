@@ -84,7 +84,9 @@ public class CacheData {
         if (null == listener) {
             throw new IllegalArgumentException("listener is null");
         }
-        ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5, content);
+        ManagerListenerWrap wrap = (listener instanceof AbstractConfigChangeListener) ?
+            new ManagerListenerWrap(listener, md5, content) : new ManagerListenerWrap(listener, md5);
+
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
@@ -204,10 +206,10 @@ public class CacheData {
                         Map data = ConfigChangeHandler.getChangeParserInstance().parseChangeData(listenerWrap.lastContent, content, type);
                         ConfigChangeEvent event = new ConfigChangeEvent(data);
                         ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
+                        listenerWrap.lastContent = content;
                     }
 
                     listenerWrap.lastCallMd5 = md5;
-                    listenerWrap.lastContent = content;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
                         listener);
                 } catch (NacosException de) {
@@ -311,6 +313,11 @@ class ManagerListenerWrap {
 
     ManagerListenerWrap(Listener listener) {
         this.listener = listener;
+    }
+
+    ManagerListenerWrap(Listener listener, String md5) {
+        this.listener = listener;
+        this.lastCallMd5 = md5;
     }
 
     ManagerListenerWrap(Listener listener, String md5, String lastContent) {
