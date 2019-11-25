@@ -520,7 +520,7 @@ public class ServiceManager implements RecordListener<Service> {
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
 
         /**
-         * service不存在则新建
+         * service不存在则新建  如果是临时节点 激活clientBeatCheckTask  以校验心跳
          */
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 

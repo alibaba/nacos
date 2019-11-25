@@ -172,7 +172,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         onPut(key, value);
 
         /**
-         * taskDispatcher调度   执行dataStore得同步
+         * taskDispatcher调度   执行dataStore得同步  通知其他节点
          */
         taskDispatcher.addTask(key);
     }
