@@ -36,7 +36,7 @@ public class ParamUtil {
     public final static boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
 
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
-    private static String defaultContextPath = "nacos";
+    private static String defaultContextPath;
     private static String defaultNodesPath = "serverlist";
     private static String appKey;
     private static String appName;
@@ -48,6 +48,8 @@ public class ParamUtil {
     static {
         // 客户端身份信息
         appKey = System.getProperty("nacos.client.appKey", "");
+
+        defaultContextPath = System.getProperty("nacos.client.contextPath", "nacos");
 
         appName = AppNameUtils.getAppName();
 
