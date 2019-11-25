@@ -240,7 +240,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
                 // Only when ip is not marked, don't we update the health status of IP:
                 /**
                  * 不要更新  待更新Instance集合（ips）中的Instance（ip）对应的验证状态
-                 * 因为checker拥有最精准的结果？？？？？  checker是谁  最精准的结果又是什么？？？
+                 * 因为checker拥有最精准的结果？？？？？  checker是否是ClientBeatCheckTask
                  * 只有当前Instance的状态为非marker时   我们才更新其对应的healthy
                  */
                 if (!ip.isMarked()) {
@@ -298,7 +298,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         toUpdateInstances = new HashSet<>(ips);
 
         /**
-         * 当前cluster对应的Instance集合
+         * 修改当前cluster对应的Instance集合
          */
         if (ephemeral) {
             ephemeralInstances = toUpdateInstances;
