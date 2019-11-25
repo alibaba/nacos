@@ -50,7 +50,7 @@ public class SwitchService {
         boolean rtn = defaultValue;
         try {
             String value = switches.get(key);
-            rtn = value != null ? Boolean.valueOf(value).booleanValue() : defaultValue;
+            rtn = value != null ? Boolean.parseBoolean(value) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
             LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
