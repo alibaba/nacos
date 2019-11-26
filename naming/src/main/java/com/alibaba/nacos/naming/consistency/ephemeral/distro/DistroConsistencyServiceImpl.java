@@ -161,13 +161,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     /**
      * 新增临时节点
      * @param key   key of data, this key should be globally unique
-     * @param value value of data
+     * @param value value of data   Instances
      * @throws NacosException
      */
     @Override
     public void put(String key, Record value) throws NacosException {
         /**
-         * 存入dataStore缓存  并新增调度任务执行RecordListener得监听
+         * 将Instances存入存入dataStore缓存  并新增调度任务执行RecordListener得监听
          */
         onPut(key, value);
 
@@ -197,7 +197,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     /**
      * 缓存key对应的Record
      * @param key
-     * @param value
+     * @param value   Instances
      */
     public void onPut(String key, Record value) {
         /**
