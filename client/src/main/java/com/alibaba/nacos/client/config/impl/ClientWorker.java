@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.common.GroupKey;
@@ -248,6 +249,8 @@ public class ClientWorker {
                 ct[0] = result.content;
                 if (result.headers.containsKey(CONFIG_TYPE)) {
                     ct[1] = result.headers.get(CONFIG_TYPE).get(0);
+                } else {
+                    ct[1] = ConfigType.TEXT.getType();
                 }
                 return ct;
             case HttpURLConnection.HTTP_NOT_FOUND:

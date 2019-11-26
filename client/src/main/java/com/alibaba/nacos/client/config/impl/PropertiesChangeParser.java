@@ -28,13 +28,12 @@ import java.util.Properties;
  * @author rushsky518
  */
 public class PropertiesChangeParser extends AbstractConfigChangeParser {
-
-    public PropertiesChangeParser(String configType) {
-        super(configType);
+    public PropertiesChangeParser() {
+        super("properties");
     }
 
     @Override
-    protected Map doParse(String oldContent, String newContent, String type) throws IOException {
+    public Map doParse(String oldContent, String newContent, String type) throws IOException {
         Properties oldProps = new Properties();
         Properties newProps = new Properties();
 
