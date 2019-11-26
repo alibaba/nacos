@@ -15,8 +15,8 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
-import java.io.IOException;
-import java.util.Collections;
+import com.alibaba.nacos.api.config.listener.ConfigChangeParser;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -26,49 +26,17 @@ import java.util.Map;
  *
  * @author rushsky518
  */
-public abstract class AbstractConfigChangeParser {
+public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
     private String configType;
-
-    private AbstractConfigChangeParser next;
 
     public AbstractConfigChangeParser(String configType) {
         this.configType = configType;
     }
 
-    public AbstractConfigChangeParser addNext(AbstractConfigChangeParser configChangeParser) {
-        if (null == this.next) {
-            this.next = configChangeParser;
-        } else {
-            this.next.addNext(configChangeParser);
-        }
-        return this;
-    }
-
-    protected boolean isResponsibleFor(String type) {
+    @Override
+    public boolean isResponsibleFor(String type) {
         return this.configType.equalsIgnoreCase(type);
     }
-
-    public Map parseChangeData(String oldContent, String newContent, String type) throws IOException {
-        if (isResponsibleFor(type)) {
-            return this.doParse(oldContent, newContent, type);
-        }
-
-        if (null != this.next) {
-            return this.next.parseChangeData(oldContent, newContent, type);
-        }
-
-        return Collections.emptyMap();
-    }
-
-    /**
-     * parse and compare config data
-     * @param oldContent
-     * @param newContent
-     * @param type
-     * @return
-     * @throws IOException
-     */
-    protected abstract Map<String, Object> doParse(String oldContent, String newContent, String type) throws IOException;
 
     protected Map filterChangeData(Map oldMap, Map newMap) {
         Map<String, ConfigChangeItem> result = new HashMap<String, ConfigChangeItem>(16);

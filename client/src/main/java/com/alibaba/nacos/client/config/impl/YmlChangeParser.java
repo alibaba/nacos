@@ -25,13 +25,12 @@ import java.util.*;
  * @author rushsky518
  */
 public class YmlChangeParser extends AbstractConfigChangeParser {
-
-    public YmlChangeParser(String configType) {
-        super(configType);
+    public YmlChangeParser() {
+        super("yaml");
     }
 
     @Override
-    protected Map<String, Object> doParse(String oldContent, String newContent, String type) {
+    public Map<String, Object> doParse(String oldContent, String newContent, String type) {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
 
@@ -88,4 +87,3 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     }
 
 }
-

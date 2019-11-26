@@ -131,9 +131,7 @@ public class ConfigServletInner {
                         }
                     }
                     String configType = cacheItem.getType();
-                    if (null != configType) {
-                        response.setHeader("Config-Type", configType);
-                    }
+                    response.setHeader("Config-Type", (null != configType) ? configType : "text");
                 }
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
