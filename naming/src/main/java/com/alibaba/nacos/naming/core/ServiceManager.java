@@ -699,6 +699,8 @@ public class ServiceManager implements RecordListener<Service> {
         if (datum != null) {
             /**
              * 以map中的数据为准    更新datum中Instance对应的healthy和lastBeat
+             *
+             * 即认为service.allIPs方法获得信息为最新的    dataStore中对应的Datum为之前的数据   需要更新
              */
             oldInstanceMap = setValid(((Instances) datum.value).getInstanceList(), map);
         }
