@@ -41,7 +41,7 @@ public class CorsConfig {
         config.addAllowedHeader("*");
         config.setMaxAge(18000L);
         config.addAllowedMethod("*");
-		source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
 
