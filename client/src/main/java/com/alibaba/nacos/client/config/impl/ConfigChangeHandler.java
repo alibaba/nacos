@@ -38,7 +38,7 @@ public class ConfigChangeHandler {
         this.parserList = new LinkedList<ConfigChangeParser>();
 
         ServiceLoader<ConfigChangeParser> loader = ServiceLoader.load(ConfigChangeParser.class);
-        if (loader.iterator().hasNext()) {
+        while (loader.iterator().hasNext()) {
             this.parserList.add(loader.iterator().next());
         }
 
