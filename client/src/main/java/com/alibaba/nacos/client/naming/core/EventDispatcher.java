@@ -173,7 +173,7 @@ public class EventDispatcher {
                         for (EventListener listener : listeners) {
                             List<Instance> hosts = Collections.unmodifiableList(serviceInfo.getHosts());
                             /**
-                             * 事件通知
+                             * 事件通知   由用户来实现业务逻辑  例如：NamingExample
                              */
                             listener.onEvent(new NamingEvent(serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(), hosts));
                         }

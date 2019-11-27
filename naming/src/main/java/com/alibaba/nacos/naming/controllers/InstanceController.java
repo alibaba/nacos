@@ -512,7 +512,7 @@ public class InstanceController {
              */
             if (udpPort > 0 && pushService.canEnablePush(agent)) {
                 /**
-                 * 新增PushClient
+                 * 新增PushClient   udp通讯
                  */
                 pushService.addClient(namespaceId, serviceName,
                     clusters,
@@ -531,7 +531,8 @@ public class InstanceController {
         List<Instance> srvedIPs;
 
         /**
-         * 查询clusters下的所有Instance  临时与持久化
+         * 查询clusters下的所有Instance  临时与持久化都查询
+         * clusters以逗号【，】分割
          */
         srvedIPs = service.srvIPs(Arrays.asList(StringUtils.split(clusters, ",")));
 
@@ -540,6 +541,9 @@ public class InstanceController {
             srvedIPs = service.getSelector().select(clientIP, srvedIPs);
         }
 
+        /**
+         * 针对service和clusters下  没有Instance
+         */
         if (CollectionUtils.isEmpty(srvedIPs)) {
 
             if (Loggers.SRV_LOG.isDebugEnabled()) {
@@ -618,7 +622,7 @@ public class InstanceController {
             List<Instance> ips = entry.getValue();
 
             /**
-             * 仅健康节点  &&  当前节点状态健康
+             * 仅查询健康节点  &&  entry对应的是非健康的Instance集合
              */
             if (healthyOnly && !entry.getKey()) {
                 continue;

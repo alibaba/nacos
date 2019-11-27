@@ -32,28 +32,28 @@ public class NamingExample {
     public static void main(String[] args) throws NacosException, InterruptedException {
 
         Properties properties = new Properties();
-        properties.setProperty("serverAddr", "192.168.50.63:8848");
+        properties.setProperty("serverAddr", "192.168.50.39:8848");
 //        properties.setProperty("namespace", "3c758c4d-43de-41bb-b75a-920471a52d76");
 
         NamingService naming = NamingFactory.createNamingService(properties);
 
-        naming.registerInstance("userProvide", "11.11.11.111", 8887, "TEST1");
+        naming.registerInstance("userProvider", "11.11.11.111", 8887, "TEST1");
 
-        naming.registerInstance("userProvide", "11.11.11.111", 8888, "TEST1");
+        naming.registerInstance("userProvider", "11.11.11.111", 8888, "TEST1");
 
-        naming.registerInstance("videProvide", "11.11.11.111", 8889, "TEST1");
+        naming.registerInstance("videoProvider", "11.11.11.111", 8889, "TEST1");
 
-        naming.registerInstance("videProvide", "2.2.2.21", 9999, "DEFAULT");
+        naming.registerInstance("videoProvider", "2.2.2.21", 9999, "DEFAULT");
 
-        naming.registerInstance("videProvide", "5.5.5.5", 9999, "DEFAULT");
+        naming.registerInstance("videoProvider", "5.5.5.5", 9999, "DEFAULT");
 
-        System.out.println("1----------------" + naming.getAllInstances("userProvide"));
+        System.out.println("1----------------" + naming.getAllInstances("userProvider"));
 
-        naming.deregisterInstance("videProvide", "5.5.5.5", 9999, "DEFAULT");
+        naming.deregisterInstance("videoProvider", "5.5.5.5", 9999, "DEFAULT");
 
-        System.out.println("2----------------" + naming.getAllInstances("videProvide"));
+        System.out.println("2----------------" + naming.getAllInstances("videoProvider"));
 
-        naming.subscribe("nacos.test.3", new EventListener() {
+        naming.subscribe("videoProvider", new EventListener() {
             @Override
             public void onEvent(Event event) {
                 System.out.println(((NamingEvent) event).getServiceName());

@@ -396,14 +396,14 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      */
     public List<Instance> srvIPs(List<String> clusters) {
         /**
-         * clusters为空  则填充clusterMap的值
+         * clusters为空  则查询service下的全部cluster
          */
         if (CollectionUtils.isEmpty(clusters)) {
             clusters = new ArrayList<>();
             clusters.addAll(clusterMap.keySet());
         }
         /**
-         * 查询clusters下的所有Instance  临时与持久化
+         * 查询clusters集合下的所有Instance  临时与持久化
          */
         return allIPs(clusters);
     }
