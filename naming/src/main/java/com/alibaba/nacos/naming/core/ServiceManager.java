@@ -176,6 +176,11 @@ public class ServiceManager implements RecordListener<Service> {
         }
     }
 
+    /**
+     * 移除
+     * @param key target key
+     * @throws Exception
+     */
     @Override
     public void onDelete(String key) throws Exception {
         String namespace = KeyBuilder.getNamespace(key);
@@ -189,6 +194,9 @@ public class ServiceManager implements RecordListener<Service> {
             return;
         }
 
+        /**
+         * 移除监听
+         */
         if (service != null) {
             service.destroy();
             consistencyService.remove(KeyBuilder.buildInstanceListKey(namespace, name, true));

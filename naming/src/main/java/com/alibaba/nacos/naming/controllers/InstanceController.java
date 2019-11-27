@@ -320,6 +320,7 @@ public class InstanceController {
 
             /**
              * 当前nacos节点 没有心跳相关的服务   则依据心跳数据执行注册操作
+             * 可能的情况是之前处理的节点宕机   所以心跳被重新路由到了当前节点
              */
             serviceManager.registerInstance(namespaceId, serviceName, instance);
         }

@@ -82,6 +82,8 @@ public class ClientBeatProcessor implements Runnable {
                 }
                 /**
                  * 更新最后一次心跳时间
+                 *
+                 * 同时会在ServiceManager#updateIpAddresses方法中  更新到dataStore对应的Datum中
                  */
                 instance.setLastBeat(System.currentTimeMillis());
                 if (!instance.isMarked()) {

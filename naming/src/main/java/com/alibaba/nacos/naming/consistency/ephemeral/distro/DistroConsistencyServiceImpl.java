@@ -209,7 +209,8 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             datum.key = key;
             datum.timestamp.incrementAndGet();
             /**
-             * 存入缓存 新增或修改
+             * 存入缓存
+             * 因为Instances是一个包含Instance的集合   所以当前操作  可能是新增或修改或删除
              */
             dataStore.put(key, datum);
         }
