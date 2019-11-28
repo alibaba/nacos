@@ -60,7 +60,7 @@ public class EventDispatcher {
     }
 
     /**
-     * 监听
+     * 触发监听
      * @param serviceInfo
      * @param clusters
      * @param listener
@@ -83,7 +83,7 @@ public class EventDispatcher {
         }
 
         /**
-         * 新增监听任务
+         * 触发监听
          */
         serviceChanged(serviceInfo);
     }

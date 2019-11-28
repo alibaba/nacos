@@ -352,7 +352,7 @@ public class HostReactor {
             updatingMap.put(serviceName, new Object());
 
             /**
-             * 向nacos集群查询查询
+             * 向nacos集群查询
              */
             updateServiceNow(serviceName, clusters);
 
@@ -363,7 +363,7 @@ public class HostReactor {
 
         } else if (updatingMap.containsKey(serviceName)) {
             /**
-             * 有其他线程在执行更新操作   且没有执行结束    所有updatingMap中含有serviceName
+             * 有其他线程在执行更新操作   且没有执行结束
              */
 
             if (UPDATE_HOLD_INTERVAL > 0) {
@@ -382,7 +382,7 @@ public class HostReactor {
         }
 
         /**
-         * 调度更新
+         * 设置定时任务   不断从nacos服务端获取最新服务列表
          */
         scheduleUpdateIfAbsent(serviceName, clusters);
 
@@ -405,7 +405,7 @@ public class HostReactor {
             }
 
             /**
-             * 设置更新任务
+             * 设置更新任务   从nacos集群中获取服务列表
              */
             ScheduledFuture<?> future = addTask(new UpdateTask(serviceName, clusters));
             futureMap.put(ServiceInfo.getKey(serviceName, clusters), future);
@@ -482,7 +482,7 @@ public class HostReactor {
 
                 if (serviceObj == null) {
                     /**
-                     * 立即更新
+                     * 缓存中没有  则向nacos集群查询
                      */
                     updateServiceNow(serviceName, clusters);
                     /**
@@ -493,7 +493,7 @@ public class HostReactor {
                 }
 
                 /**
-                 * 比较上次应答时间
+                 * 比较上次应答时间   若serviceObj对应得上次应答时间  小于记录得应答时间   则立即更新
                  */
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
                     /**

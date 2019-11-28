@@ -131,7 +131,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
     }
 
     /**
-     * 处理ServiceChangeEvent
+     * 处理ServiceChangeEvent   向客户端发送udp通讯
      * @param event
      */
     @Override
