@@ -1,0 +1,3 @@
+mvn clean install -Dmaven.test.skip   -Dpmd.skip=true
+
+

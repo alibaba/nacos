@@ -17,16 +17,17 @@ package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.pojo.Record;
 
-/**
- * Data listener public interface
- *
- * @author nacos
- */
+
 
 /**
  * SERVICE_META_KEY_PREFIX对应的ServiceManager
  * SwitchDomainKey对应的SwitchManager
  * @param <T>
+ */
+/**
+ * Data listener public interface
+ *
+ * @author nacos
  */
 public interface RecordListener<T extends Record> {
 
