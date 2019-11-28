@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.client.utils.StringUtils;
 import org.yaml.snakeyaml.Yaml;
 import java.util.*;
@@ -30,7 +31,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
     }
 
     @Override
-    public Map<String, Object> doParse(String oldContent, String newContent, String type) {
+    public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
 

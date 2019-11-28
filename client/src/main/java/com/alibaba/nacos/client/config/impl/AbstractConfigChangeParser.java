@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.config.ConfigChangeItem;
+import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.config.listener.ConfigChangeParser;
 
 import java.util.HashMap;
@@ -38,7 +40,7 @@ public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
         return this.configType.equalsIgnoreCase(type);
     }
 
-    protected Map filterChangeData(Map oldMap, Map newMap) {
+    protected Map<String, ConfigChangeItem> filterChangeData(Map oldMap, Map newMap) {
         Map<String, ConfigChangeItem> result = new HashMap<String, ConfigChangeItem>(16);
         for (Iterator<Map.Entry<String, Object>> entryItr = oldMap.entrySet().iterator(); entryItr.hasNext();) {
             Map.Entry<String, Object> e = entryItr.next();
@@ -48,10 +50,10 @@ public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
                     continue;
                 }
                 cci = new ConfigChangeItem(e.getKey(), e.getValue().toString(), newMap.get(e.getKey()).toString());
-                cci.setType(ConfigChangeItem.PropertyChangeType.MODIFIED);
+                cci.setType(PropertyChangeType.MODIFIED);
             } else {
                 cci = new ConfigChangeItem(e.getKey(), e.getValue().toString(), null);
-                cci.setType(ConfigChangeItem.PropertyChangeType.DELETED);
+                cci.setType(PropertyChangeType.DELETED);
             }
 
             result.put(e.getKey(), cci);
@@ -61,7 +63,7 @@ public abstract class AbstractConfigChangeParser implements ConfigChangeParser {
             Map.Entry<String, Object> e = entryItr.next();
             if (!oldMap.containsKey(e.getKey())) {
                 ConfigChangeItem cci = new ConfigChangeItem(e.getKey(), null, e.getValue().toString());
-                cci.setType(ConfigChangeItem.PropertyChangeType.ADDED);
+                cci.setType(PropertyChangeType.ADDED);
                 result.put(e.getKey(), cci);
             }
         }
