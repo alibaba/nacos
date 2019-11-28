@@ -32,7 +32,7 @@ import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.client.config.utils.IOUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 
 import com.alibaba.nacos.client.utils.*;
 import org.slf4j.Logger;
@@ -202,7 +202,7 @@ public class ServerListManager {
             properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                 System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                     String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
-        if (Boolean.valueOf(isUseEndpointRuleParsing)) {
+        if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
             if (StringUtils.isNotBlank(endpointUrl)) {
                 serverAddrsStr = "";
@@ -305,7 +305,7 @@ public class ServerListManager {
                 if (DEFAULT_NAME.equals(name)) {
                     EnvUtil.setSelfEnv(httpResult.headers);
                 }
-                List<String> lines = IOUtils.readLines(new StringReader(httpResult.content));
+                List<String> lines = IoUtils.readLines(new StringReader(httpResult.content));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(serverAddr)) {

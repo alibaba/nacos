@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * A consistency protocol algorithm called <b>Partition</b>
+ * A consistency protocol algorithm called <b>Distro</b>
  * <p>
  * Use a distro algorithm to divide data into many blocks. Each Nacos server node takes
  * responsibility for exactly one block of data. Each block of data is generated, removed
@@ -273,6 +273,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                     // abort the procedure:
                     return;
                 }
+
                 /**
                  * 本地不包含当前key  ||  本地key对应的数据为null  ||  本地key对应的Checksum和请求数据不同
                  */

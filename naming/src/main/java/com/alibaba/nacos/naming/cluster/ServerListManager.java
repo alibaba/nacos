@@ -92,7 +92,7 @@ public class ServerListManager {
         /**
          * 根据心跳判断集群内成员状态
          */
-        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 5000);
+        GlobalExecutor.registerServerStatusReporter(new ServerStatusReporter(), 2000);
     }
 
     /**

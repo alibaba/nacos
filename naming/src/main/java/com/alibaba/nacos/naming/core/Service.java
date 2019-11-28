@@ -213,7 +213,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         return healthyCount;
     }
 
-    public boolean meetProtectThreshold() {
+    public boolean triggerFlag() {
         return (healthyInstanceCount() * 1.0 / allIPs().size()) <= getProtectThreshold();
     }
 
@@ -550,6 +550,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
          * 删除Clusters
          */
         remvDeadClusters(this, vDom);
+
+        Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
+
         /**
          * 重新计算checksum
          */
