@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Map;
+import java.util.Iterator;
 
 /**
  * ConfigChangeHandler
@@ -38,8 +39,9 @@ public class ConfigChangeHandler {
         this.parserList = new LinkedList<ConfigChangeParser>();
 
         ServiceLoader<ConfigChangeParser> loader = ServiceLoader.load(ConfigChangeParser.class);
-        while (loader.iterator().hasNext()) {
-            this.parserList.add(loader.iterator().next());
+        Iterator<ConfigChangeParser> itr = loader.iterator();
+        while (itr.hasNext()) {
+            this.parserList.add(itr.next());
         }
 
         this.parserList.add(new PropertiesChangeParser());
