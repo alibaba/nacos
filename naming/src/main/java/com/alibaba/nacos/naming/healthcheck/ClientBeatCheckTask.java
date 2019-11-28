@@ -60,6 +60,10 @@ public class ClientBeatCheckTask implements Runnable {
         return SpringContext.getAppContext().getBean(GlobalConfig.class);
     }
 
+    public SwitchDomain getSwitchDomain() {
+        return SpringContext.getAppContext().getBean(SwitchDomain.class);
+    }
+
     public String taskKey() {
         return service.getName();
     }
@@ -71,6 +75,10 @@ public class ClientBeatCheckTask implements Runnable {
              * 是否由本地节点执行
              */
             if (!getDistroMapper().responsible(service.getName())) {
+                return;
+            }
+
+            if (!getSwitchDomain().isHealthCheckEnabled()) {
                 return;
             }
 

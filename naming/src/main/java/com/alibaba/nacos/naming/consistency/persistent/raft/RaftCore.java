@@ -477,11 +477,10 @@ public class RaftCore {
 
     /**
      * 处理其他节点发送得投票
-     *
      * @param remote
      * @return
      */
-    public RaftPeer receivedVote(RaftPeer remote) {
+    public synchronized RaftPeer receivedVote(RaftPeer remote) {
         /**
          * 非集群中得节点
          */
@@ -768,19 +767,20 @@ public class RaftCore {
          */
         peers.makeLeader(remote);
 
-
-        /**
-         * 本地的datums数据   value为0的key为本地数据   value为1的key为leader中有的数据
-         */
-        Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
-
-        for (Map.Entry<String, Datum> entry : datums.entrySet()) {
-            receivedKeysMap.put(entry.getKey(), 0);
-        }
-
-        // now check datums
-        List<String> batch = new ArrayList<>();
         if (!switchDomain.isSendBeatOnly()) {
+
+            /**
+             * 本地的datums数据   value为0的key为本地数据   value为1的key为leader中有的数据
+             */
+            Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
+
+            for (Map.Entry<String, Datum> entry : datums.entrySet()) {
+                receivedKeysMap.put(entry.getKey(), 0);
+            }
+
+            // now check datums
+            List<String> batch = new ArrayList<>();
+
             int processedCount = 0;
             if (Loggers.RAFT.isDebugEnabled()) {
                 Loggers.RAFT.debug("[RAFT] received beat with {} keys, RaftCore.datums' size is {}, remote server: {}, term: {}, local term: {}",

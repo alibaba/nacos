@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -199,13 +199,15 @@ public class DiskCache {
      */
     private static File makeSureCacheDirExists(String dir) {
         File cacheDir = new File(dir);
+
         /**
          * dir不存在  则创建
          */
-        if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-            throw new IllegalStateException("failed to create cache dir: " + dir);
+        if (!cacheDir.exists()) {
+            if (!cacheDir.mkdirs() && !cacheDir.exists()) {
+                throw new IllegalStateException("failed to create cache dir: " + dir);
+            }
         }
-
         return cacheDir;
     }
 }

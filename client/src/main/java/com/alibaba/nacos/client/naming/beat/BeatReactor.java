@@ -71,10 +71,16 @@ public class BeatReactor {
      */
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
+        String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
+        BeatInfo existBeat = null;
+        //fix #1733
+        if ((existBeat = dom2Beat.remove(key)) != null) {
+            existBeat.setStopped(true);
+        }
         /**
          * key=serviceName#ip#port
          */
-        dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
+        dom2Beat.put(key, beatInfo);
 
         /**
          * 设置一次性调度任务   间隔为beatInfo.getPeriod()   毫秒级

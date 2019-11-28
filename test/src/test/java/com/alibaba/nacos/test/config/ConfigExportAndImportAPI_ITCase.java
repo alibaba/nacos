@@ -152,18 +152,25 @@ public class ConfigExportAndImportAPI_ITCase {
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JSONObject resultObj = JSON.parseObject(queryResult);
         JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
-        Assert.assertEquals(2, resultConfigs.size());
+        Assert.assertEquals(3, resultConfigs.size());
         JSONObject config1 = resultConfigs.getJSONObject(0);
         JSONObject config2 = resultConfigs.getJSONObject(1);
+        JSONObject config3 = resultConfigs.getJSONObject(2);
         String exportByIdsUrl = "?export=true&tenant=&group=DEFAULT_GROUP&appName=&ids=";
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
-        Assert.assertEquals(2, zipItemList.size());
+        Assert.assertEquals(3, zipItemList.size());
         String config1Name = config1.getString("group") + "/" + config1.getString("dataId");
         String config2Name = config2.getString("group") + "/" + config2.getString("dataId");
+        String config3Name = config3.getString("group") + "/" + config3.getString("dataId");
+
+        System.out.println(config1Name + ", " + config2Name + ", " + config3Name);
+
         for(ZipUtils.ZipItem zipItem : zipItemList){
-            if(!(config1Name.equals(zipItem.getItemName()) || config2Name.equals(zipItem.getItemName()))){
+            if(!(config1Name.equals(zipItem.getItemName())
+                || config2Name.equals(zipItem.getItemName())
+                || config3Name.equals(zipItem.getItemName()))){
                 Assert.fail();
             }
         }

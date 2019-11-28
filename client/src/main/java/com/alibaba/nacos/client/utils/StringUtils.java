@@ -25,7 +25,9 @@ import java.util.Locale;
  * string util
  *
  * @author Nacos
+ * @deprecated Use {@link org.apache.commons.lang3.StringUtils} instead
  */
+@Deprecated
 public class StringUtils {
 
     private static final int INDEX_NOT_FOUND = -1;

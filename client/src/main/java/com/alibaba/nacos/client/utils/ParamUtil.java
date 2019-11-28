@@ -36,7 +36,7 @@ public class ParamUtil {
     public final static boolean USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE = true;
 
     private static final Pattern PATTERN = Pattern.compile("\\$\\{[^}]+\\}");
-    private static String defaultContextPath = "nacos";
+    private static String defaultContextPath;
     private static String defaultNodesPath = "serverlist";
     private static String appKey;
     private static String appName;
@@ -48,6 +48,8 @@ public class ParamUtil {
     static {
         // 客户端身份信息
         appKey = System.getProperty("nacos.client.appKey", "");
+
+        defaultContextPath = System.getProperty("nacos.client.contextPath", "nacos");
 
         appName = AppNameUtils.getAppName();
 
@@ -157,7 +159,7 @@ public class ParamUtil {
             || !PATTERN.matcher(endpointUrl).find()) {
             // skip retrieve from system property and retrieve directly from system env
             String endpointUrlSource = System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(endpointUrlSource)) {
+            if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
 
@@ -182,8 +184,8 @@ public class ParamUtil {
         });
 
 
-        if (com.alibaba.nacos.client.utils.StringUtils.isBlank(endpointUrlSource)) {
-            if (com.alibaba.nacos.client.utils.StringUtils.isNotBlank(defaultEndpointUrl)) {
+        if (StringUtils.isBlank(endpointUrlSource)) {
+            if (StringUtils.isNotBlank(defaultEndpointUrl)) {
                 endpointUrl = defaultEndpointUrl;
             }
         } else {

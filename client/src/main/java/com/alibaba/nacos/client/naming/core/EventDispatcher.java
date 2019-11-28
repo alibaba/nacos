@@ -123,6 +123,10 @@ public class EventDispatcher {
         }
     }
 
+    public boolean isSubscribed(String serviceName, String clusters) {
+        return observerMap.containsKey(ServiceInfo.getKey(serviceName, clusters));
+    }
+
     public List<ServiceInfo> getSubscribeServices() {
         List<ServiceInfo> serviceInfos = new ArrayList<ServiceInfo>();
         for (String key : observerMap.keySet()) {
@@ -185,12 +189,5 @@ public class EventDispatcher {
                 }
             }
         }
-    }
-
-    public void setExecutor(ExecutorService executor) {
-        ExecutorService oldExecutor = this.executor;
-        this.executor = executor;
-
-        oldExecutor.shutdown();
     }
 }

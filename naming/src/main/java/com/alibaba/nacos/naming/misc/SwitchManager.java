@@ -267,6 +267,11 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
                 switchDomain.setDefaultInstanceEphemeral(Boolean.parseBoolean(defaultEphemeral));
             }
 
+            if (entry.equals(SwitchEntry.DISTRO_SERVER_EXPIRED_MILLIS)) {
+                String distroServerExpiredMillis = value;
+                switchDomain.setDistroServerExpiredMillis(Long.parseLong(distroServerExpiredMillis));
+            }
+
             if (debug) {
                 update(switchDomain);
             } else {

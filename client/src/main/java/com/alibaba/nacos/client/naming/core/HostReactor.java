@@ -24,7 +24,7 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -389,6 +389,8 @@ public class HostReactor {
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
+
+
     /**
      * 调度更新
      * @param serviceName
@@ -510,12 +512,21 @@ public class HostReactor {
                     refreshOnly(serviceName, clusters);
                 }
 
+                lastRefTime = serviceObj.getLastRefTime();
+
+                if (!eventDispatcher.isSubscribed(serviceName, clusters) &&
+                    !futureMap.containsKey(ServiceInfo.getKey(serviceName, clusters))) {
+                    // abort the update task:
+                    NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
+                    return;
+                }
+
                 /**
                  * 下次任务
                  */
                 executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
 
-                lastRefTime = serviceObj.getLastRefTime();
+
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             }
