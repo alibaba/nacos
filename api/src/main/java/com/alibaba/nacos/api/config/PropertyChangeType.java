@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0  = the "License"");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.listener.impl;
-
-import com.alibaba.nacos.api.config.listener.AbstractListener;
-import com.alibaba.nacos.api.config.ConfigChangeEvent;
+package com.alibaba.nacos.api.config;
 
 /**
- * AbstractConfigChangeListener
+ * Property Change Type
  *
  * @author rushsky518
  */
-public abstract class AbstractConfigChangeListener extends AbstractListener {
-    /**
-     * handle config change
-     * @param event
-     */
-    public abstract void receiveConfigChange(final ConfigChangeEvent event);
-
-    @Override
-    public void receiveConfigInfo(final String configInfo) {}
+public enum PropertyChangeType {
+    /** add */
+    ADDED,
+    /** modified */
+    MODIFIED,
+    /** deleted */
+    DELETED
 }
-

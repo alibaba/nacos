@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.api.config;
 
 /**
  * ConfigChangeItem
@@ -26,14 +26,6 @@ public class ConfigChangeItem {
     private String newValue;
 
     private PropertyChangeType type;
-    public enum PropertyChangeType {
-        /** add */
-        ADDED,
-        /** modified */
-        MODIFIED,
-        /** deleted */
-        DELETED
-    }
 
     public ConfigChangeItem(String key, String oldValue, String newValue) {
         this.key = key;

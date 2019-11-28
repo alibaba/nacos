@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.api.config.listener;
 
+import com.alibaba.nacos.api.config.ConfigChangeItem;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -39,5 +41,5 @@ public interface ConfigChangeParser {
      * @return
      * @throws IOException
      */
-    Map<String, Object> doParse(String oldContent, String newContent, String type) throws IOException;
+    Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) throws IOException;
 }

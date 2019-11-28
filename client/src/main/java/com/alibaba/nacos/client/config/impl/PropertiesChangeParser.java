@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.client.utils.StringUtils;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class PropertiesChangeParser extends AbstractConfigChangeParser {
     }
 
     @Override
-    public Map doParse(String oldContent, String newContent, String type) throws IOException {
+    public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) throws IOException {
         Properties oldProps = new Properties();
         Properties newProps = new Properties();
 
