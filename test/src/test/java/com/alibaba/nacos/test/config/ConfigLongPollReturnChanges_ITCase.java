@@ -18,11 +18,13 @@ package com.alibaba.nacos.test.config;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigChangeEvent;
+import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.config.listener.Listener;
+import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.config.server.Config;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,14 +33,12 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Properties;
-import java.util.Random;
-import java.util.concurrent.Executor;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigLongPollReturnChanges_ITCase {
-
     @LocalServerPort
     private int port;
 
@@ -55,22 +55,97 @@ public class ConfigLongPollReturnChanges_ITCase {
     }
 
     @Test
-    public void test() throws InterruptedException, NacosException {
-        final String dataId = "test";
+    public void testAdd() throws InterruptedException, NacosException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
-        final String content = "test" + new Random().nextInt(1000);
+        final String content = "config data";
 
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
-                System.out.println(event.getChangeItems());
+                ConfigChangeItem cci = event.getChangeItem("content");
+                Assert.assertEquals(null, cci.getOldValue());
+                Assert.assertEquals(content, cci.getNewValue());
+                Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
+                System.out.println(cci);
+                latch.countDown();
             }
 
         });
-
         configService.publishConfig(dataId, group, content);
 
-        TimeUnit.SECONDS.sleep(10);
+        latch.await();
+    }
+
+    @Test
+    public void testModify() throws InterruptedException, NacosException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        final String dataId = "test" + System.currentTimeMillis();
+        final String group = "DEFAULT_GROUP";
+        final String oldData = "old data";
+        final String newData = "new data";
+
+        configService.publishConfig(dataId, group, oldData);
+
+        // query config immediately may return null
+        String config = null;
+        do {
+            TimeUnit.SECONDS.sleep(1);
+            config = configService.getConfig(dataId, group, 50);
+        } while(null == config);
+
+        configService.addListener(dataId, group, new AbstractConfigChangeListener() {
+            @Override
+            public void receiveConfigChange(ConfigChangeEvent event) {
+                ConfigChangeItem cci = event.getChangeItem("content");
+                Assert.assertEquals(oldData, cci.getOldValue());
+                Assert.assertEquals(newData, cci.getNewValue());
+                Assert.assertEquals(PropertyChangeType.MODIFIED, cci.getType());
+                System.out.println(cci);
+                latch.countDown();
+            }
+
+        });
+        configService.publishConfig(dataId, group, newData);
+
+        latch.await();
+    }
+
+    @Test
+    public void testDelete() throws InterruptedException, NacosException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        final String dataId = "test" + System.currentTimeMillis();
+        final String group = "DEFAULT_GROUP";
+        final String oldData = "old data";
+
+        configService.publishConfig(dataId, group, oldData);
+
+        // query config immediately may return null
+        String config = null;
+        do {
+            TimeUnit.SECONDS.sleep(1);
+            config = configService.getConfig(dataId, group, 50);
+        } while(null == config);
+
+        configService.addListener(dataId, group, new AbstractConfigChangeListener() {
+            @Override
+            public void receiveConfigChange(ConfigChangeEvent event) {
+                ConfigChangeItem cci = event.getChangeItem("content");
+                Assert.assertEquals(oldData, cci.getOldValue());
+                Assert.assertEquals(null, cci.getNewValue());
+                Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
+                System.out.println(cci);
+                latch.countDown();
+            }
+
+        });
+        configService.removeConfig(dataId, group);
+
+        latch.await();
     }
 
 }

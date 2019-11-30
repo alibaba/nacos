@@ -220,7 +220,6 @@ public class PersistService {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
-            info.setType(rs.getString("type"));
 
             try {
                 info.setContent(rs.getString("content"));
@@ -234,6 +233,11 @@ public class PersistService {
             }
             try {
                 info.setId(rs.getLong("ID"));
+            } catch (SQLException e) {
+                // ignore
+            }
+            try {
+                info.setType(rs.getString("type"));
             } catch (SQLException e) {
                 // ignore
             }

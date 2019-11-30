@@ -17,6 +17,7 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
+import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.config.listener.ConfigChangeParser;
 
 import java.io.IOException;
@@ -33,7 +34,17 @@ public class TextChangeParser implements ConfigChangeParser {
     public Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) throws IOException {
         Map<String, ConfigChangeItem> map = new HashMap<>(4);
         final String key = "content";
-        map.put(key, new ConfigChangeItem(key, oldContent, newContent));
+
+        ConfigChangeItem cci = new ConfigChangeItem(key, oldContent, newContent);
+        if (null == oldContent && null != newContent) {
+            cci.setType(PropertyChangeType.ADDED);
+        } else if (null != oldContent && null != newContent && !oldContent.equals(newContent)) {
+            cci.setType(PropertyChangeType.MODIFIED);
+        } else if (null != oldContent && null == newContent) {
+            cci.setType(PropertyChangeType.DELETED);
+        }
+        map.put(key, cci);
+
         return map;
     }
 }

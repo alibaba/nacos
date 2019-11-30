@@ -255,7 +255,7 @@ public class ClientWorker {
                 return ct;
             case HttpURLConnection.HTTP_NOT_FOUND:
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
-                return null;
+                return ct;
             case HttpURLConnection.HTTP_CONFLICT: {
                 LOGGER.error(
                     "[{}] [sub-server-error] get server config being modified concurrently, dataId={}, group={}, "
