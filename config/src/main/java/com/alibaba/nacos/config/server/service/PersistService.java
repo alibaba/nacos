@@ -865,7 +865,7 @@ public class PersistService {
                     ps.setString(index++, dataId);
                     ps.setString(index++, group);
                     ps.setString(index++, tenantTmp);
-                    ps.setString(index++, datumId);
+                    ps.setString(index, datumId);
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
@@ -888,7 +888,7 @@ public class PersistService {
                     int index = 1;
                     ps.setString(index++, dataId);
                     ps.setString(index++, group);
-                    ps.setString(index++, tenantTmp);
+                    ps.setString(index, tenantTmp);
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
@@ -947,7 +947,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -993,7 +993,7 @@ public class PersistService {
             if (isPublishOk == null) {
                 return false;
             }
-            return isPublishOk.booleanValue();
+            return isPublishOk;
         } catch (TransactionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             return false;
@@ -1035,7 +1035,7 @@ public class PersistService {
             if (isReplaceOk == null) {
                 return false;
             }
-            return isReplaceOk.booleanValue();
+            return isReplaceOk;
         } catch (TransactionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             return false;
@@ -1632,7 +1632,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -1644,7 +1644,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -1656,7 +1656,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     /**
@@ -1668,7 +1668,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     public List<String> getTenantIdList(int page, int pageSize) {
@@ -1690,7 +1690,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     public int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds) {
@@ -2848,7 +2848,7 @@ public class PersistService {
                 sql.append(", ");
             }
             sql.append("?");
-            paramList.add(Long.valueOf(tagArr[i]));
+            paramList.add(Long.parseLong(tagArr[i]));
         }
         sql.append(") ");
         try {
@@ -2957,7 +2957,7 @@ public class PersistService {
                 sql.append(", ");
             }
             sql.append("?");
-            paramList.add(Long.valueOf(tagArr[i]));
+            paramList.add(Long.parseLong(tagArr[i]));
         }
         sql.append(") ");
         try {
@@ -3562,7 +3562,7 @@ public class PersistService {
         if (result == null) {
             return 0;
         }
-        return result.intValue();
+        return result;
     }
 
 

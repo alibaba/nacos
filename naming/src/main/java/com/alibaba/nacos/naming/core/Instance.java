@@ -322,8 +322,9 @@ public class Instance extends com.alibaba.nacos.api.naming.pojo.Instance impleme
         while (currentInstanceIds.contains(String.valueOf(id))) {
             id++;
         }
-        currentInstanceIds.add(String.valueOf(id));
-        return String.valueOf(id);
+        String idStr = String.valueOf(id);
+        currentInstanceIds.add(idStr);
+        return idStr;
     }
 
     public void validate() throws NacosException {
