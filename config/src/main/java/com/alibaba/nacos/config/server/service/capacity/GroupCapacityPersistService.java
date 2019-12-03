@@ -119,7 +119,7 @@ public class GroupCapacityPersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result.intValue();
+        return result;
     }
 
     private boolean insertGroupCapacity(final String sql, final GroupCapacity capacity) {

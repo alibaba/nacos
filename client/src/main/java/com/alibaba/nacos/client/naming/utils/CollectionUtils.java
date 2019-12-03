@@ -145,7 +145,7 @@ public class CollectionUtils {
     private static int getFreq(final Object obj, final Map freqMap) {
         Integer count = (Integer)freqMap.get(obj);
         if (count != null) {
-            return count.intValue();
+            return count;
         }
         return 0;
     }
