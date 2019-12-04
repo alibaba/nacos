@@ -3490,7 +3490,7 @@ public class PersistService {
                 if (configInfo.getDataId().contains(SPOT)) {
                     String extName = configInfo.getDataId().substring(configInfo.getDataId().lastIndexOf(SPOT) + 1).toUpperCase();
                     try {
-                        type = FileTypeEnum.valueOf(extName).getFileType();
+                        type = FileTypeEnum.valueOf(extName.toUpperCase()).getFileType();
                     } catch (Exception ex) {
                         type = FileTypeEnum.TEXT.getFileType();
                     }
