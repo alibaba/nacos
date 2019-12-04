@@ -148,7 +148,6 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        //final int rowCount = rowCountInt.intValue();
 
         // 计算页数
         int pageCount = rowCountInt / pageSize;

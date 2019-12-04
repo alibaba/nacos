@@ -947,7 +947,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result;
+        return result.intValue();
     }
 
     /**
@@ -1632,7 +1632,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
 
     /**
@@ -1644,7 +1644,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
 
     /**
@@ -1656,7 +1656,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result;
+        return result.intValue();
     }
 
     /**
@@ -1668,7 +1668,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("configInfoBetaCount error");
         }
-        return result;
+        return result.intValue();
     }
 
     public List<String> getTenantIdList(int page, int pageSize) {
@@ -1690,7 +1690,7 @@ public class PersistService {
         if (result == null) {
             throw new IllegalArgumentException("aggrConfigInfoCount error");
         }
-        return result;
+        return result.intValue();
     }
 
     public int aggrConfigInfoCountIn(String dataId, String group, String tenant, List<String> datumIds) {
@@ -3562,7 +3562,7 @@ public class PersistService {
         if (result == null) {
             return 0;
         }
-        return result;
+        return result.intValue();
     }
 
 
