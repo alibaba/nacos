@@ -73,9 +73,7 @@ public class HttpSimpleClient {
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null && conn.getInputStream() != null) {
-                conn.getInputStream().close();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
@@ -131,9 +129,7 @@ public class HttpSimpleClient {
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null && conn.getInputStream() != null) {
-                conn.getInputStream().close();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
@@ -185,9 +181,7 @@ public class HttpSimpleClient {
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null && conn.getInputStream() != null) {
-                conn.getInputStream().close();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
