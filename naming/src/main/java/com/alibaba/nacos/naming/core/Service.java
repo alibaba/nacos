@@ -187,7 +187,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
 
         /**
-         *
+         * 更新service下得对应新注册服务得cluster下的instance列表  并触发ServiceChangeEvent
          */
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
