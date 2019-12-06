@@ -15,23 +15,21 @@
  */
 package com.alibaba.nacos.api.naming;
 
+import com.alibaba.nacos.api.common.ResponseCode;
+
 /**
- * Common parameters for service discovery
+ * Business response code of naming module
+ *
+ * Every code stays between 20001 to 29999.
  *
  * @author nkorange
- * @since 1.0.0
+ * @author 1.2.0
  */
-public class CommonParams {
+public class NamingResponseCode extends ResponseCode {
 
-    public static final String CODE = "code";
+    /**
+     * The requested resource is not found
+     */
+    public static final int RESOURCE_NOT_FOUND = 20404;
 
-    public static final String SERVICE_NAME = "serviceName";
-
-    public static final String CLUSTER_NAME = "clusterName";
-
-    public static final String NAMESPACE_ID = "namespaceId";
-
-    public static final String GROUP_NAME = "groupName";
-
-    public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
 }

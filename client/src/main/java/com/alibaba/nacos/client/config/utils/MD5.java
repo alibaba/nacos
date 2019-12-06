@@ -16,8 +16,8 @@
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-
 import com.google.common.collect.Maps;
+
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.Map;
