@@ -280,7 +280,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
             //fuzzy match
             if (outKey.startsWith(namespaceId) && name.indexOf(NamingUtils.getServiceName(serviceName)) >= 0 && groupName.indexOf(NamingUtils.getGroupName(serviceName)) >= 0) {
                 clientConcurrentMap.forEach((key, client) -> {
-                    clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceName));
+                    clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceFullName));
                 });
             }
         });
