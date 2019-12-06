@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
 import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,7 +32,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.mockito.Mockito.when;
 

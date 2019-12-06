@@ -15,10 +15,10 @@
  */
 package com.alibaba.nacos.client.config.filter.impl;
 
+import com.alibaba.nacos.api.config.filter.IConfigContext;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import com.alibaba.nacos.api.config.filter.IConfigContext;
 
 /**
  * Config Context

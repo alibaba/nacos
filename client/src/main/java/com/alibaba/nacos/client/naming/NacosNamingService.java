@@ -95,7 +95,8 @@ public class NacosNamingService implements NamingService {
         serverProxy = new NamingProxy(namespace, endpoint, serverList);
         serverProxy.setProperties(properties);
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
-        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), initPollingThreadCount(properties));
+        hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
+            initPollingThreadCount(properties));
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -198,8 +199,7 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
-            long instanceInterval = instance.getInstanceHeartBeatInterval();
-            beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
+            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }

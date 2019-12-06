@@ -91,6 +91,9 @@ public class IoUtils {
     }
 
     static public String toString(InputStream input, String encoding) throws IOException {
+        if (input == null) {
+            return StringUtils.EMPTY;
+        }
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
             : toString(new InputStreamReader(input, encoding));
     }
