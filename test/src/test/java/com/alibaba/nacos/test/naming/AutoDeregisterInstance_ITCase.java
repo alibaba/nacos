@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.naming.NamingApp;
+import com.alibaba.nacos.naming.boot.RunningConfig;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,12 +65,17 @@ public class AutoDeregisterInstance_ITCase {
         }
 
         while (true) {
-            if (!"UP".equals(naming.getServerStatus())) {
+            if (!"UP".equals(naming.getServerStatus()) || RunningConfig.getServerPort() == 0) {
                 Thread.sleep(1000L);
                 continue;
             }
             break;
         }
+    }
+
+    @After
+    public void destroy() {
+        NamingBase.destoryServer(port);
     }
 
     /**
@@ -147,8 +154,6 @@ public class AutoDeregisterInstance_ITCase {
     @Test
     public void autoRegDomTest() throws Exception {
 
-        naming = NamingFactory.createNamingService("11.239.112.161:8848,11.239.113.204:8848,11.239.114.187:8848");
-
         String serviceName = randomDomainName();
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT);
@@ -196,6 +201,8 @@ public class AutoDeregisterInstance_ITCase {
     public void autoRegDomClustersTest() throws Exception {
 
         String serviceName = randomDomainName();
+
+        System.out.println(serviceName);
 
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         naming.registerInstance(serviceName, "127.0.0.2", TEST_PORT, "c2");

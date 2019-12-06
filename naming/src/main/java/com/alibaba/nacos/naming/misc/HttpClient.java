@@ -45,7 +45,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -88,14 +87,15 @@ public class HttpClient {
     }
 
     public static HttpResult httpDelete(String url, List<String> headers, Map<String, String> paramValues) {
-        return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "DELETE");
+        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "DELETE");
     }
 
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues) {
-        return request(url, headers, paramValues, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "GET");
+        return request(url, headers, paramValues, StringUtils.EMPTY, CON_TIME_OUT_MILLIS, TIME_OUT_MILLIS, "UTF-8", "GET");
     }
 
-    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, int connectTimeout, int readTimeout, String encoding, String method) {
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String body, int connectTimeout,
+                                     int readTimeout, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -107,6 +107,15 @@ public class HttpClient {
             conn.setRequestMethod(method);
 
             setHeaders(conn, headers, encoding);
+
+            if (StringUtils.isNotBlank(body)) {
+                byte[] b = body.getBytes();
+                conn.setRequestProperty("Content-Length", String.valueOf(b.length));
+                conn.getOutputStream().write(b, 0, b.length);
+                conn.getOutputStream().flush();
+                conn.getOutputStream().close();
+            }
+
             conn.connect();
 
             return getResult(conn);

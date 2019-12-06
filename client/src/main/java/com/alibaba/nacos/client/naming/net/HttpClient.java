@@ -16,6 +16,7 @@
 package com.alibaba.nacos.client.naming.net;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.google.common.net.HttpHeaders;
 import org.apache.commons.lang3.StringUtils;
@@ -62,10 +63,10 @@ public class HttpClient {
     }
 
     public static HttpResult httpGet(String url, List<String> headers, Map<String, String> paramValues, String encoding) {
-        return request(url, headers, paramValues, encoding, "GET");
+        return request(url, headers, paramValues, StringUtils.EMPTY, encoding, HttpMethod.GET);
     }
 
-    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String encoding, String method) {
+    public static HttpResult request(String url, List<String> headers, Map<String, String> paramValues, String body, String encoding, String method) {
         HttpURLConnection conn = null;
         try {
             String encodedContent = encodingParams(paramValues, encoding);
@@ -78,9 +79,9 @@ public class HttpClient {
             conn.setReadTimeout(TIME_OUT_MILLIS);
             conn.setRequestMethod(method);
             conn.setDoOutput(true);
-            if (POST.equals(method) || PUT.equals(method)) {
+            if (StringUtils.isNotBlank(body)) {
                 // fix: apache http nio framework must set some content to request body
-                byte[] b = encodedContent.getBytes();
+                byte[] b = body.getBytes();
                 conn.setRequestProperty("Content-Length", String.valueOf(b.length));
                 conn.getOutputStream().write(b, 0, b.length);
                 conn.getOutputStream().flush();
