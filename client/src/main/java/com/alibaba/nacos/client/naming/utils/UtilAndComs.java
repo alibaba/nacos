@@ -58,8 +58,6 @@ public class UtilAndComs {
         .availableProcessors() > 1 ? Runtime.getRuntime().availableProcessors() / 2
         : 1;
 
-    public static final int DEFAULT_RESEND_BEAT_INTERVAL_SECONDS = 2;
-
     public static final String HTTP = "http://";
 
     public static final String HTTPS = "https://";

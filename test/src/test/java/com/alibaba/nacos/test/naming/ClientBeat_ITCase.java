@@ -89,7 +89,7 @@ public class ClientBeat_ITCase extends NamingBase {
             }
         }
 
-        // Sleep 30 seconds and see if instance list not changed:
+        // Sleep 35 seconds and see if instance list not changed:
         TimeUnit.SECONDS.sleep(35L);
 
         list = naming.getAllInstances(serviceName);
@@ -114,7 +114,7 @@ public class ClientBeat_ITCase extends NamingBase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        // Sleep 30 seconds and see if instance list not changed:
+        // Sleep 35 seconds and see if instance list not changed:
         TimeUnit.SECONDS.sleep(35L);
 
         list = naming.getAllInstances(serviceName);
