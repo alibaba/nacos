@@ -267,9 +267,7 @@ public class InstanceController {
         }
 
         if (clientBeat != null) {
-            if (StringUtils.isBlank(clientBeat.getCluster())) {
-                clientBeat.setCluster(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
-            } else {
+            if (StringUtils.isNotBlank(clientBeat.getCluster())) {
                 clusterName = clientBeat.getCluster();
             }
             ip = clientBeat.getIp();
@@ -311,10 +309,8 @@ public class InstanceController {
             clientBeat.setIp(ip);
             clientBeat.setPort(port);
             clientBeat.setCluster(clusterName);
-            service.processClientBeat(clientBeat);
-        } else {
-            service.processClientBeat(clientBeat);
         }
+        service.processClientBeat(clientBeat);
 
         result.put(CommonParams.CODE, NamingResponseCode.OK);
         result.put("clientBeatInterval", instance.getInstanceHeartBeatInterval());
