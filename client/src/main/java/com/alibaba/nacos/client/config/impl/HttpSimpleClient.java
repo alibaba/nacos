@@ -17,10 +17,10 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.UuidUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 
@@ -73,9 +73,7 @@ public class HttpSimpleClient {
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null && conn.getInputStream() != null) {
-                conn.getInputStream().close();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
@@ -131,9 +129,7 @@ public class HttpSimpleClient {
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null && conn.getInputStream() != null) {
-                conn.getInputStream().close();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 
@@ -185,9 +181,7 @@ public class HttpSimpleClient {
             }
             return new HttpResult(respCode, conn.getHeaderFields(), resp);
         } finally {
-            if (conn != null && conn.getInputStream() != null) {
-                conn.getInputStream().close();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 

@@ -15,6 +15,21 @@
  */
 package com.alibaba.nacos.client.config.impl;
 
+
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
+import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
+import com.alibaba.nacos.client.config.utils.ConfigScheduler;
+import com.alibaba.nacos.client.utils.EnvUtil;
+import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
+import org.slf4j.Logger;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
@@ -26,20 +41,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.alibaba.nacos.api.LifeCycle;
-import com.alibaba.nacos.api.LifeCycleHelper;
-import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.SystemPropertyKeyConst;
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
-import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.client.config.utils.ConfigScheduler;
-import com.alibaba.nacos.common.utils.IoUtils;
-
-import com.alibaba.nacos.client.utils.*;
-import org.slf4j.Logger;
 
 
 /**
@@ -207,7 +208,7 @@ public class ServerListManager {
             properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                 System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
                     String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
-        if (Boolean.valueOf(isUseEndpointRuleParsing)) {
+        if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
             if (StringUtils.isNotBlank(endpointUrl)) {
                 serverAddrsStr = "";
@@ -242,7 +243,7 @@ public class ServerListManager {
         }
 
         configScheduler.scheduleWithFixedDelay(configScheduler.getClientTimerSchedule(),
-                getServersTask, 0L, 30L, TimeUnit.SECONDS);
+            getServersTask, 0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
     }
 

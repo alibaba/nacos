@@ -48,7 +48,7 @@ public class BeatReactorTest {
         beatInfo.setScheduled(false);
         beatInfo.setPeriod(1000L);
 
-        Mockito.doReturn(0L).when(namingProxy).sendBeat(beatInfo);
+        Mockito.doReturn(0L).when(namingProxy).sendBeat(beatInfo, true);
         beatReactor.addBeatInfo("testService", beatInfo);
 
         Assert.assertEquals(1, getActiveThread(beatReactor));

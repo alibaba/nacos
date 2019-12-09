@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -23,7 +24,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -257,7 +257,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                 if (HttpServletResponse.SC_OK == result.code) {
                     isAddressServerHealth = true;
                     addressServerFailCcount = 0;
-                    List<String> lines = IOUtils.readLines(new StringReader(result.content));
+                    List<String> lines = IoUtils.readLines(new StringReader(result.content));
                     List<String> ips = new ArrayList<String>(lines.size());
                     for (String serverAddr : lines) {
                         if (StringUtils.isNotBlank(serverAddr)) {
