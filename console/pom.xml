@@ -18,7 +18,7 @@
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
-        <version>1.1.0</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>nacos-console</artifactId>
     <!--<packaging>war</packaging>-->
@@ -43,6 +43,12 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-istio</artifactId>
+        </dependency>
+
         <!-- log -->
         <!-- log4j通过slf4j来代理 -->
         <dependency>
@@ -92,13 +98,6 @@
                 <excludes>
                     <exclude>static/console-fe/.vscode/**</exclude>
                 </excludes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <includes>
-                    <include>nacos-version.txt</include>
-                </includes>
             </resource>
         </resources>
     </build>

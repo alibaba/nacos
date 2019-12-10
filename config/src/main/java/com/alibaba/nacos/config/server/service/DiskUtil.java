@@ -15,11 +15,11 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,14 +159,11 @@ public class DiskUtil {
         throws IOException {
         File file = targetFile(dataId, group, tenant);
         if (file.exists()) {
-            FileInputStream fis = null;
-            try {
-                fis = new FileInputStream(file);
-                return IOUtils.toString(fis, Constants.ENCODE);
+
+            try(FileInputStream fis = new FileInputStream(file);) {
+                return IoUtils.toString(fis, Constants.ENCODE);
             } catch (FileNotFoundException e) {
                 return StringUtils.EMPTY;
-            } finally {
-                IOUtils.closeQuietly(fis);
             }
         } else {
             return StringUtils.EMPTY;

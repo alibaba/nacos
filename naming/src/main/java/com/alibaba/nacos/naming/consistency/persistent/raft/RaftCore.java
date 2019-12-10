@@ -426,7 +426,7 @@ public class RaftCore {
         }
     }
 
-    public RaftPeer receivedVote(RaftPeer remote) {
+    public synchronized RaftPeer receivedVote(RaftPeer remote) {
         if (!peers.contains(remote)) {
             throw new IllegalStateException("can not find peer: " + remote.ip);
         }
@@ -485,7 +485,9 @@ public class RaftCore {
                 return;
             }
 
-            Loggers.RAFT.info("[RAFT] send beat with {} keys.", datums.size());
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("[RAFT] send beat with {} keys.", datums.size());
+            }
 
             local.resetLeaderDue();
 
@@ -513,8 +515,6 @@ public class RaftCore {
 
                     array.add(element);
                 }
-            } else {
-                Loggers.RAFT.info("[RAFT] send beat only.");
             }
 
             packet.put("datums", array);
@@ -531,13 +531,18 @@ public class RaftCore {
 
             byte[] compressedBytes = out.toByteArray();
             String compressedContent = new String(compressedBytes, StandardCharsets.UTF_8);
-            Loggers.RAFT.info("raw beat data size: {}, size of compressed data: {}",
-                content.length(), compressedContent.length());
+
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("raw beat data size: {}, size of compressed data: {}",
+                    content.length(), compressedContent.length());
+            }
 
             for (final String server : peers.allServersWithoutMySelf()) {
                 try {
                     final String url = buildURL(server, API_BEAT);
-                    Loggers.RAFT.info("send beat to server " + server);
+                    if (Loggers.RAFT.isDebugEnabled()) {
+                        Loggers.RAFT.debug("send beat to server " + server);
+                    }
                     HttpClient.asyncHttpPostLarge(url, null, compressedBytes, new AsyncCompletionHandler<Integer>() {
                         @Override
                         public Integer onCompleted(Response response) throws Exception {
@@ -549,7 +554,9 @@ public class RaftCore {
                             }
 
                             peers.update(JSON.parseObject(response.getResponseBody(), RaftPeer.class));
-                            Loggers.RAFT.info("receive beat response from: {}", url);
+                            if (Loggers.RAFT.isDebugEnabled()) {
+                                Loggers.RAFT.debug("receive beat response from: {}", url);
+                            }
                             return 0;
                         }
 
@@ -605,18 +612,22 @@ public class RaftCore {
 
         peers.makeLeader(remote);
 
-        Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
-
-        for (Map.Entry<String, Datum> entry : datums.entrySet()) {
-            receivedKeysMap.put(entry.getKey(), 0);
-        }
-
-        // now check datums
-        List<String> batch = new ArrayList<>();
         if (!switchDomain.isSendBeatOnly()) {
+
+            Map<String, Integer> receivedKeysMap = new HashMap<>(datums.size());
+
+            for (Map.Entry<String, Datum> entry : datums.entrySet()) {
+                receivedKeysMap.put(entry.getKey(), 0);
+            }
+
+            // now check datums
+            List<String> batch = new ArrayList<>();
+
             int processedCount = 0;
-            Loggers.RAFT.info("[RAFT] received beat with {} keys, RaftCore.datums' size is {}, remote server: {}, term: {}, local term: {}",
-                beatDatums.size(), datums.size(), remote.ip, remote.term, local.term);
+            if (Loggers.RAFT.isDebugEnabled()) {
+                Loggers.RAFT.debug("[RAFT] received beat with {} keys, RaftCore.datums' size is {}, remote server: {}, term: {}, local term: {}",
+                    beatDatums.size(), datums.size(), remote.ip, remote.term, local.term);
+            }
             for (Object object : beatDatums) {
                 processedCount = processedCount + 1;
 

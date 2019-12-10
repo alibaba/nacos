@@ -15,9 +15,9 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.service.ServerListService;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -76,15 +76,13 @@ public class NotifyService {
             String resp = null;
 
             if (HttpServletResponse.SC_OK == respCode) {
-                resp = IOUtils.toString(conn.getInputStream());
+                resp = IoUtils.toString(conn.getInputStream(),encoding);
             } else {
-                resp = IOUtils.toString(conn.getErrorStream());
+                resp = IoUtils.toString(conn.getErrorStream(),encoding);
             }
             return new HttpResult(respCode, resp);
         } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
+            IoUtils.closeQuietly(conn);
         }
     }
 

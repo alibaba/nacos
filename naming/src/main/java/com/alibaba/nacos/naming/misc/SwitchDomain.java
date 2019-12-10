@@ -42,6 +42,8 @@ public class SwitchDomain implements Record, Cloneable {
 
     private boolean healthCheckEnabled = true;
 
+    private boolean autoChangeHealthCheckEnabled = true;
+
     private boolean distroEnabled = true;
 
     private boolean enableStandalone = true;
@@ -58,7 +60,7 @@ public class SwitchDomain implements Record, Cloneable {
 
     private List<String> incrementalList = new ArrayList<>();
 
-    private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(15);
+    private long serverStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(2);
 
     private long serviceStatusSynchronizationPeriodMillis = TimeUnit.SECONDS.toMillis(5);
 
@@ -66,12 +68,14 @@ public class SwitchDomain implements Record, Cloneable {
 
     private boolean sendBeatOnly = false;
 
+    private boolean lightBeatEnabled = true;
+
     private Map<String, Integer> limitedUrlMap = new HashMap<>();
 
     /**
      * The server is regarded as expired if its two reporting interval is lagger than this variable.
      */
-    private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(30);
+    private long distroServerExpiredMillis = TimeUnit.SECONDS.toMillis(10);
 
     /**
      * since which version, push can be enabled
@@ -210,6 +214,14 @@ public class SwitchDomain implements Record, Cloneable {
         return healthCheckEnabled || getHealthCheckWhiteList().contains(serviceName);
     }
 
+    public boolean isAutoChangeHealthCheckEnabled() {
+        return autoChangeHealthCheckEnabled;
+    }
+
+    public void setAutoChangeHealthCheckEnabled(boolean autoChangeHealthCheckEnabled) {
+        this.autoChangeHealthCheckEnabled = autoChangeHealthCheckEnabled;
+    }
+
     public boolean isDistroEnabled() {
         return distroEnabled;
     }
@@ -344,6 +356,14 @@ public class SwitchDomain implements Record, Cloneable {
 
     public void setDefaultInstanceEphemeral(boolean defaultInstanceEphemeral) {
         this.defaultInstanceEphemeral = defaultInstanceEphemeral;
+    }
+
+    public boolean isLightBeatEnabled() {
+        return lightBeatEnabled;
+    }
+
+    public void setLightBeatEnabled(boolean lightBeatEnabled) {
+        this.lightBeatEnabled = lightBeatEnabled;
     }
 
     @Override

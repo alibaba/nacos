@@ -27,7 +27,8 @@ public class SubscriberStatus {
     Boolean status;
     String serverIp;
 
-    public SubscriberStatus() {}
+    public SubscriberStatus() {
+    }
 
     public SubscriberStatus(String groupKey, Boolean status, String md5, Long lastTime) {
         this.groupKey = groupKey;

@@ -17,11 +17,11 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.config.utils.ConcurrentDiskUtil;
-import com.alibaba.nacos.client.config.utils.IOUtils;
 import com.alibaba.nacos.client.config.utils.JVMUtil;
 import com.alibaba.nacos.client.config.utils.SnapShotSwitch;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
 import java.io.File;
@@ -83,7 +83,7 @@ public class LocalConfigInfoProcessor {
             InputStream is = null;
             try {
                 is = new FileInputStream(file);
-                return IOUtils.toString(is, Constants.ENCODE);
+                return IoUtils.toString(is, Constants.ENCODE);
             } finally {
                 try {
                     if (null != is) {
@@ -102,7 +102,7 @@ public class LocalConfigInfoProcessor {
         File file = getSnapshotFile(envName, dataId, group, tenant);
         if (null == config) {
             try {
-                IOUtils.delete(file);
+                IoUtils.delete(file);
             } catch (IOException ioe) {
                 LOGGER.error("[" + envName + "] delete snapshot error, " + file, ioe);
             }
@@ -120,7 +120,7 @@ public class LocalConfigInfoProcessor {
                     ConcurrentDiskUtil.writeFileContent(file, config,
                         Constants.ENCODE);
                 } else {
-                    IOUtils.writeStringToFile(file, config, Constants.ENCODE);
+                    IoUtils.writeStringToFile(file, config, Constants.ENCODE);
                 }
             } catch (IOException ioe) {
                 LOGGER.error("[" + envName + "] save snapshot error, " + file, ioe);
@@ -140,7 +140,7 @@ public class LocalConfigInfoProcessor {
             }
             for (File file : files) {
                 if (file.getName().endsWith("_nacos")) {
-                    IOUtils.cleanDirectory(file);
+                    IoUtils.cleanDirectory(file);
                 }
             }
         } catch (IOException ioe) {
@@ -152,7 +152,7 @@ public class LocalConfigInfoProcessor {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
         tmp = new File(tmp, "snapshot");
         try {
-            IOUtils.cleanDirectory(tmp);
+            IoUtils.cleanDirectory(tmp);
             LOGGER.info("success delete " + envName + "-snapshot");
         } catch (IOException e) {
             LOGGER.info("fail delete " + envName + "-snapshot, " + e.toString());

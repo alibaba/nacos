@@ -433,6 +433,58 @@ public class MultiTenant_InstanceAPI_ITCase {
     }
 
     /**
+     * @TCDescription : 多租户, 多group下，注册IP，patchInstance接口, 部分更新实例
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test
+    public void multipleTenant_group_patchInstance() throws Exception {
+        String serviceName = randomDomainName();
+
+        naming1.registerInstance(serviceName, "11.11.11.11", 80);
+        naming2.registerInstance(serviceName, TEST_GROUP_2,"22.22.22.22", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_2)
+                .appendParam("ip", "22.22.22.22")
+                .appendParam("port", "80")
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("weight", "8.0")
+                .done(),
+            String.class,
+            HttpMethod.PUT);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("groupName", TEST_GROUP_2)
+                .appendParam("ip", "22.22.22.22")
+                .appendParam("port", "80")
+                .appendParam("namespaceId", "namespace-2")
+                .done(),
+            String.class,
+            HttpMethod.PATCH);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        response = request("/nacos/v1/ns/instance/list",
+            Params.newParams()
+                .appendParam("serviceName", serviceName) //获取naming中的实例
+                .appendParam("namespaceId", "namespace-2")
+                .appendParam("groupName", TEST_GROUP_2)
+                .done(),
+            String.class);
+        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        JSONObject json = JSON.parseObject(response.getBody());
+        Assert.assertEquals(1, json.getJSONArray("hosts").size());
+        Assert.assertEquals("8.0", json.getJSONArray("hosts").getJSONObject(0).getString("weight"));
+    }
+
+    /**
      * @TCDescription : 多租户注册IP，update一个没有的实例接口
      * @TestStep :
      * @ExpectResult :

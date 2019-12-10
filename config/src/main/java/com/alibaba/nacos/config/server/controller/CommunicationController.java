@@ -22,12 +22,11 @@ import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,7 +37,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author boyan
  * @date 2010-5-7
  */
-@Controller
+@RestController
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
 
@@ -57,9 +56,8 @@ public class CommunicationController {
     /**
      * 通知配置信息改变
      */
-    @RequestMapping(value = "/dataChange", method = RequestMethod.GET)
-    @ResponseBody
-    public Boolean notifyConfigInfo(HttpServletRequest request, HttpServletResponse response,
+    @GetMapping("/dataChange")
+    public Boolean notifyConfigInfo(HttpServletRequest request,
                                     @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                                     @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
                                         String tenant,
@@ -81,11 +79,8 @@ public class CommunicationController {
     /**
      * 在本台机器上获得订阅改配置的客户端信息
      */
-    @RequestMapping(value = "/configWatchers", method = RequestMethod.GET)
-    @ResponseBody
-    public SampleResult getSubClientConfig(HttpServletRequest request,
-                                           HttpServletResponse response,
-                                           @RequestParam("dataId") String dataId,
+    @GetMapping("/configWatchers")
+    public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId,
                                            @RequestParam("group") String group,
                                            @RequestParam(value = "tenant", required = false) String tenant,
                                            ModelMap modelMap) {
@@ -96,8 +91,7 @@ public class CommunicationController {
     /**
      * 在本台机器上获得客户端监听的配置列表
      */
-    @RequestMapping(value = "/watcherConfigs", method = RequestMethod.GET)
-    @ResponseBody
+    @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request,
                                                HttpServletResponse response, @RequestParam("ip") String ip,
                                                ModelMap modelMap) {

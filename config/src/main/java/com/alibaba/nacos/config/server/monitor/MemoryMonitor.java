@@ -50,7 +50,7 @@ public class MemoryMonitor {
 
     }
 
-    static final long DELAY_SECONDS = 10;
+    private static final long DELAY_SECONDS = 10;
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
@@ -89,9 +89,7 @@ class NotifyTaskQueueMonitorTask implements Runnable {
     @Override
     public void run() {
         int size = ((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getQueue().size();
-        memoryLog.info("notifySingleServiceThreadPool-{}, toNotifyTaskSize={}",
-            new Object[] {((ScheduledThreadPoolExecutor)notifySingleService.getExecutor()).getClass().getName(),
-                size});
+        memoryLog.info("toNotifyTaskSize={}", size);
         MetricsMonitor.getNotifyTaskMonitor().set(size);
     }
 }

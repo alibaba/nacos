@@ -15,11 +15,14 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.google.common.collect.Maps;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +31,7 @@ import org.mockito.Spy;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.Mockito.when;
 
@@ -83,5 +87,30 @@ public class ServiceManagerTest extends BaseTest {
         Service service = new Service(TEST_SERVICE_NAME);
         service.setNamespaceId(TEST_NAMESPACE);
         serviceManager.updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, true);
+    }
+
+    @Test
+    public void testSnowflakeInstanceId() throws Exception {
+        ReflectionTestUtils.setField(serviceManager, "consistencyService", consistencyService);
+        Service service = new Service(TEST_SERVICE_NAME);
+        service.setNamespaceId(TEST_NAMESPACE);
+
+        Map<String, String> metaData = Maps.newHashMap();
+        metaData.put(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR);
+
+        Instance instance1 = new Instance("1.1.1.1", 1);
+        instance1.setClusterName(TEST_CLUSTER_NAME);
+        instance1.setMetadata(metaData);
+
+        Instance instance2 = new Instance("2.2.2.2", 2);
+        instance2.setClusterName(TEST_CLUSTER_NAME);
+        instance2.setMetadata(metaData);
+
+        List<Instance> instanceList = serviceManager.updateIpAddresses(service, UtilsAndCommons.UPDATE_INSTANCE_ACTION_ADD, true, instance1, instance2);
+        Assert.assertNotNull(instanceList);
+        Assert.assertEquals(2, instanceList.size());
+        int instanceId1 = Integer.parseInt(instance1.getInstanceId());
+        int instanceId2 = Integer.parseInt(instance2.getInstanceId());
+        Assert.assertNotEquals(instanceId1, instanceId2);
     }
 }

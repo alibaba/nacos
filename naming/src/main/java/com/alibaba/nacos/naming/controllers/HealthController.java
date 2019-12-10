@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.AbstractHealthChecker;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.core.ServiceManager;
@@ -35,9 +34,9 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -59,14 +58,12 @@ public class HealthController {
     @Autowired
     private ServiceManager serviceManager;
 
-    @Autowired
-    private DistroMapper distroMapper;
 
     @Autowired
     private PushService pushService;
 
     @RequestMapping("/server")
-    public JSONObject server(HttpServletRequest request) {
+    public JSONObject server() {
         JSONObject result = new JSONObject();
         result.put("msg", "Hello! I am Nacos-Naming and healthy! total services: raft " + serviceManager.getServiceCount()
             + ", local port:" + RunningConfig.getServerPort());
@@ -74,8 +71,8 @@ public class HealthController {
     }
 
     @CanDistro
-    @RequestMapping(value = {"", "/instance"}, method = RequestMethod.PUT)
-    public String update(HttpServletRequest request) throws Exception {
+    @PutMapping(value = {"", "/instance"})
+    public String update(HttpServletRequest request) {
 
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
             Constants.DEFAULT_NAMESPACE_ID);
@@ -96,7 +93,7 @@ public class HealthController {
         if (StringUtils.isBlank(healthyString)) {
             throw new IllegalArgumentException("Param 'healthy' is required.");
         }
-        
+
         valid = BooleanUtils.toBoolean(healthyString);
 
         Service service = serviceManager.getService(namespaceId, serviceName);
@@ -108,7 +105,7 @@ public class HealthController {
                     Loggers.EVT_LOG.info((valid ? "[IP-ENABLED]" : "[IP-DISABLED]") + " ips: "
                         + instance.getIp() + ":" + instance.getPort() + "@" + instance.getClusterName()
                         + ", service: " + serviceName + ", msg: update thought HealthController api");
-                    pushService.serviceChanged(namespaceId, service.getName());
+                    pushService.serviceChanged(service);
                     break;
                 }
             }
@@ -119,8 +116,7 @@ public class HealthController {
         return "ok";
     }
 
-    @ResponseBody
-    @RequestMapping(value = "checkers", method = RequestMethod.GET)
+    @GetMapping("checkers")
     public ResponseEntity checkers() {
         List<Class> classes = HealthCheckType.getLoadedHealthCheckerClasses();
         Map<String, AbstractHealthChecker> checkerMap = new HashMap<>(8);
@@ -129,7 +125,7 @@ public class HealthController {
                 AbstractHealthChecker checker = (AbstractHealthChecker) clazz.newInstance();
                 checkerMap.put(checker.getType(), checker);
             } catch (InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
+                Loggers.EVT_LOG.error("checkers error ", e);
             }
         }
         return ResponseEntity.ok(checkerMap);
