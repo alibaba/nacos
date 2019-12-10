@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * namespace service
@@ -41,6 +42,8 @@ public class NamespaceController {
 
     @Autowired
     private PersistService persistService;
+
+    private Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
 
     /**
      * Get namespace list
@@ -102,13 +105,35 @@ public class NamespaceController {
      */
     @PostMapping
     public Boolean createNamespace(HttpServletRequest request, HttpServletResponse response,
+                                   @RequestParam("customNamespaceId") String namespaceId,
                                    @RequestParam("namespaceName") String namespaceName,
                                    @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
         // TODO 获取用kp
-        String namespaceId = UUID.randomUUID().toString();
+        if(StringUtils.isBlank(namespaceId)){
+            namespaceId = UUID.randomUUID().toString();
+        } else {
+            namespaceId = namespaceId.trim();
+            if (!namespaceIdCheckPattern.matcher(namespaceId).matches()) {
+                return false;
+            }
+            if (namespaceId.length() > 128) {
+                return false;
+            }
+            if(persistService.countByTenantId(namespaceId) > 0){
+                return false;
+            }
+        }
         persistService.insertTenantInfoAtomic("1", namespaceId, namespaceName, namespaceDesc, "nacos",
             System.currentTimeMillis());
         return true;
+    }
+
+    @GetMapping(params = "checkNamespaceIdExist=true")
+    public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId){
+        if(StringUtils.isBlank(namespaceId)){
+            return true;
+        }
+        return (persistService.countByTenantId(namespaceId) > 0);
     }
 
     /**
