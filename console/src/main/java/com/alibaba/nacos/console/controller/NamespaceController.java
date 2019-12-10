@@ -131,7 +131,7 @@ public class NamespaceController {
     @GetMapping(params = "checkNamespaceIdExist=true")
     public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId){
         if(StringUtils.isBlank(namespaceId)){
-            return true;
+            return false;
         }
         return (persistService.countByTenantId(namespaceId) > 0);
     }
