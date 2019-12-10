@@ -45,6 +45,8 @@ public class NamespaceController {
 
     private Pattern namespaceIdCheckPattern = Pattern.compile("^[\\w-]+");
 
+    private static final int NAMESPACE_ID_MAX_LENGTH = 128;
+
     /**
      * Get namespace list
      *
@@ -116,7 +118,7 @@ public class NamespaceController {
             if (!namespaceIdCheckPattern.matcher(namespaceId).matches()) {
                 return false;
             }
-            if (namespaceId.length() > 128) {
+            if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
                 return false;
             }
             if(persistService.countByTenantId(namespaceId) > 0){
