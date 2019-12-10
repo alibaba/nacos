@@ -45,15 +45,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos",
     "server.port=7001"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class RestAPI_ITCase {
+public class RestAPI_ITCase extends NamingBase {
 
     @LocalServerPort
     private int port;
-
-    private URL base;
-
-    @Autowired
-    private TestRestTemplate restTemplate;
 
     @Before
     public void setUp() throws Exception {
@@ -232,6 +227,32 @@ public class RestAPI_ITCase {
         namingServiceDelete(serviceName);
     }
 
+    @Test
+    public void testInvalidNamespace() {
+
+        String serviceName = NamingBase.randomDomainName();
+        ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("protectThreshold", "0.6")
+                .appendParam("namespaceId", "..invalid-namespace")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is4xxClientError());
+
+        response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
+            Params.newParams()
+                .appendParam("serviceName", serviceName)
+                .appendParam("protectThreshold", "0.6")
+                .appendParam("namespaceId", "/invalid-namespace")
+                .done(),
+            String.class,
+            HttpMethod.POST);
+        Assert.assertTrue(response.getStatusCode().is4xxClientError());
+
+    }
+
     private void namingServiceDelete(String serviceName) {
         //delete service
         ResponseEntity<String> response = request(NamingBase.NAMING_CONTROLLER_PATH + "/service",
@@ -244,32 +265,6 @@ public class RestAPI_ITCase {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         Assert.assertEquals("ok", response.getBody());
-    }
-
-    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), HttpMethod.GET, entity, clazz);
-    }
-
-    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), httpMethod, entity, clazz);
     }
 
 }

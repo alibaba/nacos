@@ -6,9 +6,10 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
 import static com.alibaba.nacos.client.utils.StringUtils.*;
+import static org.junit.Assert.*;
 
+@Deprecated
 public class StringUtilsTest {
 
     @Test

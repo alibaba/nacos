@@ -15,9 +15,8 @@
  */
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
-import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
@@ -25,19 +24,12 @@ import com.alibaba.nacos.naming.consistency.ephemeral.distro.DataStore;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.DistroConsistencyServiceImpl;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.exception.NacosException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -68,18 +60,13 @@ public class DistroController {
     @Autowired
     private SwitchDomain switchDomain;
 
-    @RequestMapping(value = "/datum", method = RequestMethod.PUT)
-    public String onSyncDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @PutMapping("/datum")
+    public ResponseEntity onSyncDatum(@RequestBody Map<String, Datum<Instances>> dataMap) throws Exception {
 
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-
-        if (StringUtils.isBlank(entity)) {
-            Loggers.EPHEMERAL.error("[onSync] receive empty entity!");
+        if (dataMap.isEmpty()) {
+            Loggers.DISTRO.error("[onSync] receive empty entity!");
             throw new NacosException(NacosException.INVALID_PARAM, "receive empty entity!");
         }
-
-        Map<String, Datum<Instances>> dataMap =
-            serializer.deserializeMap(entity.getBytes(), Instances.class);
 
         for (Map.Entry<String, Datum<Instances>> entry : dataMap.entrySet()) {
             if (KeyBuilder.matchEphemeralInstanceListKey(entry.getKey())) {
@@ -92,35 +79,37 @@ public class DistroController {
                 consistencyService.onPut(entry.getKey(), entry.getValue().value);
             }
         }
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
-    @RequestMapping(value = "/checksum", method = RequestMethod.PUT)
-    public String syncChecksum(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        String source = WebUtils.required(request, "source");
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        Map<String, String> dataMap =
-            serializer.deserialize(entity.getBytes(), new TypeReference<Map<String, String>>() {
-        });
+    @PutMapping("/checksum")
+    public ResponseEntity syncChecksum(@RequestParam String source, @RequestBody Map<String, String> dataMap) {
+
         consistencyService.onReceiveChecksums(dataMap, source);
-        return "ok";
+        return ResponseEntity.ok("ok");
     }
 
-    @RequestMapping(value = "/datum", method = RequestMethod.GET)
-    public void get(HttpServletRequest request, HttpServletResponse response) throws Exception {
+    @GetMapping("/datum")
+    public ResponseEntity get(@RequestBody JSONObject body) throws Exception {
 
-        String entity = IOUtils.toString(request.getInputStream(), "UTF-8");
-        String keys = JSON.parseObject(entity).getString("keys");
+        String keys = body.getString("keys");
         String keySplitter = ",";
         Map<String, Datum> datumMap = new HashMap<>(64);
         for (String key : keys.split(keySplitter)) {
-            datumMap.put(key, consistencyService.get(key));
+            Datum datum = consistencyService.get(key);
+            if (datum == null) {
+                continue;
+            }
+            datumMap.put(key, datum);
         }
-        response.getWriter().write(new String(serializer.serialize(datumMap), StandardCharsets.UTF_8));
+
+        String content = new String(serializer.serialize(datumMap), StandardCharsets.UTF_8);
+        return ResponseEntity.ok(content);
     }
 
-    @RequestMapping(value = "/datums", method = RequestMethod.GET)
-    public void getAllDatums(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        response.getWriter().write(new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8));
+    @GetMapping("/datums")
+    public ResponseEntity getAllDatums() {
+        String content = new String(serializer.serialize(dataStore.getDataMap()), StandardCharsets.UTF_8);
+        return ResponseEntity.ok(content);
     }
 }

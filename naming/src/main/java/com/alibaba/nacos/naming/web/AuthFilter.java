@@ -15,10 +15,11 @@
  */
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.acl.AuthChecker;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.servlet.*;
@@ -33,6 +34,8 @@ import java.security.AccessControlException;
  * @author nkorange
  */
 public class AuthFilter implements Filter {
+
+    private static final String[] NAMESPACE_FORBIDDEN_STRINGS = new String[]{"..", "/"};
 
     @Autowired
     private AuthChecker authChecker;
@@ -64,11 +67,16 @@ public class AuthFilter implements Filter {
             }
 
             if (method.isAnnotationPresent(NeedAuth.class) && !switchDomain.isEnableAuthentication()) {
+                // leave it empty.
+            }
 
-                if (path.contains(UtilsAndCommons.NACOS_NAMING_RAFT_CONTEXT)) {
-                    authChecker.doRaftAuth(req);
-                } else {
-                    authChecker.doAuth(req.getParameterMap(), req);
+            // Check namespace:
+            String namespaceId = req.getParameter(CommonParams.NAMESPACE_ID);
+
+            if (StringUtils.isNotBlank(namespaceId)) {
+
+                if (namespaceId.contains(NAMESPACE_FORBIDDEN_STRINGS[0]) || namespaceId.contains(NAMESPACE_FORBIDDEN_STRINGS[1])) {
+                    throw new IllegalArgumentException("forbidden namespace: " + namespaceId);
                 }
             }
 
@@ -78,9 +86,12 @@ public class AuthFilter implements Filter {
         } catch (NoSuchMethodException e) {
             resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "no such api");
             return;
+        } catch (IllegalArgumentException e) {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, UtilsAndCommons.getAllExceptionMsg(e));
+            return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
+                "Server failed," + UtilsAndCommons.getAllExceptionMsg(e));
             return;
         }
         filterChain.doFilter(req, resp);
