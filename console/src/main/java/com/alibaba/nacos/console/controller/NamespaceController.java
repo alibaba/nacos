@@ -128,6 +128,13 @@ public class NamespaceController {
         return true;
     }
 
+    /**
+     * @author klw(213539@qq.com)
+     * @Description: check namespaceId exist
+     * @Date 2019/12/10 21:41
+     * @param: namespaceId
+     * @return java.lang.Boolean
+     */
     @GetMapping(params = "checkNamespaceIdExist=true")
     public Boolean checkNamespaceIdExist(@RequestParam("customNamespaceId") String namespaceId){
         if(StringUtils.isBlank(namespaceId)){
