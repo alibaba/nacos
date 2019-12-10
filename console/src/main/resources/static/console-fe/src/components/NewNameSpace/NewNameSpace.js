@@ -109,14 +109,17 @@ class NewNameSpace extends React.Component {
       this.setState({
         disabled: true,
       });
-
+      let { customNamespaceId } = values;
+      if (!customNamespaceId) {
+        customNamespaceId = '';
+      }
       request({
         type: 'get',
         url: 'v1/console/namespaces?checkNamespaceIdExist=true',
         contentType: 'application/x-www-form-urlencoded',
         beforeSend: () => this.openLoading(),
         data: {
-          customNamespaceId: values.customNamespaceId,
+          customNamespaceId,
         },
         success: res => {
           this.disabled = false;
@@ -135,7 +138,7 @@ class NewNameSpace extends React.Component {
               contentType: 'application/x-www-form-urlencoded',
               beforeSend: () => this.openLoading(),
               data: {
-                customNamespaceId: values.customNamespaceId,
+                customNamespaceId,
                 namespaceName: values.namespaceShowName,
                 namespaceDesc: values.namespaceDesc,
               },
@@ -190,8 +193,7 @@ class NewNameSpace extends React.Component {
   }
 
   validateNamespzecId(rule, value, callback) {
-    value = value.trim();
-    if (value === '') {
+    if (!value || value.trim() === '') {
       callback();
     } else {
       const { locale = {} } = this.props;
@@ -200,14 +202,18 @@ class NewNameSpace extends React.Component {
       }
       const chartReg = /^[\w-]+/g;
       const matchResult = value.match(chartReg);
-      if (matchResult.length > 1) {
-        callback(locale.input);
-      } else {
-        if (value.length !== matchResult[0].length) {
+      if (matchResult) {
+        if (matchResult.length > 1) {
           callback(locale.input);
-          return;
+        } else {
+          if (value.length !== matchResult[0].length) {
+            callback(locale.input);
+            return;
+          }
+          callback();
         }
-        callback();
+      } else {
+        callback(locale.input);
       }
     }
   }
