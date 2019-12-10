@@ -109,14 +109,14 @@ class NewNameSpace extends React.Component {
       this.setState({
         disabled: true,
       });
+
       request({
-        type: 'post',
-        url: 'v1/console/namespaces',
+        type: 'get',
+        url: 'v1/console/namespaces?checkNamespaceIdExist=true',
         contentType: 'application/x-www-form-urlencoded',
         beforeSend: () => this.openLoading(),
         data: {
-          namespaceName: values.namespaceShowName,
-          namespaceDesc: values.namespaceDesc,
+          customNamespaceId: values.customNamespaceId,
         },
         success: res => {
           this.disabled = false;
@@ -124,13 +124,38 @@ class NewNameSpace extends React.Component {
             disabled: false,
           });
           if (res === true) {
-            this.closeDialog();
-            this.props.getNameSpaces();
-            this.refreshNameSpace(); // 刷新全局namespace
-          } else {
             Dialog.alert({
               title: locale.notice,
-              content: res.message,
+              content: locale.namespaceIdAlreadyExist,
+            });
+          } else {
+            request({
+              type: 'post',
+              url: 'v1/console/namespaces',
+              contentType: 'application/x-www-form-urlencoded',
+              beforeSend: () => this.openLoading(),
+              data: {
+                customNamespaceId: values.customNamespaceId,
+                namespaceName: values.namespaceShowName,
+                namespaceDesc: values.namespaceDesc,
+              },
+              success: res => {
+                this.disabled = false;
+                this.setState({
+                  disabled: false,
+                });
+                if (res === true) {
+                  this.closeDialog();
+                  this.props.getNameSpaces();
+                  this.refreshNameSpace(); // 刷新全局namespace
+                } else {
+                  Dialog.alert({
+                    title: locale.notice,
+                    content: locale.newnamespceFailedMessage,
+                  });
+                }
+              },
+              complete: () => this.closeLoading(),
             });
           }
         },
@@ -164,6 +189,29 @@ class NewNameSpace extends React.Component {
     }
   }
 
+  validateNamespzecId(rule, value, callback) {
+    value = value.trim();
+    if (value === '') {
+      callback();
+    } else {
+      const { locale = {} } = this.props;
+      if (value.length > 128) {
+        callback(locale.namespaceIdTooLong);
+      }
+      const chartReg = /^[\w-]+/g;
+      const matchResult = value.match(chartReg);
+      if (matchResult.length > 1) {
+        callback(locale.input);
+      } else {
+        if (value.length !== matchResult[0].length) {
+          callback(locale.input);
+          return;
+        }
+        callback();
+      }
+    }
+  }
+
   render() {
     const { locale = {} } = this.props;
     const footer = (
@@ -193,6 +241,14 @@ class NewNameSpace extends React.Component {
               style={{ width: '100%', position: 'relative' }}
               visible={this.state.loading}
             >
+              <FormItem label={locale.namespaceId} {...formItemLayout}>
+                <Input
+                  {...this.field.init('customNamespaceId', {
+                    rules: [{ validator: this.validateNamespzecId.bind(this) }],
+                  })}
+                  style={{ width: '100%' }}
+                />
+              </FormItem>
               <FormItem label={locale.name} required {...formItemLayout}>
                 <Input
                   {...this.field.init('namespaceShowName', {

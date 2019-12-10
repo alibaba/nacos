@@ -463,9 +463,14 @@ const I18N_CONF = {
     newnamespce: 'Create Namespace',
     loading: 'Loading...',
     name: 'Namespace:',
+    namespaceId: 'Namespace ID(automatically generated if not filled):',
+    namespaceIdTooLong: 'The namespace ID length cannot exceed 128',
     namespacenotnull: 'Namespace cannot be empty',
     namespacedescnotnull: 'Namespace description cannot be empty',
     description: 'Description:',
+    namespaceIdAlreadyExist: 'namespaceId already exist',
+    newnamespceFailedMessage:
+      'namespaceId format is incorrect/namespaceId length greater than 128/namespaceId already exist',
   },
   NameSpaceList: {
     notice: 'Notice',
