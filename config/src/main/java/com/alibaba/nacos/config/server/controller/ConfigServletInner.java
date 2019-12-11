@@ -16,7 +16,9 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
+import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.DiskUtil;
@@ -40,6 +42,7 @@ import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.pullLog;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -219,7 +222,11 @@ public class ConfigServletInner {
                         }
                     }
                 }
-
+                /*
+                 *根据选择的配置格式设置response的Content-Type
+                 * 如果没有读取到对应的配置格式Content-Type默认为application/json
+                 */
+                setResponseContentType(response,dataId,group,tenant);
                 response.setHeader(Constants.CONTENT_MD5, md5);
                 /**
                  *  禁用缓存
@@ -281,6 +288,23 @@ public class ConfigServletInner {
         }
 
         return HttpServletResponse.SC_OK + "";
+    }
+
+    private void setResponseContentType(HttpServletResponse response,String dataId, String group,
+                                        String tenant) {
+        ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
+        Optional.ofNullable(configAllInfo).ifPresent(configAllInfo1 -> {
+            String type = configAllInfo.getType();
+            if(FileTypeEnum.JSON.getFileType().equals(type)){
+                response.setContentType("application/json;charset=" + Constants.ENCODE);
+            }else if(FileTypeEnum.XML.getFileType().equals(type)) {
+                response.setContentType("application/xml;charset=" + Constants.ENCODE);
+            }else if(FileTypeEnum.HTML.getFileType().equals(type) || FileTypeEnum.HTM.getFileType().equals(type)){
+                response.setContentType("text/html;charset=" + Constants.ENCODE);
+            }else {
+                response.setContentType("text/plain;charset=" + Constants.ENCODE);
+            }
+        });
     }
 
     private static void releaseConfigReadLock(String groupKey) {
