@@ -16,6 +16,7 @@
 package com.alibaba.nacos.naming.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.auth.AccessException;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -52,5 +53,11 @@ public class ResponseExceptionHandler {
     private ResponseEntity<String> handleException(Exception e) {
         Loggers.SRV_LOG.error("got exception.", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
+    }
+
+
+    @ExceptionHandler(AccessException.class)
+    private ResponseEntity<String> handleAccessException(AccessException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.toString());
     }
 }

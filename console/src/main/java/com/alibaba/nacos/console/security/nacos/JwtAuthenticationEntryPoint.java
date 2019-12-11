@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.console.security;
+package com.alibaba.nacos.console.security.nacos;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +37,12 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationEntryPoint.class);
 
     @Override
-    public void commence(HttpServletRequest httpServletRequest,
-                         HttpServletResponse httpServletResponse,
+    public void commence(HttpServletRequest request,
+                         HttpServletResponse response,
                          AuthenticationException e) throws IOException, ServletException {
-        logger.error("Responding with unauthorized error. Message - {}", e.getMessage());
-        httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+        logger.error("Responding with unauthorized error. Message:{}, url:{}", e.getMessage(), request.getRequestURI());
+        response.getWriter().write("xxxxxxxxxxx");
+        response.getWriter().flush();
+//        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
     }
 }

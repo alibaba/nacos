@@ -1,0 +1,126 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.nacos.config.server.auth;
+
+import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.User;
+import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Service;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
+
+
+/**
+ * Role CRUD service
+ *
+ * @author nkorange
+ * @since 1.2.0
+ */
+@Service
+public class RolePersistService extends PersistService {
+
+
+    public Page<String> getRoles(int pageNo, int pageSize) {
+
+        PaginationHelper<String> helper = new PaginationHelper<>();
+
+        String sqlCountRows = "select count(*) from (select distinct role from table) roles where ";
+        String sqlFetchRows
+            = "select distinct role from roles where ";
+
+        String where = " 1=1 ";
+
+        try {
+            return helper.fetchPage(jt, sqlCountRows
+                    + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                pageSize, STRING_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    public Page<String> getRolesByUserName(String username, int pageNo, int pageSize) {
+
+        PaginationHelper<String> helper = new PaginationHelper<>();
+
+        String sqlCountRows = "select count(*) from (select distinct role from table) roles where ";
+        String sqlFetchRows
+            = "select distinct role from roles where ";
+
+        String where = " username='" + username + "' ";
+
+        try {
+            return helper.fetchPage(jt, sqlCountRows
+                    + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
+                pageSize, STRING_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    public void addRole(String role, String userName) {
+
+        String sql = "INSERT into roles (role, username) VALUES (?, ?)";
+
+        try {
+            jt.update(sql, role, userName);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    public void deleteRole(String role) {
+        String sql = "DELETE from roles WHERE role=?";
+        try {
+            jt.update(sql, role);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    public void deleteRole(String role, String username) {
+        String sql = "DELETE from roles WHERE role=? and username=?";
+        try {
+            jt.update(sql, role, username);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+
+    private static final class StringRowMapper implements
+        RowMapper<String> {
+        @Override
+        public String mapRow(ResultSet rs, int rowNum)
+            throws SQLException {
+            return rs.getString("role");
+        }
+    }
+
+    private static final StringRowMapper STRING_ROW_MAPPER = new StringRowMapper();
+}

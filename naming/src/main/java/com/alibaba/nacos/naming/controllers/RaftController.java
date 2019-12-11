@@ -34,7 +34,6 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import com.alibaba.nacos.naming.web.NeedAuth;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -67,7 +66,6 @@ public class RaftController {
     @Autowired
     private RaftCore raftCore;
 
-    @NeedAuth
     @PostMapping("/vote")
     public JSONObject vote(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -77,7 +75,6 @@ public class RaftController {
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 
-    @NeedAuth
     @PostMapping("/beat")
     public JSONObject beat(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -93,7 +90,6 @@ public class RaftController {
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 
-    @NeedAuth
     @GetMapping("/peer")
     public JSONObject getPeer(HttpServletRequest request, HttpServletResponse response) {
         List<RaftPeer> peers = raftCore.getPeers();
@@ -113,7 +109,6 @@ public class RaftController {
         return JSON.parseObject(JSON.toJSONString(peer));
     }
 
-    @NeedAuth
     @PutMapping("/datum/reload")
     public String reloadDatum(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String key = WebUtils.required(request, "key");
@@ -121,7 +116,6 @@ public class RaftController {
         return "ok";
     }
 
-    @NeedAuth
     @PostMapping("/datum")
     public String publish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -152,7 +146,6 @@ public class RaftController {
         throw new NacosException(NacosException.INVALID_PARAM, "unknown type publish key: " + key);
     }
 
-    @NeedAuth
     @DeleteMapping("/datum")
     public String delete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -163,7 +156,6 @@ public class RaftController {
         return "ok";
     }
 
-    @NeedAuth
     @GetMapping("/datum")
     public String get(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -197,7 +189,6 @@ public class RaftController {
         return result;
     }
 
-    @NeedAuth
     @PostMapping("/datum/commit")
     public String onPublish(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -229,7 +220,6 @@ public class RaftController {
         return "ok";
     }
 
-    @NeedAuth
     @DeleteMapping("/datum/commit")
     public String onDelete(HttpServletRequest request, HttpServletResponse response) throws Exception {
 

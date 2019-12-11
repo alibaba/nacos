@@ -13,14 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.web;
+package com.alibaba.nacos.core.utils;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+import org.apache.commons.lang3.StringUtils;
+
 
 /**
- * Innovated By: Xuanyin.zy
+ * Common methods for exception
+ *
+ * @author nkorange
+ * @since 1.2.0
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface NeedAuth {
+public class ExceptionUtil {
+
+    public static String getAllExceptionMsg(Throwable e) {
+        Throwable cause = e;
+        StringBuilder strBuilder = new StringBuilder();
+
+        while (cause != null && !StringUtils.isEmpty(cause.getMessage())) {
+            strBuilder.append("caused: ").append(cause.getMessage()).append(";");
+            cause = cause.getCause();
+        }
+
+        return strBuilder.toString();
+    }
 }
