@@ -1,0 +1,123 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.alibaba.nacos.console.security.nacos;
+
+import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.console.security.nacos.users.NacosUser;
+import com.alibaba.nacos.core.auth.AccessException;
+import com.alibaba.nacos.core.auth.AuthManager;
+import com.alibaba.nacos.core.auth.Resource;
+import com.alibaba.nacos.core.auth.User;
+import com.alibaba.nacos.core.utils.Loggers;
+import io.jsonwebtoken.ExpiredJwtException;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Builtin access control entry of Nacos
+ *
+ * @author nkorange
+ * @since 1.2.0
+ */
+@Component
+public class NacosAuthManager implements AuthManager {
+
+    private static final String TOKEN_PREFIX = "Bearer ";
+
+    @Autowired
+    private JwtTokenManager tokenManager;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private NacosRoleServiceImpl roleService;
+
+    @Override
+    public User login(Object request) throws AccessException {
+        HttpServletRequest req = (HttpServletRequest) request;
+        String token = resolveToken(req);
+        if (StringUtils.isBlank(token)) {
+            throw new AccessException(AccessException.CODE_USER_NOT_FOUND, "user not found!");
+        }
+
+        try {
+            tokenManager.validateToken(token);
+        } catch (ExpiredJwtException e) {
+            throw new AccessException(AccessException.CODE_TOKEN_EXPIRED, "token expired!");
+        } catch (Exception e) {
+            throw new AccessException(AccessException.CODE_TOKEN_INVALID, "token invalid!");
+        }
+
+        Authentication authentication = tokenManager.getAuthentication(token);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String userId = authentication.getName();
+        NacosUser user = new NacosUser();
+        user.setUserName(userId);
+        user.setToken(token);
+        return user;
+    }
+
+    @Override
+    public void auth(Resource resource, User user) throws AccessException {
+        if (Loggers.AUTH.isDebugEnabled()) {
+            Loggers.AUTH.debug("auth resource: {}, user: {}", resource, user);
+        }
+
+        if (!roleService.hasPermission(user.getUserName(), resource)) {
+            throw new AccessException(AccessException.CODE_AUTHORIZATION_FAILED, "authorization failed!");
+        }
+    }
+
+    /**
+     * Get token from header
+     */
+    private String resolveToken(HttpServletRequest request) throws AccessException {
+        String bearerToken = request.getHeader(NacosAuthConfig.AUTHORIZATION_HEADER);
+        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
+            return bearerToken.substring(7);
+        }
+        bearerToken = request.getParameter(NacosAuthConfig.AUTHORIZATION_TOKEN);
+        if (StringUtils.isBlank(bearerToken)) {
+            String userName = request.getParameter("username");
+            String password = request.getParameter("password");
+            bearerToken = resolveTokenFromUser(userName, password);
+        }
+
+        return bearerToken;
+    }
+
+    private String resolveTokenFromUser(String userName, String rawPassword) throws AccessException {
+
+        try {
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName, rawPassword);
+            authenticationManager.authenticate(authenticationToken);
+        } catch (AuthenticationException e) {
+            throw new AccessException(AccessException.CODE_PASSWORD_INCORRECT, "username or password incorrect!");
+        }
+
+        return tokenManager.createToken(userName);
+    }
+}
