@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.core.auth;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -39,7 +41,7 @@ public @interface Secured {
      *
      * @return resource name
      */
-    String name() default "";
+    String name() default StringUtils.EMPTY;
 
     /**
      * Resource name parser. Should have lower priority than name()

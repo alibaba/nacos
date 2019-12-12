@@ -38,11 +38,7 @@ public enum ActionTypes {
     /**
      * Write
      */
-    WRITE("w"),
-    /**
-     * Admin
-     */
-    ADMIN("a");
+    WRITE("w");
 
     private String action;
 
