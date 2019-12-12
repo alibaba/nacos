@@ -82,13 +82,14 @@ public class AuthFilter implements Filter {
                 }
 
                 if (StringUtils.isBlank(name)) {
-                    // deny we don't find an valid resource:
+                    // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
 
                 Resource resource = new Resource(name + Resource.SPLITTER + action);
 
                 authManager.auth(resource, authManager.login(req));
+
             }
 
         } catch (AccessException e) {

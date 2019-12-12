@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.web;
+package com.alibaba.nacos.config.server.auth;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.auth.Resource;
 import com.alibaba.nacos.core.auth.ResourceParser;
 import org.apache.commons.lang3.StringUtils;
@@ -25,27 +23,21 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Naming resource parser
+ * Config resource parser
  *
  * @author nkorange
  * @since 1.2.0
  */
-public class NamingResourceParser implements ResourceParser {
+public class ConfigResourceParser implements ResourceParser {
 
-    private static final String AUTH_NAMING_PREFIX = "naming/";
+    private static final String AUTH_CONFIG_PREFIX = "config/";
 
     @Override
     public String parseName(Object request) {
-
         HttpServletRequest req = (HttpServletRequest) request;
-
-        String namespaceId = req.getParameter(CommonParams.NAMESPACE_ID);
-        String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
-        String groupName = req.getParameter(CommonParams.GROUP_NAME);
-        if (StringUtils.isBlank(groupName)) {
-            groupName = NamingUtils.getGroupName(serviceName);
-        }
-        serviceName = NamingUtils.getServiceName(serviceName);
+        String namespaceId = req.getParameter("tenant");
+        String groupName = req.getParameter("group");
+        String dataId = req.getParameter("dataId");
 
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = Constants.DEFAULT_NAMESPACE_ID;
@@ -55,16 +47,16 @@ public class NamingResourceParser implements ResourceParser {
 
         sb.append(namespaceId).append(Resource.SPLITTER);
 
-        if (StringUtils.isBlank(serviceName)) {
+        if (StringUtils.isBlank(dataId)) {
             sb.append("*")
                 .append(Resource.SPLITTER)
-                .append(AUTH_NAMING_PREFIX)
+                .append(AUTH_CONFIG_PREFIX)
                 .append("*");
         } else {
             sb.append(groupName)
                 .append(Resource.SPLITTER)
-                .append(AUTH_NAMING_PREFIX)
-                .append(serviceName);
+                .append(AUTH_CONFIG_PREFIX)
+                .append(dataId);
         }
 
         return sb.toString();
