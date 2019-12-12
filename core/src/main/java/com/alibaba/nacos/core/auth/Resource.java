@@ -39,4 +39,8 @@ public class Resource {
     public String getKey() {
         return key;
     }
+
+    public String parseName() {
+        return key.substring(0, key.lastIndexOf(SPLITTER));
+    }
 }

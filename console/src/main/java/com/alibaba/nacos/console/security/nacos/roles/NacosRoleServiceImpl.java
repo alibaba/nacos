@@ -16,10 +16,11 @@
 package com.alibaba.nacos.console.security.nacos.roles;
 
 
-import com.alibaba.nacos.config.server.auth.Permission;
+import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;
 import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.core.auth.Resource;
 import io.jsonwebtoken.lang.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +40,7 @@ import java.util.regex.Pattern;
 @Service
 public class NacosRoleServiceImpl {
 
-    private static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
+    private static final String GLOBAL_ADMIN_ROLE = "GLOBAL_ADMIN";
 
     @Autowired
     private RolePersistService rolePersistService;
@@ -61,14 +62,20 @@ public class NacosRoleServiceImpl {
      */
     public boolean hasPermission(String username, Resource resource) {
 
-        List<String> roles = getRoles(username, 1, Integer.MAX_VALUE).getPageItems();
-        if (Collections.isEmpty(roles)) {
+        Page<String> stringPage = getRoles(username, 1, Integer.MAX_VALUE);
+        if (stringPage==null || Collections.isEmpty(stringPage.getPageItems())) {
             return false;
         }
+        List<String> roles = stringPage.getPageItems();
 
         // Global admin pass:
         if (roles.contains(GLOBAL_ADMIN_ROLE)) {
             return true;
+        }
+
+        // Old global admin can pass resource 'console/':
+        if (resource.getKey().startsWith(NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX)) {
+            return false;
         }
 
         String[] segs = resource.getKey().split(Resource.SPLITTER);
@@ -80,13 +87,18 @@ public class NacosRoleServiceImpl {
 
         // For other roles, use a pattern match to decide if pass or not.
         for (String role : roles) {
-            for (Permission permission : getPermissionsByRole(role, 1, Integer.MAX_VALUE).getPageItems()) {
-                String resourceKey = permission.getResource();
+            Page<PermissionInfo> pageResult = getPermissionsByRole(role, 1, Integer.MAX_VALUE);
+            if (pageResult==null || pageResult.getPageItems()==null) {
+                continue;
+            }
+            for (PermissionInfo permissionInfo : pageResult.getPageItems()) {
+                String resourceKey = permissionInfo.getPermission().replaceAll("\\*", ".*");
+
                 String[] resourceSegs = resourceKey.split(Resource.SPLITTER);
                 String action = resourceSegs[resourceSegs.length-1];
                 if (action.contains(segs[segs.length-1]) &&
                     Pattern.matches(resourceKey.substring(0, resourceKey.lastIndexOf(Resource.SPLITTER)),
-                    resource.getKey())) {
+                    resource.parseName())) {
                     return true;
                 }
             }
@@ -95,10 +107,11 @@ public class NacosRoleServiceImpl {
     }
 
     public Page<String> getRoles(String userName, int pageNo, int pageSize) {
-        return rolePersistService.getRolesByUserName(userName, pageNo, pageSize);
+        Page<String> roles = rolePersistService.getRolesByUserName(userName, pageNo, pageSize);
+        return roles;
     }
 
-    public Page<Permission> getPermissionsByRole(String role, int pageNo, int pageSize) {
+    public Page<PermissionInfo> getPermissionsByRole(String role, int pageNo, int pageSize) {
         return permissionPersistService.getPermissions(role, pageNo, pageSize);
     }
 
@@ -114,15 +127,16 @@ public class NacosRoleServiceImpl {
         rolePersistService.deleteRole(role);
     }
 
-    public Page<Permission> getPermissions(String role, int pageNo, int pageSize) {
-        return permissionPersistService.getPermissions(role, pageNo, pageSize);
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        Page<PermissionInfo> pageInfo = permissionPersistService.getPermissions(role, pageNo, pageSize);
+        return pageInfo;
     }
 
-    public void addPermission(String role, String resource) {
-        permissionPersistService.addPermission(role,  resource);
+    public void addPermission(String role, String permission) {
+        permissionPersistService.addPermission(role,  permission);
     }
 
-    public void deletePermission(String role, String resource) {
-        permissionPersistService.deletePermission(role,  resource);
+    public void deletePermission(String role, String permission) {
+        permissionPersistService.deletePermission(role,  permission);
     }
 }

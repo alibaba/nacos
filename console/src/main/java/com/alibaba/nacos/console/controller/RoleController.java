@@ -17,6 +17,7 @@ package com.alibaba.nacos.console.controller;
 
 
 import com.alibaba.nacos.config.server.model.RestResult;
+import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
@@ -45,8 +46,8 @@ public class RoleController {
      * @param username optional, username of user
      * @return role list
      */
-    @GetMapping("")
-    @Secured(name = "console/roles", action = ActionTypes.READ)
+    @GetMapping
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
                            @RequestParam(name = "username", defaultValue = "") String username) {
         return roleService.getRoles(username, pageNo, pageSize);
@@ -63,9 +64,9 @@ public class RoleController {
      * @param username
      * @return
      */
-    @PostMapping("/{role}")
-    @Secured(name = "console/roles", action = ActionTypes.WRITE)
-    public Object addRole(@PathVariable String role, @RequestParam String username) {
+    @PostMapping
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
+    public Object addRole(@RequestParam String role, @RequestParam String username) {
 
         roleService.addRole(role, username);
         return new RestResult<>(200, "add role ok!");
@@ -78,9 +79,9 @@ public class RoleController {
      * @param username username
      * @return ok if succeed
      */
-    @DeleteMapping("/{role}")
-    @Secured(name = "console/roles", action = ActionTypes.DELETE)
-    public Object deleteRole(@PathVariable String role,
+    @DeleteMapping
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.DELETE)
+    public Object deleteRole(@RequestParam String role,
                              @RequestParam(name = "username", defaultValue = StringUtils.EMPTY) String username) {
         if (StringUtils.isBlank(username)) {
             roleService.deleteRole(role);

@@ -50,8 +50,8 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
         userPersistService.updateUserPassword(username, password);
     }
 
-    public Page<User> getUsers(String role, int pageNo, int pageSize) {
-        return userPersistService.getUsers(role, pageNo, pageSize);
+    public Page<User> getUsers(int pageNo, int pageSize) {
+        return userPersistService.getUsers(pageNo, pageSize);
     }
 
     public User getUser(String username) {

@@ -65,24 +65,23 @@ public class ControllerMethodsCache {
 
     public void initClassMethod(Class<?> clazz) {
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
-        String classPath = requestMapping.value()[0];
-        for (Method method : clazz.getMethods()) {
-            if (!method.isAnnotationPresent(RequestMapping.class)) {
-                parseSubAnnotations(method, classPath);
-                continue;
-            }
-            requestMapping = method.getAnnotation(RequestMapping.class);
-            RequestMethod[] requestMethods = requestMapping.method();
-            if (requestMethods.length == 0) {
-                requestMethods = new RequestMethod[1];
-                requestMethods[0] = RequestMethod.GET;
-            }
-            for (String methodPath : requestMapping.value()) {
-                methods.put(requestMethods[0].name() + "-->" + classPath + methodPath, method);
+        for (String classPath : requestMapping.value()) {
+            for (Method method : clazz.getMethods()) {
+                if (!method.isAnnotationPresent(RequestMapping.class)) {
+                    parseSubAnnotations(method, classPath);
+                    continue;
+                }
+                requestMapping = method.getAnnotation(RequestMapping.class);
+                RequestMethod[] requestMethods = requestMapping.method();
+                if (requestMethods.length == 0) {
+                    requestMethods = new RequestMethod[1];
+                    requestMethods[0] = RequestMethod.GET;
+                }
+                for (String methodPath : requestMapping.value()) {
+                    methods.put(requestMethods[0].name() + "-->" + classPath + methodPath, method);
+                }
             }
         }
-
-        Loggers.AUTH.info("init methods cache {}", methods);
     }
 
     private void parseSubAnnotations(Method method, String classPath) {

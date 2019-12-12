@@ -19,7 +19,7 @@ package com.alibaba.nacos.config.server.auth;
  * @author nkorange
  * @since 1.2.0
  */
-public class Permission {
+public class PermissionInfo {
 
     /**
      * Role name
@@ -29,7 +29,7 @@ public class Permission {
     /**
      * Resource key
      */
-    private String resource;
+    private String permission;
 
     public String getRole() {
         return role;
@@ -39,11 +39,11 @@ public class Permission {
         this.role = role;
     }
 
-    public String getResource() {
-        return resource;
+    public String getPermission() {
+        return permission;
     }
 
-    public void setResource(String resource) {
-        this.resource = resource;
+    public void setPermission(String permission) {
+        this.permission = permission;
     }
 }

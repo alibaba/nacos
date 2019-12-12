@@ -32,7 +32,7 @@ public class ConsoleExceptionHandler {
 
     @ExceptionHandler(AccessException.class)
     private ResponseEntity<String> handleAccessException(AccessException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.toString());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getErrMsg());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

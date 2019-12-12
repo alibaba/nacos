@@ -140,7 +140,8 @@ public class DistroFilter implements Filter {
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied: " + ExceptionUtil.getAllExceptionMsg(e));
             return;
         } catch (NoSuchMethodException e) {
-            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED, "no such api: " + e.getMessage());
+            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
+                "no such api:" + req.getMethod() + ":" + req.getRequestURI());
             return;
         } catch (Exception e) {
             resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,

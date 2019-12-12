@@ -59,15 +59,15 @@ public class NacosAuthManager implements AuthManager {
         HttpServletRequest req = (HttpServletRequest) request;
         String token = resolveToken(req);
         if (StringUtils.isBlank(token)) {
-            throw new AccessException(AccessException.CODE_USER_NOT_FOUND, "user not found!");
+            throw new AccessException("user not found!");
         }
 
         try {
             tokenManager.validateToken(token);
         } catch (ExpiredJwtException e) {
-            throw new AccessException(AccessException.CODE_TOKEN_EXPIRED, "token expired!");
+            throw new AccessException("token expired!");
         } catch (Exception e) {
-            throw new AccessException(AccessException.CODE_TOKEN_INVALID, "token invalid!");
+            throw new AccessException("token invalid!");
         }
 
         Authentication authentication = tokenManager.getAuthentication(token);
@@ -87,7 +87,7 @@ public class NacosAuthManager implements AuthManager {
         }
 
         if (!roleService.hasPermission(user.getUserName(), resource)) {
-            throw new AccessException(AccessException.CODE_AUTHORIZATION_FAILED, "authorization failed!");
+            throw new AccessException("authorization failed!");
         }
     }
 
@@ -115,7 +115,7 @@ public class NacosAuthManager implements AuthManager {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName, rawPassword);
             authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
-            throw new AccessException(AccessException.CODE_PASSWORD_INCORRECT, "username or password incorrect!");
+            throw new AccessException("username or password incorrect!");
         }
 
         return tokenManager.createToken(userName);

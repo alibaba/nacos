@@ -183,6 +183,14 @@ CREATE TABLE roles (
 	role varchar(50) NOT NULL
 );
 
+CREATE TABLE `permissions` (
+    `role` varchar(50) NOT NULL,
+    `permission` varchar(512) NOT NULL,
+    `gmt_create` bigint NULL,
+    `gmt_modified` bigint NULL,
+UNIQUE INDEX `idx_role_resource` (`role` ASC, `permission` ASC) USING BTREE
+);
+
 INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
 
 INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');
