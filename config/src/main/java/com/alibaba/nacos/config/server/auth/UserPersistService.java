@@ -88,7 +88,7 @@ public class UserPersistService extends PersistService {
         }
     }
 
-    public Page<User> getUsers(String role, int pageNo, int pageSize) {
+    public Page<User> getUsers(int pageNo, int pageSize) {
 
         PaginationHelper<User> helper = new PaginationHelper<>();
 
@@ -98,14 +98,16 @@ public class UserPersistService extends PersistService {
 
         String where = " 1=1 ";
 
-        if (StringUtils.isNotBlank(role)) {
-            where = " role='" + role + "' ";
-        }
-
         try {
-            return helper.fetchPage(jt, sqlCountRows
+            Page<User> pageInfo = helper.fetchPage(jt, sqlCountRows
                     + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
                 pageSize, USER_ROW_MAPPER);
+            if (pageInfo == null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+            return pageInfo;
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;

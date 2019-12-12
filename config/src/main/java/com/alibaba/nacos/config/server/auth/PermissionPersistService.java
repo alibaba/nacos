@@ -17,9 +17,9 @@ package com.alibaba.nacos.config.server.auth;
 
 
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.utils.PaginationHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -39,43 +39,55 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service
 public class PermissionPersistService extends PersistService {
 
-
-    public Page<Permission> getPermissions(String role, int pageNo, int pageSize) {
-        PaginationHelper<Permission> helper = new PaginationHelper<>();
+    public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
+        PaginationHelper<PermissionInfo> helper = new PaginationHelper<>();
 
         String sqlCountRows = "select count(*) from permissions where ";
         String sqlFetchRows
-            = "select distinct role from roles where ";
+            = "select role,permission from permissions where ";
 
         String where = " role='" + role + "' ";
 
+        if (StringUtils.isBlank(role)) {
+            where = " 1=1 ";
+        }
+
         try {
-            return helper.fetchPage(jt, sqlCountRows
+            Page<PermissionInfo> pageInfo = helper.fetchPage(jt, sqlCountRows
                     + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
                 pageSize, PERMISSION_ROW_MAPPER);
+
+            if (pageInfo==null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+
+            return pageInfo;
+
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
 
-    public void addPermission(String role, String resource) {
+    public void addPermission(String role, String permission) {
 
-        String sql = "INSERT into permissions (role, resource) VALUES (?, ?)";
+        String sql = "INSERT into permissions (role, permission) VALUES (?, ?)";
 
         try {
-            jt.update(sql, role, resource);
+            jt.update(sql, role, permission);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
 
-    public void deletePermission(String role, String resource) {
+    public void deletePermission(String role, String permission) {
 
-        String sql = "DELETE from permissions WHERE role=? and resource=?";
+        String sql = "DELETE from permissions WHERE role=? and permission=?";
         try {
-            jt.update(sql, role, resource);
+            jt.update(sql, role, permission);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -83,12 +95,12 @@ public class PermissionPersistService extends PersistService {
     }
 
     private static final class PermissionRowMapper implements
-        RowMapper<Permission> {
+        RowMapper<PermissionInfo> {
         @Override
-        public Permission mapRow(ResultSet rs, int rowNum)
+        public PermissionInfo mapRow(ResultSet rs, int rowNum)
             throws SQLException {
-            Permission info = new Permission();
-            info.setResource(rs.getString("resource"));
+            PermissionInfo info = new PermissionInfo();
+            info.setPermission(rs.getString("permission"));
             info.setRole(rs.getString("role"));
             return info;
         }

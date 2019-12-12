@@ -70,13 +70,13 @@ public class UserController {
      * @throws IllegalArgumentException if user already exist
      * @since 1.2.0
      */
-    @Secured(name = "console/users", action = ActionTypes.CREATE)
-    @PostMapping("/{username}")
-    public Object createUser(@PathVariable String username, @RequestParam String password) {
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.CREATE)
+    @PostMapping
+    public Object createUser(@RequestParam String username, @RequestParam String password) {
 
         User user = userDetailsService.getUser(username);
         if (user != null) {
-            throw new IllegalArgumentException("user " + username + " already exist!");
+            throw new IllegalArgumentException("user '" + username + "' already exist!");
         }
         userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
         return new RestResult<>(200, "create user ok!");
@@ -89,9 +89,9 @@ public class UserController {
      * @return ok if deleted succeed, keep silent if user not exist
      * @since 1.2.0
      */
-    @DeleteMapping("/{username}")
-    @Secured(name = "console/users", action = ActionTypes.DELETE)
-    public Object deleteUser(@PathVariable String username) {
+    @DeleteMapping
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.DELETE)
+    public Object deleteUser(@RequestParam String username) {
 
         userDetailsService.deleteUser(username);
         return new RestResult<>(200, "delete user ok!");
@@ -107,9 +107,9 @@ public class UserController {
      * @throws IllegalArgumentException if user not exist or oldPassword is incorrect
      * @since 1.2.0
      */
-    @PutMapping("/{username}")
-    @Secured(name = "console/users", action = ActionTypes.WRITE)
-    public Object updateUser(@PathVariable String username, @RequestParam String oldPassword,
+    @PutMapping
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    public Object updateUser(@RequestParam String username, @RequestParam String oldPassword,
                              @RequestParam String newPassword) {
 
         User user = userDetailsService.getUser(username);
@@ -117,7 +117,7 @@ public class UserController {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
 
-        if (!PasswordEncoderUtil.matches(oldPassword, newPassword)) {
+        if (!PasswordEncoderUtil.matches(oldPassword, user.getPassword())) {
             throw new IllegalArgumentException("old password incorrect!");
         }
 
@@ -131,15 +131,13 @@ public class UserController {
      *
      * @param pageNo   number index of page
      * @param pageSize size of page
-     * @param role     optional, the role that users have
      * @return A collection of users, empty set if no user is found
      * @since 1.2.0
      */
     @GetMapping
-    @Secured(name = "console/users", action = ActionTypes.READ)
-    public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize,
-                           @RequestParam(name = "role", defaultValue = "") String role) {
-        return userDetailsService.getUsers(role, pageNo, pageSize);
+    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
+    public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize) {
+        return userDetailsService.getUsers(pageNo, pageSize);
     }
 
     /**
@@ -154,7 +152,7 @@ public class UserController {
      * @return new token of the user
      * @throws AccessException if user info is incorrect
      */
-    @PostMapping("login")
+    @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password,
                         HttpServletResponse response, HttpServletRequest request) throws AccessException {
 
@@ -194,7 +192,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("password")
+    @PutMapping("/password")
     @Deprecated
     public RestResult<String> updatePassword(@RequestParam(value = "oldPassword") String oldPassword,
                                              @RequestParam(value = "newPassword") String newPassword) {

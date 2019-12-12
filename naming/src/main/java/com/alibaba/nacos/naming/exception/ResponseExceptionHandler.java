@@ -54,10 +54,4 @@ public class ResponseExceptionHandler {
         Loggers.SRV_LOG.error("got exception.", e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
     }
-
-
-    @ExceptionHandler(AccessException.class)
-    private ResponseEntity<String> handleAccessException(AccessException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.toString());
-    }
 }

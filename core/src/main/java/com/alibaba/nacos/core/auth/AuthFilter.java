@@ -83,7 +83,7 @@ public class AuthFilter implements Filter {
 
                 if (StringUtils.isBlank(name)) {
                     // deny we don't find an valid resource:
-                    throw new AccessException(AccessException.CODE_RESOURCE_INVALID, "resource name invalid!");
+                    throw new AccessException("resource name invalid!");
                 }
 
                 Resource resource = new Resource(name + Resource.SPLITTER + action);
@@ -92,21 +92,17 @@ public class AuthFilter implements Filter {
             }
 
         } catch (AccessException e) {
-            resp.getWriter().write(e.toString());
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            resp.getWriter().flush();
+            resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
             return;
         } catch (NoSuchMethodException e) {
-            resp.getWriter().write("no such api");
-            resp.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
+            resp.sendError(HttpServletResponse.SC_NOT_IMPLEMENTED,
+                "no such api:" + req.getMethod() + ":" + req.getRequestURI());
             return;
         } catch (IllegalArgumentException e) {
-            resp.getWriter().write(ExceptionUtil.getAllExceptionMsg(e));
-            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, ExceptionUtil.getAllExceptionMsg(e));
             return;
         } catch (Exception e) {
-            resp.getWriter().write(e.getMessage());
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Server failed," + e.getMessage());
             return;
         }
 

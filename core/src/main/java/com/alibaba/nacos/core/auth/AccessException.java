@@ -33,17 +33,8 @@ public class AccessException extends NacosException {
         this.setErrCode(code);
     }
 
-    public AccessException(int code, String msg) {
-        this.setErrCode(code);
+    public AccessException(String msg) {
         this.setErrMsg(msg);
     }
-
-    public static final int CODE_USER_NOT_FOUND = 101001;
-    public static final int CODE_PASSWORD_INCORRECT = 101002;
-    public static final int CODE_TOKEN_INVALID = 101003;
-    public static final int CODE_TOKEN_EXPIRED = 101004;
-    public static final int CODE_RESOURCE_INVALID = 101005;
-    public static final int CODE_AUTHORIZATION_FAILED = 101006;
-    public static final int CODE_ROLE_NOT_FOUND = 101007;
 
 }

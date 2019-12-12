@@ -17,6 +17,7 @@ package com.alibaba.nacos.naming.web;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.core.auth.Resource;
 import com.alibaba.nacos.core.auth.ResourceParser;
 import org.apache.commons.lang3.StringUtils;
@@ -39,12 +40,26 @@ public class NamingResourceParser implements ResourceParser {
         HttpServletRequest req = (HttpServletRequest) request;
 
         String namespaceId = req.getParameter(CommonParams.NAMESPACE_ID);
-        String fullServiceName = req.getParameter(CommonParams.SERVICE_NAME);
+        String serviceName = req.getParameter(CommonParams.SERVICE_NAME);
+        String groupName = req.getParameter(CommonParams.GROUP_NAME);
+        if (StringUtils.isBlank(groupName)) {
+            groupName = NamingUtils.getGroupName(serviceName);
+        }
+        serviceName = NamingUtils.getServiceName(serviceName);
 
         if (StringUtils.isBlank(namespaceId)) {
             namespaceId = Constants.DEFAULT_NAMESPACE_ID;
         }
 
-        return namespaceId + Resource.SPLITTER + AUTH_NAMING_PREFIX + fullServiceName;
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(namespaceId)
+            .append(Resource.SPLITTER)
+            .append(groupName)
+            .append(Resource.SPLITTER)
+            .append(AUTH_NAMING_PREFIX)
+            .append(serviceName);
+
+        return sb.toString();
     }
 }

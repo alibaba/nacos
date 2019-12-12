@@ -45,16 +45,22 @@ public class RolePersistService extends PersistService {
 
         PaginationHelper<String> helper = new PaginationHelper<>();
 
-        String sqlCountRows = "select count(*) from (select distinct role from table) roles where ";
+        String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
         String sqlFetchRows
             = "select distinct role from roles where ";
 
         String where = " 1=1 ";
 
         try {
-            return helper.fetchPage(jt, sqlCountRows
+            Page<String> pageInfo = helper.fetchPage(jt, sqlCountRows
                     + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
                 pageSize, STRING_ROW_MAPPER);
+            if (pageInfo == null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+            return pageInfo;
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -65,11 +71,15 @@ public class RolePersistService extends PersistService {
 
         PaginationHelper<String> helper = new PaginationHelper<>();
 
-        String sqlCountRows = "select count(*) from (select distinct role from table) roles where ";
+        String sqlCountRows = "select count(*) from roles where ";
         String sqlFetchRows
-            = "select distinct role from roles where ";
+            = "select role from roles where ";
 
         String where = " username='" + username + "' ";
+
+        if (StringUtils.isBlank(username)) {
+            where = " 1=1 ";
+        }
 
         try {
             return helper.fetchPage(jt, sqlCountRows
