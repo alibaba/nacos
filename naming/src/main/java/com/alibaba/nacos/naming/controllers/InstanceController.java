@@ -167,7 +167,7 @@ public class InstanceController {
         boolean enableOnly = Boolean.parseBoolean(WebUtils.optional(request, "enableOnly", "true"));
 
         return doSrvIPXT(namespaceId, serviceName, agent, clusters, clientIP, udpPort, env, isCheck, app, tenant,
-                healthyOnly, enableOnly);
+            healthyOnly, enableOnly);
     }
 
     @RequestMapping(value = "", method = RequestMethod.GET)
@@ -370,7 +370,7 @@ public class InstanceController {
    	public JSONObject doSrvIPXT(String namespaceId, String serviceName, String agent, String clusters, String clientIP,
                 int udpPort,
                 String env, boolean isCheck, String app, String tid, boolean healthyOnly, boolean enableOnly)
-         throws Exception {
+            throws Exception {
         ClientInfo clientInfo = new ClientInfo(agent);
         JSONObject result = new JSONObject();
         Service service = serviceManager.getService(namespaceId, serviceName);
