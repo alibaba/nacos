@@ -3181,7 +3181,9 @@ public class PersistService {
      * @return int
      */
     public int countByTenantId(String tenantId){
-        return jt.queryForObject("select count(1) from tenant_info where tenant_id = '" + tenantId + "'", Integer.class);
+        String[] args = new String[1];
+        args[0] = tenantId;
+        return jt.queryForObject("select count(1) from tenant_info where tenant_id = ?", args, Integer.class);
     }
 
     /**
