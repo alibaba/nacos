@@ -356,20 +356,19 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         @Override
         public void completed(HttpResponse response) {
             if (response.getStatusLine().getStatusCode() == HttpServletResponse.SC_OK) {
-                serverIp2unhealthCount.put(serverIp, 0);
-                if (serverListUnhealth.contains(serverIp)) {
-                    serverListUnhealth.remove(serverIp);
-                }
+                serverListUnhealth.remove(serverIp);
                 HttpClientUtils.closeQuietly(response);
             }
         }
 
         @Override
         public void failed(Exception ex) {
-            Integer failCount = serverIp2unhealthCount.get(serverIp);
-            failCount = failCount == null ? Integer.valueOf(0) : failCount;
-            failCount++;
-            serverIp2unhealthCount.put(serverIp, failCount);
+            int failCount = serverIp2unhealthCount.compute(serverIp,(key,oldValue)->{
+                    if(oldValue == null){
+                        return 1;
+                    }
+                    return oldValue+1;
+            });
             if (failCount > maxFailCount) {
                 if (!serverListUnhealth.contains(serverIp)) {
                     serverListUnhealth.add(serverIp);
@@ -381,10 +380,12 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
         @Override
         public void cancelled() {
-            Integer failCount = serverIp2unhealthCount.get(serverIp);
-            failCount = failCount == null ? Integer.valueOf(0) : failCount;
-            failCount++;
-            serverIp2unhealthCount.put(serverIp, failCount);
+            int failCount = serverIp2unhealthCount.compute(serverIp,(key,oldValue)->{
+                if(oldValue == null){
+                    return 1;
+                }
+                return oldValue+1;
+            });
             if (failCount > maxFailCount) {
                 if (!serverListUnhealth.contains(serverIp)) {
                     serverListUnhealth.add(serverIp);
