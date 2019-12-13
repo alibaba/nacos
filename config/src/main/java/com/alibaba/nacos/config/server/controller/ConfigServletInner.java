@@ -226,7 +226,7 @@ public class ConfigServletInner {
                  *根据选择的配置格式设置response的Content-Type
                  * 如果没有读取到对应的配置格式Content-Type默认为application/json
                  */
-                setResponseContentType(response,dataId,group,tenant);
+                setResponseContentType(response, dataId, group, tenant);
                 response.setHeader(Constants.CONTENT_MD5, md5);
                 /**
                  *  禁用缓存
@@ -290,18 +290,18 @@ public class ConfigServletInner {
         return HttpServletResponse.SC_OK + "";
     }
 
-    private void setResponseContentType(HttpServletResponse response,String dataId, String group,
+    private void setResponseContentType(HttpServletResponse response, String dataId, String group,
                                         String tenant) {
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
         Optional.ofNullable(configAllInfo).ifPresent(configAllInfo1 -> {
             String type = configAllInfo.getType();
-            if(FileTypeEnum.JSON.getFileType().equals(type)){
+            if (FileTypeEnum.JSON.getFileType().equals(type)) {
                 response.setContentType("application/json;charset=" + Constants.ENCODE);
-            }else if(FileTypeEnum.XML.getFileType().equals(type)) {
+            } else if (FileTypeEnum.XML.getFileType().equals(type)) {
                 response.setContentType("application/xml;charset=" + Constants.ENCODE);
-            }else if(FileTypeEnum.HTML.getFileType().equals(type) || FileTypeEnum.HTM.getFileType().equals(type)){
+            } else if (FileTypeEnum.HTML.getFileType().equals(type) || FileTypeEnum.HTM.getFileType().equals(type)) {
                 response.setContentType("text/html;charset=" + Constants.ENCODE);
-            }else {
+            } else {
                 response.setContentType("text/plain;charset=" + Constants.ENCODE);
             }
         });
