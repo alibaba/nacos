@@ -62,11 +62,10 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        final int rowCount = rowCountInt.intValue();
 
         // 计算页数
-        int pageCount = rowCount / pageSize;
-        if (rowCount > pageSize * pageCount) {
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
 
@@ -74,7 +73,7 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCount);
+        page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
             return null;
@@ -108,11 +107,10 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        final int rowCount = rowCountInt.intValue();
 
         // 计算页数
-        int pageCount = rowCount / pageSize;
-        if (rowCount > pageSize * pageCount) {
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
 
@@ -120,7 +118,7 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCount);
+        page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
             return null;
@@ -150,11 +148,10 @@ public class PaginationHelper<E> {
         if (rowCountInt == null) {
             throw new IllegalArgumentException("fetchPageLimit error");
         }
-        final int rowCount = rowCountInt.intValue();
 
         // 计算页数
-        int pageCount = rowCount / pageSize;
-        if (rowCount > pageSize * pageCount) {
+        int pageCount = rowCountInt / pageSize;
+        if (rowCountInt > pageSize * pageCount) {
             pageCount++;
         }
 
@@ -162,7 +159,7 @@ public class PaginationHelper<E> {
         final Page<E> page = new Page<E>();
         page.setPageNumber(pageNo);
         page.setPagesAvailable(pageCount);
-        page.setTotalCount(rowCount);
+        page.setTotalCount(rowCountInt);
 
         if (pageNo > pageCount) {
             return null;

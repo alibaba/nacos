@@ -19,7 +19,6 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.acl.AuthChecker;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
