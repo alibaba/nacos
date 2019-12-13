@@ -59,10 +59,11 @@ public class DataStore {
     public Map<String, Datum> batchGet(List<String> keys) {
         Map<String, Datum> map = new HashMap<>(128);
         for (String key : keys) {
-            if (!dataMap.containsKey(key)) {
+            Datum datum = dataMap.get(key);
+            if (datum == null) {
                 continue;
             }
-            map.put(key, dataMap.get(key));
+            map.put(key, datum);
         }
         return map;
     }

@@ -414,7 +414,7 @@ class NewConfig extends React.Component {
         label: 'YAML',
       },
       {
-        value: 'text/html',
+        value: 'html',
         label: 'HTML',
       },
       {

@@ -34,8 +34,8 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.StringUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.ArrayList;
@@ -96,7 +96,7 @@ public class NacosNamingService implements NamingService {
         eventDispatcher = new EventDispatcher();
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties), 
-        		initPollingThreadCount(properties), getEnableOnlyFlag(properties));
+            initPollingThreadCount(properties), getEnableOnlyFlag(properties));
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -208,8 +208,7 @@ public class NacosNamingService implements NamingService {
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
             beatInfo.setEnabled(instance.isEnabled());
-            long instanceInterval = instance.getInstanceHeartBeatInterval();
-            beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
+            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
