@@ -15,12 +15,10 @@
  */
 package com.alibaba.nacos.console.security.nacos;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
-import com.alibaba.nacos.core.auth.AccessException;
-import com.alibaba.nacos.core.auth.AuthManager;
-import com.alibaba.nacos.core.auth.Resource;
-import com.alibaba.nacos.core.auth.User;
+import com.alibaba.nacos.core.auth.*;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.apache.commons.lang3.StringUtils;
@@ -81,12 +79,12 @@ public class NacosAuthManager implements AuthManager {
     }
 
     @Override
-    public void auth(Resource resource, User user) throws AccessException {
+    public void auth(Permission permission, User user) throws AccessException {
         if (Loggers.AUTH.isDebugEnabled()) {
-            Loggers.AUTH.debug("auth resource: {}, user: {}", resource, user);
+            Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
         }
 
-        if (!roleService.hasPermission(user.getUserName(), resource)) {
+        if (!roleService.hasPermission(user.getUserName(), permission)) {
             throw new AccessException("authorization failed!");
         }
     }
@@ -99,7 +97,7 @@ public class NacosAuthManager implements AuthManager {
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
-        bearerToken = request.getParameter(NacosAuthConfig.AUTHORIZATION_TOKEN);
+        bearerToken = request.getParameter(Constants.ACCESS_TOKEN);
         if (StringUtils.isBlank(bearerToken)) {
             String userName = request.getParameter("username");
             String password = request.getParameter("password");
@@ -115,7 +113,7 @@ public class NacosAuthManager implements AuthManager {
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName, rawPassword);
             authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
-            throw new AccessException("username or password incorrect!");
+            throw new AccessException("unknown user!");
         }
 
         return tokenManager.createToken(userName);

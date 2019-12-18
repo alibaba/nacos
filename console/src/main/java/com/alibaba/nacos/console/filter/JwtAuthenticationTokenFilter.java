@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.console.filter;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.console.security.nacos.JwtTokenManager;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
 import org.apache.commons.lang3.StringUtils;
@@ -65,7 +66,7 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
-        String jwt = request.getParameter(NacosAuthConfig.AUTHORIZATION_TOKEN);
+        String jwt = request.getParameter(Constants.ACCESS_TOKEN);
         if (StringUtils.isNotBlank(jwt)) {
             return jwt;
         }

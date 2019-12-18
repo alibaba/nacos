@@ -47,7 +47,7 @@ public class RoleController {
      * @return role list
      */
     @GetMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
                            @RequestParam(name = "username", defaultValue = "") String username) {
         return roleService.getRoles(username, pageNo, pageSize);
@@ -65,9 +65,8 @@ public class RoleController {
      * @return
      */
     @PostMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
     public Object addRole(@RequestParam String role, @RequestParam String username) {
-
         roleService.addRole(role, username);
         return new RestResult<>(200, "add role ok!");
     }
@@ -80,7 +79,7 @@ public class RoleController {
      * @return ok if succeed
      */
     @DeleteMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.DELETE)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
     public Object deleteRole(@RequestParam String role,
                              @RequestParam(name = "username", defaultValue = StringUtils.EMPTY) String username) {
         if (StringUtils.isBlank(username)) {

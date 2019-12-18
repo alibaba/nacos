@@ -16,8 +16,10 @@
 package com.alibaba.nacos.core.auth;
 
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.WebUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -57,6 +59,13 @@ public class AuthFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
 
+        String userAgent = WebUtils.getUserAgent(req);
+
+        if (StringUtils.startsWith(userAgent, Constants.NACOS_SERVER_HEADER)) {
+            chain.doFilter(req, resp);
+            return;
+        }
+
         if (Loggers.AUTH.isDebugEnabled()) {
             Loggers.AUTH.debug("auth filter start, request: {}", req.getRequestURI());
         }
@@ -74,21 +83,19 @@ public class AuthFilter implements Filter {
 
                 Secured secured = method.getAnnotation(Secured.class);
                 String action = secured.action().toString();
-                String name = secured.name();
+                String resource = secured.resource();
 
-                if (StringUtils.isBlank(name)) {
+                if (StringUtils.isBlank(resource)) {
                     ResourceParser parser = secured.parser().newInstance();
-                    name = parser.parseName(req);
+                    resource = parser.parseName(req);
                 }
 
-                if (StringUtils.isBlank(name)) {
+                if (StringUtils.isBlank(resource)) {
                     // deny if we don't find any resource:
                     throw new AccessException("resource name invalid!");
                 }
 
-                Resource resource = new Resource(name + Resource.SPLITTER + action);
-
-                authManager.auth(resource, authManager.login(req));
+                authManager.auth(new Permission(resource, action), authManager.login(req));
 
             }
 

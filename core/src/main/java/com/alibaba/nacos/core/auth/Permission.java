@@ -13,36 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.core.auth;
 
 /**
+ * Permission to auth
+ *
  * @author nkorange
  * @since 1.2.0
  */
-public class PermissionInfo {
+public class Permission {
+
+    public Permission() {
+
+    }
+
+    public Permission(String resource, String action) {
+        this.resource = resource;
+        this.action = action;
+    }
 
     /**
-     * Role name
-     */
-    private String role;
-
-    /**
-     * Resource
+     * An unique key of resource
      */
     private String resource;
 
     /**
-     * Action on resource
+     * Action on resource, refer to class ActionTypes
      */
     private String action;
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
 
     public String getResource() {
         return resource;

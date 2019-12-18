@@ -16,6 +16,8 @@
 package com.alibaba.nacos.core.auth;
 
 
+import com.alibaba.fastjson.JSON;
+
 /**
  * Resource used in authorization.
  *
@@ -42,5 +44,10 @@ public class Resource {
 
     public String parseName() {
         return key.substring(0, key.lastIndexOf(SPLITTER));
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 }

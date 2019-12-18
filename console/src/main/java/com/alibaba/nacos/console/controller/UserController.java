@@ -16,6 +16,7 @@
 package com.alibaba.nacos.console.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.config.server.model.User;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
@@ -70,7 +71,7 @@ public class UserController {
      * @throws IllegalArgumentException if user already exist
      * @since 1.2.0
      */
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.CREATE)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     @PostMapping
     public Object createUser(@RequestParam String username, @RequestParam String password) {
 
@@ -90,7 +91,7 @@ public class UserController {
      * @since 1.2.0
      */
     @DeleteMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.DELETE)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Object deleteUser(@RequestParam String username) {
 
         userDetailsService.deleteUser(username);
@@ -108,7 +109,7 @@ public class UserController {
      * @since 1.2.0
      */
     @PutMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String oldPassword,
                              @RequestParam String newPassword) {
 
@@ -135,7 +136,7 @@ public class UserController {
      * @since 1.2.0
      */
     @GetMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
     public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize) {
         return userDetailsService.getUsers(pageNo, pageSize);
     }
@@ -164,8 +165,8 @@ public class UserController {
                 NacosAuthConfig.TOKEN_PREFIX + user.getToken());
 
             JSONObject result = new JSONObject();
-            result.put("token", user.getToken());
-            result.put("ttl", authConfigs.getTokenValidityInSeconds());
+            result.put(Constants.ACCESS_TOKEN, user.getToken());
+            result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
             return result;
         }
 
