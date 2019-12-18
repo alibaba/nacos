@@ -21,6 +21,8 @@ import com.alibaba.nacos.config.server.auth.PermissionPersistService;
 import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
+import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.core.auth.Permission;
 import com.alibaba.nacos.core.auth.Resource;
 import io.jsonwebtoken.lang.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,9 @@ public class NacosRoleServiceImpl {
     private RolePersistService rolePersistService;
 
     @Autowired
+    private NacosUserDetailsServiceImpl userDetailsService;
+
+    @Autowired
     private PermissionPersistService permissionPersistService;
 
     private Map<String, String> namespaceAdminRoles = new ConcurrentHashMap<>();
@@ -57,13 +62,13 @@ public class NacosRoleServiceImpl {
      * desired permission.
      *
      * @param username user info
-     * @param resource resource to access
+     * @param permission permission to auth
      * @return true if granted, false otherwise
      */
-    public boolean hasPermission(String username, Resource resource) {
+    public boolean hasPermission(String username, Permission permission) {
 
         Page<String> stringPage = getRoles(username, 1, Integer.MAX_VALUE);
-        if (stringPage==null || Collections.isEmpty(stringPage.getPageItems())) {
+        if (stringPage == null || Collections.isEmpty(stringPage.getPageItems())) {
             return false;
         }
         List<String> roles = stringPage.getPageItems();
@@ -74,31 +79,21 @@ public class NacosRoleServiceImpl {
         }
 
         // Old global admin can pass resource 'console/':
-        if (resource.getKey().startsWith(NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX)) {
+        if (permission.getResource().startsWith(NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX)) {
             return false;
-        }
-
-        String[] segs = resource.getKey().split(Resource.SPLITTER);
-
-        // Namespace admin pass:
-        if (roles.contains(namespaceAdminRoles.get(segs[0]))) {
-            return true;
         }
 
         // For other roles, use a pattern match to decide if pass or not.
         for (String role : roles) {
             Page<PermissionInfo> pageResult = getPermissionsByRole(role, 1, Integer.MAX_VALUE);
-            if (pageResult==null || pageResult.getPageItems()==null) {
+            if (pageResult == null || pageResult.getPageItems() == null) {
                 continue;
             }
             for (PermissionInfo permissionInfo : pageResult.getPageItems()) {
-                String resourceKey = permissionInfo.getPermission().replaceAll("\\*", ".*");
-
-                String[] resourceSegs = resourceKey.split(Resource.SPLITTER);
-                String action = resourceSegs[resourceSegs.length-1];
-                if (action.contains(segs[segs.length-1]) &&
-                    Pattern.matches(resourceKey.substring(0, resourceKey.lastIndexOf(Resource.SPLITTER)),
-                    resource.parseName())) {
+                String permissionResource = permissionInfo.getResource().replaceAll("\\*", ".*");
+                String permissionAction = permissionInfo.getAction();
+                if (permissionAction.contains(permission.getAction()) &&
+                    Pattern.matches(permissionResource, permission.getResource())) {
                     return true;
                 }
             }
@@ -115,8 +110,11 @@ public class NacosRoleServiceImpl {
         return permissionPersistService.getPermissions(role, pageNo, pageSize);
     }
 
-    public void addRole(String role, String userName) {
-        rolePersistService.addRole(role, userName);
+    public void addRole(String role, String username) {
+        if (userDetailsService.getUser(username) == null) {
+            throw new IllegalArgumentException("user '" + username + "' not found!");
+        }
+        rolePersistService.addRole(role, username);
     }
 
     public void deleteRole(String role, String userName) {
@@ -132,11 +130,11 @@ public class NacosRoleServiceImpl {
         return pageInfo;
     }
 
-    public void addPermission(String role, String permission) {
-        permissionPersistService.addPermission(role,  permission);
+    public void addPermission(String role, String resource, String action) {
+        permissionPersistService.addPermission(role, resource, action);
     }
 
-    public void deletePermission(String role, String permission) {
-        permissionPersistService.deletePermission(role,  permission);
+    public void deletePermission(String role, String resource, String action) {
+        permissionPersistService.deletePermission(role, resource, action);
     }
 }

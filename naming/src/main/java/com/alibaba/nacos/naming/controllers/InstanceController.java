@@ -92,7 +92,7 @@ public class InstanceController {
 
     @CanDistro
     @PostMapping
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.CREATE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
 
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
@@ -104,7 +104,7 @@ public class InstanceController {
 
     @CanDistro
     @DeleteMapping
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.DELETE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = getIPAddress(request);
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,

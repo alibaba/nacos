@@ -206,7 +206,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @DeleteMapping
-    @Secured(action = ActionTypes.DELETE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
                                 @RequestParam("dataId") String dataId, //
                                 @RequestParam("group") String group, //
@@ -236,7 +236,7 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      */
     @DeleteMapping(params = "delType=ids")
-    @Secured(action = ActionTypes.DELETE, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
                                              @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);

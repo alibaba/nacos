@@ -41,7 +41,7 @@ public @interface Secured {
      *
      * @return resource name
      */
-    String name() default StringUtils.EMPTY;
+    String resource() default StringUtils.EMPTY;
 
     /**
      * Resource name parser. Should have lower priority than name()

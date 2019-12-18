@@ -118,7 +118,7 @@ public class OperatorController {
         return switchDomain;
     }
 
-    @Secured(name = "switches", action = ActionTypes.WRITE)
+    @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
     public String updateSwitch(@RequestParam(required = false) boolean debug,
                                @RequestParam String entry, @RequestParam String value) throws Exception {
@@ -128,7 +128,7 @@ public class OperatorController {
         return "ok";
     }
 
-    @Secured(name = "metrics", action = ActionTypes.READ)
+    @Secured(resource = "naming/metrics", action = ActionTypes.READ)
     @GetMapping("/metrics")
     public JSONObject metrics(HttpServletRequest request) {
 

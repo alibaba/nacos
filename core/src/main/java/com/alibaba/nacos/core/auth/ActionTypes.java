@@ -16,21 +16,12 @@
 package com.alibaba.nacos.core.auth;
 
 /**
- * Request action type definitions
+ * Resource action type definitions
  *
  * @author nkorange
  * @since 1.2.0
  */
 public enum ActionTypes {
-
-    /**
-     * Create
-     */
-    CREATE("c"),
-    /**
-     * Delete
-     */
-    DELETE("d"),
     /**
      * Read
      */

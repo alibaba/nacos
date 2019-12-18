@@ -48,7 +48,7 @@ public class PermissionController {
      * @return permission of a role
      */
     @GetMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
     public Object getPermissions(@RequestParam int pageNo, @RequestParam int pageSize,
                                  @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
         return nacosRoleService.getPermissions(role, pageNo, pageSize);
@@ -58,13 +58,14 @@ public class PermissionController {
      * Add a permission to a role
      *
      * @param role       the role
-     * @param permission the permission to grant
+     * @param resource the related resource
+     * @param action the related action
      * @return ok if succeed
      */
     @PostMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
-    public Object addPermission(@RequestParam String role, @RequestParam String permission) {
-        nacosRoleService.addPermission(role, permission);
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
+    public Object addPermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+        nacosRoleService.addPermission(role, resource, action);
         return new RestResult<>(200, "add permission ok!");
     }
 
@@ -72,13 +73,14 @@ public class PermissionController {
      * Delete a permission from a role
      *
      * @param role       the role
-     * @param permission the permission to delete
+     * @param resource the related resource
+     * @param action the related action
      * @return ok if succeed
      */
     @DeleteMapping
-    @Secured(name = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.DELETE)
-    public Object deletePermission(@RequestParam String role, @RequestParam String permission) {
-        nacosRoleService.deletePermission(role, permission);
+    @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.WRITE)
+    public Object deletePermission(@RequestParam String role, @RequestParam String resource, @RequestParam String action) {
+        nacosRoleService.deletePermission(role, resource, action);
         return new RestResult<>(200, "delete permission ok!");
     }
 }

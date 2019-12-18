@@ -67,7 +67,7 @@ public class ServiceController {
     private SubscribeManager subscribeManager;
 
     @PostMapping
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.CREATE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                          @RequestParam String serviceName,
                          @RequestParam(required = false) float protectThreshold,
@@ -102,7 +102,7 @@ public class ServiceController {
     }
 
     @DeleteMapping
-    @Secured(parser = NamingResourceParser.class, action = ActionTypes.DELETE)
+    @Secured(parser = NamingResourceParser.class, action = ActionTypes.WRITE)
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
                          @RequestParam String serviceName) throws Exception {
 

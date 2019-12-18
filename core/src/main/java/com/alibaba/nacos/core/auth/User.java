@@ -24,6 +24,9 @@ package com.alibaba.nacos.core.auth;
  */
 public class User {
 
+    /**
+     * Unique string representing user
+     */
     private String userName;
 
     public String getUserName() {

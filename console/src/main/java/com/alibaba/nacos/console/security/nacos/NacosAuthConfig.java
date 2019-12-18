@@ -49,8 +49,6 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
-    public static final String AUTHORIZATION_TOKEN = "access_token";
-
     public static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
 
     public static final String LOGIN_ENTRY_POINT = "/v1/auth/login";

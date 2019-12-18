@@ -49,6 +49,9 @@ public class AuthConfigs {
     @Value("${nacos.core.auth.system.type:}")
     private String nacosAuthSystemType;
 
+    /**
+     * If access control is enabled
+     */
     @Value("${nacos.core.auth.enabled:false}")
     private boolean authEnabled;
 

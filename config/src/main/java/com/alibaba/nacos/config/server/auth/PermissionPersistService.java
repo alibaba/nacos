@@ -44,7 +44,7 @@ public class PermissionPersistService extends PersistService {
 
         String sqlCountRows = "select count(*) from permissions where ";
         String sqlFetchRows
-            = "select role,permission from permissions where ";
+            = "select role,resource,action from permissions where ";
 
         String where = " role='" + role + "' ";
 
@@ -71,23 +71,23 @@ public class PermissionPersistService extends PersistService {
         }
     }
 
-    public void addPermission(String role, String permission) {
+    public void addPermission(String role, String resource, String action) {
 
-        String sql = "INSERT into permissions (role, permission) VALUES (?, ?)";
+        String sql = "INSERT into permissions (role, resource, action) VALUES (?, ?, ?)";
 
         try {
-            jt.update(sql, role, permission);
+            jt.update(sql, role, resource, action);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
 
-    public void deletePermission(String role, String permission) {
+    public void deletePermission(String role, String resource, String action) {
 
-        String sql = "DELETE from permissions WHERE role=? and permission=?";
+        String sql = "DELETE from permissions WHERE role=? and resource=? and action=?";
         try {
-            jt.update(sql, role, permission);
+            jt.update(sql, role, resource, action);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -100,7 +100,8 @@ public class PermissionPersistService extends PersistService {
         public PermissionInfo mapRow(ResultSet rs, int rowNum)
             throws SQLException {
             PermissionInfo info = new PermissionInfo();
-            info.setPermission(rs.getString("permission"));
+            info.setResource(rs.getString("resource"));
+            info.setAction(rs.getString("action"));
             info.setRole(rs.getString("role"));
             return info;
         }
