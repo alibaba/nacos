@@ -454,6 +454,7 @@ const I18N_CONF = {
   },
   NewNameSpace: {
     norepeat: '命名空间名称不能重复',
+    norepeatId: '命名空间Id不能重复',
     notice: '提示',
     input: '请勿输入非法字符',
     ok: '确定',
@@ -464,6 +465,7 @@ const I18N_CONF = {
     namespacenotnull: '命名空间不能为空',
     namespacedescnotnull: '命名空间描述不能为空',
     description: '描述：',
+    namespaceID: '命名空间ID(可为空)',
   },
   NameSpaceList: {
     notice: '提示',

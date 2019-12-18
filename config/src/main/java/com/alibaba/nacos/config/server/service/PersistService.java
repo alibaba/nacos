@@ -3222,6 +3222,21 @@ public class PersistService {
         }
     }
 
+    public TenantInfo findTenantBytenantId(String tenantId) {
+        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE  tenant_id=?";
+        try {
+            return this.jt.queryForObject(sql, new Object[]{tenantId}, TENANT_INFO_ROW_MAPPER);
+        } catch (CannotGetJdbcConnectionException e) {
+            fatalLog.error("[db-error] " + e.toString(), e);
+            throw e;
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        } catch (Exception e) {
+            fatalLog.error("[db-other-error]" + e.getMessage(), e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
         try {
             jt.update("DELETE FROM tenant_info WHERE kp=? AND tenant_id=?", kp, tenantId);

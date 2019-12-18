@@ -103,10 +103,19 @@ public class NamespaceController {
     @PostMapping
     public Boolean createNamespace(HttpServletRequest request, HttpServletResponse response,
                                    @RequestParam("namespaceName") String namespaceName,
-                                   @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc) {
+                                   @RequestParam(value = "namespaceDesc", required = false) String namespaceDesc,
+                                   @RequestParam(value = "namespaceID", required = false) String namespaceID
+    ) {
         // TODO 获取用kp
-        String namespaceId = UUID.randomUUID().toString();
-        persistService.insertTenantInfoAtomic("1", namespaceId, namespaceName, namespaceDesc, "nacos",
+        if (StringUtils.isBlank(namespaceID)) {
+            namespaceID = UUID.randomUUID().toString();
+        }
+        if(persistService.findTenantBytenantId(namespaceID) != null) {
+            return false;
+        }
+
+        persistService.insertTenantInfoAtomic("1", namespaceID,
+            namespaceName, namespaceDesc, "nacos",
             System.currentTimeMillis());
         return true;
     }

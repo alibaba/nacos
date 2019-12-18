@@ -456,6 +456,7 @@ const I18N_CONF = {
   },
   NewNameSpace: {
     norepeat: 'Duplicate namespace. Please enter a different name.',
+    norepeatId: 'Duplicate namespaceId. Please enter a different ID.',
     notice: 'Notice',
     input: 'Illegal characters not allowed',
     ok: 'OK',
@@ -466,6 +467,7 @@ const I18N_CONF = {
     namespacenotnull: 'Namespace cannot be empty',
     namespacedescnotnull: 'Namespace description cannot be empty',
     description: 'Description:',
+    namespaceID: 'ID:(can empty)',
   },
   NameSpaceList: {
     notice: 'Notice',

@@ -98,6 +98,7 @@ class NewNameSpace extends React.Component {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
       if (errors) return;
+
       const flag = this.state.dataSource.every(
         val => val.namespaceShowName !== values.namespaceShowName
       );
@@ -105,6 +106,14 @@ class NewNameSpace extends React.Component {
         Dialog.alert({ content: locale.norepeat });
         return;
       }
+    const idFlag = this.state.dataSource.every(
+      val => val.namespace !== values.namespaceID
+    );
+    if (!idFlag && values.namespaceID !== '') {
+      Dialog.alert({ content: locale.norepeatId });
+      return;
+    }
+
       this.disabled = true;
       this.setState({
         disabled: true,
@@ -117,6 +126,7 @@ class NewNameSpace extends React.Component {
         data: {
           namespaceName: values.namespaceShowName,
           namespaceDesc: values.namespaceDesc,
+          namespaceID: values.namespaceID,
         },
         success: res => {
           this.disabled = false;
@@ -217,6 +227,14 @@ class NewNameSpace extends React.Component {
                       },
                       { validator: this.validateChart.bind(this) },
                     ],
+                  })}
+                  style={{ width: '100%' }}
+                />
+              </FormItem>
+              <FormItem label={locale.namespaceID} {...formItemLayout}>
+                <Input
+                  {...this.field.init('namespaceID', {
+
                   })}
                   style={{ width: '100%' }}
                 />
