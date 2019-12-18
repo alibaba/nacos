@@ -391,8 +391,7 @@
                 <plugins>
                     <plugin>
                         <artifactId>maven-failsafe-plugin</artifactId>
-                        <!--<version>2.19.1</version>-->
-                        <version>3.0.0-M1</version>
+                        <version>2.19.1</version>
                         <configuration>
                             <argLine>@{failsafeArgLine}</argLine>
                             <argLine>-Dnacos.standalone=true</argLine>
