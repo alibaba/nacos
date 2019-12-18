@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -23,7 +24,6 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
@@ -257,7 +257,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                 if (HttpServletResponse.SC_OK == result.code) {
                     isAddressServerHealth = true;
                     addressServerFailCcount = 0;
-                    List<String> lines = IOUtils.readLines(new StringReader(result.content));
+                    List<String> lines = IoUtils.readLines(new StringReader(result.content));
                     List<String> ips = new ArrayList<String>(lines.size());
                     for (String serverAddr : lines) {
                         if (StringUtils.isNotBlank(serverAddr)) {
@@ -356,20 +356,19 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         @Override
         public void completed(HttpResponse response) {
             if (response.getStatusLine().getStatusCode() == HttpServletResponse.SC_OK) {
-                serverIp2unhealthCount.put(serverIp, 0);
-                if (serverListUnhealth.contains(serverIp)) {
-                    serverListUnhealth.remove(serverIp);
-                }
+                serverListUnhealth.remove(serverIp);
                 HttpClientUtils.closeQuietly(response);
             }
         }
 
         @Override
         public void failed(Exception ex) {
-            Integer failCount = serverIp2unhealthCount.get(serverIp);
-            failCount = failCount == null ? Integer.valueOf(0) : failCount;
-            failCount++;
-            serverIp2unhealthCount.put(serverIp, failCount);
+            int failCount = serverIp2unhealthCount.compute(serverIp,(key,oldValue)->{
+                    if(oldValue == null){
+                        return 1;
+                    }
+                    return oldValue+1;
+            });
             if (failCount > maxFailCount) {
                 if (!serverListUnhealth.contains(serverIp)) {
                     serverListUnhealth.add(serverIp);
@@ -381,10 +380,12 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
         @Override
         public void cancelled() {
-            Integer failCount = serverIp2unhealthCount.get(serverIp);
-            failCount = failCount == null ? Integer.valueOf(0) : failCount;
-            failCount++;
-            serverIp2unhealthCount.put(serverIp, failCount);
+            int failCount = serverIp2unhealthCount.compute(serverIp,(key,oldValue)->{
+                if(oldValue == null){
+                    return 1;
+                }
+                return oldValue+1;
+            });
             if (failCount > maxFailCount) {
                 if (!serverListUnhealth.contains(serverIp)) {
                     serverListUnhealth.add(serverIp);

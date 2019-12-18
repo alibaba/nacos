@@ -93,7 +93,7 @@ public class NacosConfigService implements ConfigService {
                 System.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
                     String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
 
-        if (Boolean.valueOf(isUseCloudNamespaceParsing)) {
+        if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
             namespaceTmp = TemplateUtils.stringBlankAndThenExecute(namespaceTmp, new Callable<String>() {
                 @Override
                 public String call() {

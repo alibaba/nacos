@@ -34,6 +34,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsUtils;
 
 /**
  * Spring security config
@@ -84,7 +85,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+            //open cors
+            .cors().and()
             .authorizeRequests()
+            .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
             .anyRequest().authenticated().and()
             // custom token authorize exception handler
             .exceptionHandling()
