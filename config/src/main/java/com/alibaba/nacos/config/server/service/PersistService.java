@@ -3174,6 +3174,19 @@ public class PersistService {
     }
 
     /**
+     * @author klw(213539@qq.com)
+     * @Description: count tenant_info by tenant_id
+     * @Date 2019/12/10 17:36
+     * @param: tenantId
+     * @return int
+     */
+    public int countByTenantId(String tenantId){
+        String[] args = new String[1];
+        args[0] = tenantId;
+        return jt.queryForObject("select count(1) from tenant_info where tenant_id = ?", args, Integer.class);
+    }
+
+    /**
      * Update tenantInfo showname
      *
      * @param kp         kp
