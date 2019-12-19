@@ -121,7 +121,7 @@ public class NamespaceController {
             if (namespaceId.length() > NAMESPACE_ID_MAX_LENGTH) {
                 return false;
             }
-            if(persistService.countByTenantId(namespaceId) > 0){
+            if(persistService.tenantInfoCountByTenantId(namespaceId) > 0){
                 return false;
             }
         }
@@ -142,7 +142,7 @@ public class NamespaceController {
         if(StringUtils.isBlank(namespaceId)){
             return false;
         }
-        return (persistService.countByTenantId(namespaceId) > 0);
+        return (persistService.tenantInfoCountByTenantId(namespaceId) > 0);
     }
 
     /**
