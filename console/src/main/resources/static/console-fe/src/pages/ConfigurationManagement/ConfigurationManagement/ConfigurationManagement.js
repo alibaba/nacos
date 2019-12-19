@@ -1092,7 +1092,11 @@ class ConfigurationManagement extends React.Component {
     this.setState({ rowSelection });
     configsTableSelected.clear();
     ids.forEach((id, i) => {
-      configsTableSelected.set(id, records[i]);
+        records.forEach((v, index) => {
+              if (v.id === id) {
+                configsTableSelected.set(id, v);
+              }
+            });
     });
   }
 
