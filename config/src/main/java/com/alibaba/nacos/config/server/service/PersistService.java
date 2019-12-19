@@ -865,7 +865,7 @@ public class PersistService {
                     ps.setString(index++, dataId);
                     ps.setString(index++, group);
                     ps.setString(index++, tenantTmp);
-                    ps.setString(index++, datumId);
+                    ps.setString(index, datumId);
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
@@ -888,7 +888,7 @@ public class PersistService {
                     int index = 1;
                     ps.setString(index++, dataId);
                     ps.setString(index++, group);
-                    ps.setString(index++, tenantTmp);
+                    ps.setString(index, tenantTmp);
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
@@ -993,7 +993,7 @@ public class PersistService {
             if (isPublishOk == null) {
                 return false;
             }
-            return isPublishOk.booleanValue();
+            return isPublishOk;
         } catch (TransactionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             return false;
@@ -1035,7 +1035,7 @@ public class PersistService {
             if (isReplaceOk == null) {
                 return false;
             }
-            return isReplaceOk.booleanValue();
+            return isReplaceOk;
         } catch (TransactionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             return false;
@@ -2848,7 +2848,7 @@ public class PersistService {
                 sql.append(", ");
             }
             sql.append("?");
-            paramList.add(Long.valueOf(tagArr[i]));
+            paramList.add(Long.parseLong(tagArr[i]));
         }
         sql.append(") ");
         try {
@@ -2957,7 +2957,7 @@ public class PersistService {
                 sql.append(", ");
             }
             sql.append("?");
-            paramList.add(Long.valueOf(tagArr[i]));
+            paramList.add(Long.parseLong(tagArr[i]));
         }
         sql.append(") ");
         try {
@@ -3171,6 +3171,19 @@ public class PersistService {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
         }
+    }
+
+    /**
+     * @author klw(213539@qq.com)
+     * @Description: count tenant_info by tenant_id
+     * @Date 2019/12/10 17:36
+     * @param: tenantId
+     * @return int
+     */
+    public int countByTenantId(String tenantId){
+        String[] args = new String[1];
+        args[0] = tenantId;
+        return jt.queryForObject("select count(1) from tenant_info where tenant_id = ?", args, Integer.class);
     }
 
     /**
