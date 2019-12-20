@@ -222,7 +222,7 @@ public class Instance {
         }
         String value = getMetadata().get(key);
         if (!StringUtils.isEmpty(value) && value.matches(NUMBER_PATTERN)) {
-            return Long.valueOf(value);
+            return Long.parseLong(value);
         }
         return defaultValue;
     }
