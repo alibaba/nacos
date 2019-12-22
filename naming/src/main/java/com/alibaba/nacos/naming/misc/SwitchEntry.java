@@ -61,4 +61,6 @@ public class SwitchEntry {
     public static final String OVERRIDDEN_SERVER_STATUS = "overriddenServerStatus";
     public static final String DEFAULT_INSTANCE_EPHEMERAL = "defaultInstanceEphemeral";
     public static final String DISTRO_SERVER_EXPIRED_MILLIS = "distroServerExpiredMillis";
+    public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
+    public static final String AUTO_CHANGE_HEALTH_CHECK_ENABLED = "autoChangeHealthCheckEnabled";
 }

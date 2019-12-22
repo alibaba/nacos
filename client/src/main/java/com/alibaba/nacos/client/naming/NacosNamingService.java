@@ -105,7 +105,6 @@ public class NacosNamingService implements NamingService {
     @Override
     public void start() throws NacosException {
         if (started.compareAndSet(false, true)) {
-
             namingScheduler.initClientBeatThreadCount(properties);
             namingScheduler.initPollingThreadCount(properties);
             namingScheduler.start();
@@ -215,8 +214,7 @@ public class NacosNamingService implements NamingService {
             beatInfo.setWeight(instance.getWeight());
             beatInfo.setMetadata(instance.getMetadata());
             beatInfo.setScheduled(false);
-            long instanceInterval = instance.getInstanceHeartBeatInterval();
-            beatInfo.setPeriod(instanceInterval == 0 ? DEFAULT_HEART_BEAT_INTERVAL : instanceInterval);
+            beatInfo.setPeriod(instance.getInstanceHeartBeatInterval());
 
             beatReactor.addBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), beatInfo);
         }
