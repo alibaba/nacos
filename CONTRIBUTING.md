@@ -90,7 +90,7 @@ Some principles:
     
 -   Testability - 80% of the new code should be covered by unit test cases.
     
--   Maintainability - Comply with our [PMD spec](style/codeStyle.xml), and 3-month-frequency update should be maintained at least.
+-   Maintainability - Comply with our [PMD spec](style/codeStyle.md), and 3-month-frequency update should be maintained at least.
     
 
 ### Now how about try become a committer?

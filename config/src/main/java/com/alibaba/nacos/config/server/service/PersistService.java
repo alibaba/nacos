@@ -865,7 +865,7 @@ public class PersistService {
                     ps.setString(index++, dataId);
                     ps.setString(index++, group);
                     ps.setString(index++, tenantTmp);
-                    ps.setString(index++, datumId);
+                    ps.setString(index, datumId);
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
@@ -888,7 +888,7 @@ public class PersistService {
                     int index = 1;
                     ps.setString(index++, dataId);
                     ps.setString(index++, group);
-                    ps.setString(index++, tenantTmp);
+                    ps.setString(index, tenantTmp);
                 }
             });
         } catch (CannotGetJdbcConnectionException e) {
@@ -993,7 +993,7 @@ public class PersistService {
             if (isPublishOk == null) {
                 return false;
             }
-            return isPublishOk.booleanValue();
+            return isPublishOk;
         } catch (TransactionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             return false;
@@ -1035,7 +1035,7 @@ public class PersistService {
             if (isReplaceOk == null) {
                 return false;
             }
-            return isReplaceOk.booleanValue();
+            return isReplaceOk;
         } catch (TransactionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             return false;
@@ -2848,7 +2848,7 @@ public class PersistService {
                 sql.append(", ");
             }
             sql.append("?");
-            paramList.add(Long.valueOf(tagArr[i]));
+            paramList.add(Long.parseLong(tagArr[i]));
         }
         sql.append(") ");
         try {
@@ -2957,7 +2957,7 @@ public class PersistService {
                 sql.append(", ");
             }
             sql.append("?");
-            paramList.add(Long.valueOf(tagArr[i]));
+            paramList.add(Long.parseLong(tagArr[i]));
         }
         sql.append(") ");
         try {
@@ -3556,9 +3556,7 @@ public class PersistService {
      */
     public int tenantInfoCountByTenantId(String tenantId) {
         Assert.hasText(tenantId, "tenantId can not be null");
-        List<String> paramList = new ArrayList<>();
-        paramList.add(tenantId);
-        Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, paramList.toArray(), Integer.class);
+        Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[]{tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }
