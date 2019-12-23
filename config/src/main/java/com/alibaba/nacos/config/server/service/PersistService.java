@@ -3556,9 +3556,7 @@ public class PersistService {
      */
     public int tenantInfoCountByTenantId(String tenantId) {
         Assert.hasText(tenantId, "tenantId can not be null");
-        List<String> paramList = new ArrayList<>();
-        paramList.add(tenantId);
-        Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, paramList.toArray(), Integer.class);
+        Integer result = this.jt.queryForObject(SQL_TENANT_INFO_COUNT_BY_TENANT_ID, new String[]{tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }
