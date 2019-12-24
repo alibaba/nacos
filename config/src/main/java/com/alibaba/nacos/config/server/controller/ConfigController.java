@@ -68,7 +68,7 @@ public class ConfigController {
 
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
 
-    private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
 
     private final ConfigServletInner inner;
 
