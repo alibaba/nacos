@@ -1099,7 +1099,7 @@ class ConfigurationManagement extends React.Component {
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
         <Loading
           shape={'flower'}
-          style={{ position: 'relative', width: '100%', overflow: 'auto' }}
+          style={{ position: 'relative', width: '100%' }}
           visible={this.state.loading}
           tip={'Loading...'}
           color={'#333'}
@@ -1301,7 +1301,7 @@ class ConfigurationManagement extends React.Component {
                   <Table.Column title={locale.operation} cell={this.renderCol.bind(this)} />
                 </Table>
                 {this.state.dataSource.length > 0 && (
-                  <div style={{ marginTop: 10, overflow: 'hidden' }}>
+                  <div style={{ marginTop: 10 }}>
                     <div style={{ float: 'left' }}>
                       <Button
                         type={'primary'}
