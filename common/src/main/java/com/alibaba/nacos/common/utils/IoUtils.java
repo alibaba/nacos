@@ -16,7 +16,6 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
@@ -39,7 +38,7 @@ public class IoUtils {
         try {
             gis = new GZIPInputStream(raw);
             out = new ByteArrayOutputStream();
-            IOUtils.copy(gis, out);
+            copy(gis, out);
             return out.toByteArray();
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,6 +91,9 @@ public class IoUtils {
     }
 
     static public String toString(InputStream input, String encoding) throws IOException {
+        if (input == null) {
+            return StringUtils.EMPTY;
+        }
         return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
             : toString(new InputStreamReader(input, encoding));
     }
