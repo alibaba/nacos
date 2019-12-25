@@ -82,10 +82,26 @@ public class ClientWorker {
         }
     }
 
+    /**
+     * 监听
+     * @param dataId
+     * @param group
+     * @param listeners
+     * @throws NacosException
+     */
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
+        /**
+         * group为空  则默认DEFAULT_GROUP
+         */
         group = null2defaultGroup(group);
         String tenant = agent.getTenant();
+        /**
+         * CacheData不存在则新建CacheData  并存入cacheMap中
+         */
         CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        /**
+         * 添加监听
+         */
         for (Listener listener : listeners) {
             cache.addListener(listener);
         }
@@ -171,13 +187,27 @@ public class ClientWorker {
         return cache;
     }
 
+    /**
+     * CacheData不存在则新建CacheData  并存入cacheMap中
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @return
+     * @throws NacosException
+     */
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
+        /**
+         * 在缓存中【cacheMap】获取CacheData
+         */
         CacheData cache = getCache(dataId, group, tenant);
         if (null != cache) {
             return cache;
         }
         String key = GroupKey.getKeyTenant(dataId, group, tenant);
         synchronized (cacheMap) {
+            /**
+             * 再次从缓存中获取CacheData
+             */
             CacheData cacheFromMap = getCache(dataId, group, tenant);
             // multiple listeners on the same dataid+group and race condition,so
             // double check again
@@ -187,14 +217,26 @@ public class ClientWorker {
                 // reset so that server not hang this check
                 cache.setInitializing(true);
             } else {
+                /**
+                 * 新建
+                 */
                 cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
                 // fix issue # 1317
+                /**
+                 * 是否需要从远程同步
+                 */
                 if (enableRemoteSyncConfig) {
                     String content = getServerConfig(dataId, group, tenant, 3000L);
+                    /**
+                     * 本地保存
+                     */
                     cache.setContent(content);
                 }
             }
 
+            /**
+             * 保存到cacheMap
+             */
             Map<String, CacheData> copy = new HashMap<String, CacheData>(cacheMap.get());
             copy.put(key, cache);
             cacheMap.set(copy);
@@ -210,6 +252,13 @@ public class ClientWorker {
         return getCache(dataId, group, TenantUtil.getUserTenantForAcm());
     }
 
+    /**
+     * 在缓存中【cacheMap】获取CacheData
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @return
+     */
     public CacheData getCache(String dataId, String group, String tenant) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException();
@@ -217,6 +266,15 @@ public class ClientWorker {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
 
+    /**
+     * 发起configs  get请求
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @param readTimeout
+     * @return
+     * @throws NacosException
+     */
     public String getServerConfig(String dataId, String group, String tenant, long readTimeout)
         throws NacosException {
         if (StringUtils.isBlank(group)) {
@@ -242,9 +300,15 @@ public class ClientWorker {
 
         switch (result.code) {
             case HttpURLConnection.HTTP_OK:
+                /**
+                 * 保存快照文件
+                 */
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, result.content);
                 return result.content;
             case HttpURLConnection.HTTP_NOT_FOUND:
+                /**
+                 * 删除快照文件
+                 */
                 LocalConfigInfoProcessor.saveSnapshot(agent.getName(), dataId, group, tenant, null);
                 return null;
             case HttpURLConnection.HTTP_CONFLICT: {
@@ -268,13 +332,23 @@ public class ClientWorker {
         }
     }
 
+    /**
+     * 检查是否可以使用当前cacheData
+     * @param cacheData
+     */
     private void checkLocalConfig(CacheData cacheData) {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
         final String tenant = cacheData.tenant;
+        /**
+         * 获取容灾文件
+         */
         File path = LocalConfigInfoProcessor.getFailoverFile(agent.getName(), dataId, group, tenant);
 
         // 没有 -> 有
+        /**
+         * cacheData不允许使用   且本地容灾文件存在
+         */
         if (!cacheData.isUseLocalConfigInfo() && path.exists()) {
             String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant);
             String md5 = MD5.getInstance().getMD5String(content);
@@ -287,6 +361,9 @@ public class ClientWorker {
             return;
         }
 
+        /**
+         * cacheData允许使用   且本地容灾文件不存在
+         */
         // 有 -> 没有。不通知业务监听器，从server拿到配置后通知。
         if (cacheData.isUseLocalConfigInfo() && !path.exists()) {
             cacheData.setUseLocalConfigInfo(false);
@@ -295,6 +372,10 @@ public class ClientWorker {
             return;
         }
 
+        /**
+         * cacheData允许使用   且本地容灾文件存在  且cacheData对应的文件最后修改时间和本地容灾文件的最后修改时间不一致
+         * 即本地容灾文件内容发生了变化
+         */
         // 有变更
         if (cacheData.isUseLocalConfigInfo() && path.exists()
             && cacheData.getLocalConfigInfoVersion() != path.lastModified()) {
@@ -433,6 +514,12 @@ public class ClientWorker {
         return updateList;
     }
 
+    /**
+     * 实例化  并执行LongPollingRunnable
+     * @param agent
+     * @param configFilterChainManager
+     * @param properties
+     */
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
         this.agent = agent;
@@ -466,6 +553,9 @@ public class ClientWorker {
             @Override
             public void run() {
                 try {
+                    /**
+                     * 执行LongPollingRunnable
+                     */
                     checkConfigInfo();
                 } catch (Throwable e) {
                     LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
@@ -499,10 +589,19 @@ public class ClientWorker {
             try {
                 // check failover config
                 for (CacheData cacheData : cacheMap.get().values()) {
+                    /**
+                     * 只处理相同id
+                     */
                     if (cacheData.getTaskId() == taskId) {
                         cacheDatas.add(cacheData);
                         try {
+                            /**
+                             * 检查是否可以使用当前cacheData
+                             */
                             checkLocalConfig(cacheData);
+                            /**
+                             * 允许使用
+                             */
                             if (cacheData.isUseLocalConfigInfo()) {
                                 cacheData.checkListenerMd5();
                             }

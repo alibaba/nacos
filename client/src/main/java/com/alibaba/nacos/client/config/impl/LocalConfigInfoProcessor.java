@@ -38,7 +38,18 @@ public class LocalConfigInfoProcessor {
 
     private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
 
+    /**
+     * 获取容错文件中的内容
+     * @param serverName
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @return
+     */
     static public String getFailover(String serverName, String dataId, String group, String tenant) {
+        /**
+         * C:\Users\Administrator\nacos\config\fixed-192.168.50.64_8848_nacos\data\config-data\DEFAULT_GROUP\test
+         */
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
         if (!localPath.exists() || !localPath.isFile()) {
             return null;
@@ -59,6 +70,9 @@ public class LocalConfigInfoProcessor {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return null;
         }
+        /**
+         * C:\Users\Administrator\nacos\config\fixed-192.168.50.64_8848_nacos\snapshot\DEFAULT_GROUP\test
+         */
         File file = getSnapshotFile(name, dataId, group, tenant);
         if (!file.exists() || !file.isFile()) {
             return null;
@@ -95,11 +109,25 @@ public class LocalConfigInfoProcessor {
         }
     }
 
+    /**
+     * 保存服务端内容到快照文件
+     * @param envName
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @param config
+     */
     static public void saveSnapshot(String envName, String dataId, String group, String tenant, String config) {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return;
         }
+        /**
+         * 获取快照文件
+         */
         File file = getSnapshotFile(envName, dataId, group, tenant);
+        /**
+         * 服务端没有相应信息  则删除快照文件
+         */
         if (null == config) {
             try {
                 IoUtils.delete(file);
@@ -116,6 +144,9 @@ public class LocalConfigInfoProcessor {
                     }
                 }
 
+                /**
+                 * 写入快照文件
+                 */
                 if (JVMUtil.isMultiInstance()) {
                     ConcurrentDiskUtil.writeFileContent(file, config,
                         Constants.ENCODE);

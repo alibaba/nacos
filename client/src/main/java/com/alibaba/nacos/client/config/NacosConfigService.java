@@ -73,18 +73,37 @@ public class NacosConfigService implements ConfigService {
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
     public NacosConfigService(Properties properties) throws NacosException {
+        /**
+         * 字符集
+         */
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
             encode = Constants.ENCODE;
         } else {
             encode = encodeTmp.trim();
         }
+
+        /**
+         * 初始化namespace
+         */
         initNamespace(properties);
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
+
+        /**
+         * 配置服务   每30秒  动态获取nacos集群地址
+         */
         agent.start();
+
+        /**
+         * 初始化ClientWorker   执行LongPollingRunnable
+         */
         worker = new ClientWorker(agent, configFilterChainManager, properties);
     }
 
+    /**
+     * 从系统环境变量中获取namespace
+     * @param properties
+     */
     private void initNamespace(Properties properties) {
         String namespaceTmp = null;
 
@@ -129,6 +148,13 @@ public class NacosConfigService implements ConfigService {
         return content;
     }
 
+    /**
+     * 监听
+     * @param dataId   dataId
+     * @param group    group
+     * @param listener listener
+     * @throws NacosException
+     */
     @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
         worker.addTenantListeners(dataId, group, Arrays.asList(listener));

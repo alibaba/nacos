@@ -123,17 +123,31 @@ public class ServerListManager {
         isStarted = false;
         serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        /**
+         * 初始化属性
+         * 如果endpointUrl不为空  则设置nacos集群地址【serverAddrsStr】为空   后续将通过endpoint地址  动态获取
+         */
         initParam(properties);
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
             isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
+            /**
+             * 集群中多个地址  则以逗号分割
+             */
             String[] serverAddrsArr = serverAddrsStr.split(",");
             for (String serverAddr: serverAddrsArr) {
+                /**
+                 * 地址以http或https开头 则直接存入serverAddrs
+                 * 否则需要添加http协议头
+                 */
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
                     String[] serverAddrArr = serverAddr.split(":");
                     if (serverAddrArr.length == 1) {
+                        /**
+                         * 地址没有配置端口则使用默认端口
+                         */
                         serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
                     } else {
                         serverAddrs.add(HTTP + serverAddr);
@@ -150,6 +164,9 @@ public class ServerListManager {
                     + namespace;
             }
         } else {
+            /**
+             * serverAddrsStr为空   则通过addressServerUrl动态获取
+             */
             if (StringUtils.isBlank(endpoint)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
             }
@@ -170,6 +187,10 @@ public class ServerListManager {
     }
 
     private void initParam(Properties properties) {
+        /**
+         * 获取endpoint的属性
+         * 如果endpointUrl不为空  则设置nacos集群地址为空   后续将通过endpoint地址  动态获取
+         */
         endpoint = initEndpoint(properties);
 
         String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
@@ -182,6 +203,13 @@ public class ServerListManager {
         }
     }
 
+    /**
+     * 初始化endpoint配置
+     *
+     * 如果endpointUrl不为空  则设置nacos集群地址为空   后续将通过endpoint地址  动态获取
+     * @param properties
+     * @return
+     */
     private String initEndpoint(final Properties properties) {
 
         String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
@@ -204,6 +232,9 @@ public class ServerListManager {
                     String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
+            /**
+             * 如果endpointUrl不为空  则设置nacos集群地址为空   后续将通过endpoint地址  动态获取
+             */
             if (StringUtils.isNotBlank(endpointUrl)) {
                 serverAddrsStr = "";
             }
@@ -214,7 +245,9 @@ public class ServerListManager {
     }
 
     public synchronized void start() throws NacosException {
-
+        /**
+         * nacos集群地址  采用固定的方式  则退出
+         */
         if (isStarted || isFixed) {
             return;
         }
@@ -236,6 +269,9 @@ public class ServerListManager {
                 "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
         }
 
+        /**
+         * 没30秒  执行getServersTask   获取nacos集群地址
+         */
         TimerService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
     }
@@ -260,6 +296,10 @@ public class ServerListManager {
              * get serverlist from nameserver
              */
             try {
+                /**
+                 * getApacheServerList   获取nacos集群地址
+                 * updateIfChanged处理地址
+                 */
                 updateIfChanged(getApacheServerList(url, name));
             } catch (Exception e) {
                 LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!",
@@ -268,6 +308,10 @@ public class ServerListManager {
         }
     }
 
+    /**
+     * 内部处理nacos集群地址
+     * @param newList
+     */
     private void updateIfChanged(List<String> newList) {
         if (null == newList || newList.isEmpty()) {
             LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
@@ -289,14 +333,31 @@ public class ServerListManager {
         if (newServerAddrList.equals(serverUrls)) {
             return;
         }
+
+        /**
+         * 集群地址发生变化
+         */
+
         serverUrls = new ArrayList<String>(newServerAddrList);
         iterator = iterator();
+        /**
+         * 挑选集群中的一个地址为默认请求地址
+         */
         currentServerAddr = iterator.next();
 
+        /**
+         * 发布事件通知
+         */
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
         LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
     }
 
+    /**
+     * 访问url   获取nacos集群地址
+     * @param url
+     * @param name
+     * @return
+     */
     private List<String> getApacheServerList(String url, String name) {
         try {
             HttpResult httpResult = HttpSimpleClient.httpGet(url, null, null, null, 3000);
@@ -414,6 +475,9 @@ public class ServerListManager {
     private int endpointPort = 8080;
     private String contentPath = ParamUtil.getDefaultContextPath();
     private String serverListName = ParamUtil.getDefaultNodesPath();
+    /**
+     * nacos集群地址
+     */
     volatile List<String> serverUrls = new ArrayList<String>();
 
     private volatile String currentServerAddr;

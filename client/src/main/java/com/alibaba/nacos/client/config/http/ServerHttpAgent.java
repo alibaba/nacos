@@ -242,13 +242,33 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     public ServerHttpAgent(Properties properties) throws NacosException {
+        /**
+         * 处理Properties中的数据
+         */
         serverListMgr = new ServerListManager(properties);
+        /**
+         * 初始化  字符集  密钥（sk、ak） 最大重试次数
+         */
         init(properties);
     }
 
+    /**
+     *
+     * @param properties
+     */
     private void init(Properties properties) {
+        /**
+         * utf-8
+         */
         initEncode(properties);
+        /**
+         * 密钥   sk  ak
+         */
         initAkSk(properties);
+
+        /**
+         * 最大重试次数
+         */
         initMaxRetry(properties);
     }
 

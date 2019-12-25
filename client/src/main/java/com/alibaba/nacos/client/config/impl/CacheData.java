@@ -75,6 +75,9 @@ public class CacheData {
             throw new IllegalArgumentException("listener is null");
         }
         ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5);
+        /**
+         * 添加监听
+         */
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
@@ -223,8 +226,22 @@ public class CacheData {
         return (null == config) ? Constants.NULL : MD5.getInstance().getMD5String(config);
     }
 
+    /**
+     * 先获取容错文件中的内容  如果不存在   则获取快照文件中的内容
+     * @param name
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @return
+     */
     private String loadCacheContentFromDiskLocal(String name, String dataId, String group, String tenant) {
+        /**
+         * 容错
+         */
         String content = LocalConfigInfoProcessor.getFailover(name, dataId, group, tenant);
+        /**
+         * 快照
+         */
         content = (null != content) ? content
             : LocalConfigInfoProcessor.getSnapshot(name, dataId, group, tenant);
         return content;
@@ -257,7 +274,13 @@ public class CacheData {
         this.tenant = tenant;
         listeners = new CopyOnWriteArrayList<ManagerListenerWrap>();
         this.isInitializing = true;
+        /**
+         * 先获取容错文件中的内容  如果不存在   则获取快照文件中的内容
+         */
         this.content = loadCacheContentFromDiskLocal(name, dataId, group, tenant);
+        /**
+         * MD5加密
+         */
         this.md5 = getMd5String(content);
     }
 
