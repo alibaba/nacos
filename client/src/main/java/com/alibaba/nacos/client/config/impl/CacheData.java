@@ -59,6 +59,10 @@ public class CacheData {
         return content;
     }
 
+    /**
+     * 修改content  并级联修改md5
+     * @param newContent
+     */
     public void setContent(String newContent) {
         this.content = newContent;
         this.md5 = getMd5String(content);
@@ -158,14 +162,28 @@ public class CacheData {
         return "CacheData [" + dataId + ", " + group + "]";
     }
 
+    /**
+     * 最新的md5和listeners中存储的md5不一致   则进行通知
+     */
     void checkListenerMd5() {
         for (ManagerListenerWrap wrap : listeners) {
             if (!md5.equals(wrap.lastCallMd5)) {
+                /**
+                 * 通知监听  并修改对应的md5
+                 */
                 safeNotifyListener(dataId, group, content, md5, wrap);
             }
         }
     }
 
+    /**
+     * 通知监听
+     * @param dataId
+     * @param group
+     * @param content
+     * @param md5
+     * @param listenerWrap
+     */
     private void safeNotifyListener(final String dataId, final String group, final String content,
                                     final String md5, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
@@ -182,15 +200,29 @@ public class CacheData {
                         LOGGER.info("[{}] [notify-context] dataId={}, group={}, md5={}", name, dataId, group, md5);
                     }
                     // 执行回调之前先将线程classloader设置为具体webapp的classloader，以免回调方法中调用spi接口是出现异常或错用（多应用部署才会有该问题）。
+                    /**
+                     * 执行回调之前先将线程classloader设置为具体webapp的classloader，以免回调方法中调用spi接口是出现异常或错用（多应用部署才会有该问题）。
+                     */
                     Thread.currentThread().setContextClassLoader(appClassLoader);
 
                     ConfigResponse cr = new ConfigResponse();
                     cr.setDataId(dataId);
                     cr.setGroup(group);
                     cr.setContent(content);
+                    /**
+                     * 接口   供开发者使用
+                     */
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
+                    /**
+                     * 通知
+                     * 通知
+                     * 通知
+                     */
                     listener.receiveConfigInfo(contentTmp);
+                    /**
+                     * 修改监听内的md5
+                     */
                     listenerWrap.lastCallMd5 = md5;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
                         listener);

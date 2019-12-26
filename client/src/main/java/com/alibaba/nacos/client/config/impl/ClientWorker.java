@@ -409,10 +409,20 @@ public class ClientWorker {
 
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * @param cacheDatas
+     * @param inInitializingCacheList
+     * @return
+     * @throws IOException
+     */
+    /**
+     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
     List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
+            /**
+             * 不允许使用当前cacheData的缓存数据
+             */
             if (!cacheData.isUseLocalConfigInfo()) {
                 sb.append(cacheData.dataId).append(WORD_SEPARATOR);
                 sb.append(cacheData.group).append(WORD_SEPARATOR);
@@ -430,9 +440,19 @@ public class ClientWorker {
             }
         }
         boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
+        /**
+         * 访问configs/listener
+         */
         return checkUpdateConfigStr(sb.toString(), isInitializingCacheList);
     }
 
+    /**
+     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * @param probeUpdateString
+     * @param isInitializingCacheList
+     * @return
+     * @throws IOException
+     */
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
@@ -444,6 +464,9 @@ public class ClientWorker {
         headers.add("Long-Pulling-Timeout");
         headers.add("" + timeout);
 
+        /**
+         * told server do not hang me up if new initializing cacheData added in
+         */
         // told server do not hang me up if new initializing cacheData added in
         if (isInitializingCacheList) {
             headers.add("Long-Pulling-Timeout-No-Hangup");
@@ -455,6 +478,11 @@ public class ClientWorker {
         }
 
         try {
+            /**
+             * In order to prevent the server from handling the delay of the client's long task,
+             * increase the client's read timeout to avoid this problem.
+             * 为了防止服务器处理客户端长任务的延迟，增加客户端的读取超时以避免此问题。
+             */
             // In order to prevent the server from handling the delay of the client's long task,
             // increase the client's read timeout to avoid this problem.
 
@@ -464,6 +492,9 @@ public class ClientWorker {
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
+                /**
+                 *
+                 */
                 return parseUpdateDataIdResponse(result.content);
             } else {
                 setHealthServer(false);
@@ -603,6 +634,9 @@ public class ClientWorker {
                              * 允许使用
                              */
                             if (cacheData.isUseLocalConfigInfo()) {
+                                /**
+                                 * 检查md5  并判断是否通知监听
+                                 */
                                 cacheData.checkListenerMd5();
                             }
                         } catch (Exception e) {
@@ -611,6 +645,9 @@ public class ClientWorker {
                     }
                 }
 
+                /**
+                 *
+                 */
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
 
