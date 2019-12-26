@@ -102,7 +102,6 @@ public class UserController {
      * Update an user
      *
      * @param username    username of user
-     * @param oldPassword original password of user
      * @param newPassword new password of user
      * @return ok if update succeed
      * @throws IllegalArgumentException if user not exist or oldPassword is incorrect
@@ -110,16 +109,11 @@ public class UserController {
      */
     @PutMapping
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
-    public Object updateUser(@RequestParam String username, @RequestParam String oldPassword,
-                             @RequestParam String newPassword) {
+    public Object updateUser(@RequestParam String username, @RequestParam String newPassword) {
 
         User user = userDetailsService.getUser(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
-        }
-
-        if (!PasswordEncoderUtil.matches(oldPassword, user.getPassword())) {
-            throw new IllegalArgumentException("old password incorrect!");
         }
 
         userDetailsService.updateUserPassword(username, PasswordEncoderUtil.encode(newPassword));

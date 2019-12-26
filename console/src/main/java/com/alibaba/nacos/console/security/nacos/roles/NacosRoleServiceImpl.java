@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.security.nacos.roles;
 
 import com.alibaba.nacos.config.server.auth.PermissionInfo;
 import com.alibaba.nacos.config.server.auth.PermissionPersistService;
+import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.config.server.auth.RolePersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.console.security.nacos.NacosAuthConfig;
@@ -67,15 +68,17 @@ public class NacosRoleServiceImpl {
      */
     public boolean hasPermission(String username, Permission permission) {
 
-        Page<String> stringPage = getRoles(username, 1, Integer.MAX_VALUE);
+        Page<RoleInfo> stringPage = getRoles(username, 1, Integer.MAX_VALUE);
         if (stringPage == null || Collections.isEmpty(stringPage.getPageItems())) {
             return false;
         }
-        List<String> roles = stringPage.getPageItems();
+        List<RoleInfo> roles = stringPage.getPageItems();
 
         // Global admin pass:
-        if (roles.contains(GLOBAL_ADMIN_ROLE)) {
-            return true;
+        for (RoleInfo roleInfo : roles) {
+            if (GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
+                return true;
+            }
         }
 
         // Old global admin can pass resource 'console/':
@@ -84,8 +87,8 @@ public class NacosRoleServiceImpl {
         }
 
         // For other roles, use a pattern match to decide if pass or not.
-        for (String role : roles) {
-            Page<PermissionInfo> pageResult = getPermissionsByRole(role, 1, Integer.MAX_VALUE);
+        for (RoleInfo roleInfo : roles) {
+            Page<PermissionInfo> pageResult = getPermissionsByRole(roleInfo.getRole(), 1, Integer.MAX_VALUE);
             if (pageResult == null || pageResult.getPageItems() == null) {
                 continue;
             }
@@ -101,8 +104,8 @@ public class NacosRoleServiceImpl {
         return false;
     }
 
-    public Page<String> getRoles(String userName, int pageNo, int pageSize) {
-        Page<String> roles = rolePersistService.getRolesByUserName(userName, pageNo, pageSize);
+    public Page<RoleInfo> getRoles(String userName, int pageNo, int pageSize) {
+        Page<RoleInfo> roles = rolePersistService.getRolesByUserName(userName, pageNo, pageSize);
         return roles;
     }
 

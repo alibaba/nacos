@@ -41,20 +41,20 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 public class RolePersistService extends PersistService {
 
 
-    public Page<String> getRoles(int pageNo, int pageSize) {
+    public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
 
-        PaginationHelper<String> helper = new PaginationHelper<>();
+        PaginationHelper<RoleInfo> helper = new PaginationHelper<>();
 
         String sqlCountRows = "select count(*) from (select distinct role from roles) roles where ";
         String sqlFetchRows
-            = "select distinct role from roles where ";
+            = "select role,username from roles where ";
 
         String where = " 1=1 ";
 
         try {
-            Page<String> pageInfo = helper.fetchPage(jt, sqlCountRows
+            Page<RoleInfo> pageInfo = helper.fetchPage(jt, sqlCountRows
                     + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                pageSize, STRING_ROW_MAPPER);
+                pageSize, ROLE_INFO_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
                 pageInfo.setTotalCount(0);
@@ -67,13 +67,13 @@ public class RolePersistService extends PersistService {
         }
     }
 
-    public Page<String> getRolesByUserName(String username, int pageNo, int pageSize) {
+    public Page<RoleInfo> getRolesByUserName(String username, int pageNo, int pageSize) {
 
-        PaginationHelper<String> helper = new PaginationHelper<>();
+        PaginationHelper<RoleInfo> helper = new PaginationHelper<>();
 
         String sqlCountRows = "select count(*) from roles where ";
         String sqlFetchRows
-            = "select role from roles where ";
+            = "select role,username from roles where ";
 
         String where = " username='" + username + "' ";
 
@@ -84,7 +84,7 @@ public class RolePersistService extends PersistService {
         try {
             return helper.fetchPage(jt, sqlCountRows
                     + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                pageSize, STRING_ROW_MAPPER);
+                pageSize, ROLE_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
@@ -123,14 +123,17 @@ public class RolePersistService extends PersistService {
         }
     }
 
-    private static final class StringRowMapper implements
-        RowMapper<String> {
+    private static final class RoleInfoRowMapper implements
+        RowMapper<RoleInfo> {
         @Override
-        public String mapRow(ResultSet rs, int rowNum)
+        public RoleInfo mapRow(ResultSet rs, int rowNum)
             throws SQLException {
-            return rs.getString("role");
+            RoleInfo roleInfo = new RoleInfo();
+            roleInfo.setRole(rs.getString("role"));
+            roleInfo.setUsername(rs.getString("username"));
+            return roleInfo;
         }
     }
 
-    private static final StringRowMapper STRING_ROW_MAPPER = new StringRowMapper();
+    private static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
 }
