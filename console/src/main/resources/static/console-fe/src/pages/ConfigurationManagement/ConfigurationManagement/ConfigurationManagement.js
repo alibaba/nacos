@@ -104,6 +104,7 @@ class ConfigurationManagement extends React.Component {
         onChange: this.configDataTableOnChange.bind(this),
         selectedRowKeys: [],
       },
+      isPageEnter: false,
     };
     const obj = {
       dataId: this.dataId || '',
@@ -199,6 +200,12 @@ class ConfigurationManagement extends React.Component {
   keyDownSearch(e) {
     const theEvent = e || window.event;
     const code = theEvent.keyCode || theEvent.which || theEvent.charCode;
+    if (this.state.isPageEnter) {
+      this.setState({
+        isPageEnter: false,
+      });
+      return false;
+    }
     if (code === 13) {
       this.getData();
       return false;
@@ -424,9 +431,10 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  changePage(value) {
+  changePage(value, e) {
     this.setState(
       {
+        isPageEnter: e.keyCode && e.keyCode === 13,
         currentPage: value,
       },
       () => {
@@ -733,11 +741,9 @@ class ConfigurationManagement extends React.Component {
           </div>
         ),
         onOk: () => {
-          let idsStr = '';
-          configsTableSelected.forEach((value, key, map) => {
-            idsStr = `${idsStr + key},`;
-          });
-          const url = `v1/cs/configs?delType=ids&ids=${idsStr}`;
+          const url = `v1/cs/configs?delType=ids&ids=${Array.from(configsTableSelected.keys()).join(
+            ','
+          )}`;
           request({
             url,
             type: 'delete',
@@ -1083,9 +1089,7 @@ class ConfigurationManagement extends React.Component {
     rowSelection.selectedRowKeys = ids;
     this.setState({ rowSelection });
     configsTableSelected.clear();
-    ids.forEach((id, i) => {
-      configsTableSelected.set(id, records[i]);
-    });
+    records.forEach(item => configsTableSelected.set(item.id, item));
   }
 
   render() {
