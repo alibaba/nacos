@@ -16,6 +16,8 @@
 package com.alibaba.nacos.naming.push;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.naming.core.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -256,6 +258,31 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         List<Subscriber> clients = new ArrayList<Subscriber>();
         clientConcurrentMap.forEach((key, client) -> {
             clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceName));
+        });
+        return clients;
+    }
+
+    /**
+     *  fuzzy search subscriber
+     * @param serviceName
+     * @param namespaceId
+     * @return
+     */
+    public List<Subscriber> getClientsFuzzy(String serviceName, String namespaceId) {
+        List<Subscriber> clients = new ArrayList<Subscriber>();
+        clientMap.forEach((outKey, clientConcurrentMap) -> {
+            //get groupedName from key
+            String serviceFullName = outKey.split(UtilsAndCommons.NAMESPACE_SERVICE_CONNECTOR)[1];
+            //get groupName
+            String groupName = NamingUtils.getGroupName(serviceFullName);
+            //get serviceName
+            String name = NamingUtils.getServiceName(serviceFullName);
+            //fuzzy match
+            if (outKey.startsWith(namespaceId) && name.indexOf(NamingUtils.getServiceName(serviceName)) >= 0 && groupName.indexOf(NamingUtils.getGroupName(serviceName)) >= 0) {
+                clientConcurrentMap.forEach((key, client) -> {
+                    clients.add(new Subscriber(client.getAddrStr(), client.getAgent(), client.getApp(), client.getIp(), namespaceId, serviceFullName));
+                });
+            }
         });
         return clients;
     }

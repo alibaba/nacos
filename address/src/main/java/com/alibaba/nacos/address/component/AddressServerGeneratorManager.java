@@ -65,7 +65,7 @@ public class AddressServerGeneratorManager {
             String[] ipAndPort = generateIpAndPort(ip);
             Instance instance = new Instance();
             instance.setIp(ipAndPort[0]);
-            instance.setPort(Integer.valueOf(ipAndPort[1]));
+            instance.setPort(Integer.parseInt(ipAndPort[1]));
             instance.setClusterName(clusterName);
             instance.setServiceName(serviceName);
             instance.setTenant(Constants.DEFAULT_NAMESPACE_ID);

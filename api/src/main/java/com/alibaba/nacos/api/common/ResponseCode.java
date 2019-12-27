@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.util;
+package com.alibaba.nacos.api.common;
+
 
 /**
+ * Response code definitions.
+ * <p>
+ * This class and inherited classes define codes separated from HTTP code to provide richer and preciser
+ * information of the API results. A recommended rule for defining response code is:
+ * <li> Global and common code starts with 10001.
+ * <li> Naming module code starts with 20001.
+ * <li> Config module code starts with 30001.
+ *
  * @author nkorange
- * @since 0.8.0
+ * @since 1.2.0
  */
-public class HttpMethod {
+public class ResponseCode {
 
-    public static final String GET = "GET";
-
-    public static final String HEAD = "HEAD";
-
-    public static final String POST = "POST";
-
-    public static final String PUT = "PUT";
-
-    public static final String PATCH = "PATCH";
-
-    public static final String DELETE = "DELETE";
-
-    public static final String OPTIONS = "OPTIONS";
-
-    public static final String TRACE = "TRACE";
+    /**
+     * Everything normal
+     */
+    public static final int OK = 10200;
 }

@@ -13,39 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.common.util;
+package com.alibaba.nacos.common.utils;
 
-import org.apache.commons.lang3.StringUtils;
+import java.util.UUID;
 
 /**
- * @author nacos
+ * @author nkorange
  */
-public class Pair {
-    private String key;
-    private String value;
+public class UuidUtils {
 
-    public Pair(String key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public Pair() {
-        this(StringUtils.EMPTY, StringUtils.EMPTY);
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    public void setKey(String key) {
-        this.key = key;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
+    public static String generateUuid() {
+        return UUID.randomUUID().toString();
     }
 }
