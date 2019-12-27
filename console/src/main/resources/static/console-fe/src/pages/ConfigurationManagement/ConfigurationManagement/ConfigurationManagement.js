@@ -434,7 +434,7 @@ class ConfigurationManagement extends React.Component {
   changePage(value, e) {
     this.setState(
       {
-        isPageEnter: e.keyCode && e.keyCode === 13,
+        isPageEnter: e && e.keyCode && e.keyCode === 13,
         currentPage: value,
       },
       () => {
@@ -1099,7 +1099,7 @@ class ConfigurationManagement extends React.Component {
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
         <Loading
           shape={'flower'}
-          style={{ position: 'relative', width: '100%', overflow: 'auto' }}
+          style={{ position: 'relative', width: '100%', overflow: 'auto', height: '800px' }}
           visible={this.state.loading}
           tip={'Loading...'}
           color={'#333'}
