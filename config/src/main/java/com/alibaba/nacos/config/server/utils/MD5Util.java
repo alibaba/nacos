@@ -102,6 +102,9 @@ public class MD5Util {
      */
     static public Map<String, String> getClientMd5Map(String configKeysString) {
 
+        /**
+         * 解析传输协议 传输协议有两种格式(w为字段分隔符，l为每条数据分隔符)： 老报文：D w G w MD5 l 新报文：D w G w MD5 w T l
+         */
         Map<String, String> md5Map = new HashMap<String, String>(5);
 
         if (null == configKeysString || "".equals(configKeysString)) {

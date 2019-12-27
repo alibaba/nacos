@@ -270,7 +270,7 @@ public class ServerListManager {
         }
 
         /**
-         * 没30秒  执行getServersTask   获取nacos集群地址
+         * 每30秒  执行getServersTask   获取nacos集群地址
          */
         TimerService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
@@ -360,6 +360,9 @@ public class ServerListManager {
      */
     private List<String> getApacheServerList(String url, String name) {
         try {
+            /**
+             * 访问寻址服务器  获得nacos集群地址
+             */
             HttpResult httpResult = HttpSimpleClient.httpGet(url, null, null, null, 3000);
 
             if (HttpURLConnection.HTTP_OK == httpResult.code) {

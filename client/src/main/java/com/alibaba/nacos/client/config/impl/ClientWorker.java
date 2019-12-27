@@ -289,6 +289,9 @@ public class ClientWorker {
             } else {
                 params = Arrays.asList("dataId", dataId, "group", group, "tenant", tenant);
             }
+            /**
+             * 向服务端发起查询
+             */
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
             String message = String.format(
@@ -396,6 +399,9 @@ public class ClientWorker {
     public void checkConfigInfo() {
         // 分任务
         int listenerSize = cacheMap.get().size();
+        /**
+         * 向上取整
+         */
         // 向上取整为批数
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
         if (longingTaskCount > currentLongingTaskCount) {
@@ -408,7 +414,7 @@ public class ClientWorker {
     }
 
     /**
-     * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
+     * 从nacos集群获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      * @param cacheDatas
      * @param inInitializingCacheList
      * @return
@@ -418,6 +424,9 @@ public class ClientWorker {
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
      */
     List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws IOException {
+        /**
+         * 不允许使用缓存数据得配置
+         */
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
             /**
@@ -441,14 +450,14 @@ public class ClientWorker {
         }
         boolean isInitializingCacheList = !inInitializingCacheList.isEmpty();
         /**
-         * 访问configs/listener
+         * 访问nacos集群configs/listener
          */
         return checkUpdateConfigStr(sb.toString(), isInitializingCacheList);
     }
 
     /**
      * 从Server获取值变化了的DataID列表。返回的对象里只有dataId和group是有效的。 保证不返回NULL。
-     * @param probeUpdateString
+     * @param probeUpdateString 待查询得配置信息
      * @param isInitializingCacheList
      * @return
      * @throws IOException
@@ -466,6 +475,7 @@ public class ClientWorker {
 
         /**
          * told server do not hang me up if new initializing cacheData added in
+         * 通知诉服务器 如果有新的初始化缓存数据，不要挂断
          */
         // told server do not hang me up if new initializing cacheData added in
         if (isInitializingCacheList) {
@@ -487,13 +497,16 @@ public class ClientWorker {
             // increase the client's read timeout to avoid this problem.
 
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
+            /**
+             * 发起查询
+             */
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
                 agent.getEncode(), readTimeoutMs);
 
             if (HttpURLConnection.HTTP_OK == result.code) {
                 setHealthServer(true);
                 /**
-                 *
+                 * 处理相应信息
                  */
                 return parseUpdateDataIdResponse(result.content);
             } else {
@@ -524,6 +537,9 @@ public class ClientWorker {
 
         List<String> updateList = new LinkedList<String>();
 
+        /**
+         * 解析返回信息   按LINE_SEPARATOR和WORD_SEPARATOR分割   获取待修改部分
+         */
         for (String dataIdAndGroup : response.split(LINE_SEPARATOR)) {
             if (!StringUtils.isBlank(dataIdAndGroup)) {
                 String[] keyArr = dataIdAndGroup.split(WORD_SEPARATOR);
@@ -646,7 +662,7 @@ public class ClientWorker {
                 }
 
                 /**
-                 *
+                 * 向nacos集群发起请求  获取服务端已经修改得配置（比较md5）
                  */
                 // check server config
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
@@ -660,7 +676,14 @@ public class ClientWorker {
                         tenant = key[2];
                     }
                     try {
+                        /**
+                         * 从nacos集群   获取dataId, group, tenant 对应得最新配置信息
+                         */
                         String content = getServerConfig(dataId, group, tenant, 3000L);
+
+                        /**
+                         * 修改对应得CacheData
+                         */
                         CacheData cache = cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
                         cache.setContent(content);
                         LOGGER.info("[{}] [data-received] dataId={}, group={}, tenant={}, md5={}, content={}",
@@ -676,7 +699,13 @@ public class ClientWorker {
                 for (CacheData cacheData : cacheDatas) {
                     if (!cacheData.isInitializing() || inInitializingCacheList
                         .contains(GroupKey.getKeyTenant(cacheData.dataId, cacheData.group, cacheData.tenant))) {
+                        /**
+                         * 通知监听
+                         */
                         cacheData.checkListenerMd5();
+                        /**
+                         * 之后得请求不再需要nacos挂起   和长轮询有关
+                         */
                         cacheData.setInitializing(false);
                     }
                 }

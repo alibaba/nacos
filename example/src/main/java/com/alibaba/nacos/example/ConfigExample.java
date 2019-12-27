@@ -71,5 +71,7 @@ public class ConfigExample {
 //        System.out.println(content);
 //        Thread.sleep(300000);
 
+        Thread.sleep(Integer.MAX_VALUE);
+
     }
 }
