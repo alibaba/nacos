@@ -400,7 +400,7 @@ public class ClientWorker {
         // 分任务
         int listenerSize = cacheMap.get().size();
         /**
-         * 向上取整
+         * 向上取整   每3000次订阅   使用同一个任务
          */
         // 向上取整为批数
         int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());

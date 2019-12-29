@@ -241,6 +241,9 @@ public class CacheData {
         final long startNotify = System.currentTimeMillis();
         try {
             if (null != listener.getExecutor()) {
+                /**
+                 * 有异常
+                 */
                 listener.getExecutor().execute(job);
             } else {
                 job.run();

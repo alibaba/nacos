@@ -72,6 +72,11 @@ public class NacosConfigService implements ConfigService {
     private String encode;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
+    /**
+     * config启动
+     * @param properties
+     * @throws NacosException
+     */
     public NacosConfigService(Properties properties) throws NacosException {
         /**
          * 字符集

@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 public class ConfigExample {
 
     public static void main(String[] args) throws NacosException, InterruptedException {
-        String serverAddr = "192.168.50.39:8848";
+        String serverAddr = "127.0.0.1:8848";
         String dataId = "test";
         String group = "DEFAULT_GROUP";
         Properties properties = new Properties();
@@ -45,6 +45,21 @@ public class ConfigExample {
          * 监听
          */
         configService.addListener(dataId, group, new Listener() {
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println("receive:" + configInfo);
+            }
+
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+        });
+
+        /**
+         * 监听
+         */
+        configService.addListener("21342432", group, new Listener() {
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println("receive:" + configInfo);
