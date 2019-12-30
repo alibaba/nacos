@@ -290,20 +290,23 @@ public class ConfigServletInner {
         return HttpServletResponse.SC_OK + "";
     }
 
-    private void setResponseContentType(HttpServletResponse response, String dataId, String group,
-                                        String tenant) {
+    private void setResponseContentType(HttpServletResponse response, String dataId, String group, String tenant) {
         ConfigAllInfo configAllInfo = persistService.findConfigAllInfo(dataId, group, tenant);
         Optional.ofNullable(configAllInfo).ifPresent(configAllInfo1 -> {
             String type = configAllInfo.getType();
             if (FileTypeEnum.JSON.getFileType().equals(type)) {
                 response.setContentType("application/json;charset=" + Constants.ENCODE);
-            } else if (FileTypeEnum.XML.getFileType().equals(type)) {
-                response.setContentType("application/xml;charset=" + Constants.ENCODE);
-            } else if (FileTypeEnum.HTML.getFileType().equals(type) || FileTypeEnum.HTM.getFileType().equals(type)) {
-                response.setContentType("text/html;charset=" + Constants.ENCODE);
-            } else {
-                response.setContentType("text/plain;charset=" + Constants.ENCODE);
+                return;
             }
+            if (FileTypeEnum.XML.getFileType().equals(type)) {
+                response.setContentType("application/xml;charset=" + Constants.ENCODE);
+                return;
+            }
+            if (FileTypeEnum.HTML.getFileType().equals(type) || FileTypeEnum.HTM.getFileType().equals(type)) {
+                response.setContentType("text/html;charset=" + Constants.ENCODE);
+                return;
+            }
+            response.setContentType("text/plain;charset=" + Constants.ENCODE);
         });
     }
 
