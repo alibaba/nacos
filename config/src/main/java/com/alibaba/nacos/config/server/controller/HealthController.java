@@ -53,6 +53,10 @@ public class HealthController {
         dataSourceService = dynamicDataSource.getDataSource();
     }
 
+    /**
+     * 集群中其他服务器访问本地   获取本地是否可用
+     * @return
+     */
     @GetMapping
     public String getHealth() {
         // TODO UP DOWN WARN

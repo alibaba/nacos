@@ -49,7 +49,7 @@ public class DynamicDataSource implements ApplicationContextAware {
         DataSourceService dataSourceService = null;
 
         /**
-         * 单机启动  并且
+         * 单机启动  并且使用得不是mysql数据库
          */
         if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
             dataSourceService = (DataSourceService)applicationContext.getBean("localDataSourceService");

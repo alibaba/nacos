@@ -103,6 +103,10 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         } catch (Exception e) {
             fatalLog.error("read application.properties wrong", e);
         }
+
+        /**
+         * 获取以及更新服务器地址列表
+         */
         GetServerListTask task = new GetServerListTask();
         task.run();
         if (null == serverList || serverList.isEmpty()) {
@@ -112,6 +116,10 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             TimerTaskService.scheduleWithFixedDelay(task, 0L, 5L, TimeUnit.SECONDS);
         }
         httpclient.start();
+
+        /**
+         * 检查nacos集群地址是否可用
+         */
         CheckServerHealthTask checkServerHealthTask = new CheckServerHealthTask();
         TimerTaskService.scheduleWithFixedDelay(checkServerHealthTask, 0L, 5L, TimeUnit.SECONDS);
     }
@@ -164,11 +172,18 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
     static public class ServerlistChangeEvent implements EventDispatcher.Event {
     }
 
+    /**
+     * 更新服务器地址列表
+     * @param newList
+     */
     private void updateIfChanged(List<String> newList) {
         if (newList.isEmpty()) {
             return;
         }
 
+        /**
+         * 集群地址是否包含本机地址
+         */
         boolean isContainSelfIp = false;
         for (String ipPortTmp : newList) {
             if (ipPortTmp.contains(LOCAL_IP)) {
@@ -177,6 +192,9 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             }
         }
 
+        /**
+         * 不包含则手动添加
+         */
         if (isContainSelfIp) {
             isInIpList = true;
         } else {
@@ -186,12 +204,20 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             fatalLog.error("########## [serverlist] self ip {} not in serverlist {}", selfAddr, newList);
         }
 
+        /**
+         * 比对两者是否一致
+         */
         if (newList.equals(serverList)) {
             return;
         }
-
+        /**
+         * 更新
+         */
         serverList = new ArrayList<String>(newList);
 
+        /**
+         * serverListUnhealth中移除已经不再使用的地址
+         */
         List<String> unhealthRemoved = new ArrayList<String>();
         for (String unhealthIp : serverListUnhealth) {
             if (!newList.contains(unhealthIp)) {
@@ -201,6 +227,9 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
         serverListUnhealth.removeAll(unhealthRemoved);
 
+        /**
+         * serverIp2unhealthCount中移除已经不再使用的地址
+         */
         List<String> unhealthCountRemoved = new ArrayList<String>();
         for (Map.Entry<String, Integer> ip2UnhealthCountTmp : serverIp2unhealthCount.entrySet()) {
             if (!newList.contains(ip2UnhealthCountTmp.getKey())) {
@@ -226,6 +255,9 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
      * @return serverlist
      */
     private List<String> getApacheServerList() {
+        /**
+         * 单机模式
+         */
         if (STANDALONE_MODE) {
             List<String> serverIps = new ArrayList<String>();
             serverIps.add(getFormatServerAddr(LOCAL_IP));
@@ -235,6 +267,9 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         // 优先从文件读取服务列表
         try {
             List<String> serverIps = new ArrayList<String>();
+            /**
+             * 读取cluster.conf中的集群列表
+             */
             List<String> serverAddrLines = readClusterConf();
             if (!CollectionUtils.isEmpty(serverAddrLines)) {
                 for (String serverAddr : serverAddrLines) {
@@ -250,8 +285,14 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             defaultLog.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
         }
 
+        /**
+         * 允许动态获取地址
+         */
         if (isUseAddressServer()) {
             try {
+                /**
+                 * 访问寻址服务器获取集群地址
+                 */
                 HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
 
                 if (HttpServletResponse.SC_OK == result.code) {
@@ -283,6 +324,9 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             }
 
         } else {
+            /**
+             * 不允许动态获取地址   则返回本机ip
+             */
             List<String> serverIps = new ArrayList<String>();
             serverIps.add(getFormatServerAddr(LOCAL_IP));
             return serverIps;
@@ -324,6 +368,10 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         @Override
         public void run() {
             try {
+                /**
+                 * getApacheServerList()  获取集群地址
+                 * updateIfChanged()      更新服务器地址列表
+                 */
                 updateIfChanged(getApacheServerList());
             } catch (Exception e) {
                 defaultLog.error("[serverlist] failed to get serverlist, " + e.toString(), e);
@@ -331,13 +379,22 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         }
     }
 
+    /**
+     * 检查nacos集群地址是否可用
+     */
     private void checkServerHealth() {
         long startCheckTime = System.currentTimeMillis();
         for (String serverIp : serverList) {
             // Compatible with old codes,use status.taobao
+            /**
+             * http://192.168.50.39:8848/nacos/v1/cs/health
+             */
             String url = "http://" + serverIp + servletContext.getContextPath() + Constants.HEALTH_CONTROLLER_PATH;
             // "/nacos/health";
             HttpGet request = new HttpGet(url);
+            /**
+             * 异步访问服务器地址  并处理结果AyscCheckServerHealthCallBack
+             */
             httpclient.execute(request, new AyscCheckServerHealthCallBack(serverIp));
         }
         long endCheckTime = System.currentTimeMillis();
@@ -353,8 +410,15 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             this.serverIp = serverIp;
         }
 
+        /**
+         * 通讯成功
+         * @param response
+         */
         @Override
         public void completed(HttpResponse response) {
+            /**
+             * 通讯成功  重置serverIp2unhealthCount  并在serverListUnhealth中移除对应的地址
+             */
             if (response.getStatusLine().getStatusCode() == HttpServletResponse.SC_OK) {
                 serverIp2unhealthCount.put(serverIp, 0);
                 if (serverListUnhealth.contains(serverIp)) {
@@ -364,6 +428,10 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
             }
         }
 
+        /**
+         * 通讯失败  在serverIp2unhealthCount中记录失败次数   累计超过12次  则在serverListUnhealth中记录当前地址
+         * @param ex
+         */
         @Override
         public void failed(Exception ex) {
             Integer failCount = serverIp2unhealthCount.get(serverIp);
@@ -397,8 +465,12 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
     class CheckServerHealthTask implements Runnable {
 
+
         @Override
         public void run() {
+            /**
+             * 检查nacos集群地址是否可用
+             */
             checkServerHealth();
         }
 
