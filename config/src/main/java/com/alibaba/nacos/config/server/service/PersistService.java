@@ -676,8 +676,14 @@ public class PersistService {
     public void insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
                                   final String srcUser, final Timestamp time, final boolean notify) {
         try {
+            /**
+             * config_info_tag  新增
+             */
             addConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
         } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
+            /**
+             * config_info_tag  修改
+             */
             updateConfigInfo4Tag(configInfo, tag, srcIp, null, time, notify);
         }
     }
@@ -708,8 +714,14 @@ public class PersistService {
     public void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
                                Map<String, Object> configAdvanceInfo, boolean notify) {
         try {
+            /**
+             * 新增
+             */
             addConfigInfo(srcIp, srcUser, configInfo, time, configAdvanceInfo, notify);
         } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
+            /**
+             * 主键冲突  则修改
+             */
             updateConfigInfo(configInfo, srcIp, srcUser, time, configAdvanceInfo, notify);
         }
     }

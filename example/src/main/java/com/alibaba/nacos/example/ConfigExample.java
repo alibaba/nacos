@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 public class ConfigExample {
 
     public static void main(String[] args) throws NacosException, InterruptedException {
-        String serverAddr = "127.0.0.1:8848";
+        String serverAddr = "192.168.50.39:8848";
         String dataId = "test";
         String group = "DEFAULT_GROUP";
         Properties properties = new Properties();
@@ -71,7 +71,10 @@ public class ConfigExample {
             }
         });
 
-        boolean isPublishOk = configService.publishConfig(dataId, group, "content");
+        /**
+         * 修改配置
+         */
+        boolean isPublishOk = configService.publishConfig(dataId, group, "content132132132132");
         System.out.println(isPublishOk);
 
 //        Thread.sleep(3000);

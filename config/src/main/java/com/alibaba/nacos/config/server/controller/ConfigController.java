@@ -103,8 +103,14 @@ public class ConfigController {
                                  @RequestParam(value = "type", required = false) String type,
                                  @RequestParam(value = "schema", required = false) String schema)
         throws NacosException {
+        /**
+         * 请求端ip和名称
+         */
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
+        /**
+         * 校验
+         */
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
 
@@ -129,6 +135,9 @@ public class ConfigController {
         }
         ParamUtils.checkParam(configAdvanceInfo);
 
+        /**
+         * dataId白名单过滤
+         */
         if (AggrWhitelist.isAggrDataId(dataId)) {
             log.warn("[aggr-conflict] {} attemp to publish single data, {}, {}",
                 RequestUtil.getRemoteIp(request), dataId, group);
@@ -136,17 +145,30 @@ public class ConfigController {
         }
 
         final Timestamp time = TimeUtils.getCurrentTime();
+
+        /**
+         * beta发布对应的ip
+         */
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
+                /**
+                 * 没有tag
+                 */
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
+                /**
+                 * 有tag
+                 */
                 persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
             }
         } else { // beta publish
+            /**
+             * beta发布
+             */
             persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));
         }

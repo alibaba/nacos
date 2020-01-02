@@ -48,6 +48,9 @@ public class AggrWhitelist {
             throw new IllegalArgumentException();
         }
 
+         /**
+          * dataId是否在白名单中
+          */
         for (Pattern pattern : AGGR_DATAID_WHITELIST.get()) {
             if (pattern.matcher(dataId).matches()) {
                 return true;

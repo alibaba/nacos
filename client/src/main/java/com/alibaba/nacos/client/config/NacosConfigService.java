@@ -165,6 +165,14 @@ public class NacosConfigService implements ConfigService {
         worker.addTenantListeners(dataId, group, Arrays.asList(listener));
     }
 
+    /**
+     * 修改配置
+     * @param dataId  dataId
+     * @param group   group
+     * @param content content
+     * @return
+     * @throws NacosException
+     */
     @Override
     public boolean publishConfig(String dataId, String group, String content) throws NacosException {
         return publishConfigInner(namespace, dataId, group, null, null, null, content);
@@ -269,6 +277,18 @@ public class NacosConfigService implements ConfigService {
         }
     }
 
+    /**
+     * 修改配置
+     * @param tenant
+     * @param dataId
+     * @param group
+     * @param tag
+     * @param appName
+     * @param betaIps
+     * @param content
+     * @return
+     * @throws NacosException
+     */
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
                                        String betaIps, String content) throws NacosException {
         group = null2defaultGroup(group);
@@ -311,6 +331,9 @@ public class NacosConfigService implements ConfigService {
 
         HttpResult result = null;
         try {
+            /**
+             * 修改配置请求  /v1/cs/configs
+             */
             result = agent.httpPost(url, headers, params, encode, POST_TIMEOUT);
         } catch (IOException ioe) {
             LOGGER.warn("[{}] [publish-single] exception, dataId={}, group={}, msg={}", agent.getName(), dataId,
