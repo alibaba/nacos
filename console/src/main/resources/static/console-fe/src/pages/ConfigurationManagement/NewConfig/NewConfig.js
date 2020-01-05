@@ -189,13 +189,7 @@ class NewConfig extends React.Component {
   }
 
   goList() {
-    this.tenant = getParams('namespace') || '';
-    this.serverId = getParams('serverId') || '';
-    this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${this.tenant}`
-    );
+    this.props.history.goBack();
   }
 
   openLoading() {

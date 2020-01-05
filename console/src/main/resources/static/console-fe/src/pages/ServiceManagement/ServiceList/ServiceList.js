@@ -27,7 +27,7 @@ import {
   ConfigProvider,
   Switch,
 } from '@alifd/next';
-import { request } from '../../../globalLib';
+import { request, getParams, setParams } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
@@ -54,14 +54,9 @@ class ServiceList extends React.Component {
     this.state = {
       loading: false,
       total: 0,
-      pageSize: 10,
-      currentPage: 1,
+      pageSize: parseInt(getParams('pageSize'), 10) || 10,
+      currentPage: parseInt(getParams('pageNo'), 10) || 1,
       dataSource: [],
-      search: {
-        serviceName: '',
-        groupName: '',
-      },
-      hasIpCount: !(localStorage.getItem('hasIpCount') === 'false'),
     };
     this.field = new Field(this);
   }
@@ -81,15 +76,16 @@ class ServiceList extends React.Component {
   }
 
   queryServiceList() {
-    const { currentPage, pageSize, search, withInstances = false, hasIpCount } = this.state;
+    const { currentPage, pageSize, search, withInstances = false, field } = this.state;
     const parameter = [
-      `hasIpCount=${hasIpCount}`,
+      `hasIpCount=${this.field.getValue('hasIpCount')}`,
       `withInstances=${withInstances}`,
       `pageNo=${currentPage}`,
       `pageSize=${pageSize}`,
-      `serviceNameParam=${search.serviceName}`,
-      `groupNameParam=${search.groupName}`,
+      `serviceNameParam=${this.field.getValue('serviceName')}`,
+      `groupNameParam=${this.field.getValue('groupName')}`,
     ];
+    setParams({ ...this.field.getValues(), pageNo: currentPage, pageSize });
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
       beforeSend: () => this.openLoading(),
@@ -109,9 +105,23 @@ class ServiceList extends React.Component {
     });
   }
 
-  getQueryLater = () => {
-    setTimeout(() => this.queryServiceList());
-  };
+  namespaceCallBack(clean = false) {
+    if (clean) {
+      this.field.setValues({
+        serviceName: '',
+        groupName: '',
+      });
+      this.setState(
+        {
+          currentPage: 1,
+          pageSize: 10,
+        },
+        () => this.queryServiceList()
+      );
+    } else {
+      this.queryServiceList();
+    }
+  }
 
   showcode = () => {
     setTimeout(() => this.queryServiceList());
@@ -198,7 +208,7 @@ class ServiceList extends React.Component {
           <div style={{ marginTop: -15 }}>
             <RegionGroup
               setNowNameSpace={this.setNowNameSpace}
-              namespaceCallBack={this.getQueryLater}
+              namespaceCallBack={this.namespaceCallBack.bind(this)}
             />
           </div>
           <h3 className="page-title">
@@ -220,8 +230,7 @@ class ServiceList extends React.Component {
                   <Input
                     placeholder={serviceNamePlaceholder}
                     style={{ width: 200 }}
-                    value={search.serviceName}
-                    onChange={serviceName => this.setState({ search: { ...search, serviceName } })}
+                    {...init('serviceName', { initValue: getParams('serviceName') || '' })}
                     onPressEnter={() =>
                       this.setState({ currentPage: 1 }, () => this.queryServiceList())
                     }
@@ -231,8 +240,7 @@ class ServiceList extends React.Component {
                   <Input
                     placeholder={groupNamePlaceholder}
                     style={{ width: 200 }}
-                    value={search.groupName}
-                    onChange={groupName => this.setState({ search: { ...search, groupName } })}
+                    {...init('groupName', { initValue: getParams('groupName') || '' })}
                     onPressEnter={() =>
                       this.setState({ currentPage: 1 }, () => this.queryServiceList())
                     }
@@ -240,13 +248,19 @@ class ServiceList extends React.Component {
                 </FormItem>
                 <Form.Item label={`${hiddenEmptyService}:`}>
                   <Switch
-                    checked={hasIpCount}
-                    onChange={hasIpCount =>
-                      this.setState({ hasIpCount, currentPage: 1 }, () => {
-                        localStorage.setItem('hasIpCount', hasIpCount);
-                        this.queryServiceList();
-                      })
-                    }
+                    {...init(
+                      'hasIpCount',
+                      {
+                        valueName: 'checked',
+                        initValue: localStorage.getItem('hasIpCount') !== 'false',
+                      },
+                      {
+                        onChange: v => {
+                          localStorage.setItem('hasIpCount', v);
+                          this.queryServiceList();
+                        },
+                      }
+                    )}
                   />
                 </Form.Item>
                 <FormItem label="">
@@ -271,7 +285,7 @@ class ServiceList extends React.Component {
               <Table
                 dataSource={this.state.dataSource}
                 locale={{ empty: pubNoData }}
-                getRowProps={row => this.rowColor(row)}
+                rowProps={row => this.rowColor(row)}
               >
                 <Column title={locale.columnServiceName} dataIndex="name" />
                 <Column title={locale.groupName} dataIndex="groupName" />

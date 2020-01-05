@@ -230,7 +230,7 @@ class ConfigEditor extends React.Component {
         function(data) {
           let ret = '';
           for (let it in data) {
-            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
+            ret += `${encodeURIComponent(it)}=${encodeURIComponent(data[it])}&`;
           }
           return ret;
         },
@@ -314,13 +314,7 @@ class ConfigEditor extends React.Component {
   }
 
   goBack() {
-    const serverId = getParams('serverId') || '';
-    const tenant = getParams('namespace');
-    const searchGroup = getParams('searchGroup') || '';
-    const searchDataId = getParams('searchDataId') || '';
-    this.props.history.push(
-      `/configurationManagement?serverId=${serverId}&group=${searchGroup}&dataId=${searchDataId}&namespace=${tenant}`
-    );
+    this.props.history.goBack();
   }
 
   getConfig(beta = false, decide = false) {

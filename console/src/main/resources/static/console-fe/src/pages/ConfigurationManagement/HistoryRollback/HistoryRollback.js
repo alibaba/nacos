@@ -34,18 +34,14 @@ class HistoryRollback extends React.Component {
     this.field = new Field(this);
     this.appName = getParams('appName') || '';
     this.preAppName = this.appName;
-    this.group = getParams('group') || '';
-    this.preGroup = this.group;
 
-    this.dataId = getParams('dataId') || '';
-    this.preDataId = this.dataId;
     this.serverId = getParams('serverId') || '';
     this.state = {
       value: '',
       visible: false,
       total: 0,
-      pageSize: 10,
-      currentPage: 1,
+      pageSize: parseInt(getParams('pageSize'), 10) || 10,
+      currentPage: parseInt(getParams('pageNo'), 10) || 1,
       dataSource: [],
       fieldValue: [],
       showAppName: false,
@@ -56,19 +52,6 @@ class HistoryRollback extends React.Component {
       selectValue: [],
       loading: false,
     };
-    const obj = {
-      dataId: this.dataId || '',
-      group: this.preGroup || '',
-      appName: this.appName || '',
-      serverId: this.serverId || '',
-    };
-    setParams(obj);
-  }
-
-  componentDidMount() {
-    this.field.setValue('group', this.group);
-    this.field.setValue('dataId', this.dataId);
-    // this.getData()
   }
 
   openLoading() {
@@ -125,17 +108,26 @@ class HistoryRollback extends React.Component {
     this.getData();
   }
 
-  getData(pageNo = 1) {
+  getData() {
     const self = this;
     this.serverId = getParams('serverId') || '';
-    if (!this.dataId) return false;
+    if (!this.field.getValue('dataId')) return false;
+    const parameter = [
+      `dataId=${this.field.getValue('dataId')}`,
+      `group=${this.field.getValue('group')}`,
+      `pageNo=${this.state.currentPage}`,
+      `pageSize=${this.state.pageSize}`,
+    ];
+    setParams({
+      ...this.field.getValues(),
+      pageNo: this.state.currentPage,
+      pageSize: this.state.pageSize,
+    });
     request({
       beforeSend() {
         self.openLoading();
       },
-      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
-        this.group
-      }&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      url: `v1/cs/history?search=accurate&${parameter.join('&')}`,
       success(data) {
         if (data != null) {
           self.setState({
@@ -169,10 +161,12 @@ class HistoryRollback extends React.Component {
   }
 
   changePage(value) {
-    this.setState({
-      currentPage: value,
-    });
-    this.getData(value);
+    this.setState(
+      {
+        currentPage: value,
+      },
+      () => this.getData()
+    );
   }
 
   onInputUpdate() {}
@@ -313,6 +307,7 @@ class HistoryRollback extends React.Component {
                   placeholder={locale.dataId}
                   style={{ width: 200 }}
                   {...this.init('dataId', {
+                    initValue: getParams('dataId') || '',
                     rules: [
                       {
                         required: true,
@@ -327,6 +322,7 @@ class HistoryRollback extends React.Component {
                   placeholder={locale.group}
                   style={{ width: 200 }}
                   {...this.init('group', {
+                    initValue: getParams('group') || '',
                     rules: [
                       {
                         required: true,

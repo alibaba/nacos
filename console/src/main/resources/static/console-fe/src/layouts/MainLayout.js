@@ -89,32 +89,9 @@ class MainLayout extends React.Component {
 
   /**
    * Click the back button
-   * TODO: this.props.history.goBack(); ???
-   * @param url
    */
-  nacosGoBack(url) {
-    const params = window.location.hash.split('?')[1];
-    const urlArr = params.split('&') || [];
-    const queryParams = [];
-    for (let i = 0; i < urlArr.length; i++) {
-      if (
-        urlArr[i].split('=')[0] !== '_k' &&
-        urlArr[i].split('=')[0] !== 'dataId' &&
-        urlArr[i].split('=')[0] !== 'group'
-      ) {
-        if (urlArr[i].split('=')[0] === 'searchDataId') {
-          queryParams.push(`dataId=${urlArr[i].split('=')[1]}`);
-        } else if (urlArr[i].split('=')[0] === 'searchGroup') {
-          queryParams.push(`group=${urlArr[i].split('=')[1]}`);
-        } else {
-          queryParams.push(urlArr[i]);
-        }
-      }
-    }
-    if (localStorage.getItem('namespace')) {
-      queryParams.push(`namespace=${localStorage.getItem('namespace')}`);
-    }
-    this.props.history.push(`/${url}?${queryParams.join('&')}`);
+  nacosGoBack() {
+    this.props.history.goBack();
   }
 
   nacosEnterBack() {
@@ -146,24 +123,7 @@ class MainLayout extends React.Component {
   }
 
   navTo(url) {
-    if (url !== '/configdetail' && url !== '/configeditor') {
-      // 二级菜单不清空
-      setParams({
-        dataId: '',
-        group: '',
-      });
-    }
-
-    const params = window.location.hash.split('?')[1];
-    const urlArr = params.split('&') || [];
-    const queryParams = [];
-    for (let i = 0; i < urlArr.length; i++) {
-      if (urlArr[i].split('=')[0] !== '_k') {
-        queryParams.push(urlArr[i]);
-      }
-    }
-
-    this.props.history.push(`${url}?${queryParams.join('&')}`);
+    this.props.history.push(url);
   }
 
   nacosSetSpecialNav(item) {

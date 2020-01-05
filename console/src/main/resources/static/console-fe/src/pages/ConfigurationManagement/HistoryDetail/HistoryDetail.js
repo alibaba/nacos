@@ -80,11 +80,7 @@ class HistoryDetail extends React.Component {
   }
 
   goList() {
-    this.props.history.push(
-      `/historyRollback?serverId=${this.serverId}&group=${this.group}&dataId=${
-        this.dataId
-      }&namespace=${this.tenant}`
-    );
+    this.props.history.goBack();
   }
 
   render() {

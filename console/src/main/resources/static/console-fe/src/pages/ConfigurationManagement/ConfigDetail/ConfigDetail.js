@@ -139,11 +139,7 @@ class ConfigDetail extends React.Component {
   }
 
   goList() {
-    this.props.history.push(
-      `/configurationManagement?serverId=${this.serverId}&group=${this.searchGroup}&dataId=${
-        this.searchDataId
-      }&namespace=${this.tenant}`
-    );
+    this.props.history.goBack();
   }
 
   render() {

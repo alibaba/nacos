@@ -42,6 +42,7 @@ import { getParams, setParams, request, aliwareIntl } from '@/globalLib';
 
 import './index.scss';
 import { LANGUAGE_KEY } from '../../../constants';
+import { setParam } from '../../../globalLib';
 
 const { Panel } = Collapse;
 const { Row, Col } = Grid;
@@ -61,12 +62,6 @@ class ConfigurationManagement extends React.Component {
     this.deleteDialog = React.createRef();
     this.showcode = React.createRef();
     this.field = new Field(this);
-    this.appName = getParams('appName') || getParams('edasAppId') || '';
-    this.preAppName = this.appName;
-    this.group = getParams('group') || '';
-    this.preGroup = this.group;
-    this.dataId = getParams('dataId') || '';
-    this.preDataId = this.dataId;
     this.serverId = getParams('serverId') || 'center';
     this.edasAppId = getParams('edasAppId') || '';
     this.edasAppName = getParams('edasAppName') || '';
@@ -75,20 +70,15 @@ class ConfigurationManagement extends React.Component {
       value: '',
       visible: false,
       total: 0,
-      pageSize: 10,
-      currentPage: 1,
+      pageSize: parseInt(getParams('pageSize'), 10) || 10,
+      currentPage: parseInt(getParams('pageNo'), 10) || 1,
       dataSource: [],
       fieldValue: [],
       showAppName: false,
       showgroup: false,
-      dataId: this.dataId,
-      group: this.group,
-      appName: this.appName,
-      config_tags: [],
       tagLst: [],
       selectValue: [],
       loading: false,
-      groupList: [],
       groups: [],
       tenant: true,
       nownamespace_id: window.nownamespace || '',
@@ -106,12 +96,6 @@ class ConfigurationManagement extends React.Component {
       },
       isPageEnter: false,
     };
-    const obj = {
-      dataId: this.dataId || '',
-      group: this.preGroup || '',
-      appName: this.appName || '',
-    };
-    setParams(obj);
     this.batchHandle = null;
     this.toggleShowQuestionnaire = this.toggleShowQuestionnaire.bind(this);
   }
@@ -249,41 +233,55 @@ class ConfigurationManagement extends React.Component {
 
   cleanAndGetData(needclean = false) {
     if (needclean) {
-      this.dataId = '';
-      this.group = '';
-      this.setState({
-        group: '',
+      this.field.setValues({
         dataId: '',
-      });
-      setParams({
         group: '',
-        dataId: '',
+        appName: '',
+        config_tags: [],
       });
+      this.setState(
+        {
+          currentPage: 1,
+          pageSize: 10,
+        },
+        () => this.getData()
+      );
+    } else {
+      this.getData();
     }
-    this.getData();
     configsTableSelected.clear();
     const { rowSelection } = this.state;
     rowSelection.selectedRowKeys = [];
     this.setState({ rowSelection });
   }
 
-  getData(pageNo = 1, clearSelect = true) {
+  getData(clearSelect = true) {
     const self = this;
+    const { currentPage, pageSize } = this.state;
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
     let urlPrefix = '';
-    if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
+    if (
+      this.field.getValue('dataId').indexOf('*') !== -1 ||
+      this.field.getValue('group').indexOf('*') !== -1
+    ) {
       urlPrefix = 'v1/cs/configs?search=blur';
     } else {
       urlPrefix = 'v1/cs/configs?search=accurate';
     }
 
+    const parameter = [
+      `dataId=${this.field.getValue('dataId')}`,
+      `group=${this.field.getValue('group')}`,
+      `appName=${this.field.getValue('appName')}`,
+      `config_tags=${this.field.getValue('config_tags') || ''}`,
+      `pageNo=${currentPage}`,
+      `pageSize=${pageSize}`,
+    ];
+    setParams({ ...this.field.getValues(), pageNo: currentPage, pageSize });
+
     request({
-      url: `${urlPrefix}&dataId=${this.dataId}&group=${this.group}&appName=${
-        this.appName
-      }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
-        this.state.pageSize
-      }`,
+      url: `${urlPrefix}&${parameter.join('&')}`,
       beforeSend() {
         self.openLoading();
       },
@@ -309,7 +307,7 @@ class ConfigurationManagement extends React.Component {
         self.setState({
           dataSource: [],
           total: 0,
-          currentPage: 0,
+          currentPage: 1,
         });
       },
       complete() {
@@ -438,7 +436,7 @@ class ConfigurationManagement extends React.Component {
         currentPage: value,
       },
       () => {
-        this.getData(value, false);
+        this.getData(false);
       }
     );
   }
@@ -689,10 +687,9 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportData() {
-    let url =
-      `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams('namespace')}&appName=${
-        this.appName
-      }&ids=&dataId=` + this.dataId;
+    let url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
+      'namespace'
+    )}&appName=${this.appName}&ids=&dataId=${this.dataId}`;
     window.location.href = url;
   }
 
@@ -895,7 +892,7 @@ class ConfigurationManagement extends React.Component {
                         self.setState({
                           dataSource: [],
                           total: 0,
-                          currentPage: 0,
+                          currentPage: 1,
                         });
                       },
                       complete() {
@@ -916,7 +913,7 @@ class ConfigurationManagement extends React.Component {
         self.setState({
           dataSource: [],
           total: 0,
-          currentPage: 0,
+          currentPage: 1,
         });
       },
       complete() {
@@ -1093,6 +1090,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   render() {
+    const { init, getValue } = this.field;
     const { locale = {} } = this.props;
     return (
       <div>
@@ -1169,8 +1167,7 @@ class ConfigurationManagement extends React.Component {
                       htmlType={'text'}
                       placeholder={locale.fuzzyd}
                       style={{ width: 200 }}
-                      value={this.state.dataId}
-                      onChange={this.getDataId.bind(this)}
+                      {...init('dataId', { initValue: getParams('dataId') || '' })}
                     />
                   </Form.Item>
 
@@ -1180,8 +1177,7 @@ class ConfigurationManagement extends React.Component {
                       size={'medium'}
                       placeholder={locale.fuzzyg}
                       dataSource={this.state.groups}
-                      value={this.state.group}
-                      onChange={this.setGroup.bind(this)}
+                      {...init('group', { initValue: getParams('group') || '' })}
                       hasClear
                     />
                   </Form.Item>
@@ -1246,8 +1242,7 @@ class ConfigurationManagement extends React.Component {
                       htmlType={'text'}
                       placeholder={locale.app1}
                       style={{ width: 200 }}
-                      value={this.state.appName}
-                      onChange={this.setAppName.bind(this)}
+                      {...init('appName', { initValue: getParams('appName') || '' })}
                     />
                   </Form.Item>
                   <Form.Item label={locale.tags}>
@@ -1259,8 +1254,7 @@ class ConfigurationManagement extends React.Component {
                       filterLocal={false}
                       placeholder={locale.pleaseEnterTag}
                       dataSource={this.state.tagLst}
-                      value={this.state.config_tags}
-                      onChange={this.setConfigTags.bind(this)}
+                      {...init('config_tags', { initValue: [] })}
                       hasClear
                     />
                   </Form.Item>
