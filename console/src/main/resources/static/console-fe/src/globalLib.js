@@ -12,9 +12,7 @@
  */
 
 import projectConfig from './config';
-import moment from 'moment';
 import $ from 'jquery';
-import i18DocObj from './i18ndoc';
 
 const global = window;
 
@@ -203,120 +201,6 @@ const nacosUtils = (function(_global) {
       return url;
     },
   };
-})(global);
-
-const aliwareIntl = (function(_global) {
-  /**
-   * 国际化构造方法
-   * @param {Object} options 配置信息
-   */
-  function AliwareI18n(options) {
-    // let currentLocal = options.currentLocal || navigator.language || navigator.userLanguage;
-
-    const nowData = options.locals;
-    this.nowData = nowData;
-    this.setMomentLocale(this.currentLanguageCode);
-  }
-
-  let aliwareLocal = aliwareGetCookieByKeyName('aliyun_lang') || 'zh';
-  let aliwareLocalSite = aliwareGetCookieByKeyName('aliyun_country') || 'cn';
-  aliwareLocal = aliwareLocal.toLowerCase();
-  aliwareLocalSite = aliwareLocalSite.toLowerCase();
-  // 当前语言
-  AliwareI18n.prototype.currentLocal = aliwareLocal;
-  // 当前地区
-  AliwareI18n.prototype.currentSite = aliwareLocalSite;
-  // 当前语言-地区
-  AliwareI18n.prototype.currentLanguageCode =
-    aliwareGetCookieByKeyName('docsite_language') || `${aliwareLocal}-${aliwareLocalSite}`;
-  /**
-   * 通过key获取对应国际化文案
-   * @param {String} key 国际化key
-   */
-  AliwareI18n.prototype.get = function(key) {
-    return this.nowData[key];
-  };
-  /**
-   * 修改国际化文案数据
-   * @param {String} local 语言信息
-   */
-  AliwareI18n.prototype.changeLanguage = function(local) {
-    this.nowData = i18DocObj[local] || {};
-  };
-  /**
-   * 数字国际化
-   * @param {Number} num 数字
-   */
-  AliwareI18n.prototype.intlNumberFormat = function(num) {
-    if (typeof Intl !== 'object' || typeof Intl.NumberFormat !== 'function') {
-      return num;
-    }
-    try {
-      return new Intl.NumberFormat(this.currentLanguageCode).format(num || 0);
-    } catch (error) {
-      return num;
-    }
-  };
-  /**
-   * 时间戳格式化
-   * @param {Number} num 时间戳
-   * @param {Object} initOption 配置信息
-   */
-  AliwareI18n.prototype.intlTimeFormat = function(num = Date.now(), initOption = {}) {
-    try {
-      const date = Object.prototype.toString.call(num) === '[object Date]' ? num : new Date(num);
-      const options = Object.assign(
-        {},
-        {
-          // weekday: "short",
-          hour12: false,
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          second: 'numeric',
-        },
-        initOption
-      );
-      return date.toLocaleDateString(this.currentLanguageCode, options);
-    } catch (error) {
-      return typeof moment === 'function' ? moment(num).format() : '--';
-    }
-  };
-  /**
-   * 获取当前时间格式
-   * @param {String} language 语言信息: zh/en
-   */
-  AliwareI18n.prototype.getIntlTimeFormat = function(_language) {
-    const language = _language || aliwareLocal;
-    const langObj = {
-      zh: 'YYYY年M月D日 HH:mm:ss',
-      en: 'MMM D, YYYY, h:mm:ss A',
-      default: 'YYYY-MM-DD HH:mm:ss',
-    };
-    return langObj[language] ? langObj[language] : langObj.default;
-  };
-  /**
-   * 设置moment的locale
-   * @param {String} languageCode 语言信息: zh-ch/en-us
-   */
-  AliwareI18n.prototype.setMomentLocale = function(languageCode) {
-    if (Object.prototype.toString.call(moment) === '[object Function]') {
-      moment.locale(languageCode || this.currentLanguageCode);
-      return true;
-    }
-    return false;
-  };
-
-  return new AliwareI18n({
-    currentLocal: `${aliwareLocal}`,
-    locals:
-      i18DocObj[AliwareI18n.prototype.currentLanguageCode] ||
-      i18DocObj['en-us'] ||
-      i18DocObj['zh-cn'] ||
-      {},
-  });
 })(global);
 
 /**
@@ -645,7 +529,6 @@ export {
   nacosEvent,
   nacosUtils,
   aliwareGetCookieByKeyName,
-  aliwareIntl,
   getParams,
   setParam,
   setParams,

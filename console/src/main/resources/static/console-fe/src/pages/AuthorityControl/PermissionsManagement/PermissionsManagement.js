@@ -11,6 +11,37 @@
  * limitations under the License.
  */
 
-.next-pagination-size-selector{
-  position: static !important;
+import React from 'react';
+import PropTypes from 'prop-types';
+import {
+  Button,
+  Field,
+  Form,
+  Grid,
+  Input,
+  Loading,
+  Pagination,
+  Table,
+  ConfigProvider,
+} from '@alifd/next';
+
+import './PermissionsManagement.scss';
+
+@ConfigProvider.config
+class PermissionsManagement extends React.Component {
+  static displayName = 'UserManagement';
+
+  static propTypes = {
+    locale: PropTypes.object,
+  };
+
+  render() {
+    return (
+      <>
+        <h1>PermissionsManagement</h1>
+      </>
+    );
+  }
 }
+
+export default PermissionsManagement;
