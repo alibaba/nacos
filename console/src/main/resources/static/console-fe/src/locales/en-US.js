@@ -50,6 +50,10 @@ const I18N_CONF = {
     namespace: 'Namespace',
     clusterManagementVirtual: 'ClusterManagement',
     clusterManagement: 'Cluster Node List',
+    authorityControl: 'Authority Control',
+    userList: 'User List',
+    roleManagement: 'Role Management',
+    privilegeManagement: 'Privilege Management',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',

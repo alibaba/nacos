@@ -301,7 +301,7 @@ class NameSpace extends React.Component {
       namespaceOperation,
     } = locale;
     return (
-      <div style={{ padding: 10 }} className="clearfix">
+      <>
         <RegionGroup left={namespace} />
         <div className="fusion-demo">
           <Loading
@@ -348,7 +348,7 @@ class NameSpace extends React.Component {
             <EditorNameSpace ref={this.editgroup} getNameSpaces={this.getNameSpaces.bind(this)} />
           </Loading>
         </div>
-      </div>
+      </>
     );
   }
 }

@@ -50,6 +50,10 @@ const I18N_CONF = {
     namespace: '命名空间',
     clusterManagementVirtual: '集群管理',
     clusterManagement: '节点列表',
+    authorityControl: '权限控制',
+    userList: '用户列表',
+    roleManagement: '角色管理',
+    privilegeManagement: '权限管理',
   },
   Password: {
     passwordNotConsistent: '两次输入密码不一致',

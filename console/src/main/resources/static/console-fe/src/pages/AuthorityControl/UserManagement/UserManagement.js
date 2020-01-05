@@ -1,0 +1,161 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import { Button, Field, Form, Input, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
+import { connect } from 'react-redux';
+import { getUsers, createUser, deleteUser, passwordReset } from '../../../reducers/authority';
+import RegionGroup from '../../../components/RegionGroup';
+import NewUser from './NewUser';
+import PasswordReset from './PasswordReset';
+
+import './UserManagement.scss';
+
+const FormItem = Form.Item;
+
+const formItemLayout = {
+  labelCol: { fixedSpan: 3 },
+  wrapperCol: { span: 20 },
+};
+
+@connect(state => ({ users: state.authority.users }), { getUsers })
+@ConfigProvider.config
+class UserManagement extends React.Component {
+  static displayName = 'UserManagement';
+
+  static propTypes = {
+    locale: PropTypes.object,
+    users: PropTypes.object,
+    getUsers: PropTypes.func,
+    createUser: PropTypes.func,
+  };
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      loading: true,
+      pageNo: 1,
+      pageSize: 9,
+    };
+  }
+
+  componentDidMount() {
+    this.getUsers();
+  }
+
+  getUsers() {
+    const { pageNo, pageSize } = this.state;
+    this.props
+      .getUsers({ pageNo, pageSize })
+      .then(() => {
+        if (this.state.loading) {
+          this.setState({ loading: false });
+        }
+      })
+      .catch(() => this.setState({ loading: false }));
+  }
+
+  colseCreateUser() {
+    this.setState({ createUserVisible: false });
+  }
+
+  render() {
+    const { users } = this.props;
+    const { loading, pageSize, pageNo, createUserVisible, passwordResetUser } = this.state;
+    return (
+      <>
+        <RegionGroup left={'用户管理'} />
+        <div className="filter-panel">
+          <Button
+            type="primary"
+            className="create-user-btn"
+            onClick={() => this.setState({ createUserVisible: true })}
+          >
+            创建用户
+          </Button>
+        </div>
+        <Table dataSource={users.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
+          <Table.Column title="用户名" dataIndex="username" />
+          <Table.Column
+            title="密码"
+            dataIndex="password"
+            cell={value => value.replace(/\S/g, '*')}
+          />
+          <Table.Column
+            title="操作"
+            dataIndex="username"
+            cell={username => (
+              <>
+                <Button
+                  type="primary"
+                  onClick={() => this.setState({ passwordResetUser: username })}
+                >
+                  修改
+                </Button>
+                &nbsp;&nbsp;&nbsp;
+                <Button
+                  type="primary"
+                  warning
+                  onClick={() =>
+                    Dialog.confirm({
+                      title: '确认',
+                      content: '是否要删除该用户？',
+                      onOk: () =>
+                        deleteUser(username).then(() =>
+                          this.setState({ pageNo: 1 }, () => this.getUsers())
+                        ),
+                    })
+                  }
+                >
+                  刪除
+                </Button>
+              </>
+            )}
+          />
+        </Table>
+        {users.totalCount > pageSize && (
+          <Pagination
+            className="users-pagination"
+            current={pageNo}
+            total={users.totalCount}
+            pageSize={pageSize}
+            onChange={pageNo => this.setState({ pageNo }, () => this.getUsers())}
+          />
+        )}
+        <NewUser
+          visible={createUserVisible}
+          onOk={user =>
+            createUser(user).then(res => {
+              this.setState({ pageNo: 1 }, () => this.getUsers());
+              return res;
+            })
+          }
+          onCancel={() => this.colseCreateUser()}
+        />
+        <PasswordReset
+          username={passwordResetUser}
+          onOk={user =>
+            passwordReset(user).then(res => {
+              this.getUsers();
+              return res;
+            })
+          }
+          onCancel={() => this.setState({ passwordResetUser: undefined })}
+        />
+      </>
+    );
+  }
+}
+
+export default UserManagement;

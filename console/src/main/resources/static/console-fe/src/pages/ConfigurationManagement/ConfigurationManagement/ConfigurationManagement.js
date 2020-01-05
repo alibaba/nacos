@@ -1095,7 +1095,7 @@ class ConfigurationManagement extends React.Component {
   render() {
     const { locale = {} } = this.props;
     return (
-      <div>
+      <>
         <BatchHandle ref={ref => (this.batchHandle = ref)} />
         <Loading
           shape={'flower'}
@@ -1107,7 +1107,7 @@ class ConfigurationManagement extends React.Component {
           <div className={this.state.hasdash ? 'dash-page-container' : ''}>
             <div
               className={this.state.hasdash ? 'dash-left-container' : ''}
-              style={{ position: 'relative', padding: 10 }}
+              style={{ position: 'relative' }}
             >
               <div style={{ display: this.inApp ? 'none' : 'block', marginTop: -15 }}>
                 <RegionGroup
@@ -1359,7 +1359,7 @@ class ConfigurationManagement extends React.Component {
             )}
           </div>
         </Loading>
-      </div>
+      </>
     );
   }
 }
