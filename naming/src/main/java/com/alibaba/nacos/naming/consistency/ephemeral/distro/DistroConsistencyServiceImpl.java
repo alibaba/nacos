@@ -40,7 +40,10 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A consistency protocol algorithm called <b>Distro</b>
@@ -82,7 +85,9 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     private boolean initialized = false;
 
-    public volatile Notifier notifier = new Notifier();
+    private volatile Notifier notifier = new Notifier();
+
+    private LoadDataTask loadDataTask = new LoadDataTask();
 
     private Map<String, CopyOnWriteArrayList<RecordListener>> listeners = new ConcurrentHashMap<>();
 
@@ -90,7 +95,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @PostConstruct
     public void init() {
-        GlobalExecutor.submit(new LoadDataTask());
+        GlobalExecutor.submit(loadDataTask);
         GlobalExecutor.submitDistroNotifyTask(notifier);
     }
 
