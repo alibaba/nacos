@@ -22,13 +22,6 @@ import PasswordReset from './PasswordReset';
 
 import './UserManagement.scss';
 
-const FormItem = Form.Item;
-
-const formItemLayout = {
-  labelCol: { fixedSpan: 3 },
-  wrapperCol: { span: 20 },
-};
-
 @connect(state => ({ users: state.authority.users }), { getUsers })
 @ConfigProvider.config
 class UserManagement extends React.Component {
