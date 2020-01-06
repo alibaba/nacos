@@ -35,14 +35,18 @@ public class User_ITCase extends HttpClient4Test {
     @LocalServerPort
     private int port;
 
+    private String accessToken;
+
     @Before
     public void init() throws Exception {
         String url = String.format("http://localhost:%d/", port);
         this.base = new URL(url);
+        login();
     }
 
+
     @Test
-    public String login() {
+    public void login() {
         ResponseEntity<String> response = request("/nacos/v1/ns/auth/users/login",
             Params.newParams()
                 .appendParam("username", "username1")
@@ -54,13 +58,11 @@ public class User_ITCase extends HttpClient4Test {
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
         JSONObject json = JSON.parseObject(response.getBody());
         Assert.assertTrue(json.containsKey("accessToken"));
-        return json.getString("accessToken");
+        accessToken = json.getString("accessToken");
     }
 
     @Test
     public void createUpdateDeleteUser() {
-
-        String accessToken = login();
 
         // Create a user:
         ResponseEntity<String> response = request("/nacos/v1/ns/auth/users",
@@ -85,7 +87,7 @@ public class User_ITCase extends HttpClient4Test {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        Page<User> userPage = JSON.parseObject(response.getBody(), new TypeReference<>());
+        Page<User> userPage = JSON.parseObject(response.getBody(), new TypeReference<Page<User>>(){});
 
         Assert.assertNotNull(userPage);
         Assert.assertNotNull(userPage.getPageItems());
@@ -122,7 +124,7 @@ public class User_ITCase extends HttpClient4Test {
                 .done(),
             String.class);
 
-        userPage = JSON.parseObject(response.getBody(), new TypeReference<>());
+        userPage = JSON.parseObject(response.getBody(), new TypeReference<Page<User>>(){});
 
         Assert.assertNotNull(userPage);
         Assert.assertNotNull(userPage.getPageItems());
@@ -160,7 +162,7 @@ public class User_ITCase extends HttpClient4Test {
 
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        userPage = JSON.parseObject(response.getBody(), new TypeReference<>());
+        userPage = JSON.parseObject(response.getBody(), new TypeReference<Page<User>>(){});
 
         Assert.assertNotNull(userPage);
         Assert.assertNotNull(userPage.getPageItems());

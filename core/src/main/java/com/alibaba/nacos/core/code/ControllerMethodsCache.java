@@ -16,7 +16,6 @@
 package com.alibaba.nacos.core.code;
 
 
-import com.alibaba.nacos.core.utils.Loggers;
 import org.apache.commons.lang3.ArrayUtils;
 import org.reflections.Reflections;
 import org.springframework.stereotype.Component;
