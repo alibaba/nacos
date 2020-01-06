@@ -44,12 +44,13 @@ import javax.servlet.http.HttpServletResponse;
  * @author wfnuser
  * @author nkorange
  */
-@RestController("auth")
+@RestController("user")
 @RequestMapping({"/v1/auth", "/v1/auth/users"})
 public class UserController {
 
     @Autowired
     private JwtTokenUtils jwtTokenUtils;
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -132,7 +133,7 @@ public class UserController {
     @GetMapping
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
     public Object getUsers(@RequestParam int pageNo, @RequestParam int pageSize) {
-        return userDetailsService.getUsers(pageNo, pageSize);
+        return userDetailsService.getUsersFromDatabase(pageNo, pageSize);
     }
 
     /**

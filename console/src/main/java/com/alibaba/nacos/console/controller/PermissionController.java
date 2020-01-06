@@ -51,7 +51,7 @@ public class PermissionController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "permissions", action = ActionTypes.READ)
     public Object getPermissions(@RequestParam int pageNo, @RequestParam int pageSize,
                                  @RequestParam(name = "role", defaultValue = StringUtils.EMPTY) String role) {
-        return nacosRoleService.getPermissions(role, pageNo, pageSize);
+        return nacosRoleService.getPermissionsFromDatabase(role, pageNo, pageSize);
     }
 
     /**

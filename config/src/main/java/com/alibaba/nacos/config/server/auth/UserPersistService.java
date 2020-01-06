@@ -40,12 +40,11 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 @Service
 public class UserPersistService extends PersistService {
 
-
     public void createUser(String username, String password) {
-        String sql = "INSERT into users (username, password) VALUES (?, ?)";
+        String sql = "INSERT into users (username, password, enabled) VALUES (?, ?, ?)";
 
         try {
-            jt.update(sql, username, password);
+            jt.update(sql, username, password, true);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
             throw e;
