@@ -18,6 +18,7 @@ package com.alibaba.nacos.test.naming;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.net.HttpClient;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Assert;
@@ -36,7 +37,7 @@ import java.util.*;
 /**
  * @author nkorange
  */
-public class NamingBase {
+public class NamingBase extends HttpClient4Test {
 
 
     public static final String TEST_DOM_1 = "nacos.test.1";
@@ -65,13 +66,6 @@ public class NamingBase {
     public static final int TEST_PORT = 8080;
 
     public static final int TIME_OUT = 3000;
-
-
-    @Autowired
-    protected TestRestTemplate restTemplate;
-
-
-    protected URL base;
 
     public static String randomDomainName() {
         StringBuilder sb = new StringBuilder();
@@ -215,31 +209,5 @@ public class NamingBase {
             HttpClient.request(url, headers, new HashMap<String, String>(), StringUtils.EMPTY, "UTF-8", "PUT");
 
         Assert.assertEquals(HttpStatus.SC_OK, result.code);
-    }
-
-    protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), HttpMethod.GET, entity, clazz);
-    }
-
-    protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
-
-        HttpHeaders headers = new HttpHeaders();
-
-        HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), httpMethod, entity, clazz);
     }
 }
