@@ -13,20 +13,13 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, Field, Form, Input, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
+import { Button, Dialog, Pagination, Table, ConfigProvider } from '@alifd/next';
 import { connect } from 'react-redux';
 import { getRoles, createRole, deleteRole } from '../../../reducers/authority';
 import RegionGroup from '../../../components/RegionGroup';
 import NewRole from './NewRole';
 
 import './RolesManagement.scss';
-
-const FormItem = Form.Item;
-
-const formItemLayout = {
-  labelCol: { fixedSpan: 3 },
-  wrapperCol: { span: 20 },
-};
 
 @connect(state => ({ roles: state.authority.roles }), { getRoles })
 @ConfigProvider.config

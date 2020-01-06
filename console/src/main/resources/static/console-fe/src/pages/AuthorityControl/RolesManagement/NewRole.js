@@ -13,17 +13,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import {
-  Button,
-  Field,
-  Form,
-  Input,
-  Dialog,
-  Pagination,
-  Table,
-  ConfigProvider,
-  //   Field,
-} from '@alifd/next';
+import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
 
 const FormItem = Form.Item;
 
