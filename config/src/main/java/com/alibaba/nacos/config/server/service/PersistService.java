@@ -504,12 +504,26 @@ public class PersistService {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 try {
+                    /**
+                     * 插入config_info表  并返回id
+                     */
                     long configId = addConfigInfoAtomic(srcIp, srcUser, configInfo, time, configAdvanceInfo);
                     String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
+
+                    /**
+                     * 根据configTags  批量新增config_tags_relation表
+                     */
                     addConfiTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
+
+                    /**
+                     * 记录his_config_info
+                     */
                     insertConfigHistoryAtomic(0, configInfo, srcIp, srcUser, time, "I");
                     if (notify) {
+                        /**
+                         * 发布ConfigDataChangeEvent事件
+                         */
                         EventDispatcher.fireEvent(
                             new ConfigDataChangeEvent(false, configInfo.getDataId(), configInfo.getGroup(),
                                 configInfo.getTenant(), time.getTime()));
@@ -584,23 +598,46 @@ public class PersistService {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 try {
+                    /**
+                     * 获取config_info数据
+                     */
                     ConfigInfo oldConfigInfo = findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
                     String appNameTmp = oldConfigInfo.getAppName();
                     // 用户传过来的appName不为空，则用持久化用户的appName，否则用db的;清空appName的时候需要传空串
+                    /**
+                     * 用户传过来的appName不为空，则用持久化用户的appName，否则用db的;清空appName的时候需要传空串
+                     */
                     if (configInfo.getAppName() == null) {
                         configInfo.setAppName(appNameTmp);
                     }
+                    /**
+                     * 更新config_info数据
+                     */
                     updateConfigInfoAtomic(configInfo, srcIp, srcUser, time, configAdvanceInfo);
                     String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                     if (configTags != null) {
                         // 删除所有tag，然后再重新创建
+                        /**
+                         * 删除config_tags_relation
+                         */
                         removeTagByIdAtomic(oldConfigInfo.getId());
+
+                        /**
+                         * 批量新增config_tags_relation表
+                         */
                         addConfiTagsRelationAtomic(oldConfigInfo.getId(), configTags, configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant());
                     }
+
+                    /**
+                     * 记录his_config_info
+                     */
                     insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp, srcUser, time, "U");
                     if (notify) {
+                        /**
+                         * 发布ConfigDataChangeEvent
+                         */
                         EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, configInfo.getDataId(),
                             configInfo.getGroup(), configInfo.getTenant(), time.getTime()));
                     }
@@ -667,8 +704,14 @@ public class PersistService {
     public void insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
                                    final String srcUser, final Timestamp time, final boolean notify) {
         try {
+            /**
+             * 新增 config_info_beta
+             */
             addConfigInfo4Beta(configInfo, betaIps, srcIp, null, time, notify);
         } catch (DataIntegrityViolationException ive) { // 唯一性约束冲突
+            /**
+             * 修改config_info_beta
+             */
             updateConfigInfo4Beta(configInfo, srcIp, null, time, notify);
         }
     }
@@ -2678,6 +2721,7 @@ public class PersistService {
 
     /**
      * 增加配置；数据库原子操作，最小sql动作，无业务封装
+     * 新增config_info表  并返回id
      *
      * @param srcIp             ip
      * @param srcUser           user
@@ -2700,6 +2744,9 @@ public class PersistService {
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
 
+        /**
+         * 计算md5
+         */
         final String md5Tmp = MD5.getInstance().getMD5String(configInfo.getContent());
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
@@ -2735,6 +2782,9 @@ public class PersistService {
             if (nu == null) {
                 throw new IllegalArgumentException("insert config_info fail");
             }
+            /**
+             * 返回主键
+             */
             return nu.longValue();
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);
@@ -2764,6 +2814,7 @@ public class PersistService {
 
     /**
      * 增加配置；数据库原子操作，最小sql动作，无业务封装
+     * 批量新增config_tags_relation表
      *
      * @param configId   config id
      * @param configTags tags
@@ -2776,6 +2827,9 @@ public class PersistService {
         if (StringUtils.isNotBlank(configTags)) {
             String[] tagArr = configTags.split(",");
             for (String tag : tagArr) {
+                /**
+                 * 新增config_tags_relation表
+                 */
                 addConfiTagRelationAtomic(configId, tag, dataId, group, tenant);
             }
         }
