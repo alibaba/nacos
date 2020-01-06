@@ -50,7 +50,7 @@ public class RoleController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
     public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
                            @RequestParam(name = "username", defaultValue = "") String username) {
-        return roleService.getRoles(username, pageNo, pageSize);
+        return roleService.getRolesFromDatabase(username, pageNo, pageSize);
     }
 
     /**

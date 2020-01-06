@@ -16,14 +16,19 @@
 package com.alibaba.nacos.console.security.nacos.users;
 
 
+import com.alibaba.nacos.config.server.auth.UserPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
-import com.alibaba.nacos.config.server.auth.UserPersistService;
+import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Custem user service
@@ -34,12 +39,33 @@ import org.springframework.stereotype.Service;
 @Service
 public class NacosUserDetailsServiceImpl implements UserDetailsService {
 
+    private Map<String, User> userMap = new ConcurrentHashMap<>();
+
     @Autowired
     private UserPersistService userPersistService;
 
+    @Scheduled(initialDelay = 5000, fixedDelay = 15000)
+    private void reload() {
+        try {
+            Page<User> users = getUsersFromDatabase(1, Integer.MAX_VALUE);
+            if (users == null) {
+                return;
+            }
+
+            Map<String, User> map = new ConcurrentHashMap<>(16);
+            for (User user : users.getPageItems()) {
+                map.put(user.getUsername(), user);
+            }
+            userMap = map;
+        } catch (Exception e) {
+            Loggers.AUTH.warn("[LOAD-USERS] load failed", e);
+        }
+    }
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userPersistService.findUserByUsername(username);
+
+        User user = userMap.get(username);
         if (user == null) {
             throw new UsernameNotFoundException(username);
         }
@@ -50,12 +76,12 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
         userPersistService.updateUserPassword(username, password);
     }
 
-    public Page<User> getUsers(int pageNo, int pageSize) {
+    public Page<User> getUsersFromDatabase(int pageNo, int pageSize) {
         return userPersistService.getUsers(pageNo, pageSize);
     }
 
     public User getUser(String username) {
-        return userPersistService.findUserByUsername(username);
+        return userMap.get(username);
     }
 
     public void createUser(String username, String password) {

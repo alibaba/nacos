@@ -57,6 +57,8 @@ public class ServerHttpAgent implements HttpAgent {
 
     private SecurityProxy securityProxy;
 
+    private String namespaceId;
+
     private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
 
     /**
@@ -249,6 +251,7 @@ public class ServerHttpAgent implements HttpAgent {
     public ServerHttpAgent(Properties properties) throws NacosException {
         serverListMgr = new ServerListManager(properties);
         securityProxy = new SecurityProxy(properties);
+        namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
         init(properties);
         securityProxy.login(serverListMgr.getServerUrls());
 
@@ -275,6 +278,10 @@ public class ServerHttpAgent implements HttpAgent {
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             list.add(Constants.ACCESS_TOKEN);
             list.add(securityProxy.getAccessToken());
+        }
+        if (StringUtils.isNotBlank(namespaceId)) {
+            list.add("tenant");
+            list.add(namespaceId);
         }
     }
 
