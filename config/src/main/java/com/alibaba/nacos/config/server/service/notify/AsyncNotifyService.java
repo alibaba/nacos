@@ -77,6 +77,9 @@ public class AsyncNotifyService extends AbstractEventListener {
             String group = evt.group;
             String tenant = evt.tenant;
             String tag = evt.tag;
+            /**
+             * 集群地址列表
+             */
             List<?> ipList = serverListService.getServerList();
 
             // 其实这里任何类型队列都可以

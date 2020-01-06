@@ -505,7 +505,13 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
      */
     static final int TIMEOUT = 5000;
     private int maxFailCount = 12;
+    /**
+     * 集群地址列表
+     */
     private static volatile List<String> serverList = new ArrayList<String>();
+    /**
+     * serverIp2unhealthCount中记录失败次数   累计超过12次  则在serverListUnhealth中记录当前地址
+     */
     private static volatile List<String> serverListUnhealth = new ArrayList<String>();
     private static volatile boolean isAddressServerHealth = true;
     private static volatile int addressServerFailCcount = 0;
