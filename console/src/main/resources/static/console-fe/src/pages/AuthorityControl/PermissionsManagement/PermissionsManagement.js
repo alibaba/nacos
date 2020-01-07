@@ -63,22 +63,22 @@ class PermissionsManagement extends React.Component {
   }
 
   render() {
-    const { permissions } = this.props;
+    const { permissions, locale } = this.props;
     const { loading, pageSize, pageNo, createPermissionVisible } = this.state;
     return (
       <>
-        <RegionGroup left={'权限管理'} />
+        <RegionGroup left={locale.privilegeManagement} />
         <div className="filter-panel">
           <Button type="primary" onClick={() => this.setState({ createPermissionVisible: true })}>
-            添加权限
+            {locale.addPermission}
           </Button>
         </div>
         <Table dataSource={permissions.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
-          <Table.Column title="角色" dataIndex="role" />
-          <Table.Column title="资源" dataIndex="resource" />
-          <Table.Column title="动作" dataIndex="action" />
+          <Table.Column title={locale.role} dataIndex="role" />
+          <Table.Column title={locale.resource} dataIndex="resource" />
+          <Table.Column title={locale.action} dataIndex="action" />
           <Table.Column
-            title="操作"
+            title={locale.operation}
             cell={(value, index, record) => (
               <>
                 <Button
@@ -86,8 +86,8 @@ class PermissionsManagement extends React.Component {
                   warning
                   onClick={() =>
                     Dialog.confirm({
-                      title: '确认',
-                      content: '是否要删除该权限？',
+                      title: locale.deletePermission,
+                      content: locale.deletePermissionTip,
                       onOk: () =>
                         deletePermission(record).then(() =>
                           this.setState({ pageNo: 1 }, () => this.getPermissions())
@@ -95,7 +95,7 @@ class PermissionsManagement extends React.Component {
                     })
                   }
                 >
-                  刪除
+                  {locale.deletePermission}
                 </Button>
               </>
             )}

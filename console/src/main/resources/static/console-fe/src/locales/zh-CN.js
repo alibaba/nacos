@@ -549,6 +549,28 @@ const I18N_CONF = {
     usernameError: '用户名不能为空！',
     roleError: '角色名不能为空!',
   },
+  PermissionsManagement: {
+    privilegeManagement: '权限管理',
+    addPermission: '添加权限',
+    role: '角色名',
+    resource: '资源',
+    action: '动作',
+    operation: '操作',
+    deletePermission: '删除',
+    deletePermissionTip: '是否要删除该权限？',
+  },
+  NewPermissions: {
+    addPermission: '添加权限',
+    role: '角色名',
+    resource: '资源',
+    action: '动作',
+    resourcePlaceholder: '请输入资源',
+    rolePlaceholder: '请输入角色名',
+    actionPlaceholder: '请输入动作',
+    resourceError: '资源不能为空！',
+    roleError: '角色名不能为空!',
+    actionError: '动作不能为空!',
+  },
 };
 
 export default I18N_CONF;
