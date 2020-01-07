@@ -505,6 +505,32 @@ const I18N_CONF = {
     update: '更新',
     insert: '插入',
   },
+  UserManagement: {
+    userManagement: '用户管理',
+    createUser: '创建用户',
+    resetPassword: '修改',
+    deleteUser: '删除',
+    deleteUserTip: '是否要删除该用户？',
+    username: '用户名',
+    password: '密码',
+    operation: '操作',
+  },
+  NewUser: {
+    createUser: '创建用户',
+    username: '用户名',
+    password: '密码',
+    usernamePlaceholder: '请输入用户名',
+    passwordPlaceholder: '请输入密码',
+    usernameError: '用户名不能为空！',
+    passwordError: '密码不能为空!',
+  },
+  PasswordReset: {
+    resetPassword: '密码重置',
+    username: '用户名',
+    password: '密码',
+    passwordError: '密码不能为空！',
+    passwordPlaceholder: '请输入密码',
+  },
 };
 
 export default I18N_CONF;

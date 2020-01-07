@@ -19,8 +19,8 @@ import './UserManagement.scss';
 const FormItem = Form.Item;
 
 const formItemLayout = {
-  labelCol: { fixedSpan: 3 },
-  wrapperCol: { span: 20 },
+  labelCol: { fixedSpan: 4 },
+  wrapperCol: { span: 19 },
 };
 
 @ConfigProvider.config
@@ -35,8 +35,9 @@ class PasswordReset extends React.Component {
   };
 
   check() {
-    const errors = { password: '密码不能为空!' };
-    const vals = ['password'].map(key => {
+    const { locale } = this.props;
+    const errors = { password: locale.passwordError };
+    const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
       if (!val) {
         this.field.setError(key, errors[key]);
@@ -50,12 +51,13 @@ class PasswordReset extends React.Component {
   }
 
   render() {
+    const { locale } = this.props;
     const { getError } = this.field;
     const { username, onOk, onCancel } = this.props;
     return (
       <>
         <Dialog
-          title="密码重置"
+          title={locale.resetPassword}
           visible={username}
           onOk={() => {
             const vals = this.check();
@@ -68,11 +70,11 @@ class PasswordReset extends React.Component {
           afterClose={() => this.field.reset()}
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
-            <FormItem label="用户名" required>
+            <FormItem label={locale.username} required>
               <p>{username}</p>
             </FormItem>
-            <FormItem label="密码" required help={getError('password')}>
-              <Input name="password" htmlType="password" placeholder="Please Enter Password" />
+            <FormItem label={locale.password} required help={getError('password')}>
+              <Input name="password" htmlType="password" placeholder={locale.passwordPlaceholder} />
             </FormItem>
           </Form>
         </Dialog>

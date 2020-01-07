@@ -508,6 +508,32 @@ const I18N_CONF = {
     update: 'Update',
     insert: 'Insert',
   },
+  UserManagement: {
+    userManagement: 'User Management',
+    createUser: 'Create user',
+    resetPassword: 'Edit',
+    deleteUser: 'Delete',
+    deleteUserTip: 'Do you want to delete this user?',
+    username: 'Username',
+    password: 'Password',
+    operation: 'Operation',
+  },
+  NewUser: {
+    createUser: 'Create user',
+    username: 'Username',
+    password: 'Password',
+    usernamePlaceholder: 'Please Enter Username',
+    passwordPlaceholder: 'Please Enter Password',
+    usernameError: 'User name cannot be empty!',
+    passwordError: 'Password cannot be empty!',
+  },
+  PasswordReset: {
+    resetPassword: 'Password Reset',
+    username: 'Username',
+    password: 'Password',
+    passwordPlaceholder: 'Please Enter Password',
+    passwordError: 'Password cannot be empty!',
+  },
 };
 
 export default I18N_CONF;

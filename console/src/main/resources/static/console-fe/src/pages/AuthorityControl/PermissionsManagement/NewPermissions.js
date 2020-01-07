@@ -14,18 +14,17 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
-import './UserManagement.scss';
 
 const FormItem = Form.Item;
 
 const formItemLayout = {
-  labelCol: { fixedSpan: 4 },
-  wrapperCol: { span: 19 },
+  labelCol: { fixedSpan: 3 },
+  wrapperCol: { span: 20 },
 };
 
 @ConfigProvider.config
-class NewUser extends React.Component {
-  static displayName = 'NewUser';
+class NewPermissions extends React.Component {
+  static displayName = 'NewPermissions';
 
   field = new Field(this);
 
@@ -35,10 +34,10 @@ class NewUser extends React.Component {
   };
 
   check() {
-    const { locale } = this.props;
     const errors = {
-      username: locale.usernameError,
-      password: locale.passwordError,
+      role: '角色不能为空!',
+      resource: '资源不能为空!',
+      action: '动作不能为空!',
     };
     const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
@@ -47,20 +46,19 @@ class NewUser extends React.Component {
       }
       return val;
     });
-    if (vals.filter(v => v).length === 2) {
+    if (vals.filter(v => v).length === 3) {
       return vals;
     }
     return null;
   }
 
   render() {
-    const { locale } = this.props;
     const { getError } = this.field;
     const { visible, onOk, onCancel } = this.props;
     return (
       <>
         <Dialog
-          title={locale.createUser}
+          title="添加授权"
           visible={visible}
           onOk={() => {
             const vals = this.check();
@@ -73,11 +71,14 @@ class NewUser extends React.Component {
           afterClose={() => this.field.reset()}
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
-            <FormItem label={locale.username} required help={getError('username')}>
-              <Input name="username" trim placeholder={locale.usernamePlaceholder} />
+            <FormItem label="角色" required help={getError('role')}>
+              <Input name="role" trim placeholder="Please Enter Role" />
             </FormItem>
-            <FormItem label={locale.password} required help={getError('password')}>
-              <Input name="password" htmlType="password" placeholder={locale.passwordPlaceholder} />
+            <FormItem label="资源" required help={getError('resource')}>
+              <Input name="resource" trim placeholder="Please Enter Resource" />
+            </FormItem>
+            <FormItem label="动作" required help={getError('username')}>
+              <Input name="action" trim placeholder="Please Enter Action" />
             </FormItem>
           </Form>
         </Dialog>
@@ -86,4 +87,4 @@ class NewUser extends React.Component {
   }
 }
 
-export default NewUser;
+export default NewPermissions;

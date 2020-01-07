@@ -64,29 +64,25 @@ class UserManagement extends React.Component {
   }
 
   render() {
-    const { users } = this.props;
+    const { users, locale } = this.props;
     const { loading, pageSize, pageNo, createUserVisible, passwordResetUser } = this.state;
     return (
       <>
-        <RegionGroup left={'用户管理'} />
+        <RegionGroup left={locale.userManagement} />
         <div className="filter-panel">
-          <Button
-            type="primary"
-            className="create-user-btn"
-            onClick={() => this.setState({ createUserVisible: true })}
-          >
-            创建用户
+          <Button type="primary" onClick={() => this.setState({ createUserVisible: true })}>
+            {locale.createUser}
           </Button>
         </div>
         <Table dataSource={users.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
-          <Table.Column title="用户名" dataIndex="username" />
+          <Table.Column title={locale.username} dataIndex="username" />
           <Table.Column
-            title="密码"
+            title={locale.password}
             dataIndex="password"
             cell={value => value.replace(/\S/g, '*')}
           />
           <Table.Column
-            title="操作"
+            title={locale.operation}
             dataIndex="username"
             cell={username => (
               <>
@@ -94,7 +90,7 @@ class UserManagement extends React.Component {
                   type="primary"
                   onClick={() => this.setState({ passwordResetUser: username })}
                 >
-                  修改
+                  {locale.resetPassword}
                 </Button>
                 &nbsp;&nbsp;&nbsp;
                 <Button
@@ -102,8 +98,8 @@ class UserManagement extends React.Component {
                   warning
                   onClick={() =>
                     Dialog.confirm({
-                      title: '确认',
-                      content: '是否要删除该用户？',
+                      title: locale.deleteUser,
+                      content: locale.deleteUserTip,
                       onOk: () =>
                         deleteUser(username).then(() =>
                           this.setState({ pageNo: 1 }, () => this.getUsers())
@@ -111,7 +107,7 @@ class UserManagement extends React.Component {
                     })
                   }
                 >
-                  刪除
+                  {locale.deleteUser}
                 </Button>
               </>
             )}
