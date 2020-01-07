@@ -18,8 +18,8 @@ import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
 const FormItem = Form.Item;
 
 const formItemLayout = {
-  labelCol: { fixedSpan: 3 },
-  wrapperCol: { span: 20 },
+  labelCol: { fixedSpan: 4 },
+  wrapperCol: { span: 19 },
 };
 
 @ConfigProvider.config
@@ -34,10 +34,11 @@ class NewPermissions extends React.Component {
   };
 
   check() {
+    const { locale } = this.props;
     const errors = {
-      role: '角色不能为空!',
-      resource: '资源不能为空!',
-      action: '动作不能为空!',
+      role: locale.roleError,
+      resource: locale.resourceError,
+      action: locale.actionError,
     };
     const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
@@ -54,11 +55,11 @@ class NewPermissions extends React.Component {
 
   render() {
     const { getError } = this.field;
-    const { visible, onOk, onCancel } = this.props;
+    const { visible, onOk, onCancel, locale } = this.props;
     return (
       <>
         <Dialog
-          title="添加授权"
+          title={locale.addPermission}
           visible={visible}
           onOk={() => {
             const vals = this.check();
@@ -71,14 +72,14 @@ class NewPermissions extends React.Component {
           afterClose={() => this.field.reset()}
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
-            <FormItem label="角色" required help={getError('role')}>
-              <Input name="role" trim placeholder="Please Enter Role" />
+            <FormItem label={locale.role} required help={getError('role')}>
+              <Input name="role" trim placeholder={locale.rolePlaceholder} />
             </FormItem>
-            <FormItem label="资源" required help={getError('resource')}>
-              <Input name="resource" trim placeholder="Please Enter Resource" />
+            <FormItem label={locale.resource} required help={getError('resource')}>
+              <Input name="resource" trim placeholder={locale.resourcePlaceholder} />
             </FormItem>
-            <FormItem label="动作" required help={getError('username')}>
-              <Input name="action" trim placeholder="Please Enter Action" />
+            <FormItem label={locale.action} required help={getError('action')}>
+              <Input name="action" trim placeholder={locale.actionPlaceholder} />
             </FormItem>
           </Form>
         </Dialog>

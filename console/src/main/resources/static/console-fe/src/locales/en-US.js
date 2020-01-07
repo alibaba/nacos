@@ -552,6 +552,28 @@ const I18N_CONF = {
     usernameError: 'User name cannot be empty!',
     roleError: 'Role cannot be empty!',
   },
+  PermissionsManagement: {
+    privilegeManagement: 'Permissions Management',
+    addPermission: 'Add Permission',
+    role: 'Role',
+    resource: 'Resource',
+    action: 'Action',
+    operation: 'Operation',
+    deletePermission: 'Delete',
+    deletePermissionTip: 'Do you want to delete this permission?',
+  },
+  NewPermissions: {
+    addPermission: 'Add Permission',
+    role: 'Role',
+    resource: 'Resource',
+    action: 'Action',
+    resourcePlaceholder: 'Please enter Resource',
+    rolePlaceholder: 'Please enter Role',
+    actionPlaceholder: 'Please enter Action',
+    resourceError: 'Resource cannot be empty!',
+    roleError: 'Role cannot be empty!',
+    actionError: 'Action cannot be empty!',
+  },
 };
 
 export default I18N_CONF;
