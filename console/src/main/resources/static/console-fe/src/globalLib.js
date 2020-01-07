@@ -482,10 +482,15 @@ const request = (function(_global) {
     // 处理后置中间件
     config = handleMiddleWare.apply(this, [config, ...args, middlewareBackList]);
 
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    const [url, paramsStr = ''] = config.url.split('?');
+    const params = paramsStr.split('&');
+    params.push(`accessToken=${accessToken}`);
+
     return $.ajax(
       Object.assign({}, config, {
         type: config.type,
-        url: config.url,
+        url: [url, params.join('&')].join('?'),
         data: config.data || '',
         dataType: config.dataType || 'json',
         beforeSend(xhr) {
