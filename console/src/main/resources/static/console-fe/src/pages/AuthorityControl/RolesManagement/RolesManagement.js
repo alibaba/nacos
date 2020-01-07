@@ -68,11 +68,7 @@ class RolesManagement extends React.Component {
       <>
         <RegionGroup left={'角色管理'} />
         <div className="filter-panel">
-          <Button
-            type="primary"
-            className="create-user-btn"
-            onClick={() => this.setState({ createRoleVisible: true })}
-          >
+          <Button type="primary" onClick={() => this.setState({ createRoleVisible: true })}>
             绑定角色
           </Button>
         </div>

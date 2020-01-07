@@ -9,18 +9,24 @@ const request = () => {
   const instance = axios.create();
 
   instance.interceptors.request.use(
-    function(config) {
+    config => {
+      if (!config.params) {
+        config.params = {};
+      }
+      if (!config.url.includes('auth/users/login')) {
+        const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+        config.params.accessToken = accessToken;
+      }
       if (['post', 'put'].includes(config.method)) {
         config.data = qs.stringify(config.data);
-        config.headers = {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        };
+        if (!config.headers) {
+          config.headers = {};
+        }
+        config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
       }
       return config;
     },
-    function(error) {
-      return Promise.reject(error);
-    }
+    error => Promise.reject(error)
   );
 
   instance.interceptors.response.use(

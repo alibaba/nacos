@@ -13,7 +13,7 @@
 
 import { Message } from '@alifd/next';
 import request from '../utils/request';
-import { UPDATE_USER, SIGN_IN, USER_LIST, ROLE_LIST } from '../constants';
+import { UPDATE_USER, SIGN_IN, USER_LIST, ROLE_LIST, PERMISSIONS_LIST } from '../constants';
 
 const initialState = {
   users: {
@@ -22,7 +22,18 @@ const initialState = {
     pagesAvailable: 1,
     pageItems: [],
   },
-  roles: {},
+  roles: {
+    totalCount: 0,
+    pageNumber: 1,
+    pagesAvailable: 1,
+    pageItems: [],
+  },
+  permissions: {
+    totalCount: 0,
+    pageNumber: 1,
+    pagesAvailable: 1,
+    pageItems: [],
+  },
 };
 
 const successMsg = res => {
@@ -82,15 +93,51 @@ const createRole = ([role, username]) =>
 const deleteRole = role =>
   request.delete('v1/auth/roles', { params: role }).then(res => successMsg(res));
 
+/**
+ * 权限列表
+ * @param {*} params
+ */
+const getPermissions = params => dispatch =>
+  request
+    .get('v1/auth/permissions', { params })
+    .then(data => dispatch({ type: PERMISSIONS_LIST, data }));
+
+/**
+ * 给角色添加权限
+ * @param {*} param0
+ */
+const createPermission = ([role, resource, action]) =>
+  request.post('v1/auth/permissions', { role, resource, action }).then(res => successMsg(res));
+
+/**
+ * 删除权限
+ * @param {*} param0
+ */
+const deletePermission = permission =>
+  request.delete('v1/auth/permissions', { params: permission }).then(res => successMsg(res));
+
 export default (state = initialState, action) => {
   switch (action.type) {
     case USER_LIST:
       return { ...state, users: { ...action.data } };
     case ROLE_LIST:
       return { ...state, roles: { ...action.data } };
+    case PERMISSIONS_LIST:
+      return { ...state, permissions: { ...action.data } };
     default:
       return state;
   }
 };
 
-export { getUsers, createUser, deleteUser, passwordReset, getRoles, createRole, deleteRole };
+export {
+  getUsers,
+  createUser,
+  deleteUser,
+  passwordReset,
+  getRoles,
+  createRole,
+  deleteRole,
+  getPermissions,
+  createPermission,
+  deletePermission,
+};
