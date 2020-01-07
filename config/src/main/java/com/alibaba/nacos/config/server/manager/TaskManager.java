@@ -85,6 +85,10 @@ public final class TaskManager implements TaskManagerMBean {
         return this.taskProcessors.get(type);
     }
 
+    /**
+     * 启动ProcessRunnable
+     * @param name
+     */
     @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
     public TaskManager(String name) {
         this.name = name;
@@ -158,6 +162,9 @@ public final class TaskManager implements TaskManagerMBean {
     public void addTask(String type, AbstractTask task) {
         this.lock.lock();
         try {
+            /**
+             * 加入任务
+             */
             AbstractTask oldTask = tasks.put(type, task);
             MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
             if (null != oldTask) {

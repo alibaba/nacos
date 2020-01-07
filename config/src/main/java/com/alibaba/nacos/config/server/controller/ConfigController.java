@@ -151,23 +151,26 @@ public class ConfigController {
          */
         String betaIps = request.getHeader("betaIps");
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+        /**
+         * 非beta发布
+         */
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
                 /**
-                 * 没有tag
+                 * tag为空   config_info&config_tags_relation&his_config_info
                  */
                 persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
                 /**
-                 * 有tag
+                 * tag不为空  config_info_tag
                  */
                 persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
             }
         } else { // beta publish
             /**
-             * beta发布
+             * beta发布  config_info_beta
              */
             persistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser, time, false);
             EventDispatcher.fireEvent(new ConfigDataChangeEvent(true, dataId, group, tenant, time.getTime()));

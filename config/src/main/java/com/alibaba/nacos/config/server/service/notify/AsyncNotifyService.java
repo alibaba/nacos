@@ -85,6 +85,9 @@ public class AsyncNotifyService extends AbstractEventListener {
             // 其实这里任何类型队列都可以
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
             for (int i = 0; i < ipList.size(); i++) {
+                /**
+                 * 每个地址   新增一个NotifySingleTask  并放入queue
+                 */
                 queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, (String) ipList.get(i), evt.isBeta));
             }
             EXECUTOR.execute(new AsyncTask(httpclient, queue));
@@ -131,18 +134,34 @@ public class AsyncNotifyService extends AbstractEventListener {
             while (!queue.isEmpty()) {
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
+                /**
+                 * targetIp   在集群内
+                 */
                 if (serverListService.getServerList().contains(
                     targetIp)) {
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
+                    /**
+                     * 集群健康  但是targetIp对应得节点不健康
+                     */
                     if (serverListService.isHealthCheck()
                         && ServerListService.getServerListUnhealth().contains(targetIp)) {
                         // target ip 不健康，则放入通知列表中
+                        /**
+                         * 监控数据  并输出日志
+                         */
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                             task.getLastModified(),
                             LOCAL_IP, ConfigTraceService.NOTIFY_EVENT_UNHEALTH, 0, task.target);
                         // get delay time and set fail count to the task
+                        /**
+                         * 重试
+                         */
                         asyncTaskExecute(task);
                     } else {
+                        /**
+                         * 向集群中其他节点发送http请求
+                         * http://192.168.50.65:8848/nacos/v1/cs/communication/dataChange?dataId=test&group=DEFAULT_GROUP
+                         */
                         HttpGet request = new HttpGet(task.url);
                         request.setHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED,
                             String.valueOf(task.getLastModified()));
@@ -150,6 +169,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                         if (task.isBeta) {
                             request.setHeader("isBeta", "true");
                         }
+                        /**
+                         * AsyncNotifyCallBack  异步处理
+                         */
                         httpclient.execute(request, new AsyncNotifyCallBack(httpclient, task));
                     }
                 }
@@ -161,11 +183,21 @@ public class AsyncNotifyService extends AbstractEventListener {
 
     }
 
+    /**
+     * 重试    但间隔不断增大
+     * @param task
+     */
     private void asyncTaskExecute(NotifySingleTask task) {
+        /**
+         * 重试间隔   时间指数不断变大   间隔变长
+         */
         int delay = getDelayTime(task);
         Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
         queue.add(task);
         AsyncTask asyncTask = new AsyncTask(httpclient, queue);
+        /**
+         * 重试
+         */
         ((ScheduledThreadPoolExecutor) EXECUTOR).schedule(asyncTask, delay, TimeUnit.MILLISECONDS);
     }
 
@@ -278,6 +310,10 @@ public class AsyncNotifyService extends AbstractEventListener {
             } catch (UnsupportedEncodingException e) {
                 log.error("URLEncoder encode error", e);
             }
+
+            /**
+             * 其他节点地址  http://192.168.50.65:8848/nacos/v1/cs/communication/dataChange?dataId=test&group=DEFAULT_GROUP
+             */
             if (StringUtils.isBlank(tenant)) {
                 this.url = MessageFormat.format(URL_PATTERN, target, RunningConfigUtils.getContextPath(), dataId,
                     group);
@@ -327,7 +363,13 @@ public class AsyncNotifyService extends AbstractEventListener {
     private static int getDelayTime(NotifySingleTask task) {
         int failCount = task.getFailCount();
         int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
+        /**
+         * get delayTime and also set failCount to task;失败时间指数增加，以免断网场景不断重试无效任务，影响正常同步
+         */
         if (failCount <= MAX_COUNT) {
+            /**
+             * 失败时间指数  不断变大  则重试时间间隔变长
+             */
             task.setFailCount(failCount + 1);
         }
         return delay;

@@ -71,6 +71,9 @@ public class ConfigTraceService {
         if (!LogUtil.traceLog.isInfoEnabled()) {
             return;
         }
+        /**
+         * prometheus监控
+         */
         MetricsMonitor.getNotifyRtTimer().record(delayed, TimeUnit.MILLISECONDS);
         // 方便tlog切分
         if (StringUtils.isBlank(tenant)) {

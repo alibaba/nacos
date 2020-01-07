@@ -73,6 +73,9 @@ public class DumpService {
         DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
         DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
 
+        /**
+         * 启动TaskManager   处理dump任务
+         */
         dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         dumpTaskMgr.setDefaultTaskProcessor(processor);
 
@@ -88,6 +91,9 @@ public class DumpService {
             if (ServerListService.isFirstIp()) {
                 try {
                     Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
+                    /**
+                     * 获取his_config_info中  小于startTime得记录
+                     */
                     int totalCount = persistService.findConfigHistoryCountByTime(startTime);
                     if (totalCount > 0) {
                         int pageSize = 1000;
@@ -96,6 +102,9 @@ public class DumpService {
                             new Object[] {startTime, totalCount, pageSize, removeTime});
                         while (removeTime > 0) {
                             // 分页删除，以免批量太大报错
+                            /**
+                             * 删除his_config_info中startTime前的数据
+                             */
                             persistService.removeConfigHistory(startTime, pageSize);
                             removeTime--;
                         }
@@ -275,6 +284,15 @@ public class DumpService {
         return retentionDays;
     }
 
+    /**
+     *
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @param tag
+     * @param lastModified
+     * @param handleIp
+     */
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
         dump(dataId, group, tenant, tag, lastModified, handleIp, false);
     }
@@ -288,9 +306,25 @@ public class DumpService {
         dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, lastModified, handleIp, isBeta));
     }
 
+    /**
+     *
+     * @param dataId
+     * @param group
+     * @param tenant
+     * @param tag
+     * @param lastModified
+     * @param handleIp
+     * @param isBeta
+     */
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp,
                      boolean isBeta) {
+        /**
+         * test+DEFAULT_GROUP
+         */
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        /**
+         * 加入任务
+         */
         dumpTaskMgr.addTask(groupKey, new DumpTask(groupKey, tag, lastModified, handleIp, isBeta));
     }
 
