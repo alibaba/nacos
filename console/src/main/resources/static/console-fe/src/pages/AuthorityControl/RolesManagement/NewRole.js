@@ -18,8 +18,8 @@ import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
 const FormItem = Form.Item;
 
 const formItemLayout = {
-  labelCol: { fixedSpan: 3 },
-  wrapperCol: { span: 20 },
+  labelCol: { fixedSpan: 4 },
+  wrapperCol: { span: 19 },
 };
 
 @ConfigProvider.config
@@ -34,11 +34,12 @@ class NewRole extends React.Component {
   };
 
   check() {
+    const { locale } = this.props;
     const errors = {
-      role: '角色不能为空!',
-      username: '用户名不能为空!',
+      role: locale.roleError,
+      username: locale.usernameError,
     };
-    const vals = ['role', 'username'].map(key => {
+    const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
       if (!val) {
         this.field.setError(key, errors[key]);
@@ -52,12 +53,13 @@ class NewRole extends React.Component {
   }
 
   render() {
+    const { locale } = this.props;
     const { getError } = this.field;
     const { visible, onOk, onCancel } = this.props;
     return (
       <>
         <Dialog
-          title="绑定角色"
+          title={locale.bindingRoles}
           visible={visible}
           onOk={() => {
             const vals = this.check();
@@ -70,11 +72,11 @@ class NewRole extends React.Component {
           afterClose={() => this.field.reset()}
         >
           <Form style={{ width: 400 }} {...formItemLayout} field={this.field}>
-            <FormItem label="角色名" required help={getError('role')}>
-              <Input name="role" trim placeholder="Please Enter Role" />
+            <FormItem label={locale.role} required help={getError('role')}>
+              <Input name="role" trim placeholder={locale.rolePlaceholder} />
             </FormItem>
-            <FormItem label="用户名" required help={getError('username')}>
-              <Input name="username" placeholder="Please Enter Username" />
+            <FormItem label={locale.username} required help={getError('username')}>
+              <Input name="username" placeholder={locale.usernamePlaceholder} />
             </FormItem>
           </Form>
         </Dialog>
