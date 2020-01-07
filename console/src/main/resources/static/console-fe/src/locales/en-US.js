@@ -534,6 +534,24 @@ const I18N_CONF = {
     passwordPlaceholder: 'Please Enter Password',
     passwordError: 'Password cannot be empty!',
   },
+  RolesManagement: {
+    roleManagement: 'Role management',
+    bindingRoles: 'Binding roles',
+    role: 'Role',
+    username: 'Username',
+    operation: 'Operation',
+    deleteRole: 'Delete',
+    deleteRoleTip: 'Do you want to delete this role?',
+  },
+  NewRole: {
+    bindingRoles: 'Binding roles',
+    username: 'Username',
+    role: 'Role',
+    usernamePlaceholder: 'Please Enter Username',
+    rolePlaceholder: 'Please Enter Role',
+    usernameError: 'User name cannot be empty!',
+    roleError: 'Role cannot be empty!',
+  },
 };
 
 export default I18N_CONF;

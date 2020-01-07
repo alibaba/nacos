@@ -62,21 +62,21 @@ class RolesManagement extends React.Component {
   }
 
   render() {
-    const { roles } = this.props;
+    const { roles, locale } = this.props;
     const { loading, pageSize, pageNo, createRoleVisible, passwordResetUser } = this.state;
     return (
       <>
-        <RegionGroup left={'角色管理'} />
+        <RegionGroup left={locale.roleManagement} />
         <div className="filter-panel">
           <Button type="primary" onClick={() => this.setState({ createRoleVisible: true })}>
-            绑定角色
+            {locale.bindingRoles}
           </Button>
         </div>
         <Table dataSource={roles.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
-          <Table.Column title="角色名" dataIndex="role" />
-          <Table.Column title="用户名" dataIndex="username" />
+          <Table.Column title={locale.role} dataIndex="role" />
+          <Table.Column title={locale.username} dataIndex="username" />
           <Table.Column
-            title="操作"
+            title={locale.operation}
             dataIndex="username"
             cell={(value, index, record) => (
               <>
@@ -85,8 +85,8 @@ class RolesManagement extends React.Component {
                   warning
                   onClick={() =>
                     Dialog.confirm({
-                      title: '确认',
-                      content: '是否要删除该角色？',
+                      title: locale.deleteRole,
+                      content: locale.deleteRoleTip,
                       onOk: () =>
                         deleteRole(record).then(() =>
                           this.setState({ pageNo: 1 }, () => this.getRoles())
@@ -94,7 +94,7 @@ class RolesManagement extends React.Component {
                     })
                   }
                 >
-                  刪除
+                  {locale.deleteRole}
                 </Button>
               </>
             )}

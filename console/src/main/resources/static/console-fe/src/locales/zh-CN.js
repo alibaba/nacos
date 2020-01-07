@@ -531,6 +531,24 @@ const I18N_CONF = {
     passwordError: '密码不能为空！',
     passwordPlaceholder: '请输入密码',
   },
+  RolesManagement: {
+    roleManagement: '角色管理',
+    bindingRoles: '绑定角色',
+    role: '角色名',
+    username: '用户名',
+    operation: '操作',
+    deleteRole: '删除',
+    deleteRoleTip: '是否要删除该角色？',
+  },
+  NewRole: {
+    bindingRoles: '绑定角色',
+    username: '用户名',
+    role: '角色名',
+    usernamePlaceholder: '请输入用户名',
+    rolePlaceholder: '请输入角色名',
+    usernameError: '用户名不能为空！',
+    roleError: '角色名不能为空!',
+  },
 };
 
 export default I18N_CONF;
