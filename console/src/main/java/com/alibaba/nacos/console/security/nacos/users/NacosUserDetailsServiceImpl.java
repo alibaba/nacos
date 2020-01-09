@@ -19,6 +19,7 @@ package com.alibaba.nacos.console.security.nacos.users;
 import com.alibaba.nacos.config.server.auth.UserPersistService;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.model.User;
+import com.alibaba.nacos.core.auth.AuthConfigs;
 import com.alibaba.nacos.core.utils.Loggers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -44,6 +45,9 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     @Autowired
     private UserPersistService userPersistService;
 
+    @Autowired
+    private AuthConfigs authConfigs;
+
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
@@ -66,6 +70,10 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         User user = userMap.get(username);
+        if (!authConfigs.isCachingEnabled()) {
+            user = userPersistService.findUserByUsername(username);
+        }
+
         if (user == null) {
             throw new UsernameNotFoundException(username);
         }
@@ -81,7 +89,15 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     }
 
     public User getUser(String username) {
-        return userMap.get(username);
+        User user = userMap.get(username);
+        if (!authConfigs.isCachingEnabled()) {
+            user = getUserFromDatabase(username);
+        }
+        return user;
+    }
+
+    public User getUserFromDatabase(String username) {
+        return userPersistService.findUserByUsername(username);
     }
 
     public void createUser(String username, String password) {

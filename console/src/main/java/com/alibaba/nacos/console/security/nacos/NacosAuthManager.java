@@ -16,6 +16,7 @@
 package com.alibaba.nacos.console.security.nacos;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.config.server.auth.RoleInfo;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.core.auth.AccessException;
@@ -34,6 +35,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 /**
  * Builtin access control entry of Nacos
@@ -74,10 +76,17 @@ public class NacosAuthManager implements AuthManager {
         Authentication authentication = tokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String userId = authentication.getName();
+        String username = authentication.getName();
         NacosUser user = new NacosUser();
-        user.setUserName(userId);
+        user.setUserName(username);
         user.setToken(token);
+        List<RoleInfo> roleInfoList = roleService.getRoles(username);
+        for (RoleInfo roleInfo : roleInfoList) {
+            if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                user.setGlobalAdmin(true);
+                break;
+            }
+        }
         return user;
     }
 
