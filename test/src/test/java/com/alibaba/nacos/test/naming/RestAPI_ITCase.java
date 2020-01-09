@@ -19,8 +19,8 @@ import java.net.URL;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.nacos.naming.NamingApp;
 
+import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.test.base.Params;
 import org.junit.After;
 import org.junit.Assert;

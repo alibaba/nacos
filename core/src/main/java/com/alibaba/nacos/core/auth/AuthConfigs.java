@@ -74,6 +74,11 @@ public class AuthConfigs {
             .getProperty("nacos.core.auth.enabled", "false"));
     }
 
+    public boolean isCachingEnabled() {
+        return BooleanUtils.toBoolean(reloadableConfigs.getProperties()
+            .getProperty("nacos.core.auth.caching.enabled", "true"));
+    }
+
     @Bean
     public FilterRegistrationBean authFilterRegistration() {
         FilterRegistrationBean<AuthFilter> registration = new FilterRegistrationBean<>();

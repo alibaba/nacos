@@ -76,7 +76,7 @@ public class UserController {
     @PostMapping
     public Object createUser(@RequestParam String username, @RequestParam String password) {
 
-        User user = userDetailsService.getUser(username);
+        User user = userDetailsService.getUserFromDatabase(username);
         if (user != null) {
             throw new IllegalArgumentException("user '" + username + "' already exist!");
         }
@@ -112,7 +112,7 @@ public class UserController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Object updateUser(@RequestParam String username, @RequestParam String newPassword) {
 
-        User user = userDetailsService.getUser(username);
+        User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
         }
@@ -162,6 +162,7 @@ public class UserController {
             JSONObject result = new JSONObject();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, authConfigs.getTokenValidityInSeconds());
+            result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
             return result;
         }
 
@@ -196,8 +197,8 @@ public class UserController {
         RestResult<String> rr = new RestResult<String>();
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String username = ((UserDetails) principal).getUsername();
-        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-        String password = userDetails.getPassword();
+        User user = userDetailsService.getUserFromDatabase(username);
+        String password = user.getPassword();
 
         // TODO: throw out more fine grained exceptions
         try {

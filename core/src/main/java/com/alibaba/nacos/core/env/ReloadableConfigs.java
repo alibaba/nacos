@@ -35,13 +35,12 @@ import java.util.Properties;
  * @author nkorange
  * @since 1.2.0
  */
-@ConditionalOnProperty(name = "spring.config.location", matchIfMissing = false)
 @Component
 public class ReloadableConfigs {
 
     private Properties properties;
 
-    @Value("${spring.config.location}")
+    @Value("${spring.config.location:}")
     private String path;
 
     private static final String FILE_PREFIX = "file:";

@@ -27,12 +27,22 @@ public class NacosUser extends User {
 
     private String token;
 
+    private boolean globalAdmin = false;
+
     public String getToken() {
         return token;
     }
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public boolean isGlobalAdmin() {
+        return globalAdmin;
+    }
+
+    public void setGlobalAdmin(boolean globalAdmin) {
+        this.globalAdmin = globalAdmin;
     }
 
     @Override
