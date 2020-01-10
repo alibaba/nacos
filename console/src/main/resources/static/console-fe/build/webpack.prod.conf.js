@@ -42,8 +42,7 @@ module.exports = Object.assign({}, base, {
   plugins: [
     new CleanWebpackPlugin({
       cleanOnceBeforeBuildPatterns:[
-        path.resolve(__dirname, '../dist'),
-        path.resolve(__dirname, '../')
+        path.resolve(__dirname, '../dist/**'),
       ]
     }),
     ...base.plugins,
