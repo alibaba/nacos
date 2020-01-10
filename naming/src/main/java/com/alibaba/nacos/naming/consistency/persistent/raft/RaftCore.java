@@ -293,7 +293,7 @@ public class RaftCore {
 
         local.resetLeaderDue();
 
-        // if data should be persistent, usually this is always true:
+        // if data should be persisted, usually this is true:
         if (KeyBuilder.matchPersistentKey(datum.key)) {
             raftStore.write(datum);
         }

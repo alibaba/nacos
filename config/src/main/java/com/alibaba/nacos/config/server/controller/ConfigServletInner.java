@@ -130,6 +130,8 @@ public class ConfigServletInner {
                             isBeta = true;
                         }
                     }
+                    String configType = cacheItem.getType();
+                    response.setHeader("Config-Type", (null != configType) ? configType : "text");
                 }
                 File file = null;
                 ConfigInfoBase configInfoBase = null;

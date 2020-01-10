@@ -57,9 +57,10 @@ public class ConfigService {
     /**
      * 保存配置文件，并缓存md5.
      */
-    static public boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs) {
+    static public boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs, String type) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        makeSure(groupKey);
+        CacheItem ci = makeSure(groupKey);
+        ci.setType(type);
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
 

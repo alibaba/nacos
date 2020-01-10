@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.Config;
-import com.alibaba.nacos.test.naming.Params;
+import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
