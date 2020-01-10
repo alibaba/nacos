@@ -16,7 +16,7 @@ const base = require('./webpack.base.conf');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 
 const [cssLoader]  = base.module.rules;
 cssLoader.use.push({
@@ -40,8 +40,11 @@ module.exports = Object.assign({}, base, {
     ],
   },
   plugins: [
-    new CleanWebpackPlugin(path.resolve(__dirname, '../dist'), {
-      root: path.resolve(__dirname, '../'),
+    new CleanWebpackPlugin({
+      cleanOnceBeforeBuildPatterns:[
+        path.resolve(__dirname, '../dist'),
+        path.resolve(__dirname, '../')
+      ]
     }),
     ...base.plugins,
     new MiniCssExtractPlugin({

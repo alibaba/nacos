@@ -1,17 +1,41 @@
+const configurationMenu = {
+  key: 'configurationManagementVirtual',
+  children: [
+    {
+      key: 'configurationManagement',
+      url: '/configurationManagement',
+    },
+    {
+      key: 'listeningToQuery',
+      url: '/listeningToQuery',
+    },
+  ],
+};
+/**
+ * 权限控制相关
+ */
+const authorityControlMenu = {
+  key: 'authorityControl',
+  children: [
+    {
+      key: 'userList',
+      url: '/userManagement',
+    },
+    {
+      key: 'roleManagement',
+      url: '/rolesManagement',
+    },
+    {
+      key: 'privilegeManagement',
+      url: '/permissionsManagement',
+    },
+  ],
+};
+
 export default function(model) {
-  const configurationMenu = {
-    key: 'configurationManagementVirtual',
-    children: [
-      {
-        key: 'configurationManagement',
-        url: '/configurationManagement',
-      },
-      {
-        key: 'listeningToQuery',
-        url: '/listeningToQuery',
-      },
-    ],
-  };
+  const { token } = localStorage;
+  const { globalAdmin } = JSON.parse(token || '{}');
+
   return [
     model === 'naming' ? undefined : configurationMenu,
     {
@@ -36,23 +60,7 @@ export default function(model) {
         },
       ],
     },
-    {
-      key: 'authorityControl',
-      children: [
-        {
-          key: 'userList',
-          url: '/userManagement',
-        },
-        {
-          key: 'roleManagement',
-          url: '/rolesManagement',
-        },
-        {
-          key: 'privilegeManagement',
-          url: '/permissionsManagement',
-        },
-      ],
-    },
+    globalAdmin ? authorityControlMenu : undefined,
     {
       key: 'namespace',
       url: '/namespace',
