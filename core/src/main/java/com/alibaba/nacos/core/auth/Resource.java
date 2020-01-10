@@ -13,30 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.test.naming;
+package com.alibaba.nacos.core.auth;
 
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+
+import com.alibaba.fastjson.JSON;
 
 /**
+ * Resource used in authorization.
+ *
  * @author nkorange
+ * @since 1.2.0
  */
-public class Params {
+public class Resource {
 
-    private MultiValueMap<String, String> paramMap;
+    public static final String SPLITTER = ":";
+    public static final String ANY = "*";
 
-    public static Params newParams() {
-        Params params = new Params();
-        params.paramMap = new LinkedMultiValueMap<String, String>();
-        return params;
+    /**
+     * The unique key of resource.
+     */
+    private String key;
+
+    public Resource(String key) {
+        this.key = key;
     }
 
-    public Params appendParam(String name, String value) {
-        this.paramMap.add(name, value);
-        return this;
+    public String getKey() {
+        return key;
     }
 
-    public MultiValueMap<String, String> done() {
-        return paramMap;
+    public String parseName() {
+        return key.substring(0, key.lastIndexOf(SPLITTER));
+    }
+
+    @Override
+    public String toString() {
+        return JSON.toJSONString(this);
     }
 }

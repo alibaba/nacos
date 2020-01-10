@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.controller;
 
+import com.alibaba.nacos.config.server.auth.ConfigResourceParser;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.*;
@@ -27,6 +28,8 @@ import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
+import com.alibaba.nacos.core.auth.ActionTypes;
+import com.alibaba.nacos.core.auth.Secured;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -88,6 +91,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @PostMapping
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
                                  @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                                  @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
@@ -164,6 +168,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @GetMapping
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
                           @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                           @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY)
@@ -184,6 +189,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @GetMapping(params = "show=all")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ConfigAllInfo detailConfigInfo(HttpServletRequest request, HttpServletResponse response,
                                           @RequestParam("dataId") String dataId, @RequestParam("group") String group,
                                           @RequestParam(value = "tenant", required = false,
@@ -200,6 +206,7 @@ public class ConfigController {
      * @throws NacosException
      */
     @DeleteMapping
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public Boolean deleteConfig(HttpServletRequest request, HttpServletResponse response,
                                 @RequestParam("dataId") String dataId, //
                                 @RequestParam("group") String group, //
@@ -229,6 +236,7 @@ public class ConfigController {
      * @Param [request, response, dataId, group, tenant, tag]
      */
     @DeleteMapping(params = "delType=ids")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, HttpServletResponse response,
                                              @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
@@ -247,6 +255,7 @@ public class ConfigController {
     }
 
     @GetMapping("/catalog")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public RestResult<ConfigAdvanceInfo> getConfigAdvanceInfo(@RequestParam("dataId") String dataId,
                                                               @RequestParam("group") String group,
                                                               @RequestParam(value = "tenant", required = false,
@@ -262,6 +271,7 @@ public class ConfigController {
      * 比较MD5
      */
     @PostMapping("/listener")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public void listener(HttpServletRequest request, HttpServletResponse response)
         throws ServletException, IOException {
         request.setAttribute("org.apache.catalina.ASYNC_SUPPORTED", true);
@@ -287,6 +297,7 @@ public class ConfigController {
      * 订阅改配置的客户端信息
      */
     @GetMapping("/listener")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public GroupkeyListenserStatus getListeners(@RequestParam("dataId") String dataId,
                                                 @RequestParam("group") String group,
                                                 @RequestParam(value = "tenant", required = false) String tenant,
@@ -306,6 +317,7 @@ public class ConfigController {
      * 查询配置信息，返回JSON格式。
      */
     @GetMapping(params = "search=accurate")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId,
                                          @RequestParam("group") String group,
                                          @RequestParam(value = "appName", required = false) String appName,
@@ -335,6 +347,7 @@ public class ConfigController {
      * 模糊查询配置信息。不允许只根据内容模糊查询，即dataId和group都为NULL，但content不是NULL。这种情况下，返回所有配置。
      */
     @GetMapping(params = "search=blur")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
                                               @RequestParam("group") String group,
                                               @RequestParam(value = "appName", required = false) String appName,
@@ -361,6 +374,7 @@ public class ConfigController {
     }
 
     @DeleteMapping(params = "beta=true")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
                                         @RequestParam(value = "group") String group,
                                         @RequestParam(value = "tenant", required = false,
@@ -383,6 +397,7 @@ public class ConfigController {
     }
 
     @GetMapping(params = "beta=true")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public RestResult<ConfigInfo4Beta> queryBeta(@RequestParam(value = "dataId") String dataId,
                                                  @RequestParam(value = "group") String group,
                                                  @RequestParam(value = "tenant", required = false,
@@ -403,6 +418,7 @@ public class ConfigController {
     }
 
     @GetMapping(params = "export=true")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public ResponseEntity<byte[]> exportConfig(@RequestParam(value = "dataId", required = false) String dataId,
                                                @RequestParam(value = "group", required = false) String group,
                                                @RequestParam(value = "appName", required = false) String appName,
@@ -442,6 +458,7 @@ public class ConfigController {
     }
 
     @PostMapping(params = "import=true")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> importAndPublishConfig(HttpServletRequest request,
                                                                   @RequestParam(value = "src_user", required = false) String srcUser,
                                                                   @RequestParam(value = "namespace", required = false) String namespace,
@@ -526,6 +543,7 @@ public class ConfigController {
     }
 
     @GetMapping(params = "clone=true")
+    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
                                                        @RequestParam(value = "src_user", required = false) String srcUser,
                                                        @RequestParam(value = "tenant", required = true) String namespace,

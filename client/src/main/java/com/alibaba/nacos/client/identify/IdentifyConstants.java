@@ -20,7 +20,7 @@ package com.alibaba.nacos.client.identify;
  *
  * @author Nacos
  */
-public class Constants {
+public class IdentifyConstants {
     public static final String ACCESS_KEY = "accessKey";
 
     public static final String SECRET_KEY = "secretKey";
