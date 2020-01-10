@@ -13,24 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.alibaba.nacos.console.config;
 
 
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-/**
- * Spring cors config
- *
- * @author yshen
- */
-@Configuration
-public class CorsConfig {
+import javax.annotation.PostConstruct;
 
+/**
+ * @author yshen
+ * @author nkorange
+ * @since 1.2.0
+ */
+@Component
+@EnableScheduling
+@PropertySource("/application.properties")
+public class ConsoleConfig {
+
+    @Autowired
+    private ControllerMethodsCache methodsCache;
+
+    @PostConstruct
+    public void init() {
+        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
+        methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
+        methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
+    }
 
     @Bean
     public CorsFilter corsFilter() {
@@ -44,5 +60,4 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
-
 }

@@ -234,6 +234,10 @@ public class ServerListManager {
         isStarted = true;
     }
 
+    public List<String> getServerUrls() {
+        return serverUrls;
+    }
+
     Iterator<String> iterator() {
         if (serverUrls.isEmpty()) {
             LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);

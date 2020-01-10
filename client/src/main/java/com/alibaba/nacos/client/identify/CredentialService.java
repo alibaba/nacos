@@ -53,7 +53,7 @@ public final class CredentialService implements SpasCredentialLoader {
     }
 
     public static CredentialService getInstance(String appName) {
-        String key = appName != null ? appName : Constants.NO_APP_NAME;
+        String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
         CredentialService instance = instances.get(key);
         if (instance == null) {
             instance = new CredentialService(appName);
@@ -70,7 +70,7 @@ public final class CredentialService implements SpasCredentialLoader {
     }
 
     public static CredentialService freeInstance(String appName) {
-        String key = appName != null ? appName : Constants.NO_APP_NAME;
+        String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
         CredentialService instance = instances.remove(key);
         if (instance != null) {
             instance.free();

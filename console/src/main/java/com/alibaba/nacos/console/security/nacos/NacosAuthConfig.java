@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.console.config;
+package com.alibaba.nacos.console.security.nacos;
+
 
 import com.alibaba.nacos.console.filter.JwtAuthenticationTokenFilter;
-import com.alibaba.nacos.console.security.CustomUserDetailsServiceImpl;
-import com.alibaba.nacos.console.security.JwtAuthenticationEntryPoint;
-import com.alibaba.nacos.console.utils.JwtTokenUtils;
+import com.alibaba.nacos.console.security.nacos.users.NacosUserDetailsServiceImpl;
+import com.alibaba.nacos.core.auth.AuthConfigs;
+import com.alibaba.nacos.core.auth.AuthSystemTypes;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,25 +45,31 @@ import org.springframework.web.cors.CorsUtils;
  */
 @Configuration
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
 
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
-    public static final String AUTHORIZATION_TOKEN = "access_token";
-
     public static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
 
-    @Autowired
-    private CustomUserDetailsServiceImpl userDetailsService;
+    public static final String LOGIN_ENTRY_POINT = "/v1/auth/login";
 
-    @Autowired
-    private JwtAuthenticationEntryPoint unauthorizedHandler;
+    public static final String TOKEN_BASED_AUTH_ENTRY_POINT = "/v1/auth/**";
 
-    @Autowired
-    private JwtTokenUtils tokenProvider;
+    public static final String TOKEN_PREFIX = "Bearer ";
+
+    public static final String CONSOLE_RESOURCE_NAME_PREFIX = "console/";
 
     @Autowired
     private Environment env;
+
+    @Autowired
+    private JwtTokenManager tokenProvider;
+
+    @Autowired
+    private AuthConfigs authConfigs;
+
+    @Autowired
+    private NacosUserDetailsServiceImpl userDetailsService;
 
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
@@ -70,37 +78,62 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
+    public void configure(WebSecurity web) {
+
+        String ignoreURLs = null;
+//
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            ignoreURLs = "/**";
+        }
+//
+        if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
+            ignoreURLs = env.getProperty("nacos.security.ignore.urls", "/**");
+        }
+
+        if (StringUtils.isNotBlank(ignoreURLs)) {
+            for (String ignoreURL : ignoreURLs.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
+                web.ignoring().antMatchers(ignoreURL.trim());
+            }
+        }
+
+    }
+
+    @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
     }
 
     @Override
-    public void configure(WebSecurity web) {
-        String ignoreURLs = env.getProperty("nacos.security.ignore.urls", "/**");
-        for (String ignoreURL : ignoreURLs.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
-            web.ignoring().antMatchers(ignoreURL.trim());
-        }
-    }
-
-    @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
-            //open cors
-            .cors().and()
-            .authorizeRequests()
-            .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-            .anyRequest().authenticated().and()
-            // custom token authorize exception handler
-            .exceptionHandling()
-            .authenticationEntryPoint(unauthorizedHandler).and()
-            // since we use jwt, session is not necessary
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-            // since we use jwt, csrf is not necessary
-            .csrf().disable();
-        http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
 
-        // disable cache
-        http.headers().cacheControl();
+        if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
+            http
+
+                .csrf().disable()
+                .cors() // We don't need CSRF for JWT based authentication
+
+                .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+
+                .and()
+                .authorizeRequests()
+                .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+                .antMatchers(LOGIN_ENTRY_POINT).permitAll()
+
+                .and()
+                .authorizeRequests()
+                .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated()
+
+                .and()
+                .exceptionHandling()
+                .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
+
+            // disable cache
+            http.headers().cacheControl();
+
+            http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class);
+        }
     }
 
     @Bean
