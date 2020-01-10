@@ -13,22 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server;
+package com.alibaba.nacos.client.config.listener.impl;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import com.alibaba.nacos.api.config.listener.AbstractListener;
+import com.alibaba.nacos.api.config.ConfigChangeEvent;
 
 /**
- * Config main
+ * AbstractConfigChangeListener
  *
- * @author Nacos
+ * @author rushsky518
  */
-@EnableScheduling
-@SpringBootApplication
-public class Config {
+public abstract class AbstractConfigChangeListener extends AbstractListener {
+    /**
+     * handle config change
+     * @param event
+     */
+    public abstract void receiveConfigChange(final ConfigChangeEvent event);
 
-    public static void main(String[] args) {
-        SpringApplication.run(Config.class, args);
-    }
+    @Override
+    public void receiveConfigInfo(final String configInfo) {}
 }
+

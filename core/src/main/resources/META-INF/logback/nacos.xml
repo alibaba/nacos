@@ -7,6 +7,8 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <include resource="META-INF/logback/nacos-included.xml"/>
+    <include optional="true" resource="META-INF/logback/config-included.xml"/>
+    <include optional="true" resource="META-INF/logback/naming-included.xml"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

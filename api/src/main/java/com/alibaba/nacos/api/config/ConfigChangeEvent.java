@@ -13,22 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server;
+package com.alibaba.nacos.api.config;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import com.alibaba.nacos.api.config.ConfigChangeItem;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
- * Config main
+ * ConfigChangeEvent
  *
- * @author Nacos
+ * @author rushsky518
  */
-@EnableScheduling
-@SpringBootApplication
-public class Config {
+public class ConfigChangeEvent {
+    private Map<String, ConfigChangeItem> data;
 
-    public static void main(String[] args) {
-        SpringApplication.run(Config.class, args);
+    public ConfigChangeEvent(Map<String, ConfigChangeItem> data) {
+        this.data = data;
     }
+
+    public ConfigChangeItem getChangeItem(String key) {
+        return data.get(key);
+    }
+
+    public Collection<ConfigChangeItem> getChangeItems() {
+        return data.values();
+    }
+
 }
+
