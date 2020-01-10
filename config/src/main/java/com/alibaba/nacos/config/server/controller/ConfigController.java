@@ -17,6 +17,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.config.server.controller.parameters.SameNamespaceCloneConfigBean;
 import com.alibaba.nacos.config.server.model.*;
 import com.alibaba.nacos.config.server.result.ResultBuilder;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
@@ -46,6 +47,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -66,7 +68,7 @@ public class ConfigController {
 
     private static final String EXPORT_CONFIG_FILE_NAME_EXT = ".zip";
 
-    private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
+    private static final String EXPORT_CONFIG_FILE_NAME_DATE_FORMAT = "yyyyMMddHHmmss";
 
     private final ConfigServletInner inner;
 
@@ -525,14 +527,20 @@ public class ConfigController {
         return ResultBuilder.buildSuccessResult("导入成功", saveResult);
     }
 
-    @GetMapping(params = "clone=true")
+    @PostMapping(params = "clone=true")
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
                                                        @RequestParam(value = "src_user", required = false) String srcUser,
                                                        @RequestParam(value = "tenant", required = true) String namespace,
-                                                       @RequestParam(value = "ids", required = true) List<Long> ids,
+                                                       @RequestBody(required = true)
+                                                               List<SameNamespaceCloneConfigBean> configBeansList,
                                                        @RequestParam(value = "policy", defaultValue = "ABORT")
                                                            SameConfigPolicy policy) throws NacosException {
         Map<String, Object> failedData = new HashMap<>(4);
+        if(CollectionUtils.isEmpty(configBeansList)){
+            failedData.put("succCount", 0);
+            return ResultBuilder.buildResult(ResultCodeEnum.NO_SELECTED_CONFIG, failedData);
+        }
+        configBeansList.removeAll(Collections.singleton(null));
 
         if (NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(namespace)) {
             namespace = "";
@@ -541,8 +549,14 @@ public class ConfigController {
             return ResultBuilder.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
 
-        ids.removeAll(Collections.singleton(null));
-        List<ConfigAllInfo> queryedDataList = persistService.findAllConfigInfo4Export(null, null, null, null, ids);
+        List<Long> idList = new ArrayList<>(configBeansList.size());
+        Map<Long, SameNamespaceCloneConfigBean> configBeansMap = configBeansList.stream()
+            .collect(Collectors.toMap(SameNamespaceCloneConfigBean::getCfgId, cfg -> {
+                idList.add(cfg.getCfgId());
+                return cfg;
+            },(k1, k2) -> k1));
+
+        List<ConfigAllInfo> queryedDataList = persistService.findAllConfigInfo4Export(null, null, null, null, idList);
 
         if (queryedDataList == null || queryedDataList.isEmpty()) {
             failedData.put("succCount", 0);
@@ -552,11 +566,12 @@ public class ConfigController {
         List<ConfigAllInfo> configInfoList4Clone = new ArrayList<>(queryedDataList.size());
 
         for (ConfigAllInfo ci : queryedDataList) {
+            SameNamespaceCloneConfigBean prarmBean = configBeansMap.get(ci.getId());
             ConfigAllInfo ci4save = new ConfigAllInfo();
             ci4save.setTenant(namespace);
             ci4save.setType(ci.getType());
-            ci4save.setGroup(ci.getGroup());
-            ci4save.setDataId(ci.getDataId());
+            ci4save.setGroup((prarmBean != null && StringUtils.isNotBlank(prarmBean.getGroup())) ? prarmBean.getGroup() : ci.getGroup());
+            ci4save.setDataId((prarmBean != null && StringUtils.isNotBlank(prarmBean.getDataId())) ? prarmBean.getDataId() : ci.getDataId());
             ci4save.setContent(ci.getContent());
             if (StringUtils.isNotBlank(ci.getAppName())) {
                 ci4save.setAppName(ci.getAppName());
@@ -580,7 +595,7 @@ public class ConfigController {
                 configInfo.getTenant(), requestIpApp, time.getTime(),
                 LOCAL_IP, ConfigTraceService.PERSISTENCE_EVENT_PUB, configInfo.getContent());
         }
-        return ResultBuilder.buildSuccessResult("导入成功", saveResult);
+        return ResultBuilder.buildSuccessResult("克隆成功", saveResult);
     }
 
 }
