@@ -92,6 +92,9 @@ public final class TaskManager implements TaskManagerMBean {
     @SuppressWarnings("PMD.AvoidManuallyCreateThreadRule")
     public TaskManager(String name) {
         this.name = name;
+        /**
+         * ProcessRunnable  init
+         */
         if (null != name && name.length() > 0) {
             this.processingThread = new Thread(new ProcessRunnable(), name);
         } else {
@@ -99,6 +102,9 @@ public final class TaskManager implements TaskManagerMBean {
         }
         this.processingThread.setDaemon(true);
         this.closed.set(false);
+        /**
+         * ProcessRunnable启动
+         */
         this.processingThread.start();
     }
 
@@ -176,7 +182,7 @@ public final class TaskManager implements TaskManagerMBean {
     }
 
     /**
-     *
+     * 处理任务
      */
     protected void process() {
         for (Map.Entry<String, AbstractTask> entry : this.tasks.entrySet()) {
@@ -186,6 +192,9 @@ public final class TaskManager implements TaskManagerMBean {
                 // 获取任务
                 task = entry.getValue();
                 if (null != task) {
+                    /**
+                     * 判断时间间隔  是否需要处理当前task
+                     */
                     if (!task.shouldProcess()) {
                         // 任务当前不需要被执行，直接跳过
                         continue;
@@ -200,6 +209,9 @@ public final class TaskManager implements TaskManagerMBean {
 
             if (null != task) {
                 // 获取任务处理器
+                /**
+                 * 如果没有执行处理器  则使用默认的处理器
+                 */
                 TaskProcessor processor = this.taskProcessors.get(entry.getKey());
                 if (null == processor) {
                     // 如果没有根据任务类型设置的处理器，使用默认处理器
@@ -209,6 +221,11 @@ public final class TaskManager implements TaskManagerMBean {
                     boolean result = false;
                     try {
                         // 处理任务
+                        /**
+                         * 处理任务
+                         * 处理任务
+                         * 处理任务
+                         */
                         result = processor.process(entry.getKey(), task);
                     } catch (Throwable t) {
                         log.error("task_fail", "处理task失败", t);

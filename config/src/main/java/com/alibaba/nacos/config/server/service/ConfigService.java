@@ -59,16 +59,28 @@ public class ConfigService {
      */
     static public boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        /**
+         * 存入缓存
+         */
         makeSure(groupKey);
+        /**
+         * 加写锁
+         */
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
 
+        /**
+         * 加锁失败
+         */
         if (lockResult < 0) {
             dumpLog.warn("[dump-error] write lock failed. {}", groupKey);
             return false;
         }
 
         try {
+            /**
+             * 比对缓存中的md5和数据库中的md5是否一致
+             */
             final String md5 = MD5.getInstance().getMD5String(content);
             if (md5.equals(ConfigService.getContentMd5(groupKey))) {
                 dumpLog.warn(
@@ -76,8 +88,16 @@ public class ConfigService {
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
+                /**
+                 * 集群模式或单机模式且使用了mysql
+                 * 保存配置信息到磁盘
+                 */
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
             }
+
+            /**
+             * 更新缓存
+             */
             updateMd5(groupKey, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
@@ -93,6 +113,9 @@ public class ConfigService {
             }
             return false;
         } finally {
+            /**
+             * 释放写锁
+             */
             releaseWriteLock(groupKey);
         }
     }
@@ -306,6 +329,9 @@ public class ConfigService {
      */
     static public boolean remove(String dataId, String group, String tenant) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        /**
+         * 加写锁
+         */
         final int lockResult = tryWriteLock(groupKey);
         /**
          *  数据不存在
@@ -323,10 +349,21 @@ public class ConfigService {
         }
 
         try {
+            /**
+             *
+             */
             if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
                 DiskUtil.removeConfigInfo(dataId, group, tenant);
             }
+
+            /**
+             * 清缓存
+             */
             CACHE.remove(groupKey);
+
+            /**
+             * 发布事件   通知监听
+             */
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey));
 
             return true;
@@ -406,8 +443,20 @@ public class ConfigService {
         }
     }
 
+    /**
+     * 更新缓存
+     * @param groupKey
+     * @param md5
+     * @param lastModifiedTs
+     */
     public static void updateMd5(String groupKey, String md5, long lastModifiedTs) {
+        /**
+         * 获取缓存中的CacheItem
+         */
         CacheItem cache = makeSure(groupKey);
+        /**
+         * md5不一致   则更新缓存  发布LocalDataChangeEvent，通知监听
+         */
         if (cache.md5 == null || !cache.md5.equals(md5)) {
             cache.md5 = md5;
             cache.lastModifiedTs = lastModifiedTs;
@@ -552,8 +601,17 @@ public class ConfigService {
      * @param groupKey
      * @return 零表示没有数据，失败。正数表示成功，负数表示加锁失败。
      */
+    /**
+     * 给数据加写锁。如果成功，后面必须调用{@link #releaseWriteLock(String)}，失败则不需要。
+     *
+     * @param groupKey
+     * @return 零表示没有数据，失败。正数表示成功，负数表示加锁失败。
+     */
     static int tryWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
+        /**
+         * tryWriteLock 给数据加锁
+         */
         int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryWriteLock() ? 1 : -1);
         if (result < 0) {
             defaultLog.warn("[write-lock] failed, {}, {}", result, groupKey);
@@ -561,6 +619,10 @@ public class ConfigService {
         return result;
     }
 
+    /**
+     * 释放写锁
+     * @param groupKey
+     */
     static void releaseWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
         if (null != groupItem) {
@@ -568,6 +630,11 @@ public class ConfigService {
         }
     }
 
+    /**
+     * 存入CACHE
+     * @param groupKey
+     * @return
+     */
     static CacheItem makeSure(final String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         if (null != item) {

@@ -58,6 +58,9 @@ public class DiskUtil {
      * 保存配置信息到磁盘
      */
     static public void saveToDisk(String dataId, String group, String tenant, String content) throws IOException {
+        /**
+         * C:\Users\Administrator\nacos\data\config-data\DEFAULT_GROUP\test
+         */
         File targetFile = targetFile(dataId, group, tenant);
         FileUtils.writeStringToFile(targetFile, content, Constants.ENCODE);
     }
@@ -83,6 +86,9 @@ public class DiskUtil {
      * 删除磁盘上的配置文件
      */
     static public void removeConfigInfo(String dataId, String group, String tenant) {
+        /**
+         * 删除文件
+         */
         FileUtils.deleteQuietly(targetFile(dataId, group, tenant));
     }
 

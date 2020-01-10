@@ -35,7 +35,14 @@ public class SimpleReadWriteLock {
         status--;
     }
 
+    /**
+     * 给数据写加锁
+     * @return
+     */
     public synchronized boolean tryWriteLock() {
+        /**
+         * 无锁
+         */
         if (!isFree()) {
             return false;
         } else {
@@ -44,6 +51,9 @@ public class SimpleReadWriteLock {
         }
     }
 
+    /**
+     * 释放写锁
+     */
     public synchronized void releaseWriteLock() {
         status = 0;
     }
@@ -52,10 +62,17 @@ public class SimpleReadWriteLock {
         return status < 0;
     }
 
+    /**
+     * 无锁
+     * @return
+     */
     private boolean isFree() {
         return status == 0;
     }
 
+    /**
+     * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
+     */
     /**
      * 零表示没有锁；负数表示加写锁；正数表示加读锁，数值表示读锁的个数。
      */

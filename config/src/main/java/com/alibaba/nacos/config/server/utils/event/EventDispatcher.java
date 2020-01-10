@@ -47,6 +47,9 @@ public class EventDispatcher {
 
         for (AbstractEventListener listener : getEntry(event.getClass()).listeners) {
             try {
+                /**
+                 * 通知监听
+                 */
                 listener.onEvent(event);
             } catch (Exception e) {
                 log.error(e.toString(), e);

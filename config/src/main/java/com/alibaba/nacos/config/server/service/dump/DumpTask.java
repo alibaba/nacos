@@ -130,6 +130,9 @@ class DumpProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
+        /**
+         * 获取task数据
+         */
         DumpTask dumpTask = (DumpTask)task;
         String[] pair = GroupKey2.parseKey(dumpTask.groupKey);
         String dataId = pair[0];
@@ -139,6 +142,10 @@ class DumpProcessor implements TaskProcessor {
         String handleIp = dumpTask.handleIp;
         boolean isBeta = dumpTask.isBeta;
         String tag = dumpTask.tag;
+
+        /**
+         * beta发布
+         */
         if (isBeta) {
             // beta发布，则dump数据，更新beta缓存
             ConfigInfo4Beta cf = dumpService.persistService.findConfigInfo4Beta(dataId, group, tenant);
@@ -159,8 +166,17 @@ class DumpProcessor implements TaskProcessor {
             }
             return result;
         } else {
+            /**
+             * tag为空
+             */
             if (StringUtils.isBlank(tag)) {
+                /**
+                 * 查询对应的配置信息   content
+                 */
                 ConfigInfo cf = dumpService.persistService.findConfigInfo(dataId, group, tenant);
+                /**
+                 * dataId为com.alibaba.nacos.metadata.aggrIDs
+                 */
                 if (dataId.equals(AggrWhitelist.AGGRIDS_METADATA)) {
                     if (null != cf) {
                         AggrWhitelist.load(cf.getContent());
@@ -169,6 +185,9 @@ class DumpProcessor implements TaskProcessor {
                     }
                 }
 
+                /**
+                 * dataId为com.alibaba.nacos.metadata.clientIpWhitelist
+                 */
                 if (dataId.equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {
                     if (null != cf) {
                         ClientIpWhiteList.load(cf.getContent());
@@ -177,6 +196,9 @@ class DumpProcessor implements TaskProcessor {
                     }
                 }
 
+                /**
+                 * dataId为com.alibaba.nacos.meta.switch
+                 */
                 if (dataId.equals(SwitchService.SWITCH_META_DATAID)) {
                     if (null != cf) {
                         SwitchService.load(cf.getContent());
@@ -187,14 +209,23 @@ class DumpProcessor implements TaskProcessor {
 
                 boolean result;
                 if (null != cf) {
+                    /**
+                     * 保存配置文件  通知监听
+                     */
                     result = ConfigService.dump(dataId, group, tenant, cf.getContent(), lastModified);
 
                     if (result) {
+                        /**
+                         * 更新成功则输出日志
+                         */
                         ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
                             ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,
                             cf.getContent().length());
                     }
                 } else {
+                    /**
+                     * 删除配置文件
+                     */
                     result = ConfigService.remove(dataId, group, tenant);
 
                     if (result) {
@@ -204,6 +235,9 @@ class DumpProcessor implements TaskProcessor {
                 }
                 return result;
             } else {
+                /**
+                 * tag不为空
+                 */
                 ConfigInfo4Tag cf = dumpService.persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                 //
                 boolean result;
