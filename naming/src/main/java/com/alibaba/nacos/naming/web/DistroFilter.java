@@ -78,7 +78,6 @@ public class DistroFilter implements Filter {
             if (StringUtils.isBlank(serviceName)) {
                 serviceName = req.getParameter("dom");
             }
-            serviceName = serviceName.trim();
             Method method = filterBase.getMethod(req.getMethod(), path);
 
             if (method == null) {
