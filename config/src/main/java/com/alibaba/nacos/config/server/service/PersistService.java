@@ -3237,36 +3237,6 @@ public class PersistService {
         }
     }
 
-    public User findUserByUsername(String username) {
-        String sql = "SELECT username,password FROM users WHERE username=? ";
-        try {
-            return this.jt.queryForObject(sql, new Object[]{username}, USER_ROW_MAPPER);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        } catch (EmptyResultDataAccessException e) {
-            return null;
-        } catch (Exception e) {
-            fatalLog.error("[db-other-error]" + e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 更新用户密码
-     */
-    public void updateUserPassword(String username, String password) {
-        try {
-            jt.update(
-                "UPDATE users SET password = ? WHERE username=?",
-                password, username);
-        } catch (CannotGetJdbcConnectionException e) {
-            fatalLog.error("[db-error] " + e.toString(), e);
-            throw e;
-        }
-    }
-
-
     private List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
         List<ConfigInfo> configs = new ArrayList<ConfigInfo>();
         for (Map<String, Object> map : list) {
@@ -3572,7 +3542,7 @@ public class PersistService {
 
     static final TenantInfoRowMapper TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
 
-    static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
+    protected static final UserRowMapper USER_ROW_MAPPER = new UserRowMapper();
 
     static final ConfigInfoWrapperRowMapper CONFIG_INFO_WRAPPER_ROW_MAPPER = new ConfigInfoWrapperRowMapper();
 
@@ -3605,7 +3575,7 @@ public class PersistService {
 
     private static String PATTERN_STR = "*";
     private final static int QUERY_LIMIT_SIZE = 50;
-    private JdbcTemplate jt;
-    private TransactionTemplate tjt;
+    protected JdbcTemplate jt;
+    protected TransactionTemplate tjt;
 
 }
