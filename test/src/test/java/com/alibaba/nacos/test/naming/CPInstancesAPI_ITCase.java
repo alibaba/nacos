@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.naming.NamingApp;
 
+import com.alibaba.nacos.test.base.Params;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
