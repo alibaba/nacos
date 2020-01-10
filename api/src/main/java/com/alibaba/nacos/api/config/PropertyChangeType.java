@@ -1,7 +1,7 @@
 /*
  * Copyright 1999-2018 Alibaba Group Holding Ltd.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0  = the "License"");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+package com.alibaba.nacos.api.config;
 
 /**
- * Config main
+ * Property Change Type
  *
- * @author Nacos
+ * @author rushsky518
  */
-@EnableScheduling
-@SpringBootApplication
-public class Config {
-
-    public static void main(String[] args) {
-        SpringApplication.run(Config.class, args);
-    }
+public enum PropertyChangeType {
+    /** add */
+    ADDED,
+    /** modified */
+    MODIFIED,
+    /** deleted */
+    DELETED
 }

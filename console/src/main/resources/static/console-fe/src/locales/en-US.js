@@ -317,6 +317,7 @@ const I18N_CONF = {
     delSelectedAlertTitle: 'Delete config',
     delSelectedAlertContent: 'please select the configuration to delete',
     delSuccessMsg: 'delete successful',
+    cloneEditableTitle: 'Modify Data Id and Group (optional)',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
