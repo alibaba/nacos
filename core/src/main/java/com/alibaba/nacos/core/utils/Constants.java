@@ -58,4 +58,6 @@ public interface Constants {
     String SYSTEM_PREFER_HOSTNAME_OVER_IP = "nacos.preferHostnameOverIp";
     String WEB_CONTEXT_PATH = "server.servlet.context-path";
     String COMMA_DIVISION = ",";
+
+    String NACOS_SERVER_HEADER = "Nacos-Server";
 }

@@ -419,10 +419,7 @@ public class HttpClient {
             inputStream = new GZIPInputStream(inputStream);
         }
 
-        HttpResult result = new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
-        inputStream.close();
-
-        return result;
+        return new HttpResult(respCode, IoUtils.toString(inputStream, getCharset(conn)), respHeaders);
     }
 
     private static String getCharset(HttpURLConnection conn) {
