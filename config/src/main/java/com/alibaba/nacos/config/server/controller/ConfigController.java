@@ -114,6 +114,14 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", content);
         ParamUtils.checkParam(tag);
 
+        //配置回滚时未接收到 type ,以免导致回滚后 type 字段值丢失
+        if (type == null) {
+            ConfigAdvanceInfo configAdvanceInfoTemp = persistService.findConfigAdvanceInfo(dataId, group, tenant);
+            if (configAdvanceInfoTemp != null) {
+                type = configAdvanceInfoTemp.getType();
+            }
+        }
+
         Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(10);
         if (configTags != null) {
             configAdvanceInfo.put("config_tags", configTags);
