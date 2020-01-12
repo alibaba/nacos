@@ -62,6 +62,8 @@ public class Constants {
 
     public static final String CONFIG_VERSION = "Config-Version";
 
+    public static final String CONFIG_TYPE = "Config-Type";
+
     public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
     public static final String SPACING_INTERVAL = "client-spacing-interval";

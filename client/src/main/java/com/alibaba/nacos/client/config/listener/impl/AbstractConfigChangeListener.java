@@ -13,33 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.client.config.listener.impl;
+
+import com.alibaba.nacos.api.config.listener.AbstractListener;
+import com.alibaba.nacos.api.config.ConfigChangeEvent;
 
 /**
- * Role Info
+ * AbstractConfigChangeListener
  *
- * @author nkorange
- * @since 1.2.0
+ * @author rushsky518
  */
-public class RoleInfo {
+public abstract class AbstractConfigChangeListener extends AbstractListener {
+    /**
+     * handle config change
+     * @param event
+     */
+    public abstract void receiveConfigChange(final ConfigChangeEvent event);
 
-    private String role;
-
-    private String username;
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    @Override
+    public void receiveConfigInfo(final String configInfo) {}
 }
+

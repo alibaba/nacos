@@ -311,6 +311,7 @@ const I18N_CONF = {
     delSelectedAlertTitle: '配置删除',
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
+    cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
   },
   NewConfig: {
     newListingMain: '新建配置',

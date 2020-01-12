@@ -13,33 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.config.server.auth;
+package com.alibaba.nacos.api.config;
+
+import com.alibaba.nacos.api.config.ConfigChangeItem;
+
+import java.util.Collection;
+import java.util.Map;
 
 /**
- * Role Info
+ * ConfigChangeEvent
  *
- * @author nkorange
- * @since 1.2.0
+ * @author rushsky518
  */
-public class RoleInfo {
+public class ConfigChangeEvent {
+    private Map<String, ConfigChangeItem> data;
 
-    private String role;
-
-    private String username;
-
-    public String getRole() {
-        return role;
+    public ConfigChangeEvent(Map<String, ConfigChangeItem> data) {
+        this.data = data;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public ConfigChangeItem getChangeItem(String key) {
+        return data.get(key);
     }
 
-    public String getUsername() {
-        return username;
+    public Collection<ConfigChangeItem> getChangeItems() {
+        return data.values();
     }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
 }
+
