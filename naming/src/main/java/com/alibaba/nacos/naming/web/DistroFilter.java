@@ -83,7 +83,7 @@ public class DistroFilter implements Filter {
             if (StringUtils.isNotBlank(serviceName)) {
                 serviceName = serviceName.trim();
             }
-            Method method = filterBase.getMethod(req.getMethod(), path);
+            Method method = controllerMethodsCache.getMethod(req.getMethod(), path);
 
             if (method == null) {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
