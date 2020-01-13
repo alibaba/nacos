@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.test.naming;
+package com.alibaba.nacos.core.utils;
 
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
+import org.apache.commons.lang3.StringUtils;
+
 
 /**
+ * Common methods for exception
+ *
  * @author nkorange
+ * @since 1.2.0
  */
-public class Params {
+public class ExceptionUtil {
 
-    private MultiValueMap<String, String> paramMap;
+    public static String getAllExceptionMsg(Throwable e) {
+        Throwable cause = e;
+        StringBuilder strBuilder = new StringBuilder();
 
-    public static Params newParams() {
-        Params params = new Params();
-        params.paramMap = new LinkedMultiValueMap<String, String>();
-        return params;
-    }
+        while (cause != null && !StringUtils.isEmpty(cause.getMessage())) {
+            strBuilder.append("caused: ").append(cause.getMessage()).append(";");
+            cause = cause.getCause();
+        }
 
-    public Params appendParam(String name, String value) {
-        this.paramMap.add(name, value);
-        return this;
-    }
-
-    public MultiValueMap<String, String> done() {
-        return paramMap;
+        return strBuilder.toString();
     }
 }

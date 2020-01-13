@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.console.security;
+package com.alibaba.nacos.console.security.nacos.users;
 
 import com.alibaba.nacos.config.server.model.User;
 import org.springframework.security.core.GrantedAuthority;
@@ -27,11 +27,11 @@ import java.util.Collection;
  *
  * @author wfnuser
  */
-public class CustomUserDetails implements UserDetails {
+public class NacosUserDetails implements UserDetails {
 
     private User user;
 
-    public CustomUserDetails(User user) {
+    public NacosUserDetails(User user) {
         this.user = user;
     }
 

@@ -13,64 +13,72 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.web;
+package com.alibaba.nacos.core.code;
 
-import com.alibaba.nacos.naming.controllers.*;
+
 import org.apache.commons.lang3.ArrayUtils;
+import org.reflections.Reflections;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Basic methods for filter to use
+ * Method cache
  *
  * @author nkorange
- * @since 1.0.0
+ * @since 1.2.0
  */
 @Component
-public class FilterBase {
+public class ControllerMethodsCache {
 
-    private ConcurrentMap<String, Method> methodCache = new
+    private ConcurrentMap<String, Method> methods = new
         ConcurrentHashMap<>();
 
-    @PostConstruct
-    public void init() {
-        initClassMethod(InstanceController.class);
-        initClassMethod(ServiceController.class);
-        initClassMethod(ClusterController.class);
-        initClassMethod(CatalogController.class);
-        initClassMethod(HealthController.class);
-        initClassMethod(RaftController.class);
-        initClassMethod(DistroController.class);
-        initClassMethod(OperatorController.class);
-        initClassMethod(ApiController.class);
+    public ConcurrentMap<String, Method> getMethods() {
+        return methods;
     }
 
     public Method getMethod(String httpMethod, String path) {
         String key = httpMethod + "-->" + path.replace("/nacos", "");
-        return methodCache.get(key);
+        return methods.get(key);
     }
 
-    private void initClassMethod(Class<?> clazz) {
+    public void initClassMethod(String packageName) {
+        Reflections reflections = new Reflections(packageName);
+        Set<Class<?>> classesList = reflections.getTypesAnnotatedWith(RequestMapping.class);
+
+        for (Class clazz : classesList) {
+            initClassMethod(clazz);
+        }
+    }
+
+    public void initClassMethod(Set<Class<?>> classesList) {
+        for (Class clazz : classesList) {
+            initClassMethod(clazz);
+        }
+    }
+
+    public void initClassMethod(Class<?> clazz) {
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
-        String classPath = requestMapping.value()[0];
-        for (Method method : clazz.getMethods()) {
-            if (!method.isAnnotationPresent(RequestMapping.class)) {
-                parseSubAnnotations(method, classPath);
-                continue;
-            }
-            requestMapping = method.getAnnotation(RequestMapping.class);
-            RequestMethod[] requestMethods = requestMapping.method();
-            if (requestMethods.length == 0) {
-                requestMethods = new RequestMethod[1];
-                requestMethods[0] = RequestMethod.GET;
-            }
-            for (String methodPath : requestMapping.value()) {
-                methodCache.put(requestMethods[0].name() + "-->" + classPath + methodPath, method);
+        for (String classPath : requestMapping.value()) {
+            for (Method method : clazz.getMethods()) {
+                if (!method.isAnnotationPresent(RequestMapping.class)) {
+                    parseSubAnnotations(method, classPath);
+                    continue;
+                }
+                requestMapping = method.getAnnotation(RequestMapping.class);
+                RequestMethod[] requestMethods = requestMapping.method();
+                if (requestMethods.length == 0) {
+                    requestMethods = new RequestMethod[1];
+                    requestMethods[0] = RequestMethod.GET;
+                }
+                for (String methodPath : requestMapping.value()) {
+                    methods.put(requestMethods[0].name() + "-->" + classPath + methodPath, method);
+                }
             }
         }
     }
@@ -107,11 +115,11 @@ public class FilterBase {
 
     private void put(RequestMethod requestMethod, String classPath, String[] requestPaths, Method method) {
         if (ArrayUtils.isEmpty(requestPaths)) {
-            methodCache.put(requestMethod.name() + "-->" + classPath, method);
+            methods.put(requestMethod.name() + "-->" + classPath, method);
             return;
         }
         for (String requestPath : requestPaths) {
-            methodCache.put(requestMethod.name() + "-->" + classPath + requestPath, method);
+            methods.put(requestMethod.name() + "-->" + classPath + requestPath, method);
         }
     }
 }

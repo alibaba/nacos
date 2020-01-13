@@ -72,6 +72,16 @@ public class Constants {
 
     public static final String CONFIG_CONTROLLER_PATH = BASE_PATH + "/configs";
 
+    public static final String TOKEN = "token";
+
+    public static final String ACCESS_TOKEN = "accessToken";
+
+    public static final String TOKEN_TTL = "tokenTtl";
+
+    public static final String GLOBAL_ADMIN = "globalAdmin";
+
+    public static final String TOKEN_REFRESH_WINDOW = "tokenRefreshWindow";
+
     /**
      * second
      */
@@ -170,5 +180,7 @@ public class Constants {
     public static final String DEFAULT_INSTANCE_ID_GENERATOR = "simple";
 
     public static final String SNOWFLAKE_INSTANCE_ID_GENERATOR = "snowflake";
+
+    public static final String HTTP_PREFIX = "http";
 
 }
