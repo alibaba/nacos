@@ -498,7 +498,9 @@ public class ClientWorker {
 
             long readTimeoutMs = timeout + (long) Math.round(timeout >> 1);
             /**
-             * 发起查询
+             * 监听配置 长轮询
+             * 监听配置 长轮询
+             * 监听配置 长轮询
              */
             HttpResult result = agent.httpPost(Constants.CONFIG_CONTROLLER_PATH + "/listener", headers, params,
                 agent.getEncode(), readTimeoutMs);

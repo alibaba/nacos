@@ -204,6 +204,13 @@ public class LongPollingService extends AbstractEventListener {
         return null;
     }
 
+    /**
+     * 客户端长轮询监听
+     * @param req
+     * @param rsp
+     * @param clientMd5Map
+     * @param probeRequestSize
+     */
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
                                      int probeRequestSize) {
 

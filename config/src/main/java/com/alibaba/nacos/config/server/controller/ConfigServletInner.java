@@ -70,6 +70,9 @@ public class ConfigServletInner {
         throws IOException {
 
         // 长轮询
+        /**
+         * 长轮询监听
+         */
         if (LongPollingService.isSupportLongPolling(request)) {
             longPollingService.addLongPollingClient(request, response, clientMd5Map, probeRequestSize);
             return HttpServletResponse.SC_OK + "";
