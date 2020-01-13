@@ -183,7 +183,7 @@ class ListeningToQuery extends React.Component {
       },
     ];
     return (
-      <div style={{ padding: 10 }}>
+      <>
         <Loading
           shape="flower"
           style={{ position: 'relative' }}
@@ -320,7 +320,7 @@ class ListeningToQuery extends React.Component {
             ,
           </div>
         </Loading>
-      </div>
+      </>
     );
   }
 }

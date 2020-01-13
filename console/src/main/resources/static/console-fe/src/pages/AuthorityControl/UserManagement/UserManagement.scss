@@ -10,7 +10,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@import '../authority.scss';
 
-.next-pagination-size-selector{
-  position: static !important;
+.users-pagination {
+  float: right;
+  margin-top: 20px;
 }

@@ -11,6 +11,6 @@
  * limitations under the License.
  */
 
-.next-pagination-size-selector{
-  position: static !important;
-}
+import RolesManagement from './RolesManagement';
+
+export default RolesManagement;

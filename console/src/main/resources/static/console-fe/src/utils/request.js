@@ -1,4 +1,5 @@
 import axios from 'axios';
+import qs from 'qs';
 import { Message } from '@alifd/next';
 // import { SUCCESS_RESULT_CODE } from '../constants';
 
@@ -6,6 +7,27 @@ const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
 
 const request = () => {
   const instance = axios.create();
+
+  instance.interceptors.request.use(
+    config => {
+      if (!config.params) {
+        config.params = {};
+      }
+      if (!config.url.includes('auth/users/login')) {
+        const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+        config.params.accessToken = accessToken;
+      }
+      if (['post', 'put'].includes(config.method)) {
+        config.data = qs.stringify(config.data);
+        if (!config.headers) {
+          config.headers = {};
+        }
+        config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+      }
+      return config;
+    },
+    error => Promise.reject(error)
+  );
 
   instance.interceptors.response.use(
     response => {
