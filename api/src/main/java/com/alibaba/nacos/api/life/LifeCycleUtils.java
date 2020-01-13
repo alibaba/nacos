@@ -21,13 +21,13 @@ package com.alibaba.nacos.api.life;
  */
 public final class LifeCycleUtils {
 
-	public static void invokeInit(LifeCycle lifeCycle) {
+	public static void invokeInit(LifeCycle lifeCycle) throws Exception {
 		if (lifeCycle != null) {
 			lifeCycle.init();
 		}
 	}
 
-	public static void invokeDestroy(LifeCycle lifeCycle) {
+	public static void invokeDestroy(LifeCycle lifeCycle) throws Exception {
 		if (lifeCycle != null) {
 			lifeCycle.destroy();
 		}
@@ -38,7 +38,11 @@ public final class LifeCycleUtils {
 			Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
 				@Override
 				public void run() {
-					invokeDestroy(lifeCycle);
+					try {
+						invokeDestroy(lifeCycle);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 			}));
 		}
