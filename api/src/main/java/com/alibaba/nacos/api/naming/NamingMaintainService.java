@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.life.LifeCycle;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
@@ -29,7 +30,7 @@ import java.util.Map;
  * @author liaochuntao
  * @since 1.0.1
  */
-public interface NamingMaintainService {
+public interface NamingMaintainService extends LifeCycle {
 
     /**
      * update instance info

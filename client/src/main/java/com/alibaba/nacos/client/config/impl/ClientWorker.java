@@ -30,6 +30,7 @@ import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.api.ThreadPoolManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -57,6 +58,78 @@ import static com.alibaba.nacos.api.common.Constants.CONFIG_TYPE;
 public class ClientWorker {
 
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
+
+    final ScheduledExecutorService executor;
+    final ScheduledExecutorService executorService;
+
+    /**
+     * groupKey -> cacheData
+     */
+    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
+            new HashMap<String, CacheData>());
+
+    private final HttpAgent agent;
+    private final ConfigFilterChainManager configFilterChainManager;
+    private boolean isHealthServer = true;
+    private long timeout;
+    private double currentLongingTaskCount = 0;
+    private int taskPenaltyTime;
+    private boolean enableRemoteSyncConfig = false;
+
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties, ThreadPoolManager threadPoolManager) {
+        this.agent = agent;
+        this.configFilterChainManager = configFilterChainManager;
+
+        // Initialize the timeout parameter
+
+        init(properties);
+
+        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        threadPoolManager.register(ClientWorker.class.getCanonicalName(), executor);
+        threadPoolManager.register(ClientWorker.class.getCanonicalName(), executorService);
+
+        executor.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    checkConfigInfo();
+                } catch (Throwable e) {
+                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
+                }
+            }
+        }, 1L, 10L, TimeUnit.MILLISECONDS);
+    }
+
+    private void init(Properties properties) {
+
+        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
+                Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
+
+        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
+
+        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+    }
+
 
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) {
         group = null2defaultGroup(group);
@@ -435,57 +508,6 @@ public class ClientWorker {
         return updateList;
     }
 
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
-        this.agent = agent;
-        this.configFilterChainManager = configFilterChainManager;
-
-        // Initialize the timeout parameter
-
-        init(properties);
-
-        executor = Executors.newScheduledThreadPool(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executorService = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.Worker.longPolling." + agent.getName());
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executor.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    checkConfigInfo();
-                } catch (Throwable e) {
-                    LOGGER.error("[" + agent.getName() + "] [sub-check] rotate check error", e);
-                }
-            }
-        }, 1L, 10L, TimeUnit.MILLISECONDS);
-    }
-
-    private void init(Properties properties) {
-
-        timeout = Math.max(NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT),
-            Constants.CONFIG_LONG_POLL_TIMEOUT), Constants.MIN_CONFIG_LONG_POLL_TIMEOUT);
-
-        taskPenaltyTime = NumberUtils.toInt(properties.getProperty(PropertyKeyConst.CONFIG_RETRY_TIME), Constants.CONFIG_RETRY_TIME);
-
-        enableRemoteSyncConfig = Boolean.parseBoolean(properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
-    }
-
     class LongPollingRunnable implements Runnable {
         private int taskId;
 
@@ -570,20 +592,4 @@ public class ClientWorker {
         this.isHealthServer = isHealthServer;
     }
 
-    final ScheduledExecutorService executor;
-    final ScheduledExecutorService executorService;
-
-    /**
-     * groupKey -> cacheData
-     */
-    private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<Map<String, CacheData>>(
-        new HashMap<String, CacheData>());
-
-    private final HttpAgent agent;
-    private final ConfigFilterChainManager configFilterChainManager;
-    private boolean isHealthServer = true;
-    private long timeout;
-    private double currentLongingTaskCount = 0;
-    private int taskPenaltyTime;
-    private boolean enableRemoteSyncConfig = false;
 }

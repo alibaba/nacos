@@ -39,6 +39,7 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.api.ThreadPoolManager;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -83,7 +84,10 @@ public class NamingProxy {
 
     private Properties properties;
 
-    public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
+    private ThreadPoolManager threadPoolManager;
+
+    public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties,
+            ThreadPoolManager threadPoolManager) {
 
         securityProxy = new SecurityProxy(properties);
         this.properties = properties;
@@ -96,6 +100,7 @@ public class NamingProxy {
                 this.nacosDomain = serverList;
             }
         }
+        this.threadPoolManager = threadPoolManager;
 
         initRefreshTask();
     }
@@ -111,6 +116,10 @@ public class NamingProxy {
                 return t;
             }
         });
+
+        // register threadPool into ThreadPoolManager
+
+        threadPoolManager.register(NamingProxy.class.getCanonicalName(), executorService);
 
         executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -153,7 +162,7 @@ public class NamingProxy {
             return list;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            NAMING_LOGGER.error("get server list from endpoint has error : {}", e);
         }
 
         return null;

@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.utils.*;
+import com.alibaba.nacos.api.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.slf4j.Logger;
 
@@ -29,9 +30,10 @@ import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
-
 
 /**
  * Serverlist Manager
@@ -44,120 +46,146 @@ public class ServerListManager {
     private static final String HTTPS = "https://";
     private static final String HTTP = "http://";
 
+    private ScheduledExecutorService scheduledExecutor;
+
+    private ThreadPoolManager threadPoolManager;
+
     public ServerListManager() {
-        isFixed = false;
-        isStarted = false;
-        name = DEFAULT_NAME;
+        this.isFixed = false;
+        this.isStarted = false;
+        this.name = DEFAULT_NAME;
     }
 
-    public ServerListManager(List<String> fixed) {
-        this(fixed, null);
+    public ServerListManager(List<String> fixed, ThreadPoolManager threadPoolManager) {
+        this(fixed, null, threadPoolManager);
     }
 
-    public ServerListManager(List<String> fixed, String namespace) {
-        isFixed = true;
-        isStarted = true;
+    public ServerListManager(List<String> fixed, String namespace,
+                             ThreadPoolManager threadPoolManager) {
+        this.isFixed = true;
+        this.isStarted = true;
+        this.threadPoolManager = threadPoolManager;
         List<String> serverAddrs = new ArrayList<String>();
         for (String serverAddr : fixed) {
             String[] serverAddrArr = serverAddr.split(":");
             if (serverAddrArr.length == 1) {
-                serverAddrs.add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                serverAddrs
+                        .add(serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
             } else {
                 serverAddrs.add(serverAddr);
             }
         }
-        serverUrls = new ArrayList<String>(serverAddrs);
+        this.serverUrls = new ArrayList<String>(serverAddrs);
         if (StringUtils.isBlank(namespace)) {
-            name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()]));
+            this.name = FIXED_NAME + "-" + getFixedNameSuffix(
+                    serverAddrs.toArray(new String[serverAddrs.size()]));
         } else {
             this.namespace = namespace;
-            name = FIXED_NAME + "-" + getFixedNameSuffix(serverAddrs.toArray(new String[serverAddrs.size()])) + "-"
-                + namespace;
+            this.name = FIXED_NAME + "-" + getFixedNameSuffix(
+                    serverAddrs.toArray(new String[serverAddrs.size()])) + "-"
+                    + namespace;
         }
     }
 
-    public ServerListManager(String host, int port) {
-        isFixed = false;
-        isStarted = false;
-        name = CUSTOM_NAME + "-" + host + "-" + port;
-        addressServerUrl = String.format("http://%s:%d/%s/%s", host, port, contentPath, serverListName);
+    public ServerListManager(String host, int port, ThreadPoolManager threadPoolManager) {
+        this.isFixed = false;
+        this.isStarted = false;
+        this.name = CUSTOM_NAME + "-" + host + "-" + port;
+        this.addressServerUrl = String
+                .format("http://%s:%d/%s/%s", host, port, contentPath, serverListName);
+        this.threadPoolManager = threadPoolManager;
     }
 
-    public ServerListManager(String endpoint) throws NacosException {
-        this(endpoint, null);
+    public ServerListManager(String endpoint, ThreadPoolManager threadPoolManager)
+            throws NacosException {
+        this(endpoint, null, threadPoolManager);
     }
 
-    public ServerListManager(String endpoint, String namespace) throws NacosException {
-        isFixed = false;
-        isStarted = false;
+    public ServerListManager(String endpoint, String namespace,
+                             ThreadPoolManager threadPoolManager) throws NacosException {
+        this.isFixed = false;
+        this.isStarted = false;
+        this.threadPoolManager = threadPoolManager;
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
         endpoint = initEndpoint(properties);
 
         if (StringUtils.isBlank(endpoint)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                    "endpoint is blank");
         }
         if (StringUtils.isBlank(namespace)) {
-            name = endpoint;
-            addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
-                serverListName);
+            this.name = endpoint;
+            this.addressServerUrl = String
+                    .format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
+                            serverListName);
         } else {
             if (StringUtils.isBlank(endpoint)) {
-                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                        "endpoint is blank");
             }
-            name = endpoint + "-" + namespace;
+            this.name = endpoint + "-" + namespace;
             this.namespace = namespace;
             this.tenant = namespace;
-            addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort, contentPath,
-                serverListName, namespace);
+            this.addressServerUrl = String
+                    .format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort,
+                            contentPath, serverListName, namespace);
         }
     }
 
-    public ServerListManager(Properties properties) throws NacosException {
-        isStarted = false;
-        serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+    public ServerListManager(Properties properties, ThreadPoolManager threadPoolManager)
+            throws NacosException {
+        this.isStarted = false;
+        this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        this.threadPoolManager = threadPoolManager;
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
-            isFixed = true;
+            this.isFixed = true;
             List<String> serverAddrs = new ArrayList<String>();
             String[] serverAddrsArr = serverAddrsStr.split(",");
-            for (String serverAddr: serverAddrsArr) {
+            for (String serverAddr : serverAddrsArr) {
                 if (serverAddr.startsWith(HTTPS) || serverAddr.startsWith(HTTP)) {
                     serverAddrs.add(serverAddr);
                 } else {
                     String[] serverAddrArr = serverAddr.split(":");
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil.getDefaultServerPort());
+                        serverAddrs.add(HTTP + serverAddrArr[0] + ":" + ParamUtil
+                                .getDefaultServerPort());
                     } else {
                         serverAddrs.add(HTTP + serverAddr);
                     }
                 }
             }
-            serverUrls = serverAddrs;
+            this.serverUrls = serverAddrs;
             if (StringUtils.isBlank(namespace)) {
-                name = FIXED_NAME + "-" + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()]));
+                this.name = FIXED_NAME + "-" + getFixedNameSuffix(
+                        serverUrls.toArray(new String[serverUrls.size()]));
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
-                name = FIXED_NAME + "-" + getFixedNameSuffix(serverUrls.toArray(new String[serverUrls.size()])) + "-"
-                    + namespace;
+                this.name = FIXED_NAME + "-" + getFixedNameSuffix(
+                        serverUrls.toArray(new String[serverUrls.size()])) + "-"
+                        + namespace;
             }
         } else {
             if (StringUtils.isBlank(endpoint)) {
-                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM,
+                        "endpoint is blank");
             }
-            isFixed = false;
+            this.isFixed = false;
             if (StringUtils.isBlank(namespace)) {
-                name = endpoint;
-                addressServerUrl = String.format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
-                    serverListName);
+                this.name = endpoint;
+                this.addressServerUrl = String
+                        .format("http://%s:%d/%s/%s", endpoint, endpointPort, contentPath,
+                                serverListName);
             } else {
                 this.namespace = namespace;
                 this.tenant = namespace;
-                name = endpoint + "-" + namespace;
-                addressServerUrl = String.format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort,
-                    contentPath, serverListName, namespace);
+                this.name = endpoint + "-" + namespace;
+                this.addressServerUrl = String
+                        .format("http://%s:%d/%s/%s?namespace=%s", endpoint, endpointPort,
+                                contentPath, serverListName, namespace);
             }
         }
 
@@ -178,12 +206,14 @@ public class ServerListManager {
 
     private String initEndpoint(final Properties properties) {
 
-        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT), new Callable<String>() {
-            @Override
-            public String call() {
-                return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
-            }
-        });
+        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(
+                System.getenv(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
+                new Callable<String>() {
+                    @Override
+                    public String call() {
+                        return properties.getProperty(PropertyKeyConst.ENDPOINT_PORT);
+                    }
+                });
 
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             endpointPort = Integer.parseInt(endpointPortTmp);
@@ -192,10 +222,12 @@ public class ServerListManager {
         String endpointTmp = properties.getProperty(PropertyKeyConst.ENDPOINT);
 
         // Whether to enable domain name resolution rules
-        String isUseEndpointRuleParsing =
-            properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                System.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                    String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+        String isUseEndpointRuleParsing = properties
+                .getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                        System.getProperty(
+                                SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                                String.valueOf(
+                                        ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
         if (Boolean.parseBoolean(isUseEndpointRuleParsing)) {
             String endpointUrl = ParamUtil.parsingEndpointRule(endpointTmp);
             if (StringUtils.isNotBlank(endpointUrl)) {
@@ -213,6 +245,20 @@ public class ServerListManager {
             return;
         }
 
+        scheduledExecutor = Executors
+                .newSingleThreadScheduledExecutor(new ThreadFactory() {
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread t = new Thread(r);
+                        t.setName("com.alibaba.nacos.client.Timer");
+                        t.setDaemon(true);
+                        return t;
+                    }
+                });
+
+        threadPoolManager
+                .register(ServerListManager.class.getCanonicalName(), scheduledExecutor);
+
         GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
         for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
             getServersTask.run();
@@ -224,13 +270,16 @@ public class ServerListManager {
         }
 
         if (serverUrls.isEmpty()) {
-            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
-                addressServerUrl);
+            LOGGER.error(
+                    "[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}",
+                    name, addressServerUrl);
             throw new NacosException(NacosException.SERVER_ERROR,
-                "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
+                    "fail to get NACOS-server serverlist! env:" + name
+                            + ", not connnect url:" + addressServerUrl);
         }
 
-        TimerService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
+        scheduledExecutor
+                .scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
         isStarted = true;
     }
 
@@ -260,15 +309,17 @@ public class ServerListManager {
             try {
                 updateIfChanged(getApacheServerList(url, name));
             } catch (Exception e) {
-                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!",
-                    e);
+                LOGGER.error("[" + name
+                                + "][update-serverlist] failed to update serverlist from address server!",
+                        e);
             }
         }
     }
 
     private void updateIfChanged(List<String> newList) {
         if (null == newList || newList.isEmpty()) {
-            LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
+            LOGGER.warn(
+                    "[update-serverlist] current serverlist from address server is empty!!!");
             return;
         }
 
@@ -292,7 +343,8 @@ public class ServerListManager {
         currentServerAddr = iterator.next();
 
         EventDispatcher.fireEvent(new ServerlistChangeEvent());
-        LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
+        LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name,
+                serverUrls);
     }
 
     private List<String> getApacheServerList(String url, String name) {
@@ -303,7 +355,8 @@ public class ServerListManager {
                 if (DEFAULT_NAME.equals(name)) {
                     EnvUtil.setSelfEnv(httpResult.headers);
                 }
-                List<String> lines = IoUtils.readLines(new StringReader(httpResult.content));
+                List<String> lines = IoUtils
+                        .readLines(new StringReader(httpResult.content));
                 List<String> result = new ArrayList<String>(lines.size());
                 for (String serverAddr : lines) {
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(serverAddr)) {
@@ -318,8 +371,8 @@ public class ServerListManager {
                 }
                 return result;
             } else {
-                LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
-                    httpResult.code);
+                LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}",
+                        addressServerUrl, httpResult.code);
                 return null;
             }
         } catch (IOException e) {

@@ -17,6 +17,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.client.utils.StringUtils;
+import com.alibaba.nacos.api.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 
 import java.net.DatagramPacket;
@@ -41,12 +42,15 @@ public class PushReceiver implements Runnable {
 
     private HostReactor hostReactor;
 
-    public PushReceiver(HostReactor hostReactor) {
+    private ThreadPoolManager threadPoolManager;
+
+    public PushReceiver(HostReactor hostReactor, ThreadPoolManager threadPoolManager) {
         try {
             this.hostReactor = hostReactor;
-            udpSocket = new DatagramSocket();
+            this.threadPoolManager = threadPoolManager;
+            this.udpSocket = new DatagramSocket();
 
-            executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            this.executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
                     Thread thread = new Thread(r);
@@ -56,7 +60,9 @@ public class PushReceiver implements Runnable {
                 }
             });
 
-            executorService.execute(this);
+            this.threadPoolManager.register(PushReceiver.class.getCanonicalName(), executorService);
+
+            this.executorService.execute(this);
         } catch (Exception e) {
             NAMING_LOGGER.error("[NA] init udp socket failed", e);
         }
