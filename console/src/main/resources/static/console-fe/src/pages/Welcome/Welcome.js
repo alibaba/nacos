@@ -24,15 +24,8 @@ class Welcome extends React.Component {
 
   render() {
     const { functionMode } = this.props;
-    return (
-      <div>
-        {functionMode !== '' && (
-          <Redirect
-            to={`/${functionMode === 'naming' ? 'serviceManagement' : 'configurationManagement'}`}
-          />
-        )}
-      </div>
-    );
+    const path = functionMode === 'naming' ? 'serviceManagement' : 'configurationManagement';
+    return <>{functionMode !== '' && <Redirect to={`/${path}`} />}</>;
   }
 }
 
