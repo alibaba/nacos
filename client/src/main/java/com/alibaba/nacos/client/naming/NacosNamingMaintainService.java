@@ -27,8 +27,8 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
-import com.alibaba.nacos.api.ThreadPoolManager;
-import com.alibaba.nacos.api.life.LifeCycle;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -54,30 +54,28 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     private ThreadPoolManager threadPoolManager;
 
-    public NacosNamingMaintainService(String serverList) {
+    public NacosNamingMaintainService(String serverList) throws Exception {
         this.properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
 
         init();
     }
 
-    public NacosNamingMaintainService(Properties properties) {
+    public NacosNamingMaintainService(Properties properties) throws Exception {
         this.properties = properties;
 
         init();
     }
 
     @Override
-    public void init() {
+    public void init() throws Exception {
 
-        threadPoolManager = new ThreadPoolManager();
-
-        LifeCycleUtils.invokeInit(threadPoolManager);
+        ModuleEnums.initModuleName(ModuleEnums.MAINTAIN);
 
         namespace = InitUtils.initNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
-        serverProxy = new NamingProxy(namespace, endpoint, serverList, properties, threadPoolManager);
+        serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
 
         LifeCycleUtils.registerShutdownHook(this);
     }
@@ -186,7 +184,7 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
 
     @Override
-    public void destroy() {
-        LifeCycleUtils.invokeDestroy(threadPoolManager);
+    public void destroy() throws Exception {
+        ThreadPoolManager.getInstance().destroy(ModuleEnums.MAINTAIN.getName());
     }
 }

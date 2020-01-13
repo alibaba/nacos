@@ -28,9 +28,10 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.ModuleEnums;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
-import com.alibaba.nacos.api.ThreadPoolManager;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
@@ -76,8 +77,10 @@ public class ClientWorker {
     private int taskPenaltyTime;
     private boolean enableRemoteSyncConfig = false;
 
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties, ThreadPoolManager threadPoolManager) {
+    public ClientWorker(final HttpAgent agent, final ConfigFilterChainManager configFilterChainManager, final Properties properties) {
         this.agent = agent;
         this.configFilterChainManager = configFilterChainManager;
 
@@ -105,8 +108,8 @@ public class ClientWorker {
             }
         });
 
-        threadPoolManager.register(ClientWorker.class.getCanonicalName(), executor);
-        threadPoolManager.register(ClientWorker.class.getCanonicalName(), executorService);
+        threadPoolManager.register(ModuleEnums.nowModuleName(), ClientWorker.class.getCanonicalName(), executor);
+        threadPoolManager.register(ModuleEnums.nowModuleName(), ClientWorker.class.getCanonicalName(), executorService);
 
         executor.scheduleWithFixedDelay(new Runnable() {
             @Override

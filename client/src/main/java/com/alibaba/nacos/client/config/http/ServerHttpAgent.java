@@ -24,11 +24,8 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.JSONUtils;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TemplateUtils;
-import com.alibaba.nacos.api.ThreadPoolManager;
+import com.alibaba.nacos.client.utils.*;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -69,23 +66,21 @@ public class ServerHttpAgent implements HttpAgent {
 
     private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
 
-    private ThreadPoolManager threadPoolManager;
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
 
     public ServerHttpAgent(ServerListManager mgr) {
         serverListMgr = mgr;
     }
 
-    public ServerHttpAgent(ServerListManager mgr, Properties properties, ThreadPoolManager threadPoolManager) {
+    public ServerHttpAgent(ServerListManager mgr, Properties properties) {
         this.serverListMgr = mgr;
-        this.threadPoolManager = threadPoolManager;
         init(properties);
     }
 
-    public ServerHttpAgent(Properties properties, ThreadPoolManager threadPoolManager) throws NacosException {
-        this.serverListMgr = new ServerListManager(properties, threadPoolManager);
+    public ServerHttpAgent(Properties properties) throws NacosException {
+        this.serverListMgr = new ServerListManager(properties);
         this.securityProxy = new SecurityProxy(properties);
         this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        this.threadPoolManager = threadPoolManager;
         init(properties);
         this.securityProxy.login(serverListMgr.getServerUrls());
 
@@ -100,7 +95,7 @@ public class ServerHttpAgent implements HttpAgent {
             }
         });
 
-        threadPoolManager.register(ServerHttpAgent.class.getCanonicalName(), executorService);
+        threadPoolManager.register(ModuleEnums.nowModuleName(), ServerHttpAgent.class.getCanonicalName(), executorService);
 
         executorService.scheduleWithFixedDelay(new Runnable() {
             @Override

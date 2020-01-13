@@ -24,7 +24,8 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.api.ThreadPoolManager;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -59,14 +60,14 @@ public class HostReactor {
 
     private ScheduledExecutorService executor;
 
-    private ThreadPoolManager threadPoolManager;
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
 
-    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir, ThreadPoolManager threadPoolManager) {
-        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT, threadPoolManager);
+    public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
+        this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
-                       boolean loadCacheAtStart, int pollingThreadCount, ThreadPoolManager threadPoolManager) {
+                       boolean loadCacheAtStart, int pollingThreadCount) {
 
         this.threadPoolManager = threadPoolManager;
 
@@ -80,7 +81,7 @@ public class HostReactor {
             }
         });
 
-        threadPoolManager.register(HostReactor.class.getCanonicalName(), executor);
+        threadPoolManager.register(ModuleEnums.nowModuleName(), HostReactor.class.getCanonicalName(), executor);
 
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;
@@ -92,8 +93,8 @@ public class HostReactor {
         }
 
         this.updatingMap = new ConcurrentHashMap<String, Object>();
-        this.failoverReactor = new FailoverReactor(this, cacheDir, threadPoolManager);
-        this.pushReceiver = new PushReceiver(this, threadPoolManager);
+        this.failoverReactor = new FailoverReactor(this, cacheDir);
+        this.pushReceiver = new PushReceiver(this);
     }
 
     public Map<String, ServiceInfo> getServiceInfoMap() {

@@ -32,9 +32,9 @@ import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.ModuleEnums;
 import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.api.ThreadPoolManager;
-import com.alibaba.nacos.api.life.LifeCycle;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -70,7 +70,6 @@ public class NacosConfigService implements ConfigService {
     private ClientWorker worker;
     private String namespace;
     private String encode;
-    private ThreadPoolManager threadPoolManager;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
     private Properties properties;
@@ -83,9 +82,8 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public void init() throws Exception {
-        this.threadPoolManager = new ThreadPoolManager();
 
-        LifeCycleUtils.invokeInit(threadPoolManager);
+        ModuleEnums.initModuleName(ModuleEnums.CONFIG);
 
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
@@ -94,9 +92,9 @@ public class NacosConfigService implements ConfigService {
             encode = encodeTmp.trim();
         }
         initNamespace(properties);
-        agent = new MetricsHttpAgent(new ServerHttpAgent(properties, threadPoolManager));
+        agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
-        worker = new ClientWorker(agent, configFilterChainManager, properties, threadPoolManager);
+        worker = new ClientWorker(agent, configFilterChainManager, properties);
 
         LifeCycleUtils.registerShutdownHook(this);
 
@@ -303,6 +301,6 @@ public class NacosConfigService implements ConfigService {
 
     @Override
     public void destroy() throws Exception {
-        LifeCycleUtils.invokeDestroy(threadPoolManager);
+        ThreadPoolManager.getInstance().destroy(ModuleEnums.CONFIG.getName());
     }
 }

@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.EventDispatcher.ServerlistChangeEvent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
 import com.alibaba.nacos.client.utils.*;
-import com.alibaba.nacos.api.ThreadPoolManager;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import org.slf4j.Logger;
 
@@ -48,7 +48,7 @@ public class ServerListManager {
 
     private ScheduledExecutorService scheduledExecutor;
 
-    private ThreadPoolManager threadPoolManager;
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
 
     public ServerListManager() {
         this.isFixed = false;
@@ -56,15 +56,13 @@ public class ServerListManager {
         this.name = DEFAULT_NAME;
     }
 
-    public ServerListManager(List<String> fixed, ThreadPoolManager threadPoolManager) {
-        this(fixed, null, threadPoolManager);
+    public ServerListManager(List<String> fixed) {
+        this(fixed, null);
     }
 
-    public ServerListManager(List<String> fixed, String namespace,
-                             ThreadPoolManager threadPoolManager) {
+    public ServerListManager(List<String> fixed, String namespace) {
         this.isFixed = true;
         this.isStarted = true;
-        this.threadPoolManager = threadPoolManager;
         List<String> serverAddrs = new ArrayList<String>();
         for (String serverAddr : fixed) {
             String[] serverAddrArr = serverAddr.split(":");
@@ -87,25 +85,22 @@ public class ServerListManager {
         }
     }
 
-    public ServerListManager(String host, int port, ThreadPoolManager threadPoolManager) {
+    public ServerListManager(String host, int port) {
         this.isFixed = false;
         this.isStarted = false;
         this.name = CUSTOM_NAME + "-" + host + "-" + port;
         this.addressServerUrl = String
                 .format("http://%s:%d/%s/%s", host, port, contentPath, serverListName);
-        this.threadPoolManager = threadPoolManager;
     }
 
-    public ServerListManager(String endpoint, ThreadPoolManager threadPoolManager)
+    public ServerListManager(String endpoint)
             throws NacosException {
-        this(endpoint, null, threadPoolManager);
+        this(endpoint, null);
     }
 
-    public ServerListManager(String endpoint, String namespace,
-                             ThreadPoolManager threadPoolManager) throws NacosException {
+    public ServerListManager(String endpoint, String namespace) throws NacosException {
         this.isFixed = false;
         this.isStarted = false;
-        this.threadPoolManager = threadPoolManager;
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
         endpoint = initEndpoint(properties);
@@ -133,11 +128,10 @@ public class ServerListManager {
         }
     }
 
-    public ServerListManager(Properties properties, ThreadPoolManager threadPoolManager)
+    public ServerListManager(Properties properties)
             throws NacosException {
         this.isStarted = false;
         this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        this.threadPoolManager = threadPoolManager;
         String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         initParam(properties);
         if (StringUtils.isNotEmpty(serverAddrsStr)) {
@@ -257,7 +251,7 @@ public class ServerListManager {
                 });
 
         threadPoolManager
-                .register(ServerListManager.class.getCanonicalName(), scheduledExecutor);
+                .register(ModuleEnums.nowModuleName(), ServerListManager.class.getCanonicalName(), scheduledExecutor);
 
         GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
         for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {

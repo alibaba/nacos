@@ -15,7 +15,8 @@
  */
 package com.alibaba.nacos.client.naming.core;
 
-import com.alibaba.nacos.api.ThreadPoolManager;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -42,11 +43,9 @@ public class EventDispatcher {
     private ConcurrentMap<String, List<EventListener>> observerMap
         = new ConcurrentHashMap<String, List<EventListener>>();
 
-    private ThreadPoolManager threadPoolManager;
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
 
-    public EventDispatcher(ThreadPoolManager threadPoolManager) {
-
-        this.threadPoolManager = threadPoolManager;
+    public EventDispatcher() {
 
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
             @Override
@@ -58,7 +57,7 @@ public class EventDispatcher {
             }
         });
 
-        threadPoolManager.register(EventDispatcher.class.getCanonicalName(), executor);
+        threadPoolManager.register(ModuleEnums.nowModuleName(), EventDispatcher.class.getCanonicalName(), executor);
 
         executor.execute(new Notifier());
     }
