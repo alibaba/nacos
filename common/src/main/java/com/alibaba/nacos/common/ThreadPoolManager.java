@@ -25,8 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * For unified management of thread pool resources, the consumer can simply call
- * the register method to {@link ThreadPoolManager#register(String, String, ExecutorService)} the thread pool that needs to be included in
- * the life cycle management of the resource
+ * the register method to {@link ThreadPoolManager#register(String, String, ExecutorService)}
+ * the thread pool that needs to be included in the life cycle management of the resource
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -67,7 +67,7 @@ public final class ThreadPoolManager {
 	 */
 	public synchronized void register(String biz, String resourceName, ExecutorService executor) {
         if (!resourcesManager.containsKey(biz)) {
-            resourcesManager.put(biz, new ConcurrentHashMap<String, Set<ExecutorService>>());
+            resourcesManager.put(biz, new ConcurrentHashMap<String, Set<ExecutorService>>(8));
             lockers.put(biz, new Object());
         }
         resourcesManager.get(biz).get(resourceName).add(executor);

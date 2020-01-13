@@ -233,6 +233,7 @@ public class ServerListManager {
         return StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
 
+    @SuppressWarnings("PMD.ThreadPoolCreationRule")
     public synchronized void start() throws NacosException {
 
         if (isStarted || isFixed) {

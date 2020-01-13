@@ -21,12 +21,24 @@ package com.alibaba.nacos.client.utils;
  */
 public enum ModuleEnums {
 
+    /**
+     * The default scenario
+     */
     DEFAULT("default"),
 
+    /**
+     * Configuration management module
+     */
     CONFIG("config"),
 
+    /**
+     * Service discovery maintenance module
+     */
     MAINTAIN("maintain"),
 
+    /**
+     * Service discovery module
+     */
     NAMING("naming");
 
     private String name;
