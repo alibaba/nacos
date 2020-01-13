@@ -27,6 +27,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 
+import com.alibaba.nacos.test.base.Params;
 import org.junit.Ignore;
 import org.springframework.http.HttpMethod;
 import com.alibaba.nacos.naming.NamingApp;

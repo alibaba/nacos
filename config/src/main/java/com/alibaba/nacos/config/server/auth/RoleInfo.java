@@ -13,14 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.nacos.naming.web;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+package com.alibaba.nacos.config.server.auth;
 
 /**
- * Innovated By: Xuanyin.zy
+ * Role Info
+ *
+ * @author nkorange
+ * @since 1.2.0
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface NeedAuth {
+public class RoleInfo {
+
+    private String role;
+
+    private String username;
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 }

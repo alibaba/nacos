@@ -223,9 +223,9 @@ public class ClientWorker {
         try {
             List<String> params = null;
             if (StringUtils.isBlank(tenant)) {
-                params = Arrays.asList("dataId", dataId, "group", group);
+                params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group));
             } else {
-                params = Arrays.asList("dataId", dataId, "group", group, "tenant", tenant);
+                params = new ArrayList<String>(Arrays.asList("dataId", dataId, "group", group, "tenant", tenant));
             }
             result = agent.httpGet(Constants.CONFIG_CONTROLLER_PATH, null, params, agent.getEncode(), readTimeout);
         } catch (IOException e) {
