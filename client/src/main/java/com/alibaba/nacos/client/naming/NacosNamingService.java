@@ -34,7 +34,9 @@ import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -43,7 +45,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Nacos Naming Service
@@ -74,18 +75,24 @@ public class NacosNamingService implements NamingService {
 
     private NamingProxy serverProxy;
 
-    public NacosNamingService(String serverList) {
-        Properties properties = new Properties();
+    private Properties properties;
+
+    public NacosNamingService(String serverList) throws Exception {
+        this.properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
-
-        init(properties);
+        init();
     }
 
-    public NacosNamingService(Properties properties) {
-        init(properties);
+    public NacosNamingService(Properties properties) throws Exception {
+        this.properties = properties;
+        init();
     }
 
-    private void init(Properties properties) {
+    @Override
+    public void init() throws Exception {
+
+        ModuleEnums.initModuleName(ModuleEnums.NAMING);
+
         namespace = InitUtils.initNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
@@ -97,6 +104,11 @@ public class NacosNamingService implements NamingService {
         beatReactor = new BeatReactor(serverProxy, initClientBeatThreadCount(properties));
         hostReactor = new HostReactor(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),
             initPollingThreadCount(properties));
+
+        // Register to destroy callback hooks to the JVM
+
+        LifeCycleUtils.registerShutdownHook(this);
+
     }
 
     private int initClientBeatThreadCount(Properties properties) {
@@ -487,5 +499,10 @@ public class NacosNamingService implements NamingService {
 
     public BeatReactor getBeatReactor() {
         return beatReactor;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        ThreadPoolManager.getInstance().destroy(ModuleEnums.NAMING.getName());
     }
 }

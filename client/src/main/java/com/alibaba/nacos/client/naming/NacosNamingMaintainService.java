@@ -27,6 +27,9 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
@@ -47,23 +50,34 @@ public class NacosNamingMaintainService implements NamingMaintainService {
 
     private NamingProxy serverProxy;
 
-    public NacosNamingMaintainService(String serverList) {
-        Properties properties = new Properties();
+    private Properties properties;
+
+    private ThreadPoolManager threadPoolManager;
+
+    public NacosNamingMaintainService(String serverList) throws Exception {
+        this.properties = new Properties();
         properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverList);
 
-        init(properties);
+        init();
     }
 
-    public NacosNamingMaintainService(Properties properties) {
+    public NacosNamingMaintainService(Properties properties) throws Exception {
+        this.properties = properties;
 
-        init(properties);
+        init();
     }
 
-    private void init(Properties properties) {
+    @Override
+    public void init() throws Exception {
+
+        ModuleEnums.initModuleName(ModuleEnums.MAINTAIN);
+
         namespace = InitUtils.initNamespaceForNaming(properties);
         initServerAddr(properties);
         InitUtils.initWebRootContext();
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
+
+        LifeCycleUtils.registerShutdownHook(this);
     }
 
     private void initServerAddr(Properties properties) {
@@ -169,4 +183,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         serverProxy.updateService(service, selector);
     }
 
+    @Override
+    public void destroy() throws Exception {
+        ThreadPoolManager.getInstance().destroy(ModuleEnums.MAINTAIN.getName());
+    }
 }

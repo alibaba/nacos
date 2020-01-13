@@ -24,6 +24,8 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
@@ -58,12 +60,16 @@ public class HostReactor {
 
     private ScheduledExecutorService executor;
 
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir) {
         this(eventDispatcher, serverProxy, cacheDir, false, UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
     }
 
     public HostReactor(EventDispatcher eventDispatcher, NamingProxy serverProxy, String cacheDir,
                        boolean loadCacheAtStart, int pollingThreadCount) {
+
+        this.threadPoolManager = threadPoolManager;
 
         executor = new ScheduledThreadPoolExecutor(pollingThreadCount, new ThreadFactory() {
             @Override
@@ -74,6 +80,8 @@ public class HostReactor {
                 return thread;
             }
         });
+
+        threadPoolManager.register(ModuleEnums.nowModuleName(), HostReactor.class.getCanonicalName(), executor);
 
         this.eventDispatcher = eventDispatcher;
         this.serverProxy = serverProxy;

@@ -32,7 +32,10 @@ import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.client.utils.ModuleEnums;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.ThreadPoolManager;
+import com.alibaba.nacos.api.life.LifeCycleUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -69,7 +72,19 @@ public class NacosConfigService implements ConfigService {
     private String encode;
     private ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager();
 
-    public NacosConfigService(Properties properties) throws NacosException {
+    private Properties properties;
+
+    public NacosConfigService(Properties properties) throws Exception {
+        this.properties = properties;
+        init();
+    }
+
+
+    @Override
+    public void init() throws Exception {
+
+        ModuleEnums.initModuleName(ModuleEnums.CONFIG);
+
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
             encode = Constants.ENCODE;
@@ -80,6 +95,9 @@ public class NacosConfigService implements ConfigService {
         agent = new MetricsHttpAgent(new ServerHttpAgent(properties));
         agent.start();
         worker = new ClientWorker(agent, configFilterChainManager, properties);
+
+        LifeCycleUtils.registerShutdownHook(this);
+
     }
 
     private void initNamespace(Properties properties) {
@@ -281,4 +299,8 @@ public class NacosConfigService implements ConfigService {
         }
     }
 
+    @Override
+    public void destroy() throws Exception {
+        ThreadPoolManager.getInstance().destroy(ModuleEnums.CONFIG.getName());
+    }
 }

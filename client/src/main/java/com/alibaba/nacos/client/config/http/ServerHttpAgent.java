@@ -24,10 +24,8 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.impl.SpasAdapter;
 import com.alibaba.nacos.client.identify.STSConfig;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.JSONUtils;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.utils.*;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -59,7 +57,53 @@ public class ServerHttpAgent implements HttpAgent {
 
     private String namespaceId;
 
+    private String accessKey;
+    private String secretKey;
+    private String encode;
+    private int maxRetry = 3;
+    private volatile STSCredential sTSCredential;
+    final ServerListManager serverListMgr;
+
     private long securityInfoRefreshIntervalMills = TimeUnit.SECONDS.toMillis(5);
+
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+
+    public ServerHttpAgent(ServerListManager mgr) {
+        serverListMgr = mgr;
+    }
+
+    public ServerHttpAgent(ServerListManager mgr, Properties properties) {
+        this.serverListMgr = mgr;
+        init(properties);
+    }
+
+    public ServerHttpAgent(Properties properties) throws NacosException {
+        this.serverListMgr = new ServerListManager(properties);
+        this.securityProxy = new SecurityProxy(properties);
+        this.namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
+        init(properties);
+        this.securityProxy.login(serverListMgr.getServerUrls());
+
+
+        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread t = new Thread(r);
+                t.setName("com.alibaba.nacos.client.config.security.updater");
+                t.setDaemon(true);
+                return t;
+            }
+        });
+
+        threadPoolManager.register(ModuleEnums.nowModuleName(), ServerHttpAgent.class.getCanonicalName(), executorService);
+
+        executorService.scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                securityProxy.login(serverListMgr.getServerUrls());
+            }
+        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
+    }
 
     /**
      * @param path          相对于web应用根，以/开头
@@ -237,40 +281,6 @@ public class ServerHttpAgent implements HttpAgent {
 
     public static String getAppname() {
         return ParamUtil.getAppName();
-    }
-
-    public ServerHttpAgent(ServerListManager mgr) {
-        serverListMgr = mgr;
-    }
-
-    public ServerHttpAgent(ServerListManager mgr, Properties properties) {
-        serverListMgr = mgr;
-        init(properties);
-    }
-
-    public ServerHttpAgent(Properties properties) throws NacosException {
-        serverListMgr = new ServerListManager(properties);
-        securityProxy = new SecurityProxy(properties);
-        namespaceId = properties.getProperty(PropertyKeyConst.NAMESPACE);
-        init(properties);
-        securityProxy.login(serverListMgr.getServerUrls());
-
-        ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread t = new Thread(r);
-                t.setName("com.alibaba.nacos.client.config.security.updater");
-                t.setDaemon(true);
-                return t;
-            }
-        });
-
-        executorService.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                securityProxy.login(serverListMgr.getServerUrls());
-            }
-        }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
     }
 
     private void injectSecurityInfo(List<String> params) {
@@ -471,12 +481,5 @@ public class ServerHttpAgent implements HttpAgent {
                 '}';
         }
     }
-
-    private String accessKey;
-    private String secretKey;
-    private String encode;
-    private int maxRetry = 3;
-    private volatile STSCredential sTSCredential;
-    final ServerListManager serverListMgr;
 
 }

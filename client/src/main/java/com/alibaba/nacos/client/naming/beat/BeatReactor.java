@@ -26,6 +26,8 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
 
 import java.util.Map;
 import java.util.concurrent.*;
@@ -45,12 +47,16 @@ public class BeatReactor {
 
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
 
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+
     public BeatReactor(NamingProxy serverProxy) {
         this(serverProxy, UtilAndComs.DEFAULT_CLIENT_BEAT_THREAD_COUNT);
     }
 
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
+        this.threadPoolManager = threadPoolManager;
+
         executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -60,6 +66,8 @@ public class BeatReactor {
                 return thread;
             }
         });
+
+        threadPoolManager.register(ModuleEnums.nowModuleName(), BeatReactor.class.getCanonicalName(), executorService);
     }
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {

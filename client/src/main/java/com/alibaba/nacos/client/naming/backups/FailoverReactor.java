@@ -22,6 +22,8 @@ import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.core.HostReactor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.ModuleEnums;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -38,17 +40,14 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class FailoverReactor {
 
+    private static final long DAY_PERIOD_MINUTES = 24 * 60;
+
     private String failoverDir;
 
     private HostReactor hostReactor;
 
-    public FailoverReactor(HostReactor hostReactor, String cacheDir) {
-        this.hostReactor = hostReactor;
-        this.failoverDir = cacheDir + "/failover";
-        this.init();
-    }
-
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<String, ServiceInfo>();
+
     private ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
@@ -60,9 +59,19 @@ public class FailoverReactor {
     });
 
     private Map<String, String> switchParams = new ConcurrentHashMap<String, String>();
-    private static final long DAY_PERIOD_MINUTES = 24 * 60;
+
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+
+    public FailoverReactor(HostReactor hostReactor, String cacheDir) {
+        this.hostReactor = hostReactor;
+        this.failoverDir = cacheDir + "/failover";
+
+        this.init();
+    }
 
     public void init() {
+
+        threadPoolManager.register(ModuleEnums.nowModuleName(), FailoverReactor.class.getCanonicalName(), executorService);
 
         executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 

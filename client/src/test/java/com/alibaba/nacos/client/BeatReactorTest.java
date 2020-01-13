@@ -1,5 +1,6 @@
 package com.alibaba.nacos.client;
 
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.naming.beat.BeatInfo;
 import com.alibaba.nacos.client.naming.beat.BeatReactor;

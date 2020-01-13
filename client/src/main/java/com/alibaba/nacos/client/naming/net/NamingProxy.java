@@ -38,7 +38,9 @@ import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.client.utils.ModuleEnums;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.ThreadPoolManager;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.IoUtils;
@@ -83,6 +85,8 @@ public class NamingProxy {
 
     private Properties properties;
 
+    private ThreadPoolManager threadPoolManager = ThreadPoolManager.getInstance();
+
     public NamingProxy(String namespaceId, String endpoint, String serverList, Properties properties) {
 
         securityProxy = new SecurityProxy(properties);
@@ -111,6 +115,10 @@ public class NamingProxy {
                 return t;
             }
         });
+
+        // register threadPool into ThreadPoolManager
+
+        threadPoolManager.register(ModuleEnums.nowModuleName(), NamingProxy.class.getCanonicalName(), executorService);
 
         executorService.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -153,7 +161,7 @@ public class NamingProxy {
             return list;
 
         } catch (Exception e) {
-            e.printStackTrace();
+            NAMING_LOGGER.error("get server list from endpoint has error : {}", e);
         }
 
         return null;
