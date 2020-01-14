@@ -177,6 +177,9 @@ public class ConfigController {
                               String tenant,
                           @RequestParam(value = "tag", required = false) String tag)
         throws IOException, ServletException, NacosException {
+        if (NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)) {
+            tenant = "";
+        }
         // check params
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
@@ -428,6 +431,9 @@ public class ConfigController {
                                                    defaultValue = StringUtils.EMPTY) String tenant,
                                                @RequestParam(value = "ids", required = false) List<Long> ids) {
         ids.removeAll(Collections.singleton(null));
+        if (NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)) {
+            tenant = "";
+        }
         List<ConfigAllInfo> dataList = persistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>();
         StringBuilder metaData = null;
