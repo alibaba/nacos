@@ -91,9 +91,9 @@ class RolesManagement extends React.Component {
                       title: locale.deleteRole,
                       content: locale.deleteRoleTip,
                       onOk: () =>
-                        deleteRole(record).then(() =>
-                          this.setState({ pageNo: 1 }, () => this.getRoles())
-                        ),
+                        deleteRole(record).then(() => {
+                          this.setState({ pageNo: 1 }, () => this.getRoles());
+                        }),
                     })
                   }
                 >
