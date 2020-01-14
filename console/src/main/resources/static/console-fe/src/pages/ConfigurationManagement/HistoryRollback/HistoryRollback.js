@@ -133,9 +133,7 @@ class HistoryRollback extends React.Component {
       beforeSend() {
         self.openLoading();
       },
-      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${
-        this.group
-      }&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
+      url: `v1/cs/history?search=accurate&dataId=${this.dataId}&group=${this.group}&&pageNo=${pageNo}&pageSize=${this.state.pageSize}`,
       success(data) {
         if (data != null) {
           self.setState({
