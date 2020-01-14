@@ -109,6 +109,14 @@ public class CacheItem {
         this.tagLastModifiedTs = tagLastModifiedTs;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     final String groupKey;
     public volatile String md5 = Constants.NULL;
     public volatile long lastModifiedTs;
@@ -123,5 +131,6 @@ public class CacheItem {
     public volatile Map<String, String> tagMd5;
     public volatile Map<String, Long> tagLastModifiedTs;
     public SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
+    public String type;
 
 }
