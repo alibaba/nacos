@@ -79,6 +79,9 @@ public class DumpService {
         dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         dumpTaskMgr.setDefaultTaskProcessor(processor);
 
+        /**
+         * 启动TaskManager   处理dump任务
+         */
         dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
         dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
 

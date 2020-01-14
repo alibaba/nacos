@@ -74,6 +74,9 @@ public class CommunicationController {
         if (StringUtils.isNotBlank(isBetaStr) && trueStr.equals(isBetaStr)) {
             dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
         } else {
+            /**
+             * 非beta发布
+             */
             dumpService.dump(dataId, group, tenant, tag, lastModifiedTs, handleIp);
         }
         return true;

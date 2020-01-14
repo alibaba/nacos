@@ -39,15 +39,36 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
 
+    /**
+     * 客户端对应的md5和服务器缓存中的md5  是否一致   并返回有变化的groupKey列表
+     * @param request
+     * @param response
+     * @param clientMd5Map
+     * @return
+     */
     static public List<String> compareMd5(HttpServletRequest request,
                                           HttpServletResponse response, Map<String, String> clientMd5Map) {
         List<String> changedGroupKeys = new ArrayList<String>();
         String tag = request.getHeader("Vipserver-Tag");
         for (Map.Entry<String, String> entry : clientMd5Map.entrySet()) {
+            /**
+             * 客户端订阅的dataId+group
+             */
             String groupKey = entry.getKey();
+            /**
+             * 客户端上送的md5
+             */
             String clientMd5 = entry.getValue();
             String ip = RequestUtil.getRemoteIp(request);
+
+            /**
+             * 客户端对应的md5和服务器缓存中的md5  是否一致
+             */
             boolean isUptodate = ConfigService.isUptodate(groupKey, clientMd5, ip, tag);
+
+            /**
+             * 不一致则加入changedGroupKeys   返回有变化的groupKey
+             */
             if (!isUptodate) {
                 changedGroupKeys.add(groupKey);
             }

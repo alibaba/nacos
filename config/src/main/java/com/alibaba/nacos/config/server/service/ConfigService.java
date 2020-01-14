@@ -83,13 +83,16 @@ public class ConfigService {
              */
             final String md5 = MD5.getInstance().getMD5String(content);
             if (md5.equals(ConfigService.getContentMd5(groupKey))) {
+                /**
+                 * 一致
+                 */
                 dumpLog.warn(
                     "[dump-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
                 /**
-                 * 集群模式或单机模式且使用了mysql
+                 * 不一致 &&（集群模式 || 单机模式且使用了mysql）
                  * 保存配置信息到磁盘
                  */
                 DiskUtil.saveToDisk(dataId, group, tenant, content);
@@ -460,6 +463,10 @@ public class ConfigService {
         if (cache.md5 == null || !cache.md5.equals(md5)) {
             cache.md5 = md5;
             cache.lastModifiedTs = lastModifiedTs;
+
+            /**
+             * LongPollingService
+             */
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey));
         }
     }
@@ -543,18 +550,39 @@ public class ConfigService {
         return CACHE.get(groupKey);
     }
 
+    /**
+     * 返回缓存中groupKey对应的md5
+     * @param groupKey
+     * @param ip
+     * @param tag
+     * @return
+     */
     static public String getContentMd5(String groupKey, String ip, String tag) {
+        /**
+         * 缓存中groupKey对应的item
+         */
         CacheItem item = CACHE.get(groupKey);
+        /**
+         * beta发布的配置
+         */
         if (item != null && item.isBeta) {
             if (item.ips4Beta.contains(ip)) {
                 return item.md54Beta;
             }
         }
+
+        /**
+         * 配置含有tag属性
+         */
         if (item != null && item.tagMd5 != null && item.tagMd5.size() > 0) {
             if (StringUtils.isNotBlank(tag) && item.tagMd5.containsKey(tag)) {
                 return item.tagMd5.get(tag);
             }
         }
+
+        /**
+         * 普通配置
+         */
         return (null != item) ? item.md5 : Constants.NULL;
     }
 
@@ -568,7 +596,18 @@ public class ConfigService {
         return StringUtils.equals(md5, serverMd5);
     }
 
+    /**
+     * 客户端对应的md5和服务器缓存中的md5  是否一致
+     * @param groupKey
+     * @param md5
+     * @param ip
+     * @param tag
+     * @return
+     */
     static public boolean isUptodate(String groupKey, String md5, String ip, String tag) {
+        /**
+         * 返回缓存中groupKey对应的md5
+         */
         String serverMd5 = ConfigService.getContentMd5(groupKey, ip, tag);
         return StringUtils.equals(md5, serverMd5);
     }

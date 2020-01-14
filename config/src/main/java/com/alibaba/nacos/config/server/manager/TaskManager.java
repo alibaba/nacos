@@ -169,7 +169,7 @@ public final class TaskManager implements TaskManagerMBean {
         this.lock.lock();
         try {
             /**
-             * 加入任务
+             * 加入任务列表   等待处理
              */
             AbstractTask oldTask = tasks.put(type, task);
             MetricsMonitor.getDumpTaskMonitor().set(tasks.size());

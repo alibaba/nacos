@@ -215,6 +215,9 @@ public class LongPollingService extends AbstractEventListener {
                                      int probeRequestSize) {
 
         String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
+        /**
+         * 通知诉服务器 如果有新的初始化缓存数据，不要挂断
+         */
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
@@ -228,14 +231,23 @@ public class LongPollingService extends AbstractEventListener {
             // do nothing but set fix polling timeout
         } else {
             long start = System.currentTimeMillis();
+            /**
+             * 客户端对应的md5和服务器缓存中的md5  是否一致   并返回有变化的groupKey列表
+             */
             List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
             if (changedGroups.size() > 0) {
+                /**
+                 * 有变化的groupKey  组装响应对象
+                 */
                 generateResponse(req, rsp, changedGroups);
                 LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
                     System.currentTimeMillis() - start, "instant", RequestUtil.getRemoteIp(req), "polling",
                     clientMd5Map.size(), probeRequestSize, changedGroups.size());
                 return;
             } else if (noHangUpFlag != null && noHangUpFlag.equalsIgnoreCase(TRUE_STR)) {
+                /**
+                 * 没有变化的groupKey且客户端要求服务端不挂断  直接返回
+                 */
                 LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}", System.currentTimeMillis() - start, "nohangup",
                     RequestUtil.getRemoteIp(req), "polling", clientMd5Map.size(), probeRequestSize,
                     changedGroups.size());
@@ -248,6 +260,9 @@ public class LongPollingService extends AbstractEventListener {
         // AsyncContext.setTimeout()的超时时间不准，所以只能自己控制
         asyncContext.setTimeout(0L);
 
+        /**
+         * 没有变化的groupKey  且客户端允许服务器挂起请求
+         */
         scheduler.execute(
             new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }
@@ -373,6 +388,9 @@ public class LongPollingService extends AbstractEventListener {
 
     // =================
 
+    /**
+     * 客户端长轮询应答
+     */
     class ClientLongPolling implements Runnable {
 
         @Override
@@ -483,12 +501,21 @@ public class LongPollingService extends AbstractEventListener {
         Future<?> asyncTimeoutFuture;
     }
 
+    /**
+     * 组装响应对象
+     * @param request
+     * @param response
+     * @param changedGroups
+     */
     void generateResponse(HttpServletRequest request, HttpServletResponse response, List<String> changedGroups) {
         if (null == changedGroups) {
             return;
         }
 
         try {
+            /**
+             * list转String
+             */
             String respString = MD5Util.compareMd5ResultString(changedGroups);
             // 禁用缓存
             response.setHeader("Pragma", "no-cache");
