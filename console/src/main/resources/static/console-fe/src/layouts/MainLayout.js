@@ -30,10 +30,12 @@ class MainLayout extends React.Component {
 
   static propTypes = {
     locale: PropTypes.object,
+    location: PropTypes.object,
     history: PropTypes.object,
     version: PropTypes.any,
     getState: PropTypes.func,
     functionMode: PropTypes.string,
+    children: PropTypes.object,
   };
 
   componentDidMount() {
@@ -97,20 +99,23 @@ class MainLayout extends React.Component {
                   className="nav-menu"
                   openMode="single"
                 >
-                  {MenuData.map((subMenu, idx) =>
-                    subMenu.children ? (
-                      <SubMenu key={String(idx)} label={locale[subMenu.key]}>
-                        {subMenu.children.map((item, i) => (
-                          <Item
-                            key={[idx, i].join('-')}
-                            onClick={() => this.navTo(item.url)}
-                            className={this.isCurrentPath(item.url)}
-                          >
-                            {locale[item.key]}
-                          </Item>
-                        ))}
-                      </SubMenu>
-                    ) : (
+                  {MenuData.map((subMenu, idx) => {
+                    if (subMenu.children) {
+                      return (
+                        <SubMenu key={String(idx)} label={locale[subMenu.key]}>
+                          {subMenu.children.map((item, i) => (
+                            <Item
+                              key={[idx, i].join('-')}
+                              onClick={() => this.navTo(item.url)}
+                              className={this.isCurrentPath(item.url)}
+                            >
+                              {locale[item.key]}
+                            </Item>
+                          ))}
+                        </SubMenu>
+                      );
+                    }
+                    return (
                       <Item
                         key={idx}
                         className={['first-menu', this.isCurrentPath(subMenu.url)]
@@ -120,8 +125,8 @@ class MainLayout extends React.Component {
                       >
                         {locale[subMenu.key]}
                       </Item>
-                    )
-                  )}
+                    );
+                  })}
                 </Menu>
               </>
             )}

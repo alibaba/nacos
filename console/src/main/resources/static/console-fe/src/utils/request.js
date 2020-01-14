@@ -1,6 +1,7 @@
 import axios from 'axios';
 import qs from 'qs';
 import { Message } from '@alifd/next';
+import { browserHistory } from 'react-router';
 // import { SUCCESS_RESULT_CODE } from '../constants';
 
 const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
@@ -16,6 +17,7 @@ const request = () => {
       if (!config.url.includes('auth/users/login')) {
         const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
         config.params.accessToken = accessToken;
+        config.headers = Object.assign({}, config.headers, { accessToken });
       }
       if (['post', 'put'].includes(config.method)) {
         config.data = qs.stringify(config.data);
@@ -41,10 +43,15 @@ const request = () => {
     error => {
       if (error.response) {
         const { data, status } = error.response;
-        Message.error(data && typeof data === 'string' ? data : `HTTP ERROR: ${status}`);
+        if (status !== 403) {
+          Message.error(data && typeof data === 'string' ? data : `HTTP ERROR: ${status}`);
+        }
       } else {
         Message.error(API_GENERAL_ERROR_MESSAGE);
       }
+      localStorage.removeItem('token');
+      const [baseUrl] = location.href.split('#');
+      location.href = `${baseUrl}#/login`;
       return Promise.reject(error);
     }
   );

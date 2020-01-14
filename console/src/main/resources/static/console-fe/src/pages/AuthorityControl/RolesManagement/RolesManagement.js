@@ -77,9 +77,12 @@ class RolesManagement extends React.Component {
           <Table.Column title={locale.username} dataIndex="username" />
           <Table.Column
             title={locale.operation}
-            dataIndex="username"
-            cell={(value, index, record) => (
-              <>
+            dataIndex="role"
+            cell={(value, index, record) => {
+              if (value === 'GLOBAL_ADMIN') {
+                return null;
+              }
+              return (
                 <Button
                   type="primary"
                   warning
@@ -96,8 +99,8 @@ class RolesManagement extends React.Component {
                 >
                   {locale.deleteRole}
                 </Button>
-              </>
-            )}
+              );
+            }}
           />
         </Table>
         {roles.totalCount > pageSize && (
