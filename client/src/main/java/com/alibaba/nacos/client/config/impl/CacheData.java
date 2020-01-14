@@ -16,11 +16,13 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.ConfigChangeEvent;
 import com.alibaba.nacos.api.config.listener.AbstractSharedListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.client.config.utils.MD5;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
@@ -28,6 +30,7 @@ import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -59,9 +62,17 @@ public class CacheData {
         return content;
     }
 
-    public void setContent(String newContent) {
-        this.content = newContent;
-        this.md5 = getMd5String(content);
+    public void setContent(String content) {
+        this.content = content;
+        this.md5 = getMd5String(this.content);
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     /**
@@ -74,7 +85,9 @@ public class CacheData {
         if (null == listener) {
             throw new IllegalArgumentException("listener is null");
         }
-        ManagerListenerWrap wrap = new ManagerListenerWrap(listener, md5);
+        ManagerListenerWrap wrap = (listener instanceof AbstractConfigChangeListener) ?
+            new ManagerListenerWrap(listener, md5, content) : new ManagerListenerWrap(listener, md5);
+
         if (listeners.addIfAbsent(wrap)) {
             LOGGER.info("[{}] [add-listener] ok, tenant={}, dataId={}, group={}, cnt={}", name, tenant, dataId, group,
                 listeners.size());
@@ -158,12 +171,12 @@ public class CacheData {
     void checkListenerMd5() {
         for (ManagerListenerWrap wrap : listeners) {
             if (!md5.equals(wrap.lastCallMd5)) {
-                safeNotifyListener(dataId, group, content, md5, wrap);
+                safeNotifyListener(dataId, group, content, type, md5, wrap);
             }
         }
     }
 
-    private void safeNotifyListener(final String dataId, final String group, final String content,
+    private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
                                     final String md5, final ManagerListenerWrap listenerWrap) {
         final Listener listener = listenerWrap.listener;
 
@@ -188,6 +201,15 @@ public class CacheData {
                     configFilterChainManager.doFilter(null, cr);
                     String contentTmp = cr.getContent();
                     listener.receiveConfigInfo(contentTmp);
+
+                    // compare lastContent and content
+                    if (listener instanceof AbstractConfigChangeListener) {
+                        Map data = ConfigChangeHandler.getInstance().parseChangeData(listenerWrap.lastContent, content, type);
+                        ConfigChangeEvent event = new ConfigChangeEvent(data);
+                        ((AbstractConfigChangeListener)listener).receiveConfigChange(event);
+                        listenerWrap.lastContent = content;
+                    }
+
                     listenerWrap.lastCallMd5 = md5;
                     LOGGER.info("[{}] [notify-ok] dataId={}, group={}, md5={}, listener={} ", name, dataId, group, md5,
                         listener);
@@ -282,11 +304,13 @@ public class CacheData {
     private volatile String content;
     private int taskId;
     private volatile boolean isInitializing = true;
+    private String type;
 }
 
 class ManagerListenerWrap {
     final Listener listener;
     String lastCallMd5 = CacheData.getMd5String(null);
+    String lastContent = null;
 
     ManagerListenerWrap(Listener listener) {
         this.listener = listener;
@@ -295,6 +319,12 @@ class ManagerListenerWrap {
     ManagerListenerWrap(Listener listener, String md5) {
         this.listener = listener;
         this.lastCallMd5 = md5;
+    }
+
+    ManagerListenerWrap(Listener listener, String md5, String lastContent) {
+        this.listener = listener;
+        this.lastCallMd5 = md5;
+        this.lastContent = lastContent;
     }
 
     @Override

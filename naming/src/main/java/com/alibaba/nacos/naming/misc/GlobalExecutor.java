@@ -62,7 +62,6 @@ public class GlobalExecutor {
             }
         });
 
-
     private static ScheduledExecutorService dataSyncExecutor =
         new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), new ThreadFactory() {
             @Override
