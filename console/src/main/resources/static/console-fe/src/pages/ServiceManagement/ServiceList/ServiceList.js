@@ -28,6 +28,7 @@ import {
   Switch,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
@@ -293,11 +294,12 @@ class ServiceList extends React.Component {
                      */
                     <div>
                       <a
-                        onClick={() =>
+                        onClick={() => {
+                          const { name, groupName } = record;
                           this.props.history.push(
-                            `/serviceDetail?name=${record.name}&groupName=${record.groupName}`
-                          )
-                        }
+                            generateUrl('/serviceDetail', { name, groupName })
+                          );
+                        }}
                         style={{ marginRight: 5 }}
                       >
                         {detail}
