@@ -274,14 +274,14 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private void injectSecurityInfo(List<String> params) {
-        ArrayList<String> list = (ArrayList) params;
+        //ArrayList<String> list = (ArrayList) params;
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
-            list.add(Constants.ACCESS_TOKEN);
-            list.add(securityProxy.getAccessToken());
+            params.add(Constants.ACCESS_TOKEN);
+            params.add(securityProxy.getAccessToken());
         }
         if (StringUtils.isNotBlank(namespaceId)) {
-            list.add("tenant");
-            list.add(namespaceId);
+            params.add("tenant");
+            params.add(namespaceId);
         }
     }
 
