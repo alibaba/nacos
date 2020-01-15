@@ -128,6 +128,7 @@ public class NamingProxy {
         }, 0, securityInfoRefreshIntervalMills, TimeUnit.MILLISECONDS);
 
         refreshSrvIfNeed();
+        securityProxy.login(getServerList());
     }
 
     public List<String> getServerListFromEndpoint() {

@@ -186,6 +186,7 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException("role '" + GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
         rolePersistService.addRole(role, username);
+        roleSet.add(role);
     }
 
     public void deleteRole(String role, String userName) {
@@ -193,8 +194,8 @@ public class NacosRoleServiceImpl {
     }
 
     public void deleteRole(String role) {
-
         rolePersistService.deleteRole(role);
+        roleSet.remove(role);
     }
 
     public Page<PermissionInfo> getPermissionsFromDatabase(String role, int pageNo, int pageSize) {

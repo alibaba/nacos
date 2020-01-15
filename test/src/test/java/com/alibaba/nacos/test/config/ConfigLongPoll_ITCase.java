@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.test.config;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.config.server.Config;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * @date 2019-06-07 22:24
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigLongPoll_ITCase {
 
     @LocalServerPort

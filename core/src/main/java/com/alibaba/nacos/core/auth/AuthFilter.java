@@ -96,17 +96,13 @@ public class AuthFilter implements Filter {
                     throw new AccessException("resource name invalid!");
                 }
 
-                if (Loggers.AUTH.isDebugEnabled()) {
-                    Loggers.AUTH.debug("auth now, request: {} {}", req.getMethod(), req.getRequestURI());
-                }
-
                 authManager.auth(new Permission(resource, action), authManager.login(req));
 
             }
 
         } catch (AccessException e) {
             if (Loggers.AUTH.isDebugEnabled()) {
-                Loggers.AUTH.debug("access denied, request: {} {}", req.getMethod(), req.getRequestURI());
+                Loggers.AUTH.debug("access denied, request: {} {}, reason: {}", req.getMethod(), req.getRequestURI(), e.getErrMsg());
             }
             resp.sendError(HttpServletResponse.SC_FORBIDDEN, e.getErrMsg());
             return;

@@ -18,12 +18,12 @@ package com.alibaba.nacos.test.config;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient;
-import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClient;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClientBuilder;
@@ -45,7 +45,7 @@ import java.util.*;
  * @date 2019/5/23 15:26
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigExportAndImportAPI_ITCase {
     private static final long TIME_OUT = 2000;
     private static final String CONFIG_CONTROLLER_PATH = "/v1/cs/configs";

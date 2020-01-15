@@ -16,8 +16,12 @@
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.Nacos;
+import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.test.base.Params;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import org.apache.http.HttpStatus;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -25,11 +29,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Properties;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.fail;
 
 /**
  * @author nkorange
@@ -43,135 +48,100 @@ public class NamingAuth_ITCase extends AuthBase {
     @LocalServerPort
     private int port;
 
-    private String accessToken;
-
-    private String username = "username1";
-    private String password = "password1";
-    private String role = "role1";
-
-    private Properties properties;
-
-    private String namespace1 = "namespace1";
-    private String namespace2 = "namespace2";
+    private NamingService namingService;
 
     @Before
-    public void init() {
-        accessToken = login();
-        // Create a user:
-        ResponseEntity<String> response = request("/nacos/v1/auth/users",
-            Params.newParams()
-                .appendParam("username", username)
-                .appendParam("password", password)
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.POST);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Create a role:
-        response = request("/nacos/v1/auth/roles",
-            Params.newParams()
-                .appendParam("role", role)
-                .appendParam("username", username)
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.POST);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Add read permission for namespace1:
-        response = request("/nacos/v1/auth/permissions",
-            Params.newParams()
-                .appendParam("role", role)
-                .appendParam("resource", namespace1 + ":*:*")
-                .appendParam("action", "r")
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.POST);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Add read/write permission for namespace2:
-        response = request("/nacos/v1/auth/permissions",
-            Params.newParams()
-                .appendParam("role", role)
-                .appendParam("resource", namespace2 + ":*:*")
-                .appendParam("action", "rw")
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.POST);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Init properties:
-        properties = new Properties();
-        properties.put(PropertyKeyConst.USERNAME, username);
-        properties.put(PropertyKeyConst.PASSWORD, password);
-        properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1" + ":" + port);
+    public void init() throws Exception {
+        super.init(port);
     }
 
     @After
     public void destroy() {
-
-        // Delete permission:
-        ResponseEntity<String> response = request("/nacos/v1/auth/permissions",
-            Params.newParams()
-                .appendParam("role", role)
-                .appendParam("resource", namespace1 + ":*:*")
-                .appendParam("action", "r")
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.DELETE);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Delete permission:
-        response = request("/nacos/v1/auth/permissions",
-            Params.newParams()
-                .appendParam("role", role)
-                .appendParam("resource", namespace2 + ":*:*")
-                .appendParam("action", "rw")
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.DELETE);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Delete a role:
-        response = request("/nacos/v1/auth/roles",
-            Params.newParams()
-                .appendParam("role", role)
-                .appendParam("username", username)
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.DELETE);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-
-        // Delete a user:
-        response = request("/nacos/v1/auth/users",
-            Params.newParams()
-                .appendParam("username", username)
-                .appendParam("password", password)
-                .appendParam("accessToken", accessToken)
-                .done(),
-            String.class,
-            HttpMethod.DELETE);
-
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
+        super.destroy();
     }
 
     @Test
-    public void writeWithReadPermission() {
+    public void writeWithReadPermission() throws Exception {
 
-        properties.put(PropertyKeyConst.NAMESPACE, namespace1);
+        properties.put(PropertyKeyConst.USERNAME, username1);
+        properties.put(PropertyKeyConst.PASSWORD, password1);
+        namingService = NacosFactory.createNamingService(properties);
+
+        try {
+            namingService.registerInstance("test.1", "1.2.3.4", 80);
+            fail();
+        } catch (NacosException ne) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
+        }
+
+        try {
+            namingService.deregisterInstance("test.1", "1.2.3.4", 80);
+            fail();
+        } catch (NacosException ne) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
+        }
+    }
+
+    @Test
+    public void readWithReadPermission() throws Exception {
+
+        properties.put(PropertyKeyConst.USERNAME, username2);
+        properties.put(PropertyKeyConst.PASSWORD, password2);
+        NamingService namingService1 = NacosFactory.createNamingService(properties);
+        namingService1.registerInstance("test.1", "1.2.3.4", 80);
+        TimeUnit.SECONDS.sleep(5L);
+
+        properties.put(PropertyKeyConst.USERNAME, username1);
+        properties.put(PropertyKeyConst.PASSWORD, password1);
+        namingService = NacosFactory.createNamingService(properties);
+
+        List<Instance> list = namingService.getAllInstances("test.1");
+        Assert.assertEquals(1, list.size());
+    }
+
+    @Test
+    public void writeWithWritePermission() throws Exception {
+
+        properties.put(PropertyKeyConst.USERNAME, username2);
+        properties.put(PropertyKeyConst.PASSWORD, password2);
+        namingService = NacosFactory.createNamingService(properties);
+
+        namingService.registerInstance("test.1", "1.2.3.4", 80);
+
+        TimeUnit.SECONDS.sleep(5L);
+
+        namingService.deregisterInstance("test.1", "1.2.3.4", 80);
+    }
+
+    @Test
+    public void readWithWritePermission() throws Exception {
+
+        properties.put(PropertyKeyConst.USERNAME, username2);
+        properties.put(PropertyKeyConst.PASSWORD, password2);
+        namingService = NacosFactory.createNamingService(properties);
+
+        namingService.registerInstance("test.1", "1.2.3.4", 80);
+        TimeUnit.SECONDS.sleep(5L);
+
+        List<Instance> list = namingService.getAllInstances("test.1");
+
+        Assert.assertEquals(0, list.size());
+
+    }
+
+    @Test
+    public void readWriteWithFullPermission() throws Exception {
+
+        properties.put(PropertyKeyConst.USERNAME, username3);
+        properties.put(PropertyKeyConst.PASSWORD, password3);
+        namingService = NacosFactory.createNamingService(properties);
+
+        namingService.registerInstance("test.1", "1.2.3.4", 80);
+        TimeUnit.SECONDS.sleep(5L);
+
+        List<Instance> list = namingService.getAllInstances("test.1");
+
+        Assert.assertEquals(1, list.size());
     }
 
 }
