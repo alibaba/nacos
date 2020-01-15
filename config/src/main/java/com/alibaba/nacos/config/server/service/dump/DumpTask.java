@@ -273,9 +273,15 @@ class DumpAllProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
+        /**
+         * 获取config_info中  最大id的数据
+         */
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
+            /**
+             * 分页查询config_info中id大于lastMaxId的数据
+             */
             Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
                 PAGE_SIZE);
             if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
@@ -294,6 +300,9 @@ class DumpAllProcessor implements TaskProcessor {
                         SwitchService.load(cf.getContent());
                     }
 
+                    /**
+                     * 保存配置文件  通知监听
+                     */
                     boolean result = ConfigService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
                         cf.getLastModified());
 
