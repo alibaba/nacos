@@ -41,19 +41,20 @@ class NameSpace extends React.Component {
   }
 
   componentDidMount() {
-    this.getNameSpaces(0);
+    this.getNameSpaces(undefined, undefined, 0);
   }
 
-  getNameSpaces(delayTime = 2000) {
+  getNameSpaces(sortField, sortOrder, delayTime = 2000) {
     const { locale = {} } = this.props;
     const { prompt } = locale;
     const self = this;
     self.openLoading();
+    const param = sortOrder && sortField ? `?sortField=${sortField}&sortType=${sortOrder}` : '';
     setTimeout(() => {
       request({
         type: 'get',
         beforeSend() {},
-        url: 'v1/console/namespaces',
+        url: 'v1/console/namespaces' + param,
         success: res => {
           if (res.code === 200) {
             const data = res.data || [];
@@ -103,6 +104,10 @@ class NameSpace extends React.Component {
     this.setState({
       loading: false,
     });
+  }
+
+  onSort(dataIndex, order) {
+    this.getNameSpaces(dataIndex, order, 0);
   }
 
   detailNamespace(record) {
@@ -322,13 +327,18 @@ class NameSpace extends React.Component {
                 </Button>
               </div>
               <div>
-                <Table dataSource={this.state.dataSource} locale={{ empty: pubNoData }}>
+                <Table
+                  dataSource={this.state.dataSource}
+                  locale={{ empty: pubNoData }}
+                  onSort={this.onSort.bind(this)}
+                >
                   <Table.Column
                     title={namespaceNames}
                     dataIndex="namespaceShowName"
                     cell={this.renderName.bind(this)}
+                    sortable
                   />
-                  <Table.Column title={namespaceNumber} dataIndex="namespace" />
+                  <Table.Column title={namespaceNumber} dataIndex="namespace" sortable />
                   <Table.Column
                     title={configuration}
                     dataIndex="configCount"

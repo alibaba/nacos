@@ -18,6 +18,7 @@ package com.alibaba.nacos.console.controller;
 import com.alibaba.nacos.config.server.model.RestResult;
 import com.alibaba.nacos.config.server.model.TenantInfo;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.console.constant.ConsoleConstants;
 import com.alibaba.nacos.console.model.Namespace;
 import com.alibaba.nacos.console.model.NamespaceAllInfo;
 import org.apache.commons.lang3.StringUtils;
@@ -50,11 +51,14 @@ public class NamespaceController {
      * @return namespace list
      */
     @GetMapping
-    public RestResult<List<Namespace>> getNamespaces(HttpServletRequest request, HttpServletResponse response) {
+    public RestResult<List<Namespace>> getNamespaces(HttpServletRequest request, HttpServletResponse response,
+                                                     @RequestParam(value = "sortField",defaultValue = "gmt_create")String sortField,
+                                                     @RequestParam(value = "sortType", defaultValue = "desc") String sortType) {
         RestResult<List<Namespace>> rr = new RestResult<List<Namespace>>();
         rr.setCode(200);
+        sortField = ConsoleConstants.sortFieldMap.get(sortField);
         // TODO 获取用kp
-        List<TenantInfo> tenantInfos = persistService.findTenantByKp("1");
+        List<TenantInfo> tenantInfos = persistService.findTenantByKp("1", sortField, sortType);
         Namespace namespace0 = new Namespace("", "public", 200, persistService.configInfoCount(""), 0);
         List<Namespace> namespaces = new ArrayList<Namespace>();
         namespaces.add(namespace0);
@@ -64,6 +68,7 @@ public class NamespaceController {
                 configCount, 2);
             namespaces.add(namespaceTmp);
         }
+
         rr.setData(namespaces);
         return rr;
     }

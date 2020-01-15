@@ -3192,8 +3192,8 @@ public class PersistService {
         }
     }
 
-    public List<TenantInfo> findTenantByKp(String kp) {
-        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=?";
+    public List<TenantInfo> findTenantByKp(String kp, String field, String orderType) {
+        String sql = "SELECT tenant_id,tenant_name,tenant_desc FROM tenant_info WHERE kp=? order by " + field + " " + orderType;
         try {
             return this.jt.query(sql, new Object[]{kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
