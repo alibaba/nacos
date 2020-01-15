@@ -274,7 +274,6 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private void injectSecurityInfo(List<String> params) {
-        //ArrayList<String> list = (ArrayList) params;
         if (StringUtils.isNotBlank(securityProxy.getAccessToken())) {
             params.add(Constants.ACCESS_TOKEN);
             params.add(securityProxy.getAccessToken());
