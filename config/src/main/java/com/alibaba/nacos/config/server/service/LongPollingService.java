@@ -279,8 +279,14 @@ public class LongPollingService extends AbstractEventListener {
         if (isFixedPolling()) {
             // ignore
         } else {
+            /**
+             * 监听LocalDataChangeEvent
+             */
             if (event instanceof LocalDataChangeEvent) {
                 LocalDataChangeEvent evt = (LocalDataChangeEvent)event;
+                /**
+                 * 发布DataChangeTask
+                 */
                 scheduler.execute(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
             }
         }
@@ -327,6 +333,9 @@ public class LongPollingService extends AbstractEventListener {
                 ConfigService.getContentBetaMd5(groupKey);
                 for (Iterator<ClientLongPolling> iter = allSubs.iterator(); iter.hasNext(); ) {
                     ClientLongPolling clientSub = iter.next();
+                    /**
+                     * 过滤   筛选出订阅了groupKey的ClientLongPolling
+                     */
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
                         // 如果beta发布且不在beta列表直接跳过
                         if (isBeta && !betaIps.contains(clientSub.ip)) {
@@ -338,6 +347,9 @@ public class LongPollingService extends AbstractEventListener {
                             continue;
                         }
 
+                        /**
+                         * 记录应答时间
+                         */
                         getRetainIps().put(clientSub.ip, System.currentTimeMillis());
                         iter.remove(); // 删除订阅关系
                         LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}|{}",
@@ -395,10 +407,16 @@ public class LongPollingService extends AbstractEventListener {
 
         @Override
         public void run() {
+            /**
+             * 创建线程  在失效时间进行应答客户端请求
+             */
             asyncTimeoutFuture = scheduler.schedule(new Runnable() {
                 @Override
                 public void run() {
                     try {
+                        /**
+                         * 记录应答时间
+                         */
                         getRetainIps().put(ClientLongPolling.this.ip, System.currentTimeMillis());
                         /**
                          * 删除订阅关系
@@ -406,6 +424,9 @@ public class LongPollingService extends AbstractEventListener {
                         allSubs.remove(ClientLongPolling.this);
 
                         if (isFixedPolling()) {
+                            /**
+                             * 固定
+                             */
                             LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
                                 (System.currentTimeMillis() - createTime),
                                 "fix", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
@@ -420,11 +441,17 @@ public class LongPollingService extends AbstractEventListener {
                                 sendResponse(null);
                             }
                         } else {
+                            /**
+                             * 非固定
+                             */
                             LogUtil.clientLog.info("{}|{}|{}|{}|{}|{}",
                                 (System.currentTimeMillis() - createTime),
                                 "timeout", RequestUtil.getRemoteIp((HttpServletRequest)asyncContext.getRequest()),
                                 "polling",
                                 clientMd5Map.size(), probeRequestSize);
+                            /**
+                             * 到达失效时间   对客户端进行应答
+                             */
                             sendResponse(null);
                         }
                     } catch (Throwable t) {
@@ -435,9 +462,16 @@ public class LongPollingService extends AbstractEventListener {
 
             }, timeoutTime, TimeUnit.MILLISECONDS);
 
+            /**
+             * 建立长轮询订阅
+             */
             allSubs.add(this);
         }
 
+        /**
+         * 应答
+         * @param changedGroups
+         */
         void sendResponse(List<String> changedGroups) {
             /**
              *  取消超时任务
@@ -448,7 +482,14 @@ public class LongPollingService extends AbstractEventListener {
             generateResponse(changedGroups);
         }
 
+        /**
+         * 应答
+         * @param changedGroups
+         */
         void generateResponse(List<String> changedGroups) {
+            /**
+             * 配置没有发生变化
+             */
             if (null == changedGroups) {
                 /**
                  * 告诉容器发送HTTP响应
@@ -459,6 +500,9 @@ public class LongPollingService extends AbstractEventListener {
 
             HttpServletResponse response = (HttpServletResponse)asyncContext.getResponse();
 
+            /**
+             * 返回发生变化的配置
+             */
             try {
                 String respString = MD5Util.compareMd5ResultString(changedGroups);
 

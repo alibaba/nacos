@@ -159,7 +159,7 @@ public class AsyncNotifyService extends AbstractEventListener {
                         asyncTaskExecute(task);
                     } else {
                         /**
-                         * 向集群中其他节点发送http请求
+                         * 向集群中点发送http请求
                          * http://192.168.50.65:8848/nacos/v1/cs/communication/dataChange?dataId=test&group=DEFAULT_GROUP
                          */
                         HttpGet request = new HttpGet(task.url);
