@@ -15,11 +15,10 @@
  */
 package com.alibaba.nacos.test.naming;
 
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.naming.NamingApp;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +30,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 import static com.alibaba.nacos.test.naming.NamingBase.*;
 
 /**
@@ -40,7 +40,7 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @date 2018/6/20
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class SelectOneHealthyInstance_ITCase {
 

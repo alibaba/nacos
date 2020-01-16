@@ -16,17 +16,17 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.HttpSimpleClient.HttpResult;
-import com.alibaba.nacos.client.config.http.HttpAgent;
-import com.alibaba.nacos.config.server.Config;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiaochun.xxc
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Config.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = Nacos.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ConfigAPI_ITCase {
     public static final long TIME_OUT = 2000;
     public ConfigService iconfig = null;
