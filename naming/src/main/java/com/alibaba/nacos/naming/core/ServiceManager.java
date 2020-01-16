@@ -21,7 +21,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
@@ -30,7 +29,6 @@ import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
-import com.alibaba.nacos.naming.core.event.ServiceEvent;
 import com.alibaba.nacos.naming.misc.*;
 import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Maps;
@@ -158,7 +156,6 @@ public class ServiceManager implements RecordListener<Service> {
             } else {
                 putServiceAndInit(service);
             }
-            SpringContext.getAppContext().publishEvent(new ServiceEvent(service));
         } catch (Throwable e) {
             Loggers.SRV_LOG.error("[NACOS-SERVICE] error while processing service update", e);
         }
