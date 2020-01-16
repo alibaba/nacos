@@ -19,8 +19,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-import java.net.UnknownHostException;
-
 /**
  * Config main
  *
@@ -30,7 +28,7 @@ import java.net.UnknownHostException;
 @SpringBootApplication
 public class Config {
 
-    public static void main(String[] args) throws UnknownHostException {
+    public static void main(String[] args) {
         SpringApplication.run(Config.class, args);
     }
 }

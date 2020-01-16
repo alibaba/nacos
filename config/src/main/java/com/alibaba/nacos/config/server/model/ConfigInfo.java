@@ -28,6 +28,8 @@ public class ConfigInfo extends ConfigInfoBase {
 
     private String appName;
 
+    private String type;
+
     public ConfigInfo() {
 
     }
@@ -61,6 +63,14 @@ public class ConfigInfo extends ConfigInfoBase {
 
     public void setAppName(String appName) {
         this.appName = appName;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.exception;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;

@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.core.ServiceManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.ClientInfo;
 import com.alibaba.nacos.naming.web.CanDistro;
-import com.alibaba.nacos.naming.web.OverrideParameterRequestWrapper;
+import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.util.VersionUtil;
@@ -61,7 +61,7 @@ public class ApiController extends InstanceController {
         JSONObject result = new JSONObject();
         // For old DNS-F client:
         String dnsfVersion = "1.0.1";
-        String agent = request.getHeader("Client-Version");
+        String agent = WebUtils.getUserAgent(request);
         ClientInfo clientInfo = new ClientInfo(agent);
         if (clientInfo.type == ClientInfo.ClientType.DNS &&
             clientInfo.version.compareTo(VersionUtil.parseVersion(dnsfVersion)) <= 0) {
@@ -122,7 +122,7 @@ public class ApiController extends InstanceController {
             Constants.DEFAULT_NAMESPACE_ID);
 
         String dom = WebUtils.required(request, "dom");
-        String agent = request.getHeader("Client-Version");
+        String agent = WebUtils.getUserAgent(request);
         String clusters = WebUtils.optional(request, "clusters", StringUtils.EMPTY);
         String clientIP = WebUtils.optional(request, "clientIP", StringUtils.EMPTY);
         Integer udpPort = Integer.parseInt(WebUtils.optional(request, "udpPort", "0"));

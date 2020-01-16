@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.utils;
 
-import com.alibaba.nacos.common.util.IoUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.sun.management.OperatingSystemMXBean;
 import org.apache.commons.lang3.StringUtils;
 
@@ -121,11 +121,8 @@ public class SystemUtils {
 
     public static List<String> readClusterConf() throws IOException {
         List<String> instanceList = new ArrayList<String>();
-        Reader reader = null;
-
-        try {
-            reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
-                StandardCharsets.UTF_8);
+        try(Reader reader = new InputStreamReader(new FileInputStream(new File(CLUSTER_CONF_FILE_PATH)),
+        StandardCharsets.UTF_8)) {
             List<String> lines = IoUtils.readLines(reader);
             String comment = "#";
             for (String line : lines) {
@@ -139,13 +136,16 @@ public class SystemUtils {
                     instance = instance.substring(0, instance.indexOf(comment));
                     instance = instance.trim();
                 }
-                instanceList.add(instance);
+                int multiIndex = instance.indexOf(Constants.COMMA_DIVISION);
+                if (multiIndex > 0) {
+                    // support the format: ip1:port,ip2:port  # multi inline
+                    instanceList.addAll(Arrays.asList(instance.split(Constants.COMMA_DIVISION)));
+                } else {
+                    //support the format: 192.168.71.52:8848
+                    instanceList.add(instance);
+                }
             }
             return instanceList;
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
         }
     }
 

@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.Subscribers;
 import com.alibaba.nacos.naming.push.PushService;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -56,6 +57,10 @@ public class SubscribeManager {
         return pushService.getClients(serviceName, namespaceId);
     }
 
+    private List<Subscriber> getSubscribersFuzzy(String serviceName, String namespaceId) {
+        return pushService.getClientsFuzzy(serviceName, namespaceId);
+    }
+
     /**
      * @param serviceName
      * @param namespaceId
@@ -67,7 +72,7 @@ public class SubscribeManager {
         if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
             if (serverListManager.getHealthyServers().size() <= 1) {
-                return getSubscribers(serviceName, namespaceId);
+                return getSubscribersFuzzy(serviceName, namespaceId);
             }
 
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
@@ -79,7 +84,8 @@ public class SubscribeManager {
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
                 if (NetUtils.localServer().equals(server.getKey())) {
-                    subscriberList.addAll(getSubscribers(serviceName, namespaceId));
+                    subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
+                    continue;
                 }
 
                 HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getKey() + RunningConfig.getContextPath()
@@ -89,14 +95,14 @@ public class SubscribeManager {
                     Subscribers subscribers = (Subscribers) JSONObject.parseObject(result.content, Subscribers.class);
                     subscriberList.addAll(subscribers.getSubscribers());
                 }
-                return subscriberList.stream().filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList());
-
             }
+            return CollectionUtils.isNotEmpty(subscriberList) ?
+                subscriberList.stream().filter(distinctByKey(Subscriber::toString)).collect(Collectors.toList())
+                : Collections.EMPTY_LIST;
         } else {
             // local server
-            return getSubscribers(serviceName, namespaceId);
+            return getSubscribersFuzzy(serviceName, namespaceId);
         }
-        return Collections.emptyList();
     }
 
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {

@@ -23,6 +23,8 @@ package com.alibaba.nacos.api.naming;
  */
 public class CommonParams {
 
+    public static final String CODE = "code";
+
     public static final String SERVICE_NAME = "serviceName";
 
     public static final String CLUSTER_NAME = "clusterName";
@@ -31,4 +33,5 @@ public class CommonParams {
 
     public static final String GROUP_NAME = "groupName";
 
+    public static final String LIGHT_BEAT_ENABLED = "lightBeatEnabled";
 }

@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import com.google.common.base.Objects;
 
 /**
  * @author nkorange
@@ -138,7 +138,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(path, headers, expectedResponseCode);
+            return Objects.hashCode(path, headers, expectedResponseCode);
         }
 
         @Override
@@ -184,7 +184,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(TYPE);
+            return Objects.hashCode(TYPE);
         }
 
         @Override
@@ -250,7 +250,7 @@ public abstract class AbstractHealthChecker implements Cloneable {
 
         @Override
         public int hashCode() {
-            return Objects.hash(user, pwd, cmd);
+            return Objects.hashCode(user, pwd, cmd);
         }
 
         @Override
