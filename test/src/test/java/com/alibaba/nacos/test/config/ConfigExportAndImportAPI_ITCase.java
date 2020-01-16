@@ -28,10 +28,7 @@ import com.alibaba.nacos.config.server.utils.ZipUtils;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClient;
 import com.github.keran213539.commonOkHttp.CommonOkHttpClientBuilder;
 import com.github.keran213539.commonOkHttp.UploadByteFile;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -146,6 +143,7 @@ public class ConfigExportAndImportAPI_ITCase {
         }
     }
 
+    @Ignore
     @Test(timeout = 3*TIME_OUT)
     public void testExportByGroup(){
         String getDataUrl = "?search=accurate&dataId=&group=DEFAULT_GROUP&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";

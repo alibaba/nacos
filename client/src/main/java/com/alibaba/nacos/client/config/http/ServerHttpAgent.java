@@ -278,8 +278,8 @@ public class ServerHttpAgent implements HttpAgent {
             params.add(Constants.ACCESS_TOKEN);
             params.add(securityProxy.getAccessToken());
         }
-        if (StringUtils.isNotBlank(namespaceId)) {
-            params.add("tenant");
+        if (StringUtils.isNotBlank(namespaceId) && !params.contains(SpasAdapter.TENANT_KEY)) {
+            params.add(SpasAdapter.TENANT_KEY);
             params.add(namespaceId);
         }
     }
