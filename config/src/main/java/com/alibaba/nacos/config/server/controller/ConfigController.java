@@ -313,7 +313,9 @@ public class ConfigController {
                                              defaultValue = StringUtils.EMPTY) String tenant,
                                          @RequestParam(value = "config_tags", required = false) String configTags,
                                          @RequestParam("pageNo") int pageNo,
-                                         @RequestParam("pageSize") int pageSize) {
+                                         @RequestParam("pageSize") int pageSize,
+                                         @RequestParam(value = "sortField",defaultValue = "gmt_create")String sortField,
+                                         @RequestParam(value = "sortType", defaultValue = "desc") String sortType) {
         Map<String, Object> configAdvanceInfo = new HashMap<String, Object>(100);
         if (StringUtils.isNotBlank(appName)) {
             configAdvanceInfo.put("appName", appName);
@@ -321,9 +323,10 @@ public class ConfigController {
         if (StringUtils.isNotBlank(configTags)) {
             configAdvanceInfo.put("config_tags", configTags);
         }
+        sortField = Constants.configSortFieldMap.get(sortField);
         try {
             return persistService.findConfigInfo4Page(pageNo, pageSize, dataId, group, tenant,
-                configAdvanceInfo);
+                configAdvanceInfo, sortField, sortType);
         } catch (Exception e) {
             String errorMsg = "serialize page error, dataId=" + dataId + ", group=" + group;
             log.error(errorMsg, e);

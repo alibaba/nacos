@@ -1319,7 +1319,8 @@ public class PersistService {
 
     public Page<ConfigInfo> findConfigInfo4Page(final int pageNo, final int pageSize, final String dataId,
                                                 final String group,
-                                                final String tenant, final Map<String, Object> configAdvanceInfo) {
+                                                final String tenant, final Map<String, Object> configAdvanceInfo,
+                                                final String sortField, final String sortType) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         PaginationHelper<ConfigInfo> helper = new PaginationHelper<ConfigInfo>();
         final String appName = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("appName");
@@ -1329,6 +1330,10 @@ public class PersistService {
         StringBuilder where = new StringBuilder(" where ");
         List<String> paramList = new ArrayList<String>();
         paramList.add(tenantTmp);
+        StringBuilder orderBy = new StringBuilder();
+        if (StringUtils.isNotBlank(sortField) && StringUtils.isNotBlank(sortType)) {
+            orderBy.append(" order by ").append(sortField).append(" ").append(sortType);
+        }
         if (StringUtils.isNotBlank(configTags)) {
             sqlCount = "select count(*) from config_info  a left join config_tags_relation b on a.id=b.id";
             sql
@@ -1376,7 +1381,7 @@ public class PersistService {
             }
         }
         try {
-            return helper.fetchPage(this.jt, sqlCount + where, sql + where, paramList.toArray(), pageNo, pageSize,
+            return helper.fetchPage(this.jt, sqlCount + where, sql + where + orderBy, paramList.toArray(), pageNo, pageSize,
                 CONFIG_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             fatalLog.error("[db-error] " + e.toString(), e);

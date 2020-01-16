@@ -151,8 +151,11 @@ class ConfigurationManagement extends React.Component {
     this.setState({ isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN' });
   }
 
-  onSort(dataIndex, order) {
-    console.log(dataIndex + order);
+  onSort(sortField, order) {
+    console.log(sortField + order);
+    setParams('sortField', sortField);
+    setParams('order', order);
+    this.getData();
   }
 
   /**
@@ -268,6 +271,8 @@ class ConfigurationManagement extends React.Component {
     const self = this;
     this.tenant = getParams('namespace') || ''; // 为当前实例保存tenant参数
     this.serverId = getParams('serverId') || '';
+    const sortField = getParams('sortField') || '';
+    const order = getParams('order') || '';
     let urlPrefix = '';
     if (this.dataId.indexOf('*') !== -1 || this.group.indexOf('*') !== -1) {
       urlPrefix = 'v1/cs/configs?search=blur';
@@ -280,7 +285,7 @@ class ConfigurationManagement extends React.Component {
         this.appName
       }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
         this.state.pageSize
-      }`,
+      }&sortField=${sortField}&sortType=${order}`,
       beforeSend() {
         self.openLoading();
       },

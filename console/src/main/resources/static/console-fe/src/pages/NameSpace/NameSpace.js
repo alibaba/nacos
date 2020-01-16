@@ -13,7 +13,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
+import { Button, ConfigProvider, Dialog, Loading, Table, Icon } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';

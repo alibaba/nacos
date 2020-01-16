@@ -15,6 +15,9 @@
  */
 package com.alibaba.nacos.config.server.constant;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Server Constants
  *
@@ -213,4 +216,12 @@ public class Constants {
     public static final String ACL_RESPONSE = "ACL-Response";
 
     public static final int ATOMIC_MAX_SIZE = 1000;
+
+    public static Map<String, String> configSortFieldMap = new HashMap<>();
+
+    static {
+        configSortFieldMap.put("dataId", "data_id");
+        configSortFieldMap.put("group", "group_id");
+        configSortFieldMap.put("gmt_create", "gmt_create");
+    }
 }
