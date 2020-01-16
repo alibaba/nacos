@@ -423,7 +423,6 @@ public class ServiceManager implements RecordListener<Service> {
 
     public void addOrReplaceService(Service service) throws NacosException {
         consistencyService.put(KeyBuilder.buildServiceMetaKey(service.getNamespaceId(), service.getName()), service);
-
     }
 
     public void createEmptyService(String namespaceId, String serviceName, boolean local) throws NacosException {
