@@ -151,6 +151,10 @@ class ConfigurationManagement extends React.Component {
     this.setState({ isCn: localStorage.getItem(LANGUAGE_KEY) === 'zh-CN' });
   }
 
+  onSort(dataIndex, order) {
+    console.log(dataIndex + order);
+  }
+
   /**
    * 获取概览页数据
    */
@@ -1286,9 +1290,10 @@ class ConfigurationManagement extends React.Component {
                   maxBodyHeight={400}
                   ref={'dataTable'}
                   rowSelection={this.state.rowSelection}
+                  onSort={this.onSort.bind(this)}
                 >
-                  <Table.Column title={'Data Id'} dataIndex={'dataId'} />
-                  <Table.Column title={'Group'} dataIndex={'group'} />
+                  <Table.Column title={'Data Id'} dataIndex={'dataId'} sortable />
+                  <Table.Column title={'Group'} dataIndex={'group'} sortable />
                   {!this.inApp ? (
                     <Table.Column title={locale.application} dataIndex={'appName'} />
                   ) : (
