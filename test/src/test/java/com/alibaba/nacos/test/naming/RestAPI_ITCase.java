@@ -19,10 +19,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.test.base.Params;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -222,6 +219,7 @@ public class RestAPI_ITCase extends NamingBase {
     }
 
     @Test
+    @Ignore
     public void testInvalidNamespace() {
 
         String serviceName = NamingBase.randomDomainName();
