@@ -282,6 +282,8 @@ public class ConfigController {
             throw new IllegalArgumentException("invalid probeModify");
         }
 
+        log.info("listen config id:" + probeModify);
+
         probeModify = URLDecoder.decode(probeModify, Constants.ENCODE);
 
         Map<String, String> clientMd5Map;
@@ -290,6 +292,8 @@ public class ConfigController {
         } catch (Throwable e) {
             throw new IllegalArgumentException("invalid probeModify");
         }
+
+        log.info("listen config id 2:" + probeModify);
 
         // do long-polling
         inner.doPollingConfig(request, response, clientMd5Map, probeModify.length());
@@ -376,7 +380,7 @@ public class ConfigController {
     }
 
     @DeleteMapping(params = "beta=true")
-    @Secured(action = ActionTypes.READ, parser = ConfigResourceParser.class)
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Boolean> stopBeta(@RequestParam(value = "dataId") String dataId,
                                         @RequestParam(value = "group") String group,
                                         @RequestParam(value = "tenant", required = false,
@@ -545,6 +549,7 @@ public class ConfigController {
     }
 
     @PostMapping(params = "clone=true")
+    @Secured(action = ActionTypes.WRITE, parser = ConfigResourceParser.class)
     public RestResult<Map<String, Object>> cloneConfig(HttpServletRequest request,
                                                        @RequestParam(value = "src_user", required = false) String srcUser,
                                                        @RequestParam(value = "tenant", required = true) String namespace,
