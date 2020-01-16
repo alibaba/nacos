@@ -16,6 +16,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.naming.NamingApp;
 
+import com.alibaba.nacos.test.base.Params;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
