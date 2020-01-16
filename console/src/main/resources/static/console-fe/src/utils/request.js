@@ -18,8 +18,8 @@ const request = () => {
     },
     error => {
       if (error.response) {
-        const { status } = error.response;
-        Message.error(`HTTP ERROR: ${status}`);
+        const { data, status } = error.response;
+        Message.error(data && typeof data === 'string' ? data : `HTTP ERROR: ${status}`);
       } else {
         Message.error(API_GENERAL_ERROR_MESSAGE);
       }

@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5;
-import com.alibaba.nacos.config.server.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -187,7 +187,7 @@ class DumpProcessor implements TaskProcessor {
 
                 boolean result;
                 if (null != cf) {
-                    result = ConfigService.dump(dataId, group, tenant, cf.getContent(), lastModified);
+                    result = ConfigService.dump(dataId, group, tenant, cf.getContent(), lastModified, cf.getType());
 
                     if (result) {
                         ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
@@ -244,7 +244,7 @@ class DumpAllProcessor implements TaskProcessor {
         while (lastMaxId < currentMaxId) {
             Page<PersistService.ConfigInfoWrapper> page = persistService.findAllConfigInfoFragment(lastMaxId,
                 PAGE_SIZE);
-            if (page != null && page.getPageItems() != null) {
+            if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
                 for (PersistService.ConfigInfoWrapper cf : page.getPageItems()) {
                     long id = cf.getId();
                     lastMaxId = id > lastMaxId ? id : lastMaxId;
@@ -261,7 +261,7 @@ class DumpAllProcessor implements TaskProcessor {
                     }
 
                     boolean result = ConfigService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                        cf.getLastModified());
+                        cf.getLastModified(), cf.getType());
 
                     final String content = cf.getContent();
                     final String md5 = MD5.getInstance().getMD5String(content);

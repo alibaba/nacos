@@ -15,8 +15,9 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.apache.commons.io.IOUtils;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
@@ -49,7 +50,7 @@ public class SwitchService {
         boolean rtn = defaultValue;
         try {
             String value = switches.get(key);
-            rtn = value != null ? Boolean.valueOf(value).booleanValue() : defaultValue;
+            rtn = value != null ? Boolean.parseBoolean(value) : defaultValue;
         } catch (Exception e) {
             rtn = defaultValue;
             LogUtil.fatalLog.error("corrupt switch value {}={}", key, switches.get(key));
@@ -83,7 +84,7 @@ public class SwitchService {
 
         Map<String, String> map = new HashMap<String, String>(30);
         try {
-            for (String line : IOUtils.readLines(new StringReader(config))) {
+            for (String line : IoUtils.readLines(new StringReader(config))) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
                     String[] array = line.split("=");
 

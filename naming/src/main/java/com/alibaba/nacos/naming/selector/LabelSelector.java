@@ -17,13 +17,12 @@ package com.alibaba.nacos.naming.selector;
 
 
 import com.alibaba.nacos.api.cmdb.pojo.PreservedEntityTypes;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.naming.boot.SpringContext;
 import com.alibaba.nacos.naming.core.Instance;
-import com.alibaba.nacos.naming.exception.NacosException;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;

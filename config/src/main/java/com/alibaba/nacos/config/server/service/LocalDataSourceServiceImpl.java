@@ -18,8 +18,8 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.config.server.utils.StringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -157,7 +157,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 sqlFileIn = new FileInputStream(file);
             }
 
-            StringBuffer sqlSb = new StringBuffer();
+            StringBuilder sqlSb = new StringBuilder();
             byte[] buff = new byte[1024];
             int byteRead = 0;
             while ((byteRead = sqlFileIn.read(buff)) != -1) {

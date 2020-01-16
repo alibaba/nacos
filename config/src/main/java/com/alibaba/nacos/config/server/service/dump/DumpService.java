@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -25,7 +26,7 @@ import com.alibaba.nacos.config.server.service.*;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.utils.*;
-import org.apache.commons.io.IOUtils;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,50 +73,35 @@ public class DumpService {
         DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
         DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
 
-        dumpTaskMgr = new TaskManager(
-            "com.alibaba.nacos.server.DumpTaskManager");
+        dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         dumpTaskMgr.setDefaultTaskProcessor(processor);
 
-        dumpAllTaskMgr = new TaskManager(
-            "com.alibaba.nacos.server.DumpAllTaskManager");
+        dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
         dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
 
-        Runnable dumpAll = new Runnable() {
-            @Override
-            public void run() {
-                dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
-            }
-        };
+        Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
 
-        Runnable dumpAllBeta = new Runnable() {
-            @Override
-            public void run() {
-                dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
-            }
-        };
+        Runnable dumpAllBeta = () -> dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
 
-        Runnable clearConfigHistory = new Runnable() {
-            @Override
-            public void run() {
-                log.warn("clearConfigHistory start");
-                if (ServerListService.isFirstIp()) {
-                    try {
-                        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                        int totalCount = persistService.findConfigHistoryCountByTime(startTime);
-                        if (totalCount > 0) {
-                            int pageSize = 1000;
-                            int removeTime = (totalCount + pageSize - 1) / pageSize;
-                            log.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-                                new Object[] {startTime, totalCount, pageSize, removeTime});
-                            while (removeTime > 0) {
-                                // 分页删除，以免批量太大报错
-                                persistService.removeConfigHistory(startTime, pageSize);
-                                removeTime--;
-                            }
+        Runnable clearConfigHistory = () -> {
+            log.warn("clearConfigHistory start");
+            if (ServerListService.isFirstIp()) {
+                try {
+                    Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
+                    int totalCount = persistService.findConfigHistoryCountByTime(startTime);
+                    if (totalCount > 0) {
+                        int pageSize = 1000;
+                        int removeTime = (totalCount + pageSize - 1) / pageSize;
+                        log.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
+                            new Object[] {startTime, totalCount, pageSize, removeTime});
+                        while (removeTime > 0) {
+                            // 分页删除，以免批量太大报错
+                            persistService.removeConfigHistory(startTime, pageSize);
+                            removeTime--;
                         }
-                    } catch (Throwable e) {
-                        log.error("clearConfigHistory error", e);
                     }
+                } catch (Throwable e) {
+                    log.error("clearConfigHistory error", e);
                 }
             }
         };
@@ -155,16 +141,13 @@ public class DumpService {
                 "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
         }
         if (!STANDALONE_MODE) {
-            Runnable heartbeat = new Runnable() {
-                @Override
-                public void run() {
-                    String heartBeatTime = TimeUtils.getCurrentTime().toString();
-                    // write disk
-                    try {
-                        DiskUtil.saveHeartBeatToDisk(heartBeatTime);
-                    } catch (IOException e) {
-                        LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
-                    }
+            Runnable heartbeat = () -> {
+                String heartBeatTime = TimeUtils.getCurrentTime().toString();
+                // write disk
+                try {
+                    DiskUtil.saveHeartBeatToDisk(heartBeatTime);
+                } catch (IOException e) {
+                    LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
                 }
             };
 
@@ -196,8 +179,7 @@ public class DumpService {
                 File heartbeatFile = DiskUtil.heartBeatFile();
                 if (heartbeatFile.exists()) {
                     fis = new FileInputStream(heartbeatFile);
-                    String heartheatTempLast = IOUtils.toString(fis,
-                        Constants.ENCODE);
+                    String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
                     heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
                     if (TimeUtils.getCurrentTime().getTime()
                         - heartheatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {
@@ -214,24 +196,20 @@ public class DumpService {
                     timeStep);
                 DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(
                     this, beforeTimeStamp, TimeUtils.getCurrentTime());
-                dumpChangeProcessor.process(DumpChangeTask.TASK_ID,
-                    new DumpChangeTask());
-                Runnable checkMd5Task = new Runnable() {
-                    @Override
-                    public void run() {
-                        LogUtil.defaultLog.error("start checkMd5Task");
-                        List<String> diffList = ConfigService.checkMd5();
-                        for (String groupKey : diffList) {
-                            String[] dg = GroupKey.parseKey(groupKey);
-                            String dataId = dg[0];
-                            String group = dg[1];
-                            String tenant = dg[2];
-                            ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
-                            ConfigService.dumpChange(dataId, group, tenant, configInfo.getContent(),
-                                configInfo.getLastModified());
-                        }
-                        LogUtil.defaultLog.error("end checkMd5Task");
+                dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
+                Runnable checkMd5Task = () -> {
+                    LogUtil.defaultLog.error("start checkMd5Task");
+                    List<String> diffList = ConfigService.checkMd5();
+                    for (String groupKey : diffList) {
+                        String[] dg = GroupKey.parseKey(groupKey);
+                        String dataId = dg[0];
+                        String group = dg[1];
+                        String tenant = dg[2];
+                        ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
+                        ConfigService.dumpChange(dataId, group, tenant, configInfo.getContent(),
+                            configInfo.getLastModified());
                     }
+                    LogUtil.defaultLog.error("end checkMd5Task");
                 };
                 TimerTaskService.scheduleWithFixedDelay(checkMd5Task, 0, 12,
                     TimeUnit.HOURS);

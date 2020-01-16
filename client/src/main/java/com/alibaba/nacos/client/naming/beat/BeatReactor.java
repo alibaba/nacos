@@ -15,7 +15,14 @@
  */
 package com.alibaba.nacos.client.naming.beat;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.NamingResponseCode;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -34,6 +41,8 @@ public class BeatReactor {
 
     private NamingProxy serverProxy;
 
+    private boolean lightBeatEnabled = false;
+
     public final Map<String, BeatInfo> dom2Beat = new ConcurrentHashMap<String, BeatInfo>();
 
     public BeatReactor(NamingProxy serverProxy) {
@@ -42,7 +51,6 @@ public class BeatReactor {
 
     public BeatReactor(NamingProxy serverProxy, int threadCount) {
         this.serverProxy = serverProxy;
-
         executorService = new ScheduledThreadPoolExecutor(threadCount, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable r) {
@@ -56,8 +64,14 @@ public class BeatReactor {
 
     public void addBeatInfo(String serviceName, BeatInfo beatInfo) {
         NAMING_LOGGER.info("[BEAT] adding beat: {} to beat map.", beatInfo);
-        dom2Beat.put(buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort()), beatInfo);
-        executorService.schedule(new BeatTask(beatInfo), 0, TimeUnit.MILLISECONDS);
+        String key = buildKey(serviceName, beatInfo.getIp(), beatInfo.getPort());
+        BeatInfo existBeat = null;
+        //fix #1733
+        if ((existBeat = dom2Beat.remove(key)) != null) {
+            existBeat.setStopped(true);
+        }
+        dom2Beat.put(key, beatInfo);
+        executorService.schedule(new BeatTask(beatInfo), beatInfo.getPeriod(), TimeUnit.MILLISECONDS);
         MetricsMonitor.getDom2BeatSizeMonitor().set(dom2Beat.size());
     }
 
@@ -89,8 +103,43 @@ public class BeatReactor {
             if (beatInfo.isStopped()) {
                 return;
             }
-            long result = serverProxy.sendBeat(beatInfo);
-            long nextTime = result > 0 ? result : beatInfo.getPeriod();
+            long nextTime = beatInfo.getPeriod();
+            try {
+                JSONObject result = serverProxy.sendBeat(beatInfo, BeatReactor.this.lightBeatEnabled);
+                long interval = result.getIntValue("clientBeatInterval");
+                boolean lightBeatEnabled = false;
+                if (result.containsKey(CommonParams.LIGHT_BEAT_ENABLED)) {
+                    lightBeatEnabled = result.getBooleanValue(CommonParams.LIGHT_BEAT_ENABLED);
+                }
+                BeatReactor.this.lightBeatEnabled = lightBeatEnabled;
+                if (interval > 0) {
+                    nextTime = interval;
+                }
+                int code = NamingResponseCode.OK;
+                if (result.containsKey(CommonParams.CODE)) {
+                    code = result.getIntValue(CommonParams.CODE);
+                }
+                if (code == NamingResponseCode.RESOURCE_NOT_FOUND) {
+                    Instance instance = new Instance();
+                    instance.setPort(beatInfo.getPort());
+                    instance.setIp(beatInfo.getIp());
+                    instance.setWeight(beatInfo.getWeight());
+                    instance.setMetadata(beatInfo.getMetadata());
+                    instance.setClusterName(beatInfo.getCluster());
+                    instance.setServiceName(beatInfo.getServiceName());
+                    instance.setInstanceId(instance.getInstanceId());
+                    instance.setEphemeral(true);
+                    try {
+                        serverProxy.registerService(beatInfo.getServiceName(),
+                            NamingUtils.getGroupName(beatInfo.getServiceName()), instance);
+                    } catch (Exception ignore) {
+                    }
+                }
+            } catch (NacosException ne) {
+                NAMING_LOGGER.error("[CLIENT-BEAT] failed to send beat: {}, code: {}, msg: {}",
+                    JSON.toJSONString(beatInfo), ne.getErrCode(), ne.getErrMsg());
+
+            }
             executorService.schedule(new BeatTask(beatInfo), nextTime, TimeUnit.MILLISECONDS);
         }
     }

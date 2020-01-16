@@ -24,7 +24,7 @@ import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.net.NamingProxy;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.utils.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -105,7 +105,10 @@ public class HostReactor {
             return oldService;
         }
 
+        boolean changed = false;
+
         if (oldService != null) {
+
             if (oldService.getLastRefTime() > serviceInfo.getLastRefTime()) {
                 NAMING_LOGGER.warn("out of date data received, old-t: " + oldService.getLastRefTime()
                     + ", new-t: " + serviceInfo.getLastRefTime());
@@ -157,18 +160,21 @@ public class HostReactor {
             }
 
             if (newHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("new ips(" + newHosts.size() + ") service: "
-                    + serviceInfo.getName() + " -> " + JSON.toJSONString(newHosts));
+                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(newHosts));
             }
 
             if (remvHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("removed ips(" + remvHosts.size() + ") service: "
-                    + serviceInfo.getName() + " -> " + JSON.toJSONString(remvHosts));
+                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(remvHosts));
             }
 
             if (modHosts.size() > 0) {
+                changed = true;
                 NAMING_LOGGER.info("modified ips(" + modHosts.size() + ") service: "
-                    + serviceInfo.getName() + " -> " + JSON.toJSONString(modHosts));
+                    + serviceInfo.getKey() + " -> " + JSON.toJSONString(modHosts));
             }
 
             serviceInfo.setJsonFromServer(json);
@@ -179,7 +185,8 @@ public class HostReactor {
             }
 
         } else {
-            NAMING_LOGGER.info("new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() + " -> " + JSON
+            changed = true;
+            NAMING_LOGGER.info("init new ips(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() + " -> " + JSON
                 .toJSONString(serviceInfo.getHosts()));
             serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
             eventDispatcher.serviceChanged(serviceInfo);
@@ -189,8 +196,10 @@ public class HostReactor {
 
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
 
-        NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getName() +
-            " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+        if (changed) {
+            NAMING_LOGGER.info("current ips:(" + serviceInfo.ipCount() + ") service: " + serviceInfo.getKey() +
+                " -> " + JSON.toJSONString(serviceInfo.getHosts()));
+        }
 
         return serviceInfo;
     }
@@ -248,6 +257,8 @@ public class HostReactor {
         return serviceInfoMap.get(serviceObj.getKey());
     }
 
+
+
     public void scheduleUpdateIfAbsent(String serviceName, String clusters) {
         if (futureMap.get(ServiceInfo.getKey(serviceName, clusters)) != null) {
             return;
@@ -268,6 +279,7 @@ public class HostReactor {
         try {
 
             String result = serverProxy.queryList(serviceName, clusters, pushReceiver.getUDPPort(), false);
+
             if (StringUtils.isNotEmpty(result)) {
                 processServiceJSON(result);
             }
@@ -320,9 +332,18 @@ public class HostReactor {
                     refreshOnly(serviceName, clusters);
                 }
 
+                lastRefTime = serviceObj.getLastRefTime();
+
+                if (!eventDispatcher.isSubscribed(serviceName, clusters) &&
+                    !futureMap.containsKey(ServiceInfo.getKey(serviceName, clusters))) {
+                    // abort the update task:
+                    NAMING_LOGGER.info("update task is stopped, service:" + serviceName + ", clusters:" + clusters);
+                    return;
+                }
+
                 executor.schedule(this, serviceObj.getCacheMillis(), TimeUnit.MILLISECONDS);
 
-                lastRefTime = serviceObj.getLastRefTime();
+
             } catch (Throwable e) {
                 NAMING_LOGGER.warn("[NA] failed to update serviceName: " + serviceName, e);
             }
