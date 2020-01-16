@@ -39,10 +39,6 @@
             <artifactId>tomcat-embed-jasper</artifactId>
             <version>7.0.59</version>
         </dependency>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-dns</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>${project.groupId}</groupId>
