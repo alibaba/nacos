@@ -311,6 +311,7 @@ const I18N_CONF = {
     delSelectedAlertTitle: '配置删除',
     delSelectedAlertContent: '请选择要删除的配置',
     delSuccessMsg: '删除成功',
+    cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -461,9 +462,13 @@ const I18N_CONF = {
     newnamespce: '新建命名空间',
     loading: '加载中...',
     name: '命名空间名：',
+    namespaceId: '命名空间ID(不填则自动生成)：',
+    namespaceIdTooLong: '命名空间ID长度不能超过128',
     namespacenotnull: '命名空间不能为空',
     namespacedescnotnull: '命名空间描述不能为空',
     description: '描述：',
+    namespaceIdAlreadyExist: 'namespaceId已存在',
+    newnamespceFailedMessage: 'namespaceId格式不正确/namespaceId长度大于128/namespaceId已存在',
   },
   NameSpaceList: {
     notice: '提示',

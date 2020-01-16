@@ -32,6 +32,10 @@ public class PropertyKeyConst {
 
     public final static String NAMESPACE = "namespace";
 
+    public final static String USERNAME = "username";
+
+    public final static String PASSWORD = "password";
+
     public final static String ACCESS_KEY = "accessKey";
 
     public final static String SECRET_KEY = "secretKey";
