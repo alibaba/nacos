@@ -79,6 +79,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     volatile private List<Boolean> isHealthList;
     private volatile int masterIndex;
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+    private static Pattern mysqlHostPattern = Pattern.compile("\\/\\/(.*?):");
 
 
     @Autowired
@@ -271,12 +272,12 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                     /**
                      * 主库不健康
                      */
-                    return "DOWN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
+                    return "DOWN: " + getIpFromUrl(dataSourceList.get(i).getUrl());
                 } else {
                     /**
                      * 从库不健康
                      */
-                    return "WARN:" + getIpFromUrl(dataSourceList.get(i).getUrl());
+                    return "WARN: " + getIpFromUrl(dataSourceList.get(i).getUrl());
                 }
             }
         }
@@ -284,11 +285,11 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         return "UP";
     }
 
-    private String getIpFromUrl(String url) {
-
-        Matcher m = ipPattern.matcher(url);
+    private static String getIpFromUrl(String url) {
+        
+        Matcher m = mysqlHostPattern.matcher(url);
         if (m.find()) {
-            return m.group();
+            return m.group().substring(2, m.group().length() - 1);
         }
 
         return "";
