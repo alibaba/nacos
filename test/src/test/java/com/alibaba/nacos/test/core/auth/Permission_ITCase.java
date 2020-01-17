@@ -92,7 +92,7 @@ public class Permission_ITCase extends HttpClient4Test {
         response = request("/nacos/v1/auth/roles",
             Params.newParams()
                 .appendParam("role", "role1")
-                .appendParam("username", "username2")
+                .appendParam("username", "username3")
                 .appendParam("accessToken", accessToken)
                 .done(),
             String.class,
