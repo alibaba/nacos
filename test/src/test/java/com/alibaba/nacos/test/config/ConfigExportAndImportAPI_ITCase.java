@@ -68,7 +68,7 @@ public class ConfigExportAndImportAPI_ITCase {
 
         Map<String, String> prarm = new HashMap<>(7);
         prarm.put("dataId", "testNoAppname1.yml");
-        prarm.put("group", "DEFAULT_GROUP");
+        prarm.put("group", "EXPORT_IMPORT_TEST_GROUP");
         prarm.put("content", "test: test");
         prarm.put("desc", "testNoAppname1");
         prarm.put("type", "yaml");
@@ -80,7 +80,7 @@ public class ConfigExportAndImportAPI_ITCase {
         prarm.put("type", "text");
         Assert.assertEquals("true", httpClient.post(SERVER_ADDR + CONFIG_CONTROLLER_PATH , prarm,null));
         prarm.put("dataId", "testHasAppname1.properties");
-        prarm.put("group", "DEFAULT_GROUP");
+        prarm.put("group", "EXPORT_IMPORT_TEST_GROUP");
         prarm.put("content", "test.test1.value=test");
         prarm.put("desc", "testHasAppname1");
         prarm.put("type", "properties");
@@ -92,7 +92,7 @@ public class ConfigExportAndImportAPI_ITCase {
     public void cleanup(){
         HttpSimpleClient.HttpResult result;
         try {
-            List<String> params2 = Arrays.asList("dataId", "testNoAppname1.yml", "group", "DEFAULT_GROUP", "beta", "false");
+            List<String> params2 = Arrays.asList("dataId", "testNoAppname1.yml", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params2, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
@@ -100,7 +100,7 @@ public class ConfigExportAndImportAPI_ITCase {
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params3, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
-            List<String> params4 = Arrays.asList("dataId", "testHasAppname1.properties", "group", "DEFAULT_GROUP", "beta", "false");
+            List<String> params4 = Arrays.asList("dataId", "testHasAppname1.properties", "group", "EXPORT_IMPORT_TEST_GROUP", "beta", "false");
             result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params4, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
@@ -143,38 +143,32 @@ public class ConfigExportAndImportAPI_ITCase {
         }
     }
 
-    @Ignore
     @Test(timeout = 3*TIME_OUT)
     public void testExportByGroup(){
-        String getDataUrl = "?search=accurate&dataId=&group=DEFAULT_GROUP&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
+        String getDataUrl = "?search=accurate&dataId=&group=EXPORT_IMPORT_TEST_GROUP&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JSONObject resultObj = JSON.parseObject(queryResult);
         JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
-        Assert.assertEquals(3, resultConfigs.size());
+        Assert.assertEquals(2, resultConfigs.size());
         JSONObject config1 = resultConfigs.getJSONObject(0);
         JSONObject config2 = resultConfigs.getJSONObject(1);
-        JSONObject config3 = resultConfigs.getJSONObject(2);
-        String exportByIdsUrl = "?export=true&tenant=&group=DEFAULT_GROUP&appName=&ids=";
+        String exportByIdsUrl = "?export=true&tenant=&group=EXPORT_IMPORT_TEST_GROUP&appName=&ids=";
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
-        Assert.assertEquals(3, zipItemList.size());
+        Assert.assertEquals(2, zipItemList.size());
         String config1Name = config1.getString("group") + "/" + config1.getString("dataId");
         String config2Name = config2.getString("group") + "/" + config2.getString("dataId");
-        String config3Name = config3.getString("group") + "/" + config3.getString("dataId");
-
-        System.out.println(config1Name + ", " + config2Name + ", " + config3Name);
 
         for(ZipUtils.ZipItem zipItem : zipItemList){
             if(!(config1Name.equals(zipItem.getItemName())
-                || config2Name.equals(zipItem.getItemName())
-                || config3Name.equals(zipItem.getItemName()))){
+                || config2Name.equals(zipItem.getItemName()))){
                 Assert.fail();
             }
         }
         // verification metadata
         Map<String, String> metaData = processMetaData(unZiped.getMetaDataItem());
-        String metaDataName = packageMetaName("DEFAULT_GROUP", "testHasAppname1.properties");
+        String metaDataName = packageMetaName("EXPORT_IMPORT_TEST_GROUP", "testHasAppname1.properties");
         String appName = metaData.get(metaDataName);
         Assert.assertNotNull(appName);
         Assert.assertEquals("testApp1", appName);
@@ -182,13 +176,13 @@ public class ConfigExportAndImportAPI_ITCase {
 
     @Test(timeout = 3*TIME_OUT)
     public void testExportByGroupAndApp(){
-        String getDataUrl = "?search=accurate&dataId=&group=DEFAULT_GROUP&appName=testApp1&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
+        String getDataUrl = "?search=accurate&dataId=&group=EXPORT_IMPORT_TEST_GROUP&appName=testApp1&config_tags=&pageNo=1&pageSize=10&tenant=&namespaceId=";
         String queryResult = httpClient.get(SERVER_ADDR + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JSONObject resultObj = JSON.parseObject(queryResult);
         JSONArray resultConfigs = resultObj.getJSONArray("pageItems");
         Assert.assertEquals(1, resultConfigs.size());
         JSONObject config1 = resultConfigs.getJSONObject(0);
-        String exportByIdsUrl = "?export=true&tenant=&group=DEFAULT_GROUP&appName=testApp1&ids=";
+        String exportByIdsUrl = "?export=true&tenant=&group=EXPORT_IMPORT_TEST_GROUP&appName=testApp1&ids=";
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
@@ -201,7 +195,7 @@ public class ConfigExportAndImportAPI_ITCase {
         }
         // verification metadata
         Map<String, String> metaData = processMetaData(unZiped.getMetaDataItem());
-        String metaDataName = packageMetaName("DEFAULT_GROUP", "testHasAppname1.properties");
+        String metaDataName = packageMetaName("EXPORT_IMPORT_TEST_GROUP", "testHasAppname1.properties");
         String appName = metaData.get(metaDataName);
         Assert.assertNotNull(appName);
         Assert.assertEquals("testApp1", appName);
@@ -213,9 +207,9 @@ public class ConfigExportAndImportAPI_ITCase {
         byte[] zipData = httpClient.download(SERVER_ADDR + CONFIG_CONTROLLER_PATH + exportByIdsUrl, null);
         ZipUtils.UnZipResult unZiped = ZipUtils.unzip(zipData);
         List<ZipUtils.ZipItem> zipItemList = unZiped.getZipItemList();
-        String config1Name = "DEFAULT_GROUP/testNoAppname1.yml";
+        String config1Name = "EXPORT_IMPORT_TEST_GROUP/testNoAppname1.yml";
         String config2Name = "TEST1_GROUP/testNoAppname2.txt";
-        String config3Name = "DEFAULT_GROUP/testHasAppname1.properties";
+        String config3Name = "EXPORT_IMPORT_TEST_GROUP/testHasAppname1.properties";
         int successCount = 0;
         for(ZipUtils.ZipItem zipItem : zipItemList){
             if(config1Name.equals(zipItem.getItemName()) || config2Name.equals(zipItem.getItemName()) ||
@@ -226,7 +220,7 @@ public class ConfigExportAndImportAPI_ITCase {
         Assert.assertEquals(3, successCount);
         // verification metadata
         Map<String, String> metaData = processMetaData(unZiped.getMetaDataItem());
-        String metaDataName = packageMetaName("DEFAULT_GROUP", "testHasAppname1.properties");
+        String metaDataName = packageMetaName("EXPORT_IMPORT_TEST_GROUP", "testHasAppname1.properties");
         String appName = metaData.get(metaDataName);
         Assert.assertNotNull(appName);
         Assert.assertEquals("testApp1", appName);
