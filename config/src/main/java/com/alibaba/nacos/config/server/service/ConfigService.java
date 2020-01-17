@@ -465,7 +465,7 @@ public class ConfigService {
             cache.lastModifiedTs = lastModifiedTs;
 
             /**
-             * LongPollingService
+             * LongPollingService   通知LocalDataChangeEvent
              */
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey));
         }

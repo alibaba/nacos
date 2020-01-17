@@ -119,16 +119,25 @@ public class DumpService {
         };
 
         try {
+            /**
+             * 使用dumpAllProcessor方式  dump配置
+             */
             dumpConfigInfo(dumpAllProcessor);
 
             // 更新beta缓存
             LogUtil.defaultLog.info("start clear all config-info-beta.");
+            /**
+             * 删除文件
+             */
             DiskUtil.clearAllBeta();
             if (persistService.isExistTable(BETA_TABLE_NAME)) {
                 dumpAllBetaProcessor.process(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
             }
             // 更新Tag缓存
             LogUtil.defaultLog.info("start clear all config-info-tag.");
+            /**
+             * 删除文件
+             */
             DiskUtil.clearAllTag();
             if (persistService.isExistTable(TAG_TABLE_NAME)) {
                 dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
@@ -152,17 +161,26 @@ public class DumpService {
             throw new RuntimeException(
                 "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
         }
+        /**
+         * 集群模式
+         */
         if (!STANDALONE_MODE) {
             Runnable heartbeat = () -> {
                 String heartBeatTime = TimeUtils.getCurrentTime().toString();
                 // write disk
                 try {
+                    /**
+                     * 将当前时间写入心跳文件    status/heartBeat.txt
+                     */
                     DiskUtil.saveHeartBeatToDisk(heartBeatTime);
                 } catch (IOException e) {
                     LogUtil.fatalLog.error("save heartbeat fail" + e.getMessage());
                 }
             };
 
+            /**
+             * 写入心跳文件
+             */
             TimerTaskService.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
 
             long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
@@ -187,6 +205,9 @@ public class DumpService {
         FileInputStream fis = null;
         Timestamp heartheatLastStamp = null;
         try {
+            /**
+             * 是否在环境变量中指定了isQuickStart
+             */
             if (isQuickStart()) {
                 File heartbeatFile = DiskUtil.heartBeatFile();
                 if (heartbeatFile.exists()) {
@@ -201,7 +222,13 @@ public class DumpService {
             }
             if (isAllDump) {
                 LogUtil.defaultLog.info("start clear all config-info.");
+                /**
+                 * 删除文件
+                 */
                 DiskUtil.clearAll();
+                /**
+                 * 处理配置
+                 */
                 dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
             } else {
                 Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp,
@@ -254,6 +281,10 @@ public class DumpService {
         return Timestamp.valueOf(format.format(cal.getTime()));
     }
 
+    /**
+     * 是否isQuickStart
+     * @return
+     */
     private Boolean isQuickStart() {
         try {
             String val = null;

@@ -48,6 +48,11 @@ public class DiskUtil {
     static final String TAG_DIR = File.separator + "data" + File.separator + "tag-data";
     static final String TENANT_TAG_DIR = File.separator + "data" + File.separator + "tag-beta-data";
 
+    /**
+     * 将当前时间写入心跳文件    status/heartBeat.txt
+     * @param heartBeatTime
+     * @throws IOException
+     */
     static public void saveHeartBeatToDisk(String heartBeatTime)
         throws IOException {
         FileUtils.writeStringToFile(heartBeatFile(), heartBeatTime,
@@ -181,6 +186,10 @@ public class DiskUtil {
         return MD5.getInstance().getMD5String(getConfig(dataId, group, tenant));
     }
 
+    /**
+     * 心跳文件
+     * @return
+     */
     static public File heartBeatFile() {
         return new File(NACOS_HOME, "status/heartBeat.txt");
     }
@@ -190,12 +199,18 @@ public class DiskUtil {
     }
 
     static public void clearAll() {
+        /**
+         * 删除C:\Users\Administrator\nacos\data\config-data
+         */
         File file = new File(NACOS_HOME, BASE_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.defaultLog.info("clear all config-info success.");
         } else {
             LogUtil.defaultLog.warn("clear all config-info failed.");
         }
+        /**
+         * 删除C:\Users\Administrator\nacos\data\tenant-config-data
+         */
         File fileTenant = new File(NACOS_HOME, TENANT_BASE_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.defaultLog.info("clear all config-info-tenant success.");
@@ -205,12 +220,18 @@ public class DiskUtil {
     }
 
     static public void clearAllBeta() {
+        /**
+         * 删除data/beta-data
+         */
         File file = new File(NACOS_HOME, BETA_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.defaultLog.info("clear all config-info-beta success.");
         } else {
             LogUtil.defaultLog.warn("clear all config-info-beta failed.");
         }
+        /**
+         * 删除data/tenant-beta-data
+         */
         File fileTenant = new File(NACOS_HOME, TENANT_BETA_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.defaultLog.info("clear all config-info-beta-tenant success.");

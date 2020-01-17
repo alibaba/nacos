@@ -331,6 +331,9 @@ public class LongPollingService extends AbstractEventListener {
         public void run() {
             try {
                 ConfigService.getContentBetaMd5(groupKey);
+                /**
+                 * 遍历订阅
+                 */
                 for (Iterator<ClientLongPolling> iter = allSubs.iterator(); iter.hasNext(); ) {
                     ClientLongPolling clientSub = iter.next();
                     /**
