@@ -105,15 +105,15 @@ public class ConfigExportAndImportAPI_ITCase {
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
             List<String> params5 = Arrays.asList("dataId", "test1.yml", "group", "TEST_IMPORT", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params4, agent.getEncode(), TIME_OUT);
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params5, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
             List<String> params6 = Arrays.asList("dataId", "test2.txt", "group", "TEST_IMPORT", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params4, agent.getEncode(), TIME_OUT);
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params6, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
 
             List<String> params7 = Arrays.asList("dataId", "test3.properties", "group", "TEST_IMPORT", "beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params4, agent.getEncode(), TIME_OUT);
+            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params7, agent.getEncode(), TIME_OUT);
             Assert.assertEquals(HttpURLConnection.HTTP_OK, result.code);
         } catch (Exception e) {
             Assert.fail();
