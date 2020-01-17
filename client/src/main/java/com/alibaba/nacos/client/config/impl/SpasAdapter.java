@@ -101,5 +101,5 @@ public class SpasAdapter {
     }
 
     private static final String GROUP_KEY = "group";
-    private static final String TENANT_KEY = "tenant";
+    public static final String TENANT_KEY = "tenant";
 }
