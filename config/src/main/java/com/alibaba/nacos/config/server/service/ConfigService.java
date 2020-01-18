@@ -130,7 +130,13 @@ public class ConfigService {
                                    String betaIps) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
 
+        /**
+         * 确保存入CACHE
+         */
         makeSure(groupKey);
+        /**
+         * 加写锁
+         */
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
 
@@ -141,16 +147,26 @@ public class ConfigService {
 
         try {
             final String md5 = MD5.getInstance().getMD5String(content);
+            /**
+             * 比对数据库中和缓存中得md5是否一致
+             */
             if (md5.equals(ConfigService.getContentBetaMd5(groupKey))) {
                 dumpLog.warn(
                     "[dump-beta-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
+                /**
+                 * 不一致 &&（集群模式 || 单机模式且使用了mysql）
+                 * 存配置信息到磁盘
+                 */
                 DiskUtil.saveBetaToDisk(dataId, group, tenant, content);
             }
             String[] betaIpsArr = betaIps.split(",");
 
+            /**
+             * 更新缓存
+             */
             updateBetaMd5(groupKey, md5, Arrays.asList(betaIpsArr), lastModifiedTs);
             return true;
         } catch (IOException ioe) {
@@ -158,6 +174,9 @@ public class ConfigService {
                 ioe);
             return false;
         } finally {
+            /**
+             * 释放写锁
+             */
             releaseWriteLock(groupKey);
         }
     }
@@ -169,7 +188,13 @@ public class ConfigService {
                                   long lastModifiedTs) {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
 
+        /**
+         * 存入CACHE
+         */
         makeSure(groupKey);
+        /**
+         * 加写锁
+         */
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);
 
@@ -180,15 +205,25 @@ public class ConfigService {
 
         try {
             final String md5 = MD5.getInstance().getMD5String(content);
+            /**
+             * 比较数据库与本地CACHE中  md5是否一致
+             */
             if (md5.equals(ConfigService.getContentTagMd5(groupKey, tag))) {
                 dumpLog.warn(
                     "[dump-tag-ignore] ignore to save cache file. groupKey={}, md5={}, lastModifiedOld={}, "
                         + "lastModifiedNew={}",
                     groupKey, md5, ConfigService.getLastModifiedTs(groupKey), lastModifiedTs);
             } else if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
+                /**
+                 * 不一致 &&（集群模式 || 单机模式且使用了mysql）
+                 * 存配置信息到磁盘
+                 */
                 DiskUtil.saveTagToDisk(dataId, group, tenant, tag, content);
             }
 
+            /**
+             * 修改缓存
+             */
             updateTagMd5(groupKey, tag, md5, lastModifiedTs);
             return true;
         } catch (IOException ioe) {
@@ -196,6 +231,9 @@ public class ConfigService {
                 ioe);
             return false;
         } finally {
+            /**
+             * 释放写锁
+             */
             releaseWriteLock(groupKey);
         }
     }
@@ -478,11 +516,17 @@ public class ConfigService {
             cache.md54Beta = md5;
             cache.lastModifiedTs4Beta = lastModifiedTs;
             cache.ips4Beta = ips4Beta;
+            /**
+             * 发布LocalDataChangeEvent
+             */
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, true, ips4Beta));
         }
     }
 
     public static void updateTagMd5(String groupKey, String tag, String md5, long lastModifiedTs) {
+        /**
+         * 确认缓存中有值
+         */
         CacheItem cache = makeSure(groupKey);
         if (cache.tagMd5 == null) {
             Map<String, String> tagMd5Tmp = new HashMap<String, String>(1);
@@ -495,12 +539,18 @@ public class ConfigService {
             } else {
                 cache.tagLastModifiedTs.put(tag, lastModifiedTs);
             }
+            /**
+             * 发布LocalDataChangeEvent
+             */
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
             return;
         }
         if (cache.tagMd5.get(tag) == null || !cache.tagMd5.get(tag).equals(md5)) {
             cache.tagMd5.put(tag, md5);
             cache.tagLastModifiedTs.put(tag, lastModifiedTs);
+            /**
+             * 发布LocalDataChangeEvent
+             */
             EventDispatcher.fireEvent(new LocalDataChangeEvent(groupKey, false, null, tag));
         }
     }

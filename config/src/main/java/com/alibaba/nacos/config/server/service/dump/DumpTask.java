@@ -334,14 +334,26 @@ class DumpAllBetaProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
+        /**
+         * 查询config_info_beta总数据量
+         */
         int rowCount = persistService.configInfoBetaCount();
+        /**
+         * 分页总页数
+         */
         int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
+            /**
+             * 分页查询 config_info_beta
+             */
             Page<ConfigInfoBetaWrapper> page = persistService.findAllConfigInfoBetaForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
                 for (ConfigInfoBetaWrapper cf : page.getPageItems()) {
+                    /**
+                     * dump操作
+                     */
                     boolean result = ConfigService.dumpBeta(cf.getDataId(), cf.getGroup(), cf.getTenant(),
                         cf.getContent(), cf.getLastModified(), cf.getBetaIps());
                     LogUtil.dumpLog.info("[dump-all-beta-ok] result={}, {}, {}, length={}, md5={}", result,
@@ -371,14 +383,26 @@ class DumpAllTagProcessor implements TaskProcessor {
 
     @Override
     public boolean process(String taskType, AbstractTask task) {
+        /**
+         * config_info_tag得数据count
+         */
         int rowCount = persistService.configInfoTagCount();
+        /**
+         * 总页数
+         */
         int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
 
         int actualRowCount = 0;
         for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
+            /**
+             * 分页查询config_info_tag
+             */
             Page<ConfigInfoTagWrapper> page = persistService.findAllConfigInfoTagForDumpAll(pageNo, PAGE_SIZE);
             if (page != null) {
                 for (ConfigInfoTagWrapper cf : page.getPageItems()) {
+                    /**
+                     * dump操作
+                     */
                     boolean result = ConfigService.dumpTag(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getTag(),
                         cf.getContent(), cf.getLastModified());
                     LogUtil.dumpLog.info("[dump-all-Tag-ok] result={}, {}, {}, length={}, md5={}", result,
