@@ -128,6 +128,12 @@ class DumpProcessor implements TaskProcessor {
         this.dumpService = dumpService;
     }
 
+    /**
+     * 感觉指定task得数据   执行dump
+     * @param taskType task type
+     * @param task     task
+     * @return
+     */
     @Override
     public boolean process(String taskType, AbstractTask task) {
         /**
@@ -151,6 +157,9 @@ class DumpProcessor implements TaskProcessor {
             ConfigInfo4Beta cf = dumpService.persistService.findConfigInfo4Beta(dataId, group, tenant);
             boolean result;
             if (null != cf) {
+                /**
+                 * dump配置
+                 */
                 result = ConfigService.dumpBeta(dataId, group, tenant, cf.getContent(), lastModified, cf.getBetaIps());
                 if (result) {
                     ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
@@ -158,6 +167,9 @@ class DumpProcessor implements TaskProcessor {
                         cf.getContent().length());
                 }
             } else {
+                /**
+                 * 移除配置
+                 */
                 result = ConfigService.removeBeta(dataId, group, tenant);
                 if (result) {
                     ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
@@ -242,6 +254,9 @@ class DumpProcessor implements TaskProcessor {
                 //
                 boolean result;
                 if (null != cf) {
+                    /**
+                     * dump配置
+                     */
                     result = ConfigService.dumpTag(dataId, group, tenant, tag, cf.getContent(), lastModified);
                     if (result) {
                         ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
@@ -249,6 +264,9 @@ class DumpProcessor implements TaskProcessor {
                             cf.getContent().length());
                     }
                 } else {
+                    /**
+                     * 删除配置
+                     */
                     result = ConfigService.removeTag(dataId, group, tenant, tag);
                     if (result) {
                         ConfigTraceService.logDumpEvent(dataId, group, tenant, null, lastModified, handleIp,
@@ -271,6 +289,12 @@ class DumpAllProcessor implements TaskProcessor {
         this.persistService = dumpService.persistService;
     }
 
+    /**
+     * 分页获取config_info中得数据   执行dump
+     * @param taskType task type
+     * @param task     task
+     * @return
+     */
     @Override
     public boolean process(String taskType, AbstractTask task) {
         /**
@@ -278,6 +302,10 @@ class DumpAllProcessor implements TaskProcessor {
          */
         long currentMaxId = persistService.findConfigMaxId();
         long lastMaxId = 0;
+        /**
+         * 即将config_info中得所有数据都执行dump
+         * 但需要有其他业务注入任务到tasks中
+         */
         while (lastMaxId < currentMaxId) {
             /**
              * 分页查询config_info中id大于lastMaxId的数据
@@ -332,6 +360,12 @@ class DumpAllBetaProcessor implements TaskProcessor {
         this.persistService = dumpService.persistService;
     }
 
+    /**
+     * 分页获取config_info_beta中得数据   执行dump
+     * @param taskType task type
+     * @param task     task
+     * @return
+     */
     @Override
     public boolean process(String taskType, AbstractTask task) {
         /**
@@ -381,6 +415,12 @@ class DumpAllTagProcessor implements TaskProcessor {
         this.persistService = dumpService.persistService;
     }
 
+    /**
+     * 分页获取config_info_tag中得数据  执行dump
+     * @param taskType task type
+     * @param task     task
+     * @return
+     */
     @Override
     public boolean process(String taskType, AbstractTask task) {
         /**

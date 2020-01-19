@@ -241,12 +241,18 @@ public class DiskUtil {
     }
 
     static public void clearAllTag() {
+        /**
+         * 删除data/tag-data
+         */
         File file = new File(NACOS_HOME, TAG_DIR);
         if (FileUtils.deleteQuietly(file)) {
             LogUtil.defaultLog.info("clear all config-info-tag success.");
         } else {
             LogUtil.defaultLog.warn("clear all config-info-tag failed.");
         }
+        /**
+         * 删除data/tag-beta-data
+         */
         File fileTenant = new File(NACOS_HOME, TENANT_TAG_DIR);
         if (FileUtils.deleteQuietly(fileTenant)) {
             LogUtil.defaultLog.info("clear all config-info-tag-tenant success.");

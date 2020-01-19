@@ -85,10 +85,16 @@ public class DumpService {
         dumpAllTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpAllTaskManager");
         dumpAllTaskMgr.setDefaultTaskProcessor(dumpAllProcessor);
 
+        /**
+         * 添加任务  由dumpAllProcessor来处理   ？？？？？？？？？？？？？
+         */
         Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
 
         Runnable dumpAllBeta = () -> dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
 
+        /**
+         * 清理his_config_info数据
+         */
         Runnable clearConfigHistory = () -> {
             log.warn("clearConfigHistory start");
             if (ServerListService.isFirstIp()) {
@@ -135,6 +141,7 @@ public class DumpService {
             }
             // 更新Tag缓存
             LogUtil.defaultLog.info("start clear all config-info-tag.");
+
             /**
              * 删除文件
              */
@@ -179,7 +186,7 @@ public class DumpService {
             };
 
             /**
-             * 写入心跳文件
+             * 将心跳写入文件
              */
             TimerTaskService.scheduleWithFixedDelay(heartbeat, 0, 10, TimeUnit.SECONDS);
 

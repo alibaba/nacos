@@ -391,7 +391,7 @@ public class ConfigService {
 
         try {
             /**
-             *
+             * 集群模式   或者  使用mysql
              */
             if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
                 DiskUtil.removeConfigInfo(dataId, group, tenant);
