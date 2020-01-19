@@ -43,16 +43,16 @@ const request = () => {
     error => {
       if (error.response) {
         const { data, status } = error.response;
-        if (status !== 403) {
-          Message.error(data && typeof data === 'string' ? data : `HTTP ERROR: ${status}`);
+        if (status === 403) {
+          localStorage.removeItem('token');
+          const [baseUrl] = location.href.split('#');
+          location.href = `${baseUrl}#/login`;
+          return Promise.reject(error);
         }
+        Message.error(data && typeof data === 'string' ? data : `HTTP ERROR: ${status}`);
       } else {
         Message.error(API_GENERAL_ERROR_MESSAGE);
       }
-      localStorage.removeItem('token');
-      const [baseUrl] = location.href.split('#');
-      location.href = `${baseUrl}#/login`;
-      return Promise.reject(error);
     }
   );
 
