@@ -31,3 +31,5 @@ export const USER_LIST = 'USER_LIST';
 export const ROLE_LIST = 'ROLE_LIST';
 
 export const PERMISSIONS_LIST = 'PERMISSIONS_LIST';
+
+export const GET_NAMESPACES = 'GET_NAMESPACES';

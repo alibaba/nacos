@@ -576,12 +576,15 @@ const I18N_CONF = {
     role: 'Role',
     resource: 'Resource',
     action: 'Action',
-    resourcePlaceholder: 'Please enter Resource',
+    resourcePlaceholder: 'Please select resources',
     rolePlaceholder: 'Please enter Role',
-    actionPlaceholder: 'Please enter Action',
+    actionPlaceholder: 'Please select Action',
     resourceError: 'Resource cannot be empty!',
     roleError: 'Role cannot be empty!',
     actionError: 'Action cannot be empty!',
+    readOnly: 'read only',
+    writeOnly: 'write only',
+    readWrite: 'Read and write',
   },
 };
 

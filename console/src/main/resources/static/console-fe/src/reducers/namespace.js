@@ -11,10 +11,29 @@
  * limitations under the License.
  */
 
-import locale from './locale';
-import base from './base';
-import subscribers from './subscribers';
-import authority from './authority';
-import namespace from './namespace';
+import request from '../utils/request';
+import { GET_NAMESPACES } from '../constants';
 
-export default { locale, base, subscribers, authority, namespace };
+const initialState = {
+  namespaces: [],
+};
+
+const getNamespaces = params => dispatch =>
+  request.get('v1/console/namespaces', { params }).then(response => {
+    const { code, data } = response;
+    dispatch({
+      type: GET_NAMESPACES,
+      data: code === 200 ? data : [],
+    });
+  });
+
+export default (state = initialState, action) => {
+  switch (action.type) {
+    case GET_NAMESPACES:
+      return { ...state, namespaces: action.data };
+    default:
+      return state;
+  }
+};
+
+export { getNamespaces };
