@@ -209,12 +209,22 @@ public class AsyncNotifyService extends AbstractEventListener {
             this.httpClient = httpClient;
         }
 
+        /**
+         * 成功
+         * @param response
+         */
         @Override
         public void completed(HttpResponse response) {
 
             long delayed = System.currentTimeMillis() - task.getLastModified();
 
+            /**
+             * 响应码为200
+             */
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                /**
+                 * 记录日志和监控
+                 */
                 ConfigTraceService.logNotifyEvent(task.getDataId(),
                     task.getGroup(), task.getTenant(), null, task.getLastModified(),
                     LOCAL_IP,
@@ -229,6 +239,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                     ConfigTraceService.NOTIFY_EVENT_ERROR, delayed,
                     task.target);
 
+                /**
+                 * 重试
+                 */
                 //get delay time and set fail count to the task
                 asyncTaskExecute(task);
 
@@ -240,6 +253,10 @@ public class AsyncNotifyService extends AbstractEventListener {
             HttpClientUtils.closeQuietly(response);
         }
 
+        /**
+         * 失败
+         * @param ex
+         */
         @Override
         public void failed(Exception ex) {
 
@@ -253,6 +270,9 @@ public class AsyncNotifyService extends AbstractEventListener {
                 task.target);
 
             //get delay time and set fail count to the task
+            /**
+             * 重试
+             */
             asyncTaskExecute(task);
             LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
                 task.target, task.getDataId(), task.getGroup(), task.getLastModified());
@@ -266,6 +286,9 @@ public class AsyncNotifyService extends AbstractEventListener {
             LogUtil.notifyLog.error("[notify-exception] target:{} dataId:{} group:{} ts:{} method:{}",
                 task.target, task.getDataId(), task.getGroup(), task.getLastModified(), "CANCELED");
 
+            /**
+             * 重试
+             */
             //get delay time and set fail count to the task
             asyncTaskExecute(task);
             LogUtil.notifyLog.error("[notify-retry] target:{} dataId:{} group:{} ts:{}",
