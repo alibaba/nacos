@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = NamingApp.class, properties = {"server.servlet.context-path=/nacos"},
@@ -65,7 +66,7 @@ public class NamingProxy_ITCase {
     }
 
     @Test
-    public void testSyncData() throws NacosException {
+    public void testSyncData() throws NacosException, InterruptedException {
         // write data to DataStore
         String groupedName = NamingUtils.getGroupedName(serviceName, groupName);
         Instances instances = new Instances();
@@ -92,13 +93,24 @@ public class NamingProxy_ITCase {
         if (!result) {
             Assert.fail("NamingProxy.syncData error");
         }
+
         // query instance by api
-        List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances = namingService.getAllInstances(serviceName);
+        List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances = namingService.getAllInstances(serviceName, false);
+        for (int i = 0; i < 3 && allInstances.isEmpty(); i++) {
+            // wait for async op
+            TimeUnit.SECONDS.sleep(100);
+            allInstances = namingService.getAllInstances(serviceName, false);
+        }
+        if (allInstances.isEmpty()) {
+            Assert.fail("instance is empty");
+        }
+
         com.alibaba.nacos.api.naming.pojo.Instance dst = allInstances.get(0);
         Assert.assertEquals(instance.getIp(), dst.getIp());
         Assert.assertEquals(instance.getPort(), dst.getPort());
         Assert.assertEquals(instance.getServiceName(), dst.getServiceName());
     }
+
 }
 
 
