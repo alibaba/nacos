@@ -21,6 +21,7 @@ import com.alibaba.nacos.core.cluster.NodeChangeListener;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.executor.ExecutorManager;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
+import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alipay.remoting.rpc.RpcServer;
@@ -82,6 +83,8 @@ public class JRaftServer implements NodeChangeListener {
         this.processor = processor;
         this.executorService = ExecutorManager.newSingleScheduledExecutorService(JRaftServer.class.getCanonicalName(),
                 new NameThreadFactory("com.alibaba.nacos.core.protocol.raft.node-refresh"));
+
+        NotifyManager.subscribe(this);
     }
 
     void init(RaftConfig config) {
@@ -225,6 +228,9 @@ public class JRaftServer implements NodeChangeListener {
     }
 
     void shutdown() {
+
+        NotifyManager.unSubscribe(this);
+
         raftGroupService.shutdown();
         cliClientService.shutdown();
         rpcServer.stop();

@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.core.cluster.task.NodeHealthTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
+import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
 import com.alibaba.nacos.core.notify.NotifyManager;
@@ -241,7 +242,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     private void initConsistencyProtocol() {
         Map<String, ConsistencyProtocol> protocols = SpringUtils.getBeansOfType(ConsistencyProtocol.class);
         for (ConsistencyProtocol protocol : protocols.values()) {
-            protocol.init(SpringUtils.getBean(protocol.configType()));
+            protocol.init((Config) SpringUtils.getBean(protocol.configType()));
         }
     }
 

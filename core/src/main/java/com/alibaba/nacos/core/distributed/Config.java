@@ -24,24 +24,27 @@ package com.alibaba.nacos.core.distributed;
 public interface Config {
 
     /**
+     * Add configuration content
      *
-     * @param key
-     * @param value
+     * @param key config key
+     * @param value config value
      */
     void setVal(String key, String value);
 
     /**
+     * get configuration content by key
      *
-     * @param key
-     * @return
+     * @param key config key
+     * @return config value
      */
     String getVal(String key);
 
     /**
+     * get configuration content by key, if not found, use default-val
      *
-     * @param key
-     * @param defaultVal
-     * @return
+     * @param key config key
+     * @param defaultVal default value
+     * @return config value
      */
     String getValOfDefault(String key, String defaultVal);
 
