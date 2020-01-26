@@ -16,11 +16,9 @@
 package com.alibaba.nacos.config.server.utils;
 
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
@@ -29,8 +27,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  *
  * @author Nacos
  */
-@Component
-public class PropertyUtil {
+public class PropertyUtil implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     private final static Logger logger = LogUtil.defaultLog;
 
@@ -85,14 +82,15 @@ public class PropertyUtil {
      */
     private static boolean standaloneUseMysql = false;
 
+    /**
+     * 使用nacos内部的分布式数据存储
+     */
+    private static boolean embeddedDistributedStore = true;
 
-    @Autowired
     private Environment env;
 
-    @PostConstruct
-    public void init() {
+    private void loadSetting() {
         try {
-
             setNotifyConnectTimeout(Integer.parseInt(env.getProperty("notifyConnectTimeout", "100")));
             logger.info("notifyConnectTimeout:{}", notifyConnectTimeout);
             setNotifySocketTimeout(Integer.parseInt(env.getProperty("notifySocketTimeout", "200")));
@@ -115,7 +113,7 @@ public class PropertyUtil {
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
             setStandaloneUseMysql(getString("spring.datasource.platform", "").equals("mysql"));
-
+            setEmbeddedDistributedStore(getBoolean("embeddedDistributedStore", true));
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
         }
@@ -214,6 +212,10 @@ public class PropertyUtil {
         return standaloneUseMysql;
     }
 
+    public static boolean isEmbeddedDistributedStore() {
+        return embeddedDistributedStore;
+    }
+
     public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
         PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
     }
@@ -275,5 +277,15 @@ public class PropertyUtil {
     }
     public static void setStandaloneUseMysql(boolean standaloneUseMysql) {
         PropertyUtil.standaloneUseMysql = standaloneUseMysql;
+    }
+
+    public static void setEmbeddedDistributedStore(boolean embeddedDistributedStore) {
+        PropertyUtil.embeddedDistributedStore = embeddedDistributedStore;
+    }
+
+    @Override
+    public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+        env = configurableApplicationContext.getEnvironment();
+        loadSetting();
     }
 }

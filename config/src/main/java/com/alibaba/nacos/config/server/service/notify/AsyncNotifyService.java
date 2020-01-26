@@ -18,13 +18,14 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.ServerListService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.AbstractEventListener;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher.Event;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -46,7 +47,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -57,6 +62,8 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 @Service
 public class AsyncNotifyService extends AbstractEventListener {
+
+    private ServerNodeManager serverNodeManager;
 
     @Override
     public List<Class<? extends Event>> interest() {
@@ -77,20 +84,20 @@ public class AsyncNotifyService extends AbstractEventListener {
             String group = evt.group;
             String tenant = evt.tenant;
             String tag = evt.tag;
-            List<?> ipList = serverListService.getServerList();
+            List<Node> ipList = serverNodeManager.allNodes();
 
             // 其实这里任何类型队列都可以
             Queue<NotifySingleTask> queue = new LinkedList<NotifySingleTask>();
             for (int i = 0; i < ipList.size(); i++) {
-                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, (String) ipList.get(i), evt.isBeta));
+                queue.add(new NotifySingleTask(dataId, group, tenant, tag, dumpTs, ipList.get(i).address(), evt.isBeta));
             }
             EXECUTOR.execute(new AsyncTask(httpclient, queue));
         }
     }
 
     @Autowired
-    public AsyncNotifyService(ServerListService serverListService) {
-        this.serverListService = serverListService;
+    public AsyncNotifyService(ServerNodeManager serverNodeManager) {
+        this.serverNodeManager = serverNodeManager;
         httpclient.start();
     }
 
@@ -110,8 +117,6 @@ public class AsyncNotifyService extends AbstractEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(AsyncNotifyService.class);
 
-    private ServerListService serverListService;
-
     class AsyncTask implements Runnable {
 
         public AsyncTask(CloseableHttpAsyncClient httpclient, Queue<NotifySingleTask> queue) {
@@ -128,11 +133,10 @@ public class AsyncNotifyService extends AbstractEventListener {
             while (!queue.isEmpty()) {
                 NotifySingleTask task = queue.poll();
                 String targetIp = task.getTargetIP();
-                if (serverListService.getServerList().contains(
-                    targetIp)) {
+                if (serverNodeManager.hasNode(targetIp)) {
                     // 启动健康检查且有不监控的ip则直接把放到通知队列，否则通知
-                    if (serverListService.isHealthCheck()
-                        && ServerListService.getServerListUnhealth().contains(targetIp)) {
+                    if (serverNodeManager.isHealthCheck()
+                        && serverNodeManager.getServerListUnHealth().contains(targetIp)) {
                         // target ip 不健康，则放入通知列表中
                         ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
                             task.getLastModified(),

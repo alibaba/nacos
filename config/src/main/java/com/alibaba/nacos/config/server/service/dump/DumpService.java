@@ -22,11 +22,19 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.*;
+import com.alibaba.nacos.config.server.service.ConfigService;
+import com.alibaba.nacos.config.server.service.DiskUtil;
+import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.service.TimerTaskService;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
-import com.alibaba.nacos.config.server.utils.*;
-
+import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.MD5;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,9 +55,9 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
-import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 
 /**
  * Dump data service
@@ -64,6 +72,9 @@ public class DumpService {
 
     @Autowired
     PersistService persistService;
+
+    @Autowired
+    private ServerNodeManager serverNodeManager;
 
     @PostConstruct
     public void init() {
@@ -85,7 +96,7 @@ public class DumpService {
 
         Runnable clearConfigHistory = () -> {
             log.warn("clearConfigHistory start");
-            if (ServerListService.isFirstIp()) {
+            if (serverNodeManager.isFirstIp()) {
                 try {
                     Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                     int totalCount = persistService.findConfigHistoryCountByTime(startTime);

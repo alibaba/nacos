@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.DataSourceService;
 import com.alibaba.nacos.config.server.service.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.ServerListService;
+import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,14 +37,20 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
 
+    private final ServerNodeManager serverNodeManager;
     private final DynamicDataSource dynamicDataSource;
     private DataSourceService dataSourceService;
-    private String heathUpStr = "UP";
-    private String heathDownStr = "DOWN";
-    private String heathWarnStr = "WARN";
+
+    private static final String heathUpStr = "UP";
+
+    private static final String heathDownStr = "DOWN";
+
+    private static final String heathWarnStr = "WARN";
 
     @Autowired
-    public HealthController(DynamicDataSource dynamicDataSource) {
+    public HealthController(ServerNodeManager serverNodeManager,
+                            DynamicDataSource dynamicDataSource) {
+        this.serverNodeManager = serverNodeManager;
         this.dynamicDataSource = dynamicDataSource;
     }
 
@@ -58,10 +64,10 @@ public class HealthController {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
-        if (dbStatus.contains(heathUpStr) && ServerListService.isAddressServerHealth() && ServerListService
+        if (dbStatus.contains(heathUpStr) && serverNodeManager.isAddressServerHealth() && serverNodeManager
             .isInIpList()) {
             sb.append(heathUpStr);
-        } else if (dbStatus.contains(heathWarnStr) && ServerListService.isAddressServerHealth() && ServerListService
+        } else if (dbStatus.contains(heathWarnStr) && serverNodeManager.isAddressServerHealth() && serverNodeManager
             .isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
@@ -70,10 +76,10 @@ public class HealthController {
             if (dbStatus.contains(heathDownStr)) {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
-            if (!ServerListService.isAddressServerHealth()) {
+            if (!serverNodeManager.isAddressServerHealth()) {
                 sb.append("address server down. ");
             }
-            if (!ServerListService.isInIpList()) {
+            if (!serverNodeManager.isInIpList()) {
                 sb.append("server ip ").append(LOCAL_IP).append(" is not in the serverList of address server. ");
             }
         }

@@ -15,14 +15,16 @@
  */
 package com.alibaba.nacos.config.server.service.notify;
 
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.AbstractTask;
 import com.alibaba.nacos.config.server.manager.TaskProcessor;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
-import com.alibaba.nacos.config.server.service.ServerListService;
-import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +43,10 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 public class NotifyTaskProcessor implements TaskProcessor {
 
-    public NotifyTaskProcessor(ServerListService serverListService) {
-        this.serverListService = serverListService;
+    private ServerNodeManager serverNodeManager;
+
+    public NotifyTaskProcessor(ServerNodeManager serverNodeManager) {
+        this.serverNodeManager = serverNodeManager;
     }
 
     @Override
@@ -55,8 +59,8 @@ public class NotifyTaskProcessor implements TaskProcessor {
 
         boolean isok = true;
 
-        for (String ip : serverListService.getServerList()) {
-            isok = notifyToDump(dataId, group, tenant, lastModified, ip) && isok;
+        for (Node node : serverNodeManager.allNodes()) {
+            isok = notifyToDump(dataId, group, tenant, lastModified, node.address()) && isok;
         }
         return isok;
     }
@@ -74,8 +78,8 @@ public class NotifyTaskProcessor implements TaskProcessor {
             String urlString = MessageFormat.format(URL_PATTERN, serverIp, RunningConfigUtils.getContextPath(), dataId,
                 group);
 
-            HttpResult result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE);
-            if (result.code == HttpStatus.SC_OK) {
+            ResResult<String> result = NotifyService.invokeURL(urlString, headers, Constants.ENCODE, new TypeReference<ResResult<String>>(){});
+            if (result.getCode() == HttpStatus.SC_OK) {
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
                     ConfigTraceService.NOTIFY_EVENT_OK, delayed, serverIp);
 
@@ -85,7 +89,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
             } else {
                 MetricsMonitor.getConfigNotifyException().increment();
                 log.error("[notify-error] {}, {}, to {}, result {}", new Object[] {dataId, group,
-                    serverIp, result.code});
+                    serverIp, result.getCode()});
                 ConfigTraceService.logNotifyEvent(dataId, group, tenant, null, lastModified, LOCAL_IP,
                     ConfigTraceService.NOTIFY_EVENT_ERROR, delayed, serverIp);
                 return false;
@@ -106,6 +110,4 @@ public class NotifyTaskProcessor implements TaskProcessor {
 
     static final String URL_PATTERN = "http://{0}{1}" + Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange"
         + "?dataId={2}&group={3}";
-
-    final ServerListService serverListService;
 }

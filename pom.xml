@@ -558,6 +558,21 @@
                 <scope>provided</scope>
             </dependency>
 
+            <!-- MQ -->
+            <dependency>
+                <groupId>com.lmax</groupId>
+                <artifactId>disruptor</artifactId>
+                <version>3.4.2</version>
+            </dependency>
+
+
+            <!-- JRaft -->
+            <dependency>
+                <groupId>com.alipay.sofa</groupId>
+                <artifactId>jraft-core</artifactId>
+                <version>1.3.0</version>
+            </dependency>
+
             <!-- Apache commons -->
             <dependency>
                 <groupId>org.apache.commons</groupId>

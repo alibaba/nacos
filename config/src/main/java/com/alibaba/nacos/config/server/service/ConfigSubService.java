@@ -15,6 +15,8 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
@@ -22,17 +24,30 @@ import com.alibaba.nacos.config.server.utils.JSONUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.ThreadUtil;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import org.apache.commons.lang3.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.net.HttpURLConnection;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * config sub service
@@ -44,12 +59,12 @@ public class ConfigSubService {
 
     private ScheduledExecutorService scheduler;
 
-    private ServerListService serverListService;
+    private ServerNodeManager serverNodeManager;
 
     @Autowired
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ConfigSubService(ServerListService serverListService1) {
-        this.serverListService = serverListService1;
+    public ConfigSubService(ServerNodeManager serverNodeManager) {
+        this.serverNodeManager = serverNodeManager;
 
         scheduler = Executors.newScheduledThreadPool(
             ThreadUtil.getSuitableThreadCount(), new ThreadFactory() {
@@ -82,11 +97,12 @@ public class ConfigSubService {
                                                 CompletionService<SampleResult> completionService,
                                                 List<SampleResult> resultList) {
 
-        List<String> ipList = serverListService.getServerList();
+        List<Node> ipList = serverNodeManager.allNodes();
         List<SampleResult> collectionResult = new ArrayList<SampleResult>(
             ipList.size());
         // 提交查询任务
-        for (String ip : ipList) {
+        for (Node node : ipList) {
+            final String ip = node.address();
             try {
                 completionService.submit(new Job(ip, url, params));
             } catch (Exception e) { // 发送请求失败
@@ -180,13 +196,13 @@ public class ConfigSubService {
                 }
 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult result = NotifyService
-                    .invokeURL(urlAll, null, Constants.ENCODE);
+                ResResult<String> result = NotifyService
+                    .invokeURL(urlAll, null, Constants.ENCODE, new TypeReference<ResResult<String>>(){});
                 /**
                  *  http code 200
                  */
-                if (result.code == HttpURLConnection.HTTP_OK) {
-                    String json = result.content;
+                if (result.getCode() == HttpURLConnection.HTTP_OK) {
+                    String json = result.getData();
                     SampleResult resultObj = JSONUtils.deserializeObject(json,
                         new TypeReference<SampleResult>() {
                         });
@@ -196,7 +212,7 @@ public class ConfigSubService {
 
                     LogUtil.defaultLog.info(
                         "Can not get clientInfo from {} with {}", ip,
-                        result.code);
+                        result.getCode());
                     return null;
                 }
             } catch (Exception e) {
@@ -219,7 +235,7 @@ public class ConfigSubService {
             params.put("tenant", tenant);
         }
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-            serverListService.getServerList().size());
+                serverNodeManager.allNodes().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
             queue);
 
@@ -240,7 +256,7 @@ public class ConfigSubService {
         Map<String, String> params = new HashMap<String, String>(50);
         params.put("ip", ip);
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<Future<SampleResult>>(
-            serverListService.getServerList().size());
+                serverNodeManager.allNodes().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<SampleResult>(scheduler,
             queue);
 

@@ -27,4 +27,10 @@ import org.slf4j.LoggerFactory;
 public class Loggers {
 
     public static final Logger AUTH = LoggerFactory.getLogger("com.alibaba.nacos.core.auth");
+
+    public static final Logger CORE = LoggerFactory.getLogger("com.alibaba.nacos.core");
+
+    public static final Logger WATCH_FILE = LoggerFactory.getLogger("com.alibaba.nacos.core.file.watch");
+
+    public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.raft");
 }

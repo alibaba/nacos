@@ -50,6 +50,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpasyncclient</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-api</artifactId>
         </dependency>

@@ -15,32 +15,29 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.fastjson.TypeReference;
+import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.notify.NotifyService;
-import com.alibaba.nacos.config.server.service.notify.NotifyService.HttpResult;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.HttpClientUtils;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +50,9 @@ import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.*;
+import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
+import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
 
 /**
  * Serverlist service
@@ -61,6 +60,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.*;
  * @author Nacos
  */
 @Service
+@Deprecated
 public class ServerListService implements ApplicationListener<WebServerInitializedEvent> {
 
 
@@ -76,7 +76,6 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         this.servletContext = servletContext;
     }
 
-    @PostConstruct
     public void init() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
@@ -110,8 +109,6 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
         }
 
     }
-
-
 
     public List<String> getServerList() {
         return new ArrayList<String>(serverList);
@@ -214,12 +211,12 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
         if (isUseAddressServer()) {
             try {
-                HttpResult result = NotifyService.invokeURL(addressServerUrl, null, null);
+                ResResult<String> result = NotifyService.invokeURL(addressServerUrl, null, null, new TypeReference<ResResult<String>>(){});
 
-                if (HttpServletResponse.SC_OK == result.code) {
+                if (HttpServletResponse.SC_OK == result.getCode()) {
                     isAddressServerHealth = true;
                     addressServerFailCount = 0;
-                    List<String> lines = IoUtils.readLines(new StringReader(result.content));
+                    List<String> lines = IoUtils.readLines(new StringReader(result.getData()));
                     List<String> ips = new ArrayList<String>(lines.size());
                     for (String serverAddr : lines) {
                         if (StringUtils.isNotBlank(serverAddr)) {
@@ -232,10 +229,10 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
                     if (addressServerFailCount >= maxFailCount) {
                         isAddressServerHealth = false;
                     }
-                    defaultLog.error("[serverlist] failed to get serverlist, error code {}", result.code);
+                    defaultLog.error("[serverlist] failed to get serverlist, error code {}", result.getCode());
                     return Collections.emptyList();
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 addressServerFailCount++;
                 if (addressServerFailCount >= maxFailCount) {
                     isAddressServerHealth = false;
@@ -377,12 +374,8 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
      * ip unhealth count
      */
     private static  Map<String, Integer> serverIp2unhealthCount = new ConcurrentHashMap<>();
-    private RequestConfig requestConfig = RequestConfig.custom()
-        .setConnectTimeout(PropertyUtil.getNotifyConnectTimeout())
-        .setSocketTimeout(PropertyUtil.getNotifySocketTimeout()).build();
 
-    private CloseableHttpAsyncClient httpclient = HttpAsyncClients.custom().setDefaultRequestConfig(requestConfig)
-        .build();
+    private CloseableHttpAsyncClient httpclient;
 
 
     public String domainName;
@@ -394,10 +387,6 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent event) {
-        httpclient.start();
-        CheckServerHealthTask checkServerHealthTask = new CheckServerHealthTask();
-        TimerTaskService.scheduleWithFixedDelay(checkServerHealthTask, 0L, 5L, TimeUnit.SECONDS);
-
     }
 
 }
