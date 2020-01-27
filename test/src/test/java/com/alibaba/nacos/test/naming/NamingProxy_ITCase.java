@@ -112,19 +112,3 @@ public class NamingProxy_ITCase {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
