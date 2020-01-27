@@ -180,7 +180,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     }
 
     @Override
-    public synchronized void nodeLeaf(Collection<Node> nodes) {
+    public synchronized void nodeLeave(Collection<Node> nodes) {
         for (Node node : nodes) {
             serverListHealth.remove(node.address());
         }
@@ -190,7 +190,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         nodeView = null;
 
         NotifyManager.publishEvent(NodeChangeEvent.class, NodeChangeEvent.builder()
-                .kind("leaf")
+                .kind("leave")
                 .changeNodes(nodes)
                 .allNodes(allNodes())
                 .build());

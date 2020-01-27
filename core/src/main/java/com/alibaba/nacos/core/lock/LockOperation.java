@@ -14,34 +14,49 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.core.lock;
 
-import com.alibaba.nacos.common.model.ResResult;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
+enum LockOperation {
 
     /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
+     * lock operation
      */
-    ResResult<Boolean> onAccept(Datum data);
+    LOCK("lock"),
 
     /**
-     * Exception callback
-     *
-     * @param throwable {@link Throwable}
+     * unlock operation
      */
-    void onError(Throwable throwable);
+    UN_LOCK("unlock"),
 
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
+    /**
+     * lock renew
      */
-    String operation();
+    RE_NEW("renew")
+
+    ;
+
+    private String operation;
+
+    LockOperation(String operation) {
+        this.operation = operation;
+    }
+
+    public String getOperation() {
+        return operation;
+    }
+
+    public static LockOperation sourceOf(final String operation) {
+        for (LockOperation lockOperation : LockOperation.values()) {
+            if (Objects.equals(operation, lockOperation.getOperation())) {
+                return lockOperation;
+            }
+        }
+        return null;
+    }
 
 }

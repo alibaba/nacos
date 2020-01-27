@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
+package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alipay.sofa.jraft.Closure;

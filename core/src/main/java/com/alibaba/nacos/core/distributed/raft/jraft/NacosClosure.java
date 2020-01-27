@@ -14,34 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.core.distributed.Datum;
+import com.alipay.sofa.jraft.Closure;
+import com.alipay.sofa.jraft.Status;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
+public class NacosClosure implements Closure {
 
-    /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
-     */
-    ResResult<Boolean> onAccept(Datum data);
+    private final Datum datum;
+    private final Closure closure;
 
-    /**
-     * Exception callback
-     *
-     * @param throwable {@link Throwable}
-     */
-    void onError(Throwable throwable);
+    public NacosClosure(Datum datum, Closure closure) {
+        this.datum = datum;
+        this.closure = closure;
+    }
 
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
-     */
-    String operation();
+    @Override
+    public void run(Status status) {
+        if (closure != null) {
+            closure.run(status);
+        }
+    }
 
+    public Closure getClosure() {
+        return closure;
+    }
+
+    public Datum getDatum() {
+        return datum;
+    }
 }

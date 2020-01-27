@@ -16,13 +16,35 @@
 
 package com.alibaba.nacos.config.server.service.Intercept;
 
+import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@Conditional(value = {DisruptConfigIntercept.InnerStore.class})
 @Component
 public class DisruptConfigIntercept implements Intercept {
 
+    @Autowired
+    private XIDConnectionManager connectionManager;
+
+    @Autowired
+    private JRaftProtocol JRaftProtocol;
+
+
+
+    public static class InnerStore implements Condition {
+
+        @Override
+        public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
+            return false;
+        }
+    }
 
 }

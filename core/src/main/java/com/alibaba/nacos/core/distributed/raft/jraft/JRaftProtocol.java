@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
+package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
@@ -23,6 +23,8 @@ import com.alibaba.nacos.core.distributed.BizProcessor;
 import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
@@ -30,6 +32,7 @@ import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.entity.Task;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
@@ -43,8 +46,10 @@ import java.util.concurrent.Executor;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Component
-public class RaftProtocol implements ConsistencyProtocol<RaftConfig> {
+@SuppressWarnings("all")
+@ConditionalOnClass(name = {"com.alipay.sofa.jraft.NodeManager"})
+@Component("RaftProtocol")
+public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     private boolean isStart = false;
 

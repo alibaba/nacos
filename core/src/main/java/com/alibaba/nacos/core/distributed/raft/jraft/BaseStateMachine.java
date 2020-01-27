@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
+package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Closure;
-import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.NodeManager;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
@@ -38,27 +38,22 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosStateMachine extends StateMachineAdapter {
+public abstract class BaseStateMachine extends StateMachineAdapter {
 
     private final AtomicLong leaderTerm = new AtomicLong(-1L);
 
-    private Map<String, BizProcessor> processorMap = new HashMap<>();
+    protected Map<String, BizProcessor> processorMap = new HashMap<>();
 
     private Collection<SnapshotOperate> snapshotOperates;
 
     private NodeManager nodeManager = NodeManager.getInstance();
 
-    public NacosStateMachine() {
+    public BaseStateMachine() {
         snapshotOperates = SpringUtils.getBeansOfType(SnapshotOperate.class).values();
     }
 
     public synchronized void registerBizProcessor(BizProcessor processor) {
         processorMap.put(processor.bizInfo(), processor);
-    }
-
-    @Override
-    public void onApply(Iterator iterator) {
-
     }
 
     @Override

@@ -50,7 +50,8 @@ public class DistributeIDManager {
         int workerId = WORKER_ID.getAndIncrement();
 
         if (workerId > MAX_WORKER_ID) {
-            throw new IllegalStateException("[" + resources + "] The maximum worker ID is 31, which has exceeded the upper limit. Currently [" + workerId + "]");
+            throw new IllegalStateException("[" + resources + "] The maximum worker ID is 31, " +
+                    "which has exceeded the upper limit. Currently [" + workerId + "]");
         }
 
         SNAKE_FLOWER_ID_HELPER_MAP.computeIfAbsent(resources, s -> new SnakeFlowerIdHelper(DATA_CENTER_ID, workerId));
@@ -60,7 +61,8 @@ public class DistributeIDManager {
         if (SNAKE_FLOWER_ID_HELPER_MAP.containsKey(resource)) {
             return SNAKE_FLOWER_ID_HELPER_MAP.get(resource).nextId();
         }
-        throw new NoSuchElementException("The resource is not registered with the distributed ID resource for the time being.");
+        throw new NoSuchElementException("The resource is not registered with the distributed " +
+                "ID resource for the time being.");
     }
 
 }

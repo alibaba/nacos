@@ -14,37 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
+package com.alibaba.nacos.config.server.service.Intercept;
 
-import com.alibaba.nacos.core.distributed.Datum;
-import com.alipay.sofa.jraft.Closure;
-import com.alipay.sofa.jraft.Status;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosClosure implements Closure {
+@Conditional(value = {DefaultConfigIntercept.DefaultStore.class})
+@Component
+public class DefaultConfigIntercept implements Intercept {
 
-    private final Datum datum;
-    private final Closure closure;
+    public static class DefaultStore implements Condition {
 
-    public NacosClosure(Datum datum, Closure closure) {
-        this.datum = datum;
-        this.closure = closure;
-    }
-
-    @Override
-    public void run(Status status) {
-        if (closure != null) {
-            closure.run(status);
+        @Override
+        public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
+            return false;
         }
     }
 
-    public Closure getClosure() {
-        return closure;
-    }
-
-    public Datum getDatum() {
-        return datum;
-    }
 }

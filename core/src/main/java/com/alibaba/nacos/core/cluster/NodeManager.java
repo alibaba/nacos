@@ -74,11 +74,11 @@ public interface NodeManager {
     void nodeJoin(Collection<Node> node);
 
     /**
-     * One node leaf
+     * One node Leave
      *
      * @param node
      */
-    void nodeLeaf(Collection<Node> node);
+    void nodeLeave(Collection<Node> node);
 
     /**
      * subscribe node change event

@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.distributed;
 
+import com.alibaba.nacos.common.model.ResResult;
+
 import java.util.Collection;
 
 /**
@@ -49,8 +51,9 @@ public interface BizProcessor {
      * Process Submitted Log
      *
      * @param datum {@link Datum}
+     * @return {@link ResResult<Boolean>}
      */
-    void onApply(Datum datum);
+    ResResult<Boolean> onApply(Datum datum);
 
     /**
      * get all log consumer

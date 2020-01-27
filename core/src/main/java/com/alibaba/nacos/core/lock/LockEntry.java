@@ -14,30 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
-
-import com.alibaba.nacos.core.distributed.Datum;
-import com.alipay.remoting.AsyncContext;
-import com.alipay.remoting.BizContext;
-import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
+package com.alibaba.nacos.core.lock;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncProcessor extends AsyncUserProcessor<Datum> {
+class LockEntry {
 
-    private RaftProtocol protocol;
+    private String key;
 
-    public NacosAsyncProcessor(RaftProtocol protocol) {
-        this.protocol = protocol;
+    private long version;
+
+    private long expireTime;
+
+    public String getKey() {
+        return key;
     }
 
-    @Override
-    public void handleRequest(BizContext bizContext, AsyncContext asyncContext, Datum datum) {
+    public void setKey(String key) {
+        this.key = key;
     }
 
-    @Override
-    public String interest() {
-        return null;
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public long getExpireTime() {
+        return expireTime;
+    }
+
+    public void setExpireTime(long expireTime) {
+        this.expireTime = expireTime;
     }
 }
