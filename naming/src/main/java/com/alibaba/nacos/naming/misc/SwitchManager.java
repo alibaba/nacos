@@ -63,9 +63,8 @@ public class SwitchManager implements RecordListener<SwitchDomain> {
     }
 
     public void update(String entry, String value, boolean debug) throws Exception {
-
+        lock.lock();
         try {
-            lock.lock();
 
             Datum datum = consistencyService.get(UtilsAndCommons.getSwitchDomainKey());
             SwitchDomain switchDomain;

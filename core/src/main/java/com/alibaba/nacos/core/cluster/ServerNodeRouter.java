@@ -18,7 +18,10 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.utils.ResResultUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -27,9 +30,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController()
 public class ServerNodeRouter {
 
-    @GetMapping("/health")
+    @Autowired
+    private NodeManager nodeManager;
+
+    @GetMapping("/server/health")
     public ResResult<String> getHealth() {
         return ResResultUtils.success("");
+    }
+
+    @PostMapping("/server/report")
+    public ResResult<Boolean> report(@RequestBody ServerNode serverNode) {
+        serverNode.setExtendVal(Node.LAST_REF_TIME, String.valueOf(System.currentTimeMillis()));
+        nodeManager.update(serverNode);
+        return ResResultUtils.success(true);
     }
 
 }

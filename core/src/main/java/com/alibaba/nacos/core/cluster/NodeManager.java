@@ -95,6 +95,11 @@ public interface NodeManager {
     void unSubscribe(NodeChangeListener listener);
 
     /**
+     * clean operation
+     */
+    void clean();
+
+    /**
      * node manager shutdown
      */
     void shutdown();

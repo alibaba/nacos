@@ -165,8 +165,9 @@ public class RaftCore {
             return;
         }
 
+        OPERATE_LOCK.lock();
+
         try {
-            OPERATE_LOCK.lock();
             long start = System.currentTimeMillis();
             final Datum datum = new Datum();
             datum.key = key;

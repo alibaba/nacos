@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -32,9 +33,32 @@ public class ServerNode implements Node {
 
     private NodeState state;
 
-    private Map<String, String> extendInfo;
+    private Map<String, String> extendInfo = new HashMap<>();
 
     private String address;
+
+    {
+        extendInfo.put(SITE_KEY, "unknown");
+        extendInfo.put(AD_WEIGHT, "0");
+        extendInfo.put(LAST_REF_TIME, "0");
+        extendInfo.put(WEIGHT, "1");
+        extendInfo.put(DISTRO_BEATS, null);
+    }
+
+    @Override
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    @Override
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    @Override
+    public void setState(NodeState state) {
+        this.state = state;
+    }
 
     @Override
     public String ip() {
@@ -67,6 +91,11 @@ public class ServerNode implements Node {
     @Override
     public String extendVal(String key) {
         return extendInfo.get(key);
+    }
+
+    @Override
+    public void setExtendVal(String key, String value) {
+        extendInfo.put(key, value);
     }
 
     @Override
@@ -137,7 +166,7 @@ public class ServerNode implements Node {
 
         public ServerNode build() {
             ServerNode serverNode = new ServerNode();
-            serverNode.extendInfo = this.extendInfo;
+            serverNode.extendInfo.putAll(this.extendInfo);
             serverNode.state = this.state;
             serverNode.ip = this.ip;
             serverNode.port = this.port;

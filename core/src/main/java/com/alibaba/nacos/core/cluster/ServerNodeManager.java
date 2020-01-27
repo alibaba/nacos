@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.cluster.task.NodeHealthTask;
+import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
 import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
@@ -39,9 +39,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
@@ -56,9 +56,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     private Map<String, Node> serverListHealth = new ConcurrentSkipListMap<>();
 
-    private List<Node> serverListUnHealth = new CopyOnWriteArrayList<>();
-
-    private Map<String, Integer> serverIp2UnHealthCount = new ConcurrentHashMap<>();
+    private Set<Node> serverListUnHealth = new CopyOnWriteArraySet<>();
 
     private volatile List<Node> nodeView = new ArrayList<>();
 
@@ -119,7 +117,21 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public void update(Node newNode) {
-        serverListHealth.put(newNode.address(), newNode);
+
+        long lastRefTime = Long.parseLong(newNode.extendVal(Node.LAST_REF_TIME));
+
+        if (lastRefTime < System.currentTimeMillis()) {
+            newNode.setState(NodeState.DOWN);
+            serverListHealth.remove(newNode.address());
+            serverListUnHealth.add(newNode);
+        } else {
+            serverListHealth.put(newNode.address(), newNode);
+        }
+
+        // reset node view to lazy update
+
+        nodeView = null;
+
     }
 
     @Override
@@ -206,6 +218,10 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         NotifyManager.unSubscribe(listener);
     }
 
+    @Override
+    public void clean() {
+    }
+
     @PreDestroy
     @Override
     public void shutdown() {
@@ -248,14 +264,14 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {
-        taskManager.execute(new NodeHealthTask());
+        taskManager.execute(new NodeStateReportTask());
     }
 
     public List<Node> getServerListHealth() {
         return nodeView;
     }
 
-    public List<Node> getServerListUnHealth() {
+    public Set<Node> getServerListUnHealth() {
         return serverListUnHealth;
     }
 
@@ -293,10 +309,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     public boolean isAddressServerHealth() {
         return isAddressServerHealth;
-    }
-
-    public Map<String, Integer> getServerIp2UnHealthCount() {
-        return serverIp2UnHealthCount;
     }
 
     public String getAddressServerUrl() {

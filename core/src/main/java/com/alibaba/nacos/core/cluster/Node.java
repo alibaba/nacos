@@ -23,6 +23,37 @@ import java.util.Map;
  */
 public interface Node {
 
+    String SITE_KEY = "site";
+
+    String AD_WEIGHT = "adweight";
+
+    String LAST_REF_TIME = "lastRefTime";
+
+    String WEIGHT = "weight";
+
+    String DISTRO_BEATS = "distroBeats";
+
+    /**
+     * update node ip info
+     *
+     * @param ip server ip
+     */
+    void setIp(String ip);
+
+    /**
+     * update node port info;
+     *
+     * @param port server port
+     */
+    void setPort(int port);
+
+    /**
+     * update node state
+     *
+     * @param state {@link NodeState}
+     */
+    void setState(NodeState state);
+
     /**
      * get this node ip info
      *
@@ -65,4 +96,12 @@ public interface Node {
      * @return get target extend info
      */
     String extendVal(String key);
+
+    /**
+     * set extend data by key
+     *
+     * @param key extend info key
+     * @param value extend value
+     */
+    void setExtendVal(String key, String value);
 }
