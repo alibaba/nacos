@@ -512,6 +512,7 @@ const request = (function(_global) {
           if (url.includes('password')) {
             return;
           }
+          localStorage.removeItem('token');
           const base_url = url.split('#')[0];
           window.location = `${base_url}#/login`;
         }

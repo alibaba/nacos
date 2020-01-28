@@ -46,10 +46,11 @@ class DashboardCard extends React.Component {
                     </strong>
                     <strong>
                       <span>
+                        {/* eslint-disable */}
                         <a
                           style={{ marginLeft: 10, color: '#33cde5' }}
                           href={item.url}
-                          target={'_blank'}
+                          target="_blank"
                         >
                           {locale.viewDetails1}
                         </a>

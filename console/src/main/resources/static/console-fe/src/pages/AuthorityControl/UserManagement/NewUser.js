@@ -32,6 +32,8 @@ class NewUser extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     visible: PropTypes.bool,
+    onOk: PropTypes.func,
+    onCancel: PropTypes.func,
   };
 
   check() {
@@ -39,6 +41,7 @@ class NewUser extends React.Component {
     const errors = {
       username: locale.usernameError,
       password: locale.passwordError,
+      rePassword: locale.rePasswordError,
     };
     const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
@@ -47,10 +50,15 @@ class NewUser extends React.Component {
       }
       return val;
     });
-    if (vals.filter(v => v).length === 2) {
-      return vals;
+    if (vals.filter(v => v).length !== 3) {
+      return null;
     }
-    return null;
+    const [password, rePassword] = ['password', 'rePassword'].map(k => this.field.getValue(k));
+    if (password !== rePassword) {
+      this.field.setError('rePassword', locale.rePasswordError2);
+      return null;
+    }
+    return vals;
   }
 
   render() {
@@ -78,6 +86,13 @@ class NewUser extends React.Component {
             </FormItem>
             <FormItem label={locale.password} required help={getError('password')}>
               <Input name="password" htmlType="password" placeholder={locale.passwordPlaceholder} />
+            </FormItem>
+            <FormItem label={locale.rePassword} required help={getError('rePassword')}>
+              <Input
+                name="rePassword"
+                htmlType="password"
+                placeholder={locale.rePasswordPlaceholder}
+              />
             </FormItem>
           </Form>
         </Dialog>

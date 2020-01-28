@@ -101,9 +101,9 @@ class UserManagement extends React.Component {
                       title: locale.deleteUser,
                       content: locale.deleteUserTip,
                       onOk: () =>
-                        deleteUser(username).then(() =>
-                          this.setState({ pageNo: 1 }, () => this.getUsers())
-                        ),
+                        deleteUser(username).then(() => {
+                          this.setState({ pageNo: 1 }, () => this.getUsers());
+                        }),
                     })
                   }
                 >

@@ -13,15 +13,19 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Field, Form, Input, Dialog, ConfigProvider } from '@alifd/next';
+import { Field, Form, Input, Select, Dialog, ConfigProvider } from '@alifd/next';
+import { connect } from 'react-redux';
+import { getNamespaces } from '../../../reducers/namespace';
 
 const FormItem = Form.Item;
+const { Option } = Select;
 
 const formItemLayout = {
   labelCol: { fixedSpan: 4 },
   wrapperCol: { span: 19 },
 };
 
+@connect(state => ({ namespaces: state.namespace.namespaces }), { getNamespaces })
 @ConfigProvider.config
 class NewPermissions extends React.Component {
   static displayName = 'NewPermissions';
@@ -32,6 +36,10 @@ class NewPermissions extends React.Component {
     locale: PropTypes.object,
     visible: PropTypes.bool,
   };
+
+  componentDidMount() {
+    this.props.getNamespaces();
+  }
 
   check() {
     const { locale } = this.props;
@@ -55,7 +63,7 @@ class NewPermissions extends React.Component {
 
   render() {
     const { getError } = this.field;
-    const { visible, onOk, onCancel, locale } = this.props;
+    const { visible, onOk, onCancel, locale, namespaces } = this.props;
     return (
       <>
         <Dialog
@@ -76,10 +84,26 @@ class NewPermissions extends React.Component {
               <Input name="role" trim placeholder={locale.rolePlaceholder} />
             </FormItem>
             <FormItem label={locale.resource} required help={getError('resource')}>
-              <Input name="resource" trim placeholder={locale.resourcePlaceholder} />
+              <Select
+                name="resource"
+                placeholder={locale.resourcePlaceholder}
+                style={{ width: '100%' }}
+              >
+                {namespaces.map(({ namespaceShowName }) => (
+                  <Option value={namespaceShowName}>{namespaceShowName}</Option>
+                ))}
+              </Select>
             </FormItem>
             <FormItem label={locale.action} required help={getError('action')}>
-              <Input name="action" trim placeholder={locale.actionPlaceholder} />
+              <Select
+                name="action"
+                placeholder={locale.actionPlaceholder}
+                style={{ width: '100%' }}
+              >
+                <Option value="r">{locale.readOnly}(r)</Option>
+                <Option value="w">{locale.writeOnly}(w)</Option>
+                <Option value="rw">{locale.readWrite}(rw)</Option>
+              </Select>
             </FormItem>
           </Form>
         </Dialog>

@@ -36,7 +36,10 @@ class PasswordReset extends React.Component {
 
   check() {
     const { locale } = this.props;
-    const errors = { password: locale.passwordError };
+    const errors = {
+      password: locale.passwordError,
+      rePassword: locale.rePasswordError,
+    };
     const vals = Object.keys(errors).map(key => {
       const val = this.field.getValue(key);
       if (!val) {
@@ -44,10 +47,15 @@ class PasswordReset extends React.Component {
       }
       return val;
     });
-    if (vals.filter(v => v).length === 1) {
-      return [this.props.username, ...vals];
+    if (vals.filter(v => v).length !== 2) {
+      return null;
     }
-    return null;
+    const [password, rePassword] = ['password', 'rePassword'].map(k => this.field.getValue(k));
+    if (password !== rePassword) {
+      this.field.setError('rePassword', locale.rePasswordError2);
+      return null;
+    }
+    return [this.props.username, ...vals];
   }
 
   render() {
@@ -75,6 +83,13 @@ class PasswordReset extends React.Component {
             </FormItem>
             <FormItem label={locale.password} required help={getError('password')}>
               <Input name="password" htmlType="password" placeholder={locale.passwordPlaceholder} />
+            </FormItem>
+            <FormItem label={locale.rePassword} required help={getError('rePassword')}>
+              <Input
+                name="rePassword"
+                htmlType="password"
+                placeholder={locale.rePasswordPlaceholder}
+              />
             </FormItem>
           </Form>
         </Dialog>

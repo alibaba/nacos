@@ -14,6 +14,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { getParams, request } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import { Button, ConfigProvider, Dialog, Field, Form, Input } from '@alifd/next';
 
 import './index.scss';
@@ -96,11 +97,10 @@ class ConfigRollback extends React.Component {
   }
 
   goList() {
-    const tenant = getParams('namespace');
+    const namespace = getParams('namespace');
+    const { serverId, dataId, group } = this;
     this.props.history.push(
-      `/historyRollback?serverId=${this.serverId}&group=${this.group}&dataId=${
-        this.dataId
-      }&namespace=${tenant}`
+      generateUrl('/historyRollback', { serverId, dataId, group, namespace })
     );
   }
 

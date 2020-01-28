@@ -14,6 +14,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { getParams } from '../../../globalLib';
+import { generateUrl } from '../../../utils/nacosutil';
 import request from '../../../utils/request';
 import validateContent from 'utils/validateContent';
 import SuccessDialog from '../../../components/SuccessDialog';
@@ -96,7 +97,7 @@ class ConfigEditor extends React.Component {
             dataId: getParams('dataId').trim(),
             group,
           },
-          () =>
+          () => {
             this.getConfig(true).then(res => {
               if (!res) {
                 this.getConfig();
@@ -107,7 +108,8 @@ class ConfigEditor extends React.Component {
                 tabActiveKey: 'beta',
                 betaPublishSuccess: true,
               });
-            })
+            });
+          }
         );
       } else {
         if (group) {
@@ -315,11 +317,11 @@ class ConfigEditor extends React.Component {
 
   goBack() {
     const serverId = getParams('serverId') || '';
-    const tenant = getParams('namespace');
-    const searchGroup = getParams('searchGroup') || '';
-    const searchDataId = getParams('searchDataId') || '';
+    const namespace = getParams('namespace');
+    const group = getParams('searchGroup') || '';
+    const dataId = getParams('searchDataId') || '';
     this.props.history.push(
-      `/configurationManagement?serverId=${serverId}&group=${searchGroup}&dataId=${searchDataId}&namespace=${tenant}`
+      generateUrl('/configurationManagement', { serverId, group, dataId, namespace })
     );
   }
 
