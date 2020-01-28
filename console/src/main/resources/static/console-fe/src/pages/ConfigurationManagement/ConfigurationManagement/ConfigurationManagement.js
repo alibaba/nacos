@@ -133,7 +133,8 @@ class ConfigurationManagement extends React.Component {
               <div>
                 <div style={{ fontSize: '15px', lineHeight: '22px' }}>
                   {locale.ad}
-                  <a href={'https://survey.aliyun.com/survey/k0BjJ2ARC'} target={'_blank'}>
+                  {/* eslint-disable */}
+                  <a href="https://survey.aliyun.com/survey/k0BjJ2ARC" target="_blank">
                     {locale.questionnaire2}
                   </a>
                 </div>
@@ -438,21 +439,12 @@ class ConfigurationManagement extends React.Component {
         isPageEnter: e.keyCode && e.keyCode === 13,
         currentPage: value,
       },
-      () => {
-        this.getData(value, false);
-      }
+      () => this.getData(value, false)
     );
   }
 
   handlePageSizeChange(pageSize) {
-    this.setState(
-      {
-        pageSize,
-      },
-      () => {
-        this.changePage(1);
-      }
-    );
+    this.setState({ pageSize }, () => this.changePage(1));
   }
 
   onInputUpdate() {}
@@ -690,7 +682,7 @@ class ConfigurationManagement extends React.Component {
   }
 
   exportData() {
-    let url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
+    const url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
       'namespace'
     )}&appName=${this.appName}&ids=&dataId=${this.dataId}`;
     window.location.href = url;

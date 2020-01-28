@@ -27,6 +27,7 @@ class Password extends React.Component {
 
   static propTypes = {
     locale: PropTypes.object,
+    history: PropTypes.object,
   };
 
   constructor(props) {

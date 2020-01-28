@@ -24,6 +24,13 @@ class Login extends React.Component {
     this.field = new Field(this);
   }
 
+  componentDidMount() {
+    if (localStorage.getItem('token')) {
+      const [baseUrl] = location.href.split('#');
+      location.href = `${baseUrl}#/`;
+    }
+  }
+
   handleSubmit = () => {
     const { locale = {} } = this.props;
     this.field.validate((errors, values) => {
@@ -35,11 +42,11 @@ class Login extends React.Component {
           localStorage.setItem('token', JSON.stringify(res));
           this.props.history.push('/');
         })
-        .catch(() =>
+        .catch(() => {
           Message.error({
             content: locale.invalidUsernameOrPassword,
-          })
-        );
+          });
+        });
     });
   };
 

@@ -89,9 +89,9 @@ class PermissionsManagement extends React.Component {
                       title: locale.deletePermission,
                       content: locale.deletePermissionTip,
                       onOk: () =>
-                        deletePermission(record).then(() =>
-                          this.setState({ pageNo: 1 }, () => this.getPermissions())
-                        ),
+                        deletePermission(record).then(() => {
+                          this.setState({ pageNo: 1 }, () => this.getPermissions());
+                        }),
                     })
                   }
                 >

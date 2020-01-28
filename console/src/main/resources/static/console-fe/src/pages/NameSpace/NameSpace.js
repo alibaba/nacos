@@ -281,14 +281,6 @@ class NameSpace extends React.Component {
     return <div>{name}</div>;
   }
 
-  renderConfigCount(value, index, record) {
-    return (
-      <div>
-        {value} / {record.quota}
-      </div>
-    );
-  }
-
   render() {
     const { locale = {} } = this.props;
     const {
@@ -329,12 +321,7 @@ class NameSpace extends React.Component {
                     cell={this.renderName.bind(this)}
                   />
                   <Table.Column title={namespaceNumber} dataIndex="namespace" />
-                  <Table.Column
-                    title={configuration}
-                    dataIndex="configCount"
-                    cell={this.renderConfigCount.bind(this)}
-                  />
-
+                  <Table.Column title={configuration} dataIndex="configCount" />
                   <Table.Column
                     title={namespaceOperation}
                     dataIndex="time"
@@ -343,7 +330,6 @@ class NameSpace extends React.Component {
                 </Table>
               </div>
             </div>
-
             <NewNameSpace ref={this.newnamespace} getNameSpaces={this.getNameSpaces.bind(this)} />
             <EditorNameSpace ref={this.editgroup} getNameSpaces={this.getNameSpaces.bind(this)} />
           </Loading>

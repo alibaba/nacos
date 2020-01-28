@@ -1,3 +1,5 @@
+import { isJsonString } from '../utils/nacosutil';
+
 const configurationMenu = {
   key: 'configurationManagementVirtual',
   children: [
@@ -33,8 +35,8 @@ const authorityControlMenu = {
 };
 
 export default function(model) {
-  const { token } = localStorage;
-  const { globalAdmin } = JSON.parse(token || '{}');
+  const { token = '{}' } = localStorage;
+  const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
 
   return [
     model === 'naming' ? undefined : configurationMenu,
