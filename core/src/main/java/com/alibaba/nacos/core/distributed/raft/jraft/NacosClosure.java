@@ -27,6 +27,7 @@ public class NacosClosure implements Closure {
 
     private final Datum datum;
     private final Closure closure;
+    private Throwable throwable;
 
     public NacosClosure(Datum datum, Closure closure) {
         this.datum = datum;
@@ -36,8 +37,12 @@ public class NacosClosure implements Closure {
     @Override
     public void run(Status status) {
         if (closure != null) {
-            closure.run(status);
+            closure.run(new NStatus(status, throwable));
         }
+    }
+
+    public void setThrowable(Throwable throwable) {
+        this.throwable = throwable;
     }
 
     public Closure getClosure() {
@@ -46,5 +51,30 @@ public class NacosClosure implements Closure {
 
     public Datum getDatum() {
         return datum;
+    }
+
+    // Pass the Throwable inside the state machine to the outer layer
+
+    public static class NStatus extends Status {
+
+        private Status status;
+
+        private Throwable throwable;
+
+        public NStatus(Status status, Throwable throwable) {
+            super();
+            this.status = status;
+            this.throwable = throwable;
+        }
+
+        public void setThrowable(Throwable throwable) {
+            this.throwable = throwable;
+        }
+
+        public Throwable getThrowable() {
+            return throwable;
+        }
+
+
     }
 }

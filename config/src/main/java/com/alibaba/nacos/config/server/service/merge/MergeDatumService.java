@@ -21,6 +21,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.utils.ConfigAggLock;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import org.slf4j.Logger;
@@ -51,11 +52,26 @@ public class MergeDatumService {
     static int total = 0;
 
     @Autowired
+    private ConfigAggLock aggLock;
+
+    @Autowired
     public MergeDatumService(PersistService persistService) {
         this.persistService = persistService;
-        mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
-        mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
 
+        // This task requires resource lock contention
+
+        mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum") {
+            @Override
+            protected void process() {
+                aggLock.lock();
+                try {
+                    super.process();
+                } catch (Exception e) {
+                    aggLock.unLock();
+                }
+            }
+        };
+        mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
     }
 
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {

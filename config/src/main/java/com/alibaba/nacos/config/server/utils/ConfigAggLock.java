@@ -14,37 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.Intercept;
+package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Condition;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.core.type.AnnotatedTypeMetadata;
+import com.alibaba.nacos.core.utils.SpringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = {DisruptConfigIntercept.InnerStore.class})
 @Component
-public class DisruptConfigIntercept implements Intercept {
+public class ConfigAggLock {
 
-    @Autowired
-    private XIDConnectionManager connectionManager;
+    private final JRaftProtocol protocol;
 
-    @Autowired
-    private JRaftProtocol JRaftProtocol;
-
-
-
-    public static class InnerStore implements Condition {
-
-        @Override
-        public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-            return false;
-        }
+    public ConfigAggLock(JRaftProtocol protocol) {
+        this.protocol = protocol;
     }
 
+    public boolean lock() {
+
+        // If using external storage, no real competition for resources is required
+
+        final String val = SpringUtils.getProperty("nacos.config.store.type");
+        if (StringUtils.equalsIgnoreCase(val, "separate")) {
+            return true;
+        }
+        Map<String, Object> metaData = protocol.protocolMetaData();
+        return (boolean) metaData.get("leader");
+    }
+
+    public void unLock() {
+        // do nothing
+    }
 }

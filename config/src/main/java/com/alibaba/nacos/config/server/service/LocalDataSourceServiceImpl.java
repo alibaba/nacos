@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,6 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
@@ -54,32 +54,18 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalDataSourceServiceImpl.class);
 
-    private static final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
     private static final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
-    private static final String USER_NAME = "nacos";
-    private static final String PASSWORD = "nacos";
 
     private JdbcTemplate jt;
     private TransactionTemplate tjt;
 
+    @Qualifier(value = "standAlone")
     @Autowired
-    private PropertyUtil propertyUtil;
+    private BasicDataSource standaloneDataSource;
 
     @PostConstruct
     public void init() {
-        BasicDataSource ds = new BasicDataSource();
-        ds.setDriverClassName(JDBC_DRIVER_NAME);
-        ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
-        ds.setUsername(USER_NAME);
-        ds.setPassword(PASSWORD);
-        ds.setInitialSize(20);
-        ds.setMaxActive(30);
-        ds.setMaxIdle(50);
-        ds.setMaxWait(10000L);
-        ds.setPoolPreparedStatements(true);
-        ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-            .toMillis(10L));
-        ds.setTestWhileIdle(true);
+        BasicDataSource ds = standaloneDataSource;
 
         jt = new JdbcTemplate();
         jt.setMaxRows(50000);
@@ -90,7 +76,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         tm.setDataSource(ds);
         tjt.setTimeout(5000);
 
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
+        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
             reload();
         }
     }

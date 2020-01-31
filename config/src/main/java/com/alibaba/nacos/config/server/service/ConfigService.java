@@ -54,6 +54,18 @@ public class ConfigService {
         return CACHE.containsKey(groupKey);
     }
 
+    static public boolean configExist(final String tenant, final String group, final String dataId) {
+        return false;
+    }
+
+    static public boolean configTagExist(final String tenant, final String group, final String dataId, final String tag) {
+        return false;
+    }
+
+    static public boolean configBetaExist(final String tenant, final String group, final String dataId) {
+        return false;
+    }
+
     /**
      * 保存配置文件，并缓存md5.
      */

@@ -24,8 +24,10 @@ import com.alibaba.nacos.config.server.result.ResultBuilder;
 import com.alibaba.nacos.config.server.result.code.ResultCodeEnum;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.service.PersistService;
+import com.alibaba.nacos.config.server.service.intercept.Intercept;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.*;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
@@ -79,12 +81,16 @@ public class ConfigController {
 
     private final ConfigSubService configSubService;
 
+    private final Intercept intercept;
+
     @Autowired
     public ConfigController(ConfigServletInner configServletInner, PersistService persistService,
-                            ConfigSubService configSubService) {
+                            ConfigSubService configSubService,
+                            Intercept intercept) {
         this.inner = configServletInner;
         this.persistService = persistService;
         this.configSubService = configSubService;
+        this.intercept = intercept;
     }
 
     /**
@@ -146,7 +152,14 @@ public class ConfigController {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         if (StringUtils.isBlank(betaIps)) {
             if (StringUtils.isBlank(tag)) {
-                persistService.insertOrUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+
+                // TODO Specific business logic down to the new Service
+
+                if (ConfigService.configExist(tenant, group, dataId)) {
+                    intercept.configUpdate(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+                } else {
+                    intercept.configSave(srcIp, srcUser, configInfo, time, configAdvanceInfo, false);
+                }
                 EventDispatcher.fireEvent(new ConfigDataChangeEvent(false, dataId, group, tenant, time.getTime()));
             } else {
                 persistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser, time, false);

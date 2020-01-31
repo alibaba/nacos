@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.config.server.service.consumer;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.config.server.model.log.ConfigRequest;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
+@Component
+public class ConfigRemoveConsumer extends BaseConsumer<ConfigRequest> {
 
-    /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
-     */
-    ResResult<Boolean> onAccept(Datum data);
+    @Override
+    public String operation() {
+        return null;
+    }
 
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
-     */
-    String operation();
+    @Override
+    protected void process(ConfigRequest configRequest) {
 
+    }
 }

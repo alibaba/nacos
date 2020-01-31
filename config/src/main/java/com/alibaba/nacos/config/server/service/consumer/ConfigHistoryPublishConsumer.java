@@ -14,27 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.Intercept;
+package com.alibaba.nacos.config.server.service.consumer;
 
-import org.springframework.context.annotation.Condition;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.core.type.AnnotatedTypeMetadata;
+import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
+import com.alibaba.nacos.config.server.model.log.ConfigHistoryRequest;
 import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Conditional(value = {DefaultConfigIntercept.DefaultStore.class})
 @Component
-public class DefaultConfigIntercept implements Intercept {
+public class ConfigHistoryPublishConsumer extends BaseConsumer<ConfigHistoryRequest> {
 
-    public static class DefaultStore implements Condition {
-
-        @Override
-        public boolean matches(ConditionContext conditionContext, AnnotatedTypeMetadata annotatedTypeMetadata) {
-            return false;
-        }
+    @Override
+    protected void process(ConfigHistoryRequest request) {
+        persistService.insertConfigHistoryAtomic(request.getId(),
+                request.getConfigInfo(),
+                request.getSrcIp(),
+                request.getSrcUser(),
+                request.getTime(),
+                request.getOps());
     }
 
+    @Override
+    public String operation() {
+        return ConfigOperationEnum.CONFIG_HISTORY_PUBLISH.getOperation();
+    }
 }

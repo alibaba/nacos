@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.config.server.service.consumer;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.config.server.model.log.ConfigBetaRequest;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
+@Component
+public class ConfigBetaPublishConsumer extends BaseConsumer<ConfigBetaRequest> {
 
-    /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
-     */
-    ResResult<Boolean> onAccept(Datum data);
+    @Override
+    protected void process(ConfigBetaRequest configBetaRequest) {
 
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
-     */
-    String operation();
+    }
 
+    @Override
+    public String operation() {
+        return null;
+    }
 }

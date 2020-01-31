@@ -16,9 +16,8 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import com.alibaba.nacos.core.utils.SpringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -29,32 +28,25 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  * @author Nacos
  */
 @Component
-public class DynamicDataSource implements ApplicationContextAware {
-
-    @Autowired
-    private PropertyUtil propertyUtil;
-
-    private ApplicationContext applicationContext;
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
-
-    public ApplicationContext getApplicationContext() {
-        return applicationContext;
-    }
+public class DynamicDataSource {
 
     public DataSourceService getDataSource() {
         DataSourceService dataSourceService = null;
 
-        if (STANDALONE_MODE && !propertyUtil.isStandaloneUseMysql()) {
-            dataSourceService = (DataSourceService)applicationContext.getBean("localDataSourceService");
+        if (useMemoryDB()) {
+            dataSourceService = SpringUtils.getBean("localDataSourceService", DataSourceService.class);
         } else {
-            dataSourceService = (DataSourceService)applicationContext.getBean("basicDataSourceService");
+            dataSourceService = SpringUtils.getBean("basicDataSourceService", DataSourceService.class);
         }
 
         return dataSourceService;
+    }
+
+    private boolean useMemoryDB() {
+        boolean a = STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql();
+        boolean b = StringUtils.equalsIgnoreCase("inner", SpringUtils.getProperty("nacos.config.store.type",
+                "inner"));
+        return a || b;
     }
 
 }

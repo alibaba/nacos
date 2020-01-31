@@ -510,7 +510,7 @@ public class PersistService {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 try {
-                    long configId = addConfigInfoAtomic(srcIp, srcUser, configInfo, time, configAdvanceInfo);
+                    long configId = addConfigInfoAtomic(null, srcIp, srcUser, configInfo, time, configAdvanceInfo);
                     String configTags = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("config_tags");
                     addConfiTagsRelationAtomic(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
@@ -2680,7 +2680,7 @@ public class PersistService {
      * @param configAdvanceInfo advance info
      * @return excute sql result
      */
-    private long addConfigInfoAtomic(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+    public long addConfigInfoAtomic(final Long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
                                      final Timestamp time,
                                      Map<String, Object> configAdvanceInfo) {
         final String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY
@@ -2698,30 +2698,40 @@ public class PersistService {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        final String sql
-            = "INSERT INTO config_info(data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,"
-            + "gmt_modified,c_desc,c_use,effect,type,c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        final String sql;
+        if (Objects.isNull(id)) {
+            sql ="INSERT INTO config_info(data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,"
+                    + "gmt_modified,c_desc,c_use,effect,type,c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        } else {
+            sql ="INSERT INTO config_info(id, data_id,group_id,tenant_id,app_name,content,md5,src_ip,src_user,gmt_create,"
+                    + "gmt_modified,c_desc,c_use,effect,type,c_schema) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        }
 
         try {
             jt.update(new PreparedStatementCreator() {
                 @Override
                 public PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-                    PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-                    ps.setString(1, configInfo.getDataId());
-                    ps.setString(2, configInfo.getGroup());
-                    ps.setString(3, tenantTmp);
-                    ps.setString(4, appNameTmp);
-                    ps.setString(5, configInfo.getContent());
-                    ps.setString(6, md5Tmp);
-                    ps.setString(7, srcIp);
-                    ps.setString(8, srcUser);
-                    ps.setTimestamp(9, time);
-                    ps.setTimestamp(10, time);
-                    ps.setString(11, desc);
-                    ps.setString(12, use);
-                    ps.setString(13, effect);
-                    ps.setString(14, type);
-                    ps.setString(15, schema);
+                    int index = 1;
+                    PreparedStatement ps;
+                    ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+                    if (id != null) {
+                        ps.setLong(index ++, id);
+                    }
+                    ps.setString(index ++, configInfo.getDataId());
+                    ps.setString(index ++, configInfo.getGroup());
+                    ps.setString(index ++, tenantTmp);
+                    ps.setString(index ++, appNameTmp);
+                    ps.setString(index ++, configInfo.getContent());
+                    ps.setString(index ++, md5Tmp);
+                    ps.setString(index ++, srcIp);
+                    ps.setString(index ++, srcUser);
+                    ps.setTimestamp(index ++, time);
+                    ps.setTimestamp(index ++, time);
+                    ps.setString(index ++, desc);
+                    ps.setString(index ++, use);
+                    ps.setString(index ++, effect);
+                    ps.setString(index ++, type);
+                    ps.setString(index ++, schema);
                     return ps;
                 }
             }, keyHolder);
@@ -3056,7 +3066,7 @@ public class PersistService {
      * @param time       time
      * @param ops        ops type
      */
-    private void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
+    public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
                                            final Timestamp time, String ops) {
         String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();

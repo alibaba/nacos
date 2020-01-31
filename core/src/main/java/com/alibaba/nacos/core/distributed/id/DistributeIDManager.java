@@ -47,13 +47,7 @@ public class DistributeIDManager {
     }
 
     public static void register(String resources) {
-        int workerId = WORKER_ID.getAndIncrement();
-
-        if (workerId > MAX_WORKER_ID) {
-            throw new IllegalStateException("[" + resources + "] The maximum worker ID is 31, " +
-                    "which has exceeded the upper limit. Currently [" + workerId + "]");
-        }
-
+        int workerId = WORKER_ID.get();
         SNAKE_FLOWER_ID_HELPER_MAP.computeIfAbsent(resources, s -> new SnakeFlowerIdHelper(DATA_CENTER_ID, workerId));
     }
 

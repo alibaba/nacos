@@ -14,46 +14,40 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.lock;
+package com.alibaba.nacos.config.server.service.consumer;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.core.distributed.Datum;
 import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.utils.ResResultUtils;
-
-import java.util.Map;
+import com.alibaba.nacos.core.utils.SerializeFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class LockConsumer implements LogConsumer {
+@Component
+public abstract class BaseConsumer<T> implements LogConsumer {
 
-    private LockManager lockManager;
+    private SerializeFactory.Serializer serializer = SerializeFactory
+            .getSerializer(SerializeFactory.JSON_INDEX);
 
-    public LockConsumer(LockManager lockManager) {
-        this.lockManager = lockManager;
-    }
+    @Autowired
+    protected PersistService persistService;
 
     @Override
     public ResResult<Boolean> onAccept(Datum data) {
-        final String key = data.getKey();
-        Map<String, LockManager.LockAttempt> attemptMap = lockManager.getLockAttempts();
-        final LockEntry entry = JSON.parseObject(data.getData(), LockEntry.class);
-        final LockManager.LockAttempt attempt = new LockManager.LockAttempt();
-
-        if (System.currentTimeMillis() < attempt.getExpireTimeMs()) {
-            return ResResultUtils.failed("The resource is locked");
-        }
-
-        attempt.setExpireTimeMs(entry.getExpireTime());
-        attempt.setVersion(entry.getVersion());
-        attemptMap.put(key, attempt);
+        final byte[] source = data.getData();
+        process(serializer.deSerialize(source, data.getClassName()));
         return ResResultUtils.success();
     }
 
-    @Override
-    public String operation() {
-        return LockOperation.LOCK.getOperation();
-    }
+    /**
+     * The actual processing logic
+     *
+     * @param t data
+     */
+    protected abstract void process(T t);
 }

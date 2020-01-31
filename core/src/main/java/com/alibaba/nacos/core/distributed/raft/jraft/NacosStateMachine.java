@@ -62,12 +62,16 @@ public class NacosStateMachine extends BaseStateMachine {
                                 processor.onApply(datum);
                             }
                             catch (Throwable e) {
+                                if (closure != null) {
+                                    closure.setThrowable(e);
+                                }
                                 status = new Status(RaftError.UNKNOWN,
                                         "Exception handling within a transaction : %s",
                                         e);
                                 Loggers.RAFT.error("BizProcessor when onApply has some error",
                                         e);
                             }
+                            break;
                         }
                     }
                 }

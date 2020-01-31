@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -61,6 +62,11 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     private volatile Map<String, Object> metaData = new HashMap<>();
 
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+
     @Override
     public void init(RaftConfig config) {
 
@@ -79,12 +85,17 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
         NotifyManager.subscribe(new Subscribe<RaftEvent>() {
             @Override
             public void onEvent(RaftEvent event) {
-                final String leader = event.getLeader();
-                final long term = event.getTerm();
-                final List<String> raftClusterInfo = event.getRaftClusterInfo();
-                metaData.put("leader", leader);
-                metaData.put("term", term);
-                metaData.put("raftClusterInfo", raftClusterInfo);
+                writeLock.lock();
+                try {
+                    final String leader = event.getLeader();
+                    final long term = event.getTerm();
+                    final List<String> raftClusterInfo = event.getRaftClusterInfo();
+                    metaData.put("leader", leader);
+                    metaData.put("term", term);
+                    metaData.put("raftClusterInfo", raftClusterInfo);
+                } finally {
+                    writeLock.unlock();
+                }
             }
 
             @Override
@@ -97,7 +108,12 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     @Override
     public Map<String, Object> protocolMetaData() {
-        return metaData;
+        readLock.lock();
+        try {
+            return metaData;
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -122,7 +138,8 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     @Override
     public boolean submit(Datum data) throws Exception {
-        return submitAsync(data).get().getData();
+        CompletableFuture<ResResult<Boolean>> future = submitAsync(data);
+        return future.join().getData();
     }
 
     @Override
@@ -133,10 +150,15 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
             if (machine.isLeader()) {
                 final Task task = new Task();
                 task.setDone(new NacosClosure(data, status -> {
+                    NacosClosure.NStatus nStatus = (NacosClosure.NStatus) status;
                     ResResult<Boolean> resResult = ResResult.<Boolean>builder()
                             .withCode(status.getCode()).withData(status.isOk())
                             .withErrMsg(status.getErrorMsg()).build();
-                    future.complete(resResult);
+                    if (Objects.nonNull(nStatus.getThrowable())) {
+                        future.completeExceptionally(nStatus.getThrowable());
+                    } else {
+                        future.complete(resResult);
+                    }
                 }));
                 task.setData(ByteBuffer.wrap(JSON.toJSONBytes(data)));
                 raftNode.apply(task);

@@ -104,7 +104,7 @@ public class DumpService {
                         int pageSize = 1000;
                         int removeTime = (totalCount + pageSize - 1) / pageSize;
                         log.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-                            new Object[] {startTime, totalCount, pageSize, removeTime});
+                                new Object[]{startTime, totalCount, pageSize, removeTime});
                         while (removeTime > 0) {
                             // 分页删除，以免批量太大报错
                             persistService.removeConfigHistory(startTime, pageSize);
@@ -146,10 +146,10 @@ public class DumpService {
             }
         } catch (Exception e) {
             LogUtil.fatalLog.error(
-                "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
-                e.getCause());
+                    "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage(),
+                    e.getCause());
             throw new RuntimeException(
-                "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
+                    "Nacos Server did not start because dumpservice bean construction failure :\n" + e.getMessage());
         }
         if (!STANDALONE_MODE) {
             Runnable heartbeat = () -> {
@@ -168,10 +168,10 @@ public class DumpService {
             LogUtil.defaultLog.warn("initialDelay:{}", initialDelay);
 
             TimerTaskService.scheduleWithFixedDelay(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
-                TimeUnit.MINUTES);
+                    TimeUnit.MINUTES);
 
             TimerTaskService.scheduleWithFixedDelay(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
-                TimeUnit.MINUTES);
+                    TimeUnit.MINUTES);
         }
 
         TimerTaskService.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
@@ -179,7 +179,7 @@ public class DumpService {
     }
 
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor)
-        throws IOException {
+            throws IOException {
         int timeStep = 6;
         Boolean isAllDump = true;
         // initial dump all
@@ -193,7 +193,7 @@ public class DumpService {
                     String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
                     heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
                     if (TimeUtils.getCurrentTime().getTime()
-                        - heartheatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {
+                            - heartheatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {
                         isAllDump = false;
                     }
                 }
@@ -204,9 +204,9 @@ public class DumpService {
                 dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
             } else {
                 Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp,
-                    timeStep);
+                        timeStep);
                 DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(
-                    this, beforeTimeStamp, TimeUtils.getCurrentTime());
+                        this, beforeTimeStamp, TimeUtils.getCurrentTime());
                 dumpChangeProcessor.process(DumpChangeTask.TASK_ID, new DumpChangeTask());
                 Runnable checkMd5Task = () -> {
                     LogUtil.defaultLog.error("start checkMd5Task");
@@ -218,12 +218,12 @@ public class DumpService {
                         String tenant = dg[2];
                         ConfigInfoWrapper configInfo = persistService.queryConfigInfo(dataId, group, tenant);
                         ConfigService.dumpChange(dataId, group, tenant, configInfo.getContent(),
-                            configInfo.getLastModified());
+                                configInfo.getLastModified());
                     }
                     LogUtil.defaultLog.error("end checkMd5Task");
                 };
                 TimerTaskService.scheduleWithFixedDelay(checkMd5Task, 0, 12,
-                    TimeUnit.HOURS);
+                        TimeUnit.HOURS);
             }
         } catch (IOException e) {
             LogUtil.fatalLog.error("dump config fail" + e.getMessage());
@@ -340,14 +340,14 @@ public class DumpService {
                 try {
                     List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
                     int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
-                    int pageCount = (int)Math.ceil(rowCount * 1.0 / PAGE_SIZE);
+                    int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
                         Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant,
-                            pageNo, PAGE_SIZE);
+                                pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
                             log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
-                                rowCount);
+                                    rowCount);
                         }
                     }
 
@@ -361,15 +361,15 @@ public class DumpService {
                         if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
                             persistService.insertOrUpdate(null, null, cf, time, null, false);
                             log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
-                                datumList.size(), cf.getContent().length(), cf.getMd5(),
-                                ContentUtils.truncateContent(cf.getContent()));
+                                    datumList.size(), cf.getContent().length(), cf.getMd5(),
+                                    ContentUtils.truncateContent(cf.getContent()));
                         }
                     }
                     // 删除
                     else {
                         persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
                         log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                            + group);
+                                + group);
                     }
 
                 } catch (Throwable e) {

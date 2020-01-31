@@ -14,27 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
-
-import com.alibaba.nacos.common.model.ResResult;
+package com.alibaba.nacos.config.server.model.log;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
-
-    /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
-     */
-    ResResult<Boolean> onAccept(Datum data);
-
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
-     */
-    String operation();
-
+public class ConfigAggRequest {
 }

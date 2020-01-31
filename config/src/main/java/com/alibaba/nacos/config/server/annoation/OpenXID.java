@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.config.server.annoation;
 
-import com.alibaba.nacos.common.model.ResResult;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
-
-    /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
-     */
-    ResResult<Boolean> onAccept(Datum data);
-
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
-     */
-    String operation();
-
+@Target(ElementType.METHOD)
+@Retention(value = RetentionPolicy.RUNTIME)
+public @interface OpenXID {
 }

@@ -14,13 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.Intercept;
+package com.alibaba.nacos.config.server.service.consumer;
+
+import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
+import com.alibaba.nacos.config.server.model.log.ConfigTagRelationRequest;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Intercept {
+@Component
+public class ConfigTagRelationRemoveConsumer extends BaseConsumer<ConfigTagRelationRequest> {
 
+    @Override
+    protected void process(ConfigTagRelationRequest configTagRelationRequest) {
 
+    }
 
+    @Override
+    public String operation() {
+        return ConfigOperationEnum.CONFIG_TAG_RELATION_REMOVE.getOperation();
+    }
 }

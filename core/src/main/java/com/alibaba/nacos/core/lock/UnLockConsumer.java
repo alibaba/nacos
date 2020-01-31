@@ -52,11 +52,6 @@ class UnLockConsumer implements LogConsumer {
     }
 
     @Override
-    public void onError(Throwable throwable) {
-
-    }
-
-    @Override
     public String operation() {
         return LockOperation.UN_LOCK.getOperation();
     }

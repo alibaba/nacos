@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author huali
  */
-public final class TaskManager implements TaskManagerMBean {
+public class TaskManager implements TaskManagerMBean {
 
     private static final Logger log = LogUtil.defaultLog;
 

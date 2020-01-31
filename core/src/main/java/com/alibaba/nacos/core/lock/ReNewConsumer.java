@@ -52,11 +52,6 @@ class ReNewConsumer implements LogConsumer {
     }
 
     @Override
-    public void onError(Throwable throwable) {
-
-    }
-
-    @Override
     public String operation() {
         return LockOperation.RE_NEW.getOperation();
     }

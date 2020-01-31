@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
-
-import com.alibaba.nacos.common.model.ResResult;
+package com.alibaba.nacos.config.server.utils;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LogConsumer {
+public class LogKeyUtils {
 
-    /**
-     * Datum call back
-     *
-     * @param data {@link Datum}
-     * @return {@link ResResult<Boolean>}
-     */
-    ResResult<Boolean> onAccept(Datum data);
+    private static final String LINK_STR = "$@$";
 
-    /**Operations that this log handler listens to
-     *
-     * @return operation name
-     */
-    String operation();
+    public static final String build(String str, Object... params) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append(str);
+        for (Object obj : params) {
+            sb.append(LINK_STR).append(obj);
+        }
+        return sb.toString();
+    }
 
 }
