@@ -17,6 +17,8 @@
 package com.alibaba.nacos.common;
 
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -65,12 +67,21 @@ public final class ThreadPoolManager {
 	 * @param resourceName resource name
 	 * @param executor {@link ExecutorService}
 	 */
-	public synchronized void register(String biz, String resourceName, ExecutorService executor) {
-        if (!resourcesManager.containsKey(biz)) {
-            resourcesManager.put(biz, new ConcurrentHashMap<String, Set<ExecutorService>>(8));
-            lockers.put(biz, new Object());
+	public void register(String biz, String resourceName, ExecutorService executor) {
+        synchronized(this) {
+            if (!resourcesManager.containsKey(biz)) {
+                resourcesManager.put(biz, new HashMap<String, Set<ExecutorService>>(8));
+                lockers.put(biz, new Object());
+            }
         }
-        resourcesManager.get(biz).get(resourceName).add(executor);
+        final Object monitor = lockers.get(biz);
+        synchronized (monitor) {
+            Map<String, Set<ExecutorService>> map = resourcesManager.get(biz);
+            if (!map.containsKey(resourceName)) {
+                map.put(resourceName, new HashSet<ExecutorService>());
+            }
+            map.get(resourceName).add(executor);
+        }
     }
 
 	/**
@@ -79,9 +90,12 @@ public final class ThreadPoolManager {
      * @param biz business name
 	 * @param resourceName resource name
 	 */
-	public synchronized void deregister(String biz, String resourceName) {
+	public void deregister(String biz, String resourceName) {
         if (resourcesManager.containsKey(biz)) {
-            resourcesManager.get(biz).remove(resourceName);
+            final Object monitor = lockers.get(biz);
+            synchronized (monitor) {
+                resourcesManager.get(biz).remove(resourceName);
+            }
         }
     }
 

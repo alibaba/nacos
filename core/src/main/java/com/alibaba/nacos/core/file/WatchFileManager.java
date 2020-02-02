@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.file;
 
-import com.alibaba.nacos.core.executor.ExecutorManager;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyManager;
@@ -37,6 +37,11 @@ import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
+ * Unified file change monitoring management center, which uses {@link WatchService} internally.
+ * One file directory corresponds to one {@link WatchService}. It can only monitor up to 32 file
+ * directories. When a file change occurs, a {@link FileChangeEvent} will be issued, which will
+ * be released by {@link NotifyManager}.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class WatchFileManager {
@@ -51,7 +56,7 @@ public class WatchFileManager {
 
     private static final FileSystem FILE_SYSTEM = FileSystems.getDefault();
 
-    private static final Executor WATCH_FILE_EXECUTOR = ExecutorManager.newFixExecutorService(
+    private static final Executor WATCH_FILE_EXECUTOR = ExecutorFactory.newFixExecutorService(
             WatchFileManager.class.getCanonicalName(),
             MAX_WATCH_FILE_JOB,
             new NameThreadFactory("com.alibaba.nacos.core.file.watch")
@@ -61,7 +66,7 @@ public class WatchFileManager {
         NotifyManager.registerPublisher(FileChangeEvent::new, FileChangeEvent.class);
     }
 
-    public synchronized static boolean registerWatchJob(final String paths, Consumer<FileChangeEvent> consumer) {
+    public synchronized static boolean registerWatcher(final String paths, Consumer<FileChangeEvent> consumer) {
         NOW_WATCH_JOB_CNT ++;
         if (NOW_WATCH_JOB_CNT > MAX_WATCH_FILE_JOB) {
             return false;
@@ -86,7 +91,7 @@ public class WatchFileManager {
         }
     }
 
-    public synchronized static boolean deregisterWatchJob(final String path) {
+    public synchronized static boolean deregisterWatcher(final String path) {
         WatchJob job = MANAGER.get(path);
         if (Objects.nonNull(job)) {
             job.shutdown();
@@ -110,7 +115,7 @@ public class WatchFileManager {
         }
 
         void addSubscribe(final Consumer<FileChangeEvent> consumer) {
-            NotifyManager.subscribe(new Subscribe<FileChangeEvent>() {
+            NotifyManager.registerSubscribe(new Subscribe<FileChangeEvent>() {
                 @Override
                 public void onEvent(FileChangeEvent event) {
                     consumer.accept(event);
@@ -137,16 +142,19 @@ public class WatchFileManager {
                 try {
                     WatchKey watchKey = watchService.take();
 
-                    for (WatchEvent event : watchKey.pollEvents()) {
-                        final FileChangeEvent fileChangeEvent = new FileChangeEvent();
-                        fileChangeEvent.setPaths(paths);
-                        fileChangeEvent.setEvent(event);
+                    for (WatchEvent<?> event : watchKey.pollEvents()) {
+                        final FileChangeEvent fileChangeEvent = FileChangeEvent.builder()
+                                .paths(paths)
+                                .event(event)
+                                .build();
                         NotifyManager.publishEvent(FileChangeEvent.class, fileChangeEvent);
                     }
 
                     if (!watchKey.reset()) {
                         break;
                     }
+                } catch (InterruptedException e) {
+                    Thread.interrupted();
                 } catch (Exception e) {
                     logger.error("【{}】 File listening exception, error : {}", paths, e);
                 }

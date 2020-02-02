@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.lock;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.Datum;
 import com.alibaba.nacos.core.distributed.LogConsumer;
-import com.alibaba.nacos.core.executor.ExecutorManager;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import org.springframework.stereotype.Component;
@@ -48,7 +48,7 @@ final class MemoryLockManager implements LockManager {
 
     private final Map<String, LogConsumer> logConsumerMap = new HashMap<>(8);
 
-    private final ScheduledExecutorService executorService = ExecutorManager
+    private final ScheduledExecutorService executorService = ExecutorFactory
             .newSingleScheduledExecutorService(LockManager.class.getCanonicalName(),
                     new NameThreadFactory("com.alibaba.nacos.core.lock.expire-check"));
 
@@ -113,7 +113,6 @@ final class MemoryLockManager implements LockManager {
         try {
             return consumer.onAccept(datum);
         } catch (Exception e) {
-            consumer.onError(e);
             return ResResultUtils.failed(e.getLocalizedMessage());
         }
     }

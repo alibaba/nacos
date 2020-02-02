@@ -26,7 +26,7 @@ public class FileChangeEvent implements Event {
 
     private String paths;
 
-    private WatchEvent event;
+    private WatchEvent<?> event;
 
     public String getPaths() {
         return paths;
@@ -36,16 +36,45 @@ public class FileChangeEvent implements Event {
         this.paths = paths;
     }
 
-    public WatchEvent getEvent() {
+    public WatchEvent<?> getEvent() {
         return event;
     }
 
-    public void setEvent(WatchEvent event) {
+    public void setEvent(WatchEvent<?> event) {
         this.event = event;
     }
 
     @Override
     public Class<? extends Event> eventType() {
         return FileChangeEvent.class;
+    }
+
+    public static FileChangeEventBuilder builder() {
+        return new FileChangeEventBuilder();
+    }
+
+    public static final class FileChangeEventBuilder {
+        private String paths;
+        private WatchEvent<?> event;
+
+        private FileChangeEventBuilder() {
+        }
+
+        public FileChangeEventBuilder paths(String paths) {
+            this.paths = paths;
+            return this;
+        }
+
+        public FileChangeEventBuilder event(WatchEvent<?> event) {
+            this.event = event;
+            return this;
+        }
+
+        public FileChangeEvent build() {
+            FileChangeEvent fileChangeEvent = new FileChangeEvent();
+            fileChangeEvent.setPaths(paths);
+            fileChangeEvent.setEvent(event);
+            return fileChangeEvent;
+        }
     }
 }

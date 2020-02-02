@@ -27,6 +27,6 @@ public class ClusterConfConstants {
 
     // example : nacos.node.0.extend-info.raft_node=8000
 
-    public static final String NODE_EXTEND_DATA = "nacos.node.%d.extend-info.(.+?)";
+    public static final String NODE_EXTEND_DATA = "nacos.node.%d.extend-info.(\\w+)";
 
 }

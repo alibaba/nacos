@@ -116,4 +116,15 @@ public class ConfigTagRelationRequest {
             return configTagRelationRequest;
         }
     }
+
+    @Override
+    public String toString() {
+        return "ConfigTagRelationRequest{" +
+                "configId=" + configId +
+                ", configTags='" + configTags + '\'' +
+                ", dataId='" + dataId + '\'' +
+                ", group='" + group + '\'' +
+                ", tenant='" + tenant + '\'' +
+                '}';
+    }
 }

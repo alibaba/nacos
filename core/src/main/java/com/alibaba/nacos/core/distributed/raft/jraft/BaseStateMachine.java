@@ -32,6 +32,7 @@ import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -41,6 +42,8 @@ import java.util.stream.Collectors;
 public abstract class BaseStateMachine extends StateMachineAdapter {
 
     private final AtomicLong leaderTerm = new AtomicLong(-1L);
+
+    private final AtomicBoolean isLeader = new AtomicBoolean(false);
 
     protected Map<String, BizProcessor> processorMap = new HashMap<>();
 
@@ -77,12 +80,13 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
     public void onLeaderStart(final long term) {
         super.onLeaderStart(term);
         this.leaderTerm.set(term);
+        this.isLeader.set(true);
     }
 
     @Override
     public void onLeaderStop(final Status status) {
         super.onLeaderStop(status);
-        this.leaderTerm.set(-1L);
+        this.isLeader.set(false);
     }
 
     @Override
@@ -117,7 +121,7 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
     }
 
     public boolean isLeader() {
-        return leaderTerm.get() > 0;
+        return isLeader.get();
     }
 
     public Map<String, BizProcessor> getProcessorMap() {

@@ -16,16 +16,27 @@
 
 package com.alibaba.nacos.config.server.configuration;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
+import com.alibaba.nacos.config.server.model.log.DBRequest;
+import com.alibaba.nacos.config.server.utils.LogKeyUtils;
+import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.distributed.NDatum;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
+import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Savepoint;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,6 +45,7 @@ import java.util.logging.Logger;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 public class DataSource4ClusterV2 implements DataSource {
 
     private BasicDataSource target;
@@ -44,51 +56,16 @@ public class DataSource4ClusterV2 implements DataSource {
 
     private final ThreadLocal<String> xidLocal = new ThreadLocal<>();
 
+    private JRaftProtocol protocol;
+
     public DataSource4ClusterV2(BasicDataSource target) {
         this.target = target;
-        init();
     }
 
+    @PostConstruct
     protected void init() {
         DistributeIDManager.register(RESOURCES_NAME);
-    }
-
-    public String currentXID() {
-        return xidLocal.get();
-    }
-
-    public String openDistributeTransaction() {
-        String xid = String.valueOf(DistributeIDManager.nextId(RESOURCES_NAME));
-        connectionHolderMap.computeIfAbsent(xid, s -> {
-            final ConnectionHolder holder = new ConnectionHolder();
-            try {
-                holder.connection = target.getConnection();
-                holder.connection.setAutoCommit(false);
-                holder.savepoint = holder.connection.setSavepoint();
-                return holder;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        xidLocal.set(xid);
-        return xid;
-    }
-
-    public String openDistributeTransaction(String username, String password) {
-        String xid = String.valueOf(DistributeIDManager.nextId(RESOURCES_NAME));
-        connectionHolderMap.computeIfAbsent(xid, s -> {
-            final ConnectionHolder holder = new ConnectionHolder();
-            try {
-                holder.connection = target.getConnection(username, password);
-                holder.connection.setAutoCommit(false);
-                holder.savepoint = holder.connection.setSavepoint();
-                return holder;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        xidLocal.set(xid);
-        return xid;
+        protocol = SpringUtils.getBean(JRaftProtocol.class);
     }
 
     @Override
@@ -131,7 +108,7 @@ public class DataSource4ClusterV2 implements DataSource {
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return target.getParentLogger();
+        return null;
     }
 
     @Override
@@ -144,13 +121,84 @@ public class DataSource4ClusterV2 implements DataSource {
         return target.isWrapperFor(iface);
     }
 
+    public String currentXID() {
+        return xidLocal.get();
+    }
+
+    public String openDistributeTransaction() {
+        String xid = String.valueOf(DistributeIDManager.nextId(RESOURCES_NAME));
+        return openDistributeTransaction(xid);
+    }
+
+    public String openDistributeTransaction(String xid) {
+        connectionHolderMap.computeIfAbsent(xid, s -> {
+            final ConnectionHolder holder = new ConnectionHolder();
+            try {
+                holder.connection = target.getConnection();
+                holder.connection.setAutoCommit(false);
+                holder.savepoint = holder.connection.setSavepoint();
+
+                open(s);
+
+                return holder;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        xidLocal.set(xid);
+        return xid;
+    }
+
+    public String openDistributeTransaction(String username, String password) {
+        String xid = String.valueOf(DistributeIDManager.nextId(RESOURCES_NAME));
+        connectionHolderMap.computeIfAbsent(xid, s -> {
+            final ConnectionHolder holder = new ConnectionHolder();
+            try {
+                holder.connection = target.getConnection(username, password);
+                holder.connection.setAutoCommit(false);
+                holder.savepoint = holder.connection.setSavepoint();
+
+                open(xid);
+
+                return holder;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        xidLocal.set(xid);
+        return xid;
+    }
+
+    // COMMIT
+
+    public void commitLocal() {
+        try {
+            commit(currentXID());
+        } finally {
+            xidLocal.remove();
+        }
+    }
+
     public void commit(String xid) {
         checkXID(xid);
+        final String key = LogKeyUtils.build("CONFIG", "commit", xid);
         try {
-            final ConnectionHolder holder = connectionHolderMap.get(xid);
-            holder.connection.commit();
+            final DBRequest dbRequest = DBRequest.builder()
+                    .xid(currentXID())
+                    .operation("commit")
+                    .build();
+            commit(key, dbRequest, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
         } catch (Exception e) {
+            LogUtil.defaultLog.error("error : {}", ExceptionUtil.getAllExceptionMsg(e));
+        }
+    }
 
+    // ROLLBACK
+
+    public void rollbackLocal() {
+        try {
+            rollback(currentXID());
         } finally {
             xidLocal.remove();
         }
@@ -158,14 +206,43 @@ public class DataSource4ClusterV2 implements DataSource {
 
     public void rollback(String xid) {
         checkXID(xid);
+        final String key = LogKeyUtils.build("CONFIG", "rollback", xid);
         try {
-            final ConnectionHolder holder = connectionHolderMap.get(xid);
-            holder.connection.rollback(holder.savepoint);
+            final DBRequest dbRequest = DBRequest.builder()
+                    .xid(currentXID())
+                    .operation("rollback")
+                    .build();
+            commit(key, dbRequest, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
         } catch (Exception e) {
-
-        } finally {
-            xidLocal.remove();
+            LogUtil.defaultLog.error("error : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
+    }
+
+    // free connection
+
+    public void freedLocal() {
+        freed(currentXID());
+    }
+
+    public void freed(String xid) {
+        connectionHolderMap.remove(xid);
+    }
+
+    public ConnectionHolder getHolderByXID(String xid) {
+        return connectionHolderMap.get(xid);
+    }
+
+    // to notify nother node open transaction
+
+    private void open(String xid) {
+        final DBRequest request = DBRequest.builder()
+                .xid(xid)
+                .operation("open")
+                .build();
+
+        final String key = LogKeyUtils.build("CONFIG", "open", xid);
+
+        commit(key, request, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
     }
 
     private void checkXID(String xid) {
@@ -175,10 +252,39 @@ public class DataSource4ClusterV2 implements DataSource {
         }
     }
 
-    private static class ConnectionHolder {
+    private <T> void commit(String key, T data, String operation) {
+
+        final Map<String, String> extendInfo = new HashMap<>(8);
+
+        extendInfo.put("xid", currentXID());
+
+        final NDatum datum = NDatum.builder()
+                .operation(operation)
+                .className(data.getClass().getCanonicalName())
+                .key(key)
+                .data(JSON.toJSONBytes(data))
+                .extendInfo(extendInfo)
+                .build();
+
+        try {
+            protocol.submit(datum);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static class ConnectionHolder {
 
         private Connection connection;
         private Savepoint savepoint;
+
+        public void commit() throws SQLException {
+            connection.commit();
+        }
+
+        public void rollback() throws SQLException {
+            connection.rollback(savepoint);
+        }
 
     }
 }

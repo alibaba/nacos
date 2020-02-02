@@ -14,25 +14,27 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.consumer;
+package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
-import com.alibaba.nacos.config.server.model.log.ConfigBetaRequest;
+import com.alibaba.nacos.core.distributed.raft.jraft.SnapshotOperate;
+import com.alipay.sofa.jraft.Closure;
+import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
+import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-public class ConfigBetaPublishConsumer extends BaseConsumer<ConfigBetaRequest> {
+public class DerbySnapshotOperate implements SnapshotOperate {
 
     @Override
-    protected void process(ConfigBetaRequest configBetaRequest) {
+    public void onSnapshotSave(SnapshotWriter writer, Closure done) {
 
     }
 
     @Override
-    public String operation() {
-        return ConfigOperationEnum.CONFIG_BETA_PUBLISH.getOperation();
+    public boolean onSnapshotLoad(SnapshotReader reader) {
+        return true;
     }
 }

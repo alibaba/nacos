@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.config.server.service.consumer;
 
+import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.log.ConfigRequest;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,11 +29,12 @@ public class ConfigPublishConsumer extends BaseConsumer<ConfigRequest> {
 
     @Override
     public String operation() {
-        return null;
+        return ConfigOperationEnum.CONFIG_PUBLISH.getOperation();
     }
 
     @Override
     protected void process(ConfigRequest configRequest) {
+        LogUtil.defaultLog.info("config publish log : {}", configRequest);
         persistService.addConfigInfoAtomic(configRequest.getId(),
                 configRequest.getSrcIp(),
                 configRequest.getSrcUser(),

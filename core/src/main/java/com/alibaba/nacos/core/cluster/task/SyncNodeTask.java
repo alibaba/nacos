@@ -50,6 +50,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -66,8 +68,10 @@ public class SyncNodeTask extends Task {
 
     private final ServletContext context;
 
+    private volatile boolean alreadyLoadServer = false;
+
     public SyncNodeTask(final ServletContext context) {
-        WatchFileManager.registerWatchJob(SystemUtils.getConfFilePath(), fileChangeEvent -> readServerConfFromDisk());
+        WatchFileManager.registerWatcher(SystemUtils.getConfFilePath(), fileChangeEvent -> readServerConfFromDisk());
 
         final RequestConfig requestConfig = RequestConfig.custom()
                 .setConnectTimeout(Integer.parseInt(SpringUtils.getProperty("notifyConnectTimeout", "100")))
@@ -77,12 +81,16 @@ public class SyncNodeTask extends Task {
 
         this.context = context;
 
+    }
+
+    @Override
+    protected void init() {
         readServerConfFromDisk();
     }
 
     @Override
     protected void executeBody() {
-        if (nodeManager.getUseAddressServer()) {
+        if (!alreadyLoadServer && nodeManager.getUseAddressServer()) {
             try {
                 ResResult<String> resResult = httpclient.get(nodeManager.getAddressServerUrl(), Header.EMPTY,
                         Query.EMPTY, new TypeReference<ResResult<String>>() {
@@ -125,8 +133,10 @@ public class SyncNodeTask extends Task {
             properties.load(reader);
 
             readServerConf(properties);
+            alreadyLoadServer = true;
         } catch (Exception e) {
             Loggers.CORE.error("nacos-XXXX", "[serverlist] failed to get serverlist from disk!", e);
+            alreadyLoadServer = false;
         }
     }
 
@@ -155,11 +165,13 @@ public class SyncNodeTask extends Task {
                 final String nodeExtendInfoPrefix = String.format(ClusterConfConstants.NODE_EXTEND_DATA, i);
                 Map<String, String> extendInfo = new HashMap<>(8);
                 Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
+                Pattern pattern = Pattern.compile(nodeExtendInfoPrefix);
                 while (iterator.hasNext()) {
                     Map.Entry<Object, Object> entry = iterator.next();
                     final String key = String.valueOf(entry.getKey());
-                    if (key.startsWith(nodeExtendInfoPrefix)) {
-                        extendInfo.put(key, String.valueOf(entry.getValue()));
+                    Matcher matcher = pattern.matcher(key);
+                    if (matcher.find()) {
+                        extendInfo.put(matcher.group(1), String.valueOf(entry.getValue()));
                         iterator.remove();
                     }
                 }

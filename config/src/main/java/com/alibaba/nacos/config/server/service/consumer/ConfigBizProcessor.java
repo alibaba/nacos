@@ -45,8 +45,8 @@ public class ConfigBizProcessor implements BizProcessor {
     @PostConstruct
     protected void init() {
         protocol.registerBizProcessor(this);
-        Map<String, BaseConsumer> beans = SpringUtils.getBeansOfType(BaseConsumer.class);
-        for (BaseConsumer consumer : beans.values()) {
+        Map<String, ConfigConsumer> beans = SpringUtils.getBeansOfType(ConfigConsumer.class);
+        for (ConfigConsumer consumer : beans.values()) {
             registerLogConsumer(consumer);
         }
     }

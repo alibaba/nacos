@@ -31,9 +31,10 @@ public interface NodeManager {
 
     /**
      * this address which index in NodeManager
+     * start from 1
      *
-     * @param address
-     * @return
+     * @param address ip:port info
+     * @return this address index in node collection
      */
     int indexOf(String address);
 

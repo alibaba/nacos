@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.aspect;
 
 import com.alibaba.nacos.config.server.configuration.DataSource4ClusterV2;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -40,14 +41,27 @@ public class XIDAspect {
 
     @Around("openXID()")
     public Object aroundXID(ProceedingJoinPoint pjp) throws Throwable {
+        final String methodName = pjp.getSignature().getName();
+        final Object[] args = pjp.getArgs();
         final String xid = dataSource.openDistributeTransaction();
+        LogUtil.defaultLog.info("open distribute transaction, method : {}, args : {}, xid : {}", methodName, args, xid);
         try {
             Object result = pjp.proceed();
-            dataSource.commit(xid);
+
+            // If all the above transactions are successful, a commit operation is performed,
+            // and all Connections are notified of the commit operation.
+
+            dataSource.commitLocal();
             return result;
         } catch (Throwable e) {
-            dataSource.rollback(xid);
+
+            // If an exception occurs during the transaction, rollback the transaction
+
+            LogUtil.defaultLog.error("distribute transaction has error and execute rollback. xid : {}, error : {}", xid, e);
+            dataSource.rollbackLocal();
             throw e;
+        } finally {
+            dataSource.freedLocal();
         }
     }
 

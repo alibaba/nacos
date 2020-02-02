@@ -186,4 +186,19 @@ public class ConfigRequest implements Serializable {
             return configRequest;
         }
     }
+
+    @Override
+    public String toString() {
+        return "ConfigRequest{" +
+                "id=" + id +
+                ", dataId='" + dataId + '\'' +
+                ", group='" + group + '\'' +
+                ", tenant='" + tenant + '\'' +
+                ", srcIp='" + srcIp + '\'' +
+                ", srcUser='" + srcUser + '\'' +
+                ", time=" + time +
+                ", configAdvanceInfo=" + configAdvanceInfo +
+                ", configInfo=" + configInfo +
+                '}';
+    }
 }

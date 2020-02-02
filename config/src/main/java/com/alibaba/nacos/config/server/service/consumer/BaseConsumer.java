@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.service.consumer;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.core.distributed.Datum;
-import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SerializeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +28,7 @@ import org.springframework.stereotype.Component;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component
-public abstract class BaseConsumer<T> implements LogConsumer {
+public abstract class BaseConsumer<T> implements ConfigConsumer {
 
     private SerializeFactory.Serializer serializer = SerializeFactory
             .getSerializer(SerializeFactory.JSON_INDEX);

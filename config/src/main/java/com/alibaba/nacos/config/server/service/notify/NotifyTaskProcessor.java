@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.RunningConfigUtils;
 import com.alibaba.nacos.core.cluster.Node;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import org.apache.http.HttpStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +43,10 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  */
 public class NotifyTaskProcessor implements TaskProcessor {
 
-    private ServerNodeManager serverNodeManager;
+    private NodeManager nodeManager;
 
-    public NotifyTaskProcessor(ServerNodeManager serverNodeManager) {
-        this.serverNodeManager = serverNodeManager;
+    public NotifyTaskProcessor(NodeManager nodeManager) {
+        this.nodeManager = nodeManager;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class NotifyTaskProcessor implements TaskProcessor {
 
         boolean isok = true;
 
-        for (Node node : serverNodeManager.allNodes()) {
+        for (Node node : nodeManager.allNodes()) {
             isok = notifyToDump(dataId, group, tenant, lastModified, node.address()) && isok;
         }
         return isok;

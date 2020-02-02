@@ -44,7 +44,7 @@ public class NotifyManager {
      * @param consumer
      * @param <T>
      */
-    public static <T> void subscribe(final Subscribe consumer) {
+    public static <T> void registerSubscribe(final Subscribe consumer) {
         final String topic = consumer.subscribeType().getCanonicalName();
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);
@@ -57,7 +57,7 @@ public class NotifyManager {
      * @param consumer
      * @param <T>
      */
-    public static <T> void unSubscribe(final Subscribe consumer) {
+    public static <T> void deregisterSubscribe(final Subscribe consumer) {
         final String topic = consumer.subscribeType().getCanonicalName();
         if (PUBLISHER_MAP.containsKey(topic)) {
             Publisher publisher = PUBLISHER_MAP.get(topic);

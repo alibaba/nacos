@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.distributed;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,7 +29,7 @@ public class NDatum implements Datum {
     private byte[] data;
     private String className;
     private String operation;
-    private Map<String, String> extendInfo = Collections.emptyMap();
+    private Map<String, String> extendInfo = new HashMap<>(3);
 
     @Override
     public String getKey() {
@@ -53,6 +54,16 @@ public class NDatum implements Datum {
     @Override
     public String extendVal(String key) {
         return extendInfo.get(key);
+    }
+
+    @Override
+    public void addExtendVal(String key, String val) {
+        extendInfo.put(key, val);
+    }
+
+    @Override
+    public void appendExtendInfo(Map<String, String> extendInfo) {
+        this.extendInfo.putAll(extendInfo);
     }
 
     public static NDatumBuilder builder() {

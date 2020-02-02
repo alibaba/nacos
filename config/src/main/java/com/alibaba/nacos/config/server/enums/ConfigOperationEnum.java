@@ -82,6 +82,11 @@ public enum  ConfigOperationEnum {
      *
      */
     CONFIG_AGG_REMOVE("config_agg_remove"),
+
+    /**
+     *
+     */
+    DB_TRANSACTION_CTRL("db_transaction_ctrl"),
     ;
 
     private String operation;

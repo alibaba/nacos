@@ -37,6 +37,12 @@ public abstract class Task implements Runnable {
         executeBody();
     }
 
+    // init some resource
+
+    protected void init() {
+
+    }
+
     /**
      * Task executive
      */

@@ -21,7 +21,7 @@ import com.alibaba.nacos.core.cluster.NodeChangeListener;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
-import com.alibaba.nacos.core.executor.ExecutorManager;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -30,6 +30,7 @@ import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 import com.alipay.sofa.jraft.JRaftUtils;
 import com.alipay.sofa.jraft.Node;
+import com.alipay.sofa.jraft.NodeManager;
 import com.alipay.sofa.jraft.RaftGroupService;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
@@ -52,6 +53,7 @@ import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 
 /**
  * JRaft server instance, away from Spring IOC management
@@ -83,10 +85,11 @@ public class JRaftServer implements NodeChangeListener {
         this.nodeManager = nodeManager;
         this.machine = machine;
         this.processor = processor;
-        this.executorService = ExecutorManager.newSingleScheduledExecutorService(JRaftServer.class.getCanonicalName(),
+        this.conf = new Configuration();
+        this.executorService = ExecutorFactory.newSingleScheduledExecutorService(JRaftServer.class.getCanonicalName(),
                 new NameThreadFactory("com.alibaba.nacos.core.protocol.raft.node-refresh"));
 
-        NotifyManager.subscribe(this);
+        NotifyManager.registerSubscribe(this);
     }
 
     void init(RaftConfig config) {
@@ -106,25 +109,40 @@ public class JRaftServer implements NodeChangeListener {
         selfPort = Integer.parseInt(self.extendVal(RaftSysConstants.RAFT_PORT));
         nodeOptions = new NodeOptions();
 
-        // 设置选举超时时间为 5 秒
+        // Set the election timeout time. The default is 5 seconds.
+
         nodeOptions.setElectionTimeoutMs(Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_ELECTION_TIMEOUT_MS,
                 String.valueOf(Duration.ofSeconds(5).toMillis()))));
-        // 每隔600秒做一次 snapshot
+
+        // Set snapshot interval, default 600 seconds
+
         nodeOptions.setSnapshotIntervalSecs(Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
-                String.valueOf(Duration.ofSeconds(600).toSeconds()))));
-        // 设置初始集群配置
+                String.valueOf(Duration.ofSeconds(600).getSeconds()))));
         nodeOptions.setInitialConf(conf);
 
-        // 设置存储路径
-        // 日志, 必须
         nodeOptions.setLogUri(logUri);
-        // 元信息, 必须
         nodeOptions.setRaftMetaUri(metaDataUri);
-        // snapshot, 可选, 一般都推荐
         nodeOptions.setSnapshotUri(snapshotUri);
     }
 
     void start() {
+
+        // init raft group node
+
+        NodeManager raftNodeManager = NodeManager.getInstance();
+
+        nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.core.cluster.Node>() {
+            @Override
+            public void accept(com.alibaba.nacos.core.cluster.Node node) {
+                final String ip = node.ip();
+                final int raftPort = Integer.parseInt(node.extendVal(RaftSysConstants.RAFT_PORT));
+                final String address = ip + ":" + raftPort;
+                PeerId peerId = JRaftUtils.getPeerId(address);
+                conf.addPeer(peerId);
+                raftNodeManager.addAddress(peerId.getEndpoint());
+            }
+        });
+
         nodeOptions.setFsm(this.machine);
 
         rpcServer = new RpcServer(selfPort, true, true);
@@ -133,11 +151,10 @@ public class JRaftServer implements NodeChangeListener {
 
         RaftRpcServerFactory.addRaftRequestProcessors(rpcServer);
 
-        // 初始化 raft group 服务框架
+        // Initialize the raft group service framework
+
         this.raftGroupService = new RaftGroupService(raftGroupId,
                 JRaftUtils.getPeerId(selfIp + ":" + selfPort), nodeOptions, rpcServer);
-
-        // 启动
 
         this.node = this.raftGroupService.start();
 
@@ -166,7 +183,6 @@ public class JRaftServer implements NodeChangeListener {
                     public void run(Status status) {
                     }
                 });
-
     }
 
     void removeNode(com.alibaba.nacos.core.cluster.Node node) {
@@ -231,7 +247,7 @@ public class JRaftServer implements NodeChangeListener {
 
     void shutdown() {
 
-        NotifyManager.unSubscribe(this);
+        NotifyManager.deregisterSubscribe(this);
 
         raftGroupService.shutdown();
         cliClientService.shutdown();

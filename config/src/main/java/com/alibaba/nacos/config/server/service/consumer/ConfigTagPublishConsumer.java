@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.consumer;
 
+import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.log.ConfigTagRequest;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,7 @@ public class ConfigTagPublishConsumer  extends BaseConsumer<ConfigTagRequest> {
 
     @Override
     public String operation() {
-        return null;
+        return ConfigOperationEnum.CONFIG_TAG_PUBLISH.getOperation();
     }
 
     @Override

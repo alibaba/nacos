@@ -23,9 +23,9 @@ public class LogKeyUtils {
 
     private static final String LINK_STR = "$@$";
 
-    public static final String build(String str, Object... params) {
+    public static final String build(String biz, Object... params) {
         final StringBuilder sb = new StringBuilder();
-        sb.append(str);
+        sb.append(biz);
         for (Object obj : params) {
             sb.append(LINK_STR).append(obj);
         }

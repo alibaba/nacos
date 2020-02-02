@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.cluster;
 
-import com.alibaba.nacos.core.executor.ExecutorManager;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -34,7 +34,7 @@ public class NodeTaskManager {
 
     public NodeTaskManager(final ServerNodeManager nodeManager) {
         this.nodeManager = nodeManager;
-        this.executorService = ExecutorManager.newScheduledExecutorService(
+        this.executorService = ExecutorFactory.newScheduledExecutorService(
                 ServerNodeManager.class.getCanonicalName(),
                 2,
                 new NameThreadFactory("com.alibaba.nacos.core.cluster"));
@@ -50,6 +50,7 @@ public class NodeTaskManager {
             return;
         }
         task.setNodeManager(nodeManager);
+        task.init();
         Task.TaskType[] types = task.types();
         for (Task.TaskType taskType : types) {
             if (taskType == Task.TaskType.SCHEDULE_TASK) {

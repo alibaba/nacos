@@ -82,7 +82,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
         // There is only one consumer to ensure that the internal consumption
         // is sequential and there is no concurrent competition
 
-        NotifyManager.subscribe(new Subscribe<RaftEvent>() {
+        NotifyManager.registerSubscribe(new Subscribe<RaftEvent>() {
             @Override
             public void onEvent(RaftEvent event) {
                 writeLock.lock();

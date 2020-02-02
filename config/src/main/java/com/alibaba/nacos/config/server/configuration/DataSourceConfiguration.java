@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 import java.io.File;
@@ -34,6 +35,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@DependsOn(value = "serverNodeManager")
 @Configuration
 public class DataSourceConfiguration {
 
@@ -61,17 +63,19 @@ public class DataSourceConfiguration {
         return ds;
     }
 
-    @Conditional(ClusterV2Condition.class)
     @Bean
+    @Conditional(ClusterV2Condition.class)
     public DataSource4ClusterV2 clusterV2() {
         return new DataSource4ClusterV2(standAlone());
     }
+
+    //
 
     private static class ClusterV2Condition implements Condition {
 
         @Override
         public boolean matches(ConditionContext ctx, AnnotatedTypeMetadata metadata) {
-            final String isAlone = ctx.getEnvironment().getProperty("nacos.standalone");
+            final String isAlone = ctx.getEnvironment().getProperty("nacos.standalone", "false");
             final String isV2 = ctx.getEnvironment().getProperty("nacos.config.store.type", "inner");
             return StringUtils.equalsIgnoreCase(isAlone, "true") && StringUtils.equalsIgnoreCase(isV2, "inner");
         }

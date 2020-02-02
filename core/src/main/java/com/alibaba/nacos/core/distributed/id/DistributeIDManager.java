@@ -33,7 +33,7 @@ public class DistributeIDManager {
 
     private static ServerNodeManager serverNodeManager;
 
-    private static final AtomicInteger WORKER_ID = new AtomicInteger(0);
+    private static final AtomicInteger WORKER_ID = new AtomicInteger(1);
 
     private static final Map<String, SnakeFlowerIdHelper> SNAKE_FLOWER_ID_HELPER_MAP = new ConcurrentHashMap<>();
 

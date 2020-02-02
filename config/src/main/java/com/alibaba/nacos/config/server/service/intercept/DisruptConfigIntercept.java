@@ -124,6 +124,7 @@ public class DisruptConfigIntercept implements Intercept {
                 .configId(configId)
                 .srcIp(srcIp)
                 .srcUser(srcUser)
+                .time(time)
                 .configInfo(configInfo)
                 .ops("I")
                 .build();
@@ -152,17 +153,20 @@ public class DisruptConfigIntercept implements Intercept {
     }
 
     @Override
-    public void configUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time, Map<String, Object> configAdvanceInfo, boolean notify) {
+    public void configUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+                             Map<String, Object> configAdvanceInfo, boolean notify) {
 
     }
 
     @Override
-    public void configTagUpdate(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time, boolean notify) {
+    public void configTagUpdate(ConfigInfo configInfo, String tag, String srcIp, String srcUser,
+                                Timestamp time, boolean notify) {
 
     }
 
     @Override
-    public void configBetaUpdate(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time, boolean notify) {
+    public void configBetaUpdate(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
+                                 Timestamp time, boolean notify) {
 
     }
 

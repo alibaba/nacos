@@ -169,4 +169,18 @@ public class ConfigBetaRequest implements Serializable {
             return configBetaRequest;
         }
     }
+
+    @Override
+    public String toString() {
+        return "ConfigBetaRequest{" +
+                "dataId='" + dataId + '\'' +
+                ", group='" + group + '\'' +
+                ", tenant='" + tenant + '\'' +
+                ", configInfo=" + configInfo +
+                ", betaIps='" + betaIps + '\'' +
+                ", srcIp='" + srcIp + '\'' +
+                ", srcUser='" + srcUser + '\'' +
+                ", time=" + time +
+                '}';
+    }
 }

@@ -152,4 +152,17 @@ public class ConfigHistoryRequest {
             return configHistoryRequest;
         }
     }
+
+    @Override
+    public String toString() {
+        return "ConfigHistoryRequest{" +
+                "id=" + id +
+                ", configId=" + configId +
+                ", configInfo=" + configInfo +
+                ", srcIp='" + srcIp + '\'' +
+                ", srcUser='" + srcUser + '\'' +
+                ", time=" + time +
+                ", ops='" + ops + '\'' +
+                '}';
+    }
 }

@@ -33,7 +33,6 @@ import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.servlet.ServletContext;
@@ -59,7 +58,6 @@ import static com.alibaba.nacos.core.utils.SystemUtils.readClusterConf;
  *
  * @author Nacos
  */
-@Service
 @Deprecated
 public class ServerListService implements ApplicationListener<WebServerInitializedEvent> {
 
@@ -69,7 +67,7 @@ public class ServerListService implements ApplicationListener<WebServerInitializ
     @Value("${server.port:8848}")
     private int port;
 
-    @Value("${useAddressServer}")
+    @Value("${useAddressServer:false}")
     private Boolean isUseAddressServer = true;
 
     public ServerListService(ServletContext servletContext) {

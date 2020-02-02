@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.distributed;
 
+import java.util.Map;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
@@ -56,5 +58,20 @@ public interface Datum {
      * @return value
      */
     String extendVal(String key);
+
+    /**
+     * Set additional info data
+     *
+     * @param key key
+     * @param val value
+     */
+    void addExtendVal(String key, String val);
+
+    /**
+     * Set additional information Map
+     *
+     * @param extendInfo {@link Map<String, String>}
+     */
+    void appendExtendInfo(Map<String, String> extendInfo);
 
 }

@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.NDatum;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
-import com.alibaba.nacos.core.executor.ExecutorManager;
+import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.time.Duration;
@@ -66,7 +66,7 @@ class DefaultDistributeLock implements DistributedLock {
         } catch (Exception ignore) {
         }
         if (result) {
-            executorService = ExecutorManager.newSingleScheduledExecutorService(DistributedLock.class.getName() + "-" + key);
+            executorService = ExecutorFactory.newSingleScheduledExecutorService(DistributedLock.class.getName() + "-" + key);
             executorService.schedule(this::openAutoReNew, LIFE_TIME - 1000, TimeUnit.MILLISECONDS);
         }
         return result;

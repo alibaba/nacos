@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.consumer;
 
 import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.log.ConfigHistoryRequest;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,6 +29,7 @@ public class ConfigHistoryPublishConsumer extends BaseConsumer<ConfigHistoryRequ
 
     @Override
     protected void process(ConfigHistoryRequest request) {
+        LogUtil.defaultLog.info("config publish log : {}", request);
         persistService.insertConfigHistoryAtomic(request.getId(),
                 request.getConfigInfo(),
                 request.getSrcIp(),

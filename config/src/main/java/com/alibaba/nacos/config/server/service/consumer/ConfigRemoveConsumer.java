@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.consumer;
 
+import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.log.ConfigRequest;
 import org.springframework.stereotype.Component;
 
@@ -27,7 +28,7 @@ public class ConfigRemoveConsumer extends BaseConsumer<ConfigRequest> {
 
     @Override
     public String operation() {
-        return null;
+        return ConfigOperationEnum.CONFIG_REMOVE.getOperation();
     }
 
     @Override

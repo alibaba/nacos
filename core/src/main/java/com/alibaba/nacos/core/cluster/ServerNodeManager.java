@@ -49,7 +49,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Component
+@Component(value = "serverNodeManager")
 public class ServerNodeManager implements ApplicationListener<WebServerInitializedEvent>, NodeManager {
 
     private final NodeTaskManager taskManager = new NodeTaskManager(this);
@@ -79,7 +79,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Value("${server.port:8848}")
     private int port;
 
-    @Value("${useAddressServer:true}")
+    @Value("${useAddressServer:false}")
     private boolean isUseAddressServer;
 
     private final ServletContext servletContext;
@@ -94,10 +94,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public void init() {
 
-        // Initialize the internal distributed ID factory
-
-        DistributeIDManager.init();
-
         // register NodeChangeEvent publisher to NotifyManager
 
         NotifyManager.registerPublisher(NodeChangeEvent::new, NodeChangeEvent.class);
@@ -108,6 +104,11 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         SyncNodeTask task = new SyncNodeTask(servletContext);
         taskManager.execute(task);
+
+        // To initialize the distributed ID generator, need to wait
+        // for the cluster node information to be initialized.
+
+        DistributeIDManager.init();
 
         // Consistency protocol module initialization
 
@@ -136,7 +137,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public int indexOf(String address) {
-        int index = -1;
+        int index = 1;
         for (Map.Entry<String, Node> entry : serverListHealth.entrySet()) {
             if (Objects.equals(entry.getKey(), address)) {
                 return index;
@@ -210,12 +211,12 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public void subscribe(NodeChangeListener listener) {
-        NotifyManager.subscribe(listener);
+        NotifyManager.registerSubscribe(listener);
     }
 
     @Override
     public void unSubscribe(NodeChangeListener listener) {
-        NotifyManager.unSubscribe(listener);
+        NotifyManager.deregisterSubscribe(listener);
     }
 
     @Override

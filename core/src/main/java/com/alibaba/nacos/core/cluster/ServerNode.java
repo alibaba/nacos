@@ -37,7 +37,7 @@ public class ServerNode implements Node {
 
     private String address;
 
-    {
+    public ServerNode() {
         extendInfo.put(SITE_KEY, "unknown");
         extendInfo.put(AD_WEIGHT, "0");
         extendInfo.put(LAST_REF_TIME, "0");

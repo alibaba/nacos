@@ -16,23 +16,10 @@
 
 package com.alibaba.nacos.config.server.service.consumer;
 
-import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
-import com.alibaba.nacos.config.server.model.log.ConfigBetaRequest;
-import org.springframework.stereotype.Component;
+import com.alibaba.nacos.core.distributed.LogConsumer;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@Component
-public class ConfigBetaPublishConsumer extends BaseConsumer<ConfigBetaRequest> {
-
-    @Override
-    protected void process(ConfigBetaRequest configBetaRequest) {
-
-    }
-
-    @Override
-    public String operation() {
-        return ConfigOperationEnum.CONFIG_BETA_PUBLISH.getOperation();
-    }
+public interface ConfigConsumer extends LogConsumer {
 }

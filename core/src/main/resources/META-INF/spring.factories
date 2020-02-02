@@ -1,6 +1,5 @@
 # ApplicationContextInitializer
 org.springframework.context.ApplicationContextInitializer=\
-  com.alibaba.nacos.core.code.NacosInitializer,\
   com.alibaba.nacos.core.utils.SpringUtils
 
 # ApplicationListener
