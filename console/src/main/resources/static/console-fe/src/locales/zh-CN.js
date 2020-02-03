@@ -567,6 +567,9 @@ const I18N_CONF = {
     operation: '操作',
     deletePermission: '删除',
     deletePermissionTip: '是否要删除该权限？',
+    readOnly: '只读',
+    writeOnly: '只写',
+    readWrite: '读写',
   },
   NewPermissions: {
     addPermission: '添加权限',

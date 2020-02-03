@@ -62,6 +62,15 @@ class PermissionsManagement extends React.Component {
     this.setState({ createPermissionVisible: false });
   }
 
+  getActionText(action) {
+    const { locale } = this.props;
+    return {
+      r: `${locale.readOnly} (r)`,
+      w: `${locale.writeOnly} (w)`,
+      rw: `${locale.readWrite} (rw)`,
+    }[action];
+  }
+
   render() {
     const { permissions, locale } = this.props;
     const { loading, pageSize, pageNo, createPermissionVisible } = this.state;
@@ -76,7 +85,11 @@ class PermissionsManagement extends React.Component {
         <Table dataSource={permissions.pageItems} loading={loading} maxBodyHeight={476} fixedHeader>
           <Table.Column title={locale.role} dataIndex="role" />
           <Table.Column title={locale.resource} dataIndex="resource" />
-          <Table.Column title={locale.action} dataIndex="action" />
+          <Table.Column
+            title={locale.action}
+            dataIndex="action"
+            cell={action => this.getActionText(action)}
+          />
           <Table.Column
             title={locale.operation}
             cell={(value, index, record) => (
