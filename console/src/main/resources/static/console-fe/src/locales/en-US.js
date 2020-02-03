@@ -570,6 +570,9 @@ const I18N_CONF = {
     operation: 'Operation',
     deletePermission: 'Delete',
     deletePermissionTip: 'Do you want to delete this permission?',
+    readOnly: 'read only',
+    writeOnly: 'write only',
+    readWrite: 'Read and write',
   },
   NewPermissions: {
     addPermission: 'Add Permission',
