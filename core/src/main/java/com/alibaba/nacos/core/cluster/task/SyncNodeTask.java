@@ -94,7 +94,7 @@ public class SyncNodeTask extends Task {
             try {
                 ResResult<String> resResult = httpclient.get(nodeManager.getAddressServerUrl(), Header.EMPTY,
                         Query.EMPTY, new TypeReference<ResResult<String>>() {
-                });
+                        });
                 if (HttpServletResponse.SC_OK == resResult.getCode()) {
                     nodeManager.setAddressServerHealth(true);
 
@@ -126,7 +126,7 @@ public class SyncNodeTask extends Task {
     }
 
     private void readServerConfFromDisk() {
-        try(Reader reader = new InputStreamReader(new FileInputStream(new File(SystemUtils.CLUSTER_CONF_FILE_PATH)),
+        try (Reader reader = new InputStreamReader(new FileInputStream(new File(SystemUtils.CLUSTER_CONF_FILE_PATH)),
                 StandardCharsets.UTF_8)) {
 
             Properties properties = new Properties();
@@ -141,49 +141,53 @@ public class SyncNodeTask extends Task {
     }
 
     private void readServerConf(Properties properties) {
-            Set<Node> nodes = new HashSet<>();
-            boolean needStop = false;
+        Set<Node> nodes = new HashSet<>();
 
-            for (int i = 0; !needStop; i ++) {
-                final String nodeAddressKey = String.format(ClusterConfConstants.NODE_ADDRESS, i);
-                String nodeAddressValue = properties.getProperty(nodeAddressKey);
-                if (StringUtils.isBlank(nodeAddressValue)) {
-                    needStop = true;
+        // If it is in stand-alone mode, manually put the local IP into
+        // Properties for easy unified processing below
 
-                    // 意味着单机模式
-
-                    if (i == 0 && STANDALONE_MODE) {
-                        nodeAddressValue = LOCAL_IP;
-                        if (!nodeAddressValue.contains(":")) {
-                            nodeAddressValue += ":" + SpringUtils.getProperty("server.port","8848");
-                        }
-                    }
+        if (STANDALONE_MODE) {
+            final String nodeAddressKey = String.format(ClusterConfConstants.NODE_ADDRESS, 0);
+            if (!properties.containsKey(nodeAddressKey)) {
+                String nodeAddressValue = LOCAL_IP;
+                if (!nodeAddressValue.contains(":")) {
+                    nodeAddressValue += ":" + SpringUtils.getProperty("server.port", "8848");
                 }
-                final String[] nodeAddressInfo = nodeAddressValue.split(":");
-                final String ip = nodeAddressInfo[0].trim();
-                final int port = Integer.parseInt(nodeAddressInfo[1].trim());
-                final String nodeExtendInfoPrefix = String.format(ClusterConfConstants.NODE_EXTEND_DATA, i);
-                Map<String, String> extendInfo = new HashMap<>(8);
-                Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
-                Pattern pattern = Pattern.compile(nodeExtendInfoPrefix);
-                while (iterator.hasNext()) {
-                    Map.Entry<Object, Object> entry = iterator.next();
-                    final String key = String.valueOf(entry.getKey());
-                    Matcher matcher = pattern.matcher(key);
-                    if (matcher.find()) {
-                        extendInfo.put(matcher.group(1), String.valueOf(entry.getValue()));
-                        iterator.remove();
-                    }
-                }
-                nodes.add(ServerNode.builder()
-                        .ip(ip)
-                        .port(port)
-                        .extendInfo(extendInfo)
-                        .state(NodeState.UP)
-                        .build());
+                properties.put(nodeAddressKey, nodeAddressValue);
             }
+        }
 
-            nodeManager.nodeJoin(nodes);
+        for (int i = 0; ; i++) {
+            final String nodeAddressKey = String.format(ClusterConfConstants.NODE_ADDRESS, i);
+            String nodeAddressValue = properties.getProperty(nodeAddressKey);
+            if (StringUtils.isBlank(nodeAddressValue)) {
+                break;
+            }
+            final String[] nodeAddressInfo = nodeAddressValue.split(":");
+            final String ip = nodeAddressInfo[0].trim();
+            final int port = Integer.parseInt(nodeAddressInfo[1].trim());
+            final String nodeExtendInfoPrefix = String.format(ClusterConfConstants.NODE_EXTEND_DATA, i);
+            Map<String, String> extendInfo = new HashMap<>(8);
+            Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
+            Pattern pattern = Pattern.compile(nodeExtendInfoPrefix);
+            while (iterator.hasNext()) {
+                Map.Entry<Object, Object> entry = iterator.next();
+                final String key = String.valueOf(entry.getKey());
+                Matcher matcher = pattern.matcher(key);
+                if (matcher.find()) {
+                    extendInfo.put(matcher.group(1), String.valueOf(entry.getValue()));
+                    iterator.remove();
+                }
+            }
+            nodes.add(ServerNode.builder()
+                    .ip(ip)
+                    .port(port)
+                    .extendInfo(extendInfo)
+                    .state(NodeState.UP)
+                    .build());
+        }
+
+        nodeManager.nodeJoin(nodes);
     }
 
     @Override

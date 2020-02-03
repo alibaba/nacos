@@ -61,6 +61,13 @@ public interface NodeManager {
     Node self();
 
     /**
+     * this node ip is the first in node collection
+     *
+     * @return is first ip in node collection
+     */
+    boolean isFirstIp();
+
+    /**
      * list all nodes
      *
      * @return {@link Collection<Node>}

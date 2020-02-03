@@ -19,21 +19,18 @@ package com.alibaba.nacos.core.lock;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.Datum;
-import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.utils.ResResultUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class LockConsumer implements LogConsumer {
+@Component
+class LockConsumer implements BaseLockConsumer {
 
     private LockManager lockManager;
-
-    public LockConsumer(LockManager lockManager) {
-        this.lockManager = lockManager;
-    }
 
     @Override
     public ResResult<Boolean> onAccept(Datum data) {
@@ -55,5 +52,10 @@ class LockConsumer implements LogConsumer {
     @Override
     public String operation() {
         return LockOperation.LOCK.getOperation();
+    }
+
+    @Override
+    public void setLockManager(LockManager lockManager) {
+        this.lockManager = lockManager;
     }
 }

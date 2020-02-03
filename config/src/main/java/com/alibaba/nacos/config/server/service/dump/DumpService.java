@@ -18,28 +18,31 @@ package com.alibaba.nacos.config.server.service.dump;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigService;
 import com.alibaba.nacos.config.server.service.DiskUtil;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.PersistService.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
-import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
-import com.alibaba.nacos.config.server.utils.ContentUtils;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpChangeProcessor;
+import com.alibaba.nacos.config.server.service.dump.processor.DumpProcessor;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllBetaTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
+import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.config.server.utils.MD5;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
-import org.apache.commons.lang3.StringUtils;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -53,10 +56,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
@@ -68,10 +69,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 public class DumpService {
 
     @Autowired
-    private Environment env;
-
-    @Autowired
-    PersistService persistService;
+    private PersistService persistService;
 
     @Autowired
     private ServerNodeManager serverNodeManager;
@@ -83,6 +81,7 @@ public class DumpService {
         DumpAllProcessor dumpAllProcessor = new DumpAllProcessor(this);
         DumpAllBetaProcessor dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
         DumpAllTagProcessor dumpAllTagProcessor = new DumpAllTagProcessor(this);
+        CleanConfigHistoryExecutor cleanHistoryProcessor = new CleanConfigHistoryExecutor(this, serverNodeManager);
 
         dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         dumpTaskMgr.setDefaultTaskProcessor(processor);
@@ -93,29 +92,6 @@ public class DumpService {
         Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
 
         Runnable dumpAllBeta = () -> dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
-
-        Runnable clearConfigHistory = () -> {
-            log.warn("clearConfigHistory start");
-            if (serverNodeManager.isFirstIp()) {
-                try {
-                    Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                    int totalCount = persistService.findConfigHistoryCountByTime(startTime);
-                    if (totalCount > 0) {
-                        int pageSize = 1000;
-                        int removeTime = (totalCount + pageSize - 1) / pageSize;
-                        log.warn("clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
-                                new Object[]{startTime, totalCount, pageSize, removeTime});
-                        while (removeTime > 0) {
-                            // 分页删除，以免批量太大报错
-                            persistService.removeConfigHistory(startTime, pageSize);
-                            removeTime--;
-                        }
-                    }
-                } catch (Throwable e) {
-                    log.error("clearConfigHistory error", e);
-                }
-            }
-        };
 
         try {
             dumpConfigInfo(dumpAllProcessor);
@@ -133,16 +109,19 @@ public class DumpService {
                 dumpAllTagProcessor.process(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
             }
 
-            // add to dump aggr
-            List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
-            if (configList != null && !configList.isEmpty()) {
-                total = configList.size();
-                List<List<ConfigInfoChanged>> splitList = splitList(configList, INIT_THREAD_COUNT);
-                for (List<ConfigInfoChanged> list : splitList) {
-                    MergeAllDataWorker work = new MergeAllDataWorker(list);
-                    work.start();
+            if (serverNodeManager.isFirstIp()) {
+
+                // add to dump aggr
+
+                List<ConfigInfoChanged> configList = persistService.findAllAggrGroup();
+                if (configList != null && !configList.isEmpty()) {
+                    total = configList.size();
+                    List<List<ConfigInfoChanged>> splitList = splitList(configList, INIT_THREAD_COUNT);
+                    for (List<ConfigInfoChanged> list : splitList) {
+                        new MergeAllDataWorker(list).start();
+                    }
+                    log.info("server start, schedule merge end.");
                 }
-                log.info("server start, schedule merge end.");
             }
         } catch (Exception e) {
             LogUtil.fatalLog.error(
@@ -174,26 +153,26 @@ public class DumpService {
                     TimeUnit.MINUTES);
         }
 
-        TimerTaskService.scheduleWithFixedDelay(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+        cleanHistoryProcessor.start();
 
     }
 
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor)
             throws IOException {
         int timeStep = 6;
-        Boolean isAllDump = true;
+        boolean isAllDump = true;
         // initial dump all
         FileInputStream fis = null;
-        Timestamp heartheatLastStamp = null;
+        Timestamp heartBeatLastStamp = null;
         try {
             if (isQuickStart()) {
                 File heartbeatFile = DiskUtil.heartBeatFile();
                 if (heartbeatFile.exists()) {
                     fis = new FileInputStream(heartbeatFile);
-                    String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
-                    heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
+                    String heartBeatTempLast = IoUtils.toString(fis, Constants.ENCODE);
+                    heartBeatLastStamp = Timestamp.valueOf(heartBeatTempLast);
                     if (TimeUtils.getCurrentTime().getTime()
-                            - heartheatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {
+                            - heartBeatLastStamp.getTime() < timeStep * 60 * 60 * 1000) {
                         isAllDump = false;
                     }
                 }
@@ -203,7 +182,7 @@ public class DumpService {
                 DiskUtil.clearAll();
                 dumpAllProcessor.process(DumpAllTask.TASK_ID, new DumpAllTask());
             } else {
-                Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp,
+                Timestamp beforeTimeStamp = getBeforeStamp(heartBeatLastStamp,
                         timeStep);
                 DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(
                         this, beforeTimeStamp, TimeUtils.getCurrentTime());
@@ -256,8 +235,8 @@ public class DumpService {
     private Boolean isQuickStart() {
         try {
             String val = null;
-            val = env.getProperty("isQuickStart");
-            if (val != null && TRUE_STR.equals(val)) {
+            val = SpringUtils.getProperty("isQuickStart");
+            if (TRUE_STR.equals(val)) {
                 isQuickStart = true;
             }
             fatalLog.warn("isQuickStart:{}", isQuickStart);
@@ -265,25 +244,6 @@ public class DumpService {
             fatalLog.error("read application.properties wrong", e);
         }
         return isQuickStart;
-    }
-
-    private int getRetentionDays() {
-        String val = env.getProperty("nacos.config.retention.days");
-        if (null == val) {
-            return retentionDays;
-        }
-
-        int tmp = 0;
-        try {
-            tmp = Integer.parseInt(val);
-            if (tmp > 0) {
-                retentionDays = tmp;
-            }
-        } catch (NumberFormatException nfe) {
-            fatalLog.error("read nacos.config.retention.days wrong", nfe);
-        }
-
-        return retentionDays;
     }
 
     public void dump(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
@@ -309,6 +269,10 @@ public class DumpService {
         dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
     }
 
+    public PersistService getPersistService() {
+        return persistService;
+    }
+
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
         List<List<ConfigInfoChanged>> result = new ArrayList<List<ConfigInfoChanged>>(count);
         for (int i = 0; i < count; i++) {
@@ -319,69 +283,6 @@ public class DumpService {
             result.get(i % count).add(config);
         }
         return result;
-    }
-
-    class MergeAllDataWorker extends Thread {
-        static final int PAGE_SIZE = 10000;
-
-        private List<ConfigInfoChanged> configInfoList;
-
-        public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
-            super("MergeAllDataWorker");
-            this.configInfoList = configInfoList;
-        }
-
-        @Override
-        public void run() {
-            for (ConfigInfoChanged configInfo : configInfoList) {
-                String dataId = configInfo.getDataId();
-                String group = configInfo.getGroup();
-                String tenant = configInfo.getTenant();
-                try {
-                    List<ConfigInfoAggr> datumList = new ArrayList<ConfigInfoAggr>();
-                    int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
-                    int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
-                    for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                        Page<ConfigInfoAggr> page = persistService.findConfigInfoAggrByPage(dataId, group, tenant,
-                                pageNo, PAGE_SIZE);
-                        if (page != null) {
-                            datumList.addAll(page.getPageItems());
-                            log.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
-                                    rowCount);
-                        }
-                    }
-
-                    final Timestamp time = TimeUtils.getCurrentTime();
-                    // 聚合
-                    if (datumList.size() > 0) {
-                        ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
-                        String aggrContent = cf.getContent();
-                        String localContentMD5 = ConfigService.getContentMd5(GroupKey.getKey(dataId, group));
-                        String aggrConetentMD5 = MD5.getInstance().getMD5String(aggrContent);
-                        if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
-                            persistService.insertOrUpdate(null, null, cf, time, null, false);
-                            log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
-                                    datumList.size(), cf.getContent().length(), cf.getMd5(),
-                                    ContentUtils.truncateContent(cf.getContent()));
-                        }
-                    }
-                    // 删除
-                    else {
-                        persistService.removeConfigInfo(dataId, group, tenant, LOCAL_IP, null);
-                        log.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                                + group);
-                    }
-
-                } catch (Throwable e) {
-                    log.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
-                }
-                FINISHED.incrementAndGet();
-                if (FINISHED.get() % 100 == 0) {
-                    log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
-                }
-            }
-            log.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
-        }
     }
 
     /**
@@ -398,8 +299,6 @@ public class DumpService {
 
     private static final Logger log = LoggerFactory.getLogger(DumpService.class);
 
-    static final AtomicInteger FINISHED = new AtomicInteger();
-
     static final int INIT_THREAD_COUNT = 10;
     int total = 0;
     private final static String TRUE_STR = "true";
@@ -408,5 +307,4 @@ public class DumpService {
 
     Boolean isQuickStart = false;
 
-    private int retentionDays = 30;
 }

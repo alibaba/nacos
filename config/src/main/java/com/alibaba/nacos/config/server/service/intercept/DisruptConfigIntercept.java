@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.intercept;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.config.server.annoation.OpenXID;
-import com.alibaba.nacos.config.server.configuration.DataSource4ClusterV2;
+import com.alibaba.nacos.config.server.configuration.ClusterDataSourceV2;
 import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -29,10 +28,10 @@ import com.alibaba.nacos.config.server.model.log.ConfigHistoryRequest;
 import com.alibaba.nacos.config.server.model.log.ConfigRequest;
 import com.alibaba.nacos.config.server.model.log.ConfigTagRelationRequest;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
+import com.alibaba.nacos.config.server.service.DistributeProtocolAware;
 import com.alibaba.nacos.config.server.service.consumer.ConfigBizProcessor;
 import com.alibaba.nacos.config.server.utils.LogKeyUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
-import com.alibaba.nacos.core.distributed.NDatum;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -48,7 +47,7 @@ import java.util.Map;
  */
 @ConditionalOnProperty(value = "nacos.config.store.type", havingValue = "inner", matchIfMissing = true)
 @Component
-public class DisruptConfigIntercept implements Intercept {
+public class DisruptConfigIntercept extends DistributeProtocolAware implements Intercept {
 
     // Distributed ID resources for the configuration management module
 
@@ -58,15 +57,16 @@ public class DisruptConfigIntercept implements Intercept {
     private static final String CONFIG_BETA_ID_RESOURCE = ConfigInfo4Beta.class.getCanonicalName();
     private static final String CONFIG_AGG_ID_RESOURCE = ConfigInfoAggr.class.getCanonicalName();
 
-    private final DataSource4ClusterV2 connectionManager;
+    private final ClusterDataSourceV2 connectionManager;
 
     private final JRaftProtocol protocol;
 
     private final ConfigBizProcessor bizProcessor;
 
-    public DisruptConfigIntercept(final DataSource4ClusterV2 connectionManager,
+    public DisruptConfigIntercept(final ClusterDataSourceV2 connectionManager,
                                   final JRaftProtocol protocol,
                                   final ConfigBizProcessor bizProcessor) {
+        super();
         this.connectionManager = connectionManager;
         this.protocol = protocol;
         this.bizProcessor = bizProcessor;
@@ -196,19 +196,7 @@ public class DisruptConfigIntercept implements Intercept {
 
         extendInfo.put("xid", connectionManager.currentXID());
 
-        final NDatum datum = NDatum.builder()
-                .operation(operation)
-                .className(data.getClass().getCanonicalName())
-                .key(key)
-                .data(JSON.toJSONBytes(data))
-                .extendInfo(extendInfo)
-                .build();
-
-        try {
-            protocol.submit(datum);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        submit(key, data, operation, extendInfo);
     }
 
 }

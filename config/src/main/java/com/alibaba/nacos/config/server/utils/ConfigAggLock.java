@@ -24,6 +24,9 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 
 /**
+ * Data aggregation tasks need to adopt lock contention in cluster
+ * mode to ensure that data aggregation tasks are initiated by a node
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @Component

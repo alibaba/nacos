@@ -65,11 +65,9 @@ public class DataSourceConfiguration {
 
     @Bean
     @Conditional(ClusterV2Condition.class)
-    public DataSource4ClusterV2 clusterV2() {
-        return new DataSource4ClusterV2(standAlone());
+    public ClusterDataSourceV2 clusterV2() {
+        return new ClusterDataSourceV2(standAlone());
     }
-
-    //
 
     private static class ClusterV2Condition implements Condition {
 

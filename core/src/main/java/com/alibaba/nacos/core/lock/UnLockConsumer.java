@@ -19,21 +19,18 @@ package com.alibaba.nacos.core.lock;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.Datum;
-import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.utils.ResResultUtils;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class UnLockConsumer implements LogConsumer {
+@Component
+class UnLockConsumer implements BaseLockConsumer {
 
     private LockManager lockManager;
-
-    public UnLockConsumer(LockManager lockManager) {
-        this.lockManager = lockManager;
-    }
 
     @Override
     public ResResult<Boolean> onAccept(Datum data) {
@@ -45,8 +42,14 @@ class UnLockConsumer implements LogConsumer {
         final LockEntry entry = JSON.parseObject(data.getData(), LockEntry.class);
         LockManager.LockAttempt attempt = attemptMap.get(key);
         final long version = entry.getVersion();
+
+        if (attempt.getVersion() < version) {
+            return ResResultUtils.success();
+        }
+
         if (attempt.getVersion() == version) {
-            attempt.setExpireTimeMs(System.currentTimeMillis() - 1);
+            attemptMap.remove(key);
+            return ResResultUtils.success();
         }
         return ResResultUtils.failed("Without this version, the lock cannot be released");
     }
@@ -54,5 +57,10 @@ class UnLockConsumer implements LogConsumer {
     @Override
     public String operation() {
         return LockOperation.UN_LOCK.getOperation();
+    }
+
+    @Override
+    public void setLockManager(LockManager lockManager) {
+        this.lockManager = lockManager;
     }
 }

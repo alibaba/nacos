@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.manager;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import org.slf4j.Logger;
 
 import javax.management.ObjectName;
@@ -204,7 +205,7 @@ public class TaskManager implements TaskManagerMBean {
                         // 处理任务
                         result = processor.process(entry.getKey(), task);
                     } catch (Throwable t) {
-                        log.error("task_fail", "处理task失败", t);
+                        log.error("task_fail : {}", ExceptionUtil.getAllExceptionMsg(t));
                     }
                     if (!result) {
                         // 任务处理失败，设置最后处理时间
@@ -271,7 +272,7 @@ public class TaskManager implements TaskManagerMBean {
             ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
         } catch (Exception e) {
-            log.error("registerMBean_fail", "注册mbean出错", e);
+            log.error("registerMBean_fail : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
     }
 }

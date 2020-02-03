@@ -16,18 +16,12 @@
 
 package com.alibaba.nacos.core.lock;
 
-import com.alibaba.nacos.core.distributed.BizProcessor;
-
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface LockManager extends BizProcessor {
-
-    static LockManager getLockManager() {
-        return MemoryLockManager.getInstance();
-    }
+public interface LockManager {
 
     /**
      * Get all lock information

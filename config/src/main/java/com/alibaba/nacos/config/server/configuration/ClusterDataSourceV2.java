@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.config.server.configuration;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.log.DBRequest;
+import com.alibaba.nacos.config.server.service.DistributeProtocolAware;
 import com.alibaba.nacos.config.server.utils.LogKeyUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import com.alibaba.nacos.core.distributed.NDatum;
-import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -39,6 +38,8 @@ import java.sql.Savepoint;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -46,44 +47,50 @@ import java.util.logging.Logger;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public class DataSource4ClusterV2 implements DataSource {
+public class ClusterDataSourceV2 extends DistributeProtocolAware implements DataSource {
 
     private BasicDataSource target;
-
-    private static final String RESOURCES_NAME = "XID";
 
     private final Map<String, ConnectionHolder> connectionHolderMap = new ConcurrentHashMap<>(128);
 
     private final ThreadLocal<String> xidLocal = new ThreadLocal<>();
 
     private JRaftProtocol protocol;
+    private NodeManager nodeManager;
 
-    public DataSource4ClusterV2(BasicDataSource target) {
+    private String self;
+
+    public ClusterDataSourceV2(BasicDataSource target) {
+        super();
         this.target = target;
     }
 
     @PostConstruct
     protected void init() {
-        DistributeIDManager.register(RESOURCES_NAME);
         protocol = SpringUtils.getBean(JRaftProtocol.class);
+        nodeManager = SpringUtils.getBean(NodeManager.class);
+        self = nodeManager.self().address();
     }
 
     @Override
     public Connection getConnection() throws SQLException {
         String xid;
+
+        // TODO 直接调用 getConnection 方法，需不需要调用submit通知其他节点执行open操作？
+        // TODO 如果需要，那么这个时候的Connection应该需要进行一次Wrap封装，
+
         if (StringUtils.isBlank((xid = xidLocal.get()))) {
-            xid = openDistributeTransaction();
+            return target.getConnection();
         }
         return connectionHolderMap.get(xid).connection;
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
-        String xid;
-        if (StringUtils.isBlank((xid = xidLocal.get()))) {
-            xid = openDistributeTransaction(username, password);
-        }
-        return connectionHolderMap.get(xid).connection;
+        // This method isn't supported by the PoolingDataSource returned by
+        // the createDataSource
+        throw new UnsupportedOperationException("Not supported by BasicDataSource");
+        // return createDataSource().getConnection(username, password);
     }
 
     @Override
@@ -126,20 +133,25 @@ public class DataSource4ClusterV2 implements DataSource {
     }
 
     public String openDistributeTransaction() {
-        String xid = String.valueOf(DistributeIDManager.nextId(RESOURCES_NAME));
-        return openDistributeTransaction(xid);
+        String xid = createXID();
+        xid = openDistributeTransaction(xid);
+
+        // notify all nacos-server node to open xid-transaction
+
+        notifyOpenXID(xid);
+
+        return xid;
     }
 
     public String openDistributeTransaction(String xid) {
         connectionHolderMap.computeIfAbsent(xid, s -> {
             final ConnectionHolder holder = new ConnectionHolder();
             try {
+                holder.xid = s;
                 holder.connection = target.getConnection();
                 holder.connection.setAutoCommit(false);
                 holder.savepoint = holder.connection.setSavepoint();
 
-                open(s);
-
                 return holder;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -150,27 +162,7 @@ public class DataSource4ClusterV2 implements DataSource {
         return xid;
     }
 
-    public String openDistributeTransaction(String username, String password) {
-        String xid = String.valueOf(DistributeIDManager.nextId(RESOURCES_NAME));
-        connectionHolderMap.computeIfAbsent(xid, s -> {
-            final ConnectionHolder holder = new ConnectionHolder();
-            try {
-                holder.connection = target.getConnection(username, password);
-                holder.connection.setAutoCommit(false);
-                holder.savepoint = holder.connection.setSavepoint();
-
-                open(xid);
-
-                return holder;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        });
-        xidLocal.set(xid);
-        return xid;
-    }
-
-    // COMMIT
+    // commit
 
     public void commitLocal() {
         try {
@@ -188,13 +180,13 @@ public class DataSource4ClusterV2 implements DataSource {
                     .xid(currentXID())
                     .operation("commit")
                     .build();
-            commit(key, dbRequest, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
+            submit(key, dbRequest, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
         } catch (Exception e) {
             LogUtil.defaultLog.error("error : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
     }
 
-    // ROLLBACK
+    // rollback
 
     public void rollbackLocal() {
         try {
@@ -212,7 +204,7 @@ public class DataSource4ClusterV2 implements DataSource {
                     .xid(currentXID())
                     .operation("rollback")
                     .build();
-            commit(key, dbRequest, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
+            submit(key, dbRequest, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
         } catch (Exception e) {
             LogUtil.defaultLog.error("error : {}", ExceptionUtil.getAllExceptionMsg(e));
         }
@@ -220,11 +212,11 @@ public class DataSource4ClusterV2 implements DataSource {
 
     // free connection
 
-    public void freedLocal() {
-        freed(currentXID());
-    }
-
     public void freed(String xid) {
+        ConnectionHolder holder = connectionHolderMap.get(xid);
+        if (holder != null) {
+            holder.close();
+        }
         connectionHolderMap.remove(xid);
     }
 
@@ -234,7 +226,7 @@ public class DataSource4ClusterV2 implements DataSource {
 
     // to notify nother node open transaction
 
-    private void open(String xid) {
+    private void notifyOpenXID(String xid) {
         final DBRequest request = DBRequest.builder()
                 .xid(xid)
                 .operation("open")
@@ -242,7 +234,18 @@ public class DataSource4ClusterV2 implements DataSource {
 
         final String key = LogKeyUtils.build("CONFIG", "open", xid);
 
-        commit(key, request, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
+        submit(key, request, ConfigOperationEnum.DB_TRANSACTION_CTRL.getOperation());
+    }
+
+    // ip:port@@snakeflowerId
+
+    // TODO XID 是否真的需要 SnakeflowerID，直接本机的UUID是否就可以了
+
+    private String createXID() {
+        if (StringUtils.isNotBlank(currentXID())) {
+            return currentXID();
+        }
+        return self + "-" + UUID.randomUUID();
     }
 
     private void checkXID(String xid) {
@@ -252,38 +255,66 @@ public class DataSource4ClusterV2 implements DataSource {
         }
     }
 
-    private <T> void commit(String key, T data, String operation) {
+    private <T> void submit(String key, T data, String operation) {
 
         final Map<String, String> extendInfo = new HashMap<>(8);
 
         extendInfo.put("xid", currentXID());
 
-        final NDatum datum = NDatum.builder()
-                .operation(operation)
-                .className(data.getClass().getCanonicalName())
-                .key(key)
-                .data(JSON.toJSONBytes(data))
-                .extendInfo(extendInfo)
-                .build();
-
-        try {
-            protocol.submit(datum);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        submit(key, data, operation, extendInfo);
     }
+
+    // The holder of the Connection under the current XID carries the savepoint at
+    // the beginning of the distributed transaction, the XID, and the commit and
+    // rollback operations of the Connection.
 
     public static class ConnectionHolder {
 
+        private String xid;
         private Connection connection;
         private Savepoint savepoint;
+
+        public String getXid() {
+            return xid;
+        }
+
+        public Connection getConnection() {
+            return connection;
+        }
+
+        public Savepoint getSavepoint() {
+            return savepoint;
+        }
 
         public void commit() throws SQLException {
             connection.commit();
         }
 
         public void rollback() throws SQLException {
-            connection.rollback(savepoint);
+            if (Objects.isNull(savepoint)) {
+                connection.rollback();
+            } else {
+                connection.rollback(savepoint);
+            }
+        }
+
+        public void close() {
+            releaseSavepoint();
+            try {
+                connection.close();
+            } catch (Exception e) {
+                LogUtil.defaultLog.error("xid : [{}], this connection close has error : {}", xid, ExceptionUtil.getAllExceptionMsg(e));
+            }
+        }
+
+        private void releaseSavepoint() {
+            try {
+                if (Objects.nonNull(savepoint)) {
+                    connection.releaseSavepoint(savepoint);
+                }
+            } catch (Exception e) {
+                LogUtil.defaultLog.debug("xid : [{}], Could not explicitly release JDBC savepoint : {}", xid, ExceptionUtil.getAllExceptionMsg(e));
+            }
         }
 
     }

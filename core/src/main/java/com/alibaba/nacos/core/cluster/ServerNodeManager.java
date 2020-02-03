@@ -22,6 +22,7 @@ import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
 import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,8 +43,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-
-import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 
 /**
  *
@@ -79,6 +78,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Value("${server.port:8848}")
     private int port;
 
+    private String localAddress;
+
     @Value("${useAddressServer:false}")
     private boolean isUseAddressServer;
 
@@ -93,6 +94,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @PostConstruct
     @Override
     public void init() {
+
+        this.localAddress = InetUtils.getSelfIp() + ":" + port;
 
         // register NodeChangeEvent publisher to NotifyManager
 
@@ -155,12 +158,7 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public Node self() {
         if (Objects.isNull(self)) {
-            for (Node node : serverListHealth.values()) {
-                if (node.address().contains(LOCAL_IP)) {
-                    self = node;
-                    break;
-                }
-            }
+            self = serverListHealth.get(localAddress);
         }
         return self;
     }
@@ -217,6 +215,11 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public void unSubscribe(NodeChangeListener listener) {
         NotifyManager.deregisterSubscribe(listener);
+    }
+
+    @Override
+    public boolean isFirstIp() {
+        return 1 == indexOf(localAddress);
     }
 
     @Override
@@ -278,10 +281,6 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     public boolean isUseAddressServer() {
         return isUseAddressServer;
-    }
-
-    public boolean isFirstIp() {
-        return serverListHealth.get(0).address().contains(LOCAL_IP);
     }
 
     public boolean isInIpList() {

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.aspect;
 
-import com.alibaba.nacos.config.server.configuration.DataSource4ClusterV2;
+import com.alibaba.nacos.config.server.configuration.ClusterDataSourceV2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
 public class XIDAspect {
 
     @Autowired
-    private DataSource4ClusterV2 dataSource;
+    private ClusterDataSourceV2 dataSource;
 
     @Pointcut(value = "@annotation(com.alibaba.nacos.config.server.annoation.OpenXID)")
     private void openXID() {
@@ -60,8 +60,6 @@ public class XIDAspect {
             LogUtil.defaultLog.error("distribute transaction has error and execute rollback. xid : {}, error : {}", xid, e);
             dataSource.rollbackLocal();
             throw e;
-        } finally {
-            dataSource.freedLocal();
         }
     }
 

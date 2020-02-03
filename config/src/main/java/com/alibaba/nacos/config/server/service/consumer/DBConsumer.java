@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.consumer;
 
-import com.alibaba.nacos.config.server.configuration.DataSource4ClusterV2;
+import com.alibaba.nacos.config.server.configuration.ClusterDataSourceV2;
 import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
 import com.alibaba.nacos.config.server.model.log.DBRequest;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -35,7 +35,7 @@ public class DBConsumer extends BaseConsumer<DBRequest> {
     private static final String TRANSACTION_ROLLBACK = "rollback";
 
     @Autowired
-    private DataSource4ClusterV2 connectionManager;
+    private ClusterDataSourceV2 connectionManager;
 
     @Override
     protected void process(DBRequest dbRequest) {
@@ -44,12 +44,17 @@ public class DBConsumer extends BaseConsumer<DBRequest> {
 
         LogUtil.defaultLog.info("distribute transaction receive request : {}", dbRequest);
 
+        // Start distributed transactions, apply for a Connection in advance according to xid
+
         if (StringUtils.equalsIgnoreCase(TRANSACTION_OPEN, operation)) {
             connectionManager.openDistributeTransaction(xid);
             return;
         }
 
-        final DataSource4ClusterV2.ConnectionHolder holder = connectionManager.getHolderByXID(xid);
+        // All sub-transactions under the xid distributed transaction are completed and a commit
+        // operation is performed; if an abnormal situation occurs during the period, a rollback
+
+        final ClusterDataSourceV2.ConnectionHolder holder = connectionManager.getHolderByXID(xid);
         if (StringUtils.equalsIgnoreCase(TRANSACTION_COMMIT, operation)) {
             try {
                 holder.commit();

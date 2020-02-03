@@ -21,12 +21,14 @@ import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.NDatum;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,10 +44,12 @@ class DefaultDistributeLock implements DistributedLock {
 
     private ConsistencyProtocol<RaftConfig> protocol;
 
+    private ScheduledFuture<?> scheduledFuture;
+
     DefaultDistributeLock(String key) {
         this.key = key;
         this.version = System.currentTimeMillis();
-        this.protocol = SpringUtils.getBean("RaftProtocol", ConsistencyProtocol.class);
+        this.protocol = SpringUtils.getBean(JRaftProtocol.class);
     }
 
     @Override
@@ -67,7 +71,7 @@ class DefaultDistributeLock implements DistributedLock {
         }
         if (result) {
             executorService = ExecutorFactory.newSingleScheduledExecutorService(DistributedLock.class.getName() + "-" + key);
-            executorService.schedule(this::openAutoReNew, LIFE_TIME - 1000, TimeUnit.MILLISECONDS);
+            scheduledFuture = executorService.schedule(this::openAutoReNew, LIFE_TIME - 1000, TimeUnit.MILLISECONDS);
         }
         return result;
     }
@@ -78,6 +82,7 @@ class DefaultDistributeLock implements DistributedLock {
         entry.setKey(key);
         entry.setExpireTime(System.currentTimeMillis() + LIFE_TIME);
         entry.setVersion(version);
+        scheduledFuture.cancel(true);
         protocol.submitAsync(NDatum.builder()
                 .className(LockEntry.class.getCanonicalName())
                 .data(JSON.toJSONBytes(entry))
