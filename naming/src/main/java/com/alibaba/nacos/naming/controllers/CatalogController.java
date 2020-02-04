@@ -138,7 +138,7 @@ public class CatalogController {
         return result;
     }
 
-    @Secured(action = ActionTypes.READ)
+    @Secured(resource = "naming/services", action = ActionTypes.READ)
     @GetMapping("/services")
     public Object listDetail(@RequestParam(required = false) boolean withInstances,
                              @RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
