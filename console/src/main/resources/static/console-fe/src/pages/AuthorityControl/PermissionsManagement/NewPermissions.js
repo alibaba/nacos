@@ -90,7 +90,7 @@ class NewPermissions extends React.Component {
                 style={{ width: '100%' }}
               >
                 {namespaces.map(({ namespace, namespaceShowName }) => (
-                  <Option value={namespace}>
+                  <Option value={`${namespace}:*:*`}>
                     {namespaceShowName} {namespace ? `(${namespace})` : ''}
                   </Option>
                 ))}
