@@ -504,13 +504,14 @@ const request = (function(_global) {
       success => {},
       error => {
         // 处理403 forbidden
-        if (error && (error.status === 403 || error.status === 401)) {
+        const { status, responseJSON = {} } = error || {};
+        if ([401, 403].includes(status) && responseJSON.message === 'token invalid!') {
           // 跳转至login页
           // TODO: 用 react-router 重写，改造成本比较高，这里先hack
           const url = window.location.href;
           // TODO: 后端返回细致的错误码，如果原始密码不对 不应该直接跳到登陆页
           if (url.includes('password')) {
-            return;
+            return error;
           }
           localStorage.removeItem('token');
           const base_url = url.split('#')[0];
