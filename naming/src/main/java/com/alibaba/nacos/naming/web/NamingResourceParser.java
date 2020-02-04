@@ -47,13 +47,13 @@ public class NamingResourceParser implements ResourceParser {
         }
         serviceName = NamingUtils.getServiceName(serviceName);
 
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = Constants.DEFAULT_NAMESPACE_ID;
-        }
-
         StringBuilder sb = new StringBuilder();
 
-        sb.append(namespaceId).append(Resource.SPLITTER);
+        if (StringUtils.isNotBlank(namespaceId)) {
+            sb.append(namespaceId);
+        }
+
+        sb.append(Resource.SPLITTER);
 
         if (StringUtils.isBlank(serviceName)) {
             sb.append("*")
