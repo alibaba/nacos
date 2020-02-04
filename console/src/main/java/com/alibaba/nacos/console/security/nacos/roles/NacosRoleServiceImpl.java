@@ -46,7 +46,7 @@ import java.util.regex.Pattern;
 @Service
 public class NacosRoleServiceImpl {
 
-    public static final String GLOBAL_ADMIN_ROLE = "GLOBAL_ADMIN";
+    public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
 
     @Autowired
     private AuthConfigs authConfigs;
