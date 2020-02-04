@@ -79,7 +79,7 @@ class RolesManagement extends React.Component {
             title={locale.operation}
             dataIndex="role"
             cell={(value, index, record) => {
-              if (value === 'GLOBAL_ADMIN') {
+              if (value === 'ROLE_ADMIN') {
                 return null;
               }
               return (
