@@ -107,7 +107,9 @@ const getPermissions = params => dispatch =>
  * @param {*} param0
  */
 const createPermission = ([role, resource, action]) =>
-  request.post('v1/auth/permissions', { role, resource, action }).then(res => successMsg(res));
+  request
+    .post('v1/auth/permissions', { role, resource: `${resource}:*:*`, action })
+    .then(res => successMsg(res));
 
 /**
  * 删除权限
