@@ -66,10 +66,6 @@ public class AuthFilter implements Filter {
             return;
         }
 
-        if (Loggers.AUTH.isDebugEnabled()) {
-            Loggers.AUTH.debug("auth filter start, request: {} {}", req.getMethod(), req.getRequestURI());
-        }
-
         try {
 
             String path = new URI(req.getRequestURI()).getPath();
@@ -81,6 +77,10 @@ public class AuthFilter implements Filter {
             }
 
             if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
+
+                if (Loggers.AUTH.isDebugEnabled()) {
+                    Loggers.AUTH.debug("auth start, request: {} {}", req.getMethod(), req.getRequestURI());
+                }
 
                 Secured secured = method.getAnnotation(Secured.class);
                 String action = secured.action().toString();
