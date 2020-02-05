@@ -57,7 +57,11 @@ export const isJsonString = str => {
 };
 
 export const generateUrl = (url, params) => {
-  return [url, '?', Object.keys(params).map(key => [key, params[key].join('=')].join('&'))].join(
-    ''
-  );
+  return [
+    url,
+    '?',
+    Object.keys(params)
+      .map(key => [key, params[key]].join('='))
+      .join('&'),
+  ].join('');
 };
