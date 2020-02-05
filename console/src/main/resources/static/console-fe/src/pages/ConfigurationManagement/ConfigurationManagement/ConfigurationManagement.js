@@ -286,9 +286,6 @@ class ConfigurationManagement extends React.Component {
       }&config_tags=${this.state.config_tags || ''}&pageNo=${pageNo}&pageSize=${
         this.state.pageSize
       }`,
-      beforeSend() {
-        self.openLoading();
-      },
       success(data) {
         if (data != null) {
           self.setState({
@@ -313,9 +310,6 @@ class ConfigurationManagement extends React.Component {
           total: 0,
           currentPage: 0,
         });
-      },
-      complete() {
-        self.closeLoading();
       },
     });
   }

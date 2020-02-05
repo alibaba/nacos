@@ -335,15 +335,15 @@ class NewConfig extends React.Component {
         }
         self.successDialog.current.getInstance().openDialog(_payload);
       },
-      complete() {
-        self.closeLoading();
+      complete: () => {
+        this.closeLoading();
       },
-      error(res) {
+      error: res => {
+        this.closeLoading();
         Dialog.alert({
           language: aliwareIntl.currentLanguageCode || 'zh-cn',
           content: locale.publishFailed,
         });
-        self.closeLoading();
       },
     });
   };

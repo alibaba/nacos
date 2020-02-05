@@ -13,6 +13,7 @@
 
 import projectConfig from './config';
 import $ from 'jquery';
+import { Message } from '@alifd/next';
 
 const global = window;
 
@@ -445,7 +446,7 @@ const request = (function(_global) {
         } catch (e) {}
         // 设置自动loading效果
         if (serviceObj.autoLoading) {
-          nacosUtils.openLoading();
+          // nacosUtils.openLoading();
           const prevComplete = config.complete;
           config.complete = function() {
             nacosUtils.closeLoading();
@@ -505,7 +506,13 @@ const request = (function(_global) {
       error => {
         // 处理403 forbidden
         const { status, responseJSON = {} } = error || {};
-        if ([401, 403].includes(status) && responseJSON.message === 'token invalid!') {
+        if (responseJSON.message) {
+          Message.error(responseJSON.message);
+        }
+        if (
+          [401, 403].includes(status) &&
+          ['unknown user!', 'token invalid'].includes(responseJSON.message)
+        ) {
           // 跳转至login页
           // TODO: 用 react-router 重写，改造成本比较高，这里先hack
           const url = window.location.href;
@@ -517,6 +524,7 @@ const request = (function(_global) {
           const base_url = url.split('#')[0];
           window.location = `${base_url}#/login`;
         }
+        return error;
       }
     );
   }
@@ -536,9 +544,9 @@ export {
   nacosEvent,
   nacosUtils,
   aliwareGetCookieByKeyName,
+  removeParams,
   getParams,
   setParam,
   setParams,
-  removeParams,
   request,
 };

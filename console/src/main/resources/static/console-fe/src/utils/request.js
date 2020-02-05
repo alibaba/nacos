@@ -43,17 +43,23 @@ const request = () => {
     error => {
       if (error.response) {
         const { data = {}, status } = error.response;
-        if (status === 403 && data.message === 'token invalid!') {
+        let message = `HTTP ERROR: ${status}`;
+        if (typeof data === 'string') {
+          message = data;
+        } else if (typeof data === 'object') {
+          message = data.message;
+        }
+        Message.error(message);
+
+        if ([401, 403].includes(status) && ['unknown user!', 'token invalid'].includes(message)) {
           localStorage.removeItem('token');
           const [baseUrl] = location.href.split('#');
           location.href = `${baseUrl}#/login`;
-          return Promise.reject(error);
         }
-        Message.error(data && typeof data === 'string' ? data : `HTTP ERROR: ${status}`);
-        return error.response;
+        return Promise.reject(error.response);
       }
       Message.error(API_GENERAL_ERROR_MESSAGE);
-      return error;
+      return Promise.reject(error);
     }
   );
 
