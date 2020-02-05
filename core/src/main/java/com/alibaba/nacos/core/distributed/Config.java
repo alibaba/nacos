@@ -16,12 +16,14 @@
 
 package com.alibaba.nacos.core.distributed;
 
+import java.io.Serializable;
+
 /**
  *
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Config {
+public interface Config extends Serializable {
 
     /**
      * Add configuration content

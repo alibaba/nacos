@@ -16,6 +16,7 @@
 package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.core.utils.SystemUtils;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -123,6 +124,8 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
 
         logFilePath();
 
+        exception.printStackTrace();
+
         LOGGER.error("Nacos failed to start, please see {}/logs/nacos.log for more details.", NACOS_HOME);
     }
 
@@ -151,6 +154,11 @@ public class StartingSpringApplicationRunListener implements SpringApplicationRu
         String[] dirNames = new String[]{"logs", "conf", "data"};
         for (String dirName: dirNames) {
             LOGGER.info("Nacos Log files: {}{}{}{}",  NACOS_HOME, File.separatorChar, dirName, File.separatorChar);
+            try {
+                FileUtils.forceMkdir(new File(NACOS_HOME + File.separatorChar + dirName + File.separatorChar));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

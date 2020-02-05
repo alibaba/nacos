@@ -18,12 +18,11 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import org.apache.commons.dbcp.BasicDataSource;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.stereotype.Service;
@@ -42,13 +41,13 @@ import java.util.List;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * local data source
  *
  * @author Nacos
  */
+@Conditional(DataSourceService.MemoryDBCondition.class)
 @Service("localDataSourceService")
 public class LocalDataSourceServiceImpl implements DataSourceService {
 
@@ -59,13 +58,12 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     private JdbcTemplate jt;
     private TransactionTemplate tjt;
 
-    @Qualifier(value = "standAlone")
-    @Autowired
-    private BasicDataSource standaloneDataSource;
-
     @PostConstruct
     public void init() {
-        BasicDataSource ds = standaloneDataSource;
+
+        logger.info("use local db service");
+
+        DataSource ds = SpringUtils.getBean(DataSource.class);
 
         jt = new JdbcTemplate();
         jt.setMaxRows(50000);
@@ -76,7 +74,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         tm.setDataSource(ds);
         tjt.setTimeout(5000);
 
-        if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+        if (!PropertyUtil.isUseMysql()) {
             reload();
         }
     }

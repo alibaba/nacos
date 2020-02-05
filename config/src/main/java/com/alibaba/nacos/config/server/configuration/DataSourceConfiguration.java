@@ -63,10 +63,23 @@ public class DataSourceConfiguration {
         return ds;
     }
 
-    @Bean
     @Conditional(ClusterV2Condition.class)
+    @Bean
     public ClusterDataSourceV2 clusterV2() {
-        return new ClusterDataSourceV2(standAlone());
+        BasicDataSource ds = new BasicDataSource();
+        ds.setDriverClassName(JDBC_DRIVER_NAME);
+        ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
+        ds.setUsername(USER_NAME);
+        ds.setPassword(PASSWORD);
+        ds.setInitialSize(20);
+        ds.setMaxActive(30);
+        ds.setMaxIdle(50);
+        ds.setMaxWait(10000L);
+        ds.setPoolPreparedStatements(true);
+        ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
+                .toMillis(10L));
+        ds.setTestWhileIdle(true);
+        return new ClusterDataSourceV2(ds);
     }
 
     private static class ClusterV2Condition implements Condition {
@@ -74,8 +87,8 @@ public class DataSourceConfiguration {
         @Override
         public boolean matches(ConditionContext ctx, AnnotatedTypeMetadata metadata) {
             final String isAlone = ctx.getEnvironment().getProperty("nacos.standalone", "false");
-            final String isV2 = ctx.getEnvironment().getProperty("nacos.config.store.type", "inner");
-            return StringUtils.equalsIgnoreCase(isAlone, "true") && StringUtils.equalsIgnoreCase(isV2, "inner");
+            final String isV2 = ctx.getEnvironment().getProperty("nacos.config.store.type");
+            return StringUtils.equalsIgnoreCase(isAlone, "false") && StringUtils.equalsIgnoreCase(isV2, "inner");
         }
     }
 

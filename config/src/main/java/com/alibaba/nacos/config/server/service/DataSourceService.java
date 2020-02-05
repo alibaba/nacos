@@ -15,10 +15,16 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
+
+import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * datasource interface
@@ -67,4 +73,24 @@ public interface DataSourceService {
      * @return heath info
      */
     String getHealth();
+
+    static class MemoryDBCondition implements Condition {
+
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            boolean a = STANDALONE_MODE;
+            boolean b = StringUtils.equalsIgnoreCase("inner", context.getEnvironment().getProperty("nacos.config.store.type"));
+            return a || b;
+        }
+    }
+
+    static class OutsideDBCondition implements Condition {
+
+        @Override
+        public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+            boolean a = !STANDALONE_MODE;
+            boolean b = !StringUtils.equalsIgnoreCase("inner", context.getEnvironment().getProperty("nacos.config.store.type"));
+            return a && b;
+        }
+    }
 }

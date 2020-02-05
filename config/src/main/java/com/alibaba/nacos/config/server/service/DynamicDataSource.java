@@ -43,9 +43,8 @@ public class DynamicDataSource {
     }
 
     private boolean useMemoryDB() {
-        boolean a = STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql();
-        boolean b = StringUtils.equalsIgnoreCase("inner", SpringUtils.getProperty("nacos.config.store.type",
-                "inner"));
+        boolean a = STANDALONE_MODE && !PropertyUtil.isUseMysql();
+        boolean b = StringUtils.equalsIgnoreCase("inner", SpringUtils.getProperty("nacos.config.store.type"));
         return a || b;
     }
 

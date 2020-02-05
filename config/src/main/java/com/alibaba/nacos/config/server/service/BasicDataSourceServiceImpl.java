@@ -17,13 +17,13 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -43,17 +43,17 @@ import java.util.regex.Pattern;
 import static com.alibaba.nacos.config.server.service.PersistService.CONFIG_INFO4BETA_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.defaultLog;
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
-import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
 
 /**
  * Base data source
  *
  * @author Nacos
  */
+@Conditional(DataSourceService.OutsideDBCondition.class)
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
-    private static final Logger log = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(BasicDataSourceServiceImpl.class);
     private static final String DEFAULT_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
     private static final String MYSQL_HIGH_LEVEL_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static String JDBC_DRIVER_NAME;
@@ -80,24 +80,22 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
     private volatile int masterIndex;
     private static Pattern ipPattern = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
 
-
-    @Autowired
-    private Environment env;
-
-
     static {
         try {
             Class.forName(MYSQL_HIGH_LEVEL_DRIVER);
             JDBC_DRIVER_NAME = MYSQL_HIGH_LEVEL_DRIVER;
-            log.info("Use Mysql 8 as the driver");
+            logger.info("Use Mysql 8 as the driver");
         } catch (ClassNotFoundException e) {
-            log.info("Use Mysql as the driver");
+            logger.info("Use Mysql as the driver");
             JDBC_DRIVER_NAME = DEFAULT_MYSQL_DRIVER;
         }
     }
 
     @PostConstruct
     public void init() {
+
+        logger.info("use basic db service");
+
         queryTimeout = NumberUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
         jt = new JdbcTemplate();
         /**
@@ -126,7 +124,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
          *  事务的超时时间需要与普通操作区分开
          */
         tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
-        if (!STANDALONE_MODE || PropertyUtil.isStandaloneUseMysql()) {
+        if (PropertyUtil.isUseMysql()) {
             try {
                 reload();
             } catch (IOException e) {
@@ -146,7 +144,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
         List<BasicDataSource> dblist = new ArrayList<BasicDataSource>();
         try {
             String val = null;
-            val = env.getProperty("db.num");
+            val = SpringUtils.getProperty("db.num");
             if (null == val) {
                 throw new IllegalArgumentException("db.num is null");
             }
@@ -156,34 +154,34 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 BasicDataSource ds = new BasicDataSource();
                 ds.setDriverClassName(JDBC_DRIVER_NAME);
 
-                val = env.getProperty("db.url." + i);
+                val = SpringUtils.getProperty("db.url." + i);
                 if (null == val) {
                     fatalLog.error("db.url." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setUrl(val.trim());
 
-                val = env.getProperty("db.user." + i, env.getProperty("db.user"));
+                val = SpringUtils.getProperty("db.user." + i, SpringUtils.getProperty("db.user"));
                 if (null == val) {
                     fatalLog.error("db.user." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setUsername(val.trim());
 
-                val = env.getProperty("db.password." + i, env.getProperty("db.password"));
+                val = SpringUtils.getProperty("db.password." + i, SpringUtils.getProperty("db.password"));
                 if (null == val) {
                     fatalLog.error("db.password." + i + " is null");
                     throw new IllegalArgumentException();
                 }
                 ds.setPassword(val.trim());
 
-                val = env.getProperty("db.initialSize." + i, env.getProperty("db.initialSize"));
+                val = SpringUtils.getProperty("db.initialSize." + i, SpringUtils.getProperty("db.initialSize"));
                 ds.setInitialSize(Integer.parseInt(defaultIfNull(val, "10")));
 
-                val = env.getProperty("db.maxActive." + i, env.getProperty("db.maxActive"));
+                val = SpringUtils.getProperty("db.maxActive." + i, SpringUtils.getProperty("db.maxActive"));
                 ds.setMaxActive(Integer.parseInt(defaultIfNull(val, "20")));
 
-                val = env.getProperty("db.maxIdle." + i, env.getProperty("db.maxIdle"));
+                val = SpringUtils.getProperty("db.maxIdle." + i, SpringUtils.getProperty("db.maxIdle"));
                 ds.setMaxIdle(Integer.parseInt(defaultIfNull(val, "50")));
 
                 ds.setMaxWait(3000L);

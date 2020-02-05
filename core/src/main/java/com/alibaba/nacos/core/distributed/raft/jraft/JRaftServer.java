@@ -24,6 +24,7 @@ import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alipay.remoting.rpc.RpcServer;
@@ -118,7 +119,6 @@ public class JRaftServer implements NodeChangeListener {
 
         nodeOptions.setSnapshotIntervalSecs(Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
                 String.valueOf(Duration.ofSeconds(600).getSeconds()))));
-        nodeOptions.setInitialConf(conf);
 
         nodeOptions.setLogUri(logUri);
         nodeOptions.setRaftMetaUri(metaDataUri);
@@ -127,44 +127,53 @@ public class JRaftServer implements NodeChangeListener {
 
     void start() {
 
-        // init raft group node
+        try {
 
-        NodeManager raftNodeManager = NodeManager.getInstance();
+            // init raft group node
 
-        nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.core.cluster.Node>() {
-            @Override
-            public void accept(com.alibaba.nacos.core.cluster.Node node) {
-                final String ip = node.ip();
-                final int raftPort = Integer.parseInt(node.extendVal(RaftSysConstants.RAFT_PORT));
-                final String address = ip + ":" + raftPort;
-                PeerId peerId = JRaftUtils.getPeerId(address);
-                conf.addPeer(peerId);
-                raftNodeManager.addAddress(peerId.getEndpoint());
-            }
-        });
+            NodeManager raftNodeManager = NodeManager.getInstance();
 
-        nodeOptions.setFsm(this.machine);
+            nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.core.cluster.Node>() {
+                @Override
+                public void accept(com.alibaba.nacos.core.cluster.Node node) {
+                    final String ip = node.ip();
+                    final int raftPort = Integer.parseInt(node.extendVal(RaftSysConstants.RAFT_PORT));
+                    final String address = ip + ":" + raftPort;
+                    System.out.println(address);
+                    PeerId peerId = JRaftUtils.getPeerId(address);
+                    conf.addPeer(peerId);
+                    raftNodeManager.addAddress(peerId.getEndpoint());
+                }
+            });
 
-        rpcServer = new RpcServer(selfPort, true, true);
+            nodeOptions.setInitialConf(conf);
 
-        rpcServer.registerUserProcessor(processor);
+            nodeOptions.setFsm(this.machine);
 
-        RaftRpcServerFactory.addRaftRequestProcessors(rpcServer);
+            rpcServer = new RpcServer(selfPort, true, true);
 
-        // Initialize the raft group service framework
+            rpcServer.registerUserProcessor(processor);
 
-        this.raftGroupService = new RaftGroupService(raftGroupId,
-                JRaftUtils.getPeerId(selfIp + ":" + selfPort), nodeOptions, rpcServer);
+            RaftRpcServerFactory.addRaftRequestProcessors(rpcServer);
 
-        this.node = this.raftGroupService.start();
+            // Initialize the raft group service framework
 
-        RouteTable.getInstance().updateConfiguration(raftGroupId, conf);
+            this.raftGroupService = new RaftGroupService(raftGroupId,
+                    JRaftUtils.getPeerId(selfIp + ":" + selfPort), nodeOptions, rpcServer);
 
-        this.cliClientService = new BoltCliClientService();
-        cliClientService.init(new CliOptions());
+            this.node = this.raftGroupService.start();
 
-        executorService.scheduleAtFixedRate(this::refreshRaftNode, 3, 3,
-                TimeUnit.MINUTES);
+            RouteTable.getInstance().updateConfiguration(raftGroupId, conf);
+
+            this.cliClientService = new BoltCliClientService();
+            cliClientService.init(new CliOptions());
+
+            executorService.scheduleAtFixedRate(this::refreshRaftNode, 3, 3,
+                    TimeUnit.MINUTES);
+        } catch (Exception e) {
+            Loggers.RAFT.error("raft protocol start failure, error : {}", ExceptionUtil.getAllExceptionMsg(e));
+            throw new RuntimeException(e);
+        }
     }
 
     void addNode(com.alibaba.nacos.core.cluster.Node node) {

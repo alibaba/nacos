@@ -41,7 +41,7 @@ public class AuthFilter implements Filter {
     @Autowired
     private AuthConfigs authConfigs;
 
-    @Autowired(required = false)
+    @Autowired
     private AuthManager authManager;
 
     @Autowired

@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.core.distributed;
 
+import java.io.Serializable;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Datum {
+public interface Datum extends Serializable {
 
     /**
      * datum key

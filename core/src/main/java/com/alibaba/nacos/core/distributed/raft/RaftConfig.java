@@ -30,6 +30,8 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "com.alibaba.nacos.core.protocol.raft")
 public class RaftConfig implements Config {
 
+    private static final long serialVersionUID = 9174789390266064002L;
+
     private Map<String, String> data = new HashMap<>();
 
     public Map<String, String> getData() {

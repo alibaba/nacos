@@ -80,7 +80,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     /**
      * 单机模式使用db
      */
-    private static boolean standaloneUseMysql = false;
+    private static boolean useMysql = false;
 
     /**
      * 使用nacos内部的分布式数据存储
@@ -112,7 +112,7 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt("defaultMaxAggrSize", defaultMaxAggrSize));
             setCorrectUsageDelay(getInt("correctUsageDelay", correctUsageDelay));
             setInitialExpansionPercent(getInt("initialExpansionPercent", initialExpansionPercent));
-            setStandaloneUseMysql(getString("spring.datasource.platform", "").equals("mysql"));
+            setUseMysql(!getString("nacos.config.store.type", "").equals("inner"));
             setEmbeddedDistributedStore(getBoolean("embeddedDistributedStore", true));
         } catch (Exception e) {
             logger.error("read application.properties failed", e);
@@ -208,8 +208,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return STANDALONE_MODE;
     }
 
-    public static boolean isStandaloneUseMysql() {
-        return standaloneUseMysql;
+    public static boolean isUseMysql() {
+        return useMysql;
     }
 
     public static boolean isEmbeddedDistributedStore() {
@@ -275,8 +275,8 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     public static void setCorrectUsageDelay(int correctUsageDelay) {
         PropertyUtil.correctUsageDelay = correctUsageDelay;
     }
-    public static void setStandaloneUseMysql(boolean standaloneUseMysql) {
-        PropertyUtil.standaloneUseMysql = standaloneUseMysql;
+    public static void setUseMysql(boolean useMysql) {
+        PropertyUtil.useMysql = useMysql;
     }
 
     public static void setEmbeddedDistributedStore(boolean embeddedDistributedStore) {

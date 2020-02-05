@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.lock;
 
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -32,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@ConditionalOnMissingBean(value = LockManager.class)
 @Component
 final class MemoryLockManager extends BaseLockManager {
 

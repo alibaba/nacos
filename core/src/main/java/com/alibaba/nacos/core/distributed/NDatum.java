@@ -25,6 +25,8 @@ import java.util.Map;
  */
 public class NDatum implements Datum {
 
+    private static final long serialVersionUID = 2277124615731537462L;
+
     private String key;
     private byte[] data;
     private String className;
