@@ -93,7 +93,6 @@ class ServiceList extends React.Component {
     ];
     request({
       url: `v1/ns/catalog/services?${parameter.join('&')}`,
-      beforeSend: () => this.openLoading(),
       success: ({ count = 0, serviceList = [] } = {}) => {
         this.setState({
           dataSource: serviceList,
@@ -106,7 +105,6 @@ class ServiceList extends React.Component {
           total: 0,
           currentPage: 0,
         }),
-      complete: () => this.closeLoading(),
     });
   }
 
