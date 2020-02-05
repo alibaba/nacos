@@ -18,10 +18,12 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.NDatum;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 
 import java.util.Map;
@@ -54,7 +56,8 @@ public class DistributeProtocolAware {
         try {
             protocol.submit(datum);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LogUtil.defaultLog.error("submit has error : {}", ExceptionUtil.getAllExceptionMsg(e));
+            e.printStackTrace();
         }
     }
 

@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -88,6 +89,6 @@ public class ConfigBizProcessor implements BizProcessor {
 
     @Override
     public boolean interest(String key) {
-        return key.contains("CONFIG");
+        return StringUtils.contains(key, bizInfo());
     }
 }

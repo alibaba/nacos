@@ -55,6 +55,8 @@ public class NacosStateMachine extends BaseStateMachine {
                     // For each transaction, according to the different processing of
                     // the key to the callback interface
 
+                    Loggers.RAFT.info("receive datum : {}", JSON.toJSONString(datum));
+
                     for (Map.Entry<String, BizProcessor> entry : processorMap.entrySet()) {
                         final BizProcessor processor = entry.getValue();
                         if (processor.interest(datum.getKey())) {

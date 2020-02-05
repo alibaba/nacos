@@ -23,6 +23,8 @@ import com.alibaba.nacos.common.http.param.Header;
  */
 public class HttpResResult<T> extends ResResult<T> {
 
+    private static final long serialVersionUID = 143520334044543925L;
+
     private Header header;
 
     private T data;

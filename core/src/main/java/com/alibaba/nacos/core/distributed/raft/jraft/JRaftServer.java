@@ -48,7 +48,6 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
@@ -112,13 +111,17 @@ public class JRaftServer implements NodeChangeListener {
 
         // Set the election timeout time. The default is 5 seconds.
 
-        nodeOptions.setElectionTimeoutMs(Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_ELECTION_TIMEOUT_MS,
-                String.valueOf(Duration.ofSeconds(5).toMillis()))));
+        int electionTimeout = Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_ELECTION_TIMEOUT_MS,
+                String.valueOf(5000)));
+
+        nodeOptions.setElectionTimeoutMs(electionTimeout);
 
         // Set snapshot interval, default 600 seconds
 
-        nodeOptions.setSnapshotIntervalSecs(Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
-                String.valueOf(Duration.ofSeconds(600).getSeconds()))));
+        int doSnapshotInterval = Integer.parseInt(config.getValOfDefault(RaftSysConstants.RAFT_SNAPSHOT_INTERVAL_SECS,
+                String.valueOf(600)));
+
+        nodeOptions.setSnapshotIntervalSecs(doSnapshotInterval);
 
         nodeOptions.setLogUri(logUri);
         nodeOptions.setRaftMetaUri(metaDataUri);
@@ -139,7 +142,6 @@ public class JRaftServer implements NodeChangeListener {
                     final String ip = node.ip();
                     final int raftPort = Integer.parseInt(node.extendVal(RaftSysConstants.RAFT_PORT));
                     final String address = ip + ":" + raftPort;
-                    System.out.println(address);
                     PeerId peerId = JRaftUtils.getPeerId(address);
                     conf.addPeer(peerId);
                     raftNodeManager.addAddress(peerId.getEndpoint());

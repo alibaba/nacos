@@ -81,6 +81,17 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
         super.onLeaderStart(term);
         this.leaderTerm.set(term);
         this.isLeader.set(true);
+        NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
+                .term(leaderTerm.get())
+
+                // Means that he is a leader
+
+                .leader(null)
+                .raftClusterInfo(nodeManager.getAllNodes()
+                        .stream()
+                        .map(node -> node.getNodeId().getPeerId().toString())
+                        .collect(Collectors.toList()))
+                .build());
     }
 
     @Override

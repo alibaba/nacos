@@ -33,6 +33,26 @@ public class NDatum implements Datum {
     private String operation;
     private Map<String, String> extendInfo = new HashMap<>(3);
 
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    public void setOperation(String operation) {
+        this.operation = operation;
+    }
+
+    public void setExtendInfo(Map<String, String> extendInfo) {
+        this.extendInfo = extendInfo;
+    }
+
     @Override
     public String getKey() {
         return key;

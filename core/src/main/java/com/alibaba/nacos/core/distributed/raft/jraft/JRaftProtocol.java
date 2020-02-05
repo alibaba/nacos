@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.distributed.BizProcessor;
 import com.alibaba.nacos.core.distributed.Config;
@@ -28,10 +29,12 @@ import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.Event;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
+import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.remoting.InvokeCallback;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.entity.Task;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Component;
 
@@ -67,8 +70,16 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
+    private NodeManager nodeManager;
+
+    private String selfAddress = InetUtils.getSelfIp();
+
     @Override
     public void init(RaftConfig config) {
+
+        this.nodeManager = SpringUtils.getBean(NodeManager.class);
+
+        this.selfAddress = nodeManager.self().address();
 
         NotifyManager.registerPublisher(RaftEvent::new, RaftEvent.class);
 
@@ -90,7 +101,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
                     final String leader = event.getLeader();
                     final long term = event.getTerm();
                     final List<String> raftClusterInfo = event.getRaftClusterInfo();
-                    metaData.put("leader", leader);
+                    metaData.put("leader", leader == null || StringUtils.equalsIgnoreCase(selfAddress, leader));
                     metaData.put("term", term);
                     metaData.put("raftClusterInfo", raftClusterInfo);
                 } finally {
@@ -173,7 +184,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
                             @Override
                             public void onException(Throwable e) {
-                                throwable[0] = e;
+                                future.completeExceptionally(e);
                             }
 
                             @Override

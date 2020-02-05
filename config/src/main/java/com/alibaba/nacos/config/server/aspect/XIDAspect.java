@@ -60,6 +60,8 @@ public class XIDAspect {
             LogUtil.defaultLog.error("distribute transaction has error and execute rollback. xid : {}, error : {}", xid, e);
             dataSource.rollbackLocal();
             throw e;
+        } finally {
+            dataSource.freed(xid);
         }
     }
 

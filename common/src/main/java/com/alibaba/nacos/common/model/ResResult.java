@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.common.model;
 
+import java.io.Serializable;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class ResResult<T> {
+public class ResResult<T> implements Serializable {
+
+    private static final long serialVersionUID = 4438822771228629459L;
 
     private int code;
 

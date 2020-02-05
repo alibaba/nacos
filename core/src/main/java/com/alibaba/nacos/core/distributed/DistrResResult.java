@@ -23,6 +23,8 @@ import com.alibaba.nacos.common.model.ResResult;
  */
 public class DistrResResult extends ResResult<Boolean> {
 
+    private static final long serialVersionUID = 708148195589424819L;
+
     private Throwable throwable;
 
     public Throwable getThrowable() {
