@@ -31,6 +31,8 @@ class NewRole extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     visible: PropTypes.bool,
+    onOk: PropTypes.func,
+    onCancel: PropTypes.func,
   };
 
   check() {

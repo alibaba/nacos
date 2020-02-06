@@ -65,3 +65,7 @@ export const generateUrl = (url, params) => {
       .join('&'),
   ].join('');
 };
+
+export const isPlainObject = obj => {
+  return Object.prototype.toString.call(obj) === '[object Object]';
+};

@@ -35,6 +35,10 @@ class NewPermissions extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     visible: PropTypes.bool,
+    getNamespaces: PropTypes.func,
+    onOk: PropTypes.func,
+    onCancel: PropTypes.func,
+    namespaces: PropTypes.array,
   };
 
   componentDidMount() {
