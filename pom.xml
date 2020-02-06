@@ -31,7 +31,6 @@
         <maven>3.2.5</maven>
     </prerequisites>
 
-
     <scm>
         <url>git@github.com:alibaba/nacos.git</url>
         <connection>scm:git@github.com:alibaba/nacos.git</connection>
