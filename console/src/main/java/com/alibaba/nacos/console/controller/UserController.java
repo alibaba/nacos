@@ -101,9 +101,11 @@ public class UserController {
     @Secured(resource = NacosAuthConfig.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.WRITE)
     public Object deleteUser(@RequestParam String username) {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        for (RoleInfo roleInfo : roleInfoList) {
-            if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
-                throw new IllegalArgumentException("cannot delete admin: " + username);
+        if (roleInfoList != null) {
+            for (RoleInfo roleInfo : roleInfoList) {
+                if (roleInfo.getRole().equals(NacosRoleServiceImpl.GLOBAL_ADMIN_ROLE)) {
+                    throw new IllegalArgumentException("cannot delete admin: " + username);
+                }
             }
         }
         userDetailsService.deleteUser(username);
