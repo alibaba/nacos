@@ -85,7 +85,7 @@ public class Header {
         }
     }
 
-    public void initHeader(Map<String, String> params) {
+    public void addAll(Map<String, String> params) {
         for (Map.Entry<String, String> entry : params.entrySet()) {
             addParam(entry.getKey(), entry.getValue());
         }

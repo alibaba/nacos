@@ -61,9 +61,11 @@ public abstract class BaseHttpClient {
         try {
             final String body = EntityUtils.toString(response.getEntity());
             HttpResResult<T> resResult = new HttpResResult<T>();
+            resResult.setHttpCode(response.getStatusLine().getStatusCode());
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                 ResResult<T> data = ResponseHandler.convert(body, reference);
                 if (data != null && data.getCode() == HttpStatus.SC_OK) {
+                    resResult.setCode(200);
                     resResult.setData(data.getData());
                     resResult.setErrMsg(body);
                     return resResult;
@@ -91,9 +93,11 @@ public abstract class BaseHttpClient {
                 try {
                     final String body = EntityUtils.toString(response.getEntity());
                     HttpResResult<T> resResult = new HttpResResult<T>();
+                    resResult.setHttpCode(response.getStatusLine().getStatusCode());
                     if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
                         ResResult<T> data = ResponseHandler.convert(body, reference);
                         if (data != null && data.getCode() == HttpStatus.SC_OK) {
+                            resResult.setCode(200);
                             resResult.setData(data.getData());
                             resResult.setErrMsg(body);
                         } else {

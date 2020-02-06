@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.lock;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +33,7 @@ class LockConsumer implements BaseLockConsumer {
     private LockManager lockManager;
 
     @Override
-    public ResResult<Boolean> onAccept(Datum data) {
+    public ResResult<Boolean> onAccept(Log data) {
         final String key = data.getKey();
         Map<String, LockManager.LockAttempt> attemptMap = lockManager.getLockAttempts();
         final LockEntry entry = JSON.parseObject(data.getData(), LockEntry.class);

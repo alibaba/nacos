@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.consumer;
 
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.config.server.service.PersistService;
-import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SerializeFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public abstract class BaseConsumer<T> implements ConfigConsumer {
     protected PersistService persistService;
 
     @Override
-    public ResResult<Boolean> onAccept(Datum data) {
+    public ResResult<Boolean> onAccept(Log data) {
         final byte[] source = data.getData();
         process(serializer.deSerialize(source, data.getClassName()));
         return ResResultUtils.success();

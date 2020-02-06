@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.consumer;
 
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.BizProcessor;
-import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import com.alibaba.nacos.core.utils.ResResultUtils;
@@ -31,6 +31,7 @@ import javax.annotation.PostConstruct;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -68,11 +69,11 @@ public class ConfigBizProcessor implements BizProcessor {
     }
 
     @Override
-    public ResResult<Boolean> onApply(Datum datum) {
-        final String operation = datum.getOperation();
-        if (consumerMap.containsKey(operation)) {
-            final LogConsumer consumer = consumerMap.get(operation);
-            return consumer.onAccept(datum);
+    public ResResult<Boolean> onApply(Log log) {
+        final String operation = log.getOperation();
+        final LogConsumer consumer = consumerMap.get(operation);
+        if (Objects.nonNull(consumer)) {
+            return consumer.onAccept(log);
         }
         return ResResultUtils.failed("The operation is not supported");
     }

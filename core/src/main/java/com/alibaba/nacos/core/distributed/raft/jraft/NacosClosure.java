@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.Log;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.Status;
 
@@ -25,12 +25,12 @@ import com.alipay.sofa.jraft.Status;
  */
 public class NacosClosure implements Closure {
 
-    private final Datum datum;
+    private final Log log;
     private final Closure closure;
     private Throwable throwable;
 
-    public NacosClosure(Datum datum, Closure closure) {
-        this.datum = datum;
+    public NacosClosure(Log log, Closure closure) {
+        this.log = log;
         this.closure = closure;
     }
 
@@ -49,8 +49,8 @@ public class NacosClosure implements Closure {
         return closure;
     }
 
-    public Datum getDatum() {
-        return datum;
+    public Log getLog() {
+        return log;
     }
 
     // Pass the Throwable inside the state machine to the outer layer

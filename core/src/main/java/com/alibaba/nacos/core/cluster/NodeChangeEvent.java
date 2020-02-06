@@ -25,6 +25,8 @@ import java.util.Collection;
  */
 public class NodeChangeEvent implements Event {
 
+    private static final long serialVersionUID = 7308126651076668976L;
+
     private Collection<Node> changeNodes;
 
     private Collection<Node> allNodes;

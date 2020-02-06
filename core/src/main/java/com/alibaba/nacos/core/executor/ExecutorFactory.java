@@ -56,14 +56,14 @@ public class ExecutorFactory {
         return executorService;
     }
 
-    public static ForkJoinPool newFixForkJoinPool(final String owner) {
+    public static ForkJoinPool newForkJoinPool(final String owner) {
         ForkJoinPool forkJoinPool = new ForkJoinPool();
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, forkJoinPool);
         return forkJoinPool;
     }
 
-    public static ForkJoinPool newFixForkJoinPool(final String owner,
-                                                  final int nThreads) {
+    public static ForkJoinPool newForkJoinPool(final String owner,
+                                               final int nThreads) {
         ForkJoinPool forkJoinPool = new ForkJoinPool(nThreads);
         THREAD_POOL_MANAGER.register(DEFAULT_BIZ, owner, forkJoinPool);
         return forkJoinPool;

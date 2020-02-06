@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
-
-import java.io.Serializable;
+package com.alibaba.nacos.core.distributed.distro;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Event extends Serializable {
-
-    /**
-     * Return own event type
-     *
-     * @return {@link Event}
-     */
-    Class<? extends Event> eventType();
-
+public final class DistroSysConstants {
 }

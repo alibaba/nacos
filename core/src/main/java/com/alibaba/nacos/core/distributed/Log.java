@@ -20,9 +20,11 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
+ * Transactions committed by the distributed consistency protocol
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Datum extends Serializable {
+public interface Log extends Serializable {
 
     /**
      * datum key

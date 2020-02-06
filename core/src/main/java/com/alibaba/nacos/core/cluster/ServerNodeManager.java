@@ -22,8 +22,10 @@ import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
 import com.alibaba.nacos.core.notify.NotifyManager;
+import com.alibaba.nacos.core.utils.Constants;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.core.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -74,6 +76,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     public String addressServerUrl;
 
     private boolean isHealthCheck = true;
+
+    private String contextPath;
 
     @Value("${server.port:8848}")
     private int port;
@@ -152,7 +156,16 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     @Override
     public boolean hasNode(String address) {
-        return serverListHealth.containsKey(address);
+        boolean result = serverListHealth.containsKey(address);
+        if (!result) {
+            for (Map.Entry<String, Node> entry : serverListHealth.entrySet()) {
+                if (StringUtils.contains(entry.getKey(), address)) {
+                    result = true;
+                    break;
+                }
+            }
+        }
+        return result;
     }
 
     @Override
@@ -215,6 +228,19 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
     @Override
     public void unSubscribe(NodeChangeListener listener) {
         NotifyManager.deregisterSubscribe(listener);
+    }
+
+    @Override
+    public String getContextPath() {
+        if (StringUtils.isBlank(contextPath)) {
+            String contextPath = PropertyUtil.getProperty(Constants.WEB_CONTEXT_PATH);
+            if (Constants.ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
+                return StringUtils.EMPTY;
+            } else {
+                return contextPath;
+            }
+        }
+        return contextPath;
     }
 
     @Override

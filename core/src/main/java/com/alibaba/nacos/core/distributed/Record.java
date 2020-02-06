@@ -14,20 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.core.distributed;
 
 import java.io.Serializable;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Event extends Serializable {
+public interface Record extends Serializable {
 
     /**
-     * Return own event type
      *
-     * @return {@link Event}
+     * @return
      */
-    Class<? extends Event> eventType();
+    String key();
+
+    /**
+     *
+     * @return
+     */
+    String checkCode();
+
+    /**
+     *
+     * @return
+     */
+    long lastModifyTime();
+
+    /**
+     *
+     * @return
+     */
+    String lastOperation();
 
 }

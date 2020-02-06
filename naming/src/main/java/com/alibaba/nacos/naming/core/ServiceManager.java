@@ -21,15 +21,23 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
 import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.Message;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.ServiceStatusSynchronizer;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.Synchronizer;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -42,7 +50,13 @@ import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +94,7 @@ public class ServiceManager implements RecordListener<Service> {
     private DistroMapper distroMapper;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     @Autowired
     private PushService pushService;
@@ -817,17 +831,17 @@ public class ServiceManager implements RecordListener<Service> {
 
                     msg.setData(JSON.toJSONString(checksum));
 
-                    List<Server> sameSiteServers = serverListManager.getServers();
+                    List<Node> sameSiteServers = nodeManager.allNodes();
 
                     if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                         return;
                     }
 
-                    for (Server server : sameSiteServers) {
-                        if (server.getKey().equals(NetUtils.localServer())) {
+                    for (Node server : sameSiteServers) {
+                        if (server.address().equals(NetUtils.localServer())) {
                             continue;
                         }
-                        synchronizer.send(server.getKey(), msg);
+                        synchronizer.send(server.address(), msg);
                     }
                 }
             } catch (Exception e) {

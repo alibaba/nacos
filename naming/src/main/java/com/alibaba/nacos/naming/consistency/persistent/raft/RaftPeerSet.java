@@ -16,11 +16,12 @@
 package com.alibaba.nacos.naming.consistency.persistent.raft;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeChangeEvent;
+import com.alibaba.nacos.core.cluster.NodeChangeListener;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
@@ -38,7 +39,14 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -47,11 +55,11 @@ import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
  * @author nacos
  */
 @Component
-@DependsOn("serverListManager")
-public class RaftPeerSet implements ServerChangeListener, ApplicationContextAware {
+@DependsOn("serverNodeManager")
+public class RaftPeerSet implements NodeChangeListener, ApplicationContextAware {
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     private ApplicationContext applicationContext;
 
@@ -77,7 +85,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
 
     @PostConstruct
     public void init() {
-        serverListManager.listen(this);
+        nodeManager.subscribe(this);
     }
 
     public RaftPeer getLeader() {
@@ -257,25 +265,24 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
     }
 
     @Override
-    public void onChangeServerList(List<Server> latestMembers) {
-
+    public void onEvent(NodeChangeEvent event) {
         Map<String, RaftPeer> tmpPeers = new HashMap<>(8);
-        for (Server member : latestMembers) {
+        for (Node member : event.getAllNodes()) {
 
-            if (peers.containsKey(member.getKey())) {
-                tmpPeers.put(member.getKey(), peers.get(member.getKey()));
+            if (peers.containsKey(member.address())) {
+                tmpPeers.put(member.address(), peers.get(member.address()));
                 continue;
             }
 
             RaftPeer raftPeer = new RaftPeer();
-            raftPeer.ip = member.getKey();
+            raftPeer.ip = member.address();
 
             // first time meet the local server:
-            if (NetUtils.localServer().equals(member.getKey())) {
+            if (NetUtils.localServer().equals(member.address())) {
                 raftPeer.term.set(localTerm.get());
             }
 
-            tmpPeers.put(member.getKey(), raftPeer);
+            tmpPeers.put(member.address(), raftPeer);
         }
 
         // replace raft peer set:
@@ -285,11 +292,7 @@ public class RaftPeerSet implements ServerChangeListener, ApplicationContextAwar
             ready = true;
         }
 
-        Loggers.RAFT.info("raft peers changed: " + latestMembers);
+        Loggers.RAFT.info("raft peers changed: " + event.getAllNodes());
     }
 
-    @Override
-    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
-
-    }
 }

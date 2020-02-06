@@ -27,7 +27,15 @@ public class HttpResResult<T> extends ResResult<T> {
 
     private Header header;
 
-    private T data;
+    private int httpCode;
+
+    public int getHttpCode() {
+        return httpCode;
+    }
+
+    public void setHttpCode(int httpCode) {
+        this.httpCode = httpCode;
+    }
 
     public Header getHeader() {
         return header;

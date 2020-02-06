@@ -15,13 +15,19 @@
  */
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
-import com.alibaba.nacos.naming.cluster.ServerListManager;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.Datum;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.DependsOn;
@@ -41,7 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 @Component
-@DependsOn("serverListManager")
+@DependsOn("serverNodeManager")
 public class DataSyncer {
 
     @Autowired
@@ -57,7 +63,7 @@ public class DataSyncer {
     private DistroMapper distroMapper;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     private Map<String, String> taskMap = new ConcurrentHashMap<>();
 
@@ -187,11 +193,11 @@ public class DataSyncer {
                     Loggers.DISTRO.debug("sync checksums: {}", keyChecksums);
                 }
 
-                for (Server member : getServers()) {
-                    if (NetUtils.localServer().equals(member.getKey())) {
+                for (Node member : getServers()) {
+                    if (NetUtils.localServer().equals(member.address())) {
                         continue;
                     }
-                    NamingProxy.syncCheckSums(keyChecksums, member.getKey());
+                    NamingProxy.syncCheckSums(keyChecksums, member.address());
                 }
             } catch (Exception e) {
                 Loggers.DISTRO.error("timed sync task failed.", e);
@@ -200,8 +206,8 @@ public class DataSyncer {
 
     }
 
-    public List<Server> getServers() {
-        return serverListManager.getHealthyServers();
+    public List<Node> getServers() {
+        return nodeManager.allNodes();
     }
 
     public String buildKey(String key, String targetServer) {

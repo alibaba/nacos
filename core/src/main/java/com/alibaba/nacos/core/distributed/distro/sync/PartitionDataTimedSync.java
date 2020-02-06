@@ -14,24 +14,36 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.core.distributed.distro.sync;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.core.distributed.distro.DistroStore;
+
+import java.util.List;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class DistrResResult extends ResResult<Boolean> {
+public class PartitionDataTimedSync {
 
-    private static final long serialVersionUID = 708148195589424819L;
+    private final List<DistroStore> distroStores;
 
-    private Throwable throwable;
-
-    public Throwable getThrowable() {
-        return throwable;
+    public PartitionDataTimedSync(List<DistroStore> distroStores) {
+        this.distroStores = distroStores;
     }
 
-    public void setThrowable(Throwable throwable) {
-        this.throwable = throwable;
+    public void start() {
+
+    }
+
+    public void shutdown() {
+
+    }
+
+    private class Worker implements Runnable {
+
+        @Override
+        public void run() {
+
+        }
     }
 }

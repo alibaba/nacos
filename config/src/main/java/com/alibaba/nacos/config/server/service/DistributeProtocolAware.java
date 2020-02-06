@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.NDatum;
+import com.alibaba.nacos.core.distributed.NLog;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
@@ -45,7 +45,7 @@ public class DistributeProtocolAware {
                             final String operation,
                             final Map<String, String> extendInfo) {
 
-        final NDatum datum = NDatum.builder()
+        final NLog datum = NLog.builder()
                 .operation(operation)
                 .className(data.getClass().getCanonicalName())
                 .key(key)
@@ -66,7 +66,7 @@ public class DistributeProtocolAware {
                                                                   final String operation,
                                                                   final Map<String, String> extendInfo) {
 
-        final NDatum datum = NDatum.builder()
+        final NLog datum = NLog.builder()
                 .operation(operation)
                 .className(data.getClass().getCanonicalName())
                 .key(key)

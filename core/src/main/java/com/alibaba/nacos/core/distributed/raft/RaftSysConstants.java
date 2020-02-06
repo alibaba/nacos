@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.distributed.raft;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class RaftSysConstants {
+public final class RaftSysConstants {
 
     public static final String RAFT_PORT = "raft_port";
 

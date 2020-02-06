@@ -26,10 +26,10 @@ public interface LogConsumer {
     /**
      * Datum call back
      *
-     * @param data {@link Datum}
+     * @param data {@link Log}
      * @return {@link ResResult<Boolean>}
      */
-    ResResult<Boolean> onAccept(Datum data);
+    ResResult<Boolean> onAccept(Log data);
 
     /**Operations that this log handler listens to
      *

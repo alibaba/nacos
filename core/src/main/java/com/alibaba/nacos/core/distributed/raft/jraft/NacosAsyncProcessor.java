@@ -17,8 +17,8 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.Datum;
-import com.alibaba.nacos.core.distributed.NDatum;
+import com.alibaba.nacos.core.distributed.Log;
+import com.alibaba.nacos.core.distributed.NLog;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
@@ -28,9 +28,9 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosAsyncProcessor extends AsyncUserProcessor<Datum> {
+public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
 
-    private static final String INTEREST_NAME = NDatum.class.getName();
+    private static final String INTEREST_NAME = NLog.class.getName();
 
     private JRaftProtocol protocol;
 
@@ -39,12 +39,12 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<Datum> {
     }
 
     @Override
-    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Datum datum) {
+    public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Log log) {
         boolean isLeader = (boolean) protocol.protocolMetaData().get("leader");
         try {
             if (isLeader) {
                 CompletableFuture<ResResult<Boolean>> future = protocol
-                        .submitAsync(datum);
+                        .submitAsync(log);
                 asyncCtx.sendResponse(
                         ResResult.builder().withData(future.get().getData()).build());
             }

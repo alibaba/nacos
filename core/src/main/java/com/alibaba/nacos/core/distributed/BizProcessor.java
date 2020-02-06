@@ -50,10 +50,10 @@ public interface BizProcessor {
     /**
      * Process Submitted Log
      *
-     * @param datum {@link Datum}
+     * @param log {@link Log}
      * @return {@link ResResult<Boolean>}
      */
-    ResResult<Boolean> onApply(Datum datum);
+    ResResult<Boolean> onApply(Log log);
 
     /**
      * get all log consumer

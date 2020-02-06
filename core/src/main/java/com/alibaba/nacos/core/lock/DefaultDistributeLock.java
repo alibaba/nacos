@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.lock;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.NDatum;
+import com.alibaba.nacos.core.distributed.NLog;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
@@ -59,7 +59,7 @@ class DefaultDistributeLock implements DistributedLock {
         entry.setKey(key);
         entry.setExpireTime(System.currentTimeMillis() + LIFE_TIME);
         entry.setVersion(version);
-        CompletableFuture<ResResult<Boolean>> future = protocol.submitAsync(NDatum.builder()
+        CompletableFuture<ResResult<Boolean>> future = protocol.submitAsync(NLog.builder()
                 .className(LockEntry.class.getCanonicalName())
                 .data(JSON.toJSONBytes(entry))
                 .key(key)
@@ -83,7 +83,7 @@ class DefaultDistributeLock implements DistributedLock {
         entry.setExpireTime(System.currentTimeMillis() + LIFE_TIME);
         entry.setVersion(version);
         scheduledFuture.cancel(true);
-        protocol.submitAsync(NDatum.builder()
+        protocol.submitAsync(NLog.builder()
                 .className(LockEntry.class.getCanonicalName())
                 .data(JSON.toJSONBytes(entry))
                 .key(key)
@@ -97,7 +97,7 @@ class DefaultDistributeLock implements DistributedLock {
         LockEntry entry = new LockEntry();
         entry.setKey(key);
         entry.setVersion(version);
-        protocol.submitAsync(NDatum.builder()
+        protocol.submitAsync(NLog.builder()
                 .className(LockEntry.class.getCanonicalName())
                 .data(JSON.toJSONBytes(entry))
                 .key(key)

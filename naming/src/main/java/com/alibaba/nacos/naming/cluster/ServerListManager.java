@@ -320,7 +320,6 @@ public class ServerListManager {
         }
     }
 
-
     private class ServerStatusReporter implements Runnable {
 
         @Override

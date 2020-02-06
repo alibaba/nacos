@@ -14,20 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.core.distributed.distro;
 
-import java.io.Serializable;
+import com.alibaba.nacos.core.distributed.Config;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Event extends Serializable {
+@Component
+@ConfigurationProperties(prefix = "com.alibaba.nacos.core.protocol.distro")
+public class DistroConfig implements Config {
 
-    /**
-     * Return own event type
-     *
-     * @return {@link Event}
-     */
-    Class<? extends Event> eventType();
+    private static final long serialVersionUID = -3073040842709279788L;
 
+    @Override
+    public void setVal(String key, String value) {
+
+    }
+
+    @Override
+    public String getVal(String key) {
+        return null;
+    }
+
+    @Override
+    public String getValOfDefault(String key, String defaultVal) {
+        return null;
+    }
 }

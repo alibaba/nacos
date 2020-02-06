@@ -24,6 +24,8 @@ import java.nio.file.WatchEvent;
  */
 public class FileChangeEvent implements Event {
 
+    private static final long serialVersionUID = -4255584033113954765L;
+
     private String paths;
 
     private WatchEvent<?> event;

@@ -26,9 +26,14 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.core.auth.ActionTypes;
 import com.alibaba.nacos.core.auth.Secured;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.WebUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.core.*;
+import com.alibaba.nacos.naming.core.Cluster;
+import com.alibaba.nacos.naming.core.DistroMapper;
+import com.alibaba.nacos.naming.core.Instance;
+import com.alibaba.nacos.naming.core.Service;
+import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -39,11 +44,23 @@ import com.alibaba.nacos.naming.web.NamingResourceParser;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Service operation controller
@@ -61,7 +78,7 @@ public class ServiceController {
     private DistroMapper distroMapper;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     @Autowired
     private SubscribeManager subscribeManager;
@@ -289,7 +306,7 @@ public class ServiceController {
         String statuses = json.getString("statuses");
         String serverIp = json.getString("clientIP");
 
-        if (!serverListManager.contains(serverIp)) {
+        if (!nodeManager.hasNode(serverIp)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                 "ip: " + serverIp + " is not in serverlist");
         }

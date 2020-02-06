@@ -17,9 +17,9 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.misc.HttpClient;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -31,7 +31,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.net.HttpURLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -50,7 +54,7 @@ public class SubscribeManager {
     private PushService pushService;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
 
     private List<Subscriber> getSubscribers(String serviceName, String namespaceId) {
@@ -71,24 +75,24 @@ public class SubscribeManager {
     public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) throws InterruptedException {
         if (aggregation) {
             // size = 1 means only myself in the list, we need at least one another server alive:
-            if (serverListManager.getHealthyServers().size() <= 1) {
+            if (nodeManager.allNodes().size() <= 1) {
                 return getSubscribersFuzzy(serviceName, namespaceId);
             }
 
             List<Subscriber> subscriberList = new ArrayList<Subscriber>();
             // try sync data from remote server:
-            for (Server server : serverListManager.getHealthyServers()) {
+            for (Node server : nodeManager.allNodes()) {
 
                 Map<String, String> paramValues = new HashMap<>(128);
                 paramValues.put(CommonParams.SERVICE_NAME, serviceName);
                 paramValues.put(CommonParams.NAMESPACE_ID, namespaceId);
                 paramValues.put("aggregation", String.valueOf(Boolean.FALSE));
-                if (NetUtils.localServer().equals(server.getKey())) {
+                if (NetUtils.localServer().equals(server.address())) {
                     subscriberList.addAll(getSubscribersFuzzy(serviceName, namespaceId));
                     continue;
                 }
 
-                HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.getKey() + RunningConfig.getContextPath()
+                HttpClient.HttpResult result = HttpClient.httpGet("http://" + server.address() + RunningConfig.getContextPath()
                     + UtilsAndCommons.NACOS_NAMING_CONTEXT + SUBSCRIBER_ON_SYNC_URL, new ArrayList<>(), paramValues);
 
                 if (HttpURLConnection.HTTP_OK == result.code) {

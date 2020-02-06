@@ -16,14 +16,18 @@
 package com.alibaba.nacos.naming.healthcheck;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.naming.boot.RunningConfig;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.core.Cluster;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instance;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.HttpClient;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.push.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -33,7 +37,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Health check public methods
@@ -51,7 +59,7 @@ public class HealthCheckCommon {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     @Autowired
     private PushService pushService;
@@ -76,14 +84,14 @@ public class HealthCheckCommon {
                 List list = Arrays.asList(healthCheckResults.toArray());
                 healthCheckResults.clear();
 
-                List<Server> sameSiteServers = serverListManager.getServers();
+                List<Node> sameSiteServers = nodeManager.allNodes();
 
                 if (sameSiteServers == null || sameSiteServers.size() <= 0) {
                     return;
                 }
 
-                for (Server server : sameSiteServers) {
-                    if (server.getKey().equals(NetUtils.localServer())) {
+                for (Node server : sameSiteServers) {
+                    if (server.address().equals(NetUtils.localServer())) {
                         continue;
                     }
                     Map<String, String> params = new HashMap<>(10);
@@ -93,7 +101,7 @@ public class HealthCheckCommon {
                             server, JSON.toJSONString(list));
                     }
 
-                    HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.getKey()
+                    HttpClient.HttpResult httpResult = HttpClient.httpPost("http://" + server.address()
                         + RunningConfig.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                         + "/api/healthCheckResult", null, params);
 

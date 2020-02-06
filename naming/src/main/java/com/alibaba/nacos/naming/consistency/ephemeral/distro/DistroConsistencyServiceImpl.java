@@ -17,10 +17,10 @@ package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
-import com.alibaba.nacos.naming.cluster.servers.Server;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.consistency.ApplyAction;
 import com.alibaba.nacos.naming.consistency.Datum;
@@ -30,7 +30,12 @@ import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyServic
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.Instances;
 import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NamingProxy;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.apache.commons.lang3.StringUtils;
 import org.javatuples.Pair;
@@ -40,7 +45,13 @@ import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * A consistency protocol algorithm called <b>Distro</b>
@@ -87,7 +98,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     private Serializer serializer;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     @Autowired
     private SwitchDomain switchDomain;
@@ -125,13 +136,13 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             return;
         }
         // size = 1 means only myself in the list, we need at least one another server alive:
-        while (serverListManager.getHealthyServers().size() <= 1) {
+        while (nodeManager.allNodes().size() <= 1) {
             Thread.sleep(1000L);
             Loggers.DISTRO.info("waiting server list init...");
         }
 
-        for (Server server : serverListManager.getHealthyServers()) {
-            if (NetUtils.localServer().equals(server.getKey())) {
+        for (Node server : nodeManager.allNodes()) {
+            if (NetUtils.localServer().equals(server.address())) {
                 continue;
             }
             if (Loggers.DISTRO.isDebugEnabled()) {
@@ -255,10 +266,10 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     }
 
-    public boolean syncAllDataFromRemote(Server server) {
+    public boolean syncAllDataFromRemote(Node server) {
 
         try {
-            byte[] data = NamingProxy.getAllData(server.getKey());
+            byte[] data = NamingProxy.getAllData(server.address());
             processData(data);
             return true;
         } catch (Exception e) {

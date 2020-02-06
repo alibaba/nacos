@@ -15,10 +15,11 @@
  */
 package com.alibaba.nacos.naming.core;
 
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.core.cluster.NodeChangeEvent;
+import com.alibaba.nacos.core.cluster.NodeChangeListener;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SystemUtils;
-import com.alibaba.nacos.naming.cluster.ServerListManager;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.cluster.servers.ServerChangeListener;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
@@ -34,7 +35,7 @@ import java.util.List;
  * @author nkorange
  */
 @Component("distroMapper")
-public class DistroMapper implements ServerChangeListener {
+public class DistroMapper implements NodeChangeListener {
 
     private List<String> healthyList = new ArrayList<>();
 
@@ -46,14 +47,14 @@ public class DistroMapper implements ServerChangeListener {
     private SwitchDomain switchDomain;
 
     @Autowired
-    private ServerListManager serverListManager;
+    private NodeManager nodeManager;
 
     /**
      * init server list
      */
     @PostConstruct
     public void init() {
-        serverListManager.listen(this);
+        nodeManager.subscribe(this);
     }
 
     public boolean responsible(Cluster cluster, Instance instance) {
@@ -102,17 +103,12 @@ public class DistroMapper implements ServerChangeListener {
     }
 
     @Override
-    public void onChangeServerList(List<Server> latestMembers) {
-
-    }
-
-    @Override
-    public void onChangeHealthyServerList(List<Server> latestReachableMembers) {
-
+    public void onEvent(NodeChangeEvent event) {
         List<String> newHealthyList = new ArrayList<>();
-        for (Server server : latestReachableMembers) {
-            newHealthyList.add(server.getKey());
+        for (Node node : event.getAllNodes()) {
+            newHealthyList.add(node.address());
         }
-        healthyList = newHealthyList;
+        this.healthyList = newHealthyList;
     }
+
 }

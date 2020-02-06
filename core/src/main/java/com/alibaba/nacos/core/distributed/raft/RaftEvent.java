@@ -26,6 +26,8 @@ import java.util.List;
  */
 public class RaftEvent implements Event {
 
+    private static final long serialVersionUID = -4304258594602886451L;
+
     private String leader;
 
     private long term;

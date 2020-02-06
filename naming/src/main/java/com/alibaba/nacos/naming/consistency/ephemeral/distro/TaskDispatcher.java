@@ -16,8 +16,12 @@
 package com.alibaba.nacos.naming.consistency.ephemeral.distro;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.naming.cluster.servers.Server;
-import com.alibaba.nacos.naming.misc.*;
+import com.alibaba.nacos.core.cluster.Node;
+import com.alibaba.nacos.naming.misc.GlobalConfig;
+import com.alibaba.nacos.naming.misc.GlobalExecutor;
+import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.NetUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -92,7 +96,7 @@ public class TaskDispatcher {
                 try {
 
                     String key = queue.poll(partitionConfig.getTaskDispatchPeriod(),
-                        TimeUnit.MILLISECONDS);
+                            TimeUnit.MILLISECONDS);
 
                     if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
                         Loggers.DISTRO.debug("got key: {}", key);
@@ -114,15 +118,15 @@ public class TaskDispatcher {
                     dataSize++;
 
                     if (dataSize == partitionConfig.getBatchSyncKeyCount() ||
-                        (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
+                            (System.currentTimeMillis() - lastDispatchTime) > partitionConfig.getTaskDispatchPeriod()) {
 
-                        for (Server member : dataSyncer.getServers()) {
-                            if (NetUtils.localServer().equals(member.getKey())) {
+                        for (Node member : dataSyncer.getServers()) {
+                            if (NetUtils.localServer().equals(member.address())) {
                                 continue;
                             }
                             SyncTask syncTask = new SyncTask();
                             syncTask.setKeys(keys);
-                            syncTask.setTargetServer(member.getKey());
+                            syncTask.setTargetServer(member.address());
 
                             if (Loggers.DISTRO.isDebugEnabled() && StringUtils.isNotBlank(key)) {
                                 Loggers.DISTRO.debug("add sync task: {}", JSON.toJSONString(syncTask));

@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.notify;
+package com.alibaba.nacos.core.distributed.raft;
 
-import java.io.Serializable;
+import com.alibaba.nacos.core.distributed.Store;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Event extends Serializable {
-
-    /**
-     * Return own event type
-     *
-     * @return {@link Event}
-     */
-    Class<? extends Event> eventType();
-
+public interface RaftStore extends Store {
 }

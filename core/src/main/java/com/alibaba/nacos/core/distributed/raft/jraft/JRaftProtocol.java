@@ -23,7 +23,7 @@ import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.distributed.BizProcessor;
 import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.Event;
@@ -129,7 +129,12 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     @Override
     public <T> T metaData(String key) {
-        return (T) metaData.get(key);
+        readLock.lock();
+        try {
+            return (T) metaData.get(key);
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override
@@ -148,13 +153,13 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
     }
 
     @Override
-    public boolean submit(Datum data) throws Exception {
+    public boolean submit(Log data) throws Exception {
         CompletableFuture<ResResult<Boolean>> future = submitAsync(data);
         return future.join().getData();
     }
 
     @Override
-    public CompletableFuture<ResResult<Boolean>> submitAsync(Datum data) {
+    public CompletableFuture<ResResult<Boolean>> submitAsync(Log data) {
         final Throwable[] throwable = new Throwable[] { null };
         CompletableFuture<ResResult<Boolean>> future = new CompletableFuture<>();
         try {

@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NDatum implements Datum {
+public class NLog implements Log {
 
     private static final long serialVersionUID = 2277124615731537462L;
 
@@ -88,47 +88,47 @@ public class NDatum implements Datum {
         this.extendInfo.putAll(extendInfo);
     }
 
-    public static NDatumBuilder builder() {
-        return new NDatumBuilder();
+    private static NLogBuilder builder() {
+        return new NLogBuilder();
     }
 
-    public static final class NDatumBuilder {
+    public static final class NLogBuilder {
         private String key;
         private byte[] data;
         private String className;
         private String operation;
         private Map<String, String> extendInfo = Collections.emptyMap();
 
-        private NDatumBuilder() {
+        private NLogBuilder() {
         }
 
-        public NDatumBuilder key(String key) {
+        public NLogBuilder key(String key) {
             this.key = key;
             return this;
         }
 
-        public NDatumBuilder data(byte[] data) {
+        public NLogBuilder data(byte[] data) {
             this.data = data;
             return this;
         }
 
-        public NDatumBuilder className(String className) {
+        public NLogBuilder className(String className) {
             this.className = className;
             return this;
         }
 
-        public NDatumBuilder operation(String operation) {
+        public NLogBuilder operation(String operation) {
             this.operation = operation;
             return this;
         }
 
-        public NDatumBuilder extendInfo(Map<String, String> extendInfo) {
+        public NLogBuilder extendInfo(Map<String, String> extendInfo) {
             this.extendInfo = extendInfo;
             return this;
         }
 
-        public NDatum build() {
-            NDatum nDatum = new NDatum();
+        public NLog build() {
+            NLog nDatum = new NLog();
             nDatum.extendInfo = this.extendInfo;
             nDatum.className = this.className;
             nDatum.key = this.key;

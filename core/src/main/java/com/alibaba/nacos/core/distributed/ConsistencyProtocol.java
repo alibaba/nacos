@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.distributed;
 
 import com.alibaba.nacos.common.model.ResResult;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -75,21 +76,34 @@ public interface ConsistencyProtocol<T extends Config> {
      * Data operation, returning submission results synchronously
      * 同步数据提交，在 Datum 中已携带相应的数据操作信息
      *
-     * @param data {@link Datum}
+     * @param data {@link Log}
      * @return submit operation result
      * @throws Exception
      */
-    boolean submit(Datum data) throws Exception;
+    boolean submit(Log data) throws Exception;
 
     /**
      * Data submission operation, returning submission results asynchronously
      * 异步数据提交，在 Datum 中已携带相应的数据操作信息，返回一个Future，自行操作，提交发生的异常会在CompleteFuture中
      *
-     * @param data {@link Datum}
+     * @param data {@link Log}
      * @return {@link CompletableFuture<ResResult<Boolean>>} submit result
      * @throws Exception when submit throw Exception
      */
-    CompletableFuture<ResResult<Boolean>> submitAsync(Datum data);
+    CompletableFuture<ResResult<Boolean>> submitAsync(Log data);
+
+    /**
+     * Bulk submission of data
+     *
+     * @param datums {@link Map<String, List< Log >> },
+     *               The value of key is guaranteed to be the return value of {@link BizProcessor#bizInfo()}
+     * @return As long as one of the processing fails, an error is returned,
+     * but those that have been processed successfully will not be rolled back,
+     * and the business party will guarantee the idempotence by itself
+     */
+    default boolean batchSubmit(Map<String, List<Log>> datums) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
 
     /**
      * Concerned Configuration Object

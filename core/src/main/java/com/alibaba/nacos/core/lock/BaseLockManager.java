@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.lock;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.distributed.BizProcessor;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.Datum;
+import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.LogConsumer;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
@@ -73,14 +73,14 @@ public abstract class BaseLockManager implements LockManager {
         }
 
         @Override
-        public ResResult<Boolean> onApply(Datum datum) {
-            final String operation = datum.getOperation();
+        public ResResult<Boolean> onApply(Log log) {
+            final String operation = log.getOperation();
             if (Objects.isNull(LockOperation.sourceOf(operation))) {
                 return ResResultUtils.failed("The lock operation is not supported");
             }
             final LogConsumer consumer = logConsumerMap.get(operation);
             try {
-                return consumer.onAccept(datum);
+                return consumer.onAccept(log);
             } catch (Exception e) {
                 return ResResultUtils.failed(e.getLocalizedMessage());
             }
@@ -100,6 +100,7 @@ public abstract class BaseLockManager implements LockManager {
         public boolean interest(String key) {
             return key.contains("LOCK");
         }
+
     }
 
 }

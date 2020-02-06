@@ -16,11 +16,16 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
+import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
 import com.alibaba.nacos.naming.pojo.Record;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Consistency delegate
@@ -36,6 +41,13 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
 
     @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
+
+    private ConsistencyProtocol<RaftConfig> raftProtocol;
+
+    @PostConstruct
+    protected void init() {
+        raftProtocol = SpringUtils.getBean("RaftProtocol", ConsistencyProtocol.class);
+    }
 
     @Override
     public void put(String key, Record value) throws NacosException {

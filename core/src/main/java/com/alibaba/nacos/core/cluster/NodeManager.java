@@ -46,7 +46,9 @@ public interface NodeManager {
     void update(Node node);
 
     /**
-     * Determine if the node exists according to ip: port
+     * Determine if the node exists according to ip: port or ip,
+     * If address contains only ip information, it returns true
+     * as long as the ip exists in the node list
      *
      * @param address ip:port
      * @return exist result
@@ -68,7 +70,7 @@ public interface NodeManager {
     boolean isFirstIp();
 
     /**
-     * list all nodes
+     * list all nodes which status is health
      *
      * @return {@link Collection<Node>}
      */
@@ -101,6 +103,12 @@ public interface NodeManager {
      * @param listener {@link NodeChangeListener}
      */
     void unSubscribe(NodeChangeListener listener);
+
+    /**
+     *
+     * @return
+     */
+    String getContextPath();
 
     /**
      * clean operation
