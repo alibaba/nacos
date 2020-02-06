@@ -38,10 +38,10 @@ public interface ConsistencyProtocol<T extends Config> {
     void init(T config);
 
     /**
-     * Metadata information for this conformance protocol
+     * Copy of metadata information for this consensus protocol
      * 该一致性协议的元数据信息
      *
-     * @return {@link java.util.Collections#unmodifiableMap}
+     * @return metaData copy
      */
     Map<String, Object> protocolMetaData();
 

@@ -39,7 +39,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,7 +119,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     @Override
     public Map<String, Object> protocolMetaData() {
-        return Collections.unmodifiableMap(metaData);
+        return new HashMap<>(metaData);
     }
 
     @Override
