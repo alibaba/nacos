@@ -21,7 +21,11 @@ import java.util.Collection;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface RdsStore extends Store {
+public abstract class RdsStore extends BaseStore {
+
+    public RdsStore(String name) {
+        super(name);
+    }
 
     /**
      * query by command
@@ -30,7 +34,7 @@ public interface RdsStore extends Store {
      * @param <T> type
      * @return target data
      */
-    <T extends Record> T query(String command);
+    public abstract <T extends Record> T query(String command);
 
     /**
      * query by command
@@ -39,6 +43,6 @@ public interface RdsStore extends Store {
      * @param <T> type
      * @return target datas
      */
-    <T extends Record> Collection<T> queryBatch(String command);
+    public abstract <T extends Record> Collection<T> queryBatch(String command);
 
 }

@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.store;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -24,15 +23,14 @@ import java.util.function.Function;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface CommandDispatcher {
+public interface CommandAnalyzer {
 
     /**
      * analyze command get target consumer to deal record
      *
      * @param command command name
-     * @param <R> result data
-     * @return {@link Consumer<? extends Record>}
+     * @return {@link Function<? extends Record, Boolean>}
      */
-    <R> Function<? extends Record, R> analyze(String command);
+    Function<Record, Boolean> analyze(String command);
 
 }

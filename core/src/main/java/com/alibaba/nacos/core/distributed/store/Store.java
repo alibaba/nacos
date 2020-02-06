@@ -16,20 +16,20 @@
 
 package com.alibaba.nacos.core.distributed.store;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Store<T extends Record> {
+interface Store<T extends Record> {
 
     /**
      * register command dispatcher
      *
-     * @param dispatcher {@link CommandDispatcher}
+     * @param analyzer {@link CommandAnalyzer}
      */
-    void initCommandAnalyze(CommandDispatcher dispatcher);
+    void initCommandAnalyze(CommandAnalyzer analyzer);
 
     /**
      * data operate
@@ -45,11 +45,11 @@ public interface Store<T extends Record> {
     /**
      * data batch operate
      *
-     * @param datas operate data, like <Operate, Collection<Record>>
+     * @param data operate data, like <Operate, Collection<Record>>
      * @return this operate is success
      * @throws Exception
      */
-    boolean batchOperate(Map<String, Collection<? extends Record>> datas) throws Exception;
+    boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception;
 
     /**
      * The storage belongs to that business

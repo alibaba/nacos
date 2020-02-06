@@ -23,7 +23,11 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public interface KVStore extends Store {
+public abstract class KVStore extends BaseStore {
+
+    public KVStore(String name) {
+        super(name);
+    }
 
     /**
      * get batch data by key list
@@ -31,7 +35,7 @@ public interface KVStore extends Store {
      * @param keys {@link Collection <String>}
      * @return {@link Map <String, ? extends Record>}
      */
-    Map<String, ? extends Record> batchGet(Collection<String> keys);
+    public abstract Map<String, ? extends Record> batchGet(Collection<String> keys);
 
     /**
      * get data by key
@@ -39,13 +43,13 @@ public interface KVStore extends Store {
      * @param key data key
      * @return target data {@link <T extends Record>}
      */
-    <T extends Record> T getByKey(String key);
+    public abstract <T extends Record> T getByKey(String key);
 
     /**
      * all data keys
      *
      * @return {@link Collection <String>}
      */
-    Collection<String> allKeys();
+    public abstract Collection<String> allKeys();
 
 }
