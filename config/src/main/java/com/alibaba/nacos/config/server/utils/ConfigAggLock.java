@@ -46,8 +46,7 @@ public class ConfigAggLock {
         if (StringUtils.equalsIgnoreCase(val, "separate")) {
             return true;
         }
-        Map<String, Object> metaData = protocol.protocolMetaData();
-        return (boolean) metaData.get("leader");
+        return protocol.metaData("leader");
     }
 
     public void unLock() {

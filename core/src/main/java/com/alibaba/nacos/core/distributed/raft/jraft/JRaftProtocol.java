@@ -20,10 +20,10 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.Event;
@@ -39,6 +39,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +56,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Component("RaftProtocol")
 public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
-    private boolean isStart = false;
+    private volatile boolean isStart = false;
 
     private JRaftServer raftServer;
 
@@ -63,7 +64,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     private NacosStateMachine machine = new NacosStateMachine();
 
-    private volatile Map<String, Object> metaData = new HashMap<>();
+    private Map<String, Object> metaData = new HashMap<>();
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -119,12 +120,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     @Override
     public Map<String, Object> protocolMetaData() {
-        readLock.lock();
-        try {
-            return metaData;
-        } finally {
-            readLock.unlock();
-        }
+        return Collections.unmodifiableMap(metaData);
     }
 
     @Override

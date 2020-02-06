@@ -41,7 +41,7 @@ public interface ConsistencyProtocol<T extends Config> {
      * Metadata information for this conformance protocol
      * 该一致性协议的元数据信息
      *
-     * @return {@link Map<String, Object>}
+     * @return {@link java.util.Collections#unmodifiableMap}
      */
     Map<String, Object> protocolMetaData();
 

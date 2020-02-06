@@ -33,6 +33,7 @@ public interface Store<T extends Record> {
 
     /**
      * data operate
+     * un support data query operation
      *
      * @param data which extend {@link Record}
      * @param command data operate

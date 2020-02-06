@@ -40,7 +40,7 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
 
     @Override
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Log log) {
-        boolean isLeader = (boolean) protocol.protocolMetaData().get("leader");
+        boolean isLeader = protocol.metaData("leader");
         try {
             if (isLeader) {
                 CompletableFuture<ResResult<Boolean>> future = protocol
