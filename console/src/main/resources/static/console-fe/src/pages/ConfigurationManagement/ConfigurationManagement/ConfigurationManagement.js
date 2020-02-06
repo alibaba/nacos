@@ -675,28 +675,51 @@ class ConfigurationManagement extends React.Component {
     });
   }
 
+  openUri(url, params) {
+    window.open(
+      [
+        url,
+        Object.keys(params)
+          .map(key => `${key}=${params[key]}`)
+          .join('&'),
+      ].join('?')
+    );
+  }
+
   exportData() {
-    const url = `v1/cs/configs?export=true&group=${this.group}&tenant=${getParams(
-      'namespace'
-    )}&appName=${this.appName}&ids=&dataId=${this.dataId}`;
-    window.location.href = url;
+    const { group, appName, dataId, openUri } = this;
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: getParams('namespace'),
+      group,
+      appName,
+      dataId,
+      ids: '',
+      accessToken,
+    });
   }
 
   exportSelectedData() {
+    const ids = [];
     const { locale = {} } = this.props;
-    if (configsTableSelected.size === 0) {
+    const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
+    if (!configsTableSelected.size) {
       Dialog.alert({
         title: locale.exportSelectedAlertTitle,
         content: locale.exportSelectedAlertContent,
       });
-    } else {
-      let idsStr = '';
-      configsTableSelected.forEach((value, key, map) => {
-        idsStr = `${idsStr + key},`;
-      });
-      let url = `v1/cs/configs?export=true&group=&tenant=&appName=&ids=${idsStr}`;
-      window.location.href = url;
+      return;
     }
+    configsTableSelected.forEach((value, key, map) => ids.push(key));
+    this.openUri('v1/cs/configs', {
+      export: 'true',
+      tenant: '',
+      group: '',
+      appName: '',
+      ids: ids.join(','),
+      accessToken,
+    });
   }
 
   multipleSelectionDeletion() {
