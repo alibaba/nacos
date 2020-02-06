@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.cluster.ServerNodeManager;
-import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
@@ -138,13 +138,13 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
     }
 
     @Override
-    public void registerBizProcessor(BizProcessor processor) {
+    public void registerBizProcessor(LogDispatcher processor) {
         machine.registerBizProcessor(processor);
     }
 
     @Override
     public <T> T getData(String key) throws Exception {
-        for (BizProcessor processor : machine.getProcessorMap().values()) {
+        for (LogDispatcher processor : machine.getProcessorMap().values()) {
             if (processor.interest(key)) {
                 return processor.getData(key);
             }

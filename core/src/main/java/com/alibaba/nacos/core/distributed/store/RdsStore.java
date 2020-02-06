@@ -14,37 +14,31 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.core.distributed.store;
 
-import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface Record extends Serializable {
+public interface RdsStore extends Store {
 
     /**
+     * query by command
      *
-     * @return
+     * @param command this operate command name
+     * @param <T> type
+     * @return target data
      */
-    String key();
+    <T extends Record> T query(String command);
 
     /**
+     * query by command
      *
-     * @return
+     * @param command this operate command name
+     * @param <T> type
+     * @return target datas
      */
-    String checkCode();
-
-    /**
-     *
-     * @return
-     */
-    long lastModifyTime();
-
-    /**
-     *
-     * @return
-     */
-    String lastOperation();
+    <T extends Record> Collection<T> queryBatch(String command);
 
 }

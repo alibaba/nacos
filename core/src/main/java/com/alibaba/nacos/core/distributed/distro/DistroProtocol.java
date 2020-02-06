@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.distro;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.Config;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
@@ -44,7 +44,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Component(value = "DistroProtocol")
 public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
 
-    private final Map<String, BizProcessor> bizProcessorMap = new ConcurrentHashMap<>();
+    private final Map<String, LogDispatcher> bizProcessorMap = new ConcurrentHashMap<>();
 
     private final Map<String, Object> metaData = new HashMap<>();
 
@@ -87,14 +87,14 @@ public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
     }
 
     @Override
-    public void registerBizProcessor(BizProcessor processor) {
+    public void registerBizProcessor(LogDispatcher processor) {
         bizProcessorMap.put(processor.bizInfo(), processor);
     }
 
     @Override
     public <T> T getData(String key) throws Exception {
-        for (Map.Entry<String, BizProcessor> entry : bizProcessorMap.entrySet()) {
-            final BizProcessor processor = entry.getValue();
+        for (Map.Entry<String, LogDispatcher> entry : bizProcessorMap.entrySet()) {
+            final LogDispatcher processor = entry.getValue();
             if (processor.interest(key)) {
                 return processor.getData(key);
             }
@@ -105,8 +105,8 @@ public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
     @Override
     public boolean submit(Log data) throws Exception {
         final String key = data.getKey();
-        for (Map.Entry<String, BizProcessor> entry : bizProcessorMap.entrySet()) {
-            final BizProcessor processor = entry.getValue();
+        for (Map.Entry<String, LogDispatcher> entry : bizProcessorMap.entrySet()) {
+            final LogDispatcher processor = entry.getValue();
             if (processor.interest(key)) {
                 processor.onApply(data);
                 return true;
@@ -131,7 +131,7 @@ public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
     @Override
     public boolean batchSubmit(Map<String, List<Log>> datums) {
         for (Map.Entry<String, List<Log>> entry : datums.entrySet()) {
-            final BizProcessor processor = bizProcessorMap.get(entry.getKey());
+            final LogDispatcher processor = bizProcessorMap.get(entry.getKey());
             executor.execute(() -> {
                 for (Log log : entry.getValue()) {
                     try {

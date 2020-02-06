@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -45,7 +45,7 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
 
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
 
-    protected Map<String, BizProcessor> processorMap = new HashMap<>();
+    protected Map<String, LogDispatcher> processorMap = new HashMap<>();
 
     private Collection<SnapshotOperate> snapshotOperates;
 
@@ -55,7 +55,7 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
         snapshotOperates = SpringUtils.getBeansOfType(SnapshotOperate.class).values();
     }
 
-    public synchronized void registerBizProcessor(BizProcessor processor) {
+    public synchronized void registerBizProcessor(LogDispatcher processor) {
         processorMap.put(processor.bizInfo(), processor);
     }
 
@@ -135,7 +135,7 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
         return isLeader.get();
     }
 
-    public Map<String, BizProcessor> getProcessorMap() {
+    public Map<String, LogDispatcher> getProcessorMap() {
         return processorMap;
     }
 }

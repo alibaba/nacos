@@ -14,13 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro;
+package com.alibaba.nacos.core.distributed.store;
 
-import com.alibaba.nacos.core.distributed.Store;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
+ * Command dispatcher, find the corresponding Function <T, R> implementation according to command
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface DistroStore extends Store {
+public interface CommandDispatcher {
+
+    /**
+     * analyze command get target consumer to deal record
+     *
+     * @param command command name
+     * @param <R> result data
+     * @return {@link Consumer<? extends Record>}
+     */
+    <R> Function<? extends Record, R> analyze(String command);
 
 }

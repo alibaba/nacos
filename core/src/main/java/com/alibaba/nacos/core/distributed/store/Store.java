@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.core.distributed.store;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,48 +25,30 @@ import java.util.Map;
 public interface Store<T extends Record> {
 
     /**
-     * Data batch insert
+     * register command dispatcher
      *
-     * @param datas {@link Collection<? extends Record>}
+     * @param dispatcher {@link CommandDispatcher}
      */
-    void batchSave(Collection<? extends Record> datas);
+    void initCommandAnalyze(CommandDispatcher dispatcher);
 
     /**
-     * Data batch update
+     * data operate
      *
-     * @param datas {@link Collection<? extends Record>}
+     * @param data which extend {@link Record}
+     * @param command data operate
+     * @return this operate is success
+     * @throws Exception
      */
-    void batchUpdate(Collection<? extends Record> datas);
+    boolean operate(T data, String command) throws Exception;
 
     /**
-     * Data batch remove
+     * data batch operate
      *
-     * @param key {@link Collection<String>}
+     * @param datas operate data, like <Operate, Collection<Record>>
+     * @return this operate is success
+     * @throws Exception
      */
-    void batchRemove(Collection<String> key);
-
-    /**
-     * get batch data by key list
-     *
-     * @param keys {@link Collection <String>}
-     * @return {@link Map <String, ? extends Record>}
-     */
-    Map<String, ? extends Record> batchGet(Collection<String> keys);
-
-    /**
-     * get data by key
-     *
-     * @param key data key
-     * @return target data {@link <T extends Record>}
-     */
-    <T extends Record> T getByKey(String key);
-
-    /**
-     * all data keys
-     *
-     * @return {@link Collection <String>}
-     */
-    Collection<String> allKeys();
+    boolean batchOperate(Map<String, Collection<? extends Record>> datas) throws Exception;
 
     /**
      * The storage belongs to that business

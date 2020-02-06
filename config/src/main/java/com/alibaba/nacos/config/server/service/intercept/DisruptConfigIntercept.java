@@ -29,7 +29,7 @@ import com.alibaba.nacos.config.server.model.log.ConfigRequest;
 import com.alibaba.nacos.config.server.model.log.ConfigTagRelationRequest;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.DistributeProtocolAware;
-import com.alibaba.nacos.config.server.service.consumer.ConfigBizProcessor;
+import com.alibaba.nacos.config.server.service.consumer.ConfigLogDispatcher;
 import com.alibaba.nacos.config.server.utils.LogKeyUtils;
 import com.alibaba.nacos.config.server.utils.event.EventDispatcher;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
@@ -61,11 +61,11 @@ public class DisruptConfigIntercept extends DistributeProtocolAware implements I
 
     private final JRaftProtocol protocol;
 
-    private final ConfigBizProcessor bizProcessor;
+    private final ConfigLogDispatcher bizProcessor;
 
     public DisruptConfigIntercept(final ClusterDataSourceV2 connectionManager,
                                   final JRaftProtocol protocol,
-                                  final ConfigBizProcessor bizProcessor) {
+                                  final ConfigLogDispatcher bizProcessor) {
         super();
         this.connectionManager = connectionManager;
         this.protocol = protocol;

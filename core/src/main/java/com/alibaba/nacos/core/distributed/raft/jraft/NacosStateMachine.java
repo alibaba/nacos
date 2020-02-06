@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.NLog;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -57,8 +57,8 @@ public class NacosStateMachine extends BaseStateMachine {
 
                     Loggers.RAFT.info("receive datum : {}", JSON.toJSONString(log));
 
-                    for (Map.Entry<String, BizProcessor> entry : processorMap.entrySet()) {
-                        final BizProcessor processor = entry.getValue();
+                    for (Map.Entry<String, LogDispatcher> entry : processorMap.entrySet()) {
+                        final LogDispatcher processor = entry.getValue();
                         if (processor.interest(log.getKey())) {
                             try {
                                 processor.onApply(log);

@@ -14,34 +14,38 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.sync;
+package com.alibaba.nacos.core.distributed.store;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class PartitionDataTimedSync {
+@SuppressWarnings("all")
+public interface KVStore extends Store {
 
-    private final List<DistroStore> distroStores;
+    /**
+     * get batch data by key list
+     *
+     * @param keys {@link Collection <String>}
+     * @return {@link Map <String, ? extends Record>}
+     */
+    Map<String, ? extends Record> batchGet(Collection<String> keys);
 
-    public PartitionDataTimedSync(List<DistroStore> distroStores) {
-        this.distroStores = distroStores;
-    }
+    /**
+     * get data by key
+     *
+     * @param key data key
+     * @return target data {@link <T extends Record>}
+     */
+    <T extends Record> T getByKey(String key);
 
-    public void start() {
+    /**
+     * all data keys
+     *
+     * @return {@link Collection <String>}
+     */
+    Collection<String> allKeys();
 
-    }
-
-    public void shutdown() {
-
-    }
-
-    private class Worker implements Runnable {
-
-        @Override
-        public void run() {
-
-        }
-    }
 }

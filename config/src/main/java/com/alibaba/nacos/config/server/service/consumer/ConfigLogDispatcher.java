@@ -17,14 +17,13 @@
 package com.alibaba.nacos.config.server.service.consumer;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.LogConsumer;
-import com.alibaba.nacos.core.distributed.raft.jraft.JRaftProtocol;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -36,16 +35,17 @@ import java.util.Objects;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("all")
 @Component
-public class ConfigBizProcessor implements BizProcessor {
+public class ConfigLogDispatcher implements LogDispatcher {
 
-    @Autowired
-    private JRaftProtocol protocol;
+    private ConsistencyProtocol protocol;
 
     private final Map<String, LogConsumer> consumerMap = new HashMap<>();
 
     @PostConstruct
     protected void init() {
+        protocol = SpringUtils.getBean("RaftProtocol", ConsistencyProtocol.class);
         protocol.registerBizProcessor(this);
         Map<String, ConfigConsumer> beans = SpringUtils.getBeansOfType(ConfigConsumer.class);
         for (ConfigConsumer consumer : beans.values()) {
@@ -54,12 +54,12 @@ public class ConfigBizProcessor implements BizProcessor {
     }
 
     @Override
-    public void registerLogConsumer(LogConsumer consumer) {
+    public synchronized void registerLogConsumer(LogConsumer consumer) {
         consumerMap.put(consumer.operation(), consumer);
     }
 
     @Override
-    public void deregisterLogConsumer(String operation) {
+    public synchronized void deregisterLogConsumer(String operation) {
         consumerMap.remove(operation);
     }
 

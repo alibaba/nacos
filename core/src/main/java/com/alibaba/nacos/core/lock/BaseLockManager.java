@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.lock;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.BizProcessor;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.LogConsumer;
@@ -40,7 +40,7 @@ import java.util.Objects;
 public abstract class BaseLockManager implements LockManager {
 
     @Component
-    protected static class LockBizProcessor implements BizProcessor {
+    protected static class LockLogDispatcher implements LogDispatcher {
 
         private final Map<String, LogConsumer> logConsumerMap = new HashMap<>(8);
 

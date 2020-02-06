@@ -29,7 +29,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.Log;
-import com.alibaba.nacos.core.distributed.distro.DistroStore;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import org.apache.commons.lang3.StringUtils;

@@ -59,9 +59,9 @@ public interface ConsistencyProtocol<T extends Config> {
      * register biz-processor
      * 注册业务处理器，处理不同业务的Log
      *
-     * @param processor {@link BizProcessor}
+     * @param processor {@link LogDispatcher}
      */
-    void registerBizProcessor(BizProcessor processor);
+    void registerBizProcessor(LogDispatcher processor);
 
     /**
      * Obtain data according to the key, and implement specific data acquisition by BizProcessor
@@ -96,7 +96,7 @@ public interface ConsistencyProtocol<T extends Config> {
      * Bulk submission of data
      *
      * @param datums {@link Map<String, List< Log >> },
-     *               The value of key is guaranteed to be the return value of {@link BizProcessor#bizInfo()}
+     *               The value of key is guaranteed to be the return value of {@link LogDispatcher#bizInfo()}
      * @return As long as one of the processing fails, an error is returned,
      * but those that have been processed successfully will not be rolled back,
      * and the business party will guarantee the idempotence by itself

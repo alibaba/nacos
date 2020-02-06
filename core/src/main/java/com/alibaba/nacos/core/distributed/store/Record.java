@@ -14,12 +14,41 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.raft;
+package com.alibaba.nacos.core.distributed.store;
 
-import com.alibaba.nacos.core.distributed.Store;
+import java.io.Serializable;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface RaftStore extends Store {
+public interface Record extends Serializable {
+
+    /**
+     * Uniquely identifies
+     *
+     * @return Uniquely identifies
+     */
+    String key();
+
+    /**
+     * check out
+     *
+     * @return md5
+     */
+    String checkCode();
+
+    /**
+     * lastModifyTime
+     *
+     * @return this record last modify time
+     */
+    long lastModifyTime();
+
+    /**
+     * lastOperation
+     *
+     * @return this record last operation
+     */
+    String lastOperation();
+
 }

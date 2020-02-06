@@ -23,7 +23,7 @@ import java.util.Collection;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface BizProcessor {
+public interface LogDispatcher {
 
     /**
      * register log consumer
