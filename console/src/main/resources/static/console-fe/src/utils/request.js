@@ -2,6 +2,7 @@ import axios from 'axios';
 import qs from 'qs';
 import { Message } from '@alifd/next';
 import { browserHistory } from 'react-router';
+import { isPlainObject } from './nacosutil';
 // import { SUCCESS_RESULT_CODE } from '../constants';
 
 const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
@@ -11,17 +12,18 @@ const request = () => {
 
   instance.interceptors.request.use(
     config => {
-      if (!config.params) {
+      const { url, params, data, method, headers } = config;
+      if (!params) {
         config.params = {};
       }
-      if (!config.url.includes('auth/users/login')) {
+      if (!url.includes('auth/users/login')) {
         const { accessToken = '' } = JSON.parse(localStorage.token || '{}');
         config.params.accessToken = accessToken;
-        config.headers = Object.assign({}, config.headers, { accessToken });
+        config.headers = Object.assign({}, headers, { accessToken });
       }
-      if (['post', 'put'].includes(config.method)) {
-        config.data = qs.stringify(config.data);
-        if (!config.headers) {
+      if (data && isPlainObject(data) && ['post', 'put'].includes(method)) {
+        config.data = qs.stringify(data);
+        if (!headers) {
           config.headers = {};
         }
         config.headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -51,7 +53,10 @@ const request = () => {
         }
         Message.error(message);
 
-        if ([401, 403].includes(status) && ['unknown user!', 'token invalid'].includes(message)) {
+        if (
+          [401, 403].includes(status) &&
+          ['unknown user!', 'token invalid', 'token expired!'].includes(message)
+        ) {
           localStorage.removeItem('token');
           const [baseUrl] = location.href.split('#');
           location.href = `${baseUrl}#/login`;

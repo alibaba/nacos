@@ -175,7 +175,6 @@ class ConfigEditor extends React.Component {
   }
 
   clickTab(tabActiveKey) {
-    console.log('tabActiveKey', tabActiveKey, tabActiveKey === 'beta');
     this.setState({ tabActiveKey }, () => this.getConfig(tabActiveKey === 'beta'));
   }
 
@@ -217,26 +216,20 @@ class ConfigEditor extends React.Component {
   }
 
   _publishConfig(beta = false) {
-    const { locale } = this.props;
     const { betaIps, isNewConfig } = this.state;
     const headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
     if (beta) {
       headers.betaIps = betaIps;
     }
-    const data = { ...this.state.form, content: this.getCodeVal() };
+    const form = { ...this.state.form, content: this.getCodeVal() };
+    const data = new FormData();
+    Object.keys(form).forEach(key => {
+      data.append(key, form[key]);
+    });
     return request({
       url: 'v1/cs/configs',
       method: 'post',
       data,
-      transformRequest: [
-        function(data) {
-          let ret = '';
-          for (let it in data) {
-            ret += encodeURIComponent(it) + '=' + encodeURIComponent(data[it]) + '&';
-          }
-          return ret;
-        },
-      ],
       headers,
     }).then(res => {
       if (res) {

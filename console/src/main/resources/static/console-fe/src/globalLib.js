@@ -511,7 +511,7 @@ const request = (function(_global) {
         }
         if (
           [401, 403].includes(status) &&
-          ['unknown user!', 'token invalid'].includes(responseJSON.message)
+          ['unknown user!', 'token invalid', 'token expired!'].includes(responseJSON.message)
         ) {
           // 跳转至login页
           // TODO: 用 react-router 重写，改造成本比较高，这里先hack

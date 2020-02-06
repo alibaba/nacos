@@ -1405,6 +1405,7 @@ h6 {
   .right-panel {
     width: calc(100% - 180px);
     padding: 10px;
+    overflow: scroll;
   }
   .nav-title {
     margin: 0;
