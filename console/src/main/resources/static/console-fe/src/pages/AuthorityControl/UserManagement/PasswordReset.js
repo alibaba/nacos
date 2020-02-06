@@ -32,6 +32,9 @@ class PasswordReset extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     visible: PropTypes.bool,
+    username: PropTypes.string,
+    onCancel: PropTypes.func,
+    onOk: PropTypes.func,
   };
 
   check() {
