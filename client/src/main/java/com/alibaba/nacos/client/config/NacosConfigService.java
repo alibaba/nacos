@@ -98,6 +98,8 @@ public class NacosConfigService implements ConfigService {
 
         LifeCycleUtils.registerShutdownHook(this);
 
+        ModuleEnums.clean();
+
     }
 
     private void initNamespace(Properties properties) {

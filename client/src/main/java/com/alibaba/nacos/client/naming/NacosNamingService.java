@@ -109,6 +109,8 @@ public class NacosNamingService implements NamingService {
 
         LifeCycleUtils.registerShutdownHook(this);
 
+        ModuleEnums.clean();
+
     }
 
     private int initClientBeatThreadCount(Properties properties) {

@@ -78,6 +78,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
         serverProxy = new NamingProxy(namespace, endpoint, serverList, properties);
 
         LifeCycleUtils.registerShutdownHook(this);
+
+        ModuleEnums.clean();
     }
 
     private void initServerAddr(Properties properties) {
