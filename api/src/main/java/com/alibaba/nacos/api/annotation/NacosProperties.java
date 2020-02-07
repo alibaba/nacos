@@ -97,6 +97,16 @@ public @interface NacosProperties {
     String ENABLE_REMOTE_SYNC_CONFIG = "enableRemoteSyncConfig";
 
     /**
+     * The property name of "password"
+     */
+    String USERNAME = "password";
+
+    /**
+     * The property name of "password"
+     */
+    String PASSWORD = "password";
+
+    /**
      * The placeholder of endpoint, the value is <code>"${nacos.endpoint:}"</code>
      */
     String ENDPOINT_PLACEHOLDER = "${" + PREFIX + ENDPOINT + ":}";
@@ -155,6 +165,16 @@ public @interface NacosProperties {
      * The placeholder of {@link NacosProperties#ENABLE_REMOTE_SYNC_CONFIG enableRemoteSyncConfig}, the value is <code>"${nacos.enableRemoteSyncConfig:}"</code>
      */
     String ENABLE_REMOTE_SYNC_CONFIG_PLACEHOLDER = "${" + PREFIX + ENABLE_REMOTE_SYNC_CONFIG + ":}";
+
+    /**
+     * The placeholder of {@link NacosProperties#USERNAME username}, the value is <code>"${nacos.username:}"</code>
+     */
+    String USERNAME_PLACEHOLDER = "${" + PREFIX + USERNAME + ":}";
+
+    /**
+     * The placeholder of {@link NacosProperties#PASSWORD password}, the value is <code>"${nacos.password:}"</code>
+     */
+    String PASSWORD_PLACEHOLDER = "${" + PREFIX + PASSWORD + ":}";
 
     /**
      * The property of "endpoint"
@@ -251,5 +271,21 @@ public @interface NacosProperties {
      * @see #ENABLE_REMOTE_SYNC_CONFIG
      */
     String enableRemoteSyncConfig() default ENABLE_REMOTE_SYNC_CONFIG_PLACEHOLDER;
+
+    /**
+     * The property of "username"
+     *
+     * @return empty as default value
+     * @see #USERNAME
+     */
+    String username() default USERNAME_PLACEHOLDER;
+
+    /**
+     * The property of "password"
+     *
+     * @return empty as default value
+     * @see #PASSWORD
+     */
+    String password() default PASSWORD_PLACEHOLDER;
 
 }
