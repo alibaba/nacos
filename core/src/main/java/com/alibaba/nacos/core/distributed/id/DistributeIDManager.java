@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.distributed.id;
 
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SnakeFlowerIdHelper;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.core.utils.SystemUtils;
@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class DistributeIDManager {
 
-    private static ServerNodeManager serverNodeManager;
+    private static NodeManager nodeManager;
 
     private static final AtomicInteger WORKER_ID = new AtomicInteger(1);
 
@@ -42,8 +42,8 @@ public class DistributeIDManager {
     private static final int MAX_WORKER_ID = 31;
 
     public static void init() {
-        serverNodeManager = SpringUtils.getBean(ServerNodeManager.class);
-        DATA_CENTER_ID = serverNodeManager.indexOf(SystemUtils.LOCAL_IP);
+        nodeManager = SpringUtils.getBean(NodeManager.class);
+        DATA_CENTER_ID = nodeManager.indexOf(SystemUtils.LOCAL_IP);
     }
 
     public static void register(String resources) {
