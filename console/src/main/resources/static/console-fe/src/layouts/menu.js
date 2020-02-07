@@ -8,6 +8,10 @@ const configurationMenu = {
       url: '/configurationManagement',
     },
     {
+      key: 'historyRollback',
+      url: '/historyRollback',
+    },
+    {
       key: 'listeningToQuery',
       url: '/listeningToQuery',
     },
