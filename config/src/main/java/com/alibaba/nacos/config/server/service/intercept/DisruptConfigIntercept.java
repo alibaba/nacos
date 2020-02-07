@@ -74,7 +74,7 @@ public class DisruptConfigIntercept extends DistributeProtocolAware implements I
 
     @PostConstruct
     protected void init() {
-        protocol.registerBizProcessor(bizProcessor);
+        protocol.registerLogDispatcher(bizProcessor);
         DistributeIDManager.register(CONFIG_ID_RESOURCE);
         DistributeIDManager.register(CONFIG_TAG_ID_RESOURCE);
         DistributeIDManager.register(CONFIG_BETA_ID_RESOURCE);

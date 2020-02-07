@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-interface Store<T extends Record> {
+interface Store {
 
     /**
      * register command dispatcher
@@ -40,7 +40,7 @@ interface Store<T extends Record> {
      * @return this operate is success
      * @throws Exception
      */
-    boolean operate(T data, String command) throws Exception;
+    <T extends Record> boolean operate(T data, String command) throws Exception;
 
     /**
      * data batch operate
@@ -49,7 +49,7 @@ interface Store<T extends Record> {
      * @return this operate is success
      * @throws Exception
      */
-    boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception;
+    <T extends Record> boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception;
 
     /**
      * The storage belongs to that business

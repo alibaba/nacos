@@ -14,36 +14,26 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.sync;
+package com.alibaba.nacos.core.distributed;
 
-import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
-
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class PartitionDataTimedSync {
+public abstract class AbstractConsistencyProtocol<T extends Config> implements ConsistencyProtocol<T> {
 
-    private final List<AbstractDistroKVStore> distroStores;
+    protected Map<String, LogDispatcher> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
 
-    public PartitionDataTimedSync(List<AbstractDistroKVStore> distroStores) {
-        this.distroStores = distroStores;
+    @Override
+    public void registerLogDispatcher(LogDispatcher processor) {
+        dispatcherMap.put(processor.bizInfo(), processor);
     }
 
-    public void start() {
-
+    protected Map<String, LogDispatcher> allDispatcher() {
+        return dispatcherMap;
     }
 
-    public void shutdown() {
-
-    }
-
-    private class Worker implements Runnable {
-
-        @Override
-        public void run() {
-
-        }
-    }
 }

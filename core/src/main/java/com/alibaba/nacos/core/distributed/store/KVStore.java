@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
+ * Key-value pair data storage structure abstraction
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")

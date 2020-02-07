@@ -19,11 +19,10 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
 import com.alibaba.nacos.core.distributed.Config;
-import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
 import com.alibaba.nacos.core.distributed.LogDispatcher;
+import com.alibaba.nacos.core.distributed.raft.AbstractRaftProtocol;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.Event;
@@ -53,7 +52,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @SuppressWarnings("all")
 @ConditionalOnClass(name = {"com.alipay.sofa.jraft.NodeManager"})
 @Component("RaftProtocol")
-public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
+public class JRaftProtocol extends AbstractRaftProtocol {
 
     private volatile boolean isStart = false;
 
@@ -61,7 +60,7 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
 
     private Node raftNode;
 
-    private NacosStateMachine machine = new NacosStateMachine();
+    private NacosStateMachine machine;
 
     private Map<String, Object> metaData = new HashMap<>();
 
@@ -77,13 +76,15 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
     @Override
     public void init(RaftConfig config) {
 
+        this.machine = new NacosStateMachine(this);
+
         this.nodeManager = SpringUtils.getBean(NodeManager.class);
 
         this.selfAddress = nodeManager.self().address();
 
         NotifyManager.registerPublisher(RaftEvent::new, RaftEvent.class);
 
-        this.raftServer = new JRaftServer(SpringUtils.getBean(ServerNodeManager.class), machine,
+        this.raftServer = new JRaftServer(this.nodeManager, machine,
                 new NacosAsyncProcessor(this));
         this.raftServer.init(config);
         this.raftServer.start();
@@ -123,23 +124,18 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
     }
 
     @Override
-    public <T> T metaData(String key) {
+    public <R> R metaData(String key) {
         readLock.lock();
         try {
-            return (T) metaData.get(key);
+            return (R) metaData.get(key);
         } finally {
             readLock.unlock();
         }
     }
 
     @Override
-    public void registerBizProcessor(LogDispatcher processor) {
-        machine.registerBizProcessor(processor);
-    }
-
-    @Override
-    public <T> T getData(String key) throws Exception {
-        for (LogDispatcher processor : machine.getProcessorMap().values()) {
+    public <D> D getData(String key) throws Exception {
+        for (LogDispatcher processor : allDispatcher().values()) {
             if (processor.interest(key)) {
                 return processor.getData(key);
             }
@@ -212,5 +208,9 @@ public class JRaftProtocol implements ConsistencyProtocol<RaftConfig> {
         if (isStart) {
             raftServer.shutdown();
         }
+    }
+
+    Map<String, LogDispatcher> allLogDispacther() {
+        return allDispatcher();
     }
 }

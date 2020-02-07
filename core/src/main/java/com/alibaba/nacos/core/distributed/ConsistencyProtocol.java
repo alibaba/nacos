@@ -50,10 +50,10 @@ public interface ConsistencyProtocol<T extends Config> {
      * 根据 key 获取元数据信息中的某个值
      *
      * @param key key
-     * @param <T> target type
+     * @param <R> target type
      * @return value
      */
-    <T> T metaData(String key);
+    <R> R metaData(String key);
 
     /**
      * register biz-processor
@@ -61,7 +61,7 @@ public interface ConsistencyProtocol<T extends Config> {
      *
      * @param processor {@link LogDispatcher}
      */
-    void registerBizProcessor(LogDispatcher processor);
+    void registerLogDispatcher(LogDispatcher processor);
 
     /**
      * Obtain data according to the key, and implement specific data acquisition by BizProcessor
@@ -70,7 +70,7 @@ public interface ConsistencyProtocol<T extends Config> {
      * @return data
      * @throws Exception
      */
-    <T> T getData(String key) throws Exception;
+    <D> D getData(String key) throws Exception;
 
     /**
      * Data operation, returning submission results synchronously

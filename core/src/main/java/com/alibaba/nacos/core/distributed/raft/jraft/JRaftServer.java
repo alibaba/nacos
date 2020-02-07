@@ -18,7 +18,7 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.core.cluster.NodeChangeEvent;
 import com.alibaba.nacos.core.cluster.NodeChangeListener;
-import com.alibaba.nacos.core.cluster.ServerNodeManager;
+import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
@@ -31,7 +31,6 @@ import com.alipay.remoting.rpc.RpcServer;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 import com.alipay.sofa.jraft.JRaftUtils;
 import com.alipay.sofa.jraft.Node;
-import com.alipay.sofa.jraft.NodeManager;
 import com.alipay.sofa.jraft.RaftGroupService;
 import com.alipay.sofa.jraft.RouteTable;
 import com.alipay.sofa.jraft.Status;
@@ -79,9 +78,9 @@ public class JRaftServer implements NodeChangeListener {
 
     private int selfPort;
 
-    private final ServerNodeManager nodeManager;
+    private final NodeManager nodeManager;
 
-    public JRaftServer(final ServerNodeManager nodeManager, final NacosStateMachine machine, final AsyncUserProcessor processor) {
+    public JRaftServer(final NodeManager nodeManager, final NacosStateMachine machine, final AsyncUserProcessor processor) {
         this.nodeManager = nodeManager;
         this.machine = machine;
         this.processor = processor;
@@ -134,7 +133,7 @@ public class JRaftServer implements NodeChangeListener {
 
             // init raft group node
 
-            NodeManager raftNodeManager = NodeManager.getInstance();
+            com.alipay.sofa.jraft.NodeManager raftNodeManager = com.alipay.sofa.jraft.NodeManager.getInstance();
 
             nodeManager.allNodes().forEach(new Consumer<com.alibaba.nacos.core.cluster.Node>() {
                 @Override

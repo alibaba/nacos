@@ -32,9 +32,9 @@ public class DistroServer {
     private DataSyncer dataSyncer;
     private PartitionDataTimedSync timedSync;
 
-    private final List<DistroStore> distroStores;
+    private final List<AbstractDistroKVStore> distroStores;
 
-    public DistroServer(List<DistroStore> distroStores) {
+    public DistroServer(List<AbstractDistroKVStore> distroStores) {
         this.distroStores = distroStores;
     }
 

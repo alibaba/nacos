@@ -19,6 +19,8 @@ package com.alibaba.nacos.core.distributed.store;
 import java.util.Collection;
 
 /**
+ * Relational data storage structure abstraction
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public abstract class RdsStore extends BaseStore {

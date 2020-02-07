@@ -17,30 +17,39 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.Log;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.NLog;
+import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class NacosStateMachine extends BaseStateMachine {
+public class NacosStateMachine extends AbstractStateMachine {
+
+    private final LogParallelExecutor executor = new LogParallelExecutor();
+
+    public NacosStateMachine(JRaftProtocol protocol) {
+        super(protocol);
+    }
 
     @Override
     public void onApply(Iterator iter) {
         int index = 0;
         int applied = 0;
         try {
+            List<CompletableFuture<Boolean>> futures = new ArrayList<>();
             while (iter.hasNext()) {
-                Status status = Status.OK();
                 Log log = null;
                 NacosClosure closure = null;
                 try {
@@ -57,22 +66,14 @@ public class NacosStateMachine extends BaseStateMachine {
 
                     Loggers.RAFT.info("receive datum : {}", JSON.toJSONString(log));
 
-                    for (Map.Entry<String, LogDispatcher> entry : processorMap.entrySet()) {
+                    for (Map.Entry<String, LogDispatcher> entry : protocol.allLogDispacther().entrySet()) {
                         final LogDispatcher processor = entry.getValue();
                         if (processor.interest(log.getKey())) {
-                            try {
-                                processor.onApply(log);
-                            }
-                            catch (Throwable e) {
-                                if (closure != null) {
-                                    closure.setThrowable(e);
-                                }
-                                status = new Status(RaftError.UNKNOWN,
-                                        "Exception handling within a transaction : %s",
-                                        e);
-                                Loggers.RAFT.error("BizProcessor when onApply has some error",
-                                        e);
-                            }
+
+                            // Transaction log processing for different business
+                            // modules changed to parallel processing
+
+                            futures.add(executor.execute(processor, log, closure));
                             break;
                         }
                     }
@@ -81,16 +82,18 @@ public class NacosStateMachine extends BaseStateMachine {
                     index++;
                     throw e;
                 }
-                if (Objects.nonNull(closure)) {
-                    closure.run(status);
-                }
                 applied++;
                 index++;
                 iter.next();
             }
+
+            // Wait for all Log processing this time to complete
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
         }
         catch (Throwable t) {
-            t.printStackTrace();
+            Loggers.RAFT.error("StateMachine meet critical error: {}.", ExceptionUtil.getAllExceptionMsg(t));
             iter.setErrorAndRollback(index - applied, new Status(RaftError.ESTATEMACHINE,
                     "StateMachine meet critical error: %s.", t.getMessage()));
         }

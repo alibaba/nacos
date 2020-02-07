@@ -17,10 +17,10 @@
 package com.alibaba.nacos.core.distributed.distro;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
+import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Config;
-import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.Log;
+import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -42,9 +41,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @SuppressWarnings("all")
 @Component(value = "DistroProtocol")
-public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
-
-    private final Map<String, LogDispatcher> bizProcessorMap = new ConcurrentHashMap<>();
+public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> {
 
     private final Map<String, Object> metaData = new HashMap<>();
 
@@ -55,45 +52,34 @@ public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
 
     private final Executor executor = ExecutorFactory.newFixExecutorService(DistroProtocol.class.getCanonicalName(), 4);
 
-    private List<DistroStore> distroStores;
+    private List<AbstractDistroKVStore> distroStores;
 
     private DistroServer distroServer;
 
     @Override
     public void init(DistroConfig config) {
-        this.distroStores = new ArrayList<>(SpringUtils.getBeansOfType(DistroStore.class).values());
-
+        this.distroStores = new ArrayList<>(SpringUtils.getBeansOfType(AbstractDistroKVStore.class).values());
         this.distroServer = new DistroServer(distroStores);
     }
 
     @Override
     public Map<String, Object> protocolMetaData() {
+        return new HashMap<>(metaData);
+    }
+
+    @Override
+    public <R> R metaData(String key) {
         readLock.lock();
         try {
-            return metaData;
+            return (R) metaData.get(key);
         } finally {
             readLock.unlock();
         }
     }
 
     @Override
-    public <T> T metaData(String key) {
-        readLock.lock();
-        try {
-            return (T) metaData.get(key);
-        } finally {
-            readLock.unlock();
-        }
-    }
-
-    @Override
-    public void registerBizProcessor(LogDispatcher processor) {
-        bizProcessorMap.put(processor.bizInfo(), processor);
-    }
-
-    @Override
-    public <T> T getData(String key) throws Exception {
-        for (Map.Entry<String, LogDispatcher> entry : bizProcessorMap.entrySet()) {
+    public <D> D getData(String key) throws Exception {
+        for (Map.Entry<String, LogDispatcher> entry : allDispatcher().entrySet()) {
             final LogDispatcher processor = entry.getValue();
             if (processor.interest(key)) {
                 return processor.getData(key);
@@ -105,7 +91,7 @@ public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
     @Override
     public boolean submit(Log data) throws Exception {
         final String key = data.getKey();
-        for (Map.Entry<String, LogDispatcher> entry : bizProcessorMap.entrySet()) {
+        for (Map.Entry<String, LogDispatcher> entry : allDispatcher().entrySet()) {
             final LogDispatcher processor = entry.getValue();
             if (processor.interest(key)) {
                 processor.onApply(data);
@@ -131,7 +117,7 @@ public class DistroProtocol implements ConsistencyProtocol<DistroConfig> {
     @Override
     public boolean batchSubmit(Map<String, List<Log>> datums) {
         for (Map.Entry<String, List<Log>> entry : datums.entrySet()) {
-            final LogDispatcher processor = bizProcessorMap.get(entry.getKey());
+            final LogDispatcher processor = allDispatcher().get(entry.getKey());
             executor.execute(() -> {
                 for (Log log : entry.getValue()) {
                     try {

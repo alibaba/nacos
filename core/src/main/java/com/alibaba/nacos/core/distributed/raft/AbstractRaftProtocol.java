@@ -14,36 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.sync;
+package com.alibaba.nacos.core.distributed.raft;
 
-import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
-
-import java.util.List;
+import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class PartitionDataTimedSync {
-
-    private final List<AbstractDistroKVStore> distroStores;
-
-    public PartitionDataTimedSync(List<AbstractDistroKVStore> distroStores) {
-        this.distroStores = distroStores;
-    }
-
-    public void start() {
-
-    }
-
-    public void shutdown() {
-
-    }
-
-    private class Worker implements Runnable {
-
-        @Override
-        public void run() {
-
-        }
-    }
+public abstract class AbstractRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> {
 }

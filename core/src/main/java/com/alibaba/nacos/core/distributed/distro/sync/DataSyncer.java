@@ -28,7 +28,8 @@ import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.core.cluster.Node;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.distributed.Log;
+import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
+import com.alibaba.nacos.core.distributed.store.Record;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.executor.NameThreadFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -50,7 +51,7 @@ public class DataSyncer {
 
     private final NodeManager nodeManager;
 
-    private final List<DistroStore> distroStores;
+    private final List<AbstractDistroKVStore> distroStores;
 
     private final Map<String, String> taskMap = new ConcurrentHashMap<>();
 
@@ -59,7 +60,7 @@ public class DataSyncer {
     private NSyncHttpClient httpClient;
 
     public DataSyncer(NodeManager nodeManager,
-                      List<DistroStore> distroStores) {
+                      List<AbstractDistroKVStore> distroStores) {
         this.nodeManager = nodeManager;
         this.distroStores = distroStores;
     }
@@ -85,7 +86,7 @@ public class DataSyncer {
             return;
         }
 
-        for (DistroStore distroStore : distroStores) {
+        for (AbstractDistroKVStore distroStore : distroStores) {
             dataSyncExecutor.schedule(() -> {
                 // 1. check the server
                 if (getServers() == null || getServers().isEmpty()) {
@@ -96,7 +97,7 @@ public class DataSyncer {
 
 
                 // 2. get the datums by keys and check the datum is empty or not
-                Map<String, Log> datumMap = distroStore.batchGet(keys);
+                Map<String, ? extends Record> datumMap = distroStore.batchGet(keys);
                 if (datumMap == null || datumMap.isEmpty()) {
                     // clear all flags of this task:
                     for (String key : keys) {
@@ -153,7 +154,7 @@ public class DataSyncer {
         return key + "@@@@" + targetServer;
     }
 
-    private boolean syncData(Map<String, Log> data, String curServer) {
+    private boolean syncData(Map<String, ? extends Record> data, String curServer) {
         final Header header = Header.newInstance()
                 .addParam(HttpHeaderConsts.CLIENT_VERSION_HEADER, VersionUtils.VERSION)
                 .addParam(HttpHeaderConsts.USER_AGENT_HEADER, NACOS_SERVER_HEADER + ":" + VersionUtils.VERSION)

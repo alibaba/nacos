@@ -54,7 +54,7 @@ public abstract class BaseLockManager implements LockManager {
                 logConsumerMap.put(baseLockConsumer.operation(), baseLockConsumer);
             });
             ConsistencyProtocol<RaftConfig> protocol = SpringUtils.getBean(JRaftProtocol.class);
-            protocol.registerBizProcessor(this);
+            protocol.registerLogDispatcher(this);
         }
 
         @Override

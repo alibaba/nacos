@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
@@ -30,8 +29,6 @@ import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -39,24 +36,21 @@ import java.util.stream.Collectors;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public abstract class BaseStateMachine extends StateMachineAdapter {
+public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     private final AtomicLong leaderTerm = new AtomicLong(-1L);
 
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
 
-    protected Map<String, LogDispatcher> processorMap = new HashMap<>();
+    protected final JRaftProtocol protocol;
 
     private Collection<SnapshotOperate> snapshotOperates;
 
     private NodeManager nodeManager = NodeManager.getInstance();
 
-    public BaseStateMachine() {
-        snapshotOperates = SpringUtils.getBeansOfType(SnapshotOperate.class).values();
-    }
-
-    public synchronized void registerBizProcessor(LogDispatcher processor) {
-        processorMap.put(processor.bizInfo(), processor);
+    public AbstractStateMachine(JRaftProtocol protocol) {
+        this.protocol = protocol;
+        this.snapshotOperates = SpringUtils.getBeansOfType(SnapshotOperate.class).values();
     }
 
     @Override
@@ -135,7 +129,4 @@ public abstract class BaseStateMachine extends StateMachineAdapter {
         return isLeader.get();
     }
 
-    public Map<String, LogDispatcher> getProcessorMap() {
-        return processorMap;
-    }
 }

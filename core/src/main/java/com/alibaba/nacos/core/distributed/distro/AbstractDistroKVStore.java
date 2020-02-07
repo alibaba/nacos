@@ -14,36 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed.distro.sync;
+package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.core.distributed.distro.AbstractDistroKVStore;
-
-import java.util.List;
+import com.alibaba.nacos.core.distributed.store.KVStore;
 
 /**
+ * Eventual consistency key-value pair storage
+ * Implementation class needs to be discovered by Spring
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class PartitionDataTimedSync {
+@SuppressWarnings("all")
+public abstract class AbstractDistroKVStore extends KVStore {
 
-    private final List<AbstractDistroKVStore> distroStores;
-
-    public PartitionDataTimedSync(List<AbstractDistroKVStore> distroStores) {
-        this.distroStores = distroStores;
-    }
-
-    public void start() {
-
-    }
-
-    public void shutdown() {
-
-    }
-
-    private class Worker implements Runnable {
-
-        @Override
-        public void run() {
-
-        }
+    public AbstractDistroKVStore(String name) {
+        super(name);
     }
 }

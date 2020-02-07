@@ -46,7 +46,7 @@ public class ConfigLogDispatcher implements LogDispatcher {
     @PostConstruct
     protected void init() {
         protocol = SpringUtils.getBean("RaftProtocol", ConsistencyProtocol.class);
-        protocol.registerBizProcessor(this);
+        protocol.registerLogDispatcher(this);
         Map<String, ConfigConsumer> beans = SpringUtils.getBeansOfType(ConfigConsumer.class);
         for (ConfigConsumer consumer : beans.values()) {
             registerLogConsumer(consumer);

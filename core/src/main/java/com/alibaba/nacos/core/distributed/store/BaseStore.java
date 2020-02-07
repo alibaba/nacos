@@ -23,8 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveAction;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,24 +61,37 @@ abstract class BaseStore implements Store {
     }
 
     @Override
-    public boolean batchOperate(Map data) throws Exception {
+    public <T extends Record> boolean batchOperate(Map<String, ArrayList<T>> data) throws Exception {
         checkAnalyzer();
-        List<Boolean> result = new ArrayList<>();
-        for (Map.Entry<String, ArrayList<Record>> entry : ((Map<String, ArrayList<Record>>) data).entrySet()) {
+        CompletableFuture[] futures = new CompletableFuture[data.size()];
+        List<Boolean> result = new CopyOnWriteArrayList<>();
+        int index = 0;
+        for (Map.Entry<String, ArrayList<T>> entry : data.entrySet()) {
             final Function<Record, Boolean> function = commandAnalyzer.analyze(entry.getKey());
-            final ArrayList<Record> records = entry.getValue();
-            final Stream<Record> stream = records.size() > openParller ? records.parallelStream() : records.stream();
-            List<Boolean> subResult = stream
-                    .map(record -> {
-                        try {
-                            return function.apply(record);
-                        } catch (Exception e) {
-                            return false;
-                        }
-                    })
-                    .collect(Collectors.toList());
-            result.add(BooleanUtils.and(subResult.toArray(new Boolean[0])));
+            final ArrayList<T> records = entry.getValue();
+            final Stream<T> stream = records.size() > openParller ? records.parallelStream() : records.stream();
+            futures[index ++] = CompletableFuture.supplyAsync(() -> {
+                return stream
+                        .map(record -> {
+                            try {
+                                return function.apply(record);
+                            } catch (Exception e) {
+                                return false;
+                            }
+                        })
+                        .collect(Collectors.toList());
+            }, executor).whenComplete(new BiConsumer<List<Boolean>, Throwable>() {
+                @Override
+                public void accept(List<Boolean> subResult, Throwable throwable) {
+                    if (Objects.nonNull(throwable)) {
+                        result.add(false);
+                    } else {
+                        result.add(BooleanUtils.and(subResult.toArray(new Boolean[0])));
+                    }
+                }
+            });
         }
+        CompletableFuture.allOf(futures);
         return BooleanUtils.and(result.toArray(new Boolean[0]));
     }
 
@@ -86,19 +101,4 @@ abstract class BaseStore implements Store {
         }
     }
 
-    private static class OperateJob extends RecursiveAction {
-
-        private final ArrayList<Record> records;
-        private final Function<Record, Boolean> function;
-
-        public OperateJob(ArrayList<Record> records, Function<Record, Boolean> function) {
-            this.records = records;
-            this.function = function;
-        }
-
-        @Override
-        protected void compute() {
-
-        }
-    }
 }
