@@ -14,40 +14,53 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.core.util;
 
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.LogProcessor;
+import org.junit.Assert;
+import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public abstract class AbstractConsistencyProtocol<T extends Config> implements ConsistencyProtocol<T> {
-
-    protected Map<String, LogProcessor> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
-
-    public void loadLogDispatcher(List<LogProcessor> logProcessors) {
-        logProcessors.forEach(logDispatcher -> dispatcherMap.put(logDispatcher.bizInfo(), logDispatcher));
-    }
-
-    protected Map<String, LogProcessor> allProcessor() {
-        return dispatcherMap;
-    }
+public class MapUtilsTest {
 
     protected Object getVIfMapByRecursive(Object o, int index, String... keys) {
         if (index >= keys.length) {
             return o;
         }
-        if (o.getClass().isAssignableFrom(Map.class)) {
+        if (Map.class.isAssignableFrom(o.getClass())) {
             return getVIfMapByRecursive(((Map) o).get(keys[index]), index + 1, keys);
         }
         return null;
+    }
+
+
+    @Test
+    public void test_getVIfMapByRecursive() {
+
+        final String key = "num";
+
+        Map<String, Object> map = new HashMap<>();
+
+        // layer 1
+
+        Map<String, Object> subMap_1 = new HashMap<>();
+        subMap_1.put(key, 1);
+        map.put(key, subMap_1);
+
+        // layer 2
+
+        Map<String, Object> subMap_2 = new HashMap<>();
+        subMap_2.put(key, 1);
+        subMap_1.put(key, subMap_2);
+
+        System.out.println(map);
+
+        Assert.assertEquals(1, getVIfMapByRecursive(map, 0, key, key, key));
+
     }
 
 }

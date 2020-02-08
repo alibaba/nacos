@@ -19,6 +19,7 @@ package com.alibaba.nacos.consistency;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 
+import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 
@@ -45,6 +46,7 @@ public interface LogProcessor {
      *
      * @return {@link List<SnapshotOperate>}
      */
+    @PostConstruct
     default List<SnapshotOperate> loadSnapshotOperate() {
         return Collections.emptyList();
     }

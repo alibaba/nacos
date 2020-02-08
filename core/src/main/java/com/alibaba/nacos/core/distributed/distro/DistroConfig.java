@@ -17,10 +17,15 @@
 package com.alibaba.nacos.core.distributed.distro;
 
 import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.LogProcessor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,6 +38,8 @@ public class DistroConfig implements Config {
     private static final long serialVersionUID = -3073040842709279788L;
 
     private Map<String, String> data = new HashMap<>();
+
+    private List<LogProcessor> processors = new ArrayList<>();
 
     public Map<String, String> getData() {
         return data;
@@ -56,4 +63,15 @@ public class DistroConfig implements Config {
     public String getValOfDefault(String key, String defaultVal) {
         return data.getOrDefault(key, defaultVal);
     }
+
+    @Override
+    public List<LogProcessor> listLogProcessor() {
+        return Collections.unmodifiableList(processors);
+    }
+
+    @Override
+    public void addLogProcessors(LogProcessor... processors) {
+        this.processors.addAll(Arrays.asList(processors));
+    }
+
 }

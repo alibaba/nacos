@@ -31,14 +31,13 @@ import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Node;
-import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -52,12 +51,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     private Node raftNode;
 
-    private Map<String, Object> metaData = new HashMap<>();
-
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private Map<String, Properties> metaData = new ConcurrentHashMap<>();
 
     private NodeManager nodeManager;
 
@@ -83,17 +77,16 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         NotifyManager.registerSubscribe(new Subscribe<RaftEvent>() {
             @Override
             public void onEvent(RaftEvent event) {
-                writeLock.lock();
-                try {
-                    final String leader = event.getLeader();
-                    final long term = event.getTerm();
-                    final List<String> raftClusterInfo = event.getRaftClusterInfo();
-                    metaData.put("leader", leader == null || StringUtils.equalsIgnoreCase(selfAddress, leader));
-                    metaData.put("term", term);
-                    metaData.put("raftClusterInfo", raftClusterInfo);
-                } finally {
-                    writeLock.unlock();
-                }
+                final String groupId = event.getGroupId();
+                metaData.computeIfAbsent(groupId, s -> new Properties());
+                final Properties subMetaData = metaData.get(groupId);
+                final String leader = event.getLeader();
+                final long term = event.getTerm();
+                final List<String> raftClusterInfo = event.getRaftClusterInfo();
+                subMetaData.put("leader", leader);
+                subMetaData.put("term", term);
+                subMetaData.put("raftClusterInfo", raftClusterInfo);
+                metaData.put(groupId, subMetaData);
             }
 
             @Override
@@ -102,21 +95,22 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
             }
         });
 
+        loadLogDispatcher(config.listLogProcessor());
+
     }
 
     @Override
-    public Map<String, Object> protocolMetaData() {
-        return new HashMap<>(metaData);
+    public Map protocolMetaData() {
+        return metaData;
     }
 
     @Override
-    public <R> R metaData(String key) {
-        readLock.lock();
-        try {
-            return (R) metaData.get(key);
-        } finally {
-            readLock.unlock();
+    public <R> R metaData(String key, String... subKey) {
+        Object o = metaData.get(key);
+        if (subKey == null || subKey.length == 0) {
+            return (R) o;
         }
+        return (R) getVIfMapByRecursive(o, 0, subKey);
     }
 
     @Override

@@ -47,13 +47,6 @@ import java.util.concurrent.CompletableFuture;
 public interface ConsistencyProtocol<T extends Config> {
 
     /**
-     * Discover all LogDispatcher, called by nacos
-     *
-     * @param logProcessors Transaction Log Processing for the Consistency Protocol
-     */
-    void loadLogDispatcher(List<LogProcessor> logProcessors);
-
-    /**
      * Consistency protocol initialization: perform initialization operations based on the incoming Config
      * 一致性协议初始化，根据 Config 实现类
      *
@@ -67,17 +60,18 @@ public interface ConsistencyProtocol<T extends Config> {
      *
      * @return metaData copy
      */
-    Map<String, Object> protocolMetaData();
+    Map protocolMetaData();
 
     /**
      * Get the value of the corresponding metadata information according to the key
      * 根据 key 获取元数据信息中的某个值
      *
      * @param key key
+     * @param subKey if value is key-value struct
      * @param <R> target type
      * @return value
      */
-    <R> R metaData(String key);
+    <R> R metaData(String key, String... subKey);
 
     /**
      * Obtain data according to the request

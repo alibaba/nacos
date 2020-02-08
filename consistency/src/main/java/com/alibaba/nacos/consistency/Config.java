@@ -17,6 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Consistent protocol related configuration objects
@@ -49,5 +50,19 @@ public interface Config extends Serializable {
      * @return config value
      */
     String getValOfDefault(String key, String defaultVal);
+
+    /**
+     * get LogProcessors
+     *
+     * @return {@link List<LogProcessor>}
+     */
+    List<LogProcessor> listLogProcessor();
+
+    /**
+     * add {@link LogProcessor} processor
+     *
+     * @param processors {@link LogProcessor} array
+     */
+    void addLogProcessors(LogProcessor... processors);
 
 }

@@ -31,8 +31,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * // TODO 将 naming 模块的 AP 协议下沉到 core 模块
@@ -42,12 +42,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @SuppressWarnings("all")
 public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> implements APProtocol<DistroConfig> {
 
-    private final Map<String, Object> metaData = new HashMap<>();
-
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private final Map<String, Object> metaData = new ConcurrentHashMap<>();
 
     private final Executor executor = ExecutorFactory.newFixExecutorService(DistroProtocol.class.getCanonicalName(), 4);
 
@@ -59,6 +54,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     public void init(DistroConfig config) {
         this.distroStores = new ArrayList<>(SpringUtils.getBeansOfType(AbstractDistroKVStore.class).values());
         this.distroServer = new DistroServer(distroStores);
+
+        loadLogDispatcher(config.listLogProcessor());
     }
 
     @Override
@@ -67,13 +64,12 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     }
 
     @Override
-    public <R> R metaData(String key) {
-        readLock.lock();
-        try {
-            return (R) metaData.get(key);
-        } finally {
-            readLock.unlock();
+    public <R> R metaData(String key, String... subKey) {
+        Object o = metaData.get(key);
+        if (subKey == null || subKey.length == 0) {
+            return (R) o;
         }
+        return (R) getVIfMapByRecursive(o, 0, subKey);
     }
 
     @Override

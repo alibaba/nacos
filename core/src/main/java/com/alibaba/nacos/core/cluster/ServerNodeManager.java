@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.cluster;
 
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
+import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.ap.CPProtocol;
 import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
 import com.alibaba.nacos.consistency.cp.APProtocol;
@@ -293,14 +294,16 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     private void initAPProtocol() {
         APProtocol protocol = SpringUtils.getBean(APProtocol.class);
-        protocol.init(((Config) SpringUtils.getBean(protocol.configType())));
-        protocol.loadLogDispatcher(loadAllDispatcher(LogProcessor4AP.class));
+        Config config = (Config) SpringUtils.getBean(protocol.configType());
+        config.addLogProcessors(loadAllDispatcher(LogProcessor4AP.class).toArray(new LogProcessor[0]));
+        protocol.init((config));
     }
 
     private void initCPProtocol() {
         CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
-        protocol.loadLogDispatcher(loadAllDispatcher(LogProcessor4CP.class));
-        protocol.init(((Config) SpringUtils.getBean(protocol.configType())));
+        Config config = (Config) SpringUtils.getBean(protocol.configType());
+        config.addLogProcessors(loadAllDispatcher(LogProcessor4CP.class).toArray(new LogProcessor[0]));
+        protocol.init((config));
     }
 
 
