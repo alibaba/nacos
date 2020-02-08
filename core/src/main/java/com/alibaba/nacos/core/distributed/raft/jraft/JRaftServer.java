@@ -90,6 +90,8 @@ public class JRaftServer implements NodeChangeListener {
 
     private final NodeManager nodeManager;
 
+    private RaftConfig raftConfig;
+
     public JRaftServer(final NodeManager nodeManager) {
         this.nodeManager = nodeManager;
         this.conf = new Configuration();
@@ -98,16 +100,7 @@ public class JRaftServer implements NodeChangeListener {
     }
 
     void init(RaftConfig config, Collection<LogProcessor> processors) {
-        String parentPath = Paths.get(SystemUtils.NACOS_HOME, "protocol/raft").toString();
-        try {
-            FileUtils.forceMkdir(new File(parentPath));
-        } catch (Exception e) {
-            Loggers.RAFT.error("Init Raft-File dir have some error : {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
-        final String logUri = Paths.get(parentPath, "log").toString();
-        final String snapshotUri = Paths.get(parentPath, "snapshot").toString();
-        final String metaDataUri = Paths.get(parentPath, "meta-data").toString();
+        this.raftConfig = config;
 
         final com.alibaba.nacos.core.cluster.Node self = nodeManager.self();
         selfIp = self.ip();
@@ -127,10 +120,6 @@ public class JRaftServer implements NodeChangeListener {
                 String.valueOf(600)));
 
         nodeOptions.setSnapshotIntervalSecs(doSnapshotInterval);
-
-        nodeOptions.setLogUri(logUri);
-        nodeOptions.setRaftMetaUri(metaDataUri);
-        nodeOptions.setSnapshotUri(snapshotUri);
 
         this.processors = processors;
     }
@@ -175,14 +164,35 @@ public class JRaftServer implements NodeChangeListener {
     }
 
     private void initMultiRaftGroup(Collection<LogProcessor> processors, PeerId self, NodeOptions options, RpcServer rpcServer) {
+        final String parentPath = Paths.get(SystemUtils.NACOS_HOME, "protocol/raft").toString();
+
         this.executorService = ExecutorFactory.newScheduledExecutorService(JRaftServer.class.getCanonicalName(),
                 processors.size(),
                 new NameThreadFactory("com.alibaba.nacos.core.protocol.raft.node-refresh"));
         for (LogProcessor processor : processors) {
-            NodeOptions copy = options.copy();
+
             final String _group = processor.bizInfo();
+
+            final String logUri = Paths.get(parentPath, _group, "log").toString();
+            final String snapshotUri = Paths.get(parentPath, _group,"snapshot").toString();
+            final String metaDataUri = Paths.get(parentPath, _group,"meta-data").toString();
+
+            try {
+                FileUtils.forceMkdir(new File(logUri));
+                FileUtils.forceMkdir(new File(snapshotUri));
+                FileUtils.forceMkdir(new File(metaDataUri));
+            } catch (Exception e) {
+                Loggers.RAFT.error("Init Raft-File dir have some error : {}", e.getMessage());
+                throw new RuntimeException(e);
+            }
+
+            NodeOptions copy = options.copy();
+            copy.setLogUri(logUri);
+            copy.setRaftMetaUri(metaDataUri);
+            copy.setSnapshotUri(snapshotUri);
             copy.setFsm(new NacosStateMachine(this, processor));
-            RaftGroupService raftGroupService = new RaftGroupService(_group, self, copy, rpcServer);
+
+            RaftGroupService raftGroupService = new RaftGroupService(_group, self, copy, rpcServer, true);
 
             Node node = raftGroupService.start();
 
@@ -198,7 +208,7 @@ public class JRaftServer implements NodeChangeListener {
     }
 
 
-    CompletableFuture<ResResult<Boolean>> commit(Log data) throws Exception {
+    CompletableFuture<ResResult<Boolean>> commit(Log data) {
         final String key = data.getKey();
         final RaftGroupTuple tuple = findNodeByLog(data);
         if (tuple == null) {
@@ -222,24 +232,28 @@ public class JRaftServer implements NodeChangeListener {
             task.setData(ByteBuffer.wrap(JSON.toJSONBytes(data)));
             node.apply(task);
         } else {
-            cliClientService.getRpcClient().invokeWithCallback(
-                    leaderNode(node.getGroupId()).getEndpoint().toString(), data, new InvokeCallback() {
-                        @Override
-                        public void onResponse(Object o) {
-                            ResResult<Boolean> resResult = (ResResult) o;
-                            future.complete(resResult);
-                        }
+            try {
+                cliClientService.getRpcClient().invokeWithCallback(
+                        leaderNode(node.getGroupId()).getEndpoint().toString(), data, new InvokeCallback() {
+                            @Override
+                            public void onResponse(Object o) {
+                                ResResult<Boolean> resResult = (ResResult) o;
+                                future.complete(resResult);
+                            }
 
-                        @Override
-                        public void onException(Throwable e) {
-                            future.completeExceptionally(e);
-                        }
+                            @Override
+                            public void onException(Throwable e) {
+                                future.completeExceptionally(e);
+                            }
 
-                        @Override
-                        public Executor getExecutor() {
-                            return null;
-                        }
-                    }, 5000);
+                            @Override
+                            public Executor getExecutor() {
+                                return null;
+                            }
+                        }, 5000);
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
         }
         return future;
     }

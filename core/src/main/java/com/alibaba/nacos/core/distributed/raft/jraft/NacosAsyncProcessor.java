@@ -18,13 +18,11 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.Log;
-import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.NLog;
+import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
-
-import java.util.Objects;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -41,17 +39,21 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
 
     @Override
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Log log) {
-        try {
-            final JRaftServer.RaftGroupTuple tuple = server.findNodeByLog(log);
-            if (Objects.isNull(tuple)) {
-                throw new UnsupportedOperationException();
-            }
-            final LogProcessor processor = tuple.getProcessor();
-            ResResult<Boolean> resResult = processor.onApply(log);
-            asyncCtx.sendResponse(resResult);
-        } catch (Exception e) {
-            asyncCtx.sendResponse(
-                    ResResult.builder().withData(false).withErrMsg(e.getMessage()).build());
+        final JRaftServer.RaftGroupTuple tuple = server.findNodeByLog(log);
+        if (tuple.getNode().isLeader()) {
+            server.commit(log).whenComplete((result, t) -> {
+                if (t == null) {
+                    asyncCtx.sendResponse(ResResultUtils.success());
+                } else {
+                    asyncCtx.sendResponse(
+                            ResResult.builder()
+                                    .withData(false)
+                                    .withErrMsg(t.getMessage())
+                                    .build());
+                }
+            });
+        } else {
+            asyncCtx.sendResponse(ResResultUtils.failed("Not leader"));
         }
     }
 
