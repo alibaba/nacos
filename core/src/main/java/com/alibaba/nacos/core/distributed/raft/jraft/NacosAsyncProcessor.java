@@ -18,12 +18,13 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.consistency.NLog;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Objects;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -32,22 +33,22 @@ public class NacosAsyncProcessor extends AsyncUserProcessor<Log> {
 
     private static final String INTEREST_NAME = NLog.class.getName();
 
-    private JRaftProtocol protocol;
+    private final JRaftServer server;
 
-    public NacosAsyncProcessor(JRaftProtocol protocol) {
-        this.protocol = protocol;
+    public NacosAsyncProcessor(JRaftServer server) {
+        this.server = server;
     }
 
     @Override
     public void handleRequest(BizContext bizContext, AsyncContext asyncCtx, Log log) {
-        boolean isLeader = protocol.metaData("leader");
         try {
-            if (isLeader) {
-                CompletableFuture<ResResult<Boolean>> future = protocol
-                        .submitAsync(log);
-                asyncCtx.sendResponse(
-                        ResResult.builder().withData(future.get().getData()).build());
+            final JRaftServer.RaftGroupTuple tuple = server.findNodeByLog(log);
+            if (Objects.isNull(tuple)) {
+                throw new UnsupportedOperationException();
             }
+            final LogProcessor processor = tuple.getProcessor();
+            ResResult<Boolean> resResult = processor.onApply(log);
+            asyncCtx.sendResponse(resResult);
         } catch (Exception e) {
             asyncCtx.sendResponse(
                     ResResult.builder().withData(false).withErrMsg(e.getMessage()).build());

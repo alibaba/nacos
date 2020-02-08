@@ -14,31 +14,43 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.consistency.snapshot;
 
-import com.alibaba.nacos.consistency.Config;
-import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.LogProcessor;
-
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public abstract class AbstractConsistencyProtocol<T extends Config> implements ConsistencyProtocol<T> {
+public class Writer {
 
-    protected Map<String, LogProcessor> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
+    private final List<String> files = new ArrayList<>();
 
-    @Override
-    public void loadLogDispatcher(List<LogProcessor> logProcessors) {
-        logProcessors.forEach(logDispatcher -> dispatcherMap.put(logDispatcher.bizInfo(), logDispatcher));
+    /**
+     * Adds a snapshot file without metadata.
+     *
+     * @param fileName file name
+     * @return true on success
+     */
+    public boolean addFile(final String fileName) {
+        files.add(fileName);
+        return true;
     }
 
-    protected Map<String, LogProcessor> allProcessor() {
-        return dispatcherMap;
+    /**
+     * Remove a snapshot file.
+     *
+     * @param fileName file name
+     * @return true on success
+     */
+    public boolean removeFile(final String fileName) {
+        files.remove(fileName);
+        return true;
+    }
+
+    public List<String> listFiles() {
+        return Collections.unmodifiableList(files);
     }
 
 }

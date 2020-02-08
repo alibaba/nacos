@@ -17,6 +17,10 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Can be discovered through SPI or Spring,
@@ -30,10 +34,20 @@ public interface LogProcessor {
     /**
      * get data by key
      *
-     * @param key data
+     * @param request request
      * @return target type data
      */
-    <T> T getData(String key);
+    <T> T getData(String request);
+
+    /**
+     * Discovery snapshot handler
+     * It is up to LogProcessor to decide which SnapshotOperate should be loaded and saved by itself
+     *
+     * @return {@link List<SnapshotOperate>}
+     */
+    default List<SnapshotOperate> loadSnapshotOperate() {
+        return Collections.emptyList();
+    }
 
     /**
      * Process Submitted Log
@@ -42,6 +56,15 @@ public interface LogProcessor {
      * @return {@link ResResult<Boolean>}
      */
     ResResult<Boolean> onApply(Log log);
+
+    /**
+     * Callback triggered when a state machine error occurs
+     *
+     * @param throwable {@link Throwable}
+     */
+    default void onError(Throwable throwable) {
+
+    }
 
     /**
      * this BizProcessor which interest biz

@@ -28,11 +28,21 @@ public class RaftEvent implements Event {
 
     private static final long serialVersionUID = -4304258594602886451L;
 
+    private String groupId;
+
     private String leader;
 
     private long term;
 
     private List<String> raftClusterInfo = Collections.emptyList();
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
 
     public String getLeader() {
         return leader;
@@ -68,11 +78,17 @@ public class RaftEvent implements Event {
     }
 
     public static final class RaftEventBuilder {
+        private String groupId;
         private String leader;
         private long term;
         private List<String> raftClusterInfo = Collections.emptyList();
 
         private RaftEventBuilder() {
+        }
+
+        public RaftEventBuilder groupId(String groupId) {
+            this.groupId = groupId;
+            return this;
         }
 
         public RaftEventBuilder leader(String leader) {
@@ -92,6 +108,7 @@ public class RaftEvent implements Event {
 
         public RaftEvent build() {
             RaftEvent raftEvent = new RaftEvent();
+            raftEvent.setGroupId(groupId);
             raftEvent.setLeader(leader);
             raftEvent.setTerm(term);
             raftEvent.setRaftClusterInfo(raftClusterInfo);

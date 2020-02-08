@@ -27,20 +27,14 @@ import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.error.RaftError;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosStateMachine extends AbstractStateMachine {
 
-    private final LogParallelExecutor executor = new LogParallelExecutor();
-
-    public NacosStateMachine(JRaftProtocol protocol) {
-        super(protocol);
+    public NacosStateMachine(JRaftServer server, LogProcessor processor) {
+        super(server, processor);
     }
 
     @Override
@@ -48,7 +42,6 @@ public class NacosStateMachine extends AbstractStateMachine {
         int index = 0;
         int applied = 0;
         try {
-            List<CompletableFuture<Boolean>> futures = new ArrayList<>();
             while (iter.hasNext()) {
                 Log log = null;
                 NacosClosure closure = null;
@@ -61,22 +54,9 @@ public class NacosStateMachine extends AbstractStateMachine {
                         final ByteBuffer data = iter.getData();
                         log = JSON.parseObject(data.array(), NLog.class);
                     }
-                    // For each transaction, according to the different processing of
-                    // the key to the callback interface
 
                     Loggers.RAFT.info("receive datum : {}", JSON.toJSONString(log));
-
-                    for (Map.Entry<String, LogProcessor> entry : protocol.allLogDispacther().entrySet()) {
-                        final LogProcessor processor = entry.getValue();
-                        if (processor.interest(log.getKey())) {
-
-                            // Transaction log processing for different business
-                            // modules changed to parallel processing
-
-                            futures.add(executor.execute(processor, log, closure));
-                            break;
-                        }
-                    }
+                    processor.onApply(log);
                 }
                 catch (Throwable e) {
                     index++;
@@ -86,10 +66,6 @@ public class NacosStateMachine extends AbstractStateMachine {
                 index++;
                 iter.next();
             }
-
-            // Wait for all Log processing this time to complete
-
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
 
         }
         catch (Throwable t) {

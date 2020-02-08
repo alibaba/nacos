@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.Log;
@@ -31,18 +30,14 @@ import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.notify.listener.Subscribe;
 import com.alibaba.nacos.core.utils.InetUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import com.alipay.remoting.InvokeCallback;
 import com.alipay.sofa.jraft.Node;
-import com.alipay.sofa.jraft.entity.Task;
 import org.apache.commons.lang3.StringUtils;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -56,8 +51,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     private JRaftServer raftServer;
 
     private Node raftNode;
-
-    private NacosStateMachine machine;
 
     private Map<String, Object> metaData = new HashMap<>();
 
@@ -73,19 +66,15 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     @Override
     public void init(RaftConfig config) {
 
-        this.machine = new NacosStateMachine(this);
-
         this.nodeManager = SpringUtils.getBean(NodeManager.class);
 
         this.selfAddress = nodeManager.self().address();
 
         NotifyManager.registerPublisher(RaftEvent::new, RaftEvent.class);
 
-        this.raftServer = new JRaftServer(this.nodeManager, machine,
-                new NacosAsyncProcessor(this));
-        this.raftServer.init(config);
+        this.raftServer = new JRaftServer(this.nodeManager);
+        this.raftServer.init(config, allLogDispacther().values());
         this.raftServer.start();
-        this.raftNode = this.raftServer.getNode();
         isStart = true;
 
         // There is only one consumer to ensure that the internal consumption
@@ -132,7 +121,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
 
     @Override
     public <D> D getData(String key) throws Exception {
-        for (LogProcessor processor : allDispatcher().values()) {
+        for (LogProcessor processor : allProcessor().values()) {
             if (processor.interest(key)) {
                 return processor.getData(key);
             }
@@ -151,41 +140,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
         final Throwable[] throwable = new Throwable[] { null };
         CompletableFuture<ResResult<Boolean>> future = new CompletableFuture<>();
         try {
-            if (machine.isLeader()) {
-                final Task task = new Task();
-                task.setDone(new NacosClosure(data, status -> {
-                    NacosClosure.NStatus nStatus = (NacosClosure.NStatus) status;
-                    ResResult<Boolean> resResult = ResResult.<Boolean>builder()
-                            .withCode(status.getCode()).withData(status.isOk())
-                            .withErrMsg(status.getErrorMsg()).build();
-                    if (Objects.nonNull(nStatus.getThrowable())) {
-                        future.completeExceptionally(nStatus.getThrowable());
-                    } else {
-                        future.complete(resResult);
-                    }
-                }));
-                task.setData(ByteBuffer.wrap(JSON.toJSONBytes(data)));
-                raftNode.apply(task);
-            } else {
-                raftServer.getCliClientService().getRpcClient().invokeWithCallback(
-                        raftServer.leaderIp(), data, new InvokeCallback() {
-                            @Override
-                            public void onResponse(Object o) {
-                                ResResult<Boolean> resResult = (ResResult) o;
-                                future.complete(resResult);
-                            }
-
-                            @Override
-                            public void onException(Throwable e) {
-                                future.completeExceptionally(e);
-                            }
-
-                            @Override
-                            public Executor getExecutor() {
-                                return null;
-                            }
-                        }, 5000);
-            }
+            future = raftServer.commit(data);
         } catch (Throwable e) {
             throwable[0] = e;
         }
@@ -208,6 +163,6 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> imple
     }
 
     Map<String, LogProcessor> allLogDispacther() {
-        return allDispatcher();
+        return allProcessor();
     }
 }

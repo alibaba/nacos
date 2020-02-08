@@ -43,7 +43,6 @@ import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -300,20 +299,19 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
     private void initCPProtocol() {
         CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
-        protocol.init(((Config) SpringUtils.getBean(protocol.configType())));
         protocol.loadLogDispatcher(loadAllDispatcher(LogProcessor4CP.class));
+        protocol.init(((Config) SpringUtils.getBean(protocol.configType())));
     }
 
 
     private <T> List<T> loadAllDispatcher(Class<T> cls) {
-        final List<T> result = new ArrayList<>();
         Map<String, T> beans = SpringUtils.getBeansOfType(cls);
 
-        result.addAll(beans.values());
+        final List<T> result = new ArrayList<>(beans.values());
 
         ServiceLoader<T> loader = ServiceLoader.load(cls);
-        for (Iterator<T> iterator = loader.iterator(); iterator.hasNext(); ) {
-            result.add(iterator.next());
+        for (T t : loader) {
+            result.add(t);
         }
         return result;
     }

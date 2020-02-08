@@ -16,6 +16,11 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
+import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.snapshot.CallFinally;
+import com.alibaba.nacos.consistency.snapshot.Reader;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
+import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alipay.sofa.jraft.Closure;
@@ -23,18 +28,17 @@ import com.alipay.sofa.jraft.NodeManager;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.core.StateMachineAdapter;
 import com.alipay.sofa.jraft.entity.LeaderChangeContext;
+import com.alipay.sofa.jraft.error.RaftError;
 import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -46,35 +50,67 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
 
-    protected final JRaftProtocol protocol;
+    protected final JRaftServer server;
 
-    private final Collection<SnapshotOperate> snapshotOperates;
+    protected final LogProcessor processor;
+
+    private Collection<JSnapshotOperate> operates;
+
+    private final String groupId;
 
     private NodeManager nodeManager = NodeManager.getInstance();
 
-    public AbstractStateMachine(JRaftProtocol protocol) {
-        this.protocol = protocol;
-        List<SnapshotOperate> operates = new ArrayList<>();
-        ServiceLoader<SnapshotOperate> loader = ServiceLoader.load(SnapshotOperate.class);
+    public AbstractStateMachine(JRaftServer server, LogProcessor processor) {
+        this.server = server;
+        this.processor = processor;
+        this.groupId = processor.bizInfo();
 
-        for (Iterator<SnapshotOperate> iterator = loader.iterator(); iterator.hasNext(); ) {
-            operates.add(iterator.next());
+        List<SnapshotOperate> userOperates = processor.loadSnapshotOperate();
+
+        this.operates = new ArrayList<>();
+
+        for (SnapshotOperate item : userOperates) {
+            operates.add(new JSnapshotOperate() {
+
+                @Override
+                public void onSnapshotSave(SnapshotWriter writer, Closure done) {
+                    final Writer _w = new Writer();
+
+                    // Do a layer of proxy operation to shield different Raft
+                    // components from implementing snapshots
+
+                    final BiConsumer<Boolean, Throwable> proxy = (result, t) -> {
+                        for (String file : _w.listFiles()) {
+                            writer.addFile(file);
+                        }
+                        final Status status = result ? Status.OK() : new Status(RaftError.EIO,
+                                "Fail to compress snapshot at %s, error is %s", writer.getPath(),
+                                t.getMessage());
+                        done.run(status);
+                    };
+                    item.onSnapshotSave(_w, new CallFinally(proxy));
+                }
+
+                @Override
+                public boolean onSnapshotLoad(SnapshotReader reader) {
+                    final Reader _r = new Reader(reader.getPath(), reader.listFiles());
+                    return item.onSnapshotLoad(_r);
+                }
+            });
         }
-
-        snapshotOperates = Collections.unmodifiableCollection(operates);
     }
 
     @Override
     public void onSnapshotSave(SnapshotWriter writer, Closure done) {
-        for (SnapshotOperate snapshotOperate : snapshotOperates) {
-            snapshotOperate.onSnapshotSave(writer, done);
+        for (JSnapshotOperate operate : operates) {
+            operate.onSnapshotSave(writer, done);
         }
     }
 
     @Override
     public boolean onSnapshotLoad(SnapshotReader reader) {
-        for (SnapshotOperate snapshotOperate : snapshotOperates) {
-            if (!snapshotOperate.onSnapshotLoad(reader)) {
+        for (JSnapshotOperate operate : operates) {
+            if (!operate.onSnapshotLoad(reader)) {
                 return false;
             }
         }
@@ -87,6 +123,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
         this.leaderTerm.set(term);
         this.isLeader.set(true);
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
+                .groupId(groupId)
                 .term(leaderTerm.get())
 
                 // Means that he is a leader
@@ -109,6 +146,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     public void onStopFollowing(LeaderChangeContext ctx) {
         super.onStopFollowing(ctx);
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
+                .groupId(groupId)
                 .term(leaderTerm.get())
                 .leader(ctx.getLeaderId().toString())
                 .raftClusterInfo(nodeManager.getAllNodes()
@@ -122,6 +160,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
     public void onStartFollowing(LeaderChangeContext ctx) {
         super.onStartFollowing(ctx);
         NotifyManager.publishEvent(RaftEvent.class, RaftEvent.builder()
+                .groupId(groupId)
                 .term(leaderTerm.get())
                 .leader(ctx.getLeaderId().toString())
                 .raftClusterInfo(nodeManager.getAllNodes()
@@ -133,7 +172,7 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     @Override
     public void onError(RaftException e) {
-        super.onError(e);
+        processor.onError(e);
     }
 
     public boolean isLeader() {

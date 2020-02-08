@@ -29,7 +29,8 @@ import com.google.protobuf.ByteString;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public interface SnapshotOperate {
+@SuppressWarnings("all")
+public interface JSnapshotOperate {
 
     /**
      * do snapshot save operation

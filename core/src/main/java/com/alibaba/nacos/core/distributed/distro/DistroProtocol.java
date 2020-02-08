@@ -78,7 +78,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
 
     @Override
     public <D> D getData(String key) throws Exception {
-        for (Map.Entry<String, LogProcessor> entry : allDispatcher().entrySet()) {
+        for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
             final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
                 return processor.getData(key);
@@ -90,7 +90,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     @Override
     public boolean submit(Log data) throws Exception {
         final String key = data.getKey();
-        for (Map.Entry<String, LogProcessor> entry : allDispatcher().entrySet()) {
+        for (Map.Entry<String, LogProcessor> entry : allProcessor().entrySet()) {
             final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
                 processor.onApply(data);
@@ -116,7 +116,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> im
     @Override
     public boolean batchSubmit(Map<String, List<Log>> datums) {
         for (Map.Entry<String, List<Log>> entry : datums.entrySet()) {
-            final LogProcessor processor = allDispatcher().get(entry.getKey());
+            final LogProcessor processor = allProcessor().get(entry.getKey());
             executor.execute(() -> {
                 for (Log log : entry.getValue()) {
                     try {
