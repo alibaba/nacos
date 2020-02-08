@@ -117,18 +117,30 @@ public class ConfigServletInner {
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
         String requestIpApp = RequestUtil.getAppName(request);
+        /**
+         * 加读锁
+         */
         int lockResult = tryConfigReadLock(groupKey);
 
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
+        /**
+         * 加锁成功
+         */
         if (lockResult > 0) {
             FileInputStream fis = null;
             try {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
+                /**
+                 * 在cache中获取groupKey对应的CacheItem
+                 */
                 CacheItem cacheItem = ConfigService.getContentCache(groupKey);
                 if (cacheItem != null) {
                     if (cacheItem.isBeta()) {
+                        /**
+                         * 访问的客户端是beta中对应的ip
+                         */
                         if (cacheItem.getIps4Beta().contains(clientIp)) {
                             isBeta = true;
                         }
@@ -137,17 +149,32 @@ public class ConfigServletInner {
                 File file = null;
                 ConfigInfoBase configInfoBase = null;
                 PrintWriter out = null;
+                /**
+                 * beta客户端访问
+                 */
                 if (isBeta) {
                     md5 = cacheItem.getMd54Beta();
                     lastModified = cacheItem.getLastModifiedTs4Beta();
                     if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                        /**
+                         * 单机   并且没有使用mysql    则获取config_info_beta对应的值
+                         */
                         configInfoBase = persistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
+                        /**
+                         * 返回服务端beta缓存文件的路径
+                         */
                         file = DiskUtil.targetBetaFile(dataId, group, tenant);
                     }
                     response.setHeader("isBeta", "true");
                 } else {
+                    /**
+                     * 没有tag
+                     */
                     if (StringUtils.isBlank(tag)) {
+                        /**
+                         * 使用autoTag
+                         */
                         if (isUseTag(cacheItem, autoTag)) {
                             if (cacheItem != null) {
                                 if (cacheItem.tagMd5 != null) {
@@ -158,21 +185,39 @@ public class ConfigServletInner {
                                 }
                             }
                             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                                /**
+                                 * 单机   并且没有使用mysql    则获取config_info_tag对应的值
+                                 */
                                 configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, autoTag);
                             } else {
+                                /**
+                                 * 返回服务端Tag缓存文件的路径
+                                 */
                                 file = DiskUtil.targetTagFile(dataId, group, tenant, autoTag);
                             }
 
                             response.setHeader("Vipserver-Tag",
                                 URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
                         } else {
+                            /**
+                             * 不使用autoTag
+                             */
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                                /**
+                                 * 单机   并且没有使用mysql    则获取config_info对应的值
+                                 */
                                 configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
                             } else {
+                                /**
+                                 * 返回服务端缓存文件的路径
+                                 */
                                 file = DiskUtil.targetFile(dataId, group, tenant);
                             }
+                            /**
+                             * 配置不存在
+                             */
                             if (configInfoBase == null && fileNotExist(file)) {
                                 // FIXME CacheItem
                                 // 不存在了无法简单的计算推送delayed，这里简单的记做-1
@@ -189,6 +234,9 @@ public class ConfigServletInner {
                             }
                         }
                     } else {
+                        /**
+                         * 有tag
+                         */
                         if (cacheItem != null) {
                             if (cacheItem.tagMd5 != null) {
                                 md5 = cacheItem.tagMd5.get(tag);
@@ -201,10 +249,20 @@ public class ConfigServletInner {
                             }
                         }
                         if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
+                            /**
+                             * 单机   并且没有使用mysql    则获取config_info_tag对应的值
+                             */
                             configInfoBase = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
+                            /**
+                             * 返回服务端Tag缓存文件的路径
+                             */
                             file = DiskUtil.targetTagFile(dataId, group, tenant, tag);
                         }
+
+                        /**
+                         * 配置不存在
+                         */
                         if (configInfoBase == null && fileNotExist(file)) {
                             // FIXME CacheItem
                             // 不存在了无法简单的计算推送delayed，这里简单的记做-1
@@ -237,6 +295,9 @@ public class ConfigServletInner {
                     response.setDateHeader("Last-Modified", file.lastModified());
                 }
 
+                /**
+                 * 将配置信息写入返回对象
+                 */
                 if (STANDALONE_MODE && !PropertyUtil.isStandaloneUseMysql()) {
                     out = response.getWriter();
                     out.print(configInfoBase.getContent());
@@ -258,13 +319,18 @@ public class ConfigServletInner {
                     requestIp);
 
             } finally {
+                /**
+                 * 释放读锁
+                 */
                 releaseConfigReadLock(groupKey);
                 if (null != fis) {
                     fis.close();
                 }
             }
         } else if (lockResult == 0) {
-
+            /**
+             * 数据不存在
+             */
             // FIXME CacheItem 不存在了无法简单的计算推送delayed，这里简单的记做-1
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
                 ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
@@ -274,7 +340,9 @@ public class ConfigServletInner {
             return HttpServletResponse.SC_NOT_FOUND + "";
 
         } else {
-
+            /**
+             * 加锁失败   有进程正在写入
+             */
             pullLog.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
 
             response.setStatus(HttpServletResponse.SC_CONFLICT);
@@ -290,6 +358,11 @@ public class ConfigServletInner {
         ConfigService.releaseReadLock(groupKey);
     }
 
+    /**
+     * 加读锁
+     * @param groupKey
+     * @return
+     */
     private static int tryConfigReadLock(String groupKey) {
         /**
          *  默认加锁失败

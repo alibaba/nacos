@@ -227,6 +227,9 @@ public class NacosConfigService implements ConfigService {
 
         LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}", agent.getName(),
             dataId, group, tenant, ContentUtils.truncateContent(content));
+        /**
+         * 从服务端获取配置发生异常  则从本都快照文件中读取配置
+         */
         content = LocalConfigInfoProcessor.getSnapshot(agent.getName(), dataId, group, tenant);
         cr.setContent(content);
         configFilterChainManager.doFilter(null, cr);
