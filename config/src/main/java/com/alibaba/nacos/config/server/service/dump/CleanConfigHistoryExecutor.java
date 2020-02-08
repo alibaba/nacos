@@ -16,25 +16,17 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.config.server.configuration.ClusterDataSourceV2;
-import com.alibaba.nacos.config.server.enums.ConfigOperationEnum;
-import com.alibaba.nacos.config.server.model.log.CleanHistoryRequest;
-import com.alibaba.nacos.config.server.service.DistributeProtocolAware;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.TimerTaskService;
-import com.alibaba.nacos.config.server.utils.LogKeyUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.NodeManager;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
@@ -42,12 +34,9 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class CleanConfigHistoryExecutor extends DistributeProtocolAware {
+public class CleanConfigHistoryExecutor {
 
     private static final Logger log = LoggerFactory.getLogger(CleanConfigHistoryExecutor.class);
-
-    @Autowired
-    private ClusterDataSourceV2 connectionManager;
 
     private PersistService persistService;
     private NodeManager nodeManager;
@@ -75,23 +64,7 @@ public class CleanConfigHistoryExecutor extends DistributeProtocolAware {
                             startTime, totalCount, pageSize, removeTime);
                     while (removeTime > 0) {
                         // 分页删除，以免批量太大报错
-                        final String xid = connectionManager.openDistributeTransaction();
-                        try {
-                            final String key = LogKeyUtils.build("CONFIG", startTime, pageSize, xid);
-
-                            final CleanHistoryRequest request = CleanHistoryRequest.builder()
-                                    .startTime(startTime)
-                                    .limitSize(pageSize)
-                                    .build();
-
-                            final Map<String, String> extendInfo = new HashMap<>();
-                            extendInfo.put("xid", xid);
-                            submit(key, request, ConfigOperationEnum.CONFIG_HISTORY_REMOVE.getOperation(), extendInfo);
-                            connectionManager.commitLocal();
-                        } catch (Exception e) {
-                            log.error("clearConfigHistory error", e);
-                            connectionManager.rollbackLocal();
-                        }
+                        persistService.removeConfigHistory(startTime, pageSize);
                         removeTime--;
                     }
                 }

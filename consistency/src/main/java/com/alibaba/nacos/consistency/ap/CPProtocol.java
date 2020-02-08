@@ -14,31 +14,14 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.distributed;
+package com.alibaba.nacos.consistency.ap;
 
 import com.alibaba.nacos.consistency.Config;
 import com.alibaba.nacos.consistency.ConsistencyProtocol;
-import com.alibaba.nacos.consistency.LogProcessor;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public abstract class AbstractConsistencyProtocol<T extends Config> implements ConsistencyProtocol<T> {
-
-    protected Map<String, LogProcessor> dispatcherMap = Collections.synchronizedMap(new HashMap<>());
-
-    @Override
-    public void loadLogDispatcher(List<LogProcessor> logProcessors) {
-        logProcessors.forEach(logDispatcher -> dispatcherMap.put(logDispatcher.bizInfo(), logDispatcher));
-    }
-
-    protected Map<String, LogProcessor> allDispatcher() {
-        return dispatcherMap;
-    }
-
+@SuppressWarnings("all")
+public interface CPProtocol<C extends Config> extends ConsistencyProtocol<C> {
 }

@@ -15,6 +15,7 @@
  */
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.config.server.utils.DiskUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

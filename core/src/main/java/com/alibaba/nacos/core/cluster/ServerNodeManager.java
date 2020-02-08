@@ -16,10 +16,14 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.ConsistencyProtocol;
+import com.alibaba.nacos.consistency.ap.CPProtocol;
+import com.alibaba.nacos.consistency.ap.LogProcessor4AP;
+import com.alibaba.nacos.consistency.cp.APProtocol;
+import com.alibaba.nacos.consistency.cp.LogProcessor4CP;
 import com.alibaba.nacos.core.cluster.task.NodeStateReportTask;
 import com.alibaba.nacos.core.cluster.task.SyncNodeTask;
-import com.alibaba.nacos.core.distributed.Config;
-import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.id.DistributeIDManager;
 import com.alibaba.nacos.core.notify.NotifyManager;
 import com.alibaba.nacos.core.utils.Constants;
@@ -39,9 +43,11 @@ import javax.annotation.PreDestroy;
 import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -119,7 +125,8 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
 
         // Consistency protocol module initialization
 
-        initConsistencyProtocol();
+        initAPProtocol();
+        initCPProtocol();
 
     }
 
@@ -285,12 +292,32 @@ public class ServerNodeManager implements ApplicationListener<WebServerInitializ
         isHealthCheck = Boolean.parseBoolean(SpringUtils.getProperty("isHealthCheck", "true"));
     }
 
-    private void initConsistencyProtocol() {
-        Map<String, ConsistencyProtocol> protocols = SpringUtils.getBeansOfType(ConsistencyProtocol.class);
-        for (ConsistencyProtocol protocol : protocols.values()) {
-            protocol.init((Config) SpringUtils.getBean(protocol.configType()));
-        }
+    private void initAPProtocol() {
+        APProtocol protocol = SpringUtils.getBean(APProtocol.class);
+        protocol.init(((Config) SpringUtils.getBean(protocol.configType())));
+        protocol.loadLogDispatcher(loadAllDispatcher(LogProcessor4AP.class));
     }
+
+    private void initCPProtocol() {
+        CPProtocol protocol = SpringUtils.getBean(CPProtocol.class);
+        protocol.init(((Config) SpringUtils.getBean(protocol.configType())));
+        protocol.loadLogDispatcher(loadAllDispatcher(LogProcessor4CP.class));
+    }
+
+
+    private <T> List<T> loadAllDispatcher(Class<T> cls) {
+        final List<T> result = new ArrayList<>();
+        Map<String, T> beans = SpringUtils.getBeansOfType(cls);
+
+        result.addAll(beans.values());
+
+        ServiceLoader<T> loader = ServiceLoader.load(cls);
+        for (Iterator<T> iterator = loader.iterator(); iterator.hasNext(); ) {
+            result.add(iterator.next());
+        }
+        return result;
+    }
+
 
     @Override
     public void onApplicationEvent(WebServerInitializedEvent webServerInitializedEvent) {

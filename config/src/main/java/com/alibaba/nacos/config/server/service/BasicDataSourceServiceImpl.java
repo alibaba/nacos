@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -49,7 +48,6 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.fatalLog;
  *
  * @author Nacos
  */
-@Conditional(DataSourceService.OutsideDBCondition.class)
 @Service("basicDataSourceService")
 public class BasicDataSourceServiceImpl implements DataSourceService {
 
@@ -93,38 +91,37 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
     @PostConstruct
     public void init() {
-
-        logger.info("use basic db service");
-
-        queryTimeout = NumberUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
-        jt = new JdbcTemplate();
-        /**
-         *  设置最大记录数，防止内存膨胀
-         */
-        jt.setMaxRows(50000);
-        jt.setQueryTimeout(queryTimeout);
-
-        testMasterJT = new JdbcTemplate();
-        testMasterJT.setQueryTimeout(queryTimeout);
-
-        testMasterWritableJT = new JdbcTemplate();
-        /**
-         * 防止login接口因为主库不可用而rt太长
-         */
-        testMasterWritableJT.setQueryTimeout(1);
-        /**
-         * 数据库健康检测
-         */
-        testJTList = new ArrayList<JdbcTemplate>();
-        isHealthList = new ArrayList<Boolean>();
-
-        tm = new DataSourceTransactionManager();
-        tjt = new TransactionTemplate(tm);
-        /**
-         *  事务的超时时间需要与普通操作区分开
-         */
-        tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
         if (PropertyUtil.isUseMysql()) {
+            logger.info("use basic db service");
+
+            queryTimeout = NumberUtils.toInt(System.getProperty("QUERYTIMEOUT"), 3);
+            jt = new JdbcTemplate();
+            /**
+             *  设置最大记录数，防止内存膨胀
+             */
+            jt.setMaxRows(50000);
+            jt.setQueryTimeout(queryTimeout);
+
+            testMasterJT = new JdbcTemplate();
+            testMasterJT.setQueryTimeout(queryTimeout);
+
+            testMasterWritableJT = new JdbcTemplate();
+            /**
+             * 防止login接口因为主库不可用而rt太长
+             */
+            testMasterWritableJT.setQueryTimeout(1);
+            /**
+             * 数据库健康检测
+             */
+            testJTList = new ArrayList<JdbcTemplate>();
+            isHealthList = new ArrayList<Boolean>();
+
+            tm = new DataSourceTransactionManager();
+            tjt = new TransactionTemplate(tm);
+            /**
+             *  事务的超时时间需要与普通操作区分开
+             */
+            tjt.setTimeout(TRANSACTION_QUERY_TIMEOUT);
             try {
                 reload();
             } catch (IOException e) {
@@ -133,9 +130,9 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
             }
 
             TimerTaskService.scheduleWithFixedDelay(new SelectMasterTask(), 10, 10,
-                TimeUnit.SECONDS);
+                    TimeUnit.SECONDS);
             TimerTaskService.scheduleWithFixedDelay(new CheckDBHealthTask(), 10, 10,
-                TimeUnit.SECONDS);
+                    TimeUnit.SECONDS);
         }
     }
 
@@ -189,7 +186,7 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
 
                 // 每10分钟检查一遍连接池
                 ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
-                    .toMillis(10L));
+                        .toMillis(10L));
                 ds.setTestWhileIdle(true);
                 ds.setValidationQuery("SELECT 1 FROM dual");
 
@@ -312,8 +309,8 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 testMasterJT.setQueryTimeout(queryTimeout);
                 try {
                     testMasterJT
-                        .update(
-                            "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
+                            .update(
+                                    "DELETE FROM config_info WHERE data_id='com.alibaba.nacos.testMasterDB'");
                     if (jt.getDataSource() != ds) {
                         fatalLog.warn("[master-db] {}", ds.getUrl());
                     }
@@ -352,10 +349,10 @@ public class BasicDataSourceServiceImpl implements DataSourceService {
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {
                         fatalLog.error("[db-error] master db {} down.",
-                            getIpFromUrl(dataSourceList.get(i).getUrl()));
+                                getIpFromUrl(dataSourceList.get(i).getUrl()));
                     } else {
                         fatalLog.error("[db-error] slave db {} down.",
-                            getIpFromUrl(dataSourceList.get(i).getUrl()));
+                                getIpFromUrl(dataSourceList.get(i).getUrl()));
                     }
                     isHealthList.set(i, Boolean.FALSE);
 

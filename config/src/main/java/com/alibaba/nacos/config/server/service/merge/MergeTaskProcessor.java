@@ -22,7 +22,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.DistributeProtocolAware;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
@@ -43,7 +42,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
  *
  * @author Nacos
  */
-public class MergeTaskProcessor extends DistributeProtocolAware implements TaskProcessor {
+public class MergeTaskProcessor implements TaskProcessor {
 
     final int PAGE_SIZE = 10000;
 
@@ -79,8 +78,6 @@ public class MergeTaskProcessor extends DistributeProtocolAware implements TaskP
             if (datumList.size() > 0) {
                 ConfigInfo cf = merge(dataId, group, tenant, datumList);
 
-                // TODO 使用 protocol.submit 进行事务提交
-
                 persistService.insertOrUpdate(null, null, cf, time, null);
 
                 log.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group, datumList.size(),
@@ -91,8 +88,6 @@ public class MergeTaskProcessor extends DistributeProtocolAware implements TaskP
             }
             // 删除
             else {
-
-                // TODO 使用 protocol.submit 进行事务提交
 
                 if (StringUtils.isBlank(tag)) {
                     persistService.removeConfigInfo(dataId, group, tenant, clientIp, null);

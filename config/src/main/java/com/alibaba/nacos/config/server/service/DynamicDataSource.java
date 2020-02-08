@@ -17,7 +17,6 @@ package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.STANDALONE_MODE;
@@ -43,9 +42,7 @@ public class DynamicDataSource {
     }
 
     private boolean useMemoryDB() {
-        boolean a = STANDALONE_MODE && !PropertyUtil.isUseMysql();
-        boolean b = StringUtils.equalsIgnoreCase("inner", SpringUtils.getProperty("nacos.config.store.type"));
-        return a || b;
+        return STANDALONE_MODE && !PropertyUtil.isUseMysql();
     }
 
 }

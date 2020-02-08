@@ -21,7 +21,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigService;
-import com.alibaba.nacos.config.server.service.DistributeProtocolAware;
 import com.alibaba.nacos.config.server.service.PersistService;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
@@ -45,7 +44,7 @@ import static com.alibaba.nacos.core.utils.SystemUtils.LOCAL_IP;
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class MergeAllDataWorker extends DistributeProtocolAware implements Runnable {
+class MergeAllDataWorker implements Runnable {
 
     private static final Executor executor = ExecutorFactory.newCacheExecutorService(MergeAllDataWorker.class.getCanonicalName());
 

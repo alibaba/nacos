@@ -16,8 +16,7 @@
 package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.core.distributed.ConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.raft.RaftConfig;
+import com.alibaba.nacos.consistency.ap.CPProtocol;
 import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alibaba.nacos.naming.consistency.ephemeral.EphemeralConsistencyService;
 import com.alibaba.nacos.naming.consistency.persistent.PersistentConsistencyService;
@@ -42,11 +41,11 @@ public class DelegateConsistencyServiceImpl implements ConsistencyService {
     @Autowired
     private EphemeralConsistencyService ephemeralConsistencyService;
 
-    private ConsistencyProtocol<RaftConfig> raftProtocol;
+    private CPProtocol raftProtocol;
 
     @PostConstruct
     protected void init() {
-        raftProtocol = SpringUtils.getBean("RaftProtocol", ConsistencyProtocol.class);
+        raftProtocol = SpringUtils.getBean(CPProtocol.class);
     }
 
     @Override

@@ -17,8 +17,8 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.common.model.ResResult;
-import com.alibaba.nacos.core.distributed.Log;
-import com.alibaba.nacos.core.distributed.NLog;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.NLog;
 import com.alipay.remoting.AsyncContext;
 import com.alipay.remoting.BizContext;
 import com.alipay.remoting.rpc.protocol.AsyncUserProcessor;

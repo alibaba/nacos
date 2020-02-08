@@ -17,9 +17,9 @@
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.nacos.core.distributed.Log;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
-import com.alibaba.nacos.core.distributed.NLog;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.NLog;
 import com.alibaba.nacos.core.utils.ExceptionUtil;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Iterator;
@@ -66,8 +66,8 @@ public class NacosStateMachine extends AbstractStateMachine {
 
                     Loggers.RAFT.info("receive datum : {}", JSON.toJSONString(log));
 
-                    for (Map.Entry<String, LogDispatcher> entry : protocol.allLogDispacther().entrySet()) {
-                        final LogDispatcher processor = entry.getValue();
+                    for (Map.Entry<String, LogProcessor> entry : protocol.allLogDispacther().entrySet()) {
+                        final LogProcessor processor = entry.getValue();
                         if (processor.interest(log.getKey())) {
 
                             // Transaction log processing for different business

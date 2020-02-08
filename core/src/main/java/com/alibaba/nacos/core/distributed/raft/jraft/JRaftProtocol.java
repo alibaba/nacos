@@ -18,11 +18,12 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.ap.CPProtocol;
 import com.alibaba.nacos.core.cluster.NodeManager;
-import com.alibaba.nacos.core.distributed.Config;
-import com.alibaba.nacos.core.distributed.Log;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
-import com.alibaba.nacos.core.distributed.raft.AbstractRaftProtocol;
+import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
 import com.alibaba.nacos.core.distributed.raft.RaftConfig;
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.Event;
@@ -34,8 +35,6 @@ import com.alipay.remoting.InvokeCallback;
 import com.alipay.sofa.jraft.Node;
 import com.alipay.sofa.jraft.entity.Task;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.stereotype.Component;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -50,9 +49,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-@ConditionalOnClass(name = {"com.alipay.sofa.jraft.NodeManager"})
-@Component("RaftProtocol")
-public class JRaftProtocol extends AbstractRaftProtocol {
+public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig> implements CPProtocol<RaftConfig> {
 
     private volatile boolean isStart = false;
 
@@ -135,7 +132,7 @@ public class JRaftProtocol extends AbstractRaftProtocol {
 
     @Override
     public <D> D getData(String key) throws Exception {
-        for (LogDispatcher processor : allDispatcher().values()) {
+        for (LogProcessor processor : allDispatcher().values()) {
             if (processor.interest(key)) {
                 return processor.getData(key);
             }
@@ -210,7 +207,7 @@ public class JRaftProtocol extends AbstractRaftProtocol {
         }
     }
 
-    Map<String, LogDispatcher> allLogDispacther() {
+    Map<String, LogProcessor> allLogDispacther() {
         return allDispatcher();
     }
 }

@@ -18,14 +18,13 @@ package com.alibaba.nacos.config.server.service;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.core.utils.SpringUtils;
+import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.PostConstruct;
@@ -38,6 +37,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME;
 import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
@@ -47,12 +47,14 @@ import static com.alibaba.nacos.core.utils.SystemUtils.NACOS_HOME_KEY;
  *
  * @author Nacos
  */
-@Conditional(DataSourceService.MemoryDBCondition.class)
-@Service("localDataSourceService")
+@Component("localDataSourceService")
 public class LocalDataSourceServiceImpl implements DataSourceService {
 
     private static final Logger logger = LoggerFactory.getLogger(LocalDataSourceServiceImpl.class);
 
+    private static final String JDBC_DRIVER_NAME = "org.apache.derby.jdbc.EmbeddedDriver";
+    private static final String USER_NAME = "nacos";
+    private static final String PASSWORD = "nacos";
     private static final String DERBY_BASE_DIR = "data" + File.separator + "derby-data";
 
     private JdbcTemplate jt;
@@ -60,21 +62,32 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
 
     @PostConstruct
     public void init() {
-
-        logger.info("use local db service");
-
-        DataSource ds = SpringUtils.getBean(DataSource.class);
-
-        jt = new JdbcTemplate();
-        jt.setMaxRows(50000);
-        jt.setQueryTimeout(5000);
-        jt.setDataSource(ds);
-        DataSourceTransactionManager tm = new DataSourceTransactionManager();
-        tjt = new TransactionTemplate(tm);
-        tm.setDataSource(ds);
-        tjt.setTimeout(5000);
-
         if (!PropertyUtil.isUseMysql()) {
+
+            logger.info("use local db service");
+
+            BasicDataSource ds = new BasicDataSource();
+            ds.setDriverClassName(JDBC_DRIVER_NAME);
+            ds.setUrl("jdbc:derby:" + NACOS_HOME + File.separator + DERBY_BASE_DIR + ";create=true");
+            ds.setUsername(USER_NAME);
+            ds.setPassword(PASSWORD);
+            ds.setInitialSize(20);
+            ds.setMaxActive(30);
+            ds.setMaxIdle(50);
+            ds.setMaxWait(10000L);
+            ds.setPoolPreparedStatements(true);
+            ds.setTimeBetweenEvictionRunsMillis(TimeUnit.MINUTES
+                    .toMillis(10L));
+            ds.setTestWhileIdle(true);
+
+            jt = new JdbcTemplate();
+            jt.setMaxRows(50000);
+            jt.setQueryTimeout(5000);
+            jt.setDataSource(ds);
+            DataSourceTransactionManager tm = new DataSourceTransactionManager();
+            tjt = new TransactionTemplate(tm);
+            tm.setDataSource(ds);
+            tjt.setTimeout(5000);
             reload();
         }
     }
@@ -137,7 +150,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
                 sqlFileIn = url.openStream();
             } else {
                 File file = new File(
-                    System.getProperty(NACOS_HOME_KEY) + File.separator + "conf" + File.separator + "schema.sql");
+                        System.getProperty(NACOS_HOME_KEY) + File.separator + "conf" + File.separator + "schema.sql");
                 sqlFileIn = new FileInputStream(file);
             }
 

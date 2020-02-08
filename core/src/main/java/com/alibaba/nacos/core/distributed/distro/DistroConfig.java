@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.core.distributed.distro;
 
-import com.alibaba.nacos.core.distributed.Config;
+import com.alibaba.nacos.consistency.Config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
@@ -29,18 +32,28 @@ public class DistroConfig implements Config {
 
     private static final long serialVersionUID = -3073040842709279788L;
 
-    @Override
-    public void setVal(String key, String value) {
+    private Map<String, String> data = new HashMap<>();
 
+    public Map<String, String> getData() {
+        return data;
+    }
+
+    public void setData(Map<String, String> data) {
+        this.data = data;
+    }
+
+    @Override
+    public synchronized void setVal(String key, String value) {
+        data.put(key, value);
     }
 
     @Override
     public String getVal(String key) {
-        return null;
+        return data.get(key);
     }
 
     @Override
     public String getValOfDefault(String key, String defaultVal) {
-        return null;
+        return data.getOrDefault(key, defaultVal);
     }
 }

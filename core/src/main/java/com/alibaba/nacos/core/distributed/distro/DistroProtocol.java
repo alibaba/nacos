@@ -17,14 +17,14 @@
 package com.alibaba.nacos.core.distributed.distro;
 
 import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.consistency.Config;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogProcessor;
+import com.alibaba.nacos.consistency.cp.APProtocol;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
-import com.alibaba.nacos.core.distributed.Config;
-import com.alibaba.nacos.core.distributed.Log;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.ResResultUtils;
 import com.alibaba.nacos.core.utils.SpringUtils;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,8 +40,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-@Component(value = "DistroProtocol")
-public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> {
+public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> implements APProtocol<DistroConfig> {
 
     private final Map<String, Object> metaData = new HashMap<>();
 
@@ -79,8 +78,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> {
 
     @Override
     public <D> D getData(String key) throws Exception {
-        for (Map.Entry<String, LogDispatcher> entry : allDispatcher().entrySet()) {
-            final LogDispatcher processor = entry.getValue();
+        for (Map.Entry<String, LogProcessor> entry : allDispatcher().entrySet()) {
+            final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
                 return processor.getData(key);
             }
@@ -91,8 +90,8 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> {
     @Override
     public boolean submit(Log data) throws Exception {
         final String key = data.getKey();
-        for (Map.Entry<String, LogDispatcher> entry : allDispatcher().entrySet()) {
-            final LogDispatcher processor = entry.getValue();
+        for (Map.Entry<String, LogProcessor> entry : allDispatcher().entrySet()) {
+            final LogProcessor processor = entry.getValue();
             if (processor.interest(key)) {
                 processor.onApply(data);
                 return true;
@@ -117,7 +116,7 @@ public class DistroProtocol extends AbstractConsistencyProtocol<DistroConfig> {
     @Override
     public boolean batchSubmit(Map<String, List<Log>> datums) {
         for (Map.Entry<String, List<Log>> entry : datums.entrySet()) {
-            final LogDispatcher processor = allDispatcher().get(entry.getKey());
+            final LogProcessor processor = allDispatcher().get(entry.getKey());
             executor.execute(() -> {
                 for (Log log : entry.getValue()) {
                     try {

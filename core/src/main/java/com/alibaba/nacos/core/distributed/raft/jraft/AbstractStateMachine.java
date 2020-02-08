@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.distributed.raft.jraft;
 
 import com.alibaba.nacos.core.distributed.raft.RaftEvent;
 import com.alibaba.nacos.core.notify.NotifyManager;
-import com.alibaba.nacos.core.utils.SpringUtils;
 import com.alipay.sofa.jraft.Closure;
 import com.alipay.sofa.jraft.NodeManager;
 import com.alipay.sofa.jraft.Status;
@@ -28,7 +27,12 @@ import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -44,13 +48,20 @@ public abstract class AbstractStateMachine extends StateMachineAdapter {
 
     protected final JRaftProtocol protocol;
 
-    private Collection<SnapshotOperate> snapshotOperates;
+    private final Collection<SnapshotOperate> snapshotOperates;
 
     private NodeManager nodeManager = NodeManager.getInstance();
 
     public AbstractStateMachine(JRaftProtocol protocol) {
         this.protocol = protocol;
-        this.snapshotOperates = SpringUtils.getBeansOfType(SnapshotOperate.class).values();
+        List<SnapshotOperate> operates = new ArrayList<>();
+        ServiceLoader<SnapshotOperate> loader = ServiceLoader.load(SnapshotOperate.class);
+
+        for (Iterator<SnapshotOperate> iterator = loader.iterator(); iterator.hasNext(); ) {
+            operates.add(iterator.next());
+        }
+
+        snapshotOperates = Collections.unmodifiableCollection(operates);
     }
 
     @Override

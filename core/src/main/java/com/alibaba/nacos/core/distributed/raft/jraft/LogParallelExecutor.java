@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.distributed.raft.jraft;
 
-import com.alibaba.nacos.core.distributed.Log;
-import com.alibaba.nacos.core.distributed.LogDispatcher;
+import com.alibaba.nacos.consistency.Log;
+import com.alibaba.nacos.consistency.LogProcessor;
 import com.alibaba.nacos.core.executor.ExecutorFactory;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Status;
@@ -36,8 +36,16 @@ class LogParallelExecutor {
 
     private final Map<String, Executor> executorMap = new HashMap<>();
 
-    CompletableFuture<Boolean> execute(final LogDispatcher dispatcher, final Log log, final NacosClosure closure) {
-        final String bizInfo = dispatcher.bizInfo();
+    /**
+     * Single-threaded processing for transactions under the same business
+     *
+     * @param processor {@link LogProcessor}
+     * @param log {@link Log}
+     * @param closure {@link NacosClosure}
+     * @return {@link CompletableFuture<Boolean>} this log processor result
+     */
+    CompletableFuture<Boolean> execute(final LogProcessor processor, final Log log, final NacosClosure closure) {
+        final String bizInfo = processor.bizInfo();
         if (!executorMap.containsKey(bizInfo)) {
             executorMap.put(bizInfo, ExecutorFactory.
                     newSingleExecutorService("LogDispatcher-" + bizInfo));
@@ -50,7 +58,7 @@ class LogParallelExecutor {
             Status status = Status.OK();
             Throwable throwable = null;
             try {
-                future.complete(dispatcher.onApply(log).getData());
+                future.complete(processor.onApply(log).getData());
             } catch (Exception e) {
                 throwable = e;
                 status = new Status(RaftError.UNKNOWN,
