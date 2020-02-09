@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.common.model.ResResult;
+import com.alibaba.nacos.consistency.request.GetRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperate;
 
-import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,10 +34,10 @@ public interface LogProcessor {
     /**
      * get data by key
      *
-     * @param request request
+     * @param request request {@link GetRequest}
      * @return target type data
      */
-    <T> T getData(String request);
+    <T> T getData(GetRequest request);
 
     /**
      * Discovery snapshot handler
@@ -46,7 +45,6 @@ public interface LogProcessor {
      *
      * @return {@link List<SnapshotOperate>}
      */
-    @PostConstruct
     default List<SnapshotOperate> loadSnapshotOperate() {
         return Collections.emptyList();
     }
@@ -55,9 +53,9 @@ public interface LogProcessor {
      * Process Submitted Log
      *
      * @param log {@link Log}
-     * @return {@link ResResult<Boolean>}
+     * @return {@link boolean}
      */
-    ResResult<Boolean> onApply(Log log);
+    boolean onApply(Log log);
 
     /**
      * Callback triggered when a state machine error occurs

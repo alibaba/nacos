@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.consistency;
 
-import com.alibaba.nacos.common.model.ResResult;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -97,10 +95,10 @@ public interface ConsistencyProtocol<T extends Config> {
      * 异步数据提交，在 Datum 中已携带相应的数据操作信息，返回一个Future，自行操作，提交发生的异常会在CompleteFuture中
      *
      * @param data {@link Log}
-     * @return {@link CompletableFuture<ResResult<Boolean>>} submit result
+     * @return {@link CompletableFuture<Boolean>} submit result
      * @throws Exception when submit throw Exception
      */
-    CompletableFuture<ResResult<Boolean>> submitAsync(Log data);
+    CompletableFuture<Boolean> submitAsync(Log data);
 
     /**
      * Bulk submission of data

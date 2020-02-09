@@ -77,4 +77,11 @@ public interface Log extends Serializable {
      */
     void appendExtendInfo(Map<String, String> extendInfo);
 
+    /**
+     * list all extendInfo
+     *
+     * @return {@link Map<String, String>}
+     */
+    Map<String, String> listExtendInfo();
+
 }

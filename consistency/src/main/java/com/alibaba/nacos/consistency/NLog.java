@@ -88,7 +88,12 @@ public class NLog implements Log {
         this.extendInfo.putAll(extendInfo);
     }
 
-    private static NLogBuilder builder() {
+    @Override
+    public Map<String, String> listExtendInfo() {
+        return this.extendInfo;
+    }
+
+    public static NLogBuilder builder() {
         return new NLogBuilder();
     }
 
